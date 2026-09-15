@@ -19,7 +19,7 @@ namespace TaskLayer
     {
         public static void WriteMzIdentMl(IEnumerable<SpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<Modification> variableMods, 
             List<Modification> fixedMods, List<SilacLabel> silacLabels, List<DigestionAgent> proteases, Tolerance productTolerance, 
-            Tolerance parentTolerance, int missedCleavages, string outputPath, bool appendMotifToModNames)
+            Tolerance parentTolerance, int missedCleavages, string outputPath, bool appendMotifToModNames, bool? semiSpecific = null)
         {
 
             //if SILAC, remove the silac labels, because the base/full sequences reported for output are not the same as the peptides in the best peptides list for the psm
@@ -576,7 +576,11 @@ namespace TaskLayer
                 {
                     id = "E_" + protease_index,
                     name = protease.Name,
-                    semiSpecific = protease.CleavageSpecificity == CleavageSpecificity.Semi,
+                    // The search's own specificity when the caller gives it: trypsin is Full even in a semi-specific search,
+                    // whose semi-specificity comes from SearchModeType. Otherwise what the protease itself says.
+                    semiSpecific = semiSpecific ?? protease.CleavageSpecificity == CleavageSpecificity.Semi,
+                    // without this the XML serializer omits semiSpecific entirely, which it always did before
+                    semiSpecificSpecified = true,
                     missedCleavagesSpecified = true,
                     missedCleavages = missedCleavages,
                     EnzymeName = new mzIdentML110.Generated.ParamListType()
