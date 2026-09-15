@@ -1191,6 +1191,100 @@ namespace Test
         }
 
         /// <summary>
+        /// Mixed hypotheses in one OSM: a non-oligo (null cap formula, via the defensive cast) and an
+        /// oligo (real cap formula). Resolve cannot collapse a null against a value, so the terminus
+        /// cells join with the null hypothesis rendered as an empty cell - the writer-level version of
+        /// the "null among values" Resolve branch.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_Oligo_MixedNullAndValueHypotheses_PipeJoinWithEmptyCell()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            try
+            {
+                Protein protein = new Protein("MPEPTIDEK", "prot_td");
+                PeptideWithSetModifications peptide = new PeptideWithSetModifications(
+                    protein, new DigestionParams(), 1, 9, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+                ChemicalFormula fivePrime = ChemicalFormula.ParseFormula("O-3P-1");
+                OligoWithSetMods oligo = BuildTestOligo("AAA", fivePrime, ChemicalFormula.ParseFormula("H2O4P"));
+
+                double mass = 12.0 + oligo.MonoisotopicMass.ToMz(1);
+                var scan = new Ms2ScanWithSpecificMass(
+                    new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                        0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                    mass, 1, "", new CommonParameters());
+
+                var osm = new OligoSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+                osm.AddOrReplace(oligo, 10, 0, true, new List<MatchedFragmentIon>());
+                osm.ResolveAllAmbiguities();
+
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                int fivePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.FivePrimeTerminus);
+                string[] rowSplits = osm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                Assert.That(fivePrimeIndex, Is.GreaterThanOrEqualTo(0));
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+                // The null hypothesis's cap cannot collapse against the oligo's - Resolve joins the
+                // hypothesis list in order, rendering the null as an empty cell on either side.
+                Assert.That(rowSplits[fivePrimeIndex],
+                    Is.EqualTo("|" + fivePrime.Formula).Or.EqualTo(fivePrime.Formula + "|"));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// Multiple hypotheses, none of which is an oligo: every terminus formula is null, so Resolve
+        /// gets an all-null list and each cap cell comes back empty.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_Oligo_AllNullHypotheses_WritesEmptyCells()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            try
+            {
+                Protein proteinA = new Protein("MPEPTIDEK", "prot_td_a");
+                PeptideWithSetModifications peptideA = new PeptideWithSetModifications(
+                    proteinA, new DigestionParams(), 1, 9, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+                Protein proteinB = new Protein("MPEPTIDEKK", "prot_td_b");
+                PeptideWithSetModifications peptideB = new PeptideWithSetModifications(
+                    proteinB, new DigestionParams(), 1, 10, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+                double mass = 12.0 + peptideA.MonoisotopicMass.ToMz(1);
+                var scan = new Ms2ScanWithSpecificMass(
+                    new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                        0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                    mass, 1, "", new CommonParameters());
+
+                var osm = new OligoSpectralMatch(peptideA, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+                osm.AddOrReplace(peptideB, 10, 0, true, new List<MatchedFragmentIon>());
+                osm.ResolveAllAmbiguities();
+
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                int fivePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.FivePrimeTerminus);
+                int threePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.ThreePrimeTerminus);
+                string[] rowSplits = osm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                Assert.That(fivePrimeIndex, Is.GreaterThanOrEqualTo(0));
+                Assert.That(threePrimeIndex, Is.GreaterThanOrEqualTo(0));
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+                // [null, null] -> Resolve all-null -> empty cells, not a crash.
+                Assert.That(rowSplits[fivePrimeIndex], Is.EqualTo(string.Empty));
+                Assert.That(rowSplits[threePrimeIndex], Is.EqualTo(string.Empty));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
         /// A terminus object with a monoisotopic mass but no chemical formula, exercising the
         /// writer's ThisChemicalFormula null guard. Never produced by real digestion.
         /// </summary>
