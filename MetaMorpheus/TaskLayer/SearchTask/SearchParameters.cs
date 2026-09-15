@@ -124,8 +124,8 @@ namespace TaskLayer
         /// replicate structure -- is knowledge no search has; only a human does. A run that emitted
         /// one unconditionally would have to write "not available" wherever it could not find a
         /// value, and a corpus of those passes every validator, produces no drift findings, and
-        /// cannot be mined. Opting in is the user asserting the sample metadata exists, which is
-        /// what earns the right to demand it.
+        /// cannot be mined. Opting in is the user saying the sample metadata exists, which is what
+        /// makes it worth naming every gap before the run starts.
         /// </summary>
         public bool WriteSdrf { get; set; }
     }

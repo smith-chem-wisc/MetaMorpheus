@@ -498,9 +498,10 @@
                                             Writes an SDRF-Proteomics file describing this experiment alongside the results,
                                             so searches can be compared and mined across experiments.
                                             <LineBreak/>
-                                            Requires an ExperimentalDesign.tsv beside the spectra files: an SDRF records which
-                                            sample each file came from, and nothing in a search knows that. The run will stop
-                                            before starting if it is missing.
+                                            Reads the sample metadata from ExperimentalDesign.tsv beside the spectra files: an SDRF
+                                            records which sample each file came from, and nothing in a search knows that. Without
+                                            it the search still runs, a warning names what is missing, and those columns say
+                                            "not available".
                                         </TextBlock>
                                     </CheckBox.ToolTip>
                                 </CheckBox>

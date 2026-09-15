@@ -658,13 +658,15 @@ namespace TaskLayer
                          string.Join("; ", designErrors));
             }
 
-            // Labelled runs cannot express comment[label]: SDRF wants one row per sample per channel,
-            // and MetaMorpheus has no channel-to-sample mapping for isobaric tags or for SILAC.
-            // Guessing one would invent an experimental design.
+            // Labelled runs do not yet express comment[label]: SDRF wants one row per sample per
+            // channel. SILAC has no channel-to-sample mapping at all; isobaric runs have one in
+            // TmtDesign.txt, but the SDRF writer does not read it yet. Guessing would invent an
+            // experimental design.
             if (SearchParameters.DoMultiplexQuantification
                 || SearchParameters.SilacLabels?.Any() == true)
-                Warn("SDRF output on a labelled search: comment[label] cannot be filled in, because " +
-                     "MetaMorpheus has no channel-to-sample mapping. Every other column will be written.");
+                Warn("SDRF output on a labelled search: comment[label] is not filled in yet, because " +
+                     "the SDRF is written one row per file, not one row per channel. Every other column " +
+                     "will be written.");
         }
 
 

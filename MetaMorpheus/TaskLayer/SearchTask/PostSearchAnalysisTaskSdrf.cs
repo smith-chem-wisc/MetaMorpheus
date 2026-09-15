@@ -33,8 +33,8 @@ namespace TaskLayer
         {
             // Deliberately wrapped, unlike the other writers in this class, which are bare and abort
             // the whole run on failure. An SDRF is metadata about results, not results: a bad sample
-            // annotation must not destroy a search that has already succeeded. The requirement that
-            // the metadata EXISTS is enforced earlier, at task validation, where failing is cheap.
+            // annotation must not destroy a search that has already succeeded. Missing metadata was
+            // already named before the run, by SearchTask.WarnAboutSdrfGaps.
             try
             {
                 var rows = BuildSdrfRows().ToList();
@@ -48,9 +48,9 @@ namespace TaskLayer
                 {
                     Software = new CvParam("MS", "MS:1002826", "MetaMorpheus", ""),
                     SoftwareVersion = GlobalVariables.MetaMorpheusVersion,
-                    // The sample metadata is only as complete as the input allowed. Enforcement
-                    // happened at validation time; by here the run is committed, so accept what we
-                    // have and let SdrfCoverage report on it rather than throwing mid-write.
+                    // The sample metadata is only as complete as the input allowed. Gaps were named
+                    // before the run; by here it is committed, so accept what we have and let
+                    // SdrfCoverage report on it rather than throwing mid-write.
                     RequireSampleMetadata = false
                 });
 
@@ -204,10 +204,11 @@ namespace TaskLayer
         /// <summary>
         /// Only a genuinely label-free search is described as label free.
         ///
-        /// SDRF wants one row per sample per CHANNEL, and MetaMorpheus has no channel-to-sample
-        /// mapping for EITHER isobaric tags or SILAC -- it models the labelling scheme for the whole
-        /// search, not which sample sat in which channel. Guessing one would invent an experimental
-        /// design, so the label is left unresolved and the coverage report shows it.
+        /// SDRF wants one row per sample per CHANNEL, and this writer emits one row per file. SILAC
+        /// has no channel-to-sample mapping in MetaMorpheus at all. Isobaric runs do, in
+        /// TmtDesign.txt, but expanding rows from it is not done here yet. Until it is, the label is
+        /// left unresolved and the coverage report shows it; guessing would invent an experimental
+        /// design.
         ///
         /// Returning "label free sample" for a labelled run would be worse than returning nothing:
         /// the column comes out fully populated with a confident falsehood, which
