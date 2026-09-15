@@ -534,20 +534,38 @@ namespace EngineLayer.ModernSearch
 
         /// <summary>
         /// The last peptide index checked with <see cref="IsSortedForBinSearch"/> and the answer, so the check runs once per index
-        /// rather than once per scan. Held by reference: an index is built once and not changed while it is searched. Scans on
-        /// several threads may each check a new index once; they reach the same answer.
+        /// rather than once per scan. Held by reference: an index is built once and not changed while it is searched. A search
+        /// starts all its threads at once, so the check is made under a lock: it reads every peptide, and each thread repeating it
+        /// cost more than the scoring it was guarding.
         /// </summary>
         private sealed record BinSearchOrder(List<IBioPolymerWithSetMods> PeptideIndex, bool Sorted);
 
-        private BinSearchOrder _binSearchOrder;
+        private volatile BinSearchOrder _binSearchOrder;
+
+        private readonly object _binSearchOrderLock = new object();
+
+        private int _binSearchOrderChecks;
+
+        /// <summary>
+        /// How many times this engine has checked a peptide index's order, so a test can see the check is not repeated.
+        /// </summary>
+        internal int BinSearchOrderChecks => System.Threading.Volatile.Read(ref _binSearchOrderChecks);
 
         private bool PeptideIndexIsSortedForBinSearch(List<IBioPolymerWithSetMods> peptideIndex)
         {
             BinSearchOrder known = _binSearchOrder;
             if (known == null || !ReferenceEquals(known.PeptideIndex, peptideIndex))
             {
-                known = new BinSearchOrder(peptideIndex, IsSortedForBinSearch(peptideIndex));
-                _binSearchOrder = known;
+                lock (_binSearchOrderLock)
+                {
+                    known = _binSearchOrder;
+                    if (known == null || !ReferenceEquals(known.PeptideIndex, peptideIndex))
+                    {
+                        System.Threading.Interlocked.Increment(ref _binSearchOrderChecks);
+                        known = new BinSearchOrder(peptideIndex, IsSortedForBinSearch(peptideIndex));
+                        _binSearchOrder = known;
+                    }
+                }
             }
             return known.Sorted;
         }
@@ -563,6 +581,11 @@ namespace EngineLayer.ModernSearch
             // below it: the same position the per-bin mass search finds, without reading a peptide in every bin.
             bool windowEndsAtAPeptideId = !Double.IsInfinity(highestMassPeptideToLookFor) && PeptideIndexIsSortedForBinSearch(peptideIndex);
             int lastPeptideIdInWindow = windowEndsAtAPeptideId ? LastPeptideIdAtOrBelow(peptideIndex, highestMassPeptideToLookFor) : -1;
+
+            // OpenSearchMode accepts every mass, so a candidate's mass need not be read to ask it; the glyco and crosslink searches
+            // use it, and that read was a trip to a peptide object for every candidate reaching the cutoff. Exactly that type only:
+            // a subclass may override Accepts.
+            bool acceptorAcceptsEveryMass = massDiffAcceptor.GetType() == typeof(OpenSearchMode);
 
             // get all theoretical fragments this experimental fragment could be
             for (int i = 0; i < binsToSearch.Count; i++) //binsToSearch is the list of fragment in Spectra
@@ -627,7 +650,7 @@ namespace EngineLayer.ModernSearch
                         int id = peptideIdsInThisBin[j];
 
                         // add possible search results to the hashset of id's (only once)
-                        if (scoringTable[id] == 0 && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0)
+                        if (scoringTable[id] == 0 && (acceptorAcceptsEveryMass || massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0))
                         {
                             idsOfPeptidesPossiblyObserved.Add(id);
                         }
@@ -645,7 +668,7 @@ namespace EngineLayer.ModernSearch
                         scoringTable[id]++;
 
                         // if the score of the peptide >3 (counts > 3 times), and the mass difference is accepted, add the peptide to the list of peptides possibly observed
-                        if (scoringTable[id] == byteScoreCutoff && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0)
+                        if (scoringTable[id] == byteScoreCutoff && (acceptorAcceptsEveryMass || massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0))
                         {
                             idsOfPeptidesPossiblyObserved.Add(id);
                         }

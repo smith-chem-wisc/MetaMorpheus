@@ -168,7 +168,59 @@ namespace Test
             AssertScoringMatchesReference(shuffled, DissociationType.HCD);
         }
 
+        /// <summary>
+        /// A tolerance acceptor rejects most candidates, so reading each candidate's mass for it still decides what is scored.
+        /// </summary>
+        [Test]
+        public static void IndexedScoringWithAToleranceAcceptorScoresWhatThePerBinMassSearchScored()
+        {
+            AssertScoringMatchesReference(SortedPeptideIndex(), DissociationType.HCD, new SinglePpmAroundZeroSearchMode(5));
+        }
+
+        /// <summary>
+        /// Only an acceptor that is exactly <see cref="OpenSearchMode"/> is known to accept every mass. A subclass may override
+        /// Accepts, so it must still be asked.
+        /// </summary>
+        [Test]
+        public static void IndexedScoringStillAsksAnAcceptorDerivedFromOpenSearchMode()
+        {
+            AssertScoringMatchesReference(SortedPeptideIndex(), DissociationType.HCD, new RejectEverythingOpenSearchMode());
+        }
+
+        private sealed class RejectEverythingOpenSearchMode : OpenSearchMode
+        {
+            public override int Accepts(double scanPrecursorMass, double peptideMass) => -1;
+        }
+
+        /// <summary>
+        /// Every scan's search asks whether the index is in mass order, and a search starts all its threads at once. The index is
+        /// checked once, not once per thread: the check reads every peptide.
+        /// </summary>
+        [Test]
+        public static void ScansStartingTogetherCheckTheIndexOrderOnce()
+        {
+            // Many references to a few peptides: sorted, and long enough that an unguarded check overlaps between threads.
+            var few = SortedPeptideIndex();
+            var peptideIndex = Enumerable.Range(0, 400_000).Select(i => few[i * few.Count / 400_000]).ToList();
+            var fragmentIndex = new FragmentIndex(new[] { 0, 3 }, new[] { 0, 1, 2 });
+            var probe = new Probe();
+
+            const int threads = 16;
+            using var barrier = new System.Threading.Barrier(threads);
+            System.Threading.Tasks.Parallel.For(0, threads, new System.Threading.Tasks.ParallelOptions { MaxDegreeOfParallelism = threads }, _ =>
+            {
+                barrier.SignalAndWait();
+                probe.ScoreOn(fragmentIndex, new List<int> { 0 }, new byte[peptideIndex.Count], 1, new List<int>(), 1000,
+                    double.NegativeInfinity, 2000, peptideIndex, new OpenSearchMode(), DissociationType.HCD);
+            });
+
+            Assert.That(probe.IndexOrderChecks, Is.EqualTo(1));
+        }
+
         private static void AssertScoringMatchesReference(List<IBioPolymerWithSetMods> peptideIndex, DissociationType dissociationType)
+            => AssertScoringMatchesReference(peptideIndex, dissociationType, new OpenSearchMode());
+
+        private static void AssertScoringMatchesReference(List<IBioPolymerWithSetMods> peptideIndex, DissociationType dissociationType, MassDiffAcceptor acceptor)
         {
             var random = new Random(31337);
             var ids = Enumerable.Range(0, peptideIndex.Count).ToArray();
@@ -199,7 +251,6 @@ namespace Test
                 windows.Add((highest - random.NextDouble() * 500, highest));
             }
 
-            var acceptor = new OpenSearchMode();
             var failures = new List<string>();
             foreach (var (lowest, highest) in windows)
             {
@@ -297,7 +348,13 @@ namespace Test
         /// </summary>
         private sealed class Probe : ModernSearchEngine
         {
-            private Probe() : base(null, null, null, null, 0, new CommonParameters(), null, new OpenSearchMode(), 0, new List<string>()) { }
+            internal Probe() : base(null, null, null, null, 0, new CommonParameters(), null, new OpenSearchMode(), 0, new List<string>()) { }
+
+            internal int IndexOrderChecks => BinSearchOrderChecks;
+
+            internal void ScoreOn(FragmentIndex fragmentIndex, List<int> binsToSearch, byte[] scoringTable, byte cutoff, List<int> observed, double precursor,
+                double lowest, double highest, List<IBioPolymerWithSetMods> peptideIndex, MassDiffAcceptor acceptor, DissociationType dissociationType)
+                => IndexedScoring(fragmentIndex, binsToSearch, scoringTable, cutoff, observed, precursor, lowest, highest, peptideIndex, acceptor, 0, dissociationType);
 
             internal static bool IsSorted(List<IBioPolymerWithSetMods> peptideIndex) => IsSortedForBinSearch(peptideIndex);
 
