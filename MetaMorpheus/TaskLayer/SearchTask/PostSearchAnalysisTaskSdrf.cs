@@ -168,9 +168,14 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// The organism, taken from the search database rather than looked up. A UniProt database
-        /// states it, and mzLib retains it as <c>Protein.NcbiTaxonomyId</c> for both the XML and
-        /// FASTA paths, so no taxonomy ontology has to be shipped or queried.
+        /// The organism, taken from the search database rather than looked up, so no taxonomy
+        /// ontology has to be shipped or queried. A UniProt database states it and mzLib retains it
+        /// as <c>Protein.NcbiTaxonomyId</c>.
+        ///
+        /// Today that reaches a MetaMorpheus search only from a UniProt XML database. mzLib can read
+        /// FASTA's OX= too, but MetaMorpheus passes LoadProteinFasta explicit regexes without the
+        /// organism-id one, so a FASTA search leaves the column "not available". That loader call is
+        /// #2782's to change, and it deliberately has not.
         /// </summary>
         private CvParam ResolveOrganismFromSearchDatabase()
         {
