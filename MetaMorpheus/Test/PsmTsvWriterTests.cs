@@ -6,6 +6,7 @@ using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
+using System.IO;
 using Omics.Digestion;
 using Omics.Modifications;
 using Easy.Common.Extensions;
@@ -730,7 +731,11 @@ namespace Test
             ChemicalFormula fivePrime = ChemicalFormula.ParseFormula("O-3P-1");
             ChemicalFormula threePrime = ChemicalFormula.ParseFormula("H2O4P");
             oligo = BuildTestOligo("AAA", fivePrime, threePrime);
+            return BuildOsmFromOligo(oligo);
+        }
 
+        private static OligoSpectralMatch BuildOsmFromOligo(OligoWithSetMods oligo)
+        {
             double mass = 12.0 + oligo.MonoisotopicMass.ToMz(1);
             var scan = new Ms2ScanWithSpecificMass(
                 new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
@@ -891,6 +896,63 @@ namespace Test
             finally
             {
                 GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_Oligo_RoundTripWritesAndReadsTerminusFormulas()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                "TerminiRoundTrip_" + System.Guid.NewGuid().ToString("N") + ".osmtsv");
+            try
+            {
+                // The same base sequence, with explicitly different terminus formulas per row. The
+                // formulas are deliberately not the NucleicAcid/Rnase defaults so that, if the reader
+                // silently used its PreviousResidue/NextResidue fallback instead of the written
+                // columns, the assertions below would fail.
+                ChemicalFormula rowAFive = ChemicalFormula.ParseFormula("HO");
+                ChemicalFormula rowAThree = ChemicalFormula.ParseFormula("PO4");
+                ChemicalFormula rowBFive = ChemicalFormula.ParseFormula("PO3");
+                ChemicalFormula rowBThree = ChemicalFormula.ParseFormula("H2O");
+
+                var osmA = BuildOsmFromOligo(BuildTestOligo("AAA", rowAFive, rowAThree));
+                var osmB = BuildOsmFromOligo(BuildTestOligo("AAA", rowBFive, rowBThree));
+
+                // Real OSM output always carries FDR values; the mzLib reader requires the QValue cell
+                // (written from PsmFdrInfo, null for a fresh synthetic match) to be a parseable number.
+                foreach (var osm in new[] { osmA, osmB })
+                {
+                    osm.PsmFdrInfo = new FdrInfo();
+                }
+
+                using (StreamWriter writer = new StreamWriter(filePath))
+                {
+                    writer.WriteLine(SpectralMatch.GetTabSeparatedHeader());
+                    writer.WriteLine(osmA.ToString(new Dictionary<string, int>()));
+                    writer.WriteLine(osmB.ToString(new Dictionary<string, int>()));
+                }
+
+                List<OsmFromTsv> readBack = SpectrumMatchTsvReader.ReadOsmTsv(filePath, out List<string> warnings);
+
+                Assert.That(warnings, Is.Empty, "reading the round-tripped file produced warnings");
+                Assert.That(readBack, Has.Count.EqualTo(2));
+
+                // Each row must come back with exactly the terminus formulas its own writer row carried.
+                Assert.That(readBack[0].FivePrimeTerminus.ThisChemicalFormula.Formula, Is.EqualTo(rowAFive.Formula));
+                Assert.That(readBack[0].ThreePrimeTerminus.ThisChemicalFormula.Formula, Is.EqualTo(rowAThree.Formula));
+                Assert.That(readBack[1].FivePrimeTerminus.ThisChemicalFormula.Formula, Is.EqualTo(rowBFive.Formula));
+                Assert.That(readBack[1].ThreePrimeTerminus.ThisChemicalFormula.Formula, Is.EqualTo(rowBThree.Formula));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
             }
         }
 
