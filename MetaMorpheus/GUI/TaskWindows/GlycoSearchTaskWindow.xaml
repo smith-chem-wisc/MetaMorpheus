@@ -224,6 +224,19 @@
                                             <Label x:Name="label_Copy" Content="Protease" />
                                             <ComboBox x:Name="proteaseComboBox" SelectionChanged="NonSpecificUpdate" />
                                         </StackPanel>
+                                        <CheckBox x:Name="SemiSpecificCheckBox" Content="Semi-specific digestion" Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <CheckBox.ToolTip>
+                                                <TextBlock>
+                                                    Also search peptides with only one terminus made by the protease, the other made elsewhere
+                                                    <LineBreak />
+                                                    (for example by StcE or another glycoprotease before trypsin, or by endogenous processing).
+                                                    <LineBreak />
+                                                    This replaces the former "semi-trypsin" protease: choose trypsin and check this box.
+                                                    <LineBreak />
+                                                    The search space is much larger, so the search is slower.
+                                                </TextBlock>
+                                            </CheckBox.ToolTip>
+                                        </CheckBox>
                                         <StackPanel Orientation="Horizontal" Margin="1">
                                             <Label x:Name="label2" Content="Number of Database Partitions" />
                                             <local:IntegerTexBoxControl x:Name="numberOfDatabaseSearchesTextBox" Width="45" />
