@@ -202,6 +202,10 @@ namespace TaskLayer
                 }
             }
 
+            // Localization is done, so let go of what the search built on the glycan boxes before FDR and PEP (see ReleaseSearchCaches).
+            GlycanBox.ReleaseSearchCaches(GlycanBox.OGlycanBoxes);
+            GlycanBox.ReleaseSearchCaches(GlycanBox.NOGlycanBoxes);
+
             PostGlycoSearchAnalysisParameters pgsap = new()
             {
                 GlycoSearchTaskResults = MyTaskResults,

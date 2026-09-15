@@ -428,6 +428,38 @@ namespace EngineLayer
         private MotifCount _motifCount;
         private GlycanBoxLocalizationCache _localizationCache;
 
+        internal bool HasBuiltMotifCount => Volatile.Read(ref _motifCount) != null;
+
+        internal bool HasBuiltLocalizationCache => Volatile.Read(ref _localizationCache) != null;
+
+        /// <summary>
+        /// Drops what a search built on each box on first read: its child boxes, motif count and localization cache. Each rebuilds
+        /// identically if read again, so results cannot change.
+        /// </summary>
+        /// <remarks>
+        /// Call once the search and its localization are done. The boxes stay reachable through static fields, which the result
+        /// writer reads, and on an N+O search these caches were about ten million small objects that every later full garbage
+        /// collection had to walk; the PEP model's FastTree trainer forces three per fit, so PEP spent most of its time in those
+        /// pauses. Not safe while a search is reading the boxes.
+        /// </remarks>
+        public static void ReleaseSearchCaches(GlycanBox[] boxes)
+        {
+            if (boxes == null)
+            {
+                return;
+            }
+            foreach (GlycanBox box in boxes)
+            {
+                box._motifCount = null;
+                box._localizationCache = null;
+
+                // Only a box the box builders made can rebuild its child boxes; an array assigned to any other box is kept.
+                if (box._childBoxBuilder != ChildBoxBuilder.None)
+                {
+                    box._childGlycanBoxes = null;
+                }
+            }
+        }
         /// <summary>
         /// How many glycans in this box need each motif. Built on first use; a box is shared by all search threads.
         /// </summary>
