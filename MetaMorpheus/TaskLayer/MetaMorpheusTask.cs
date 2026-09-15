@@ -47,6 +47,98 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask
     {
+        #region Settings files that name a protease mzLib no longer ships
+
+        /// <summary>
+        /// Semi-specific proteases mzLib used to ship, with the cleavage motifs each had. mzLib #1005 (February 2026) removed
+        /// "semi-trypsin", the only one, because a semi-specific search is asked for with <c>SearchModeType = Semi</c> on
+        /// the fully specific protease. Settings files written before that still name it, including the O-Pair Search
+        /// paper's glyco settings.
+        /// </summary>
+        private static readonly (string Name, string Motifs)[] RemovedSemiSpecificProteases =
+        {
+            ("semi-trypsin", "K|,R|"),
+        };
+
+        /// <summary>
+        /// Reads protein digestion parameters from a settings file. A file that names a removed semi-specific protease
+        /// (see <see cref="RemovedSemiSpecificProteases"/>) is read as the shipped fully specific protease with the same
+        /// cleavage motifs plus a semi-specific search, with every other digestion setting kept, and the user is warned.
+        /// Every other file is read exactly as before.
+        /// </summary>
+        /// <remarks>
+        /// <para><b>Search mode.</b> A file that said <c>SearchModeType = Full</c> got its semi-specificity from the
+        /// protease, so it becomes <c>Semi</c>. Its FragmentationTerminus is kept; in glyco, crosslink and classic settings
+        /// it is Both, which asks mzLib for the semi-specific peptides themselves (mzLib #1303). A file that already said
+        /// Semi or None is a non-specific search asking for seeds, so its search mode and terminus are kept as they are.</para>
+        /// <para><b>Replacement.</b> Found by motif, not by name, because the name of the no-proline-rule trypsin is itself
+        /// changing (mzLib #1186). A protease the user has defined under the old name is in the dictionary and is used as
+        /// defined; nothing is translated.</para>
+        /// <para>Settings are rebuilt through the DigestionParams constructor rather than patched, so that Protease and
+        /// SpecificProtease stay consistent with the search mode.</para>
+        /// </remarks>
+        private static DigestionParams ReadProteinDigestionParams(TomlTable table)
+        {
+            string ReadString(string key) => table.ContainsKey(key) ? table.Get<string>(key) : null;
+            string protease = ReadString(nameof(DigestionParams.Protease));
+            string specificProtease = ReadString(nameof(DigestionParams.SpecificProtease)) ?? protease;
+
+            // For a non-specific search the file's Protease is singleN or singleC and the removed name is in SpecificProtease.
+            var removed = RemovedSemiSpecificProteases.FirstOrDefault(r =>
+                (r.Name == protease || r.Name == specificProtease) && !ProteaseDictionary.Dictionary.ContainsKey(r.Name));
+            Protease replacement = removed.Name == null ? null : FindShippedFullySpecificProtease(removed.Motifs);
+            if (replacement == null)
+            {
+                return table.Get<DigestionParams>(); // unchanged behaviour, including the exception for an unknown protease
+            }
+
+            var defaults = new DigestionParams();
+            T Read<T>(string key, T fallback) => table.ContainsKey(key) ? table.Get<T>(key) : fallback;
+            TEnum ReadEnum<TEnum>(string key, TEnum fallback) where TEnum : struct, Enum =>
+                table.ContainsKey(key) ? Enum.Parse<TEnum>(table.Get<string>(key)) : fallback;
+
+            CleavageSpecificity searchModeType = ReadEnum(nameof(DigestionParams.SearchModeType), defaults.SearchModeType);
+            if (searchModeType == CleavageSpecificity.Full)
+            {
+                searchModeType = CleavageSpecificity.Semi;
+            }
+
+            var digestionParams = new DigestionParams(
+                protease: replacement.Name,
+                maxMissedCleavages: Read(nameof(DigestionParams.MaxMissedCleavages), defaults.MaxMissedCleavages),
+                minPeptideLength: Read(nameof(DigestionParams.MinPeptideLength), defaults.MinPeptideLength),
+                maxPeptideLength: Read(nameof(DigestionParams.MaxPeptideLength), defaults.MaxPeptideLength),
+                maxModificationIsoforms: Read(nameof(DigestionParams.MaxModificationIsoforms), defaults.MaxModificationIsoforms),
+                initiatorMethionineBehavior: ReadEnum(nameof(DigestionParams.InitiatorMethionineBehavior), defaults.InitiatorMethionineBehavior),
+                maxModsForPeptides: Read(nameof(DigestionParams.MaxModsForPeptide), defaults.MaxModsForPeptide),
+                searchModeType: searchModeType,
+                fragmentationTerminus: ReadEnum(nameof(DigestionParams.FragmentationTerminus), defaults.FragmentationTerminus),
+                generateUnlabeledProteinsForSilac: Read(nameof(DigestionParams.GeneratehUnlabeledProteinsForSilac), defaults.GeneratehUnlabeledProteinsForSilac),
+                keepNGlycopeptide: Read(nameof(DigestionParams.KeepNGlycopeptide), defaults.KeepNGlycopeptide),
+                keepOGlycopeptide: Read(nameof(DigestionParams.KeepOGlycopeptide), defaults.KeepOGlycopeptide));
+
+            Warn($"These settings name the protease \"{removed.Name}\", which is no longer available. They were read as \"{replacement.Name}\" " +
+                 $"with SearchModeType {searchModeType} and FragmentationTerminus {digestionParams.FragmentationTerminus}, which digests the same peptides. " +
+                 "Save the task to update its settings.");
+            return digestionParams;
+        }
+
+        /// <summary>The shipped fully specific protease with exactly these cleavage motifs, or null if there is none.</summary>
+        private static Protease FindShippedFullySpecificProtease(string motifs)
+        {
+            static string Signature(IEnumerable<DigestionMotif> m) => string.Join(";", m
+                .Select(x => $"{x.InducingCleavage}|{x.PreventingCleavage}|{x.CutIndex}|{x.ExcludeFromWildcard}")
+                .OrderBy(s => s, StringComparer.Ordinal));
+
+            string wanted = Signature(DigestionMotif.ParseDigestionMotifsFromString(motifs));
+            return ProteaseDictionary.Dictionary.Values
+                .Where(p => p.CleavageSpecificity == CleavageSpecificity.Full && Signature(p.DigestionMotifs) == wanted)
+                .OrderBy(p => p.Name, StringComparer.Ordinal)
+                .FirstOrDefault();
+        }
+
+        #endregion
+
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
             .ConfigureType<Tolerance>(type => type
                 .WithConversionFor<TomlString>(convert => convert
@@ -80,7 +172,7 @@ namespace TaskLayer
                 .WithConversionFor<TomlTable>(c => c
                     .FromToml(tmlTable =>
                         tmlTable.ContainsKey("Protease")
-                            ? tmlTable.Get<DigestionParams>()
+                            ? ReadProteinDigestionParams(tmlTable)
                             : tmlTable.Get<RnaDigestionParams>())))
             .ConfigureType<DigestionParams>(type => type
                 .IgnoreProperty(p => p.DigestionAgent)
