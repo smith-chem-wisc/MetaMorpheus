@@ -33,36 +33,6 @@ namespace Test
     {
         private const string SdrfFileName = "experiment.sdrf.tsv";
 
-        /// <summary>
-        /// The columns SDRF-Proteomics requires of every document.
-        ///
-        /// DUPLICATED FROM mzLib ON PURPOSE, and the duplication is the point rather than an
-        /// oversight. mzLib's SdrfValidator -- which owns this list -- is internal: it ships as
-        /// NuGet, and a type goes public only when something outside its assembly already calls it.
-        /// Nothing here does, so a MetaMorpheus test cannot ask mzLib whether the file it just
-        /// wrote is valid; it can only read the header back and check.
-        ///
-        /// The accepted cost of that decision is that this list can drift from the one that
-        /// actually governs. If mzLib changes it, this fails and should be updated to match --
-        /// never the other way round.
-        /// </summary>
-        private static readonly string[] RequiredSdrfColumns =
-        {
-            "source name",
-            "assay name",
-            "technology type",
-            "characteristics[organism]",
-            "characteristics[organism part]",
-            "characteristics[biological replicate]",
-            "comment[data file]",
-            "comment[instrument]",
-            "comment[label]",
-            "comment[cleavage agent details]",
-            "comment[technical replicate]",
-            "comment[fraction identifier]",
-            "comment[proteomics data acquisition method]"
-        };
-
         #region Opting in and out
 
         /// <summary>
@@ -136,7 +106,7 @@ namespace Test
             var document = new SdrfDocument(sdrfPath);
             document.LoadResults();
 
-            var missing = RequiredSdrfColumns.Where(c => !document.Header.Contains(c)).ToList();
+            var missing = SdrfValidator.RequiredColumns.Where(c => !document.Header.Contains(c)).ToList();
             Assert.That(missing, Is.Empty,
                 "Every required column must be present even with no design file: " + string.Join(", ", missing));
             Assert.That(document.Results.Single()["characteristics[organism part]"], Is.EqualTo("not available"),
@@ -211,9 +181,9 @@ namespace Test
         /// <summary>
         /// A labelled search does not get to claim it was label free.
         ///
-        /// SDRF wants one row per sample per channel, and MetaMorpheus has no channel-to-sample
-        /// mapping for either isobaric tags or SILAC. Saying "label free sample" for a SILAC run is
-        /// a confident falsehood; the reserved word is the truth.
+        /// SDRF wants one row per sample per channel, and the writer emits one row per file. Saying
+        /// "label free sample" for a SILAC or TMT run is a confident falsehood; until rows are
+        /// expanded per channel, the reserved word is the truth.
         /// </summary>
         [Test]
         public static void LabelledSearchesDoNotClaimToBeLabelFree()
@@ -221,7 +191,7 @@ namespace Test
             Assert.That(InvokeLabel(new SearchParameters())?.Name, Is.EqualTo("label free sample"));
 
             Assert.That(InvokeLabel(new SearchParameters { DoMultiplexQuantification = true }), Is.Null,
-                "Isobaric labelling: no channel-to-sample map exists.");
+                "Isobaric labelling: rows are not yet expanded per channel.");
 
             var silac = new SearchParameters
             {
@@ -305,14 +275,13 @@ namespace Test
         }
 
         /// <summary>
-        /// Every column SDRF-Proteomics requires is present.
+        /// Every column SDRF-Proteomics requires is present, and mzLib's own validator passes the
+        /// document the search wrote.
         ///
-        /// This is the assertion the rest of the stack cannot make on its own, and that is exactly
-        /// why it is here. A column that is MISSING is invisible to both instruments built to catch
-        /// thin metadata: SdrfCoverage measures the fill rate of columns that exist, so an absent
-        /// column has no fill rate to report, and mzLib's validator -- which does check -- is
-        /// internal and unreachable from MetaMorpheus. So nothing between the search and a mined
-        /// corpus notices.
+        /// A column that is MISSING is invisible to SdrfCoverage, which measures the fill rate of
+        /// columns that exist, so an absent column has no fill rate to report. SdrfValidator does
+        /// check, and asking it directly -- rather than a copy of its column list -- means this
+        /// test cannot drift from the rules that actually govern.
         /// </summary>
         [Test]
         public static void TheWrittenSdrfCarriesEveryRequiredColumn()
@@ -323,13 +292,17 @@ namespace Test
             var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
             document.LoadResults();
 
-            var missing = RequiredSdrfColumns.Where(c => !document.Header.Contains(c)).ToList();
+            var missing = SdrfValidator.RequiredColumns.Where(c => !document.Header.Contains(c)).ToList();
 
             Assert.That(missing, Is.Empty,
                 "SDRF-Proteomics requires these columns of every document, and they are absent from " +
                 "the one this search wrote: " + string.Join(", ", missing) + ". A document missing a " +
                 "required column cannot be pooled across experiments, which is the only reason to " +
                 "write one.");
+
+            SdrfValidationResult validation = SdrfValidator.Validate(document);
+            Assert.That(validation.Errors, Is.Empty,
+                "mzLib's validator rejects the SDRF this search wrote: " + validation);
 
             Directory.Delete(folder, true);
         }
