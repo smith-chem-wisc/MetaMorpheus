@@ -1,5 +1,6 @@
 using EngineLayer;
 using GuiFunctions;
+using GuiFunctions.Util;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -78,7 +79,7 @@ namespace MetaMorpheusGUI
 
             if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
             {
-                ProteaseComboBox.SelectedItem = digestionParams.Protease; //protease needs to come first or recommended settings can overwrite the actual settings
+                ProteaseComboBox.SelectedItem = TaskWindowSearchMode.ProteaseToShow(digestionParams); //protease needs to come first or recommended settings can overwrite the actual settings
                 InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
             }
             else
@@ -289,13 +290,17 @@ namespace MetaMorpheusGUI
             }
             else
             {
+                // this window has no semi-specific control, so keep the loaded task's search mode rather than resetting it to Full
+                var (searchModeType, fragmentationTerminus) = TaskWindowSearchMode.Preserve(TheTask.CommonParameters.DigestionParams);
                 digestionParamsToSave = new DigestionParams(
                     protease: protease.Name,
                     maxMissedCleavages: maxMissedCleavages,
                     minPeptideLength: minPeptideLength,
                     maxPeptideLength: maxPeptideLength,
                     maxModificationIsoforms: maxModificationIsoforms,
-                    maxModsForPeptides: maxModsPerPeptide);
+                    maxModsForPeptides: maxModsPerPeptide,
+                    searchModeType: searchModeType,
+                    fragmentationTerminus: fragmentationTerminus);
             }
 
             var listOfModsVariable = new List<(string, string)>();
