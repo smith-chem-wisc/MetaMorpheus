@@ -11,7 +11,9 @@ using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using NUnit.Framework;
+using Omics;
 using Omics.Modifications;
+using Proteomics;
 using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
@@ -304,6 +306,142 @@ namespace Test
             SdrfValidationResult validation = SdrfValidator.Validate(document);
             Assert.That(validation.Errors, Is.Empty,
                 "mzLib's validator rejects the SDRF this search wrote: " + validation);
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// The organism is the first TARGET protein's NCBI taxonomy id, as an NCBITaxon term.
+        ///
+        /// Driven through the resolver rather than a search because no search in this suite can
+        /// reach it: MetaMorpheus hands LoadProteinFasta explicit UniProt regexes, which skips mzLib's
+        /// header detection and with it the OX= regex, so a FASTA search never populates
+        /// NcbiTaxonomyId today. #2782 records that and deliberately leaves it unchanged, because
+        /// parsing OX= moves other output. A decoy listed first must not decide the organism.
+        /// </summary>
+        [Test]
+        public static void TheOrganismIsTheFirstTargetProteinsTaxonomyId()
+        {
+            var taxon = new List<DatabaseReference>
+            {
+                new(Protein.NcbiTaxonomyDatabaseReferenceType, "559292", new List<Tuple<string, string>>())
+            };
+            var decoyTaxon = new List<DatabaseReference>
+            {
+                new(Protein.NcbiTaxonomyDatabaseReferenceType, "9606", new List<Tuple<string, string>>())
+            };
+
+            var task = new PostSearchAnalysisTask
+            {
+                Parameters = new PostSearchAnalysisParameters
+                {
+                    BioPolymerList = new List<IBioPolymer>
+                    {
+                        new Protein("PEPTIDE", "DECOY_P1", organism: "Homo sapiens", isDecoy: true, databaseReferences: decoyTaxon),
+                        new Protein("PEPTIDEK", "P38266", organism: "Saccharomyces cerevisiae", databaseReferences: taxon)
+                    }
+                }
+            };
+
+            var organism = (CvParam)typeof(PostSearchAnalysisTask)
+                .GetMethod("ResolveOrganismFromSearchDatabase", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(task, null);
+
+            Assert.That(organism?.Accession, Is.EqualTo("NCBITaxon:559292"));
+            Assert.That(organism?.Name, Is.EqualTo("Saccharomyces cerevisiae"));
+        }
+
+        #endregion
+
+        #region A failed SDRF never costs the search
+
+        /// <summary>
+        /// The SDRF writer is the one writer in PostSearchAnalysisTask that is wrapped: it is metadata
+        /// about results, so a failure writing it must leave the finished search standing and leave a
+        /// crash report behind, not throw. Here the file cannot be created because a folder already
+        /// holds its name.
+        /// </summary>
+        [Test]
+        public static void ASearchSurvivesAnSdrfThatCannotBeWritten()
+        {
+            string folder = SetUpIsolatedRun(nameof(ASearchSurvivesAnSdrfThatCannotBeWritten),
+                out string spectraPath, out DbForTask database);
+
+            var task = BuildSearchTask(writeSdrf: true);
+            string output = Path.Combine(folder, "TaskOutput");
+            Directory.CreateDirectory(Path.Combine(output, SdrfFileName));
+
+            Assert.DoesNotThrow(() =>
+                task.RunTask(output, new List<DbForTask> { database }, new List<string> { spectraPath }, "sdrf-blocked"));
+
+            Assert.That(File.Exists(Path.Combine(output, "AllPSMs.psmtsv")), Is.True,
+                "The search's own results are written regardless.");
+            Assert.That(File.Exists(Path.Combine(output, "SdrfWriter_crash.txt")), Is.True,
+                "The failure is reported, not swallowed silently.");
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// Reading an instrument model from a data file's header must never be what fails a completed
+        /// search. A file no reader understands resolves to no instrument, which the builder then
+        /// writes as the reserved word.
+        /// </summary>
+        [Test]
+        public static void AnUnreadableDataFileResolvesToNoInstrument()
+        {
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "SdrfOutput_UnreadableInstrument");
+            Directory.CreateDirectory(folder);
+            string unreadable = Path.Combine(folder, "not-a-spectra-file.xyz");
+            File.WriteAllText(unreadable, "not spectra");
+
+            var instrument = typeof(PostSearchAnalysisTask)
+                .GetMethod("ResolveInstrument", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(new PostSearchAnalysisTask(), new object[] { unreadable });
+
+            Assert.That(instrument, Is.Null);
+
+            Directory.Delete(folder, true);
+        }
+
+        #endregion
+
+        #region Warnings before the run
+
+        /// <summary>
+        /// A labelled search is told before it starts that comment[label] will not be filled in, so
+        /// the gap is not first discovered in the written file.
+        /// </summary>
+        [Test]
+        public static void ALabelledSearchIsWarnedThatItsLabelWillNotBeFilledIn()
+        {
+            string folder = SetUpIsolatedRun(nameof(ALabelledSearchIsWarnedThatItsLabelWillNotBeFilledIn),
+                out string spectraPath, out _);
+
+            var task = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    WriteSdrf = true,
+                    SilacLabels = new List<SilacLabel> { new('K', 'a', "C{6}H{12}N{2}O{1}", 6.020129) }
+                }
+            };
+
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                typeof(SearchTask)
+                    .GetMethod("WarnAboutSdrfGaps", BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .Invoke(task, new object[] { new List<string> { spectraPath } });
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+            }
+
+            Assert.That(warnings.Any(w => w.Contains("comment[label]")), Is.True, string.Join(" | ", warnings));
 
             Directory.Delete(folder, true);
         }
