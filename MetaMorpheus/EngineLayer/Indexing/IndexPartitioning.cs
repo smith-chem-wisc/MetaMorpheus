@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using MassSpectrometry;
+using Omics;
 using Omics.Fragmentation;
 using Omics.Modifications;
 using Proteomics;
@@ -74,7 +75,7 @@ namespace EngineLayer.Indexing
         /// Returns the smallest partition count &gt;= <paramref name="requestedPartitions"/> whose estimated
         /// peak index footprint fits the memory budget. Never returns less than what was requested.
         /// </summary>
-        public static int SuggestTotalPartitions(List<Protein> proteins, CommonParameters commonParameters,
+        public static int SuggestTotalPartitions(IReadOnlyList<IBioPolymer> proteins, CommonParameters commonParameters,
             List<Modification> fixedModifications, List<Modification> variableModifications,
             List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, double maxFragmentSize,
             int requestedPartitions, out long estimatedBytes, out long budgetBytes, out bool cappedByLimit)
@@ -141,13 +142,13 @@ namespace EngineLayer.Indexing
         /// scales by the whole database's residue count. Sampling rather than assuming a fixed yield is
         /// what makes this hold up across proteases, missed-cleavage counts and variable-mod loads.
         /// </summary>
-        private static (long Peptides, long FragmentEntries) EstimateIndexSize(List<Protein> proteins,
+        private static (long Peptides, long FragmentEntries) EstimateIndexSize(IReadOnlyList<IBioPolymer> proteins,
             CommonParameters commonParameters, DigestionParams digestionParams,
             List<Modification> fixedModifications, List<Modification> variableModifications,
             List<SilacLabel> silacLabels, (SilacLabel, SilacLabel)? turnoverLabels, double maxFragmentSize)
         {
             long totalResidues = 0;
-            foreach (Protein protein in proteins)
+            foreach (IBioPolymer protein in proteins)
             {
                 totalResidues += protein.BaseSequence.Length;
             }

@@ -22,7 +22,7 @@ namespace EngineLayer.Indexing
         private static readonly double WaterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
 
         private const int FragmentBinsPerDalton = 1000;
-        private readonly List<Protein> ProteinList;
+        private readonly List<IBioPolymer> BioPolymerList;
         private readonly List<Modification> FixedModifications;
         private readonly List<Modification> VariableModifications;
         private readonly List<SilacLabel> SilacLabels;
@@ -34,13 +34,18 @@ namespace EngineLayer.Indexing
         public readonly List<FileInfo> ProteinDatabases;
         public readonly TargetContaminantAmbiguity TcAmbiguity;
 
-        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications,
+        /// <summary>
+        /// Takes IEnumerable rather than List so that a List&lt;Protein&gt; still binds here by
+        /// covariance -- the protein callers need no change, and there is no overload to be ambiguous
+        /// about when someone passes an empty collection expression.
+        /// </summary>
+        public IndexingEngine(IEnumerable<IBioPolymer> bioPolymerList, List<Modification> variableModifications, List<Modification> fixedModifications,
             List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, int currentPartition, DecoyType decoyType,
-            CommonParameters commonParams, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, 
+            CommonParameters commonParams, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
             double maxFragmentSize, bool generatePrecursorIndex, List<FileInfo> proteinDatabases, TargetContaminantAmbiguity tcAmbiguity, List<string> nestedIds)
             : base(commonParams, fileSpecificParameters, nestedIds)
         {
-            ProteinList = proteinList;
+            BioPolymerList = bioPolymerList as List<IBioPolymer> ?? bioPolymerList.ToList();
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
             SilacLabels = silacLabels;
@@ -64,7 +69,7 @@ namespace EngineLayer.Indexing
             sb.AppendLine("Partitions: " + CurrentPartition + "/" + CommonParameters.TotalPartitions);
             sb.AppendLine("Precursor Index: " + GeneratePrecursorIndex);
             sb.AppendLine("Search Decoys: " + DecoyType);
-            sb.AppendLine("Number of proteins: " + ProteinList.Count);
+            sb.AppendLine("Number of proteins: " + BioPolymerList.Count);
             sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + VariableModifications.Count);
             sb.AppendLine("Dissociation Type: " + CommonParameters.DissociationType);
@@ -84,7 +89,7 @@ namespace EngineLayer.Indexing
                 sb.AppendLine("specificProtease: " + digestionParam.SpecificProtease);
             sb.AppendLine("maximumFragmentSize" + (int)Math.Round(MaxFragmentSize));
 
-            sb.Append("Localizeable mods: " + ProteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
+            sb.Append("Localizeable mods: " + BioPolymerList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
         }
 
@@ -94,32 +99,31 @@ namespace EngineLayer.Indexing
             int oldPercentProgress = 0;
 
             // digest database
-            List<PeptideWithSetModifications> peptides = new List<PeptideWithSetModifications>();
+            // IBioPolymer.Digest covers proteins and nucleic acids alike, and already carries the SILAC
+            // parameters, so the index no longer needs to know which kind of polymer it is holding.
+            List<IBioPolymerWithSetMods> peptides = new List<IBioPolymerWithSetMods>();
 
-            if (CommonParameters.DigestionParams is not DigestionParams digestionParams)
-                throw new MetaMorpheusException("Digestion parameters must be of type DigestionParams. Not yet implemented for Rna Digestion");
-            
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
             // Each thread's peptides land in its own slot and are concatenated in thread order, so the
             // peptide index does not depend on which thread finishes first. Appending under a lock made
             // the order vary run to run, which changed how equal-mass peptides were ordered by the sort
             // below and so changed reported Delta Scores between otherwise identical runs.
-            var peptidesPerThread = new List<PeptideWithSetModifications>[maxThreadsPerFile];
+            var peptidesPerThread = new List<IBioPolymerWithSetMods>[maxThreadsPerFile];
             Parallel.ForEach(threads, (i) =>
             {
                 int threadIndex = i;
-                List<PeptideWithSetModifications> localPeptides = new List<PeptideWithSetModifications>();
+                List<IBioPolymerWithSetMods> localPeptides = new List<IBioPolymerWithSetMods>();
 
-                for (; i < ProteinList.Count; i += maxThreadsPerFile)
+                for (; i < BioPolymerList.Count; i += maxThreadsPerFile)
                 {
                     // Stop loop if canceled
                     if (GlobalVariables.StopLoops) { return; }
 
-                    localPeptides.AddRange(ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels));
+                    localPeptides.AddRange(BioPolymerList[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels));
 
                     progress++;
-                    var percentProgress = (int)((progress / ProteinList.Count) * 100);
+                    var percentProgress = (int)((progress / BioPolymerList.Count) * 100);
 
                     if (percentProgress > oldPercentProgress)
                     {
@@ -271,7 +275,7 @@ namespace EngineLayer.Indexing
         /// and, when the search needs them, the interior terminal mod precursor bins -- which come out of
         /// the same fragmentation, so peptides are still fragmented exactly once.
         /// </summary>
-        private void FragmentPeptideBlock(PeptideBlock block, int blockIndex, List<PeptideWithSetModifications> peptides,
+        private void FragmentPeptideBlock(PeptideBlock block, int blockIndex, List<IBioPolymerWithSetMods> peptides,
             bool addInteriorTerminalModsToPrecursorIndex, List<Modification> terminalModifications,
             FragmentEmissionRun[] fragmentEmissions, List<(int Bin, int PeptideId)>[] interiorTerminalModEmissions,
             FragmentationProgress fragmentationProgress)
@@ -297,9 +301,24 @@ namespace EngineLayer.Indexing
                 }
 
                 //Add terminal mods if needed (do it here rather than earlier so that we don't have to fragment twice)
+                // The "single" agents are NOT protein-only: mzLib's rnases.tsv ships RNases named
+                // singleN and singleC, which the Name.Contains("single") test above matches. What makes
+                // this reachable only for peptides is the refusal in SearchTask.RunSpecific -- a
+                // non-specific search rejects a nucleic acid database before it gets here. That guard
+                // lives in another file, so throw rather than skip if it is ever relaxed: silently
+                // omitting interior terminal mods would cost identifications with nothing reporting why.
                 if (addInteriorTerminalModsToPrecursorIndex)
                 {
-                    CollectInteriorTerminalModPrecursorBins(interiorEmissions, fragments, peptides[peptideId], peptideId, terminalModifications);
+                    if (peptides[peptideId] is not PeptideWithSetModifications peptideForTerminalMods)
+                    {
+                        throw new MetaMorpheusException(
+                            "Interior terminal modifications are only implemented for peptides, but a " +
+                            $"{peptides[peptideId].GetType().Name} reached the precursor index under digestion agent " +
+                            $"'{CommonParameters.DigestionParams.DigestionAgent.Name}'. Non-specific search is " +
+                            "supposed to refuse a nucleic acid database before indexing.");
+                    }
+
+                    CollectInteriorTerminalModPrecursorBins(interiorEmissions, fragments, peptideForTerminalMods, peptideId, terminalModifications);
                 }
 
                 if (fragmentationProgress.AdvanceOnePeptide(peptides.Count, out int percentProgress))
@@ -351,7 +370,7 @@ namespace EngineLayer.Indexing
         /// permutation the previous in-place sort produced, which matters because equal masses are
         /// pervasive: a reversed decoy has its target's residue composition and therefore its exact mass.
         /// </summary>
-        internal static List<PeptideWithSetModifications> SortByMonoisotopicMass(List<PeptideWithSetModifications> peptides)
+        internal static List<T> SortByMonoisotopicMass<T>(List<T> peptides) where T : IBioPolymerWithSetMods
         {
             var order = new KeyValuePair<double, int>[peptides.Count];
             for (int i = 0; i < order.Length; i++)
@@ -361,7 +380,7 @@ namespace EngineLayer.Indexing
 
             Array.Sort(order, (x, y) => x.Key.CompareTo(y.Key));
 
-            var sorted = new List<PeptideWithSetModifications>(order.Length);
+            var sorted = new List<T>(order.Length);
             for (int i = 0; i < order.Length; i++)
             {
                 sorted.Add(peptides[order[i].Value]);
@@ -369,7 +388,7 @@ namespace EngineLayer.Indexing
             return sorted;
         }
 
-        private List<int>[] CreateNewPrecursorIndex(List<PeptideWithSetModifications> peptidesSortedByMass)
+        private List<int>[] CreateNewPrecursorIndex(List<IBioPolymerWithSetMods> peptidesSortedByMass)
         {
             // create precursor index
             List<int>[] precursorIndex = null;

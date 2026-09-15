@@ -379,17 +379,15 @@ namespace TaskLayer
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
                 {
-                    // Assume modern search is for proteins.
-                    var proteinList = bioPolymerList.Cast<Protein>().ToList();
                     // scoped to indexing/searching only, so the settings the task reports stay as configured
-                    CommonParameters indexParams = RaisePartitionsToFitMemory(proteinList, combinedParams, fixedModifications,
+                    CommonParameters indexParams = RaisePartitionsToFitMemory(bioPolymerList, combinedParams, fixedModifications,
                         variableModifications, SearchParameters.SilacLabels, SearchParameters.StartTurnoverLabel,
                         SearchParameters.EndTurnoverLabel, SearchParameters.MaxFragmentSize, ref decidedPartitions);
                     for (int currentPartition = 0; currentPartition < indexParams.TotalPartitions; currentPartition++)
                     {
-                        List<PeptideWithSetModifications> peptideIndex = null;
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / indexParams.TotalPartitions,
-                            ((currentPartition + 1) * proteinList.Count / indexParams.TotalPartitions) - (currentPartition * proteinList.Count / indexParams.TotalPartitions));
+                        List<IBioPolymerWithSetMods> peptideIndex = null;
+                        List<IBioPolymer> proteinListSubset = bioPolymerList.GetRange(currentPartition * bioPolymerList.Count / indexParams.TotalPartitions,
+                            ((currentPartition + 1) * bioPolymerList.Count / indexParams.TotalPartitions) - (currentPartition * bioPolymerList.Count / indexParams.TotalPartitions));
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
@@ -400,7 +398,7 @@ namespace TaskLayer
 
                         lock (indexLock)
                         {
-                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
+                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, bioPolymerList, taskId);
                         }
 
                         Status("Searching files...", taskId);
@@ -457,6 +455,16 @@ namespace TaskLayer
                     //foreach terminus we're going to look at
                     foreach (CommonParameters paramToUse in paramsToUse)
                     {
+                        // Non-specific search is built around proteases -- terminal mod placement, the
+                        // "single" agents, the FDR categories -- none of which have a nucleic acid
+                        // counterpart yet. Say so, rather than letting the cast below throw a bare
+                        // InvalidCastException that names Protein and RNA and explains neither.
+                        if (bioPolymerList.Any(p => p is not Protein))
+                        {
+                            throw new MetaMorpheusException(
+                                "Non-specific search is only implemented for proteins. Use Classic or Modern search for nucleic acid databases.");
+                        }
+
                         var proteinList = bioPolymerList.Cast<Protein>().ToList();
                         // scoped to indexing/searching only; paramToUse still carries the configured terminus
                         // to the spectral-library step below

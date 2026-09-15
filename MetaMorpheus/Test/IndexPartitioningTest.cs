@@ -7,6 +7,7 @@ using EngineLayer.ModernSearch;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
+using Omics;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
@@ -499,7 +500,7 @@ namespace Test
                     0, DecoyType.Reverse, parameters, fsp, 30000, false, new List<FileInfo>(),
                     TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
                 var results = (IndexingResults)engine.Run();
-                return results.PeptideIndex.Select(p => p.FullSequence + "@" + p.Protein.Accession + ":" + p.OneBasedStartResidue).ToList();
+                return results.PeptideIndex.Select(p => p.FullSequence + "@" + p.Parent.Accession + ":" + p.OneBasedStartResidue).ToList();
             }
 
             var first = RunOnce();
@@ -762,7 +763,7 @@ namespace Test
         {
             private BinSearchProbe() : base(null, null, null, null, 0, new CommonParameters(), null, new OpenSearchMode(), 0, new List<string>()) { }
 
-            private BinSearchProbe(List<PeptideWithSetModifications> peptideIndex)
+            private BinSearchProbe(IEnumerable<IBioPolymerWithSetMods> peptideIndex)
                 : base(null, null, peptideIndex, null, 0, new CommonParameters(), null, new OpenSearchMode(), 0, new List<string>()) { }
 
             private BinSearchProbe(CommonParameters parameters)
@@ -779,7 +780,7 @@ namespace Test
 
             /// <summary>The window is an instance method because it reads PeptideIndex off the engine.</summary>
             internal static (int start, int end) Window(double lowest, double highest, ReadOnlySpan<int> bin,
-                List<PeptideWithSetModifications> peptideIndex)
+                IEnumerable<IBioPolymerWithSetMods> peptideIndex)
                 => new BinSearchProbe(peptideIndex).GetFirstAndLastIndexesInBinToIncrement(lowest, highest, bin, 0);
 
             /// <summary>Reaches the protected instance scoring method; the base constructor only assigns fields.</summary>
@@ -793,7 +794,7 @@ namespace Test
                 var observed = new List<int>();
                 new BinSearchProbe().IndexedScoring(fragmentIndex, binsToSearch, new byte[peptideIndex.Count], 1,
                     observed, peptideIndex.First(p => !double.IsNaN(p.MonoisotopicMass)).MonoisotopicMass,
-                    lowestMass, highestMass, peptideIndex, new OpenSearchMode(), 0, DissociationType.HCD);
+                    lowestMass, highestMass, peptideIndex.Cast<IBioPolymerWithSetMods>().ToList(), new OpenSearchMode(), 0, DissociationType.HCD);
                 return observed;
             }
         }

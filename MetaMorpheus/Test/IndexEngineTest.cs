@@ -3,6 +3,7 @@ using EngineLayer.Indexing;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
+using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -38,7 +39,7 @@ namespace Test
             var variableModifications = new List<Modification>();
 
             FragmentIndex referenceFragmentIndex = null;
-            List<PeptideWithSetModifications> referencePeptideIndex = null;
+            List<IBioPolymerWithSetMods> referencePeptideIndex = null;
 
             foreach (int threadCount in new[] { 1, 2, 3, 8 })
             {
