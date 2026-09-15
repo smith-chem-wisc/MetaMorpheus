@@ -750,6 +750,13 @@ namespace TaskLayer
                 var stopWatch = new Stopwatch();
                 stopWatch.Start();
 
+                // backstop for callers that bypass EverythingRunnerEngine, which refuses these tasks with a warning first
+                string digestionRefusal = DigestionSearchModeCheck.GetRefusal(this, displayName);
+                if (digestionRefusal != null)
+                {
+                    throw new MetaMorpheusException(digestionRefusal);
+                }
+
                 FileSpecificParameters[] fileSettingsList = new FileSpecificParameters[currentRawDataFilepathList.Count];
                 for (int i = 0; i < currentRawDataFilepathList.Count; i++)
                 {
