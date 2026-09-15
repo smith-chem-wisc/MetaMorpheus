@@ -184,8 +184,12 @@ namespace TaskLayer
                 long freeBytes = IndexPartitioning.AvailableBytes();
                 FileParallelismPlan plan = FileParallelism.Decide(fileCount, threadBudget, freeBytes, bytesPerFile, _glycoSearchParameters.MaximumSpectraFilesInParallel);
 
-                ProseCreatedWhileRunning.Append("spectra files searched in parallel = " + plan.FilesInParallel + " of " + fileCount
-                    + ", with " + plan.ThreadsPerFile + " threads each from a budget of " + Math.Max(1, threadBudget) + " (limited by " + plan.LimitedBy + "); \n");
+                // The split above sets how many files run at once and how many threads load each; the search itself draws on one budget
+                // shared by every file, so threads move from files that finish to files still searching.
+                var searchThreads = new SearchThreadBudget(threadBudget);
+                ProseCreatedWhileRunning.Append("spectra files searched in parallel = " + plan.FilesInParallel + " of " + fileCount + " (limited by " + plan.LimitedBy + ")"
+                    + ", each loaded with " + plan.ThreadsPerFile + " threads and searched with threads shared from a budget of " + searchThreads.TotalThreads
+                    + " that move from files that finish to files still searching; \n");
                 ProseCreatedWhileRunning.Append("memory free after building the index and loading the first spectra file = " + (freeBytes / 1e9).ToString("0.0") + " GB, estimated "
                     + (bytesPerFile / 1e9).ToString("0.0") + " GB for each further file; \n");
 
@@ -204,7 +208,10 @@ namespace TaskLayer
 
                     var gsms = new List<GlycoSpectralMatch>[scans.Length];
                     new GlycoSearchEngine(gsms, scans, peptideIndex, fragmentIndex, null, 0, searchParamsPerFile[spectraFileIndex], this.FileSpecificParameters, glycanSearchSpace,
-                        _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisIds[spectraFileIndex]).Run();
+                        _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisIds[spectraFileIndex])
+                    {
+                        ThreadBudget = searchThreads
+                    }.Run();
                     gsmsPerFile[spectraFileIndex] = gsms;
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search 1/1!", thisIds[spectraFileIndex]));
