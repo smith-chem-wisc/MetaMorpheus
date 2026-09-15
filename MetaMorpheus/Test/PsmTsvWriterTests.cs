@@ -111,6 +111,132 @@ namespace Test
             Assert.That(ppmErrorString, Is.EqualTo("0"));
         }
 
+        #region Resolve Null Handling
+
+        /// <summary>
+        /// Resolve(IEnumerable&lt;string&gt;) with no usable value at all (all null) resolves to a null
+        /// ResolvedString - the caller then emits an empty cell rather than crashing.
+        /// </summary>
+        [Test]
+        public static void Resolve_String_AllNullValues_ReturnsNullResolvedString()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string> { null, null, null });
+            Assert.That(resolvedString, Is.Null);
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        [Test]
+        public static void Resolve_String_EmptyCollection_ReturnsNullResolvedString()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string>());
+            Assert.That(resolvedString, Is.Null);
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        [Test]
+        public static void Resolve_String_SingleNullElement_ReturnsNullResolvedString()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string> { null });
+            Assert.That(resolvedString, Is.Null);
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        /// <summary>
+        /// A null element among equal non-null values cannot be collapsed (first.Equals(null) is
+        /// false), so Resolve joins the raw list, rendering the null element as an empty cell.
+        /// </summary>
+        [Test]
+        public static void Resolve_String_NullAmongSameValues_JoinsWithEmptyCell()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string> { "a", null, "a" });
+            Assert.That(resolvedString, Is.EqualTo("a||a"));
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        [Test]
+        public static void Resolve_String_NullAmongDistinctValues_JoinsWithEmptyCell()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string> { "a", null, "b" });
+            Assert.That(resolvedString, Is.EqualTo("a||b"));
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        /// <summary>
+        /// The ambiguousIfNull overload: an all-null list still resolves to a null ResolvedString even
+        /// when a fallback is supplied - the fallback only selects the joining strategy, it does not
+        /// rescue an all-null input.
+        /// </summary>
+        [Test]
+        public static void Resolve_StringWithFallback_AllNullValues_ReturnsNullResolvedString()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string> { null, null }, "fallback");
+            Assert.That(resolvedString, Is.Null);
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        /// <summary>
+        /// The ambiguousIfNull overload joins only distinct values when a fallback is present, with the
+        /// null element rendered as an empty cell.
+        /// </summary>
+        [Test]
+        public static void Resolve_StringWithFallback_NullAmongValues_JoinsDistinctWithEmptyCell()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string> { "b", null, "a", "b" }, "fallback");
+            Assert.That(resolvedString, Is.EqualTo("b||a"));
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        /// <summary>
+        /// The ambiguousIfNull overload keeps duplicated values (and the empty cell from the null
+        /// element) when no fallback is supplied.
+        /// </summary>
+        [Test]
+        public static void Resolve_StringWithoutFallback_NullAmongSameValues_JoinsDuplicatesWithEmptyCell()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string> { "a", null, "a" }, ambiguousIfNull: null);
+            Assert.That(resolvedString, Is.EqualTo("a||a"));
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        /// <summary>
+        /// ModsChemicalFormulas / ModsCombinedChemicalFormula null-path: any hypothesis whose
+        /// modification list contains a null Modification resolves to "unknown" rather than throwing.
+        /// </summary>
+        [Test]
+        public static void Resolve_Modifications_NullModificationElement_ReturnsUnknown()
+        {
+            var enumerable = new List<List<Modification>>
+            {
+                new List<Modification> { null }
+            };
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(enumerable);
+            Assert.That(resolvedString, Is.EqualTo("unknown"));
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        /// <summary>
+        /// A modification whose ChemicalFormula is null hits the same guard and also resolves to
+        /// "unknown" rather than throwing.
+        /// </summary>
+        [Test]
+        public static void Resolve_Modifications_NullChemicalFormula_ReturnsUnknown()
+        {
+            ModificationMotif.TryGetMotif("N", out ModificationMotif motif);
+            Modification modWithoutFormula = new Modification(_originalId: "noFormula", _modificationType: "mt",
+                _target: motif, _locationRestriction: "Anywhere.");
+            Assert.That(modWithoutFormula.ChemicalFormula, Is.Null);
+
+            var enumerable = new List<List<Modification>>
+            {
+                new List<Modification> { modWithoutFormula }
+            };
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(enumerable);
+            Assert.That(resolvedString, Is.EqualTo("unknown"));
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        #endregion
+
         /// <summary>
         /// Test Case 1: Verifies that when peptide is null, all output fields are empty strings
         /// </summary>
@@ -751,7 +877,7 @@ namespace Test
         /// Builds an oligo over a parent with a non-null GeneNames list, so the full
         /// AddPeptideSequenceData path (the geneString column) does not throw during serialization.
         /// </summary>
-        private static OligoWithSetMods BuildTestOligo(string baseSequence, ChemicalFormula fivePrime, ChemicalFormula threePrime)
+        private static OligoWithSetMods BuildTestOligo(string baseSequence, IHasChemicalFormula fivePrime, IHasChemicalFormula threePrime)
         {
             var rna = new RNA(baseSequence, "test_rna", geneNames: new List<System.Tuple<string, string>>());
             return new OligoWithSetMods(baseSequence, n: rna, fivePrimeTerminus: fivePrime, threePrimeTerminus: threePrime);
@@ -954,6 +1080,125 @@ namespace Test
                     File.Delete(filePath);
                 }
             }
+        }
+
+        /// <summary>
+        /// The terminus columns are gated on AnalyteType.Oligo but the values are pulled from the
+        /// matched hypothesis via a defensive cast to OligoWithSetMods. An OSM whose hypothesis is not
+        /// an oligo exercises that null path end-to-end: the terminus cells resolve to null and are
+        /// written as empty cells, with the rest of the row untouched.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_Oligo_NonOligoHypothesis_WritesEmptyCells()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            try
+            {
+                Protein protein = new Protein("MPEPTIDEK", "prot_td");
+                PeptideWithSetModifications peptide = new PeptideWithSetModifications(
+                    protein, new DigestionParams(), 1, 9, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+                double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+                var scan = new Ms2ScanWithSpecificMass(
+                    new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                        0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                    mass, 1, "", new CommonParameters());
+
+                var osm = new OligoSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+                osm.ResolveAllAmbiguities();
+
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                int fivePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.FivePrimeTerminus);
+                int threePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.ThreePrimeTerminus);
+                string[] rowSplits = osm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                Assert.That(fivePrimeIndex, Is.GreaterThanOrEqualTo(0));
+                Assert.That(threePrimeIndex, Is.GreaterThanOrEqualTo(0));
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+                // Defensive cast hits null -> Resolve(all-null) -> empty cells, not a crash.
+                Assert.That(rowSplits[fivePrimeIndex], Is.EqualTo(string.Empty));
+                Assert.That(rowSplits[threePrimeIndex], Is.EqualTo(string.Empty));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// The terminal-cap columns participate in the same null contract as every other sequence
+        /// column: when there is no spectral match at all (pepWithModsIsNull, the header row),
+        /// AddPeptideSequenceData emits a single blank cell for each cap column instead of invoking
+        /// Resolve - so the header and data rows stay column-aligned.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_Header_SmNull_WritesBlankCells()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            try
+            {
+                var dict = new Dictionary<string, string>();
+                PsmTsvWriter.AddPeptideSequenceData(dict, null, null);
+
+                Assert.That(dict[SpectrumMatchFromTsvHeader.FivePrimeTerminus], Is.EqualTo(" "));
+                Assert.That(dict[SpectrumMatchFromTsvHeader.ThreePrimeTerminus], Is.EqualTo(" "));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// The terminal-cap writer guards each null hop on the way to the formula string. A terminus
+        /// whose ThisChemicalFormula is null (never produced by a real digestion, but defensively
+        /// supported) must yield an empty cell for that block and leave the other cap untouched.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_Oligo_NullTerminusChemicalFormula_WritesEmptyCell()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            try
+            {
+                ChemicalFormula realThreePrime = ChemicalFormula.ParseFormula("H2O4P");
+                OligoWithSetMods oligo = BuildTestOligo("AAA", new NullFormulaTerminus(), realThreePrime);
+
+                var osm = BuildOsmFromOligo(oligo);
+
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                int fivePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.FivePrimeTerminus);
+                int threePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.ThreePrimeTerminus);
+                string[] rowSplits = osm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                Assert.That(fivePrimeIndex, Is.GreaterThanOrEqualTo(0));
+                Assert.That(threePrimeIndex, Is.GreaterThanOrEqualTo(0));
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+                // Null ThisChemicalFormula -> null formula string -> Resolve(all null) -> empty cell.
+                Assert.That(rowSplits[fivePrimeIndex], Is.EqualTo(string.Empty));
+                // The other cap still writes normally.
+                Assert.That(rowSplits[threePrimeIndex], Is.EqualTo(realThreePrime.Formula));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// A terminus object with a monoisotopic mass but no chemical formula, exercising the
+        /// writer's ThisChemicalFormula null guard. Never produced by real digestion.
+        /// </summary>
+        private class NullFormulaTerminus : IHasChemicalFormula
+        {
+            public double MonoisotopicMass => 0.0;
+
+            public ChemicalFormula ThisChemicalFormula => null;
         }
 
         #endregion
