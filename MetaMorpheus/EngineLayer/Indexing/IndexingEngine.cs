@@ -85,6 +85,11 @@ namespace EngineLayer.Indexing
             sb.AppendLine("digestionTerminus: " + CommonParameters.DigestionParams.FragmentationTerminus);
             sb.AppendLine("maxModsForEachPeptide: " + CommonParameters.DigestionParams.MaxMods);
             sb.AppendLine("cleavageSpecificity: " + CommonParameters.DigestionParams.SearchModeType);
+            // Semi + Both digested into C-terminal seeds before mzLib #1303 and into semi-specific peptides since, under the same
+            // settings. This line keeps an index of seeds cached by an older MetaMorpheus from ever matching a new search.
+            if (CommonParameters.DigestionParams.SearchModeType == Omics.Digestion.CleavageSpecificity.Semi
+                && CommonParameters.DigestionParams.FragmentationTerminus == Omics.Fragmentation.FragmentationTerminus.Both)
+                sb.AppendLine("semiSpecificDigestion: peptides, not seeds (mzLib #1303)");
             if (CommonParameters.DigestionParams is DigestionParams digestionParam)
                 sb.AppendLine("specificProtease: " + digestionParam.SpecificProtease);
             sb.AppendLine("maximumFragmentSize" + (int)Math.Round(MaxFragmentSize));
