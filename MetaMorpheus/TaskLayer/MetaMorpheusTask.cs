@@ -1216,14 +1216,14 @@ namespace TaskLayer
             {
                 int suggested = IndexPartitioning.SuggestTotalPartitions(proteinList, parameters, fixedModifications,
                     variableModifications, silacLabels, startLabel, endLabel, maxFragmentSize, parameters.TotalPartitions,
-                    out long estimatedBytes, out long budgetBytes, out bool cappedByLimit);
+                    out long estimatedBytes, out long budgetBytes, out bool cappedByLimit, out long estimatedFragmentEntries);
 
                 decidedPartitions = suggested;
 
                 if (suggested > parameters.TotalPartitions)
                 {
                     foreach (string warning in IndexPartitioning.PartitionWarnings(parameters.TotalPartitions,
-                                 suggested, estimatedBytes, budgetBytes, cappedByLimit))
+                                 suggested, estimatedBytes, budgetBytes, cappedByLimit, estimatedFragmentEntries))
                     {
                         Warn(warning);
                     }

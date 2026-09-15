@@ -107,7 +107,7 @@ namespace Test
         {
             return IndexPartitioning.SuggestTotalPartitions(proteins, parameters, new List<Modification>(),
                 new List<Modification>(), null, null, null, 30000.0, requested,
-                out estimatedBytes, out budgetBytes, out cappedByLimit);
+                out estimatedBytes, out budgetBytes, out cappedByLimit, out _);
         }
 
         // ------------------------------------------------------------------ partition guard
@@ -412,6 +412,66 @@ namespace Test
         {
             Assert.That(IndexPartitioning.PartitionsForBudget(1L << 40, 0, 0, 2, 500, out bool capped), Is.EqualTo(2));
             Assert.That(capped, Is.False);
+        }
+
+        /// <summary>
+        /// The fragment index is one flat int[], so a partition cannot hold more entries than an array can, however
+        /// much memory is free. Sized to half that ceiling per partition, because partitions are cut by protein count
+        /// and the largest one runs well above the mean.
+        /// </summary>
+        [Test]
+        public static void PartitionsForEntryLimit_KeepsEachPartitionUnderHalfTheArrayCeiling()
+        {
+            long perPartition = Array.MaxLength / 2;
+
+            Assert.That(IndexPartitioning.PartitionsForEntryLimit(0, 1, 5000, out bool none), Is.EqualTo(1), "nothing measured, nothing raised");
+            Assert.That(none, Is.False);
+            Assert.That(IndexPartitioning.PartitionsForEntryLimit(perPartition, 1, 5000, out _), Is.EqualTo(1), "exactly at the limit fits one partition");
+            Assert.That(IndexPartitioning.PartitionsForEntryLimit(perPartition + 1, 1, 5000, out _), Is.EqualTo(2));
+
+            // the human proteome at 4 missed cleavages with decoys builds 1.457 B entries: past the per-partition
+            // limit, although a 512 GB node's memory budget would leave it in one partition
+            Assert.That(IndexPartitioning.PartitionsForEntryLimit(1_457_494_626, 1, 156_240, out _), Is.EqualTo(2));
+
+            Assert.That(IndexPartitioning.PartitionsForEntryLimit(perPartition * 3, 8, 5000, out _), Is.EqualTo(8), "never lowers the request");
+            Assert.That(IndexPartitioning.PartitionsForEntryLimit(perPartition * 3, 1, 2, out _), Is.EqualTo(2), "never more than one partition per protein");
+
+            Assert.That(IndexPartitioning.PartitionsForEntryLimit(perPartition * 300, 1, 100_000, out bool capped), Is.EqualTo(256));
+            Assert.That(capped, Is.True);
+        }
+
+        /// <summary>
+        /// A raise for the entry ceiling must not be explained as a memory shortfall: the user has the memory, and a
+        /// message about a budget would send them looking for the wrong fix.
+        /// </summary>
+        [Test]
+        public static void PartitionWarnings_EntryLimitRaiseIsNotReportedAsMemory()
+        {
+            const long tenGb = 10L * 1024 * 1024 * 1024;
+            long entries = Array.MaxLength; // two partitions' worth
+
+            var warnings = IndexPartitioning.PartitionWarnings(1, 2, 1L << 30, tenGb, cappedByLimit: false, estimatedFragmentEntries: entries).ToList();
+
+            Assert.That(warnings.Count, Is.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("fragment index entries"));
+            Assert.That(warnings[0], Does.Contain("TotalPartitions to 2"));
+            Assert.That(warnings[0], Does.Not.Contain("budgeted"));
+        }
+
+        /// <summary>
+        /// Emission buffers grow by doubling. Doubling in int arithmetic wraps negative at 2^30 and Array.Resize then
+        /// throws ArgumentOutOfRangeException -- reachable with one indexing thread, where one block holds every
+        /// emission. Growth has to stop at the array ceiling, and past it fail the way Build does.
+        /// </summary>
+        [Test]
+        public static void FragmentEmissionRun_GrowCapacity_StopsAtTheArrayCeiling()
+        {
+            Assert.That(FragmentEmissionRun.GrowCapacity(16), Is.EqualTo(32));
+            Assert.That(FragmentEmissionRun.GrowCapacity(1 << 30), Is.EqualTo(Array.MaxLength), "2^30 doubled wraps negative in int arithmetic");
+            Assert.That(FragmentEmissionRun.GrowCapacity(Array.MaxLength - 1), Is.EqualTo(Array.MaxLength));
+
+            var e = Assert.Throws<MetaMorpheusException>(() => FragmentEmissionRun.GrowCapacity(Array.MaxLength));
+            Assert.That(e.Message, Does.Contain("Too many fragments to index"));
         }
 
         /// <summary>The warning has to name both numbers and the new count, since it is the only signal a user gets.</summary>

@@ -74,9 +74,25 @@ namespace EngineLayer.Indexing
         {
             if (index == array.Length)
             {
-                Array.Resize(ref array, array.Length * 2);
+                Array.Resize(ref array, GrowCapacity(array.Length));
             }
             array[index] = value;
+        }
+
+        /// <summary>
+        /// The next buffer size: double, capped at <see cref="Array.MaxLength"/>. Doubling in int arithmetic wraps
+        /// negative once a buffer reaches 2^30 and Array.Resize then throws ArgumentOutOfRangeException. One block
+        /// holds every emission when MaxThreadsToUsePerFile is 1, so that is ~1.07 B fragments -- short of what the
+        /// flat index itself can hold. A buffer already at the cap cannot take another entry, and neither could the
+        /// index, so it fails the way <see cref="FragmentIndexBuilder.Build"/> does.
+        /// </summary>
+        internal static int GrowCapacity(int currentLength)
+        {
+            if (currentLength >= Array.MaxLength)
+            {
+                throw new MetaMorpheusException(FragmentIndexBuilder.TooManyFragmentsMessage);
+            }
+            return (int)Math.Min(2L * currentLength, Array.MaxLength);
         }
     }
 
@@ -90,6 +106,8 @@ namespace EngineLayer.Indexing
     /// </summary>
     internal static class FragmentIndexBuilder
     {
+        internal const string TooManyFragmentsMessage = "Too many fragments to index; try \"Classic Search\" mode, more partitions, or a smaller maximum fragment mass";
+
         internal static FragmentIndex Build(int binCount, IReadOnlyList<FragmentEmissionRun> runsInEmissionOrder)
         {
             // binStart doubles as the counting array and then as the scatter cursor, so a 30M-bin index
@@ -118,9 +136,11 @@ namespace EngineLayer.Indexing
                 totalEntries += n;
             }
 
-            if (totalEntries > int.MaxValue)
+            // Array.MaxLength, not int.MaxValue: between the two the allocation below fails as out-of-memory and
+            // would be reported as a maximum fragment mass problem
+            if (totalEntries > Array.MaxLength)
             {
-                throw new MetaMorpheusException("Too many fragments to index; try \"Classic Search\" mode, more partitions, or a smaller maximum fragment mass");
+                throw new MetaMorpheusException(TooManyFragmentsMessage);
             }
 
             for (int bin = 1; bin <= binCount; bin++)

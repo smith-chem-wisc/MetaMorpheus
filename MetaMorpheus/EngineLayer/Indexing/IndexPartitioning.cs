@@ -63,6 +63,19 @@ namespace EngineLayer.Indexing
         /// <summary>Bins per dalton, matching IndexingEngine.</summary>
         private const int FragmentBinsPerDalton = 1000;
 
+        /// <summary>
+        /// Fragment entries one partition's index is sized to hold. The fragment index is one flat int[], so
+        /// <see cref="Array.MaxLength"/> is a ceiling that no amount of free memory lifts, and on a large node the
+        /// memory budget alone would leave a database that exceeds it in one partition.
+        ///
+        /// Half the ceiling, because partitions are cut by protein count rather than by fragments. Measured on
+        /// reviewed human UniProt (78,120 entries), the largest contiguous slice holds 1.21x the mean residue
+        /// count at 2 partitions, 1.60x at 4, 1.75x at 64 and 1.95x at 256. The fragment count itself is not
+        /// where the risk is: on the same database with decoys, EstimateIndexSize gave 584.1 M entries against
+        /// 579.3 M built at 2 missed cleavages, and 1,461.7 M against 1,457.5 M at 4.
+        /// </summary>
+        private static long MaxFragmentEntriesPerPartition => Array.MaxLength / 2;
+
         /// <summary>Proteins digested to learn the peptide yield of the configured digestion settings.</summary>
         private const int SampleSize = 200;
 
@@ -78,9 +91,11 @@ namespace EngineLayer.Indexing
         public static int SuggestTotalPartitions(IReadOnlyList<IBioPolymer> proteins, CommonParameters commonParameters,
             List<Modification> fixedModifications, List<Modification> variableModifications,
             List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, double maxFragmentSize,
-            int requestedPartitions, out long estimatedBytes, out long budgetBytes, out bool cappedByLimit)
+            int requestedPartitions, out long estimatedBytes, out long budgetBytes, out bool cappedByLimit,
+            out long estimatedFragmentEntries)
         {
             estimatedBytes = 0;
+            estimatedFragmentEntries = 0;
             budgetBytes = AvailableBytes();
             cappedByLimit = false;
 
@@ -97,9 +112,34 @@ namespace EngineLayer.Indexing
             (long peptideCount, long fragmentCount) = EstimateIndexSize(proteins, commonParameters, digestionParams,
                 fixedModifications, variableModifications, silacLabels, turnoverLabels, maxFragmentSize);
             estimatedBytes = peptideCount * BytesPerPeptide + fragmentCount * BytesPerFragmentEntry;
+            estimatedFragmentEntries = fragmentCount;
 
-            return PartitionsForBudget(estimatedBytes, BinSpaceBytes(maxFragmentSize), budgetBytes,
-                requestedPartitions, proteins.Count, out cappedByLimit);
+            int forMemory = PartitionsForBudget(estimatedBytes, BinSpaceBytes(maxFragmentSize), budgetBytes,
+                requestedPartitions, proteins.Count, out bool cappedByMemory);
+            int forEntries = PartitionsForEntryLimit(fragmentCount, requestedPartitions, proteins.Count, out bool cappedByEntries);
+
+            cappedByLimit = cappedByMemory || cappedByEntries;
+            return Math.Max(forMemory, forEntries);
+        }
+
+        /// <summary>
+        /// How many partitions keep each partition's fragment index under <see cref="MaxFragmentEntriesPerPartition"/>,
+        /// never going below <paramref name="requestedPartitions"/> and never exceeding one partition per protein.
+        /// Independent of memory: a node with room for a 3 B-entry index still cannot put it in one int[].
+        /// </summary>
+        internal static int PartitionsForEntryLimit(long estimatedFragmentEntries, int requestedPartitions, int proteinCount,
+            out bool cappedByLimit)
+        {
+            cappedByLimit = false;
+            if (estimatedFragmentEntries <= 0)
+            {
+                return requestedPartitions;
+            }
+
+            double exact = Math.Ceiling(estimatedFragmentEntries / (double)MaxFragmentEntriesPerPartition);
+            cappedByLimit = exact > MaxPartitions;
+            int needed = (int)Math.Min(MaxPartitions, exact);
+            return Math.Max(requestedPartitions, Math.Min(needed, Math.Max(1, proteinCount)));
         }
 
         /// <summary>
@@ -305,9 +345,17 @@ namespace EngineLayer.Indexing
         /// set of messages can be asserted without depending on the test machine's memory.
         /// </summary>
         public static IEnumerable<string> PartitionWarnings(int requestedPartitions, int suggestedPartitions,
-            long estimatedBytes, long budgetBytes, bool cappedByLimit)
+            long estimatedBytes, long budgetBytes, bool cappedByLimit, long estimatedFragmentEntries = 0)
         {
-            yield return PartitionIncreaseWarning(requestedPartitions, suggestedPartitions, estimatedBytes, budgetBytes);
+            // a raise for the flat index's entry ceiling, which the memory message would misexplain
+            if (estimatedFragmentEntries > requestedPartitions * MaxFragmentEntriesPerPartition)
+            {
+                yield return PartitionEntryLimitWarning(requestedPartitions, suggestedPartitions, estimatedFragmentEntries);
+            }
+            else
+            {
+                yield return PartitionIncreaseWarning(requestedPartitions, suggestedPartitions, estimatedBytes, budgetBytes);
+            }
 
             if (cappedByLimit)
             {
@@ -315,6 +363,15 @@ namespace EngineLayer.Indexing
                              $"may page heavily. Consider a smaller database, a shorter maximum peptide length, " +
                              $"or fewer variable modifications.";
             }
+        }
+
+        /// <summary>Message for the user when one partition would hold more fragments than its index can.</summary>
+        public static string PartitionEntryLimitWarning(int requestedPartitions, int suggestedPartitions, long estimatedFragmentEntries)
+        {
+            return $"Indexing this database in {requestedPartitions} partition(s) is estimated to need " +
+                   $"{estimatedFragmentEntries / 1e9:N2} billion fragment index entries, more than one partition's index " +
+                   $"can hold. Increasing TotalPartitions to {suggestedPartitions}. Identifications and scores are " +
+                   $"unaffected; reported PEP and q-values can shift slightly.";
         }
 
         /// <summary>Message for the user when the requested partition count cannot fit.</summary>
