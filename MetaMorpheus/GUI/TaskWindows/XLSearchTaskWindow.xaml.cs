@@ -155,6 +155,10 @@ namespace MetaMorpheusGUI
             if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
             {
                 proteaseComboBox.SelectedItem = TaskWindowSearchMode.ProteaseToShow(digestionParams);
+                // a loaded task that asks for seed peptides cannot be shown here as it is, so say what happens to it
+                string searchModeWarning = TaskWindowSearchMode.PreserveWarning(digestionParams);
+                SearchModeWarningTextBlock.Text = searchModeWarning;
+                SearchModeWarningTextBlock.Visibility = searchModeWarning == null ? Visibility.Collapsed : Visibility.Visible;
                 initiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
             }
 

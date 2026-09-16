@@ -200,6 +200,10 @@ namespace MetaMorpheusGUI
             {
                 proteaseComboBox.SelectedItem = TaskWindowSearchMode.ProteaseToShow(digestionParams);
                 SemiSpecificCheckBox.IsChecked = TaskWindowSearchMode.IsSemiSpecific(digestionParams);
+                // a loaded task that asks for seed peptides cannot be shown here as it is, so say what happens to it
+                string searchModeWarning = TaskWindowSearchMode.ForSemiSpecificChoiceWarning(digestionParams);
+                SearchModeWarningTextBlock.Text = searchModeWarning;
+                SearchModeWarningTextBlock.Visibility = searchModeWarning == null ? Visibility.Collapsed : Visibility.Visible;
                 initiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
             }
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);

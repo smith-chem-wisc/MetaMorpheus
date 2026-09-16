@@ -3,6 +3,7 @@ using NUnit.Framework;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using System.Collections.Generic;
 using System.IO;
 using TaskLayer;
 using Transcriptomics.Digestion;
@@ -93,6 +94,94 @@ namespace Test.GuiTests
         {
             Assert.That(TaskWindowSearchMode.Preserve(null), Is.EqualTo((CleavageSpecificity.Full, FragmentationTerminus.Both)));
             Assert.That(TaskWindowSearchMode.Preserve(new RnaDigestionParams()), Is.EqualTo((CleavageSpecificity.Full, FragmentationTerminus.Both)));
+        }
+
+        /// <summary>
+        /// A task the windows can show as it is gets no warning. That covers every task a window itself can save, plus RNA
+        /// tasks and tasks without digestion parameters, which have no protein search mode.
+        /// </summary>
+        [Test]
+        [TestCase(CleavageSpecificity.Full, FragmentationTerminus.Both)]
+        [TestCase(CleavageSpecificity.Semi, FragmentationTerminus.Both)]
+        public static void Warnings_ForAUsableSearchMode_AreNull(CleavageSpecificity searchModeType, FragmentationTerminus terminus)
+        {
+            var loaded = new DigestionParams("trypsin", searchModeType: searchModeType, fragmentationTerminus: terminus);
+            Assert.That(TaskWindowSearchMode.ForSemiSpecificChoiceWarning(loaded), Is.Null);
+            Assert.That(TaskWindowSearchMode.PreserveWarning(loaded), Is.Null);
+        }
+
+        [Test]
+        public static void Warnings_ForATaskWithoutProteinDigestionParams_AreNull()
+        {
+            foreach (IDigestionParams loaded in new IDigestionParams[] { null, new RnaDigestionParams() })
+            {
+                Assert.That(TaskWindowSearchMode.ForSemiSpecificChoiceWarning(loaded), Is.Null);
+                Assert.That(TaskWindowSearchMode.PreserveWarning(loaded), Is.Null);
+            }
+        }
+
+        private static IEnumerable<TestCaseData> SeedRequests()
+        {
+            yield return new TestCaseData(CleavageSpecificity.Semi, FragmentationTerminus.N);
+            yield return new TestCaseData(CleavageSpecificity.Semi, FragmentationTerminus.C);
+            yield return new TestCaseData(CleavageSpecificity.None, FragmentationTerminus.N);
+            yield return new TestCaseData(CleavageSpecificity.None, FragmentationTerminus.Both);
+        }
+
+        /// <summary>
+        /// Review of #2812 (nbollis): a hand-edited glyco task with Semi + N, or None, was rewritten to Semi + Both or
+        /// Full + Both on save without a word, so the user searched something other than what the file asked for. Saving
+        /// still writes a mode a glyco search can use, but the window now says, before the user saves, which setting was
+        /// loaded and that saving replaces it with the choice in the semi-specific box.
+        /// </summary>
+        [Test]
+        [TestCaseSource(nameof(SeedRequests))]
+        public static void ForSemiSpecificChoiceWarning_ForASeedRequest_NamesTheLoadedSettingAndSaysSavingChangesIt(CleavageSpecificity searchModeType, FragmentationTerminus terminus)
+        {
+            var loaded = new DigestionParams("trypsin", searchModeType: searchModeType, fragmentationTerminus: terminus);
+            string warning = TaskWindowSearchMode.ForSemiSpecificChoiceWarning(loaded);
+
+            Assert.That(warning, Does.Contain($"SearchModeType {searchModeType}"));
+            Assert.That(warning, Does.Contain($"FragmentationTerminus {terminus}"));
+            Assert.That(warning, Does.Contain("Saving will change it"));
+            Assert.That(warning, Does.Contain("Semi-specific digestion"), "it must point at the box that decides what is saved");
+        }
+
+        /// <summary>
+        /// Review of #2812 (nbollis): the crosslink, GPTMD and calibration windows keep a loaded mode they have no control
+        /// for, so the user saw an ordinary protease and only learned at run time that the task would be refused. The window
+        /// now says so up front, and says the fix has to be made in the settings file.
+        /// </summary>
+        [Test]
+        [TestCaseSource(nameof(SeedRequests))]
+        public static void PreserveWarning_ForASeedRequest_NamesTheLoadedSettingAndSaysTheTaskWillBeRefused(CleavageSpecificity searchModeType, FragmentationTerminus terminus)
+        {
+            var loaded = new DigestionParams("trypsin", searchModeType: searchModeType, fragmentationTerminus: terminus);
+            string warning = TaskWindowSearchMode.PreserveWarning(loaded);
+
+            Assert.That(warning, Does.Contain($"SearchModeType {searchModeType}"));
+            Assert.That(warning, Does.Contain($"FragmentationTerminus {terminus}"));
+            Assert.That(warning, Does.Contain("refused"));
+            Assert.That(warning, Does.Contain("settings file"));
+        }
+
+        /// <summary>
+        /// The windows warn about exactly the tasks the run-time check refuses (for a task other than the non-specific
+        /// search), so the two can never disagree.
+        /// </summary>
+        [Test]
+        public static void Warnings_AreGivenExactlyWhenTheRunTimeCheckRefusesTheTask()
+        {
+            foreach (CleavageSpecificity searchModeType in new[] { CleavageSpecificity.Full, CleavageSpecificity.Semi, CleavageSpecificity.None })
+            foreach (FragmentationTerminus terminus in new[] { FragmentationTerminus.Both, FragmentationTerminus.N, FragmentationTerminus.C })
+            {
+                var loaded = new DigestionParams("trypsin", searchModeType: searchModeType, fragmentationTerminus: terminus);
+                var task = new GptmdTask { CommonParameters = new EngineLayer.CommonParameters(digestionParams: loaded) };
+                bool refused = DigestionSearchModeCheck.GetRefusal(task) != null;
+
+                Assert.That(TaskWindowSearchMode.PreserveWarning(loaded) != null, Is.EqualTo(refused), $"{searchModeType} + {terminus}");
+                Assert.That(TaskWindowSearchMode.ForSemiSpecificChoiceWarning(loaded) != null, Is.EqualTo(refused), $"{searchModeType} + {terminus}");
+            }
         }
 
         /// <summary>

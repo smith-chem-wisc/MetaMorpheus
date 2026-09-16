@@ -56,6 +56,23 @@ namespace Test
             _ => throw new System.ArgumentException(kind),
         };
 
+        /// <summary>
+        /// The one rule for which digestion settings give seeds. The refusal and the task windows' warnings both use it.
+        /// </summary>
+        [Test]
+        [TestCase(CleavageSpecificity.Full, FragmentationTerminus.Both, false)]
+        [TestCase(CleavageSpecificity.Full, FragmentationTerminus.N, false)]
+        [TestCase(CleavageSpecificity.Semi, FragmentationTerminus.Both, false)]
+        [TestCase(CleavageSpecificity.Semi, FragmentationTerminus.N, true)]
+        [TestCase(CleavageSpecificity.Semi, FragmentationTerminus.C, true)]
+        [TestCase(CleavageSpecificity.None, FragmentationTerminus.Both, true)]
+        [TestCase(CleavageSpecificity.None, FragmentationTerminus.C, true)]
+        public static void AsksForSeeds_IsTrueForNoneAndForSemiWithOneTerminus(CleavageSpecificity searchModeType, FragmentationTerminus terminus, bool expected)
+        {
+            var digestionParams = new DigestionParams("trypsin", searchModeType: searchModeType, fragmentationTerminus: terminus);
+            Assert.That(DigestionSearchModeCheck.AsksForSeeds(digestionParams), Is.EqualTo(expected));
+        }
+
         private static IEnumerable<TestCaseData> EveryTaskAndDigestion()
         {
             foreach (string kind in new[] { "Glyco", "Crosslink", "Gptmd", "Calibration", "ClassicSearch", "ModernSearch" })
