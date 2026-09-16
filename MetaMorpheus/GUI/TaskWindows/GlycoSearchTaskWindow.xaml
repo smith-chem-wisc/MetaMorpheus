@@ -143,7 +143,7 @@
                                     <local:IntegerTexBoxControl x:Name="TbMaxOGlycanNum" Width="45"/>
                                 </StackPanel>
                                 <CheckBox x:Name="CkbOxoniumIonFilt" Content="OxoniumIonFilt" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"/>
-                                <StackPanel Orientation="Horizontal" Grid.Row="4" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <StackPanel Orientation="Horizontal" Grid.Row="4" Margin="0,5,0,0" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <StackPanel.ToolTip>
                                         <TextBlock>
                                             The heaviest total glycan mass, in Da, searched on one peptide. Default 4000.
@@ -156,7 +156,7 @@
                                         </TextBlock>
                                     </StackPanel.ToolTip>
                                     <Label Content="Maximum Glycan Mass (Da)"/>
-                                    <local:DoubleTextBoxControl x:Name="TbMaxGlycanBoxMass" Width="45"/>
+                                    <local:DoubleTextBoxControl x:Name="TbMaxGlycanBoxMass" Width="45" LowerBound="0"/>
                                 </StackPanel>
                             </Grid>
                         </Grid>
