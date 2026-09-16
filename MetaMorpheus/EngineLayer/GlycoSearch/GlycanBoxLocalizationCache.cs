@@ -91,30 +91,30 @@ namespace EngineLayer.GlycoSearch
                 {
                     // As BuildValidChart: the later child holds at most one more mod and contains every mod of the earlier child.
                     if (children[y].NumberOfMods <= children[preY].NumberOfMods + 1
-                        && (children[preY].NumberOfMods == 0 || ContainsAll(children[y].ModIds, children[preY].ModIds)))
+                        && (children[preY].NumberOfMods == 0 || IsGlycanCoveredBy(children[preY].ModIds, children[y].ModIds)))
                     {
                         ValidChart[y][preY] = true;
-                        int added = FirstAdded(children[preY].ModIds, children[y].ModIds, out bool anyAdded);
-                        AddedMotif[y][preY] = anyAdded ? GlycanBox.MotifOf(added) : null;
+                        int addedGlycan = AddedGlycan(children[preY].ModIds, children[y].ModIds, out bool anyAdded);
+                        AddedMotif[y][preY] = anyAdded ? GlycanBox.MotifOf(addedGlycan) : null;
                     }
                 }
             }
         }
 
         /// <summary>
-        /// Whether <paramref name="whole"/> holds every id of <paramref name="part"/>, counting repeats; what
-        /// LocalizationGraph.TryGetLeft(whole, part) returns, without allocating.
+        /// Whether <paramref name="cover"/> holds every id of <paramref name="glycan"/>, counting repeats; what
+        /// LocalizationGraph.TryGetLeft(cover, glycan) returns, without allocating.
         /// </summary>
-        internal static bool ContainsAll(int[] whole, int[] part)
+        internal static bool IsGlycanCoveredBy(int[] glycan, int[] cover)
         {
-            for (int i = 0; i < part.Length; i++)
+            for (int i = 0; i < glycan.Length; i++)
             {
-                // Check each distinct id once, at its first occurrence in part.
-                if (Array.IndexOf(part, part[i], 0, i) >= 0)
+                // Check each distinct id once, at its first occurrence in glycan.
+                if (Array.IndexOf(glycan, glycan[i], 0, i) >= 0)
                 {
                     continue;
                 }
-                if (Count(whole, part[i]) < Count(part, part[i]))
+                if (Count(cover, glycan[i]) < Count(glycan, glycan[i]))
                 {
                     return false;
                 }
@@ -128,7 +128,7 @@ namespace EngineLayer.GlycoSearch
         /// appears in current, so its first element is the earliest-appearing id that current holds more times than pre.
         /// <paramref name="pre"/> must be contained in current, as GetDiff also requires.
         /// </summary>
-        internal static int FirstAdded(int[] pre, int[] current, out bool anyAdded)
+        internal static int AddedGlycan(int[] pre, int[] current, out bool anyAdded)
         {
             for (int i = 0; i < current.Length; i++)
             {

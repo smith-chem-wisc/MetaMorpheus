@@ -127,11 +127,11 @@ namespace EngineLayer.GlycoSearch
                     {
                         double maxCost = 0;
                         var motifInThisPos = modPos_motif[x];
-                        var validRow = cache.ValidChart[y];
-                        var addedMotifRow = cache.AddedMotif[y];
+                        var isValidRow = cache.ValidChart[y];
+                        var addedMotifInThisRow = cache.AddedMotif[y];
                         for (int preY = 0; preY <= y; preY++)
                         {
-                            if (validRow[preY] && localizationGraph.array[x - 1][preY] != null && (addedMotifRow[preY] == null || addedMotifRow[preY] == motifInThisPos))
+                            if (isValidRow[preY] && localizationGraph.array[x - 1][preY] != null && (addedMotifInThisRow[preY] == null || addedMotifInThisRow[preY] == motifInThisPos))
                             {
                                 adjNode.AllSources.Add(preY);
 

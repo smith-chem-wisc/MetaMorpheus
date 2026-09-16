@@ -36,12 +36,12 @@ namespace Test
                 int[] part = Enumerable.Range(0, random.Next(0, 5)).Select(_ => random.Next(-3, 4)).ToArray();
 
                 bool expectedContains = (bool)tryGetLeft.Invoke(null, new object[] { whole, part });
-                Assert.That(GlycanBoxLocalizationCache.ContainsAll(whole, part), Is.EqualTo(expectedContains), $"whole [{string.Join(",", whole)}] part [{string.Join(",", part)}]");
+                Assert.That(GlycanBoxLocalizationCache.IsGlycanCoveredBy(part, whole), Is.EqualTo(expectedContains), $"whole [{string.Join(",", whole)}] part [{string.Join(",", part)}]");
 
                 if (expectedContains)
                 {
                     int[] diff = LocalizationGraph.GetDiff(part, whole);
-                    int first = GlycanBoxLocalizationCache.FirstAdded(part, whole, out bool anyAdded);
+                    int first = GlycanBoxLocalizationCache.AddedGlycan(part, whole, out bool anyAdded);
                     Assert.That(anyAdded, Is.EqualTo(diff.Length > 0));
                     if (anyAdded)
                     {
