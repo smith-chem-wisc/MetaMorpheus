@@ -363,6 +363,28 @@ namespace EngineLayer.Indexing
         }
 
         /// <summary>
+        /// A value that changes when the peptide index holds different peptides or the same peptides in a different
+        /// order, for checking that two copies of one partition's index agree before peptide ids are carried from
+        /// one to the other. Order matters because it is not fixed by the settings alone:
+        /// <see cref="SortByMonoisotopicMass"/> breaks mass ties by digestion order, and digestion order depends on
+        /// MaxThreadsToUsePerFile, which is not part of the cache key. Each peptide is identified by its full
+        /// sequence, parent accession and start residue, so a shared peptide whose two proteins swap places is
+        /// caught too. Only for comparison within one process: string hashes are randomized per process.
+        /// </summary>
+        public static int PeptideOrderFingerprint(IReadOnlyList<IBioPolymerWithSetMods> peptides)
+        {
+            var hash = new HashCode();
+            hash.Add(peptides.Count);
+            foreach (IBioPolymerWithSetMods peptide in peptides)
+            {
+                hash.Add(peptide.FullSequence, StringComparer.Ordinal);
+                hash.Add(peptide.Parent.Accession, StringComparer.Ordinal);
+                hash.Add(peptide.OneBasedStartResidue);
+            }
+            return hash.ToHashCode();
+        }
+
+        /// <summary>
         /// Sorts by monoisotopic mass, reading each mass once instead of once per comparison —
         /// PeptideWithSetModifications.MonoisotopicMass rounds to 9 places on every read even though the
         /// unrounded value is cached, so a comparison delegate pays for it ~2n*log(n) times.

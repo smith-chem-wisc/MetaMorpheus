@@ -145,6 +145,10 @@ namespace TaskLayer
                     ? new List<(int Partition, int PeptideId, byte Score)>[arrayOfMs2ScansSortedByMass.Length]
                     : null;
 
+                // Round 2 has only peptide ids from round 1, so it must see each partition's index in the same order.
+                // Recorded per partition in round 1 and checked in round 2.
+                int[] peptideOrderFingerprints = candidates == null ? null : new int[indexParams.TotalPartitions];
+
                 for (int currentPartition = 0; currentPartition < indexParams.TotalPartitions; currentPartition++)
                 {
                     List<PeptideWithSetModifications> peptideIndex = null;
@@ -165,6 +169,7 @@ namespace TaskLayer
                     else
                     {
                         glycoSearchEngine.FirstRoundSearch();
+                        peptideOrderFingerprints[currentPartition] = IndexingEngine.PeptideOrderFingerprint(peptideIndex);
                     }
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + indexParams.TotalPartitions + "!", thisId));
@@ -184,10 +189,20 @@ namespace TaskLayer
                     GenerateIndexes_PeptideOnly(indexEngine, dbFilenameList, ref peptideIndex, ref precursorIndex, proteinList, taskId);
                     if (peptideIndex == null)
                     {
-                        // the first round's index was not cached (or could not be read back), so build it again;
-                        // indexing is deterministic, so the peptide ids the candidates refer to are unchanged
+                        // the first round's index could not be read back, so build it again
                         FragmentIndex unusedFragmentIndex = null;
                         GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref unusedFragmentIndex, ref precursorIndex, proteinList, taskId);
+                    }
+
+                    // A rebuild, or a different cache folder, can hold the same peptides in a different order: mass ties
+                    // are broken by digestion order, which depends on the thread count, and the thread count is not part
+                    // of the cache key. The candidates would then point at other peptides and report wrong
+                    // glycopeptides without any error, so stop instead.
+                    if (IndexingEngine.PeptideOrderFingerprint(peptideIndex) != peptideOrderFingerprints[currentPartition])
+                    {
+                        throw new MetaMorpheusException($"The peptide index for partition {currentPartition + 1} of {indexParams.TotalPartitions} " +
+                            "changed between the two rounds of the glyco search, so the first round's candidates no longer point at the right " +
+                            $"peptides. Delete the {IndexFolderName} folder next to the database and run the search again.");
                     }
 
                     Status("Searching files...", taskId);
