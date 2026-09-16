@@ -103,11 +103,11 @@ namespace Test
         }
 
         private static int Suggest(List<Protein> proteins, CommonParameters parameters, int requested,
-            out long estimatedBytes, out long budgetBytes, out bool cappedByLimit)
+            out long estimatedBytes, out long budgetBytes, out bool cappedByMemory)
         {
             return IndexPartitioning.SuggestTotalPartitions(proteins, parameters, new List<Modification>(),
                 new List<Modification>(), null, null, null, 30000.0, requested,
-                out estimatedBytes, out budgetBytes, out cappedByLimit, out _);
+                out estimatedBytes, out budgetBytes, out cappedByMemory, out _);
         }
 
         // ------------------------------------------------------------------ partition guard
@@ -450,12 +450,58 @@ namespace Test
             const long tenGb = 10L * 1024 * 1024 * 1024;
             long entries = Array.MaxLength; // two partitions' worth
 
-            var warnings = IndexPartitioning.PartitionWarnings(1, 2, 1L << 30, tenGb, cappedByLimit: false, estimatedFragmentEntries: entries).ToList();
+            var warnings = IndexPartitioning.PartitionWarnings(1, 2, 1L << 30, tenGb, cappedByMemory: false, estimatedFragmentEntries: entries).ToList();
 
             Assert.That(warnings.Count, Is.EqualTo(1));
             Assert.That(warnings[0], Does.Contain("fragment index entries"));
             Assert.That(warnings[0], Does.Contain("TotalPartitions to 2"));
             Assert.That(warnings[0], Does.Not.Contain("budgeted"));
+
+            // the per-partition limit is half the ceiling, a margin for uneven partitions; up to the ceiling itself
+            // one partition could hold this index, so the message must not claim it cannot
+            Assert.That(warnings[0], Does.Not.Contain("can hold."));
+            Assert.That(warnings[0], Does.Contain("uneven"));
+        }
+
+        /// <summary>
+        /// The count is the larger of what memory needs and what the entry limit needs, so the message has to follow
+        /// whichever set it. On a 16 GB laptop memory is the tighter limit long before the entry limit: a 1.46 B-entry
+        /// index needs 2 partitions for entries but 6 for memory. Telling that user the entry limit raised it to 6,
+        /// with no memory figures, explains nothing.
+        /// </summary>
+        [Test]
+        public static void PartitionWarnings_MemorySetTheCount_IsExplainedAsMemory()
+        {
+            long budget = (long)(5.6 * 1024 * 1024 * 1024);
+            long estimatedBytes = 18L * 1024 * 1024 * 1024;
+            long entries = 1_461_700_000;
+            Assert.That(IndexPartitioning.PartitionsForEntryLimit(entries, 1, 156_240, out _), Is.EqualTo(2), "premise: entries alone need 2");
+
+            var warnings = IndexPartitioning.PartitionWarnings(1, 6, estimatedBytes, budget, cappedByMemory: false, estimatedFragmentEntries: entries).ToList();
+
+            Assert.That(warnings.Count, Is.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("TotalPartitions to 6"));
+            Assert.That(warnings[0], Does.Contain("budgeted"), "the memory figures are what explain 6");
+            Assert.That(warnings[0], Does.Not.Contain("fragment index entries"));
+        }
+
+        /// <summary>
+        /// When even the most partitions leave each one over the entry limit, the problem is the index's size, not
+        /// memory. The paging warning would send the user to the wrong fix, and the build is the thing at risk.
+        /// </summary>
+        [Test]
+        public static void PartitionWarnings_EntryCap_IsNotReportedAsPaging()
+        {
+            const long tenGb = 10L * 1024 * 1024 * 1024;
+            long entries = (Array.MaxLength / 2) * 300L;
+
+            var warnings = IndexPartitioning.PartitionWarnings(1, 256, 1L << 30, tenGb, cappedByMemory: false, estimatedFragmentEntries: entries).ToList();
+
+            Assert.That(warnings.Count, Is.EqualTo(2), "the raise, plus a warning that it is still too large");
+            Assert.That(warnings[0], Does.Contain("TotalPartitions to 256"));
+            Assert.That(warnings[1], Does.Contain("Even 256 partitions"));
+            Assert.That(warnings[1], Does.Contain("fragment index"));
+            Assert.That(warnings.Any(w => w.Contains("may page heavily")), Is.False, "memory is not the problem");
         }
 
         /// <summary>
@@ -471,6 +517,29 @@ namespace Test
             Assert.That(FragmentEmissionRun.GrowCapacity(Array.MaxLength - 1), Is.EqualTo(Array.MaxLength));
 
             var e = Assert.Throws<MetaMorpheusException>(() => FragmentEmissionRun.GrowCapacity(Array.MaxLength));
+            Assert.That(e.Message, Does.Contain("Too many fragments to index"));
+        }
+
+        /// <summary>
+        /// The test above pins the arithmetic; this one pins that the buffers actually grow through it. At the real
+        /// ceiling that needs a buffer of at least 4 GB, so the run is given a small cap instead: 16 -> 32 -> 40, then
+        /// the same failure as at the ceiling. Growing by plain doubling in Add would reach 64 here, which is the
+        /// same code that wraps negative at 2^30.
+        /// </summary>
+        [Test]
+        public static void FragmentEmissionRun_Add_GrowsThroughTheCappedCapacity()
+        {
+            var run = new FragmentEmissionRun(firstPeptideId: 0, expectedPeptides: 16, maxCapacity: 40);
+            run.BeginPeptide();
+            for (int bin = 0; bin < 40; bin++)
+            {
+                run.Add(bin);
+            }
+
+            Assert.That(run.Bins.Length, Is.EqualTo(40), "16 doubles to 32, then stops at the cap rather than doubling to 64");
+            Assert.That(run.Bins.Take(40), Is.EqualTo(Enumerable.Range(0, 40)), "nothing lost across the resizes");
+
+            var e = Assert.Throws<MetaMorpheusException>(() => run.Add(40));
             Assert.That(e.Message, Does.Contain("Too many fragments to index"));
         }
 
@@ -2136,13 +2205,13 @@ namespace Test
         {
             const long tenGb = 10L * 1024 * 1024 * 1024;
 
-            var fits = IndexPartitioning.PartitionWarnings(1, 4, 22L * 1024 * 1024 * 1024, tenGb, cappedByLimit: false)
+            var fits = IndexPartitioning.PartitionWarnings(1, 4, 22L * 1024 * 1024 * 1024, tenGb, cappedByMemory: false)
                 .Where(w => w.Contains("TotalPartitions") || w.Contains("may page heavily")).ToList();
             Assert.That(fits.Count, Is.EqualTo(1), "a raise that fits needs one message");
             Assert.That(fits[0], Does.Contain("TotalPartitions to 4"));
             Assert.That(fits[0], Does.Not.Contain("may page heavily"));
 
-            var capped = IndexPartitioning.PartitionWarnings(1, 256, long.MaxValue / 2, tenGb, cappedByLimit: true)
+            var capped = IndexPartitioning.PartitionWarnings(1, 256, long.MaxValue / 2, tenGb, cappedByMemory: true)
                 .Where(w => w.Contains("TotalPartitions") || w.Contains("may page heavily")).ToList();
             Assert.That(capped.Count, Is.EqualTo(2), "the raise, plus a warning that it still will not fit");
             Assert.That(capped[0], Does.Contain("TotalPartitions to 256"));

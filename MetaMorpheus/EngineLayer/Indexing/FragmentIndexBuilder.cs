@@ -19,10 +19,21 @@ namespace EngineLayer.Indexing
         private int _peptideCount;
         private int _emissionsForCurrentPeptide;
         private bool _peptideOpen;
+        private readonly int _maxCapacity;
 
         internal FragmentEmissionRun(int firstPeptideId, int expectedPeptides = 16)
+            : this(firstPeptideId, expectedPeptides, Array.MaxLength)
+        {
+        }
+
+        /// <param name="maxCapacity">
+        /// Largest either buffer may grow to. <see cref="Array.MaxLength"/> in use; lower only so a test can reach
+        /// the cap without allocating gigabytes.
+        /// </param>
+        internal FragmentEmissionRun(int firstPeptideId, int expectedPeptides, int maxCapacity)
         {
             FirstPeptideId = firstPeptideId;
+            _maxCapacity = maxCapacity;
             _bins = new int[Math.Max(16, expectedPeptides)];
             _runLengths = new int[Math.Max(16, expectedPeptides)];
         }
@@ -70,11 +81,11 @@ namespace EngineLayer.Indexing
             }
         }
 
-        private static void Append(ref int[] array, int index, int value)
+        private void Append(ref int[] array, int index, int value)
         {
             if (index == array.Length)
             {
-                Array.Resize(ref array, GrowCapacity(array.Length));
+                Array.Resize(ref array, GrowCapacity(array.Length, _maxCapacity));
             }
             array[index] = value;
         }
@@ -86,13 +97,15 @@ namespace EngineLayer.Indexing
         /// flat index itself can hold. A buffer already at the cap cannot take another entry, and neither could the
         /// index, so it fails the way <see cref="FragmentIndexBuilder.Build"/> does.
         /// </summary>
-        internal static int GrowCapacity(int currentLength)
+        internal static int GrowCapacity(int currentLength) => GrowCapacity(currentLength, Array.MaxLength);
+
+        private static int GrowCapacity(int currentLength, int maxCapacity)
         {
-            if (currentLength >= Array.MaxLength)
+            if (currentLength >= maxCapacity)
             {
                 throw new MetaMorpheusException(FragmentIndexBuilder.TooManyFragmentsMessage);
             }
-            return (int)Math.Min(2L * currentLength, Array.MaxLength);
+            return (int)Math.Min(2L * currentLength, maxCapacity);
         }
     }
 

@@ -86,18 +86,24 @@ namespace EngineLayer.Indexing
 
         /// <summary>
         /// Returns the smallest partition count &gt;= <paramref name="requestedPartitions"/> whose estimated
-        /// peak index footprint fits the memory budget. Never returns less than what was requested.
+        /// peak index footprint fits the memory budget and keeps each partition under the fragment entry limit.
+        /// Never returns less than what was requested.
         /// </summary>
+        /// <param name="cappedByMemory">
+        /// Even the maximum partition count does not fit the memory budget. Memory only: the entry limit's own cap
+        /// is a different problem with a different fix, and <see cref="PartitionWarnings"/> works it out from
+        /// <paramref name="estimatedFragmentEntries"/>.
+        /// </param>
         public static int SuggestTotalPartitions(IReadOnlyList<IBioPolymer> proteins, CommonParameters commonParameters,
             List<Modification> fixedModifications, List<Modification> variableModifications,
             List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, double maxFragmentSize,
-            int requestedPartitions, out long estimatedBytes, out long budgetBytes, out bool cappedByLimit,
+            int requestedPartitions, out long estimatedBytes, out long budgetBytes, out bool cappedByMemory,
             out long estimatedFragmentEntries)
         {
             estimatedBytes = 0;
             estimatedFragmentEntries = 0;
             budgetBytes = AvailableBytes();
-            cappedByLimit = false;
+            cappedByMemory = false;
 
             if (proteins == null || proteins.Count == 0 || commonParameters.DigestionParams is not DigestionParams digestionParams)
             {
@@ -115,10 +121,9 @@ namespace EngineLayer.Indexing
             estimatedFragmentEntries = fragmentCount;
 
             int forMemory = PartitionsForBudget(estimatedBytes, BinSpaceBytes(maxFragmentSize), budgetBytes,
-                requestedPartitions, proteins.Count, out bool cappedByMemory);
-            int forEntries = PartitionsForEntryLimit(fragmentCount, requestedPartitions, proteins.Count, out bool cappedByEntries);
+                requestedPartitions, proteins.Count, out cappedByMemory);
+            int forEntries = PartitionsForEntryLimit(fragmentCount, requestedPartitions, proteins.Count, out _);
 
-            cappedByLimit = cappedByMemory || cappedByEntries;
             return Math.Max(forMemory, forEntries);
         }
 
@@ -340,15 +345,21 @@ namespace EngineLayer.Indexing
         }
 
         /// <summary>
-        /// Everything the user should be told about a raised partition count: that it was raised, and — when
-        /// even the maximum will not fit — that the run may still page. Returned rather than emitted so the
-        /// set of messages can be asserted without depending on the test machine's memory.
+        /// Everything the user should be told about a raised partition count: that it was raised and why, and --
+        /// when even the maximum is not enough -- what is still wrong. Returned rather than emitted so the set of
+        /// messages can be asserted without depending on the test machine's memory.
         /// </summary>
         public static IEnumerable<string> PartitionWarnings(int requestedPartitions, int suggestedPartitions,
-            long estimatedBytes, long budgetBytes, bool cappedByLimit, long estimatedFragmentEntries = 0)
+            long estimatedBytes, long budgetBytes, bool cappedByMemory, long estimatedFragmentEntries = 0)
         {
-            // a raise for the flat index's entry ceiling, which the memory message would misexplain
-            if (estimatedFragmentEntries > requestedPartitions * MaxFragmentEntriesPerPartition)
+            // The count is the larger of what memory needs and what the entry limit needs, so explain whichever set
+            // it. Asking only whether the entry limit would raise the count at all gets this wrong wherever memory is
+            // tighter -- a 16 GB machine, long before the entry limit matters -- and then hides the memory figures
+            // that explain the number. The entry rule depends on nothing but the estimate, so it is recomputed here;
+            // without a protein-count bound, which caps both rules at the same number and so decides nothing. When
+            // both rules need the same count the entry message is the one given.
+            int forEntries = PartitionsForEntryLimit(estimatedFragmentEntries, requestedPartitions, int.MaxValue, out bool cappedByEntries);
+            if (forEntries > requestedPartitions && forEntries >= suggestedPartitions)
             {
                 yield return PartitionEntryLimitWarning(requestedPartitions, suggestedPartitions, estimatedFragmentEntries);
             }
@@ -357,7 +368,17 @@ namespace EngineLayer.Indexing
                 yield return PartitionIncreaseWarning(requestedPartitions, suggestedPartitions, estimatedBytes, budgetBytes);
             }
 
-            if (cappedByLimit)
+            // Two different ways for the maximum to fall short, with different fixes. Kept apart: a cap from the
+            // entry limit reported as a memory problem would suggest paging when the risk is the build failing.
+            if (cappedByEntries)
+            {
+                yield return $"Even {suggestedPartitions} partitions leaves more than {MaxFragmentEntriesPerPartition / 1e9:N2} " +
+                             $"billion fragment index entries in each, so building the fragment index may fail. Consider a " +
+                             $"smaller database, fewer missed cleavages, fewer variable modifications, or a lower maximum " +
+                             $"fragment mass.";
+            }
+
+            if (cappedByMemory)
             {
                 yield return $"Even {suggestedPartitions} partitions is estimated not to fit in memory; this search " +
                              $"may page heavily. Consider a smaller database, a shorter maximum peptide length, " +
@@ -365,13 +386,14 @@ namespace EngineLayer.Indexing
             }
         }
 
-        /// <summary>Message for the user when one partition would hold more fragments than its index can.</summary>
+        /// <summary>Message for the user when the entry limit is what raised the partition count.</summary>
         public static string PartitionEntryLimitWarning(int requestedPartitions, int suggestedPartitions, long estimatedFragmentEntries)
         {
             return $"Indexing this database in {requestedPartitions} partition(s) is estimated to need " +
-                   $"{estimatedFragmentEntries / 1e9:N2} billion fragment index entries, more than one partition's index " +
-                   $"can hold. Increasing TotalPartitions to {suggestedPartitions}. Identifications and scores are " +
-                   $"unaffected; reported PEP and q-values can shift slightly.";
+                   $"{estimatedFragmentEntries / 1e9:N2} billion fragment index entries. Increasing TotalPartitions to " +
+                   $"{suggestedPartitions} keeps each partition under {MaxFragmentEntriesPerPartition / 1e9:N2} billion, half " +
+                   $"of what one partition's index can hold, because partitions are split by protein count and come out " +
+                   $"uneven. Identifications and scores are unaffected; reported PEP and q-values can shift slightly.";
         }
 
         /// <summary>Message for the user when the requested partition count cannot fit.</summary>
