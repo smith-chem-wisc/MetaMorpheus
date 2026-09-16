@@ -35,6 +35,7 @@ namespace Test
         public static void PooledPartitionCuts_SelectTheSameCandidatesAsOnePartition()
         {
             var random = new Random(20260915);
+            var countsByScore = new int[byte.MaxValue + 1];
             int[] topNs = { 0, 1, 3, 5, 50 };
             int trialsWithMoreCandidatesThanTopN = 0;
 
@@ -55,7 +56,7 @@ namespace Test
                 List<int> observed = Enumerable.Range(0, peptideCount).OrderBy(_ => random.Next()).ToList();
 
                 var singlePartition = new List<int>();
-                GlycoSearchEngine.SelectTopN(observed, scores, cutoff, topN, singlePartition);
+                GlycoSearchEngine.SelectTopCandidates(observed, scores, cutoff, topN, countsByScore, singlePartition);
                 if (topN > 0 && observed.Count(id => scores[id] >= cutoff) > topN)
                 {
                     trialsWithMoreCandidatesThanTopN++;
@@ -70,7 +71,7 @@ namespace Test
                     List<int> observedHere = observed.Where(id => id >= start && id < end).ToList();
 
                     var cutHere = new List<int>();
-                    GlycoSearchEngine.SelectTopN(observedHere, scores, cutoff, topN, cutHere);
+                    GlycoSearchEngine.SelectTopCandidates(observedHere, scores, cutoff, topN, countsByScore, cutHere);
                     if (cutHere.Count == 0)
                     {
                         continue;
@@ -220,7 +221,7 @@ namespace Test
             FragmentIndex fragmentIndex, int partition, CommonParameters parameters, int topN, List<(int Partition, int PeptideId, byte Score)>[] candidates)
         {
             return new GlycoSearchEngine(gsms, scans, peptideIndex, fragmentIndex, null, partition, parameters, null,
-                "OGlycan.gdb", null, GlycoSearchType.OGlycanSearch, topN, 4, true, new List<string>(), candidates);
+                "OGlycan.gdb", null, GlycoSearchType.OGlycanSearch, topN, 4, true, new List<string>(), candidates: candidates);
         }
 
         /// <summary>One line per kept match: scan, peptide, score and glycan box, sorted. Rank is left out on purpose.</summary>

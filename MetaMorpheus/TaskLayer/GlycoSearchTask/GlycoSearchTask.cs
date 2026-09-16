@@ -134,7 +134,7 @@ namespace TaskLayer
                     FragmentIndex secondFragmentIndex = null;
 
                     return new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, indexParams, this.FileSpecificParameters,
-                        _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisId, candidates);
+                        _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisId, _glycoSearchParameters.MaximumGlycanBoxMass, candidates);
                 }
 
                 // The TopN candidate cut has to be taken over the whole database, or which glycopeptides are reported
@@ -274,6 +274,10 @@ namespace TaskLayer
                     filteredAllPsms.Add(glycoSpectralMatch);
                 }
             }
+
+            // Localization is done, so let go of what the search built on the glycan boxes before FDR and PEP (see ReleaseSearchCaches).
+            GlycanBox.ReleaseSearchCaches(GlycanBox.OGlycanBoxes);
+            GlycanBox.ReleaseSearchCaches(GlycanBox.NOGlycanBoxes);
 
             PostGlycoSearchAnalysisParameters pgsap = new()
             {
