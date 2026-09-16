@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System;
 using System.IO;
 using System.Linq;
 using EngineLayer;
@@ -62,7 +63,7 @@ namespace Test.Transcriptomics
 
             Assert.That(results.PeptideIndex, Is.Not.Empty, "no oligos were digested into the index");
             Assert.That(results.PeptideIndex.First(), Is.InstanceOf<OligoWithSetMods>());
-            Assert.That(results.FragmentIndex.Count(bin => bin != null), Is.GreaterThan(0), "no fragments were binned");
+            Assert.That(results.FragmentIndex.EntryCount, Is.GreaterThan(0), "no fragments were binned");
         }
 
         /// <summary>
@@ -81,13 +82,14 @@ namespace Test.Transcriptomics
             var results = (IndexingResults)indexEngine.Run();
 
             int multiEntryBins = 0;
-            foreach (var bin in results.FragmentIndex.Where(b => b != null))
+            for (int b = 0; b < results.FragmentIndex.Length; b++)
             {
-                for (int i = 1; i < bin.Count; i++)
+                ReadOnlySpan<int> bin = results.FragmentIndex[b];
+                for (int i = 1; i < bin.Length; i++)
                 {
                     Assert.That(bin[i], Is.GreaterThan(bin[i - 1]), "a fragment bin is not ascending by oligo id");
                 }
-                if (bin.Count > 1)
+                if (bin.Length > 1)
                 {
                     multiEntryBins++;
                 }
@@ -270,7 +272,7 @@ namespace Test.Transcriptomics
 
                 var task = new SearchTask { CommonParameters = commonParameters };
                 List<IBioPolymerWithSetMods> oligoIndex = null;
-                List<int>[] fragmentIndex = null;
+                FragmentIndex fragmentIndex = null;
                 List<int>[] precursorIndex = null;
 
                 task.GenerateIndexes(indexEngine, new List<DbForTask> { new DbForTask(dbPath, false) },
@@ -278,7 +280,7 @@ namespace Test.Transcriptomics
 
                 Assert.That(oligoIndex, Is.Not.Null.And.Not.Empty, "no oligos came back from the index");
                 Assert.That(oligoIndex.First(), Is.InstanceOf<OligoWithSetMods>());
-                Assert.That(fragmentIndex.Count(bin => bin != null), Is.GreaterThan(0), "no fragments were binned");
+                Assert.That(fragmentIndex.EntryCount, Is.GreaterThan(0), "no fragments were binned");
 
                 // The part that distinguishes the two paths.
                 Assert.That(Directory.Exists(Path.Combine(databaseFolder, MetaMorpheusTask.IndexFolderName)), Is.False,
