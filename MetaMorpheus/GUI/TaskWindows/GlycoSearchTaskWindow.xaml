@@ -98,6 +98,7 @@
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
+                                    <RowDefinition Height="1*"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="1*"/>
@@ -142,6 +143,21 @@
                                     <local:IntegerTexBoxControl x:Name="TbMaxOGlycanNum" Width="45"/>
                                 </StackPanel>
                                 <CheckBox x:Name="CkbOxoniumIonFilt" Content="OxoniumIonFilt" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" Grid.Row="4" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <StackPanel.ToolTip>
+                                        <TextBlock>
+                                            The heaviest total glycan mass, in Da, searched on one peptide. Default 4000.
+                                            <LineBreak />
+                                            Applies to every search type: O-glycan, N-glycan, and N-O-glycan.
+                                            <LineBreak />
+                                            The limit is on the sum of all glycans placed on the peptide (the single N-glycan in an N-glycan search).
+                                            <LineBreak />
+                                            Heavier combinations are never built or searched; raising the limit makes large glycan lists much slower.
+                                        </TextBlock>
+                                    </StackPanel.ToolTip>
+                                    <Label Content="Maximum Glycan Mass (Da)"/>
+                                    <local:DoubleTextBoxControl x:Name="TbMaxGlycanBoxMass" Width="45"/>
+                                </StackPanel>
                             </Grid>
                         </Grid>
                     </Expander>
