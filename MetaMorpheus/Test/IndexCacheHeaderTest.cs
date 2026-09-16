@@ -65,12 +65,24 @@ namespace Test
             return folder;
         }
 
+        /// <summary>
+        /// The smallest complete index of either kind: one length word of 1, then one zero. Read as a fragment
+        /// index that is one bin offset and no entries; read as a precursor index, one bin with a count of zero.
+        /// </summary>
         private static void WriteHeader(string path, int magic, int version)
         {
-            var bytes = new byte[16];
+            var bytes = new byte[20];
             BitConverter.TryWriteBytes(bytes.AsSpan(0), magic);
             BitConverter.TryWriteBytes(bytes.AsSpan(4), version);
+            BitConverter.TryWriteBytes(bytes.AsSpan(8), 1);
             File.WriteAllBytes(path, bytes);
+        }
+
+        /// <summary>Cut bytes off the end of a file, as a write that was stopped part way leaves it.</summary>
+        private static void Truncate(string path, int bytesToRemove)
+        {
+            using var file = new FileStream(path, FileMode.Open, FileAccess.Write);
+            file.SetLength(file.Length - bytesToRemove);
         }
 
         /// <summary>Overwrite the version word of an existing index file, leaving the rest of it intact.</summary>
@@ -225,6 +237,162 @@ namespace Test
             string freshFolder = Directory.GetDirectories(indexRoot).Single(d => d != staleFolder);
             Assert.That(File.Exists(Path.Combine(freshFolder, MetaMorpheusTask.SecondFragmentIndexFileName)), Is.True,
                 "the second index must be written beside the fresh fragment index, not into the retired folder");
+        }
+
+        /// <summary>
+        /// A write cut short keeps a valid header over a short payload, so the header alone is not enough: the
+        /// file has to be as long as the header says. Checked on real index files, one word short.
+        /// </summary>
+        [Test]
+        public static void CheckFiles_RejectsATruncatedIndex()
+        {
+            string folder = NewDatabaseFolder(out List<DbForTask> databases);
+            var task = new IndexProbeTask();
+            var engine = MakeEngine(new CommonParameters(), databases, generatePrecursorIndex: true);
+
+            FragmentIndex fragmentIndex = null;
+            List<PeptideWithSetModifications> peptideIndex = null;
+            List<int>[] precursorIndex = null;
+            task.GenerateIndexes(engine, databases, ref peptideIndex, ref fragmentIndex, ref precursorIndex, Proteins(), "probe");
+
+            string indexFolder = Directory.GetDirectories(Path.Combine(folder, MetaMorpheusTask.IndexFolderName)).Single();
+            Assert.That(CheckFiles(engine, indexFolder), Is.Not.Null, "premise: the freshly written index is a hit");
+            Assert.That(Directory.GetFiles(indexFolder, "*.partial"), Is.Empty, "a finished write leaves no partial file behind");
+
+            string fragmentIndexFile = Path.Combine(indexFolder, MetaMorpheusTask.FragmentIndexFileName);
+            byte[] intactFragmentIndex = File.ReadAllBytes(fragmentIndexFile);
+            Truncate(fragmentIndexFile, sizeof(int));
+            Assert.That(CheckFiles(engine, indexFolder), Is.Null, "a fragment index one word short must be a miss");
+
+            File.WriteAllBytes(fragmentIndexFile, intactFragmentIndex);
+            string precursorIndexFile = Path.Combine(indexFolder, MetaMorpheusTask.PrecursorIndexFileName);
+            // everything after the header and part of the counts array: the bins could be anything, the counts cannot
+            long cutAt = 12 + sizeof(int) * 10;
+            using (var file = new FileStream(precursorIndexFile, FileMode.Open, FileAccess.Write))
+            {
+                file.SetLength(cutAt);
+            }
+            Assert.That(CheckFiles(engine, indexFolder), Is.Null, "a precursor index cut off inside its counts must be a miss");
+        }
+
+        /// <summary>
+        /// The crosslink sequence end to end over a cache whose second index was cut short. Before the length check
+        /// the folder was selected, GenerateIndexes read clean, and GenerateSecondIndexes -- which has no recovery --
+        /// threw reading past the end of the file.
+        /// </summary>
+        [Test]
+        public static void GenerateSecondIndexes_TruncatedCachedIndexIsRebuiltRatherThanRead()
+        {
+            string folder = NewDatabaseFolder(out List<DbForTask> databases);
+            var task = new IndexProbeTask();
+            var parameters = new CommonParameters();
+            var secondParameters = parameters.CloneWithNewDissociationType(DissociationType.ETD);
+
+            FragmentIndex fragmentIndex = null;
+            FragmentIndex secondFragmentIndex = null;
+            List<PeptideWithSetModifications> peptideIndex = null;
+            List<int>[] precursorIndex = null;
+
+            var engine = MakeEngine(parameters, databases, generatePrecursorIndex: false);
+            var secondEngine = MakeEngine(secondParameters, databases, generatePrecursorIndex: false);
+            task.GenerateIndexes(engine, databases, ref peptideIndex, ref fragmentIndex, ref precursorIndex, Proteins(), "probe");
+            task.GenerateSecondIndexes(engine, secondEngine, databases, ref secondFragmentIndex, Proteins(), "probe");
+            int expectedEntries = secondFragmentIndex.EntryCount;
+            Assert.That(expectedEntries, Is.GreaterThan(0), "an empty index would make the reread prove nothing");
+
+            string indexRoot = Path.Combine(folder, MetaMorpheusTask.IndexFolderName);
+            string truncatedFolder = Directory.GetDirectories(indexRoot).Single();
+            Truncate(Path.Combine(truncatedFolder, MetaMorpheusTask.SecondFragmentIndexFileName), sizeof(int));
+
+            FragmentIndex rebuiltFragmentIndex = null;
+            FragmentIndex rebuiltSecondFragmentIndex = null;
+            List<PeptideWithSetModifications> rebuiltPeptideIndex = null;
+            List<int>[] rebuiltPrecursorIndex = null;
+
+            Assert.DoesNotThrow(() =>
+            {
+                task.GenerateIndexes(engine, databases, ref rebuiltPeptideIndex, ref rebuiltFragmentIndex, ref rebuiltPrecursorIndex, Proteins(), "probe");
+                task.GenerateSecondIndexes(engine, secondEngine, databases, ref rebuiltSecondFragmentIndex, Proteins(), "probe");
+            });
+
+            Assert.That(rebuiltSecondFragmentIndex.EntryCount, Is.EqualTo(expectedEntries), "the rebuilt second index must match the one the truncated file replaced");
+        }
+
+        /// <summary>
+        /// An index is written under a temporary name and moved into place only when complete, so a write that fails
+        /// part way leaves nothing under the real name for CheckFiles to find.
+        /// </summary>
+        [Test]
+        public static void WriteThroughTemporaryFile_FailedWriteLeavesNoFileUnderTheRealName()
+        {
+            string folder = NewDatabaseFolder(out _);
+            string target = Path.Combine(folder, MetaMorpheusTask.FragmentIndexFileName);
+            var write = typeof(MetaMorpheusTask).GetMethod("WriteThroughTemporaryFile", PrivateStatic);
+
+            var thrown = Assert.Throws<TargetInvocationException>(() => write.Invoke(null, new object[]
+            {
+                target, (Action<FileStream>)(file =>
+                {
+                    file.Write(new byte[64]);
+                    throw new IOException("disk full");
+                })
+            }));
+            Assert.That(thrown.InnerException, Is.InstanceOf<IOException>());
+            Assert.That(File.Exists(target), Is.False, "a failed write must not leave a file under the index's real name");
+
+            write.Invoke(null, new object[] { target, (Action<FileStream>)(file => file.Write(new byte[64])) });
+            Assert.That(new FileInfo(target).Length, Is.EqualTo(64), "a completed write is moved into place");
+        }
+
+        /// <summary>A list type the peptide serializer was not told about, so serializing it throws after the file is open.</summary>
+        private class UnregisteredPeptideList : List<PeptideWithSetModifications> { }
+
+        /// <summary>
+        /// The test above calls the helper itself; this one holds each real writer to it. Each writer is made to fail
+        /// after it has opened its file, over an existing file under the real name. Through the temporary file, that
+        /// existing file is untouched. Writing straight to the real name (FileMode.Create) empties it at open, so
+        /// switching any one of the three writers back to a direct write fails here.
+        ///
+        /// The partial file must go too: it is as large as the index, so on a full disk -- the likeliest reason for a
+        /// write to fail -- leaving it would keep the disk full.
+        /// </summary>
+        [Test]
+        [TestCase("WriteFragmentIndex", "FragmentIndexFileName")]
+        [TestCase("WritePrecursorIndex", "PrecursorIndexFileName")]
+        [TestCase("WritePeptideIndex", "PeptideIndexFileName")]
+        public static void IndexWriters_FailedWriteLeavesTheExistingFileUntouched(string writerName, string fileNameField)
+        {
+            string folder = NewDatabaseFolder(out _);
+            try
+            {
+                string target = Path.Combine(folder, (string)typeof(MetaMorpheusTask).GetField(fileNameField, BindingFlags.Public | BindingFlags.Static).GetValue(null));
+                byte[] existing = Enumerable.Range(1, 64).Select(i => (byte)i).ToArray();
+                File.WriteAllBytes(target, existing);
+
+                // the input that makes each writer throw once its file is open: a null index for the two binary
+                // writers (dereferenced inside the write), an unregistered list type for the serializer
+                MethodInfo writer;
+                object badIndex;
+                if (writerName == "WritePeptideIndex")
+                {
+                    writer = typeof(MetaMorpheusTask).GetMethod(writerName, PrivateStatic, new[] { typeof(List<PeptideWithSetModifications>), typeof(string) });
+                    badIndex = new UnregisteredPeptideList { new Protein("PEPTIDEK", "P1").Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First() };
+                }
+                else
+                {
+                    writer = typeof(MetaMorpheusTask).GetMethod(writerName, PrivateStatic);
+                    badIndex = null;
+                }
+                Assert.That(writer, Is.Not.Null, $"{writerName} not found; update this test");
+
+                Assert.Throws<TargetInvocationException>(() => writer.Invoke(null, new[] { badIndex, target }), "premise: the write must fail");
+                Assert.That(File.ReadAllBytes(target), Is.EqualTo(existing), $"a failed {writerName} must not touch the file under the real name");
+                Assert.That(File.Exists(target + ".partial"), Is.False, "a failed write must not leave its partial file behind");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
         }
     }
 }
