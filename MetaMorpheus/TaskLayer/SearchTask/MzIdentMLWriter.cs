@@ -572,15 +572,17 @@ namespace TaskLayer
             int protease_index = 0;
             foreach (DigestionAgent protease in proteases)
             {
+                // The search's own specificity when the caller gives it: trypsin is Full even in a semi-specific search,
+                // whose semi-specificity comes from SearchModeType. Otherwise what the protease itself says.
+                bool isSemiSpecific = semiSpecific ?? protease.CleavageSpecificity == CleavageSpecificity.Semi;
                 _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].Enzymes.Enzyme[protease_index] = new mzIdentML110.Generated.EnzymeType()
                 {
                     id = "E_" + protease_index,
                     name = protease.Name,
-                    // The search's own specificity when the caller gives it: trypsin is Full even in a semi-specific search,
-                    // whose semi-specificity comes from SearchModeType. Otherwise what the protease itself says.
-                    semiSpecific = semiSpecific ?? protease.CleavageSpecificity == CleavageSpecificity.Semi,
-                    // without this the XML serializer omits semiSpecific entirely, which it always did before
-                    semiSpecificSpecified = true,
+                    semiSpecific = isSemiSpecific,
+                    // Written only for a semi-specific search. The attribute is optional, and every other search's file stays
+                    // as it always was, with no semiSpecific attribute at all.
+                    semiSpecificSpecified = isSemiSpecific,
                     missedCleavagesSpecified = true,
                     missedCleavages = missedCleavages,
                     EnzymeName = new mzIdentML110.Generated.ParamListType()

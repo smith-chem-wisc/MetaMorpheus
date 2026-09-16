@@ -55,23 +55,31 @@ namespace Test
             }
         }
 
-        /// <summary>The search's own specificity, when the caller gives it, is what the file says.</summary>
+        /// <summary>
+        /// The search's own specificity, when the caller gives it, decides. A semi-specific search writes
+        /// <c>semiSpecific="true"</c>; any other search leaves the attribute out, exactly as every file did before.
+        /// </summary>
+        /// <remarks>
+        /// Review of #2812 (nbollis): writing <c>semiSpecific="false"</c> for every fully specific and non-specific search
+        /// changed those files for readers that tell a missing attribute from an explicit false, for no gain. The schema
+        /// makes the attribute optional, so only a semi-specific search, the case that was wrong, now writes it.
+        /// </remarks>
         [Test]
         [TestCase(true, "true")]
-        [TestCase(false, "false")]
-        public static void WriteMzIdentMl_WithTheSearchSpecificity_WritesSemiSpecific(bool semiSpecific, string expected)
+        [TestCase(false, null)]
+        public static void WriteMzIdentMl_WithTheSearchSpecificity_WritesSemiSpecificOnlyWhenTrue(bool semiSpecific, string expected)
         {
             Assert.That(WriteAndReadSemiSpecific(ProteaseDictionary.Dictionary["trypsin"], semiSpecific, $"Given{semiSpecific}"), Is.EqualTo(expected));
         }
 
         /// <summary>
-        /// Without it, the protease's own specificity decides, and the attribute is still written (it used to be omitted).
+        /// Without it, the protease's own specificity decides, and again only a semi-specific protease writes the attribute.
         /// </summary>
         [Test]
         public static void WriteMzIdentMl_WithoutTheSearchSpecificity_WritesTheProteaseSpecificity()
         {
-            Assert.That(WriteAndReadSemiSpecific(ProteaseDictionary.Dictionary["trypsin"], null, "FullProtease"), Is.EqualTo("false"),
-                "the attribute must be present even when false");
+            Assert.That(WriteAndReadSemiSpecific(ProteaseDictionary.Dictionary["trypsin"], null, "FullProtease"), Is.Null,
+                "a fully specific protease leaves the attribute out, as before #2812");
 
             var semiProtease = new Protease("MzIdentMlSemiSpecificTests-semi", CleavageSpecificity.Semi, null, null, DigestionMotif.ParseDigestionMotifsFromString("K|,R|"));
             Assert.That(WriteAndReadSemiSpecific(semiProtease, null, "SemiProtease"), Is.EqualTo("true"));
