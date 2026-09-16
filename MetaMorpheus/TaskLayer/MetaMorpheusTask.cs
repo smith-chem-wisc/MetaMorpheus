@@ -1223,7 +1223,8 @@ namespace TaskLayer
                 if (suggested > parameters.TotalPartitions)
                 {
                     foreach (string warning in IndexPartitioning.PartitionWarnings(parameters.TotalPartitions,
-                                 suggested, estimatedBytes, budgetBytes, cappedByMemory, estimatedFragmentEntries))
+                                 suggested, estimatedBytes, budgetBytes, cappedByMemory, estimatedFragmentEntries,
+                                 proteinList.Count))
                     {
                         Warn(warning);
                     }

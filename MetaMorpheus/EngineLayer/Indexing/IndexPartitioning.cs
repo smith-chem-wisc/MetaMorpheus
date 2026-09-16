@@ -90,7 +90,8 @@ namespace EngineLayer.Indexing
         /// Never returns less than what was requested.
         /// </summary>
         /// <param name="cappedByMemory">
-        /// Even the maximum partition count does not fit the memory budget. Memory only: the entry limit's own cap
+        /// The count returned still does not fit the memory budget, because it reached the maximum partition count or
+        /// one partition per protein. Memory only: the entry limit's own cap
         /// is a different problem with a different fix, and <see cref="PartitionWarnings"/> works it out from
         /// <paramref name="estimatedFragmentEntries"/>.
         /// </param>
@@ -142,9 +143,10 @@ namespace EngineLayer.Indexing
             }
 
             double exact = Math.Ceiling(estimatedFragmentEntries / (double)MaxFragmentEntriesPerPartition);
-            cappedByLimit = exact > MaxPartitions;
             int needed = (int)Math.Min(MaxPartitions, exact);
-            return Math.Max(requestedPartitions, Math.Min(needed, Math.Max(1, proteinCount)));
+            int partitions = Math.Max(requestedPartitions, Math.Min(needed, Math.Max(1, proteinCount)));
+            cappedByLimit = partitions < exact;
+            return partitions;
         }
 
         /// <summary>
@@ -177,9 +179,10 @@ namespace EngineLayer.Indexing
             }
 
             double exact = Math.Ceiling(estimatedBytes / (double)budget);
-            cappedByLimit = exact > MaxPartitions;
             int needed = (int)Math.Min(MaxPartitions, exact);
-            return Math.Max(requestedPartitions, Math.Min(needed, Math.Max(1, proteinCount)));
+            int partitions = Math.Max(requestedPartitions, Math.Min(needed, Math.Max(1, proteinCount)));
+            cappedByLimit = partitions < exact;
+            return partitions;
         }
 
         /// <summary>
@@ -350,16 +353,18 @@ namespace EngineLayer.Indexing
         /// messages can be asserted without depending on the test machine's memory.
         /// </summary>
         public static IEnumerable<string> PartitionWarnings(int requestedPartitions, int suggestedPartitions,
-            long estimatedBytes, long budgetBytes, bool cappedByMemory, long estimatedFragmentEntries = 0)
+            long estimatedBytes, long budgetBytes, bool cappedByMemory, long estimatedFragmentEntries = 0,
+            int proteinCount = int.MaxValue)
         {
             // The count is the larger of what memory needs and what the entry limit needs, so explain whichever set
             // it. Asking only whether the entry limit would raise the count at all gets this wrong wherever memory is
             // tighter -- a 16 GB machine, long before the entry limit matters -- and then hides the memory figures
-            // that explain the number. The entry rule depends on nothing but the estimate, so it is recomputed here;
-            // without a protein-count bound, which caps both rules at the same number and so decides nothing. When
-            // both rules need the same count the entry message is the one given.
-            int forEntries = PartitionsForEntryLimit(estimatedFragmentEntries, requestedPartitions, int.MaxValue, out bool cappedByEntries);
-            if (forEntries > requestedPartitions && forEntries >= suggestedPartitions)
+            // that explain the number. The entry rule depends on nothing but the estimate and the protein count, so
+            // it is recomputed here with the same bound the count was chosen under. When memory fell short, memory
+            // needed more than the count, so memory explains it even where a cap makes the entry rule tie. Otherwise,
+            // when both rules need the same count, the entry message is the one given.
+            int forEntries = PartitionsForEntryLimit(estimatedFragmentEntries, requestedPartitions, proteinCount, out bool cappedByEntries);
+            if (!cappedByMemory && forEntries > requestedPartitions && forEntries >= suggestedPartitions)
             {
                 yield return PartitionEntryLimitWarning(requestedPartitions, suggestedPartitions, estimatedFragmentEntries);
             }

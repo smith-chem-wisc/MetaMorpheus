@@ -505,6 +505,50 @@ namespace Test
         }
 
         /// <summary>
+        /// One partition per protein is a cap too. With 40 proteins, an index whose entries need 45 partitions and
+        /// whose memory needs 100 gets 40, which satisfies neither rule. Both rules must say they fell short, and the
+        /// count must be explained by memory, the rule that needed more -- not by the entry limit because it happens
+        /// to tie once both are clamped. A few proteins with a high peptide yield (non-specific, top-down) get here.
+        /// </summary>
+        [Test]
+        public static void PartitionWarnings_ProteinCountCap_ReportsBothShortfallsAndExplainsMemory()
+        {
+            const long tenGb = 10L * 1024 * 1024 * 1024;
+            const int proteins = 40;
+            long estimatedBytes = (long)(tenGb * BudgetFraction) * 100;
+            long entries = (Array.MaxLength / 2) * 45L;
+
+            Assert.That(IndexPartitioning.PartitionsForBudget(estimatedBytes, 0, tenGb, 1, proteins, out bool cappedByMemory), Is.EqualTo(proteins));
+            Assert.That(cappedByMemory, Is.True, "memory needed 100 and got 40");
+            Assert.That(IndexPartitioning.PartitionsForEntryLimit(entries, 1, proteins, out bool cappedByEntries), Is.EqualTo(proteins));
+            Assert.That(cappedByEntries, Is.True, "entries needed 45 and got 40");
+
+            var warnings = IndexPartitioning.PartitionWarnings(1, proteins, estimatedBytes, tenGb, cappedByMemory,
+                entries, proteins).ToList();
+
+            Assert.That(warnings[0], Does.Contain("TotalPartitions to 40"));
+            Assert.That(warnings[0], Does.Contain("budgeted"), "memory needed more, so its figures explain the count");
+            Assert.That(warnings.Any(w => w.Contains("may page heavily")), Is.True);
+            Assert.That(warnings.Any(w => w.Contains("Even 40 partitions leaves more than")), Is.True);
+            Assert.That(warnings.Count, Is.EqualTo(3));
+        }
+
+        /// <summary>
+        /// A request at or above what a rule needs is not a shortfall, even where the protein count is lower still.
+        /// </summary>
+        [Test]
+        public static void PartitionRules_ProteinCountBelowAMetNeed_IsNotACap()
+        {
+            const long tenGb = 10L * 1024 * 1024 * 1024;
+            long budget = (long)(tenGb * BudgetFraction);
+
+            Assert.That(IndexPartitioning.PartitionsForBudget(budget * 4, 0, tenGb, 8, 3, out bool memoryCapped), Is.EqualTo(8));
+            Assert.That(memoryCapped, Is.False, "8 requested already covers the 4 needed");
+            Assert.That(IndexPartitioning.PartitionsForEntryLimit((Array.MaxLength / 2) * 4L, 8, 3, out bool entriesCapped), Is.EqualTo(8));
+            Assert.That(entriesCapped, Is.False);
+        }
+
+        /// <summary>
         /// Emission buffers grow by doubling. Doubling in int arithmetic wraps negative at 2^30 and Array.Resize then
         /// throws ArgumentOutOfRangeException -- reachable with one indexing thread, where one block holds every
         /// emission. Growth has to stop at the array ceiling, and past it fail the way Build does.
