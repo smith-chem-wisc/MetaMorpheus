@@ -46,6 +46,7 @@ namespace TaskLayer
 
         /// <summary>
         /// Glycan boxes (the summed glycans placed on one peptide) heavier than this, in Da, are never built or searched.
+        /// Applies to O-, N- and N+O searches; in an N-glycan search the box is the single N-glycan.
         /// </summary>
         public double MaximumGlycanBoxMass { get; set; }
 

@@ -204,6 +204,32 @@ namespace Test
                 glycoSearchType: GlycoSearchType.OGlycanSearch, 30, 3, false, null);
         }
 
+        /// <summary>
+        /// An N-glycan search places a single N-glycan on the peptide, so the box mass cap must drop every N-glycan heavier than it,
+        /// as the O- and N+O searches drop heavier boxes.
+        /// </summary>
+        [Test]
+        public static void NGlycanSearchDropsNGlycansHeavierThanMaximumGlycanBoxMass()
+        {
+            var commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, trimMsMsPeaks: false);
+            var nGlycansProperty = typeof(GlycoSearchEngine).GetProperty("NGlycans", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.That(nGlycansProperty, Is.Not.Null, "Unable to find private NGlycans property via reflection.");
+
+            Glycan[] MakeEngineNGlycans(double maxGlycanBoxMass) => (Glycan[])nGlycansProperty.GetValue(new GlycoSearchEngine(
+                new List<GlycoSpectralMatch>[0], new Ms2ScanWithSpecificMass[0], new List<PeptideWithSetModifications>(), null, null, 0,
+                commonParameters, null, null, "NGlycan.gdb", GlycoSearchType.NGlycanSearch, 30, 3, false, null, maxGlycanBoxMass));
+
+            Glycan[] uncapped = MakeEngineNGlycans(double.MaxValue);
+            Assert.That(uncapped.Length, Is.GreaterThan(1));
+
+            double cap = (double)uncapped[uncapped.Length / 2].Mass / 1E5;
+            Glycan[] capped = MakeEngineNGlycans(cap);
+            Assert.That(capped, Is.EqualTo(uncapped.Where(p => (double)p.Mass / 1E5 <= cap).ToArray()));
+            Assert.That(capped.Length, Is.LessThan(uncapped.Length));
+
+            Assert.That(MakeEngineNGlycans(0), Is.Empty);
+        }
+
         private static Ms2ScanWithSpecificMass InvokeGetLocalizationScan(GlycoSearchEngine engine, Ms2ScanWithSpecificMass parentScan)
         {
             var method = typeof(GlycoSearchEngine).GetMethod("GetLocalizationScan", BindingFlags.NonPublic | BindingFlags.Instance);
