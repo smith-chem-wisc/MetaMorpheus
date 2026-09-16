@@ -343,5 +343,56 @@ namespace Test
             write.Invoke(null, new object[] { target, (Action<FileStream>)(file => file.Write(new byte[64])) });
             Assert.That(new FileInfo(target).Length, Is.EqualTo(64), "a completed write is moved into place");
         }
+
+        /// <summary>A list type the peptide serializer was not told about, so serializing it throws after the file is open.</summary>
+        private class UnregisteredPeptideList : List<PeptideWithSetModifications> { }
+
+        /// <summary>
+        /// The test above calls the helper itself; this one holds each real writer to it. Each writer is made to fail
+        /// after it has opened its file, over an existing file under the real name. Through the temporary file, that
+        /// existing file is untouched. Writing straight to the real name (FileMode.Create) empties it at open, so
+        /// switching any one of the three writers back to a direct write fails here.
+        ///
+        /// The partial file must go too: it is as large as the index, so on a full disk -- the likeliest reason for a
+        /// write to fail -- leaving it would keep the disk full.
+        /// </summary>
+        [Test]
+        [TestCase("WriteFragmentIndex", "FragmentIndexFileName")]
+        [TestCase("WritePrecursorIndex", "PrecursorIndexFileName")]
+        [TestCase("WritePeptideIndex", "PeptideIndexFileName")]
+        public static void IndexWriters_FailedWriteLeavesTheExistingFileUntouched(string writerName, string fileNameField)
+        {
+            string folder = NewDatabaseFolder(out _);
+            try
+            {
+                string target = Path.Combine(folder, (string)typeof(MetaMorpheusTask).GetField(fileNameField, BindingFlags.Public | BindingFlags.Static).GetValue(null));
+                byte[] existing = Enumerable.Range(1, 64).Select(i => (byte)i).ToArray();
+                File.WriteAllBytes(target, existing);
+
+                // the input that makes each writer throw once its file is open: a null index for the two binary
+                // writers (dereferenced inside the write), an unregistered list type for the serializer
+                MethodInfo writer;
+                object badIndex;
+                if (writerName == "WritePeptideIndex")
+                {
+                    writer = typeof(MetaMorpheusTask).GetMethod(writerName, PrivateStatic, new[] { typeof(List<PeptideWithSetModifications>), typeof(string) });
+                    badIndex = new UnregisteredPeptideList { new Protein("PEPTIDEK", "P1").Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First() };
+                }
+                else
+                {
+                    writer = typeof(MetaMorpheusTask).GetMethod(writerName, PrivateStatic);
+                    badIndex = null;
+                }
+                Assert.That(writer, Is.Not.Null, $"{writerName} not found; update this test");
+
+                Assert.Throws<TargetInvocationException>(() => writer.Invoke(null, new[] { badIndex, target }), "premise: the write must fail");
+                Assert.That(File.ReadAllBytes(target), Is.EqualTo(existing), $"a failed {writerName} must not touch the file under the real name");
+                Assert.That(File.Exists(target + ".partial"), Is.False, "a failed write must not leave its partial file behind");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
     }
 }

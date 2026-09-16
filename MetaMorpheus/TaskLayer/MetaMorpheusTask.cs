@@ -1413,13 +1413,24 @@ namespace TaskLayer
         /// short -- a killed process, a full disk -- left a valid header over a short payload, which the header
         /// check in CheckFiles accepted: GenerateIndexes then rebuilt on every run, and GenerateSecondIndexes,
         /// which has no recovery, crashed.
+        ///
+        /// A failed write deletes its partial file before the exception goes on. The partial file is as large as the
+        /// index, and a full disk is the likeliest reason for the failure.
         /// </summary>
         private static void WriteThroughTemporaryFile(string fileName, Action<FileStream> write)
         {
             string partialFileName = fileName + ".partial";
-            using (var file = new FileStream(partialFileName, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20))
+            try
             {
-                write(file);
+                using (var file = new FileStream(partialFileName, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20))
+                {
+                    write(file);
+                }
+            }
+            catch
+            {
+                File.Delete(partialFileName);
+                throw;
             }
             File.Move(partialFileName, fileName, overwrite: true);
         }
