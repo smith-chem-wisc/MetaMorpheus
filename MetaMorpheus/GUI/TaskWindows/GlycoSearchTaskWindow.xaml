@@ -237,6 +237,8 @@
                                                 </TextBlock>
                                             </CheckBox.ToolTip>
                                         </CheckBox>
+                                        <!-- shown only for a loaded task this window cannot show as it is (see TaskWindowSearchMode) -->
+                                        <TextBlock x:Name="SearchModeWarningTextBlock" Visibility="Collapsed" TextWrapping="Wrap" MaxWidth="450" HorizontalAlignment="Left" Margin="10,0,5,5" Foreground="DarkRed" FontWeight="DemiBold" />
                                         <StackPanel Orientation="Horizontal" Margin="1">
                                             <Label x:Name="label2" Content="Number of Database Partitions" />
                                             <local:IntegerTexBoxControl x:Name="numberOfDatabaseSearchesTextBox" Width="45" />

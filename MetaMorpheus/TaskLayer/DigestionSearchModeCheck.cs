@@ -22,6 +22,14 @@ namespace TaskLayer
     public static class DigestionSearchModeCheck
     {
         /// <summary>
+        /// Whether these settings make digestion return seeds rather than peptides: SearchModeType None with any terminus,
+        /// or Semi with terminus N or C. The refusal below and the task windows' warnings both use this one rule.
+        /// </summary>
+        public static bool AsksForSeeds(DigestionParams digestionParams) =>
+            digestionParams.SearchModeType == CleavageSpecificity.None
+            || (digestionParams.SearchModeType == CleavageSpecificity.Semi && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C);
+
+        /// <summary>
         /// The message explaining why this task cannot run with its digestion settings, or null when it can.
         /// </summary>
         /// <param name="task">The task to check.</param>
@@ -32,9 +40,9 @@ namespace TaskLayer
             {
                 return null; // RNA digestion has no protein seed request
             }
-            if (task is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific })
+            if (task is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific } || !AsksForSeeds(digestionParams))
             {
-                return null; // the non-specific search engine trims seeds
+                return null; // the non-specific search engine trims seeds; every other task gets peptides
             }
 
             string which = taskName == null ? "This task" : $"Task \"{taskName}\"";
@@ -43,12 +51,8 @@ namespace TaskLayer
                 return $"Cannot proceed. {which} has SearchModeType None (non-specific), which gives seed peptides that only the non-specific search can use. " +
                        "Use a Search task with the non-specific search type, or choose fully or semi-specific digestion.";
             }
-            if (digestionParams.SearchModeType == CleavageSpecificity.Semi && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C)
-            {
-                return $"Cannot proceed. {which} has SearchModeType Semi with FragmentationTerminus {digestionParams.FragmentationTerminus}, which gives seed peptides that only the non-specific search can use. " +
-                       "For semi-specific peptides, set FragmentationTerminus Both.";
-            }
-            return null;
+            return $"Cannot proceed. {which} has SearchModeType Semi with FragmentationTerminus {digestionParams.FragmentationTerminus}, which gives seed peptides that only the non-specific search can use. " +
+                   "For semi-specific peptides, set FragmentationTerminus Both.";
         }
     }
 }

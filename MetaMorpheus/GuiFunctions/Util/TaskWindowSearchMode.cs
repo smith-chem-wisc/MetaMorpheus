@@ -1,6 +1,7 @@
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using TaskLayer;
 
 namespace GuiFunctions.Util;
 
@@ -45,4 +46,31 @@ public static class TaskWindowSearchMode
     /// is singleN or singleC.
     /// </summary>
     public static Protease ProteaseToShow(DigestionParams loaded) => loaded.SpecificProtease;
+
+    /// <summary>
+    /// The warning a window with a semi-specific choice (the Glyco window) shows for a loaded task it cannot show as it is,
+    /// or null. Such a task asks for seeds, which only a hand-edited settings file can do; <see cref="ForSemiSpecificChoice"/>
+    /// replaces that on save, so the user is told before saving rather than finding a different search afterwards.
+    /// </summary>
+    public static string ForSemiSpecificChoiceWarning(IDigestionParams loaded) =>
+        DescribeSeedRequest(loaded) is { } described
+            ? $"{described} Saving will change it to fully or semi-specific digestion at both termini, as set by \"Semi-specific digestion\"."
+            : null;
+
+    /// <summary>
+    /// The warning a window without a semi-specific choice (crosslink, GPTMD, calibration) shows for a loaded task it cannot
+    /// show as it is, or null. <see cref="Preserve"/> keeps the setting, so the task will be refused when run, and this
+    /// window has no control that could change it.
+    /// </summary>
+    public static string PreserveWarning(IDigestionParams loaded) =>
+        DescribeSeedRequest(loaded) is { } described
+            ? $"{described} Saving keeps it, and the task will be refused when run. To search it, set SearchModeType Full, or Semi with FragmentationTerminus Both, in the task's settings file."
+            : null;
+
+    /// <summary>What a loaded task that asks for seeds asked for, and why this task cannot use it; null for any other task.</summary>
+    private static string DescribeSeedRequest(IDigestionParams loaded) =>
+        loaded is DigestionParams digestionParams && DigestionSearchModeCheck.AsksForSeeds(digestionParams)
+            ? $"This task has SearchModeType {digestionParams.SearchModeType} with FragmentationTerminus {digestionParams.FragmentationTerminus}, " +
+              "which gives seed peptides that only the non-specific search can use."
+            : null;
 }
