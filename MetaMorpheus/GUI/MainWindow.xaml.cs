@@ -1895,32 +1895,32 @@ namespace MetaMorpheusGUI
                             switch (tomlFile.Get<string>("TaskType"))
                             {
                                 case "Search":
-                                    var search = Toml.ReadFile<SearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                                    var search = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<SearchTask>(filePath);
                                     AddTaskToCollection(search);
                                     break;
 
                                 case "Calibrate":
-                                    var calib = Toml.ReadFile<CalibrationTask>(filePath, MetaMorpheusTask.tomlConfig);
+                                    var calib = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<CalibrationTask>(filePath);
                                     AddTaskToCollection(calib);
                                     break;
 
                                 case "Gptmd":
-                                    var gptmd = Toml.ReadFile<GptmdTask>(filePath, MetaMorpheusTask.tomlConfig);
+                                    var gptmd = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GptmdTask>(filePath);
                                     AddTaskToCollection(gptmd);
                                     break;
 
                                 case "XLSearch":
-                                    var xl = Toml.ReadFile<XLSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                                    var xl = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<XLSearchTask>(filePath);
                                     AddTaskToCollection(xl);
                                     break;
 
                                 case "GlycoSearch":
-                                    var glyco = MetaMorpheusTask.ReadTaskTomlWithLowResFallback<GlycoSearchTask>(filePath);
+                                    var glyco = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GlycoSearchTask>(filePath);
                                     AddTaskToCollection(glyco);
                                     break;
 
                                 case "Average":
-                                    var average = Toml.ReadFile<SpectralAveragingTask>(filePath, MetaMorpheusTask.tomlConfig);
+                                    var average = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<SpectralAveragingTask>(filePath);
                                     AddTaskToCollection(average);
                                     break;
                             }
@@ -2059,12 +2059,12 @@ namespace MetaMorpheusGUI
                 {
                     switch (taskType)
                     {
-                        case MyTask.Search: task = Toml.ReadFile<SearchTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
-                        case MyTask.Calibrate: task = Toml.ReadFile<CalibrationTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
-                        case MyTask.Gptmd: task = Toml.ReadFile<GptmdTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
-                        case MyTask.XLSearch: task = Toml.ReadFile<XLSearchTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
-                        case MyTask.GlycoSearch: task = Toml.ReadFile<GlycoSearchTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
-                        case MyTask.Average: task = Toml.ReadFile<SpectralAveragingTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
+                        case MyTask.Search: task = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<SearchTask>(defaultTomlFilePath); break;
+                        case MyTask.Calibrate: task = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<CalibrationTask>(defaultTomlFilePath); break;
+                        case MyTask.Gptmd: task = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GptmdTask>(defaultTomlFilePath); break;
+                        case MyTask.XLSearch: task = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<XLSearchTask>(defaultTomlFilePath); break;
+                        case MyTask.GlycoSearch: task = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GlycoSearchTask>(defaultTomlFilePath); break;
+                        case MyTask.Average: task = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<SpectralAveragingTask>(defaultTomlFilePath); break;
                     }
                 }
                 catch (Exception)

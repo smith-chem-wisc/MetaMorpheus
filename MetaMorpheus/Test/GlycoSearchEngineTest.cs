@@ -325,7 +325,7 @@ namespace Test
             try
             {
                 // Read TOML with low-res tolerance omitted, relying on fallback to productMassTolerance for low-res.
-                var inputTask = MetaMorpheusTask.ReadTaskTomlWithLowResFallback<GlycoSearchTask>(
+                var inputTask = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GlycoSearchTask>(
                     Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_OmitNewLowResTolerance.toml"));
 
                 // Confirm read-in behavior (tracking expected when low-res omitted)
@@ -372,7 +372,7 @@ namespace Test
 
             try
             {
-                var inputTask = MetaMorpheusTask.ReadTaskTomlWithLowResFallback<GlycoSearchTask>(
+                var inputTask = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GlycoSearchTask>(
                     Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_LowResToleranceAdded.toml"));
 
                 // Confirm read-in behavior: explicit low-res tolerance is preserved (not overridden by product tolerance)

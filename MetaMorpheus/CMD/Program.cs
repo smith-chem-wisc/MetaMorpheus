@@ -228,32 +228,32 @@ namespace MetaMorpheusCommandLine
                 switch (toml.Get<string>("TaskType"))
                 {
                     case "Search":
-                        var searchTask = Toml.ReadFile<SearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        var searchTask = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<SearchTask>(filePath);
                         taskList.Add(("Task" + (i + 1) + "SearchTask", searchTask));
                         break;
 
                     case "Calibrate":
-                        var calibrationTask = Toml.ReadFile<CalibrationTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        var calibrationTask = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<CalibrationTask>(filePath);
                         taskList.Add(("Task" + (i + 1) + "CalibrationTask", calibrationTask));
                         break;
 
                     case "Gptmd":
-                        var GptmdTask = Toml.ReadFile<GptmdTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        var GptmdTask = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GptmdTask>(filePath);
                         taskList.Add(("Task" + (i + 1) + "GptmdTask", GptmdTask));
                         break;
 
                     case "XLSearch":
-                        var XlTask = Toml.ReadFile<XLSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        var XlTask = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<XLSearchTask>(filePath);
                         taskList.Add(("Task" + (i + 1) + "XLSearchTask", XlTask));
                         break;
 
                     case "GlycoSearch":
-                        var GlycoTask = MetaMorpheusTask.ReadTaskTomlWithLowResFallback<GlycoSearchTask>(filePath);
+                        var GlycoTask = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GlycoSearchTask>(filePath);
                         taskList.Add(("Task" + (i + 1) + "GlycoSearchTask", GlycoTask));
                         break;
 
                     case "Average":
-                        var AveragingTask = Toml.ReadFile<SpectralAveragingTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        var AveragingTask = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<SpectralAveragingTask>(filePath);
                         taskList.Add(("Task" + (i + 1) + "AveragingTask", AveragingTask));
                         break;
 

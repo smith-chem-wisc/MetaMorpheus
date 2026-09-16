@@ -42,6 +42,44 @@ namespace Test
         }
 
         [Test]
+        public static void LegacyXlSearchParameterSectionNameLoads()
+        {
+            string tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "LegacyXlSectionTask.toml");
+            var xlTask = new XLSearchTask();
+            xlTask.XlSearchParameters.CrosslinkSearchTopNum = 123;
+
+            Toml.WriteFile(xlTask, tomlPath, MetaMorpheusTask.tomlConfig);
+            string legacyToml = File.ReadAllText(tomlPath)
+                .Replace("[XlSearchParameters]", "[XLSearchParameters]")
+                .Replace("[XlSearchParameters.", "[XLSearchParameters.");
+            File.WriteAllText(tomlPath, legacyToml);
+
+            var loaded = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<XLSearchTask>(tomlPath);
+            File.Delete(tomlPath);
+
+            Assert.That(loaded.XlSearchParameters.CrosslinkSearchTopNum, Is.EqualTo(123));
+        }
+
+        [Test]
+        public static void LegacyGlycoSearchParameterSectionNameLoads()
+        {
+            string tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "LegacyGlycoSectionTask.toml");
+            var glycoTask = new GlycoSearchTask();
+            glycoTask._glycoSearchParameters.GlycoSearchTopNum = 77;
+
+            Toml.WriteFile(glycoTask, tomlPath, MetaMorpheusTask.tomlConfig);
+            string legacyToml = File.ReadAllText(tomlPath)
+                .Replace("[_glycoSearchParameters]", "[SearchParameters]")
+                .Replace("[_glycoSearchParameters.", "[SearchParameters.");
+            File.WriteAllText(tomlPath, legacyToml);
+
+            var loaded = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GlycoSearchTask>(tomlPath);
+            File.Delete(tomlPath);
+
+            Assert.That(loaded._glycoSearchParameters.GlycoSearchTopNum, Is.EqualTo(77));
+        }
+
+        [Test]
         public static void TestTomlFunction()
         {
             SearchTask searchTask = new()
