@@ -174,17 +174,17 @@ namespace MetaMorpheusGUI
             ModPepsAreUnique.IsChecked = task._glycoSearchParameters.ModPeptidesAreDifferent;
 
             //quantification
-            CheckBoxNoQuant.IsChecked = !task._glycoSearchParameters.DoQuantification;
-            CheckBoxLFQ.IsChecked = task._glycoSearchParameters.DoQuantification;
+            CheckBoxNoQuant.IsChecked = !task._glycoSearchParameters.DoLabelFreeQuantification;
+            CheckBoxLFQ.IsChecked = task._glycoSearchParameters.DoLabelFreeQuantification;
             PeakFindingToleranceTextBox.Text = task._glycoSearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
-            CheckBoxMatchBetweenRuns.IsChecked = task._glycoSearchParameters.DoMbrAnalysis;
+            CheckBoxMatchBetweenRuns.IsChecked = task._glycoSearchParameters.MatchBetweenRuns;
             CheckBoxNormalize.IsChecked = task._glycoSearchParameters.Normalize;
 
             //output options
             WriteDecoyCheckBox.IsChecked = task._glycoSearchParameters.WriteDecoys;
             WriteContaminantCheckBox.IsChecked = task._glycoSearchParameters.WriteContaminants;
             WriteIndividualResultsCheckBox.IsChecked = task._glycoSearchParameters.WriteIndividualFiles;
-            WriteSpectrumLibraryCheckBox.IsChecked = task._glycoSearchParameters.WriteSpectrumLibrary;
+            WriteSpectrumLibraryCheckBox.IsChecked = task._glycoSearchParameters.WriteSpectralLibrary;
 
             CheckBoxDecoy.IsChecked = task._glycoSearchParameters.DecoyType != DecoyType.None;
             RadioButtonReverseDecoy.IsChecked = task._glycoSearchParameters.DecoyType == DecoyType.Reverse;
@@ -266,7 +266,7 @@ namespace MetaMorpheusGUI
             {
                 ye.VerifyCheckState();
             }
-            WritePrunedDBCheckBox.IsChecked = task._glycoSearchParameters.WritePrunedDataBase;
+            WritePrunedDBCheckBox.IsChecked = task._glycoSearchParameters.WritePrunedDatabase;
             UpdateModSelectionGrid();
         }
 
@@ -332,16 +332,16 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
 
             //Quantification Options
-            TheTask._glycoSearchParameters.DoQuantification = !CheckBoxNoQuant.IsChecked.Value;
+            TheTask._glycoSearchParameters.DoLabelFreeQuantification = !CheckBoxNoQuant.IsChecked.Value;
             TheTask._glycoSearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
-            TheTask._glycoSearchParameters.DoMbrAnalysis = CheckBoxMatchBetweenRuns.IsChecked.Value;
+            TheTask._glycoSearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;
             TheTask._glycoSearchParameters.QuantifyPpmTol = double.Parse(PeakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
 
             //Output Options
             TheTask._glycoSearchParameters.WriteDecoys = WriteDecoyCheckBox.IsChecked.Value;
             TheTask._glycoSearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
             TheTask._glycoSearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
-            TheTask._glycoSearchParameters.WriteSpectrumLibrary = WriteSpectrumLibraryCheckBox.IsChecked.Value;
+            TheTask._glycoSearchParameters.WriteSpectralLibrary = WriteSpectrumLibraryCheckBox.IsChecked.Value;
 
             if (CheckBoxDecoy.IsChecked.Value)
             {
@@ -468,7 +468,7 @@ namespace MetaMorpheusGUI
                 productDeconParams: productDeconvolutionParameters,
                 rtPredictorName: rtPredictorModelName);
 
-            TheTask._glycoSearchParameters.WritePrunedDataBase = WritePrunedDBCheckBox.IsChecked.Value;
+            TheTask._glycoSearchParameters.WritePrunedDatabase = WritePrunedDBCheckBox.IsChecked.Value;
             SetModSelectionForPrunedDB();
             TheTask.CommonParameters = commonParamsToSave;
 

@@ -171,7 +171,7 @@ namespace TaskLayer
                 WriteProteinResults(OutputFolder, null, MyTaskResults);
             }
 
-            if (Parameters.GlycoSearchParameters.WritePrunedDataBase)
+            if (Parameters.GlycoSearchParameters.WritePrunedDatabase)
             {
                 WritePrunedDatabase(Parameters.AllPsms.Cast<SpectralMatch>().ToList(), Parameters.BioPolymerList.Cast<IBioPolymer>().ToList(), Parameters.GlycoSearchParameters.ModsToWriteSelection, Parameters.DatabaseFilenameList, Parameters.OutputFolder, Parameters.SearchTaskId);
             }
@@ -181,7 +181,7 @@ namespace TaskLayer
             
      
 
-            if (Parameters.GlycoSearchParameters.WriteSpectrumLibrary)
+            if (Parameters.GlycoSearchParameters.WriteSpectralLibrary)
             {
                 List<LibrarySpectrum> spectrumLibrary = new List<LibrarySpectrum>();
                 foreach (var gsm in filteredPsms)
@@ -440,7 +440,7 @@ namespace TaskLayer
             // the return below. The quantified path repopulates them with intensities further down.
             PopulateCountBasedOccupancy(BuildUndefinedExperimentalDesign());
 
-            if (!Parameters.GlycoSearchParameters.DoQuantification)
+            if (!Parameters.GlycoSearchParameters.DoLabelFreeQuantification)
             {
                 return;
             }
@@ -573,7 +573,7 @@ namespace TaskLayer
                 normalize: Parameters.GlycoSearchParameters.Normalize,
                 ppmTolerance: Parameters.GlycoSearchParameters.QuantifyPpmTol,
                 matchBetweenRunsPpmTolerance: Parameters.GlycoSearchParameters.QuantifyPpmTol,  // If these tolerances are not equivalent, then MBR will falsely classify peptides found in the initial search as MBR peaks
-                matchBetweenRuns: Parameters.GlycoSearchParameters.DoMbrAnalysis,
+                matchBetweenRuns: Parameters.GlycoSearchParameters.MatchBetweenRuns,
                 silent: true,
                 maxThreads: CommonParameters.MaxThreadsToUsePerFile);
 
@@ -659,7 +659,7 @@ namespace TaskLayer
 
         private void WriteQuantificationResults()
         {
-            if (Parameters.GlycoSearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
+            if (Parameters.GlycoSearchParameters.DoLabelFreeQuantification && Parameters.FlashLfqResults != null)
             {
                 // write peaks
                 WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });

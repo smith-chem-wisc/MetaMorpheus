@@ -212,7 +212,7 @@ namespace Test
 
             var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\Glyco_Isobaric_testing.toml"), MetaMorpheusTask.tomlConfig);
             glycoSearchTask._glycoSearchParameters.DoParsimony = false;
-            glycoSearchTask._glycoSearchParameters.DoQuantification = true;
+            glycoSearchTask._glycoSearchParameters.DoLabelFreeQuantification = true;
             glycoSearchTask._glycoSearchParameters.OxoniumIonFilt = false; //turn off the diagnostic filter
 
             DbForTask targetDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoProteinFASTA_7proteins.fasta"), false);
@@ -911,7 +911,7 @@ namespace Test
 
             var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSnip.toml"), MetaMorpheusTask.tomlConfig);
             glycoSearchTask._glycoSearchParameters.DoParsimony = false;
-            glycoSearchTask._glycoSearchParameters.DoQuantification = true;
+            glycoSearchTask._glycoSearchParameters.DoLabelFreeQuantification = true;
 
             DbForTask targetDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoProteinFASTA_7proteins.fasta"), false);
             DbForTask contaminDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P13987_contaminant.fasta"), false);
@@ -1129,7 +1129,7 @@ namespace Test
                     DoParsimony = true,
                     WriteContaminants = writeContaminants,
                     WriteDecoys = writeDecoys,
-                    WritePrunedDataBase = false,
+                    WritePrunedDatabase = false,
                 }
             };
             glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, isContaminant) }, rawFilePaths, "");
@@ -1187,7 +1187,7 @@ namespace Test
                     WriteContaminants = true,
                     WriteDecoys = true,
                     WriteIndividualFiles = true,
-                    WritePrunedDataBase = false,
+                    WritePrunedDatabase = false,
                 }
             };
             glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, rawFilePaths, "");
@@ -1256,8 +1256,8 @@ namespace Test
                     WriteContaminants = true,
                     WriteDecoys = true,
                     WriteIndividualFiles = true,
-                    DoQuantification = true,
-                    WritePrunedDataBase = false,
+                    DoLabelFreeQuantification = true,
+                    WritePrunedDatabase = false,
                 }
             };
             glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, rawFilePaths, "");
@@ -1685,7 +1685,7 @@ namespace Test
             Directory.CreateDirectory(outputFolder);
 
             var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
-            glycoSearchTask._glycoSearchParameters.WriteSpectrumLibrary =  true;
+            glycoSearchTask._glycoSearchParameters.WriteSpectralLibrary =  true;
 
             DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150.fasta"), false);
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
@@ -1787,7 +1787,7 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
             Directory.CreateDirectory(outputFolder);
             var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
-            glycoSearchTask._glycoSearchParameters.WritePrunedDataBase = true;
+            glycoSearchTask._glycoSearchParameters.WritePrunedDatabase = true;
             //only write o-glycan in pruned database
             glycoSearchTask._glycoSearchParameters.ModsToWriteSelection = new Dictionary<string, int> { {"O-linked glycosylation", 3}, }; 
 
@@ -1842,7 +1842,7 @@ namespace Test
             var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(
                 Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"),
                 MetaMorpheusTask.tomlConfig);
-            glycoSearchTask._glycoSearchParameters.DoQuantification = false;
+            glycoSearchTask._glycoSearchParameters.DoLabelFreeQuantification = false;
 
             DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
             string spectraFile1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_1.mzML");
