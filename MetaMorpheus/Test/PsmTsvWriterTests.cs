@@ -6,6 +6,7 @@ using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
+using System.IO;
 using Omics.Digestion;
 using Omics.Modifications;
 using Easy.Common.Extensions;
@@ -16,6 +17,8 @@ using EngineLayer.FdrAnalysis;
 using GuiFunctions;
 using System.Linq;
 using System.Reflection;
+using Transcriptomics;
+using Transcriptomics.Digestion;
 
 namespace Test
 {
@@ -107,6 +110,132 @@ namespace Test
 
             Assert.That(ppmErrorString, Is.EqualTo("0"));
         }
+
+        #region Resolve Null Handling
+
+        /// <summary>
+        /// Resolve(IEnumerable&lt;string&gt;) with no usable value at all (all null) resolves to a null
+        /// ResolvedString - the caller then emits an empty cell rather than crashing.
+        /// </summary>
+        [Test]
+        public static void Resolve_String_AllNullValues_ReturnsNullResolvedString()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string> { null, null, null });
+            Assert.That(resolvedString, Is.Null);
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        [Test]
+        public static void Resolve_String_EmptyCollection_ReturnsNullResolvedString()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string>());
+            Assert.That(resolvedString, Is.Null);
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        [Test]
+        public static void Resolve_String_SingleNullElement_ReturnsNullResolvedString()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string> { null });
+            Assert.That(resolvedString, Is.Null);
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        /// <summary>
+        /// A null element among equal non-null values cannot be collapsed (first.Equals(null) is
+        /// false), so Resolve joins the raw list, rendering the null element as an empty cell.
+        /// </summary>
+        [Test]
+        public static void Resolve_String_NullAmongSameValues_JoinsWithEmptyCell()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string> { "a", null, "a" });
+            Assert.That(resolvedString, Is.EqualTo("a||a"));
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        [Test]
+        public static void Resolve_String_NullAmongDistinctValues_JoinsWithEmptyCell()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string> { "a", null, "b" });
+            Assert.That(resolvedString, Is.EqualTo("a||b"));
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        /// <summary>
+        /// The ambiguousIfNull overload: an all-null list still resolves to a null ResolvedString even
+        /// when a fallback is supplied - the fallback only selects the joining strategy, it does not
+        /// rescue an all-null input.
+        /// </summary>
+        [Test]
+        public static void Resolve_StringWithFallback_AllNullValues_ReturnsNullResolvedString()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string> { null, null }, "fallback");
+            Assert.That(resolvedString, Is.Null);
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        /// <summary>
+        /// The ambiguousIfNull overload joins only distinct values when a fallback is present, with the
+        /// null element rendered as an empty cell.
+        /// </summary>
+        [Test]
+        public static void Resolve_StringWithFallback_NullAmongValues_JoinsDistinctWithEmptyCell()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string> { "b", null, "a", "b" }, "fallback");
+            Assert.That(resolvedString, Is.EqualTo("b||a"));
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        /// <summary>
+        /// The ambiguousIfNull overload keeps duplicated values (and the empty cell from the null
+        /// element) when no fallback is supplied.
+        /// </summary>
+        [Test]
+        public static void Resolve_StringWithoutFallback_NullAmongSameValues_JoinsDuplicatesWithEmptyCell()
+        {
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(new List<string> { "a", null, "a" }, ambiguousIfNull: null);
+            Assert.That(resolvedString, Is.EqualTo("a||a"));
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        /// <summary>
+        /// ModsChemicalFormulas / ModsCombinedChemicalFormula null-path: any hypothesis whose
+        /// modification list contains a null Modification resolves to "unknown" rather than throwing.
+        /// </summary>
+        [Test]
+        public static void Resolve_Modifications_NullModificationElement_ReturnsUnknown()
+        {
+            var enumerable = new List<List<Modification>>
+            {
+                new List<Modification> { null }
+            };
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(enumerable);
+            Assert.That(resolvedString, Is.EqualTo("unknown"));
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        /// <summary>
+        /// A modification whose ChemicalFormula is null hits the same guard and also resolves to
+        /// "unknown" rather than throwing.
+        /// </summary>
+        [Test]
+        public static void Resolve_Modifications_NullChemicalFormula_ReturnsUnknown()
+        {
+            ModificationMotif.TryGetMotif("N", out ModificationMotif motif);
+            Modification modWithoutFormula = new Modification(_originalId: "noFormula", _modificationType: "mt",
+                _target: motif, _locationRestriction: "Anywhere.");
+            Assert.That(modWithoutFormula.ChemicalFormula, Is.Null);
+
+            var enumerable = new List<List<Modification>>
+            {
+                new List<Modification> { modWithoutFormula }
+            };
+            var (resolvedString, resolvedValue) = PsmTsvWriter.Resolve(enumerable);
+            Assert.That(resolvedString, Is.EqualTo("unknown"));
+            Assert.That(resolvedValue, Is.Null);
+        }
+
+        #endregion
 
         /// <summary>
         /// Test Case 1: Verifies that when peptide is null, all output fields are empty strings
@@ -716,6 +845,457 @@ namespace Test
             Assert.That(MetaDrawLogic.ShouldShowProFormaColumn(new List<SpectrumMatchFromTsv>()), Is.False);
         }
 
+        #region Oligo Terminus Columns
+
+        /// <summary>
+        /// Builds a single-hypothesis OSM for the oligo terminus column tests.
+        /// The oligo carries explicit, non-default 5'- and 3'-terminus formulas so the test
+        /// asserts the exact strings written, not the reader's fallbacks.
+        /// </summary>
+        private static OligoSpectralMatch BuildTerminiTestOsm(out OligoWithSetMods oligo)
+        {
+            ChemicalFormula fivePrime = ChemicalFormula.ParseFormula("O-3P-1");
+            ChemicalFormula threePrime = ChemicalFormula.ParseFormula("H2O4P");
+            oligo = BuildTestOligo("AAA", fivePrime, threePrime);
+            return BuildOsmFromOligo(oligo);
+        }
+
+        private static OligoSpectralMatch BuildOsmFromOligo(OligoWithSetMods oligo)
+        {
+            double mass = 12.0 + oligo.MonoisotopicMass.ToMz(1);
+            var scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                    0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                mass, 1, "", new CommonParameters());
+
+            var osm = new OligoSpectralMatch(oligo, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            osm.ResolveAllAmbiguities();
+            return osm;
+        }
+
+        /// <summary>
+        /// Builds an oligo over a parent with a non-null GeneNames list, so the full
+        /// AddPeptideSequenceData path (the geneString column) does not throw during serialization.
+        /// </summary>
+        private static OligoWithSetMods BuildTestOligo(string baseSequence, IHasChemicalFormula fivePrime, IHasChemicalFormula threePrime)
+        {
+            var rna = new RNA(baseSequence, "test_rna", geneNames: new List<System.Tuple<string, string>>());
+            return new OligoWithSetMods(baseSequence, n: rna, fivePrimeTerminus: fivePrime, threePrimeTerminus: threePrime);
+        }
+
+        /// <summary>
+        /// Oligo runs: the 5'-Terminus column is emitted immediately after Essential Sequence,
+        /// followed by 3'-Terminus, in both header and data row, and both carry the terminus
+        /// chemical-formula strings. Both AllOSMs and AllOligos go through this same
+        /// GetTabSeparatedHeader/ToString path, so this covers the columns in both output files.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_OligoSearch_ColumnsFollowEssentialSequenceAndCarryTerminusFormulas()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            try
+            {
+                var osm = BuildTerminiTestOsm(out OligoWithSetMods oligo);
+
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                int essentialSequenceIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.EssentialSequence);
+                int fivePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.FivePrimeTerminus);
+                int threePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.ThreePrimeTerminus);
+
+                // 5' first, then 3', immediately after Essential Sequence.
+                Assert.That(fivePrimeIndex, Is.EqualTo(essentialSequenceIndex + 1));
+                Assert.That(threePrimeIndex, Is.EqualTo(fivePrimeIndex + 1));
+
+                string[] rowSplits = osm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                // Header and data row stay in sync - the invariant the single analyte-type gate exists to protect.
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+
+                // Compared against the formula strings directly, so the assertions cannot move with
+                // the production code they are checking.
+                Assert.That(rowSplits[fivePrimeIndex], Is.EqualTo(oligo.FivePrimeTerminus.ThisChemicalFormula.Formula));
+                Assert.That(rowSplits[threePrimeIndex], Is.EqualTo(oligo.ThreePrimeTerminus.ThisChemicalFormula.Formula));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// Non-oligo runs: the terminus columns must appear in neither the header nor the data row.
+        /// Asserting the row's field count matches the header's is what actually defends the invariant -
+        /// a gate that diverged between the two would shift every downstream column by one.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        [TestCase(AnalyteType.Peptide)]
+        [TestCase(AnalyteType.Proteoform)]
+        public static void Termini_NonOligoSearch_ColumnsAbsent(AnalyteType analyteType)
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = analyteType;
+            try
+            {
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+
+                Assert.That(headerSplits.IndexOf(SpectrumMatchFromTsvHeader.FivePrimeTerminus), Is.EqualTo(-1));
+                Assert.That(headerSplits.IndexOf(SpectrumMatchFromTsvHeader.ThreePrimeTerminus), Is.EqualTo(-1));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// Bottom-up (AnalyteType.Peptide): the terminus columns are absent from the header AND the
+        /// data row, and the two stay aligned - so a PSM file never carries a trailing empty pair of
+        /// cells and never shifts any existing column.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_BottomUpSearch_ColumnsAbsentFromRowAndRowStaysAligned()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Peptide;
+            try
+            {
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                var psm = BuildProFormaTestPsm(out PeptideWithSetModifications peptide);
+                string[] rowSplits = psm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+                Assert.That(rowSplits, Does.Not.Contain(SpectrumMatchFromTsvHeader.FivePrimeTerminus));
+                Assert.That(rowSplits, Does.Not.Contain(SpectrumMatchFromTsvHeader.ThreePrimeTerminus));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// The terminus columns resolve across ambiguous matches with the same Resolve(...) idiom as
+        /// the neighbouring sequence columns. With two oligos whose terminus formulas differ, that
+        /// idiom joins them with '|' - the branch a single-oligo test never enters.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_AmbiguousOligos_ValuesJoinedByPipe()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            try
+            {
+                // Same base sequence, different 5'-terminus - so the two terminus strings differ.
+                ChemicalFormula minusPhosphateFivePrime = ChemicalFormula.ParseFormula("O-3P-1");
+                ChemicalFormula otherFivePrime = ChemicalFormula.ParseFormula("PO4");
+                ChemicalFormula otherThreePrime = ChemicalFormula.ParseFormula("HO");
+                OligoWithSetMods oligoA = BuildTestOligo("AAA", minusPhosphateFivePrime, otherThreePrime);
+                OligoWithSetMods oligoB = BuildTestOligo("AAA", otherFivePrime, otherThreePrime);
+
+                double mass = 12.0 + oligoA.MonoisotopicMass.ToMz(1);
+                var scan = new Ms2ScanWithSpecificMass(
+                    new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                        0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                    mass, 1, "", new CommonParameters());
+
+                var ambiguousOsm = new OligoSpectralMatch(oligoA, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+                ambiguousOsm.AddOrReplace(oligoB, 10, 0, true, new List<MatchedFragmentIon>());
+                ambiguousOsm.ResolveAllAmbiguities();
+
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                int fivePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.FivePrimeTerminus);
+                int threePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.ThreePrimeTerminus);
+                string[] rowSplits = ambiguousOsm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+                Assert.That(rowSplits[fivePrimeIndex], Does.Contain("|"));
+                Assert.That(rowSplits[fivePrimeIndex], Does.Contain(minusPhosphateFivePrime.Formula));
+                Assert.That(rowSplits[fivePrimeIndex], Does.Contain(otherFivePrime.Formula));
+                // The 3'-terminus is identical across both hypotheses, so it resolves to a single value.
+                Assert.That(rowSplits[threePrimeIndex], Is.EqualTo(otherThreePrime.Formula));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_Oligo_RoundTripWritesAndReadsTerminusFormulas()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                "TerminiRoundTrip_" + System.Guid.NewGuid().ToString("N") + ".osmtsv");
+            try
+            {
+                // The same base sequence, with explicitly different terminus formulas per row. The
+                // formulas are deliberately not the NucleicAcid/Rnase defaults so that, if the reader
+                // silently used its PreviousResidue/NextResidue fallback instead of the written
+                // columns, the assertions below would fail.
+                ChemicalFormula rowAFive = ChemicalFormula.ParseFormula("HO");
+                ChemicalFormula rowAThree = ChemicalFormula.ParseFormula("PO4");
+                ChemicalFormula rowBFive = ChemicalFormula.ParseFormula("PO3");
+                ChemicalFormula rowBThree = ChemicalFormula.ParseFormula("H2O");
+
+                var osmA = BuildOsmFromOligo(BuildTestOligo("AAA", rowAFive, rowAThree));
+                var osmB = BuildOsmFromOligo(BuildTestOligo("AAA", rowBFive, rowBThree));
+
+                // Real OSM output always carries FDR values; the mzLib reader requires the QValue cell
+                // (written from PsmFdrInfo, null for a fresh synthetic match) to be a parseable number.
+                foreach (var osm in new[] { osmA, osmB })
+                {
+                    osm.PsmFdrInfo = new FdrInfo();
+                }
+
+                using (StreamWriter writer = new StreamWriter(filePath))
+                {
+                    writer.WriteLine(SpectralMatch.GetTabSeparatedHeader());
+                    writer.WriteLine(osmA.ToString(new Dictionary<string, int>()));
+                    writer.WriteLine(osmB.ToString(new Dictionary<string, int>()));
+                }
+
+                List<OsmFromTsv> readBack = SpectrumMatchTsvReader.ReadOsmTsv(filePath, out List<string> warnings);
+
+                Assert.That(warnings, Is.Empty, "reading the round-tripped file produced warnings");
+                Assert.That(readBack, Has.Count.EqualTo(2));
+
+                // Each row must come back with exactly the terminus formulas its own writer row carried.
+                Assert.That(readBack[0].FivePrimeTerminus.ThisChemicalFormula.Formula, Is.EqualTo(rowAFive.Formula));
+                Assert.That(readBack[0].ThreePrimeTerminus.ThisChemicalFormula.Formula, Is.EqualTo(rowAThree.Formula));
+                Assert.That(readBack[1].FivePrimeTerminus.ThisChemicalFormula.Formula, Is.EqualTo(rowBFive.Formula));
+                Assert.That(readBack[1].ThreePrimeTerminus.ThisChemicalFormula.Formula, Is.EqualTo(rowBThree.Formula));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+            }
+        }
+
+        /// <summary>
+        /// The terminus columns are gated on AnalyteType.Oligo but the values are pulled from the
+        /// matched hypothesis via a defensive cast to OligoWithSetMods. An OSM whose hypothesis is not
+        /// an oligo exercises that null path end-to-end: the terminus cells resolve to null and are
+        /// written as empty cells, with the rest of the row untouched.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_Oligo_NonOligoHypothesis_WritesEmptyCells()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            try
+            {
+                Protein protein = new Protein("MPEPTIDEK", "prot_td");
+                PeptideWithSetModifications peptide = new PeptideWithSetModifications(
+                    protein, new DigestionParams(), 1, 9, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+                double mass = 12.0 + peptide.MonoisotopicMass.ToMz(1);
+                var scan = new Ms2ScanWithSpecificMass(
+                    new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                        0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                    mass, 1, "", new CommonParameters());
+
+                var osm = new OligoSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+                osm.ResolveAllAmbiguities();
+
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                int fivePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.FivePrimeTerminus);
+                int threePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.ThreePrimeTerminus);
+                string[] rowSplits = osm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                Assert.That(fivePrimeIndex, Is.GreaterThanOrEqualTo(0));
+                Assert.That(threePrimeIndex, Is.GreaterThanOrEqualTo(0));
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+                // Defensive cast hits null -> Resolve(all-null) -> empty cells, not a crash.
+                Assert.That(rowSplits[fivePrimeIndex], Is.EqualTo(string.Empty));
+                Assert.That(rowSplits[threePrimeIndex], Is.EqualTo(string.Empty));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// The terminal-cap columns participate in the same null contract as every other sequence
+        /// column: when there is no spectral match at all (pepWithModsIsNull, the header row),
+        /// AddPeptideSequenceData emits a single blank cell for each cap column instead of invoking
+        /// Resolve - so the header and data rows stay column-aligned.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_Header_SmNull_WritesBlankCells()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            try
+            {
+                var dict = new Dictionary<string, string>();
+                PsmTsvWriter.AddPeptideSequenceData(dict, null, null);
+
+                Assert.That(dict[SpectrumMatchFromTsvHeader.FivePrimeTerminus], Is.EqualTo(" "));
+                Assert.That(dict[SpectrumMatchFromTsvHeader.ThreePrimeTerminus], Is.EqualTo(" "));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// The terminal-cap writer guards each null hop on the way to the formula string. A terminus
+        /// whose ThisChemicalFormula is null (never produced by a real digestion, but defensively
+        /// supported) must yield an empty cell for that block and leave the other cap untouched.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_Oligo_NullTerminusChemicalFormula_WritesEmptyCell()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            try
+            {
+                ChemicalFormula realThreePrime = ChemicalFormula.ParseFormula("H2O4P");
+                OligoWithSetMods oligo = BuildTestOligo("AAA", new NullFormulaTerminus(), realThreePrime);
+
+                var osm = BuildOsmFromOligo(oligo);
+
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                int fivePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.FivePrimeTerminus);
+                int threePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.ThreePrimeTerminus);
+                string[] rowSplits = osm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                Assert.That(fivePrimeIndex, Is.GreaterThanOrEqualTo(0));
+                Assert.That(threePrimeIndex, Is.GreaterThanOrEqualTo(0));
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+                // Null ThisChemicalFormula -> null formula string -> Resolve(all null) -> empty cell.
+                Assert.That(rowSplits[fivePrimeIndex], Is.EqualTo(string.Empty));
+                // The other cap still writes normally.
+                Assert.That(rowSplits[threePrimeIndex], Is.EqualTo(realThreePrime.Formula));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// Mixed hypotheses in one OSM: a non-oligo (null cap formula, via the defensive cast) and an
+        /// oligo (real cap formula). Resolve cannot collapse a null against a value, so the terminus
+        /// cells join with the null hypothesis rendered as an empty cell - the writer-level version of
+        /// the "null among values" Resolve branch.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_Oligo_MixedNullAndValueHypotheses_PipeJoinWithEmptyCell()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            try
+            {
+                Protein protein = new Protein("MPEPTIDEK", "prot_td");
+                PeptideWithSetModifications peptide = new PeptideWithSetModifications(
+                    protein, new DigestionParams(), 1, 9, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+                ChemicalFormula fivePrime = ChemicalFormula.ParseFormula("O-3P-1");
+                OligoWithSetMods oligo = BuildTestOligo("AAA", fivePrime, ChemicalFormula.ParseFormula("H2O4P"));
+
+                double mass = 12.0 + oligo.MonoisotopicMass.ToMz(1);
+                var scan = new Ms2ScanWithSpecificMass(
+                    new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                        0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                    mass, 1, "", new CommonParameters());
+
+                var osm = new OligoSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+                osm.AddOrReplace(oligo, 10, 0, true, new List<MatchedFragmentIon>());
+                osm.ResolveAllAmbiguities();
+
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                int fivePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.FivePrimeTerminus);
+                string[] rowSplits = osm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                Assert.That(fivePrimeIndex, Is.GreaterThanOrEqualTo(0));
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+                // The null hypothesis's cap cannot collapse against the oligo's - Resolve joins the
+                // hypothesis list in order, rendering the null as an empty cell on either side.
+                Assert.That(rowSplits[fivePrimeIndex],
+                    Is.EqualTo("|" + fivePrime.Formula).Or.EqualTo(fivePrime.Formula + "|"));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// Multiple hypotheses, none of which is an oligo: every terminus formula is null, so Resolve
+        /// gets an all-null list and each cap cell comes back empty.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // mutates the process-wide GlobalVariables.AnalyteType
+        public static void Termini_Oligo_AllNullHypotheses_WritesEmptyCells()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            try
+            {
+                Protein proteinA = new Protein("MPEPTIDEK", "prot_td_a");
+                PeptideWithSetModifications peptideA = new PeptideWithSetModifications(
+                    proteinA, new DigestionParams(), 1, 9, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+                Protein proteinB = new Protein("MPEPTIDEKK", "prot_td_b");
+                PeptideWithSetModifications peptideB = new PeptideWithSetModifications(
+                    proteinB, new DigestionParams(), 1, 10, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+                double mass = 12.0 + peptideA.MonoisotopicMass.ToMz(1);
+                var scan = new Ms2ScanWithSpecificMass(
+                    new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                        0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""),
+                    mass, 1, "", new CommonParameters());
+
+                var osm = new OligoSpectralMatch(peptideA, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+                osm.AddOrReplace(peptideB, 10, 0, true, new List<MatchedFragmentIon>());
+                osm.ResolveAllAmbiguities();
+
+                var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+                int fivePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.FivePrimeTerminus);
+                int threePrimeIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.ThreePrimeTerminus);
+                string[] rowSplits = osm.ToString(new Dictionary<string, int>()).Split('\t');
+
+                Assert.That(fivePrimeIndex, Is.GreaterThanOrEqualTo(0));
+                Assert.That(threePrimeIndex, Is.GreaterThanOrEqualTo(0));
+                Assert.That(rowSplits.Length, Is.EqualTo(headerSplits.Length));
+                // [null, null] -> Resolve all-null -> empty cells, not a crash.
+                Assert.That(rowSplits[fivePrimeIndex], Is.EqualTo(string.Empty));
+                Assert.That(rowSplits[threePrimeIndex], Is.EqualTo(string.Empty));
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
+        }
+
+        /// <summary>
+        /// A terminus object with a monoisotopic mass but no chemical formula, exercising the
+        /// writer's ThisChemicalFormula null guard. Never produced by real digestion.
+        /// </summary>
+        private class NullFormulaTerminus : IHasChemicalFormula
+        {
+            public double MonoisotopicMass => 0.0;
+
+            public ChemicalFormula ThisChemicalFormula => null;
+        }
+
+        #endregion
 
         #region Collisional Energy Tests
 
