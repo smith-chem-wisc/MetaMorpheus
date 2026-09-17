@@ -42,6 +42,10 @@ namespace MetaMorpheusGUI
 
         public MainWindow()
         {
+            // subscribed before startup so that what startup notices, such as a custom protease that
+            // collided with a built-in, is shown too. Queued rather than written, because the
+            // notifications box does not exist until InitializeComponent has run.
+            GlobalVariables.WarnHandler += (sender, e) => Dispatcher.BeginInvoke(new Action(() => NotificationHandler(sender, e)));
             GlobalVariables.SetUpGlobalVariables();
             InitializeComponent();
 
@@ -207,6 +211,8 @@ namespace MetaMorpheusGUI
                 }
 
                 UpdateOutputFolderTextbox();
+                SeedTmtExperimentalDesign();
+                dataGridSpectraFiles.Items.Refresh();
             }
         }
 
@@ -582,6 +588,16 @@ namespace MetaMorpheusGUI
         private void SetExperimentalDesign_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new ExperimentalDesignWindow(SpectraFiles);
+            dialog.ShowDialog();
+        }
+        private void SetTmtExperimentalDesign_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new TmtExperimentalDesignWindow(SpectraFiles)
+            {
+                Owner = this,
+                Title = "TMT Experimental Design"
+            };
+
             dialog.ShowDialog();
         }
 
@@ -1639,13 +1655,6 @@ namespace MetaMorpheusGUI
                 NotificationHandler(null, new StringEventArgs(error, null));
             }
             GlobalVariables.ErrorsReadingMods.Clear();
-
-            // and anything else startup noticed, such as a custom protease that collided with a built-in
-            foreach (var warning in GlobalVariables.StartupWarnings)
-            {
-                NotificationHandler(null, new StringEventArgs(warning, null));
-            }
-            GlobalVariables.StartupWarnings.Clear();
         }
 
         private void UpdateOutputFolderTextbox()
@@ -1693,7 +1702,23 @@ namespace MetaMorpheusGUI
             {
                 AddPreRunFileRecursiveHelper(path);
             }
+
+            SeedTmtExperimentalDesign();
             UpdateGuiOnPreRunChange();
+        }
+
+        /// <summary>
+        /// Refreshes the TMT experimental design state from any TmtDesign.txt sitting next to the
+        /// CHECKED spectra files. Seeding from every file in the grid warned about files the user had
+        /// deliberately unchecked, while the design window only ever lists the checked ones.
+        /// </summary>
+        private void SeedTmtExperimentalDesign()
+        {
+            TmtExperimentalDesignWindow.SeedFromDesignFiles(
+                SpectraFiles.Where(sf => sf.Use)
+                            .Select(sf => sf.FilePath)
+                            .Where(p => !string.IsNullOrWhiteSpace(p))
+                            .ToList());
         }
 
         private void AddPreRunFileRecursiveHelper(string path)
@@ -2255,6 +2280,7 @@ namespace MetaMorpheusGUI
             AddDefaultContaminantsButton.IsEnabled = enable;
             AddSpectraButton.IsEnabled = enable;
             SetFileSpecificSettingsButton.IsEnabled = enable;
+            SetTmtExperimentalDesignButton.IsEnabled = enable;
             SetExperimentalDesignButton.IsEnabled = enable;
             AddSearchTaskButton.IsEnabled = enable;
             AddCalibTaskButton.IsEnabled = enable;
