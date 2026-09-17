@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetaMorpheusGUI.MassDifferenceAcceptorControl"
+<UserControl x:Class="MetaMorpheusGUI.MassDifferenceAcceptorControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -42,8 +42,15 @@
             </Grid.RowDefinitions>
 
             <!-- Left: Selection Radio Buttons -->
-            <StackPanel Grid.Column="0" Grid.Row="0"  Margin="0">
-                <ListBox ItemsSource="{Binding MassDiffAcceptorTypes}"
+            <StackPanel Grid.Column="0" Grid.Row="0"  Margin="0" >
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <RadioButton Content="Monoisotopic Mass" IsChecked="{Binding UseMonoisotopicMass, Mode=TwoWay}" GroupName="PrecursorMassMatchMode" Margin="0,0,8,0" />
+                    <RadioButton Content="Most Abundant Mass" IsChecked="{Binding UseMostAbundantMass, Mode=TwoWay}" GroupName="PrecursorMassMatchMode" />
+                </StackPanel>
+
+                <!-- Mass Diff Acceptor Types (collection follows the selected precursor mass mode) -->
+                <ListBox ItemsSource="{Binding ActiveMassDiffAcceptorTypes}"
                              SelectedItem="{Binding SelectedType, Mode=TwoWay}"
                              BorderThickness="0"
                              SelectionMode="Single">

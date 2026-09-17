@@ -1,4 +1,4 @@
-﻿<Window x:Class="MetaMorpheusGUI.GptmdTaskWindow"
+<Window x:Class="MetaMorpheusGUI.GptmdTaskWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -48,7 +48,6 @@
                         <StackPanel>
                             <local:HostDeconParamControl x:Name="DeisotopingControl" DataContext="{Binding}"/>
                             <CheckBox x:Name="UseMostAbundantMassCheckBox" Content="Use Most Abundant Mass" Margin="10,0,5,5"
-                                      IsChecked="{Binding ElementName=DeisotopingControl, Path=DataContext.UseMostAbundantMass, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                 <CheckBox.ToolTip>
                                     <TextBlock>

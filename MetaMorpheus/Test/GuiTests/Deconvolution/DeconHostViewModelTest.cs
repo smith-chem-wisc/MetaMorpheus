@@ -4,6 +4,7 @@ using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
 using NUnit.Framework;
+using TaskLayer;
 
 namespace Test.GuiTests.Deconvolution;
 
@@ -40,12 +41,12 @@ public class DeconHostViewModelTests
     public void PrecursorMassMatchMode_DefaultsToMonoisotopic_AndUseMostAbundantMassProjectsBothWays()
     {
         // Default: monoisotopic, checkbox unchecked
-        var viewModel = new DeconHostViewModel(ClassicPrecursorDeconvolutionParameters, ClassicProductDeconvolutionParameters);
+        var viewModel = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Exact, "");
         Assert.That(viewModel.PrecursorMassMatchMode, Is.EqualTo(PrecursorMassMatchMode.Monoisotopic));
         Assert.That(viewModel.UseMostAbundantMass, Is.False);
 
         // Constructor passthrough of the mode
-        var mostAbundant = new DeconHostViewModel(ClassicPrecursorDeconvolutionParameters, ClassicProductDeconvolutionParameters,
+        var mostAbundant = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Exact, "",
             precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
         Assert.That(mostAbundant.UseMostAbundantMass, Is.True);
 
