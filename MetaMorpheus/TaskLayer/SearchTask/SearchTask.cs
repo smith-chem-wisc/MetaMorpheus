@@ -23,6 +23,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Chemistry;
+using Transcriptomics.Digestion;
 
 namespace TaskLayer
 {
@@ -421,7 +422,12 @@ namespace TaskLayer
 
                     //create params for N, C, or both if semi
                     List<CommonParameters> paramsToUse = new List<CommonParameters> { combinedParams };
-                    if (combinedParams.DigestionParams.SearchModeType == CleavageSpecificity.Semi) //if semi, we need to do both N and C to hit everything
+                    if (combinedParams.DigestionParams is RnaDigestionParams)
+                    {
+                        // the rnase (singleN or singleC) decides which end the seeds keep, and so which fragments to index
+                        paramsToUse = new List<CommonParameters> { combinedParams.CloneWithNewTerminus(NonSpecificEnzymeSearchEngine.SeedTerminus(combinedParams.DigestionParams)) };
+                    }
+                    else if (combinedParams.DigestionParams.SearchModeType == CleavageSpecificity.Semi) //if semi, we need to do both N and C to hit everything
                     {
                         paramsToUse.Clear();
                         List<FragmentationTerminus> terminiToUse = new List<FragmentationTerminus> { FragmentationTerminus.N, FragmentationTerminus.C };
@@ -455,17 +461,7 @@ namespace TaskLayer
                     //foreach terminus we're going to look at
                     foreach (CommonParameters paramToUse in paramsToUse)
                     {
-                        // Non-specific search is built around proteases -- terminal mod placement, the
-                        // "single" agents, the FDR categories -- none of which have a nucleic acid
-                        // counterpart yet. Say so, rather than letting the cast below throw a bare
-                        // InvalidCastException that names Protein and RNA and explains neither.
-                        if (bioPolymerList.Any(p => p is not Protein))
-                        {
-                            throw new MetaMorpheusException(
-                                "Non-specific search is only implemented for proteins. Use Classic or Modern search for nucleic acid databases.");
-                        }
-
-                        var proteinList = bioPolymerList.Cast<Protein>().ToList();
+                        var proteinList = bioPolymerList;
                         // scoped to indexing/searching only; paramToUse still carries the configured terminus
                         // to the spectral-library step below
                         CommonParameters indexParams = RaisePartitionsToFitMemory(proteinList, paramToUse, fixedModifications,
@@ -475,11 +471,10 @@ namespace TaskLayer
                         //foreach database partition
                         for (int currentPartition = 0; currentPartition < indexParams.TotalPartitions; currentPartition++)
                         {
-                            List<PeptideWithSetModifications> peptideIndex = null;
+                            List<IBioPolymerWithSetMods> peptideIndex = null;
 
-                            List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / indexParams.TotalPartitions,
-                                ((currentPartition + 1) * proteinList.Count / indexParams.TotalPartitions) - (currentPartition * proteinList.Count / indexParams.TotalPartitions))
-                                .ToList(); // assume that only proteins are used in non-specific search
+                            List<IBioPolymer> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / indexParams.TotalPartitions,
+                                ((currentPartition + 1) * proteinList.Count / indexParams.TotalPartitions) - (currentPartition * proteinList.Count / indexParams.TotalPartitions));
 
                             FragmentIndex fragmentIndex = null;
                             List<int>[] precursorIndex = null;

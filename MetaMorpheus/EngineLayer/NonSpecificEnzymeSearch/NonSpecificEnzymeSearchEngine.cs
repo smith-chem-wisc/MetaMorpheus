@@ -14,6 +14,7 @@ using MzLibUtil;
 using Omics.Digestion;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
+using Transcriptomics.Digestion;
 
 namespace EngineLayer.NonSpecificEnzymeSearch
 {
@@ -25,30 +26,66 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private readonly int MinimumPeptideLength;
         readonly SpectralMatch[][] GlobalCategorySpecificPsms;
         readonly CommonParameters ModifiedParametersNoComp;
-        readonly List<ProductType> ProductTypesToSearch;
         readonly List<Modification> VariableTerminalModifications;
         readonly List<int>[] CoisolationIndex;
 
         /// <summary>
-        /// Non-specific search is proteomics-only, so it keeps a peptide-typed view of the index that
-        /// ModernSearchEngine now holds as IBioPolymerWithSetMods. Same objects, narrower type.
+        /// For each fragment type that can end a trimmed candidate, how far the candidate's precursor mass sits above
+        /// that fragment's mass: water less the ion cap for peptides, the open-end terminus less the ion cap for
+        /// nucleic acids (<see cref="OligoSeedTrimming.PrecursorMinusFragmentMasses"/>).
         /// </summary>
-        protected new readonly List<PeptideWithSetModifications> PeptideIndex;
+        readonly List<double> PrecursorMinusFragmentMasses;
+
+        /// <summary>For a nucleic acid search, the end the seeds keep fixed (5' for singleN, 3' for singleC); otherwise null.</summary>
+        readonly FragmentationTerminus? OligoFixedTerminus;
+
+        /// <summary>For a nucleic acid search, the termini a cut can leave at a seed's open end; otherwise null.</summary>
+        readonly IList<IHasChemicalFormula> OligoOpenEndTermini;
 
         public NonSpecificEnzymeSearchEngine(SpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<int>[] coisolationIndex,
             IEnumerable<IBioPolymerWithSetMods> peptideIndex, Indexing.FragmentIndex fragmentIndex, List<int>[] precursorIndex, int currentPartition,
             CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<Modification> variableModifications, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
-            PeptideIndex = peptideIndex.Cast<PeptideWithSetModifications>().ToList();
             CoisolationIndex = coisolationIndex;
             PrecursorIndex = precursorIndex;
             MinimumPeptideLength = commonParameters.DigestionParams.MinLength;
             GlobalCategorySpecificPsms = globalPsms;
             ModifiedParametersNoComp = commonParameters.CloneWithNewTerminus(addCompIons: false);
-            ProductTypesToSearch = DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.DigestionParams.FragmentationTerminus]).ToList();
-            VariableTerminalModifications = GetVariableTerminalMods(commonParameters.DigestionParams.FragmentationTerminus, variableModifications);
+
+            if (commonParameters.DigestionParams is RnaDigestionParams rnaDigestionParams)
+            {
+                // The task refuses both of these before a run starts (MetaMorpheusTask.GetSeedDigestionRefusal); this is the backstop.
+                OligoFixedTerminus = OligoSeedTrimming.FixedTerminus(rnaDigestionParams.Rnase)
+                    ?? throw new MetaMorpheusException($"Non-specific search over nucleic acids needs the rnase singleN or singleC, not {rnaDigestionParams.Rnase.Name}.");
+                if (commonParameters.AddCompIons)
+                {
+                    throw new MetaMorpheusException("Complementary ions are not implemented for non-specific search over nucleic acids.");
+                }
+                OligoOpenEndTermini = OligoSeedTrimming.OpenEndTermini(rnaDigestionParams.Rnase);
+                var trimmableProductTypes = OligoSeedTrimming.TrimmableProductTypes(
+                    commonParameters.DigestionParams.ProductsFromDissociationType()[commonParameters.DissociationType], OligoFixedTerminus.Value);
+                PrecursorMinusFragmentMasses = OligoSeedTrimming.PrecursorMinusFragmentMasses(trimmableProductTypes, OligoOpenEndTermini);
+            }
+            else
+            {
+                PrecursorMinusFragmentMasses = DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType]
+                    .Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.DigestionParams.FragmentationTerminus])
+                    .Select(pt => WaterMonoisotopicMass - DissociationTypeCollection.GetMassShiftFromProductType(pt))
+                    .ToList();
+            }
+            VariableTerminalModifications = GetVariableTerminalMods(SeedTerminus(commonParameters.DigestionParams), variableModifications);
         }
+
+        /// <summary>
+        /// The end a non-specific search's seeds keep fixed. For peptides that is the digestion's FragmentationTerminus
+        /// (N for singleN, C for singleC); for nucleic acids the rnase decides it (5' for singleN, 3' for singleC),
+        /// whatever the terminus says.
+        /// </summary>
+        public static FragmentationTerminus SeedTerminus(IDigestionParams digestionParams) =>
+            digestionParams is RnaDigestionParams rnaDigestionParams && OligoSeedTrimming.FixedTerminus(rnaDigestionParams.Rnase) is { } fixedTerminus
+                ? fixedTerminus
+                : digestionParams.FragmentationTerminus;
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -99,9 +136,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             int obsPrecursorFloorMz = (int)Math.Floor(interval.Minimum * FragmentBinsPerDalton);
                             int obsPrecursorCeilingMz = (int)Math.Ceiling(interval.Maximum * FragmentBinsPerDalton);
 
-                            foreach (ProductType pt in ProductTypesToSearch)
+                            foreach (double precursorMinusFragmentMass in PrecursorMinusFragmentMasses)
                             {
-                                int dissociationBinShift = (int)Math.Round((WaterMonoisotopicMass - DissociationTypeCollection.GetMassShiftFromProductType(pt)) * FragmentBinsPerDalton);
+                                int dissociationBinShift = (int)Math.Round(precursorMinusFragmentMass * FragmentBinsPerDalton);
                                 int lowestBin = obsPrecursorFloorMz - dissociationBinShift;
                                 int highestBin = obsPrecursorCeilingMz - dissociationBinShift;
                                 for (int bin = lowestBin; bin <= highestBin; bin++)
@@ -134,27 +171,39 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 maxInitialScore--;
                                 foreach (int id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
                                 {
-                                    PeptideWithSetModifications peptide = PeptideIndex[id];
-                                    peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts, CommonParameters.FragmentationParameters);
-                                    Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.GetPrecursorMassForSearch(CommonParameters), peptide, CommonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor, semiSpecificSearch);
-                                    int notch = notchAndUpdatedPeptide.Item1;
+                                    int notch;
+                                    IBioPolymerWithSetMods candidate;
+                                    if (PeptideIndex[id] is OligoWithSetMods seed)
+                                    {
+                                        (notch, candidate) = AcceptsOligo(scan.GetPrecursorMassForSearch(CommonParameters), seed);
+                                    }
+                                    else
+                                    {
+                                        var peptide = (PeptideWithSetModifications)PeptideIndex[id];
+                                        peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts, CommonParameters.FragmentationParameters);
+                                        Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.GetPrecursorMassForSearch(CommonParameters), peptide, CommonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor, semiSpecificSearch);
+                                        notch = notchAndUpdatedPeptide.Item1;
+                                        candidate = notchAndUpdatedPeptide.Item2;
+                                    }
+
                                     if (notch >= 0)
                                     {
-                                        peptide = notchAndUpdatedPeptide.Item2;
-                                        peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, peptideTheorProducts, CommonParameters.FragmentationParameters);
+                                        candidate.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, peptideTheorProducts, CommonParameters.FragmentationParameters);
                                         List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, ModifiedParametersNoComp);
 
                                         double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons);
                                         if (thisScore > CommonParameters.ScoreCutoff)
                                         {
-                                            SpectralMatch[] localPeptideSpectralMatches = GlobalCategorySpecificPsms[(int)FdrClassifier.GetCleavageSpecificityCategory(peptide.CleavageSpecificityForFdrCategory)];
+                                            SpectralMatch[] localPeptideSpectralMatches = GlobalCategorySpecificPsms[(int)FdrClassifier.GetCleavageSpecificityCategory(candidate.CleavageSpecificityForFdrCategory)];
                                             if (localPeptideSpectralMatches[ms2ArrayIndex] == null)
                                             {
-                                                localPeptideSpectralMatches[ms2ArrayIndex] = new PeptideSpectralMatch(peptide, notch, thisScore, ms2ArrayIndex, scan, CommonParameters, matchedIons);
+                                                localPeptideSpectralMatches[ms2ArrayIndex] = candidate is OligoWithSetMods
+                                                    ? new OligoSpectralMatch(candidate, notch, thisScore, ms2ArrayIndex, scan, CommonParameters, matchedIons)
+                                                    : new PeptideSpectralMatch(candidate, notch, thisScore, ms2ArrayIndex, scan, CommonParameters, matchedIons);
                                             }
                                             else
                                             {
-                                                localPeptideSpectralMatches[ms2ArrayIndex].AddOrReplace(peptide, thisScore, notch, CommonParameters.ReportAllAmbiguity, matchedIons);
+                                                localPeptideSpectralMatches[ms2ArrayIndex].AddOrReplace(candidate, thisScore, notch, CommonParameters.ReportAllAmbiguity, matchedIons);
                                             }
                                         }
                                     }
@@ -177,7 +226,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             return new MetaMorpheusEngineResults(this);
         }
 
-        private void SnesIndexedScoring(Ms2ScanWithSpecificMass scan, Indexing.FragmentIndex FragmentIndex, byte[] scoringTable, List<PeptideWithSetModifications> peptideIndex, DissociationType dissociationType)
+        private void SnesIndexedScoring(Ms2ScanWithSpecificMass scan, Indexing.FragmentIndex FragmentIndex, byte[] scoringTable, List<IBioPolymerWithSetMods> peptideIndex, DissociationType dissociationType)
         {
             int obsPreviousFragmentCeilingMz = 0;
 
@@ -449,6 +498,71 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             return new Tuple<int, PeptideWithSetModifications>(-1, null);
         }
 
+        /// <summary>
+        /// The nucleic acid counterpart of <see cref="Accepts"/>: the sub-oligo of <paramref name="seed"/>, keeping its
+        /// fixed end, whose mass the precursor accepts, or notch -1 and null. Shortest first and the full seed last, as
+        /// for peptides; a terminal modification is tried on a sub-oligo only when the unmodified one is not accepted.
+        /// </summary>
+        private (int Notch, OligoWithSetMods Candidate) AcceptsOligo(double scanPrecursorMass, OligoWithSetMods seed)
+        {
+            FragmentationTerminus fixedTerminus = OligoFixedTerminus.Value;
+            int length = seed.BaseSequence.Length;
+            double[] massesWithoutOpenEnd = OligoSeedTrimming.MassesWithoutOpenEndTerminus(seed, fixedTerminus);
+            Dictionary<int, List<Modification>> terminalMods = GetTerminalModPositions(seed, CommonParameters.DigestionParams, VariableTerminalModifications);
+
+            for (int n = Math.Max(1, CommonParameters.DigestionParams.MinLength); n < length; n++)
+            {
+                bool allHeavier = true;
+                foreach (IHasChemicalFormula openEndTerminus in OligoOpenEndTermini)
+                {
+                    double theoMass = massesWithoutOpenEnd[n] + openEndTerminus.MonoisotopicMass;
+                    allHeavier &= theoMass > scanPrecursorMass;
+
+                    int notch = MassDiffAcceptor.Accepts(scanPrecursorMass, theoMass);
+                    if (notch >= 0)
+                    {
+                        return (notch, OligoSeedTrimming.Trim(seed, fixedTerminus, n, openEndTerminus));
+                    }
+                    if (terminalMods.TryGetValue(n, out List<Modification> modsHere))
+                    {
+                        foreach (Modification mod in modsHere)
+                        {
+                            notch = MassDiffAcceptor.Accepts(scanPrecursorMass, theoMass + mod.MonoisotopicMass.Value);
+                            if (notch >= 0)
+                            {
+                                return (notch, OligoSeedTrimming.Trim(seed, fixedTerminus, n, openEndTerminus, mod));
+                            }
+                        }
+                    }
+                }
+                if (allHeavier) // as for peptides: longer sub-oligos only get heavier
+                {
+                    return (-1, null);
+                }
+            }
+
+            if (length >= CommonParameters.DigestionParams.MinLength)
+            {
+                int notch = MassDiffAcceptor.Accepts(scanPrecursorMass, seed.MonoisotopicMass);
+                if (notch >= 0)
+                {
+                    return (notch, OligoSeedTrimming.Trim(seed, fixedTerminus, length, null));
+                }
+                if (terminalMods.TryGetValue(length, out List<Modification> modsAtEnd))
+                {
+                    foreach (Modification mod in modsAtEnd)
+                    {
+                        notch = MassDiffAcceptor.Accepts(scanPrecursorMass, seed.MonoisotopicMass + mod.MonoisotopicMass.Value);
+                        if (notch >= 0)
+                        {
+                            return (notch, OligoSeedTrimming.Trim(seed, fixedTerminus, length, null, mod));
+                        }
+                    }
+                }
+            }
+            return (-1, null);
+        }
+
         public static List<SpectralMatch> ResolveFdrCategorySpecificPsms(List<SpectralMatch>[] AllPsms, int numNotches, string taskId, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
         {
             //update all psms with peptide info
@@ -601,18 +715,31 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             return bestPsmsList.OrderBy(b => b.PsmFdrInfo.QValue).ThenByDescending(b => b.Score).ToList();
         }
 
+        /// <summary>
+        /// The location restriction of modifications on a seed's open end, the end opposite the one it keeps fixed.
+        /// Contains-matched, so "3'-terminal" also finds "Oligo 3'-terminal", as "C-terminal" finds "Peptide C-terminal".
+        /// </summary>
+        private static string OpenEndLocationRestriction(FragmentationTerminus seedTerminus) => seedTerminus switch
+        {
+            FragmentationTerminus.FivePrime => "3'-terminal", // singleN over nucleic acids
+            FragmentationTerminus.ThreePrime => "5'-terminal", // singleC over nucleic acids
+            FragmentationTerminus.N => "C-terminal", //if singleN, want to find c-terminal mods and vice-versa
+            _ => "N-terminal",
+        };
+
         public static List<Modification> GetVariableTerminalMods(FragmentationTerminus fragmentationTerminus, List<Modification> variableModifications)
         {
-            string terminalStringToFind = fragmentationTerminus == FragmentationTerminus.N ? "C-terminal" : "N-terminal"; //if singleN, want to find c-terminal mods and vice-versa
+            string terminalStringToFind = OpenEndLocationRestriction(fragmentationTerminus);
             return variableModifications == null ?
                 new List<Modification>() :
                 variableModifications.Where(x => x.LocationRestriction.Contains(terminalStringToFind)).ToList();
         }
 
-        public static Dictionary<int, List<Modification>> GetTerminalModPositions(PeptideWithSetModifications peptide, IDigestionParams digestionParams, List<Modification> variableMods)
+        public static Dictionary<int, List<Modification>> GetTerminalModPositions(IBioPolymerWithSetMods peptide, IDigestionParams digestionParams, List<Modification> variableMods)
         {
             Dictionary<int, List<Modification>> annotatedTerminalModDictionary = new Dictionary<int, List<Modification>>();
-            bool nTerminus = digestionParams.FragmentationTerminus == FragmentationTerminus.N; //is this the singleN or singleC search?
+            FragmentationTerminus seedTerminus = SeedTerminus(digestionParams);
+            bool nTerminus = seedTerminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime; //is this the singleN or singleC search?
 
             //determine the start and end index ranges when considering the minimum peptide length
             int startResidue = nTerminus ?
@@ -621,10 +748,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             int endResidue = nTerminus ?
                 peptide.OneBasedEndResidue :
                 peptide.OneBasedEndResidue - digestionParams.MinLength + 1;
-            string terminalStringToFind = nTerminus ? "C-terminal" : "N-terminal"; //if singleN, want to find c-terminal mods and vice-versa
+            string terminalStringToFind = OpenEndLocationRestriction(seedTerminus);
 
             //get all the mods for this protein
-            IDictionary<int, List<Modification>> annotatedModsForThisProtein = peptide.Protein.OneBasedPossibleLocalizedModifications;
+            IDictionary<int, List<Modification>> annotatedModsForThisProtein = peptide.Parent.OneBasedPossibleLocalizedModifications;
             //get the possible annotated mods for this peptide
             List<int> annotatedMods = annotatedModsForThisProtein.Keys.Where(x => x >= startResidue && x <= endResidue).ToList();
 
