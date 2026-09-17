@@ -1,4 +1,4 @@
-﻿global using obo = Omics.Modifications.IO.obo;
+global using obo = Omics.Modifications.IO.obo;
 using Chemistry;
 using Easy.Common.Extensions;
 using EngineLayer.GlycoSearch;
@@ -37,6 +37,25 @@ namespace EngineLayer
         private static List<Crosslinker> _KnownCrosslinkers;
         public static List<Modification> ProteaseMods = new List<Modification>();
 
+        /// <summary>
+        /// Files in the Mods folder that LoadModifications must skip. glyco.txt is turned into Glycan
+        /// objects by LoadTxtGlycan; RnaCustomModifications.txt is read into the separate RNA collection
+        /// by LoadRnaModifications; and RnaMods.txt is not read from disk at all -- the mzLib package
+        /// ships it into this folder as part of one opt-in group, but LoadRnaModifications takes the RNA
+        /// mods from mzLib's embedded copy instead, so reading the file here would double them into the
+        /// protein collection.
+        /// Matched by whole file name rather than by substring. The folder's contents now arrive from the
+        /// mzLib package rather than from this repository, so a file added upstream -- or a user's own
+        /// "MyGlycoScratch.txt" dropped in beside them -- must not be skipped silently on the strength of
+        /// containing "glyco" or "rna" somewhere in its name.
+        /// </summary>
+        private static readonly HashSet<string> ModFilesLoadedElsewhere = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "glyco.txt",
+            "RnaMods.txt",
+            "RnaCustomModifications.txt",
+        };
+
 
         //Characters that aren't amino acids, but are reserved for special uses (motifs, delimiters, mods, etc)
         private static char[] _InvalidAminoAcids;
@@ -47,11 +66,11 @@ namespace EngineLayer
         public static List<string> ErrorsReadingMods;
 
         /// <summary>
-        /// Non-fatal things the user should know about that were noticed while starting up, and that are
-        /// not about reading a modification. Surfaced beside <see cref="ErrorsReadingMods"/> by both front
-        /// ends. Kept separate because that list's name is a promise about what is in it.
+        /// Non-fatal things the user should know about, such as a custom protease that collided with a
+        /// built-in. Each front end routes these to its own output, as it does for the engine and task
+        /// warnings; subscribe before <see cref="SetUpGlobalVariables"/> to hear the ones raised at startup.
         /// </summary>
-        public static List<string> StartupWarnings { get; private set; } = new List<string>();
+        public static event EventHandler<StringEventArgs> WarnHandler;
 
         // mzLib keeps these as private constants, so the names are repeated rather than referenced.
         // They are the shipped files whose banner and header row seed the custom counterparts.
@@ -115,6 +134,7 @@ namespace EngineLayer
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
         public static List<string> SeparationTypes { get; private set; }
         public static string ExperimentalDesignFileName { get; private set; }
+        public static string TmtExperimentalDesignFileName { get; private set; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
         public static List<string> OGlycanDatabasePaths { get; private set; }
@@ -130,9 +150,8 @@ namespace EngineLayer
             AnalyteType = AnalyteType.Peptide;
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
+            TmtExperimentalDesignFileName = "TmtDesign.txt";
             SeparationTypes = new List<string> { { "HPLC" }, { "CZE" } };
-
-            StartupWarnings = new List<string>();
 
             SetMetaMorpheusVersion();
             SetUpDataDirectory();
@@ -443,8 +462,7 @@ namespace EngineLayer
             // load custom crosslinkers
             string customCrosslinkerLocation = Path.Combine(DataDir, @"Data", @"CustomCrosslinkers.tsv");
 
-            // Header row only, with no banner: LoadCrosslinkers skips line 1 and parses every line after
-            // it, so a comment banner here would be read as a crosslinker and throw on its columns.
+            // The shipped Crosslinkers.tsv has no banner, so this seeds its header row alone.
             CustomDataFile.EnsureExists(customCrosslinkerLocation,
                 () => CustomDataFile.BannerAndHeaderFromFile(crosslinkerLocation, "Name\t"),
                 "custom crosslinker");
@@ -474,15 +492,17 @@ namespace EngineLayer
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
-                if (modFile.Contains("glyco.txt"))
+                if (ModFilesLoadedElsewhere.Contains(Path.GetFileName(modFile)))
                 {
-                    // Glycan modifications are handled separately in LoadGlycans()
                     continue;
                 }
-                if (modFile.Contains("Rna"))
-                    continue;
                 AddMods(ModificationLoader.ReadModsFromFile(modFile, out var errorMods), false);
             }
+
+            // Cleavage modifications live with proteases.tsv in mzLib; this is the only
+            // place they reach AllModsKnown.
+            ProteaseMods = ProteaseDictionary.LoadEmbeddedProteaseMods();
+            AddMods(ProteaseMods, false);
 
             AddMods(UniprotDeseralized.OfType<Modification>(), false);
             AddMods(UnimodDeserialized.OfType<Modification>(), false);
@@ -503,17 +523,12 @@ namespace EngineLayer
             _AllRnaModTypesKnown = new HashSet<string>();
             AllRnaModsKnownDictionary = new Dictionary<string, Modification>();
 
-            // RNA Mods is an embedded resources: It gets packed into the DLL so we do not need to worry about the installer. 
-            var assembly = typeof(GlobalVariables).Assembly;
-            var resourceName = "EngineLayer.Mods.RnaMods.txt";
-
-            using (var stream = assembly.GetManifestResourceStream(resourceName))
-            using (var reader = new StreamReader(stream))
-            {
-                string fileContent = reader.ReadToEnd();
-                var mods = ModificationLoader.ReadModsFromString(fileContent, out var errors);
-                AddMods(mods, false, true);
-            }
+            // The RNA modifications come from mzLib's embedded copy, the same one this branch already
+            // takes the protease cleavage mods from. That keeps a single source of truth with
+            // Omics.dll while preserving the property #2752 established when it made these an
+            // embedded resource here: they are carried in an assembly, so no installer, repair or
+            // upgrade can leave them missing. A file in Mods\ could.
+            AddMods(Omics.Modifications.Mods.MetaMorpheusRnaModifications, false, true);
 
             var customModsPath = Path.Combine(DataDir, @"Mods", "RnaCustomModifications.txt");
             CustomDataFile.EnsureExists(customModsPath,
@@ -685,8 +700,7 @@ namespace EngineLayer
             {
                 try
                 {
-                    var mods = ProteaseDictionary.LoadEmbeddedProteaseMods();
-                    var result = ProteaseDictionary.LoadAndMergeCustomProteases(CustomProteasePath, mods);
+                    var result = ProteaseDictionary.LoadAndMergeCustomProteases(CustomProteasePath, ProteaseMods);
                     ReportSkippedCustomEntries(result.Skipped, "protease", CustomProteasePath);
                 }
                 catch (Exception e)
@@ -710,11 +724,20 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// mzLib refuses to let a custom digestion agent shadow one of its own, and reports the collision
-        /// through <c>CustomDigestionAgentLoadResult.Skipped</c> rather than throwing, specifically so the
-        /// caller can tell the user. Nothing consumed that before, so a user who named a custom protease
-        /// "trypsin" got silence and a protease that was not theirs.
+        /// mzLib refuses to let a custom digestion agent shadow one already loaded, and reports the
+        /// collision through <c>CustomDigestionAgentLoadResult.Skipped</c> rather than throwing, specifically
+        /// so the caller can tell the user. Nothing consumed that before, so a user who named a custom
+        /// protease "trypsin" got silence and a protease that was not theirs.
         /// </summary>
+        /// <remarks>
+        /// The message deliberately does not say a BUILT-IN owns the name. mzLib documents <c>Skipped</c> as
+        /// three cases it "intentionally" does not distinguish: the name is in the embedded resource, it was
+        /// loaded by an earlier call, or an earlier file in the same batch added it. Production reaches only
+        /// the first -- <see cref="SetUpGlobalVariables"/> runs once per process and passes one file -- but a
+        /// second run in the same process merges into mzLib's static dictionary again, and every one of the
+        /// user's own entries comes back skipped. Naming the cause would then be wrong, and the test suite is
+        /// exactly where that happens.
+        /// </remarks>
         private static void ReportSkippedCustomEntries(IReadOnlyList<string> skipped, string kind, string path)
         {
             if (skipped == null || skipped.Count == 0)
@@ -722,9 +745,15 @@ namespace EngineLayer
                 return;
             }
 
-            StartupWarnings.Add($"{skipped.Count} custom {kind}(s) in {Path.GetFileName(path)} were ignored because "
-                + $"a built-in {kind} already uses the same name: {string.Join(", ", skipped.Select(p => "'" + p + "'"))}. "
-                + $"Rename them in {path} if you meant to define your own.");
+            Warn($"{skipped.Count} custom {kind}(s) in {Path.GetFileName(path)} were ignored because the "
+                + $"name was already taken: {string.Join(", ", skipped.Select(p => "'" + p + "'"))}. The "
+                + $"definition already loaded is kept and the custom one discarded. Rename them in {path} "
+                + $"if you meant to define your own.");
+        }
+
+        private static void Warn(string v)
+        {
+            WarnHandler?.Invoke(null, new StringEventArgs(v, null));
         }
     }
 }
