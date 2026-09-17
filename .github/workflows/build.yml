@@ -53,8 +53,14 @@ jobs:
         run: |
           set -euo pipefail
           status=0
-          for project in CMD EngineLayer TaskLayer; do
-            asm="$project/bin/Release/${{ env.DOTNET_FRAMEWORK }}/$project.dll"
+          # project:assembly, because AssemblyName is not always the project name - GUI.Avalonia
+          # builds MetaMorpheusAvalonia.dll, and deriving the file name from the project name looked
+          # for something that does not exist and reported it as a missing assembly. That desktop app
+          # is the binary Apple Silicon users actually launch, so it is the one this most needs to cover.
+          for pair in CMD:CMD EngineLayer:EngineLayer TaskLayer:TaskLayer GUI.Avalonia:MetaMorpheusAvalonia; do
+            project="${pair%%:*}"
+            assembly="${pair##*:}"
+            asm="$project/bin/Release/${{ env.DOTNET_FRAMEWORK }}/$assembly.dll"
             path="./MetaMorpheus/$asm"
             if [ ! -f "$path" ]; then
               echo "::error::expected assembly not found: $path"

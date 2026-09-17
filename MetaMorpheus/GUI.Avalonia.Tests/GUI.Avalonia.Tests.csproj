@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="4.5.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="Avalonia.Headless.NUnit" Version="12.1.1" />
+    <!-- Required by the "XPlat Code Coverage" collector. Without it the collector is simply absent:
+         the run reports "Unable to find a datacollector" on a line nobody reads, exits 0, and uploads
+         nothing, which is what made Codecov report a zero-line patch on a four-thousand-line PR.
+         Referenced here rather than added by the workflow, so a local run collects coverage too. -->
+    <PackageReference Include="coverlet.collector" Version="6.0.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GUI.Avalonia\GUI.Avalonia.csproj" />
+  </ItemGroup>
+
+  <!-- The smallest real spectra/database pairing in the repository, the same one CalibrationTests and
+       SearchTaskTest use, so the end-to-end test runs a genuine search in seconds rather than minutes. -->
+  <ItemGroup>
+    <None Include="..\Test\TestData\mouseOne.mzML" CopyToOutputDirectory="PreserveNewest" Link="TestData\mouseOne.mzML" />
+    <None Include="..\Test\TestData\mouseOne.xml" CopyToOutputDirectory="PreserveNewest" Link="TestData\mouseOne.xml" />
+  </ItemGroup>
+
+</Project>

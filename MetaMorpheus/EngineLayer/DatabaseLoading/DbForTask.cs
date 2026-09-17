@@ -13,6 +13,15 @@ public class DbForTask
         DecoyIdentifier = decoyIdentifier ?? GlobalVariables.DecoyIdentifier;
     }
 
+    /// <summary>
+    /// The filename heuristic every front end uses to guess whether a database is a contaminant list.
+    /// Ordinal, so it does not depend on the current culture. A guess only - callers should let the
+    /// user override it.
+    /// </summary>
+    public static bool LooksLikeContaminant(string filePath) =>
+        filePath.Contains("contaminant", System.StringComparison.OrdinalIgnoreCase)
+        || filePath.Contains("crap", System.StringComparison.OrdinalIgnoreCase);
+
     public bool IsSpectralLibrary { get; }
     public string FilePath { get; }
     public bool IsContaminant { get; }
