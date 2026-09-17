@@ -560,13 +560,82 @@ namespace Test
         }
 
         /// <summary>
+        /// A TmtDesign.txt the reader refuses is no better than none: the SDRF falls back to one row
+        /// per file, and the warning before the search says the design is the reason, not its absence.
+        /// </summary>
+        [Test]
+        public static void ATmtSearchWithAnUnusableDesignDescribesEachFileOnce_AndSaysWhy()
+        {
+            string root = RunTmtSearchWritingSdrf("SdrfOutput_TmtUnusableDesign", writeDesign: true,
+                out string output, out List<string> warnings, designIsUnusable: true);
+
+            var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
+            document.LoadResults();
+
+            Assert.That(document.Results.Count, Is.EqualTo(1), "A refused design gives no channels to expand.");
+            Assert.That(document.Results.Single()["comment[label]"], Is.EqualTo("not available"));
+
+            Assert.That(warnings.Any(w => w.Contains("cannot be used as it stands")
+                                          && w.Contains("not a sample type")), Is.True,
+                "The warning names the design's own error: " + string.Join(" | ", warnings));
+
+            Directory.Delete(root, true);
+        }
+
+        /// <summary>
+        /// A DiLeu search gets its channel rows, but PRIDE has no DiLeu channel terms, so the user is
+        /// told before the search that comment[label] will stay empty.
+        /// </summary>
+        [Test]
+        public static void ADiLeuSearchIsWarnedThatItsLabelWillNotBeFilledIn()
+        {
+            string folder = SetUpIsolatedRun(nameof(ADiLeuSearchIsWarnedThatItsLabelWillNotBeFilledIn),
+                out string spectraPath, out _);
+            File.WriteAllLines(Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName), new[]
+            {
+                TmtExperimentalDesign.Header,
+                $"{spectraPath}	Plex1	Sample1	115a	CondA	1	1	1	study sample"
+            });
+
+            var task = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    WriteSdrf = true,
+                    DoMultiplexQuantification = true,
+                    MultiplexModId = "DiLeu-12plex on K"
+                }
+            };
+
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                typeof(SearchTask)
+                    .GetMethod("WarnAboutSdrfGaps", BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .Invoke(task, new object[] { new List<string> { spectraPath } });
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+            }
+
+            Assert.That(warnings, Has.Count.EqualTo(1), string.Join(" | ", warnings));
+            Assert.That(warnings.Single(), Does.Contain("DiLeu").And.Contain("comment[label]"));
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
         /// Runs the TMT11 fixture MultiplexQuantificationTests uses, with SDRF output on, in a folder of
         /// its own. With <paramref name="writeDesign"/>, a TmtDesign.txt goes beside the spectra: the
         /// last channel is Empty, and the rows are written in reverse so document order cannot pass
-        /// for reporter m/z order. Returns the root folder to delete.
+        /// for reporter m/z order. With <paramref name="designIsUnusable"/>, every row's Sample Type is
+        /// one the design reader refuses. Returns the root folder to delete.
         /// </summary>
         private static string RunTmtSearchWritingSdrf(string folderName, bool writeDesign,
-            out string output, out List<string> warnings)
+            out string output, out List<string> warnings, bool designIsUnusable = false)
         {
             string root = Path.Combine(TestContext.CurrentContext.TestDirectory, folderName);
             if (Directory.Exists(root)) Directory.Delete(root, true);
@@ -580,7 +649,8 @@ namespace Test
             {
                 var designRows = Tmt11Channels
                     .Select((tag, i) => $"{mzml}\tPlex1\tSample{i + 1}\t{tag}\tCond{(i % 2 == 0 ? "A" : "B")}\t{i / 2 + 1}\t1\t1\t" +
-                                        (i == Tmt11Channels.Length - 1 ? "empty" : "study sample"))
+                                        (designIsUnusable ? "not a sample type"
+                                            : i == Tmt11Channels.Length - 1 ? "empty" : "study sample"))
                     .Reverse();
                 File.WriteAllLines(Path.Combine(dataFolder, GlobalVariables.TmtExperimentalDesignFileName),
                     new[] { TmtExperimentalDesign.Header }.Concat(designRows));
