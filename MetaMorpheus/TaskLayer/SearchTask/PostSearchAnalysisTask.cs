@@ -829,7 +829,9 @@ namespace TaskLayer
                                 psm.ScanRetentionTime,
                                 psm.ScanPrecursorCharge,
                                 psmToProteinGroups[psm],
-                                optionalChemicalFormula: identifiedBioPolymer.ThisChemicalFormula,
+                                optionalChemicalFormula: GlobalVariables.AnalyteType == AnalyteType.Oligo
+                                    ? identifiedBioPolymer.ThisChemicalFormula
+                                    : null,
                                 psmScore: psm.Score,
                                 qValue: psmsForQuantification.FilterType == FilterType.QValue ? psm.FdrInfo.QValue : psm.FdrInfo.PEP_QValue,
                                 decoy: psm.IsDecoy,
