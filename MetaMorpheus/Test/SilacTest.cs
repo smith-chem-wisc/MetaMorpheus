@@ -693,6 +693,59 @@ namespace Test
             File.Delete(mzmlName);
         }
 
+        /// <summary>
+        /// FlashLFQ leaves random-retention-time MBR decoy peaks in FlashLfqResults.Peaks so it can estimate MBR FDR,
+        /// and those decoys carry their donor's full sequence. CalculateSilacIntensities merges peaks by full sequence,
+        /// so without filtering, the decoy's envelopes are summed into the target channel's SILAC intensity.
+        /// </summary>
+        [Test]
+        public static void TestSilacIntensitiesIgnoreMbrDecoyPeaks()
+        {
+            SpectraFileInfo file = new SpectraFileInfo("silacMbrDecoy.mzML", "", 0, 0, 0);
+            var flashLfqProteinGroups = new List<FlashLFQ.ProteinGroup> { new FlashLFQ.ProteinGroup("accession1", "gene1", "organism1") };
+
+            //"PEPTIDEa" is how a heavy peptide is represented before it's converted back to "PEPTIDEK(+8.014)"
+            var lightId = new FlashLFQ.Identification(file, "PEPTIDEK", "PEPTIDEK", 927.45, 10.0, 2, flashLfqProteinGroups);
+            var heavyId = new FlashLFQ.Identification(file, "PEPTIDEa", "PEPTIDEa", 935.47, 10.0, 2, flashLfqProteinGroups);
+
+            //light and heavy are both seen in ms1 scans 0, 1 and 2, at a 2:1 ratio
+            var lightPeak = new FlashLFQ.ChromatographicPeak(lightId, file);
+            lightPeak.IsotopicEnvelopes.AddRange(BuildEnvelopes(new[] { 0, 1, 2 }, 10));
+            var heavyPeak = new FlashLFQ.ChromatographicPeak(heavyId, file);
+            heavyPeak.IsotopicEnvelopes.AddRange(BuildEnvelopes(new[] { 0, 1, 2 }, 5));
+
+            //the mbr decoy is built from the light donor identification, so it shares the light full sequence
+            var randomRtDecoyPeak = new FlashLFQ.MbrChromatographicPeak(lightId, file, 10.0, randomRt: true);
+            randomRtDecoyPeak.IsotopicEnvelopes.AddRange(BuildEnvelopes(new[] { 0, 1, 2 }, 1000));
+
+            var peaks = new Dictionary<SpectraFileInfo, List<FlashLFQ.ChromatographicPeak>>
+            {
+                { file, new List<FlashLFQ.ChromatographicPeak> { lightPeak, heavyPeak, randomRtDecoyPeak } }
+            };
+
+            var lightPeptide = new FlashLFQ.Peptide("PEPTIDEK", "PEPTIDEK", true, new HashSet<FlashLFQ.ProteinGroup>(flashLfqProteinGroups));
+            var heavyPeptide = new FlashLFQ.Peptide("PEPTIDEa", "PEPTIDEa", true, new HashSet<FlashLFQ.ProteinGroup>(flashLfqProteinGroups));
+            var unlabeledToPeptides = new Dictionary<string, List<FlashLFQ.Peptide>>
+            {
+                { "PEPTIDEK", new List<FlashLFQ.Peptide> { lightPeptide, heavyPeptide } }
+            };
+
+            SilacConversions.CalculateSilacIntensities(peaks, unlabeledToPeptides);
+
+            //the decoy's 3000 must not reach the light channel, and the 2:1 ratio must survive
+            Assert.That(lightPeptide.GetIntensity(file), Is.EqualTo(30).Within(1e-6));
+            Assert.That(heavyPeptide.GetIntensity(file), Is.EqualTo(15).Within(1e-6));
+        }
+
+        private static List<FlashLFQ.IsotopicEnvelope> BuildEnvelopes(int[] zeroBasedScanIndices, double intensityPerScan)
+        {
+            //charge state 1 so FlashLFQ.IsotopicEnvelope's intensity/charge division is the identity
+            return zeroBasedScanIndices
+                .Select(scanIndex => new FlashLFQ.IsotopicEnvelope(
+                    new IndexedMassSpectralPeak(500, intensityPerScan, scanIndex, 10.0 + scanIndex), 1, intensityPerScan, 1))
+                .ToList();
+        }
+
         [Test]
         public static void TestSilacHelperMethods()
         {
