@@ -365,5 +365,72 @@ namespace Test
                 Assert.That(ex.Message, Does.Contain("OopsOnlyThree"), "the offending line is what the user has to fix");
             });
         }
+
+        /// <summary>
+        /// A hand-written file with no header row at all must not lose a crosslinker. Detecting the header
+        /// by position (the original) or by "first line that is not a note" (its first fix) both consumed a
+        /// real row: with a '#' note on top, the note was skipped as a note and MyLinker1 was eaten as the
+        /// header. Silently, which is worse than the crash the note used to cause. The header is now the
+        /// first line that actually LOOKS like the header.
+        /// </summary>
+        [Test]
+        public static void LoadCrosslinkers_KeepsEveryRowOfAHeaderlessFile()
+        {
+            string path = Path.Combine(_dir, "CustomCrosslinkers.tsv");
+            File.WriteAllLines(path, new[]
+            {
+                "# my own crosslinkers",
+                "MyLinker1\tK\tK\tT\tCID\t158.0\t0\t0\t1\t1\t1",
+                "MyLinker2\tK\tK\tT\tCID\t159.0\t0\t0\t1\t1\t1",
+            });
+
+            var loaded = Crosslinker.LoadCrosslinkers(path).ToList();
+
+            Assert.That(loaded.Select(p => p.CrosslinkerName), Is.EqualTo(new[] { "MyLinker1", "MyLinker2" }));
+        }
+
+        /// <summary>
+        /// A row with the right column count but an unreadable mass is the last route to a raw .NET crash
+        /// out of SetUpGlobalVariables: the column-count guard passes it and double.Parse throws
+        /// FormatException naming neither the file nor the line. It now follows the same failure contract as
+        /// every other custom-file reader.
+        /// </summary>
+        [Test]
+        public static void LoadCrosslinkers_NamesTheFileAndLineForARowItCannotParse()
+        {
+            string path = Path.Combine(_dir, "CustomCrosslinkers.tsv");
+            File.WriteAllLines(path, new[]
+            {
+                CrosslinkerHeader,
+                "BadMass\tK\tK\tT\tCID\tnot-a-number\t0\t0\t1\t1\t1",
+            });
+
+            var ex = Assert.Throws<MetaMorpheusException>(() => Crosslinker.LoadCrosslinkers(path).ToList());
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(ex.Message, Does.Contain("CustomCrosslinkers.tsv"));
+                Assert.That(ex.Message, Does.Contain("Line 2"));
+                Assert.That(ex.Message, Does.Contain("BadMass"), "the offending line is what the user has to fix");
+            });
+        }
+
+        /// <summary>
+        /// Seeding writes beside the destination and moves the finished file into place, so a write that
+        /// fails leaves nothing behind. It matters more here than it looks: rule 1 protects whatever sits at
+        /// the destination on every later startup, so a partial file written there would be permanent.
+        /// </summary>
+        [Test]
+        public static void EnsureExists_LeavesNoPartialFileWhenItCannotFinish()
+        {
+            // a directory where the file should go: the template builds and writes, and the move fails
+            string path = Path.Combine(_dir, "blocked.tsv");
+            Directory.CreateDirectory(path);
+
+            Assert.Throws<MetaMorpheusException>(() =>
+                CustomDataFile.EnsureExists(path, () => "a perfectly good template", "test thing"));
+
+            Assert.That(File.Exists(path + ".tmp"), Is.False, "a half-written file must not be left behind");
+        }
     }
 }

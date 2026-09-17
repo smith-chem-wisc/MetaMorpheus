@@ -694,11 +694,20 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// mzLib refuses to let a custom digestion agent shadow one of its own, and reports the collision
-        /// through <c>CustomDigestionAgentLoadResult.Skipped</c> rather than throwing, specifically so the
-        /// caller can tell the user. Nothing consumed that before, so a user who named a custom protease
-        /// "trypsin" got silence and a protease that was not theirs.
+        /// mzLib refuses to let a custom digestion agent shadow one already loaded, and reports the
+        /// collision through <c>CustomDigestionAgentLoadResult.Skipped</c> rather than throwing, specifically
+        /// so the caller can tell the user. Nothing consumed that before, so a user who named a custom
+        /// protease "trypsin" got silence and a protease that was not theirs.
         /// </summary>
+        /// <remarks>
+        /// The message deliberately does not say a BUILT-IN owns the name. mzLib documents <c>Skipped</c> as
+        /// three cases it "intentionally" does not distinguish: the name is in the embedded resource, it was
+        /// loaded by an earlier call, or an earlier file in the same batch added it. Production reaches only
+        /// the first -- <see cref="SetUpGlobalVariables"/> runs once per process and passes one file -- but a
+        /// second run in the same process merges into mzLib's static dictionary again, and every one of the
+        /// user's own entries comes back skipped. Naming the cause would then be wrong, and the test suite is
+        /// exactly where that happens.
+        /// </remarks>
         private static void ReportSkippedCustomEntries(IReadOnlyList<string> skipped, string kind, string path)
         {
             if (skipped == null || skipped.Count == 0)
@@ -706,9 +715,10 @@ namespace EngineLayer
                 return;
             }
 
-            Warn($"{skipped.Count} custom {kind}(s) in {Path.GetFileName(path)} were ignored because "
-                + $"a built-in {kind} already uses the same name: {string.Join(", ", skipped.Select(p => "'" + p + "'"))}. "
-                + $"Rename them in {path} if you meant to define your own.");
+            Warn($"{skipped.Count} custom {kind}(s) in {Path.GetFileName(path)} were ignored because the "
+                + $"name was already taken: {string.Join(", ", skipped.Select(p => "'" + p + "'"))}. The "
+                + $"definition already loaded is kept and the custom one discarded. Rename them in {path} "
+                + $"if you meant to define your own.");
         }
 
         private static void Warn(string v)

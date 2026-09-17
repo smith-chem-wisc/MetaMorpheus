@@ -102,12 +102,46 @@ namespace EngineLayer
                     throw new MetaMorpheusException("the template was empty");
                 }
 
-                File.WriteAllText(path, template);
+                // Written beside the destination and moved into place. File.WriteAllText truncates its
+                // destination before it streams, so writing straight to `path` means an interrupted write
+                // -- a full disk is the realistic one -- leaves a partial file that rule 1 then protects on
+                // every later startup, and nothing ever repairs it. The move is the only step that creates
+                // the real path, and it is a rename within one folder.
+                string partialPath = path + ".tmp";
+                try
+                {
+                    File.WriteAllText(partialPath, template);
+                    File.Move(partialPath, path);
+                }
+                catch
+                {
+                    TryDelete(partialPath);
+                    throw;
+                }
             }
             catch (Exception e)
             {
                 throw new MetaMorpheusException(
                     $"Error creating the default {description} file at {path}: {e.Message}", e);
+            }
+        }
+
+        /// <summary>
+        /// Best-effort removal of the half-written file left by a failed seed. It is already the unhappy
+        /// path, so a failure to clean up must not replace the error that got us here.
+        /// </summary>
+        private static void TryDelete(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+            catch
+            {
+                // nothing useful to do, and the caller's exception is the one worth reporting
             }
         }
 

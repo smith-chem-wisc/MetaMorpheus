@@ -83,6 +83,12 @@ namespace EngineLayer
         /// </summary>
         private const int ExpectedColumnCount = 11;
 
+        /// <summary>
+        /// How the header row starts. Matched by content rather than by position, because a hand-edited
+        /// file may carry notes above it -- and may have no header row at all.
+        /// </summary>
+        private const string HeaderPrefix = "Name\t";
+
         public static IEnumerable<Crosslinker> LoadCrosslinkers(string CrosslinkerLocation)
         {
             using (StreamReader crosslinkers = new StreamReader(CrosslinkerLocation))
@@ -103,9 +109,11 @@ namespace EngineLayer
                         continue;
                     }
 
-                    // The header is the first line that is not blank or a note, wherever it lands. Counting
-                    // it by position instead let a note above it push the header into the data rows.
-                    if (!headerSeen)
+                    // The header is the first line that is not blank or a note AND looks like the header,
+                    // wherever it lands. Counting it by position let a note above it push the header into
+                    // the data rows; consuming the first line unconditionally instead silently ate the
+                    // first crosslinker of a hand-written file that has no header row at all.
+                    if (!headerSeen && line.TrimStart().StartsWith(HeaderPrefix, StringComparison.Ordinal))
                     {
                         headerSeen = true;
                         continue;
@@ -117,8 +125,28 @@ namespace EngineLayer
                             + $"{line.Split('\t').Length} tab-separated column(s); {ExpectedColumnCount} are required. The line was: {line}");
                     }
 
-                    yield return ParseCrosslinkerFromString(line);
+                    yield return ParseCrosslinkerFromString(line, CrosslinkerLocation, lineCount);
                 }
+            }
+        }
+
+        /// <summary>
+        /// <see cref="ParseCrosslinkerFromString(string)"/>, with a malformed row reported as a
+        /// <see cref="MetaMorpheusException"/> naming the file, the line number and the line -- the failure
+        /// contract the other custom-file readers follow. Without it, a header this loader does not
+        /// recognise, or a row with a non-numeric mass, reaches double.Parse and comes back as a raw
+        /// FormatException out of SetUpGlobalVariables, before any window opens.
+        /// </summary>
+        private static Crosslinker ParseCrosslinkerFromString(string line, string path, int lineNumber)
+        {
+            try
+            {
+                return ParseCrosslinkerFromString(line);
+            }
+            catch (Exception e) when (!(e is MetaMorpheusException))
+            {
+                throw new MetaMorpheusException($"Line {lineNumber} of {Path.GetFileName(path)} could not be read "
+                    + $"as a crosslinker: {e.Message} The line was: {line}", e);
             }
         }
 
