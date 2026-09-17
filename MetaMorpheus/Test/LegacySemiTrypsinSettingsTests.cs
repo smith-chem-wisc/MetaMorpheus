@@ -155,6 +155,39 @@ namespace Test
         }
 
         /// <summary>
+        /// A custom protease that cuts exactly where semi-trypsin cut, but carries a cleavage modification, is a different
+        /// digestion and is never chosen as the replacement, even though its name sorts first. The replacement is found by
+        /// motif and ties are broken by ordinal name, which puts every capitalised name before "trypsin", so without the
+        /// cleavage modification in the comparison this protease would win and would silently modify every peptide terminus.
+        /// </summary>
+        [Test]
+        public static void LegacySemiTrypsin_IsNotReplacedByAProteaseThatModifiesEveryCleavage()
+        {
+            const string modifyingTrypsinName = "ALegacySemiTrypsinSettingsTests-trypsin-that-modifies-cleavage";
+            Assert.That(string.Compare(modifyingTrypsinName, "trypsin", StringComparison.Ordinal), Is.LessThan(0),
+                "premise: this name sorts before trypsin, so on name alone it wins the tie-break");
+
+            Omics.Modifications.ModificationMotif.TryGetMotif("K", out var motif);
+            var cleavageMod = new Omics.Modifications.Modification(_originalId: "cleavage mod on K", _modificationType: "testModType",
+                _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
+            ProteaseDictionary.Dictionary[modifyingTrypsinName] = new Protease(modifyingTrypsinName, CleavageSpecificity.Full, null, null,
+                DigestionMotif.ParseDigestionMotifsFromString(SemiTrypsinMotifs), cleavageMod);
+            try
+            {
+                var migrated = (DigestionParams)LoadGlycoTask(GlycoTestData("GlycoSearchTaskconfig_ETD.toml"), true).Task.CommonParameters.DigestionParams;
+
+                Assert.That(migrated.Protease.Name, Is.Not.EqualTo(modifyingTrypsinName), "a protease that modifies every cleavage is not semi-trypsin");
+                Assert.That(migrated.Protease.CleavageMod, Is.Null, "semi-trypsin modified nothing when it cleaved");
+                Assert.That(MotifSignature(migrated.Protease.DigestionMotifs), Is.EqualTo(MotifSignature(DigestionMotif.ParseDigestionMotifsFromString(SemiTrypsinMotifs))),
+                    "the replacement must still cut exactly where semi-trypsin cut");
+            }
+            finally
+            {
+                ProteaseDictionary.Dictionary.Remove(modifyingTrypsinName);
+            }
+        }
+
+        /// <summary>
         /// A non-specific search file already asks for seeds through its search mode, so only the protease is translated:
         /// Semi stays Semi and None stays None, each with the terminus the file gave.
         /// </summary>

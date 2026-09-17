@@ -172,16 +172,25 @@ namespace TaskLayer
             return digestionParams;
         }
 
-        /// <summary>The shipped fully specific protease with exactly these cleavage motifs, or null if there is none.</summary>
+        /// <summary>
+        /// The shipped fully specific protease that cleaves exactly like the removed one, or null if there is none.
+        /// </summary>
+        /// <remarks>
+        /// A candidate matches on its cleavage motifs and on its cleavage modification. The removed proteases modified
+        /// nothing when they cleaved, so a protease that carries a modification is a different digestion even with the same
+        /// motifs: it would add that modification at every terminus it cuts. The modification has to be part of the
+        /// comparison because the candidates are every protease in the dictionary, including the user's own custom ones, and
+        /// the tie-break is ordinal by name, which puts every capitalised name ahead of "trypsin".
+        /// </remarks>
         private static Protease FindShippedFullySpecificProtease(string motifs)
         {
-            static string Signature(IEnumerable<DigestionMotif> m) => string.Join(";", m
+            static string Signature(IEnumerable<DigestionMotif> m, Modification cleavageMod) => string.Join(";", m
                 .Select(x => $"{x.InducingCleavage}|{x.PreventingCleavage}|{x.CutIndex}|{x.ExcludeFromWildcard}")
-                .OrderBy(s => s, StringComparer.Ordinal));
+                .OrderBy(s => s, StringComparer.Ordinal)) + "#" + cleavageMod?.IdWithMotif;
 
-            string wanted = Signature(DigestionMotif.ParseDigestionMotifsFromString(motifs));
+            string wanted = Signature(DigestionMotif.ParseDigestionMotifsFromString(motifs), null);
             return ProteaseDictionary.Dictionary.Values
-                .Where(p => p.CleavageSpecificity == CleavageSpecificity.Full && Signature(p.DigestionMotifs) == wanted)
+                .Where(p => p.CleavageSpecificity == CleavageSpecificity.Full && Signature(p.DigestionMotifs, p.CleavageMod) == wanted)
                 .OrderBy(p => p.Name, StringComparer.Ordinal)
                 .FirstOrDefault();
         }
