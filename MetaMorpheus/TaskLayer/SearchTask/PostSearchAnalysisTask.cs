@@ -818,6 +818,8 @@ namespace TaskLayer
 
                     foreach (var psm in spectraFile)
                     {
+                        var identifiedBioPolymer = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
+
                         flashLFQIdentifications.Add(
                             new Identification(
                                 fileInfo: rawfileinfo,
@@ -827,6 +829,7 @@ namespace TaskLayer
                                 psm.ScanRetentionTime,
                                 psm.ScanPrecursorCharge,
                                 psmToProteinGroups[psm],
+                                optionalChemicalFormula: identifiedBioPolymer.ThisChemicalFormula,
                                 psmScore: psm.Score,
                                 qValue: psmsForQuantification.FilterType == FilterType.QValue ? psm.FdrInfo.QValue : psm.FdrInfo.PEP_QValue,
                                 decoy: psm.IsDecoy,
