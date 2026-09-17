@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Chemistry;
 using EngineLayer;
 using MassSpectrometry;
+using Omics.Digestion;
 using Omics.Modifications;
 using System.Linq;
 using EngineLayer.FdrAnalysis;
@@ -519,9 +520,9 @@ public class CleavageSiteFilterTests
     /// carries the digestion parameters and the parent the filter reads.
     /// </summary>
     private static PeptideWithSetModifications Peptide(string proteinSequence, string peptideSequence,
-        string protease = "trypsin")
+        string protease = "trypsin", int maxMissedCleavages = 0)
     {
-        var digestionParams = new DigestionParams(protease: protease, maxMissedCleavages: 0, minPeptideLength: 1);
+        var digestionParams = new DigestionParams(protease: protease, maxMissedCleavages: maxMissedCleavages, minPeptideLength: 1);
         return new Proteomics.Protein(proteinSequence, "accession")
             .Digest(digestionParams, new List<Modification>(), new List<Modification>())
             .Single(p => p.BaseSequence == peptideSequence);
@@ -567,6 +568,16 @@ public class CleavageSiteFilterTests
     }
 
     [Test]
+    public void Rejects_SubstitutionThatCreatesACleavageSite_EvenWhenMissedCleavagesWouldAllowTheUncleavedForm()
+    {
+        // With missed cleavages allowed the full-length form is still producible, so this rejection
+        // is a stringency choice rather than an impossibility: the substitution splits the signal
+        // across cleaved and uncleaved forms. Pinned so the choice cannot change silently.
+        var peptide = Peptide("PEPTIDEKAAAR", "PEPTIDEK", maxMissedCleavages: 2);
+        Assert.That(Passes(peptide, 4, Substitution('T', 'R')), Is.False);
+    }
+
+    [Test]
     public void Accepts_SubstitutionThatLeavesCleavageUnchanged()
     {
         // T at residue 4 becomes S: no cut site is created, destroyed or blocked.
@@ -589,6 +600,21 @@ public class CleavageSiteFilterTests
         // that fails under trypsin|P is inert here.
         var peptide = Peptide("PEPTIDEKAAAR", "AAAR");
         Assert.That(Passes(peptide, 1, Substitution('A', 'P')), Is.True);
+    }
+
+    [Test]
+    public void Accepts_AnythingWhenTheSearchIsNotFullySpecific()
+    {
+        // Semi-specific peptides need not end at a cleavage site, so a substitution that moves one
+        // does not make this peptide impossible. The same substitution is rejected under a fully
+        // specific search by Rejects_SubstitutionThatDestroysTheCleavageSiteEndingThePeptide.
+        var digestionParams = new DigestionParams(protease: "trypsin", maxMissedCleavages: 0,
+            minPeptideLength: 1, searchModeType: CleavageSpecificity.Semi);
+        var peptide = new Proteomics.Protein("PEPTIDEKAAAR", "accession")
+            .Digest(digestionParams, new List<Modification>(), new List<Modification>())
+            .First(p => p.BaseSequence == "PEPTIDEK");
+
+        Assert.That(Passes(peptide, 8, Substitution('K', 'A')), Is.True);
     }
 
     [Test]

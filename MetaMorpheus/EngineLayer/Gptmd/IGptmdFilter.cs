@@ -154,7 +154,6 @@ public sealed class FlankingIonCoverageFilter : IGptmdFilter
     }
 }
 
-
 /// <summary>
 /// Rejects an amino acid substitution that moves the digestion agent's cut sites. Such a
 /// substitution changes where the protein is cleaved, so the peptide actually produced is not the
@@ -176,8 +175,15 @@ public sealed class CleavageSiteFilter : IGptmdFilter
         if (!TryGetSubstitution(modAttemptingToAdd, out char original, out char substituted))
             return true;
 
-        DigestionAgent? agent = candidatePeptide?.DigestionParams?.DigestionAgent;
+        IDigestionParams? digestionParams = candidatePeptide?.DigestionParams;
+        DigestionAgent? agent = digestionParams?.DigestionAgent;
         if (agent?.DigestionMotifs is not { Count: > 0 })
+            return true;
+
+        // Only a fully specific search requires the peptide's termini to be cleavage sites. In a
+        // semi- or non-specific search the peptide can exist wherever the substitution puts the
+        // sites, so moving one says nothing about whether the candidate is real.
+        if (digestionParams!.SearchModeType != CleavageSpecificity.Full)
             return true;
 
         // GptmdEngine passes the site in "one is N-terminus" space, so residue one arrives as two.
