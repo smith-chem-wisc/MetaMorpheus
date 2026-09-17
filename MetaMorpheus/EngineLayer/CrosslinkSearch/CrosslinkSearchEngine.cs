@@ -728,8 +728,9 @@ namespace EngineLayer.CrosslinkSearch
 
             List<Product> childProducts = new List<Product>();
 
-            //There are two situations now. 1) The childScan is MS3 scan and the crosslinker is cleavable. So the precursor mass of the MS3 scan must be same as signature ions.
-            //2) The childScan is MS2 or MS3, but the precursor of the ChildScan is same. It is weird that the MS3 has same precursor mass as its parent scan, but it happens in some data.
+            //Three situations. 1) The childScan is an MS3 scan and the crosslinker is cleavable, so the precursor mass of the MS3 scan matches one of this peptide's signature ions.
+            //2) The childScan is an MS2 child of the same precursor. 3) The childScan is an MS3 whose precursor matches the parent MS2's, which is weird but happens in some data.
+            //Anything else is an MS3 that is not evidence about this peptide, and is not annotated.
             if (Crosslinker.Cleavable && childScan.TheScan.MsnOrder == 3 && (shortMassAlphaMs3 || longMassAlphaMs3))
             {
                 double massToLocalize = shortMassAlphaMs3 ? Crosslinker.CleaveMassShort : Crosslinker.CleaveMassLong;
@@ -752,26 +753,24 @@ namespace EngineLayer.CrosslinkSearch
           
                     peptideWithMod.Fragment(CommonParameters.MS3ChildScanDissociationType, FragmentationTerminus.Both, childProducts);              
             }
-            //else if (Math.Abs(childScan.PrecursorMass - parentScan.PrecursorMass) < 0.001)
+            else if (childScan.TheScan.MsnOrder == 2)
+            {
+                childProducts = CrosslinkedPeptide.XlGetTheoreticalFragments(CommonParameters.MS2ChildScanDissociationType,
+                    Crosslinker, new List<int> { possibleSite }, otherPeptide.MonoisotopicMass, mainPeptide).First().Item2;
+            }
+            else if (Math.Abs(childScan.PrecursorMass - parentScan.PrecursorMass) < 0.001)
+            {
+                //The MS3 scan has the same precursor mass as the parent MS2. Rare, but it happens in some data.
+                childProducts = CrosslinkedPeptide.XlGetTheoreticalFragments(CommonParameters.MS3ChildScanDissociationType,
+                    Crosslinker, new List<int> { possibleSite }, otherPeptide.MonoisotopicMass, mainPeptide).First().Item2;
+            }
             else
             {
-                if (childScan.TheScan.MsnOrder == 2)
-                {
-                    childProducts = CrosslinkedPeptide.XlGetTheoreticalFragments(CommonParameters.MS2ChildScanDissociationType,
-                        Crosslinker, new List<int> { possibleSite }, otherPeptide.MonoisotopicMass, mainPeptide).First().Item2;
-                }
-                else
-                {
-                    //It tried to corver the situation that the MS3 scan have the same precursor mass as the parent MS2.  
-                    //This is so rare that I only see it in one data. May need unit test in the future.
-                    childProducts = CrosslinkedPeptide.XlGetTheoreticalFragments(CommonParameters.MS3ChildScanDissociationType,
-                        Crosslinker, new List<int> { possibleSite }, otherPeptide.MonoisotopicMass, mainPeptide).First().Item2;
-                }
+                //An MS3 whose precursor matches neither this peptide's stub masses nor the parent MS2 is a
+                //signature ion of something else -- usually the partner peptide. Annotating it against this
+                //peptide anyway fed coincidental matches into the score.
+                return null;
             }
-            //else
-            //{
-            //    return null;
-            //}
 
             var matchedChildIons = MatchFragmentIons(childScan, childProducts, CommonParameters);
 
