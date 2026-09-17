@@ -82,25 +82,35 @@ namespace TaskLayer
         /// Only the non-specific search engine, which a Search task runs for <see cref="SearchType.NonSpecific"/>, can use seeds
         /// (it makes its own N and C passes). Classic and Modern search, Glyco, crosslink, GPTMD and calibration score digestion
         /// products as they are, so given seeds they finish normally and report far fewer, wrong identifications.
+        /// <para>The reverse holds for nucleic acids: the non-specific search can only trim seeds, so it needs the rnase
+        /// singleN or singleC, and it has no complementary ions for them.</para>
         /// </remarks>
         /// <param name="taskName">The name the user knows the task by, included in the message when given.</param>
         public string GetSeedDigestionRefusal(string taskName = null)
         {
-            if (this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific }) // the non-specific search engine trims seeds
-            {
-                return null;
-            }
-
             string which = taskName == null ? "This task" : $"Task \"{taskName}\"";
+            bool nonSpecificSearch = this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific }; // the non-specific search engine trims seeds
+
             if (CommonParameters?.DigestionParams is RnaDigestionParams rnaDigestionParams)
             {
-                return AsksForSeeds(rnaDigestionParams)
-                    ? $"Cannot proceed. {which} uses the rnase {rnaDigestionParams.Rnase.Name}, which gives seed oligos that only a non-specific search could use, " +
-                      "and non-specific search is not yet implemented for nucleic acids. Choose a fully specific rnase, or the rnase non-specific to search every oligo."
+                if (!nonSpecificSearch)
+                {
+                    return AsksForSeeds(rnaDigestionParams)
+                        ? $"Cannot proceed. {which} uses the rnase {rnaDigestionParams.Rnase.Name}, which gives seed oligos that only the non-specific search can use. " +
+                          "Use a Search task with the non-specific search type, or choose a fully specific rnase (the rnase non-specific searches every oligo)."
+                        : null;
+                }
+                if (!AsksForSeeds(rnaDigestionParams))
+                {
+                    return $"Cannot proceed. {which} is a non-specific search with the rnase {rnaDigestionParams.Rnase.Name}. " +
+                           $"Non-specific search over nucleic acids needs the rnase singleN or singleC; for {rnaDigestionParams.Rnase.Name}, use Classic or Modern search.";
+                }
+                return CommonParameters.AddCompIons
+                    ? $"Cannot proceed. {which} is a non-specific search over nucleic acids with complementary ions, which are not implemented for nucleic acids. Turn off complementary ions."
                     : null;
             }
 
-            if (CommonParameters?.DigestionParams is not DigestionParams digestionParams || !AsksForSeeds(digestionParams))
+            if (nonSpecificSearch || CommonParameters?.DigestionParams is not DigestionParams digestionParams || !AsksForSeeds(digestionParams))
             {
                 return null;
             }

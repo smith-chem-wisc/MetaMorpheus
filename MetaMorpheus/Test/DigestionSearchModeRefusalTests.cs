@@ -161,8 +161,9 @@ namespace Test
                 yield return new TestCaseData(kind, "singleC", true).SetName($"{kind} with singleC is refused (seed oligos)");
             }
 
-            // non-specific search over nucleic acids is refused by the runner with its own message, not by this check
-            yield return new TestCaseData("NonSpecificSearch", "singleN", false).SetName("NonSpecificSearch with singleN is left to the runner");
+            // the non-specific search trims seed oligos, so it is the one search that needs them
+            yield return new TestCaseData("NonSpecificSearch", "singleN", false).SetName("NonSpecificSearch with singleN is allowed");
+            yield return new TestCaseData("NonSpecificSearch", "singleC", false).SetName("NonSpecificSearch with singleC is allowed");
         }
 
         /// <summary>
@@ -180,12 +181,44 @@ namespace Test
                 Assert.That(refusal, Does.Contain("\"MyTask\""), "the message must name the task");
                 Assert.That(refusal, Does.Contain(rnase), "the message must name the rnase");
                 Assert.That(refusal, Does.Contain("seed oligos"), "the message must say why");
-                Assert.That(refusal, Does.Contain("fully specific rnase"), "the message must say what to do instead");
+                Assert.That(refusal, Does.Contain("non-specific search type").And.Contain("fully specific rnase"), "the message must say what to do instead");
             }
             else
             {
                 Assert.That(refusal, Is.Null);
             }
+        }
+
+        /// <summary>
+        /// The other direction: the non-specific search over nucleic acids can only trim seeds, so any other rnase is
+        /// refused, and so are complementary ions, which have no nucleic acid definition.
+        /// </summary>
+        [Test]
+        [TestCase("RNase T1")]
+        [TestCase("top-down")]
+        [TestCase("non-specific")]
+        public static void GetSeedDigestionRefusal_NonSpecificSearchOverNucleicAcids_NeedsSingleNOrSingleC(string rnase)
+        {
+            string refusal = MakeRnaTask("NonSpecificSearch", rnase).GetSeedDigestionRefusal("MyTask");
+
+            Assert.That(refusal, Does.StartWith("Cannot proceed."));
+            Assert.That(refusal, Does.Contain("\"MyTask\"").And.Contain(rnase));
+            Assert.That(refusal, Does.Contain("singleN or singleC").And.Contain("Classic or Modern"));
+        }
+
+        [Test]
+        public static void GetSeedDigestionRefusal_NonSpecificSearchOverNucleicAcids_RefusesComplementaryIons()
+        {
+            var task = new SearchTask
+            {
+                CommonParameters = new CommonParameters(addCompIons: true, digestionParams: new RnaDigestionParams("singleN")),
+                SearchParameters = new SearchParameters { SearchType = SearchType.NonSpecific },
+            };
+
+            string refusal = task.GetSeedDigestionRefusal("MyTask");
+
+            Assert.That(refusal, Does.StartWith("Cannot proceed."));
+            Assert.That(refusal, Does.Contain("complementary ions"));
         }
 
         [Test]

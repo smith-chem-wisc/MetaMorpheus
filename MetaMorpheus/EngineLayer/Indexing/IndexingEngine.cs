@@ -14,6 +14,7 @@ using Omics;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
 using UsefulProteomicsDatabases;
+using Transcriptomics.Digestion;
 
 namespace EngineLayer.Indexing
 {
@@ -155,7 +156,7 @@ namespace EngineLayer.Indexing
             }
             bool addInteriorTerminalModsToPrecursorIndex = GeneratePrecursorIndex && CommonParameters.DigestionParams.DigestionAgent.Name.Contains("single");
             List<Modification> terminalModifications = addInteriorTerminalModsToPrecursorIndex ?
-                NonSpecificEnzymeSearchEngine.GetVariableTerminalMods(CommonParameters.DigestionParams.FragmentationTerminus, VariableModifications) :
+                NonSpecificEnzymeSearchEngine.GetVariableTerminalMods(NonSpecificEnzymeSearchEngine.SeedTerminus(CommonParameters.DigestionParams), VariableModifications) :
                 null;
 
             // Create the fragment index in compressed sparse row form. Peptide ids are split into
@@ -301,24 +302,17 @@ namespace EngineLayer.Indexing
                 }
 
                 //Add terminal mods if needed (do it here rather than earlier so that we don't have to fragment twice)
-                // The "single" agents are NOT protein-only: mzLib's rnases.tsv ships RNases named
-                // singleN and singleC, which the Name.Contains("single") test above matches. What makes
-                // this reachable only for peptides is the refusal in SearchTask.RunSpecific -- a
-                // non-specific search rejects a nucleic acid database before it gets here. That guard
-                // lives in another file, so throw rather than skip if it is ever relaxed: silently
-                // omitting interior terminal mods would cost identifications with nothing reporting why.
+                // The "single" agents match both the proteases and mzLib's rnases singleN and singleC.
                 if (addInteriorTerminalModsToPrecursorIndex)
                 {
-                    if (peptides[peptideId] is not PeptideWithSetModifications peptideForTerminalMods)
+                    if (peptides[peptideId] is OligoWithSetMods seed)
                     {
-                        throw new MetaMorpheusException(
-                            "Interior terminal modifications are only implemented for peptides, but a " +
-                            $"{peptides[peptideId].GetType().Name} reached the precursor index under digestion agent " +
-                            $"'{CommonParameters.DigestionParams.DigestionAgent.Name}'. Non-specific search is " +
-                            "supposed to refuse a nucleic acid database before indexing.");
+                        CollectInteriorTerminalModPrecursorBins(interiorEmissions, seed, peptideId, terminalModifications);
                     }
-
-                    CollectInteriorTerminalModPrecursorBins(interiorEmissions, fragments, peptideForTerminalMods, peptideId, terminalModifications);
+                    else
+                    {
+                        CollectInteriorTerminalModPrecursorBins(interiorEmissions, fragments, (PeptideWithSetModifications)peptides[peptideId], peptideId, terminalModifications);
+                    }
                 }
 
                 if (fragmentationProgress.AdvanceOnePeptide(peptides.Count, out int percentProgress))
@@ -490,14 +484,48 @@ namespace EngineLayer.Indexing
                                         WaterMonoisotopicMass;
                 }
 
-                foreach (Modification mod in relevantDatabaseMod.Value)
+                AddTerminalModPrecursorBins(emissions, basePrecursorMass, relevantDatabaseMod.Value, peptideId);
+            }
+        }
+
+        /// <summary>
+        /// The nucleic acid counterpart of the peptide overload: the precursor bins of the sub-oligos of a singleN or
+        /// singleC seed that end in a terminal modification. Sub-oligo masses come from
+        /// <see cref="OligoSeedTrimming.MassesWithoutOpenEndTerminus"/> plus each terminus the rnase can leave at the
+        /// cut, because RNA fragment caps do not add up to the precursor the way b and y ions plus water do.
+        /// </summary>
+        private void CollectInteriorTerminalModPrecursorBins(List<(int Bin, int PeptideId)> emissions, OligoWithSetMods seed, int peptideId, List<Modification> variableModifications)
+        {
+            var rnase = ((RnaDigestionParams)CommonParameters.DigestionParams).Rnase;
+            FragmentationTerminus fixedTerminus = OligoSeedTrimming.FixedTerminus(rnase).Value;
+            double[] massesWithoutOpenEnd = OligoSeedTrimming.MassesWithoutOpenEndTerminus(seed, fixedTerminus);
+            int length = seed.BaseSequence.Length;
+
+            Dictionary<int, List<Modification>> databaseAnnotatedMods = NonSpecificEnzymeSearchEngine.GetTerminalModPositions(seed, CommonParameters.DigestionParams, variableModifications);
+            foreach (KeyValuePair<int, List<Modification>> relevantDatabaseMod in databaseAnnotatedMods)
+            {
+                int subOligoLength = relevantDatabaseMod.Key;
+                if (subOligoLength >= length)
                 {
-                    double modifiedMass = basePrecursorMass + mod.MonoisotopicMass.Value;
-                    if (modifiedMass <= MaxFragmentSize) //if the precursor is larger than the index allows, then don't add it
-                    {
-                        int precursorBin = (int)Math.Round(modifiedMass * FragmentBinsPerDalton);
-                        emissions.Add((precursorBin, peptideId));
-                    }
+                    AddTerminalModPrecursorBins(emissions, seed.MonoisotopicMass, relevantDatabaseMod.Value, peptideId);
+                    continue;
+                }
+                foreach (var openEndTerminus in OligoSeedTrimming.OpenEndTermini(rnase))
+                {
+                    AddTerminalModPrecursorBins(emissions, massesWithoutOpenEnd[subOligoLength] + openEndTerminus.MonoisotopicMass, relevantDatabaseMod.Value, peptideId);
+                }
+            }
+        }
+
+        private void AddTerminalModPrecursorBins(List<(int Bin, int PeptideId)> emissions, double basePrecursorMass, List<Modification> terminalMods, int peptideId)
+        {
+            foreach (Modification mod in terminalMods)
+            {
+                double modifiedMass = basePrecursorMass + mod.MonoisotopicMass.Value;
+                if (modifiedMass <= MaxFragmentSize) //if the precursor is larger than the index allows, then don't add it
+                {
+                    int precursorBin = (int)Math.Round(modifiedMass * FragmentBinsPerDalton);
+                    emissions.Add((precursorBin, peptideId));
                 }
             }
         }
