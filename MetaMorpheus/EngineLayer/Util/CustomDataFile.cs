@@ -7,13 +7,13 @@ using System.Text;
 namespace EngineLayer
 {
     /// <summary>
-    /// The one place MetaMorpheus creates a data file that the USER is expected to edit.
+    /// The helper for seeding a data file that the USER is expected to edit.
     ///
     /// <para>
     /// Every such file -- custom proteases, rnases, crosslinkers, modifications, RNA modifications,
-    /// monosaccharides -- follows the same recipe, and it exists because breaking it produced a
-    /// data-loss bug (#2752: a user's edited custom monosaccharides were overwritten on install,
-    /// repair and upgrade). The rules are:
+    /// monosaccharides, amino acids -- follows the same contract, and it exists because breaking it
+    /// produced a data-loss bug (#2752: a user's edited custom monosaccharides were overwritten on
+    /// install, repair and upgrade). The rules are:
     /// </para>
     ///
     /// <list type="number">
@@ -26,14 +26,15 @@ namespace EngineLayer
     ///     <b>Seed a documented template, not an empty file and not a copy of the data.</b> The
     ///     template is the shipped sibling's comment banner plus its header row, and no data rows --
     ///     so the user opens a file that explains its own format and has nothing to delete first.
-    ///     <see cref="BannerAndHeaderFrom(Stream, string)"/> derives exactly that from the shipped file,
-    ///     which keeps the two from drifting.
+    ///     Where there is a shipped sibling, <see cref="BannerAndHeaderFrom(Stream, string)"/> derives
+    ///     exactly that from it, which keeps the two from drifting.
     ///   </description></item>
     ///   <item><description>
-    ///     <b>The template ships inside an assembly, never as a file on disk.</b> It must not appear
-    ///     in <c>Product.wxs</c> as a <c>&lt;File&gt;</c> and must not carry a
+    ///     <b>The custom file is never installer- or build-managed.</b> It must not appear in
+    ///     <c>Product.wxs</c> as a <c>&lt;File&gt;</c> and must not carry a
     ///     <c>&lt;None Update ... CopyToOutputDirectory&gt;</c> rule. Those two are what let an
     ///     installer or a build overwrite the user's copy, and both were removed by the #2752 fix.
+    ///     The shipped file a template is read from may be either; only the custom file may not.
     ///   </description></item>
     ///   <item><description>
     ///     <b>Failing to seed is reported, not swallowed.</b> The user gets a
@@ -42,11 +43,26 @@ namespace EngineLayer
     /// </list>
     ///
     /// <para>
-    /// One deliberate exception: <c>CustomAminoAcids.txt</c> is seeded with a full A-Z dump of the
-    /// existing residues rather than a bare header, because its whole purpose is letting a user
-    /// adjust the mass of a residue that already exists. A header-only template would make the
-    /// common case harder, not easier. See <c>GlobalVariables.WriteAminoAcidsFile</c>.
+    /// Not every file is seeded through this class, or from a shipped sibling:
     /// </para>
+    /// <list type="bullet">
+    ///   <item><description>
+    ///     <c>CustomAminoAcids.txt</c> is seeded by <c>GlobalVariables.WriteAminoAcidsFile</c> with a
+    ///     full A-Z dump of the existing residues rather than a bare header, because its whole purpose is
+    ///     letting a user adjust the mass of a residue that already exists.
+    ///   </description></item>
+    ///   <item><description>
+    ///     <c>MonosaccharidesCustom.tsv</c> is seeded by
+    ///     <c>GlycanDatabase.EnsureCustomMonosaccharideFileExists</c>, which also carries over a legacy
+    ///     copy, from its own embedded, documented template.
+    ///   </description></item>
+    ///   <item><description>
+    ///     <c>CustomModifications.txt</c> and <c>RnaCustomModifications.txt</c> use a hand-written banner
+    ///     (<c>GlobalVariables.CustomModificationsTemplate</c>), since <c>Mods.txt</c> has no header row to
+    ///     cut at. <c>CustomCrosslinkers.tsv</c> gets a header alone, because the shipped
+    ///     <c>Crosslinkers.tsv</c> has no banner.
+    ///   </description></item>
+    /// </list>
     /// </summary>
     public static class CustomDataFile
     {
@@ -79,7 +95,14 @@ namespace EngineLayer
                     Directory.CreateDirectory(directory);
                 }
 
-                File.WriteAllText(path, buildTemplate());
+                // A blank file would be protected by rule 1 on every later startup and never repaired.
+                string template = buildTemplate();
+                if (string.IsNullOrWhiteSpace(template))
+                {
+                    throw new MetaMorpheusException("the template was empty");
+                }
+
+                File.WriteAllText(path, template);
             }
             catch (Exception e)
             {
@@ -95,8 +118,10 @@ namespace EngineLayer
         /// <param name="shipped">The shipped file. Disposed by this method.</param>
         /// <param name="headerPrefix">
         /// How the header row starts, e.g. <c>"Name\t"</c>. Everything up to and including the first line
-        /// that starts with this (ignoring leading whitespace, and skipping comment lines) is kept.
+        /// that starts with this (ignoring leading whitespace) is kept, with the comment and blank lines
+        /// above it.
         /// </param>
+        /// <exception cref="MetaMorpheusException">A data row comes before any header row.</exception>
         public static string BannerAndHeaderFrom(Stream shipped, string headerPrefix)
         {
             var template = new StringBuilder();
@@ -106,26 +131,28 @@ namespace EngineLayer
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    bool isComment = line.StartsWith("#", StringComparison.Ordinal);
-                    bool isHeader = !isComment && line.TrimStart().StartsWith(headerPrefix, StringComparison.Ordinal);
+                    string trimmed = line.TrimStart();
 
-                    if (!isComment && !isHeader)
+                    // a blank line inside the banner is part of the banner, not the end of it
+                    if (trimmed.Length == 0 || trimmed.StartsWith("#", StringComparison.Ordinal))
                     {
-                        // a data row: the banner is over and the header was already written, or there
-                        // was no header to find
-                        break;
+                        template.AppendLine(line);
+                        continue;
                     }
 
-                    template.AppendLine(line);
-
-                    if (isHeader)
+                    if (trimmed.StartsWith(headerPrefix, StringComparison.Ordinal))
                     {
-                        break;
+                        template.AppendLine(line);
+                        return template.ToString();
                     }
+
+                    // a data row before any header: a template built from here would be headerless
+                    break;
                 }
             }
 
-            return template.ToString();
+            throw new MetaMorpheusException(
+                $"No header row starting with '{headerPrefix.Trim()}' was found before the data rows of the shipped file.");
         }
 
         /// <summary>

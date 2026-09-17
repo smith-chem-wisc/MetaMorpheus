@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Transcriptomics.Digestion;
 
 namespace Test
 {
@@ -17,8 +18,10 @@ namespace Test
     /// the template builder.
     /// </summary>
     [TestFixture]
+    [NonParallelizable]
     public static class CustomFileCollisionTests
     {
+        private const string OwnName = "NotAShadowingName_ForTest";
         private static string _backup;
         private static bool _hadFile;
 
@@ -47,6 +50,10 @@ namespace Test
             }
 
             _backup = null;
+
+            // mzLib merges custom proteases into its static dictionary and never resets it, so rerunning
+            // startup cannot take this one back out
+            ProteaseDictionary.Dictionary.Remove(OwnName);
             GlobalVariables.SetUpGlobalVariables();
         }
 
@@ -89,7 +96,7 @@ namespace Test
             File.WriteAllLines(GlobalVariables.CustomProteasePath, new[]
             {
                 "Name\tMotif\tSpecificity\tPSI-MS Accession\tPSI-MS Name\tCleavage Modification",
-                "NotAShadowingName_ForTest\tX|\tfull\t\t\t",
+                $"{OwnName}\tX|\tfull\t\t\t",
             });
 
             var warnings = WarningsFromStartup();
@@ -136,6 +143,26 @@ namespace Test
                     "the banner is the part that makes the template worth seeding");
                 Assert.That(lines.Any(l => l.StartsWith("Arg-C\t")), Is.False,
                     "a shipped protease in the custom file would look like the user's own");
+            });
+        }
+
+        /// <summary>
+        /// The rnase counterpart. Its resource name is a copy of an mzLib private, so this is what notices
+        /// if mzLib renames or reshapes the file.
+        /// </summary>
+        [Test]
+        public static void TheRnaseTemplateComesFromMzLibsEmbeddedFile_AndCarriesNoRnases()
+        {
+            string template = CustomDataFile.BannerAndHeaderFrom(typeof(RnaseDictionary).Assembly,
+                "Transcriptomics.Digestion.rnases.tsv", "Name\t");
+
+            var lines = template.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            Assert.Multiple(() =>
+            {
+                Assert.That(lines.Last(), Does.StartWith("Name\t"), "the header is the last line kept");
+                Assert.That(lines.Count(l => l.StartsWith("#")), Is.GreaterThan(0), "the banner is kept");
+                Assert.That(lines.Where(l => RnaseDictionary.Dictionary.Keys.Any(k => l.StartsWith(k + "\t"))),
+                    Is.Empty, "a shipped rnase in the custom file would look like the user's own");
             });
         }
 

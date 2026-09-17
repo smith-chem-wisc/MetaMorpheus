@@ -447,8 +447,7 @@ namespace EngineLayer
             // load custom crosslinkers
             string customCrosslinkerLocation = Path.Combine(DataDir, @"Data", @"CustomCrosslinkers.tsv");
 
-            // Header row only, with no banner: LoadCrosslinkers skips line 1 and parses every line after
-            // it, so a comment banner here would be read as a crosslinker and throw on its columns.
+            // The shipped Crosslinkers.tsv has no banner, so this seeds its header row alone.
             CustomDataFile.EnsureExists(customCrosslinkerLocation,
                 () => CustomDataFile.BannerAndHeaderFromFile(crosslinkerLocation, "Name\t"),
                 "custom crosslinker");

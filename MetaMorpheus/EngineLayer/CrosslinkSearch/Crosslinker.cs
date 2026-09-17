@@ -88,21 +88,26 @@ namespace EngineLayer
             using (StreamReader crosslinkers = new StreamReader(CrosslinkerLocation))
             {
                 int lineCount = 0;
+                bool headerSeen = false;
 
                 while (crosslinkers.Peek() != -1)
                 {
                     lineCount++;
                     string line = crosslinkers.ReadLine();
-                    if (lineCount == 1)
-                    {
-                        continue;
-                    }
 
                     // CustomCrosslinkers.tsv is edited by hand, so a blank line or a '#' note in it is a
                     // thing that happens. Both used to reach ParseCrosslinkerFromString and come back as
                     // an unhandled IndexOutOfRangeException during startup, before any window opened.
-                    if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#", StringComparison.Ordinal))
+                    if (string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith("#", StringComparison.Ordinal))
                     {
+                        continue;
+                    }
+
+                    // The header is the first line that is not blank or a note, wherever it lands. Counting
+                    // it by position instead let a note above it push the header into the data rows.
+                    if (!headerSeen)
+                    {
+                        headerSeen = true;
                         continue;
                     }
 
