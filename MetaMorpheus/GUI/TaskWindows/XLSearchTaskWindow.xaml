@@ -135,7 +135,21 @@
                     </Expander>
                 </GroupBox>
                 <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
-                    <Expander x:Name="SearchModeExpander">
+                    <StackPanel>
+                        <!-- Max Threads -->
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <Label Content="Max Threads:" Width="150" />
+                            <local:IntegerTexBoxControl x:Name="maxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <TextBox.ToolTip>
+                                    <TextBlock>
+                                        By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
+                                        <LineBreak/>
+                                        Enter a lower number to limit CPU usage.
+                                    </TextBlock>
+                                </TextBox.ToolTip>
+                            </local:IntegerTexBoxControl>
+                        </StackPanel>
+                        <Expander x:Name="SearchModeExpander">
                         <Expander.Style>
                             <Style TargetType="Expander">
                                 <Setter Property="Header" Value="{Binding SearchModeExpanderTitle}" />
@@ -230,23 +244,12 @@
                                             <Label x:Name="ffdf" Content="Minimum score allowed:" />
                                             <local:IntegerTexBoxControl x:Name="minScoreAllowed" Width="45" />
                                         </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label Content="Max Threads" />
-                                            <local:IntegerTexBoxControl x:Name="maxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                <TextBox.ToolTip>
-                                                    <TextBlock>
-                                                        By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
-                                                        <LineBreak/>
-                                                        Enter a lower number to limit CPU usage.
-                                                    </TextBlock>
-                                                </TextBox.ToolTip>
-                                            </local:IntegerTexBoxControl>
-                                        </StackPanel>
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
                         </StackPanel>
-                    </Expander>
+                        </Expander>
+                    </StackPanel>
                 </GroupBox>
                 <GroupBox Header="Modifications" DockPanel.Dock="Top">
                     <Expander x:Name="ModExpander" Collapsed="ApmdExpander_Collapsed" Expanded="ModExpander_Expanded">
