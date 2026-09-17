@@ -199,6 +199,61 @@ namespace Test
             Directory.Delete(unitTestFolder, true);
         }
 
+        /// <summary>
+        /// Calibration warnings are emitted once per spectra file and were otherwise identical between
+        /// files, so a run over many files produced a notification list with no way to tell which file
+        /// each line referred to (issue #1646).
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        public static void CalibrationWarningsNameTheSpectraFile()
+        {
+            // set up directories
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CalibrationWarningFileNameTest");
+            string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(outputFolder);
+
+            // set up original spectra file (input to calibration)
+            string nonCalibratedFilePath = Path.Combine(unitTestFolder, "warnFileName.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+
+            // protein db for a non-matching organism, so calibration widens tolerances and then gives up
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fa");
+
+            List<string> warnings = new();
+            EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+
+            try
+            {
+                CalibrationTask calibrationTask = new();
+                calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) },
+                    new List<string> { nonCalibratedFilePath }, "test");
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+            }
+
+            string expectedPrefix = Path.GetFileName(nonCalibratedFilePath) + ": ";
+            List<string> calibrationWarnings = warnings
+                .Where(w => w.Contains("Could not find enough PSMs to calibrate with") || w.Contains("Calibration failure!"))
+                .ToList();
+
+            Assert.That(calibrationWarnings.Any(w => w.Contains("Could not find enough PSMs to calibrate with")),
+                "expected a warning about opening up the tolerances");
+            Assert.That(calibrationWarnings.Any(w => w.Contains("Calibration failure!")),
+                "expected a calibration failure warning");
+            foreach (string warning in calibrationWarnings)
+            {
+                Assert.That(warning, Does.StartWith(expectedPrefix));
+            }
+
+            // clean up
+            Directory.Delete(unitTestFolder, true);
+        }
+
         [Test]
         [NonParallelizable]
         public static void CalibrationTooFewMS1DataPoints()
