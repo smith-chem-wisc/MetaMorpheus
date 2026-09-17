@@ -64,6 +64,17 @@ namespace TaskLayer
             || (digestionParams.SearchModeType == CleavageSpecificity.Semi && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C);
 
         /// <summary>
+        /// Whether these settings make digestion return seed oligos rather than oligos: the rnase singleN or singleC.
+        /// </summary>
+        /// <remarks>
+        /// Nucleic acid digestion ignores <c>SearchModeType</c>; the rnase's own specificity decides what it returns
+        /// (mzLib <c>Rnase.GetUnmodifiedOligos</c>). singleN and singleC return, for every position, the longest oligo fixed
+        /// at that 5' or 3' end, leaving the other end to a search engine that decides it from the precursor mass.
+        /// </remarks>
+        public static bool AsksForSeeds(RnaDigestionParams digestionParams) =>
+            digestionParams.Rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC;
+
+        /// <summary>
         /// Why this task cannot run with its digestion settings, or null when it can. The GUI's Run button and the command
         /// line check it for every task before a run starts; the task itself assumes its settings are valid.
         /// </summary>
@@ -75,14 +86,25 @@ namespace TaskLayer
         /// <param name="taskName">The name the user knows the task by, included in the message when given.</param>
         public string GetSeedDigestionRefusal(string taskName = null)
         {
-            if (CommonParameters?.DigestionParams is not DigestionParams digestionParams // RNA digestion has no protein seed request
-                || this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific } // the non-specific search engine trims seeds
-                || !AsksForSeeds(digestionParams))
+            if (this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific }) // the non-specific search engine trims seeds
             {
                 return null;
             }
 
             string which = taskName == null ? "This task" : $"Task \"{taskName}\"";
+            if (CommonParameters?.DigestionParams is RnaDigestionParams rnaDigestionParams)
+            {
+                return AsksForSeeds(rnaDigestionParams)
+                    ? $"Cannot proceed. {which} uses the rnase {rnaDigestionParams.Rnase.Name}, which gives seed oligos that only a non-specific search could use, " +
+                      "and non-specific search is not yet implemented for nucleic acids. Choose a fully specific rnase, or the rnase non-specific to search every oligo."
+                    : null;
+            }
+
+            if (CommonParameters?.DigestionParams is not DigestionParams digestionParams || !AsksForSeeds(digestionParams))
+            {
+                return null;
+            }
+
             return digestionParams.SearchModeType == CleavageSpecificity.None
                 ? $"Cannot proceed. {which} has SearchModeType None (non-specific), which gives seed peptides that only the non-specific search can use. " +
                   "Use a Search task with the non-specific search type, or choose fully or semi-specific digestion."
