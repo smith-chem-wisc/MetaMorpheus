@@ -47,6 +47,51 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask
     {
+        #region Digestion settings that ask for seed peptides
+
+        /// <summary>
+        /// Whether these settings make digestion return seeds rather than peptides: SearchModeType None with any terminus, or
+        /// Semi with FragmentationTerminus N or C.
+        /// </summary>
+        /// <remarks>
+        /// In mzLib, <c>SearchModeType</c> Full gives fully specific peptides, and Semi with <c>FragmentationTerminus</c> Both
+        /// gives semi-specific peptides (since mzLib #1303). The other combinations give seeds: long stretches fixed at one
+        /// terminus whose other end the search engine decides afterwards, from the precursor mass. See
+        /// <c>DigestionParams.SearchModeType</c> in mzLib for the full table.
+        /// </remarks>
+        public static bool AsksForSeeds(DigestionParams digestionParams) =>
+            digestionParams.SearchModeType == CleavageSpecificity.None
+            || (digestionParams.SearchModeType == CleavageSpecificity.Semi && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C);
+
+        /// <summary>
+        /// Why this task cannot run with its digestion settings, or null when it can. The GUI's Run button and the command
+        /// line check it for every task before a run starts; the task itself assumes its settings are valid.
+        /// </summary>
+        /// <remarks>
+        /// Only the non-specific search engine, which a Search task runs for <see cref="SearchType.NonSpecific"/>, can use seeds
+        /// (it makes its own N and C passes). Classic and Modern search, Glyco, crosslink, GPTMD and calibration score digestion
+        /// products as they are, so given seeds they finish normally and report far fewer, wrong identifications.
+        /// </remarks>
+        /// <param name="taskName">The name the user knows the task by, included in the message when given.</param>
+        public string GetSeedDigestionRefusal(string taskName = null)
+        {
+            if (CommonParameters?.DigestionParams is not DigestionParams digestionParams // RNA digestion has no protein seed request
+                || this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific } // the non-specific search engine trims seeds
+                || !AsksForSeeds(digestionParams))
+            {
+                return null;
+            }
+
+            string which = taskName == null ? "This task" : $"Task \"{taskName}\"";
+            return digestionParams.SearchModeType == CleavageSpecificity.None
+                ? $"Cannot proceed. {which} has SearchModeType None (non-specific), which gives seed peptides that only the non-specific search can use. " +
+                  "Use a Search task with the non-specific search type, or choose fully or semi-specific digestion."
+                : $"Cannot proceed. {which} has SearchModeType Semi with FragmentationTerminus {digestionParams.FragmentationTerminus}, which gives seed peptides that only the non-specific search can use. " +
+                  "For semi-specific peptides, set FragmentationTerminus Both.";
+        }
+
+        #endregion
+
         #region Settings files that name a protease mzLib no longer ships
 
         /// <summary>
@@ -61,27 +106,37 @@ namespace TaskLayer
         };
 
         /// <summary>
-        /// Reads protein digestion parameters from a settings file. A file that names a removed semi-specific protease
-        /// (see <see cref="RemovedSemiSpecificProteases"/>) is read as the shipped fully specific protease with the same
-        /// cleavage motifs plus a semi-specific search, with every other digestion setting kept, and the user is warned.
-        /// Every other file is read exactly as before.
+        /// Reads protein digestion parameters from a settings file with the normal reader. A file that names a removed
+        /// semi-specific protease (see <see cref="RemovedSemiSpecificProteases"/>) first has that name replaced, in the parsed
+        /// table, by the shipped fully specific protease with the same cleavage motifs, and its search mode made
+        /// semi-specific; the user is warned. Every other file is read exactly as before.
         /// </summary>
         /// <remarks>
-        /// <para><b>Search mode.</b> A file that said <c>SearchModeType = Full</c> got its semi-specificity from the
-        /// protease, so it becomes <c>Semi</c>. Its FragmentationTerminus is kept; in glyco, crosslink and classic settings
-        /// it is Both, which asks mzLib for the semi-specific peptides themselves (mzLib #1303). A file that already said
-        /// Semi or None is a non-specific search asking for seeds, so its search mode and terminus are kept as they are.</para>
+        /// <para><b>Why a translation is still needed.</b> mzLib 1.0.591 has no "semi-trypsin", so the Protease converter
+        /// throws for these files. What mzLib #1303 changed is that trypsin with <c>SearchModeType = Semi</c> and
+        /// FragmentationTerminus Both now digests into the semi-specific peptides "semi-trypsin" meant, so the translation
+        /// below is exact. A name change alone is not enough: the file says <c>SearchModeType = Full</c>, because its
+        /// semi-specificity came from the protease.</para>
+        /// <para><b>Search mode.</b> Full (or missing) becomes Semi. The FragmentationTerminus is kept; in glyco, crosslink and
+        /// classic settings it is Both. A file that already said Semi or None is a non-specific search asking for seeds,
+        /// with the removed name in SpecificProtease only, so its search mode and terminus are kept as they are.</para>
         /// <para><b>Replacement.</b> Found by motif, not by name, because the name of the no-proline-rule trypsin is itself
         /// changing (mzLib #1186). A protease the user has defined under the old name is in the dictionary and is used as
         /// defined; nothing is translated.</para>
-        /// <para>Settings are rebuilt through the DigestionParams constructor rather than patched, so that Protease and
-        /// SpecificProtease stay consistent with the search mode.</para>
         /// </remarks>
         private static DigestionParams ReadProteinDigestionParams(TomlTable table)
         {
             string ReadString(string key) => table.ContainsKey(key) ? table.Get<string>(key) : null;
+            void SetString(string key, string value)
+            {
+                if (table.ContainsKey(key))
+                    table.Update(key, value);
+                else
+                    table.Add(key, value);
+            }
+
             string protease = ReadString(nameof(DigestionParams.Protease));
-            string specificProtease = ReadString(nameof(DigestionParams.SpecificProtease)) ?? protease;
+            string specificProtease = ReadString(nameof(DigestionParams.SpecificProtease));
 
             // For a non-specific search the file's Protease is singleN or singleC and the removed name is in SpecificProtease.
             var removed = RemovedSemiSpecificProteases.FirstOrDefault(r =>
@@ -92,33 +147,24 @@ namespace TaskLayer
                 return table.Get<DigestionParams>(); // unchanged behaviour, including the exception for an unknown protease
             }
 
-            var defaults = new DigestionParams();
-            T Read<T>(string key, T fallback) => table.ContainsKey(key) ? table.Get<T>(key) : fallback;
-            TEnum ReadEnum<TEnum>(string key, TEnum fallback) where TEnum : struct, Enum =>
-                table.ContainsKey(key) ? Enum.Parse<TEnum>(table.Get<string>(key)) : fallback;
-
-            CleavageSpecificity searchModeType = ReadEnum(nameof(DigestionParams.SearchModeType), defaults.SearchModeType);
-            if (searchModeType == CleavageSpecificity.Full)
+            if (protease == removed.Name)
             {
-                searchModeType = CleavageSpecificity.Semi;
+                SetString(nameof(DigestionParams.Protease), replacement.Name);
+                SetString(nameof(DigestionParams.SpecificProtease), replacement.Name);
+                string searchModeType = ReadString(nameof(DigestionParams.SearchModeType));
+                if (searchModeType == null || searchModeType == nameof(CleavageSpecificity.Full))
+                {
+                    SetString(nameof(DigestionParams.SearchModeType), nameof(CleavageSpecificity.Semi));
+                }
+            }
+            else
+            {
+                SetString(nameof(DigestionParams.SpecificProtease), replacement.Name);
             }
 
-            var digestionParams = new DigestionParams(
-                protease: replacement.Name,
-                maxMissedCleavages: Read(nameof(DigestionParams.MaxMissedCleavages), defaults.MaxMissedCleavages),
-                minPeptideLength: Read(nameof(DigestionParams.MinPeptideLength), defaults.MinPeptideLength),
-                maxPeptideLength: Read(nameof(DigestionParams.MaxPeptideLength), defaults.MaxPeptideLength),
-                maxModificationIsoforms: Read(nameof(DigestionParams.MaxModificationIsoforms), defaults.MaxModificationIsoforms),
-                initiatorMethionineBehavior: ReadEnum(nameof(DigestionParams.InitiatorMethionineBehavior), defaults.InitiatorMethionineBehavior),
-                maxModsForPeptides: Read(nameof(DigestionParams.MaxModsForPeptide), defaults.MaxModsForPeptide),
-                searchModeType: searchModeType,
-                fragmentationTerminus: ReadEnum(nameof(DigestionParams.FragmentationTerminus), defaults.FragmentationTerminus),
-                generateUnlabeledProteinsForSilac: Read(nameof(DigestionParams.GeneratehUnlabeledProteinsForSilac), defaults.GeneratehUnlabeledProteinsForSilac),
-                keepNGlycopeptide: Read(nameof(DigestionParams.KeepNGlycopeptide), defaults.KeepNGlycopeptide),
-                keepOGlycopeptide: Read(nameof(DigestionParams.KeepOGlycopeptide), defaults.KeepOGlycopeptide));
-
+            var digestionParams = table.Get<DigestionParams>();
             Warn($"These settings name the protease \"{removed.Name}\", which is no longer available. They were read as \"{replacement.Name}\" " +
-                 $"with SearchModeType {searchModeType} and FragmentationTerminus {digestionParams.FragmentationTerminus}, which digests the same peptides. " +
+                 $"with SearchModeType {digestionParams.SearchModeType} and FragmentationTerminus {digestionParams.FragmentationTerminus}, which digests the same peptides. " +
                  "Save the task to update its settings.");
             return digestionParams;
         }
@@ -749,13 +795,6 @@ namespace TaskLayer
             {
                 var stopWatch = new Stopwatch();
                 stopWatch.Start();
-
-                // backstop for callers that bypass EverythingRunnerEngine, which refuses these tasks with a warning first
-                string digestionRefusal = DigestionSearchModeCheck.GetRefusal(this, displayName);
-                if (digestionRefusal != null)
-                {
-                    throw new MetaMorpheusException(digestionRefusal);
-                }
 
                 FileSpecificParameters[] fileSettingsList = new FileSpecificParameters[currentRawDataFilepathList.Count];
                 for (int i = 0; i < currentRawDataFilepathList.Count; i++)

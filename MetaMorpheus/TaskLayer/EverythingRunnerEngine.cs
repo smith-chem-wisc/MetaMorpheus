@@ -63,21 +63,6 @@ namespace TaskLayer
 
             StringBuilder allResultsText = new StringBuilder();
 
-            // A task whose digestion asks for seed peptides it cannot use would finish normally with far fewer, wrong
-            // identifications (see DigestionSearchModeCheck). Checked for every task before any runs, so a long earlier task
-            // is not wasted, and refused with a warning rather than a throw, for the reason given at the non-specific RNA
-            // refusal below. MetaMorpheusTask.RunTask throws the same message as a backstop.
-            foreach (var (taskName, task) in TaskList)
-            {
-                string refusal = DigestionSearchModeCheck.GetRefusal(task, taskName);
-                if (refusal != null)
-                {
-                    Warn(refusal);
-                    FinishedAllTasks(OutputFolder);
-                    return;
-                }
-            }
-
             for (int i = 0; i < TaskList.Count; i++)
             {
                 if (!CurrentRawDataFilenameList.Any())

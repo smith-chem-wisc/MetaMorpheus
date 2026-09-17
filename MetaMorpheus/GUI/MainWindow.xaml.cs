@@ -930,6 +930,15 @@ namespace MetaMorpheusGUI
                 NotificationHandler(null, new StringEventArgs("You need to add at least one protein database!", null));
             }
 
+            // check that no task's digestion asks for seed peptides it cannot use
+            foreach (var preRunTask in PreRunTasks)
+            {
+                if (!TaskValidator.CheckDigestionSearchMode(preRunTask.metaMorpheusTask, preRunTask.DisplayName))
+                {
+                    return;
+                }
+            }
+
             // only checked spectra files are run, so only they may define the experimental design
             List<string> spectraFilePathsToUse = SpectraFiles.Where(p => p.Use).Select(p => p.FilePath).ToList();
             if (!spectraFilePathsToUse.Any())

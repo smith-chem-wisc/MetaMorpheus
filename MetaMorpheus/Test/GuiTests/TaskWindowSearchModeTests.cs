@@ -177,7 +177,7 @@ namespace Test.GuiTests
             {
                 var loaded = new DigestionParams("trypsin", searchModeType: searchModeType, fragmentationTerminus: terminus);
                 var task = new GptmdTask { CommonParameters = new EngineLayer.CommonParameters(digestionParams: loaded) };
-                bool refused = DigestionSearchModeCheck.GetRefusal(task) != null;
+                bool refused = task.GetSeedDigestionRefusal() != null;
 
                 Assert.That(TaskWindowSearchMode.PreserveWarning(loaded) != null, Is.EqualTo(refused), $"{searchModeType} + {terminus}");
                 Assert.That(TaskWindowSearchMode.ForSemiSpecificChoiceWarning(loaded) != null, Is.EqualTo(refused), $"{searchModeType} + {terminus}");
