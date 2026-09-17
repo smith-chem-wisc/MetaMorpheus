@@ -1,4 +1,4 @@
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.Indexing;
 using MassSpectrometry;
@@ -15,6 +15,7 @@ using Readers.SpectralLibrary;
 using SpectralAveraging;
 using System;
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -99,6 +100,7 @@ namespace TaskLayer
                     {
                         "ClassicDeconvolution" => tmlTable.Get<ClassicDeconvolutionParameters>(),
                         "IsoDecDeconvolution" => tmlTable.Get<IsoDecDeconvolutionParameters>(),
+                        "Multiple" => tmlTable.Get<MultipleDeconParameters>(),
                         _ => throw new MetaMorpheusException($"Toml Parsing Failure - Unknown Deconvolution Type: {tmlTable.Get<string>("DeconvolutionType")}")
                     })))
             // Ignore all properties that are not user settable, instantiate with defaults. If the toml differs, defaults will be overridden. 
@@ -117,6 +119,14 @@ namespace TaskLayer
                 .IgnoreProperty(p => p.MinusOneAreasZero)
                 .IgnoreProperty(p => p.IsotopeThreshold)
                 .IgnoreProperty(p => p.ZScoreThreshold))
+            .ConfigureType<MultipleDeconParameters>(type => type
+                .CreateInstance(() => new MultipleDeconParameters(
+                    [new ClassicDeconvolutionParameters(1, 20, 4, 3)],
+                    1,
+                    20,
+                    Polarity.Positive,
+                    new Averagine(),
+                    1.0033548381)))
 
             // Convert average residue models to simple strings instead of tables, Nett makes all objects tables by default
             // The base class AverageResidue is used for Toml Reading. The derived classes are used for toml writing. 
@@ -218,10 +228,10 @@ namespace TaskLayer
         public const string IndexFolderName = "DatabaseIndex";
         public const string IndexEngineParamsFileName = "indexEngine.params";
         public const string PeptideIndexFileName = "peptideIndex.ind";
-        public const string FragmentIndexFileName = "fragmentIndex.ind";
+        public const string FragmentIndexFileName = "fragmentIndex.bin";
         public const string SecondIndexEngineParamsFileName = "secondIndexEngine.params";
-        public const string SecondFragmentIndexFileName = "secondFragmentIndex.ind";
-        public const string PrecursorIndexFileName = "precursorIndex.ind";
+        public const string SecondFragmentIndexFileName = "secondFragmentIndex.bin";
+        public const string PrecursorIndexFileName = "precursorIndex.bin";
 
         public static List<Ms2ScanWithSpecificMass>[] _GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
@@ -1181,6 +1191,51 @@ namespace TaskLayer
             OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
+        /// <summary>
+        /// Returns <paramref name="parameters"/>, or a copy with a raised TotalPartitions when one index
+        /// build would not fit in available memory. Only ever raises, so a user who deliberately asked for
+        /// more partitions keeps them. Returning a copy rather than mutating matters:
+        /// SetAllFileSpecificCommonParams hands back the task's own CommonParameters when a file has no
+        /// file-specific settings, so mutating would rewrite the settings the task reports.
+        ///
+        /// Callers must use the returned instance for *every* read of TotalPartitions in the partition
+        /// loop — the loop bound and the protein-range slicing included — or the two will disagree and the
+        /// search will silently cover only part of the database.
+        /// </summary>
+        protected CommonParameters RaisePartitionsToFitMemory(IReadOnlyList<IBioPolymer> proteinList, CommonParameters parameters,
+            List<Modification> fixedModifications, List<Modification> variableModifications,
+            List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, double maxFragmentSize,
+            ref int? decidedPartitions)
+        {
+            // Decide once per task, not once per spectra file. Available memory shrinks as PSMs accumulate
+            // and each file's spectra are loaded, so re-deriving per file could index file 1 in one partition
+            // and file 5 in four. That would invalidate the disk cache for every partition (the count is part
+            // of IndexingEngine.ToString(), which is the cache key) and leave files within one run searched
+            // under different partitionings, whose PSM-level statistics are then not comparable.
+            if (decidedPartitions == null)
+            {
+                int suggested = IndexPartitioning.SuggestTotalPartitions(proteinList, parameters, fixedModifications,
+                    variableModifications, silacLabels, startLabel, endLabel, maxFragmentSize, parameters.TotalPartitions,
+                    out long estimatedBytes, out long budgetBytes, out bool cappedByMemory, out long estimatedFragmentEntries);
+
+                decidedPartitions = suggested;
+
+                if (suggested > parameters.TotalPartitions)
+                {
+                    foreach (string warning in IndexPartitioning.PartitionWarnings(parameters.TotalPartitions,
+                                 suggested, estimatedBytes, budgetBytes, cappedByMemory, estimatedFragmentEntries,
+                                 proteinList.Count))
+                    {
+                        Warn(warning);
+                    }
+                }
+            }
+
+            return decidedPartitions.Value <= parameters.TotalPartitions
+                ? parameters
+                : parameters.CloneWithNewTotalPartitions(decidedPartitions.Value);
+        }
+
         protected static void Warn(string v)
         {
             WarnHandler?.Invoke(null, new StringEventArgs(v, null));
@@ -1257,16 +1312,27 @@ namespace TaskLayer
             Warn($"{engineName} engine Crashed! Error written to {outPath}");
         }
 
+        private static void WritePeptideIndex(List<IBioPolymerWithSetMods> peptideIndex, string peptideIndexFileName)
+            => WritePeptideIndex(peptideIndex.Cast<PeptideWithSetModifications>().ToList(), peptideIndexFileName);
+
         private static void WritePeptideIndex(List<PeptideWithSetModifications> peptideIndex, string peptideIndexFileName)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
             var ser = new NetSerializer.Serializer(messageTypes);
 
-            using (var file = File.Create(peptideIndexFileName))
-            {
-                ser.Serialize(file, peptideIndex);
-            }
+            WriteThroughTemporaryFile(peptideIndexFileName, file => ser.Serialize(file, peptideIndex));
         }
+
+        /// <summary>
+        /// Cast rather than OfType, to match the write side one method up. Both respond to the same
+        /// violated precondition -- a cached index is only reachable when indexIsCacheable, which is
+        /// AnalyteType != Oligo -- and they must fail the same way. OfType here would drop the oligos
+        /// and carry on with whatever proteins remained, returning a plausible index silently built
+        /// from a subset of the database; the write side already throws on the first oligo.
+        /// </summary>
+        private static List<IBioPolymerWithSetMods> ReadPeptideIndex(string peptideIndexFileName, IEnumerable<IBioPolymer> allKnownBioPolymers)
+            => ReadPeptideIndex(peptideIndexFileName, allKnownBioPolymers.Cast<Protein>().ToList())
+                .Cast<IBioPolymerWithSetMods>().ToList();
 
         private static List<PeptideWithSetModifications> ReadPeptideIndex(string peptideIndexFileName, List<Protein> allKnownProteins)
         {
@@ -1311,25 +1377,188 @@ namespace TaskLayer
             return digestionParams;
         }
 
-        private static void WriteFragmentIndex(List<int>[] fragmentIndex, string fragmentIndexFileName)
-        {
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
+        // "MMFI" — guards against reading a file written by a different layout. The file name also changed
+        // when this replaced NetSerializer, so an index cached by an older version is simply not found and
+        // gets rebuilt rather than misread.
+        private const int FragmentIndexMagic = 0x4946_4D4D;
+        // "MMPI"
+        private const int PrecursorIndexMagic = 0x4950_4D4D;
+        // 2: the fragment index went from bin counts + concatenated ids to the compressed sparse row pair
+        private const int FragmentIndexFormatVersion = 2;
 
-            using (var file = File.Create(fragmentIndexFileName))
+        /// <summary>
+        /// The two arrays behind a <see cref="FragmentIndex"/>, written as raw little-endian int32 in bulk.
+        /// NetSerializer walked every list and every element individually; a fragment index has millions of
+        /// bins and hundreds of millions of entries, so the per-object cost dominated. Now that the in-memory
+        /// form is already flat, reading it back is a pair of array fills rather than a rebuild.
+        /// </summary>
+        private static void WriteFragmentIndex(FragmentIndex fragmentIndex, string fragmentIndexFileName)
+        {
+            WriteThroughTemporaryFile(fragmentIndexFileName, file =>
             {
-                ser.Serialize(file, fragmentIndex);
+                Span<int> header = stackalloc int[4];
+                header[0] = FragmentIndexMagic;
+                header[1] = FragmentIndexFormatVersion;
+                header[2] = fragmentIndex.BinStart.Length;
+                header[3] = fragmentIndex.PeptideIds.Length;
+                file.Write(MemoryMarshal.AsBytes(header));
+
+                WriteInt32Bulk(file, fragmentIndex.BinStart);
+                WriteInt32Bulk(file, fragmentIndex.PeptideIds);
+            });
+        }
+
+        /// <summary>
+        /// Writes under a temporary name and moves the file into place only once the write has finished, so a
+        /// cached index under its real name is always complete. Written straight to the real name, a write cut
+        /// short -- a killed process, a full disk -- left a valid header over a short payload, which the header
+        /// check in CheckFiles accepted: GenerateIndexes then rebuilt on every run, and GenerateSecondIndexes,
+        /// which has no recovery, crashed.
+        ///
+        /// A failed write deletes its partial file before the exception goes on. The partial file is as large as the
+        /// index, and a full disk is the likeliest reason for the failure.
+        /// </summary>
+        private static void WriteThroughTemporaryFile(string fileName, Action<FileStream> write)
+        {
+            string partialFileName = fileName + ".partial";
+            try
+            {
+                using (var file = new FileStream(partialFileName, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20))
+                {
+                    write(file);
+                }
+            }
+            catch
+            {
+                File.Delete(partialFileName);
+                throw;
+            }
+            File.Move(partialFileName, fileName, overwrite: true);
+        }
+
+        private static FragmentIndex ReadFragmentIndex(string fragmentIndexFileName)
+        {
+            using var file = new FileStream(fragmentIndexFileName, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20);
+
+            Span<int> header = stackalloc int[4];
+            file.ReadExactly(MemoryMarshal.AsBytes(header));
+            if (header[0] != FragmentIndexMagic || header[1] != FragmentIndexFormatVersion)
+            {
+                throw new MetaMorpheusException($"{fragmentIndexFileName} is not a fragment index this version can read.");
+            }
+
+            var binStart = new int[header[2]];
+            var peptideIds = new int[header[3]];
+            ReadInt32Bulk(file, binStart);
+            ReadInt32Bulk(file, peptideIds);
+
+            return new FragmentIndex(binStart, peptideIds);
+        }
+
+        /// <summary>
+        /// The precursor index is still a <see cref="List{T}"/> array: it is appended to after construction by
+        /// AddInteriorTerminalModsToPrecursorIndex, so it cannot be built with the count-then-fill pass a
+        /// compressed layout needs. Kept in the same flat format as before.
+        /// </summary>
+        private static void WritePrecursorIndex(List<int>[] precursorIndex, string precursorIndexFileName)
+            => WriteThroughTemporaryFile(precursorIndexFileName, file => WritePrecursorIndexPayload(precursorIndex, file));
+
+        private static void WritePrecursorIndexPayload(List<int>[] precursorIndex, FileStream file)
+        {
+            var counts = new int[precursorIndex.Length];
+            for (int i = 0; i < precursorIndex.Length; i++)
+            {
+                counts[i] = precursorIndex[i]?.Count ?? 0;
+            }
+
+            Span<int> header = stackalloc int[3];
+            header[0] = PrecursorIndexMagic;
+            header[1] = FragmentIndexFormatVersion;
+            header[2] = precursorIndex.Length;
+            file.Write(MemoryMarshal.AsBytes(header));
+            WriteInt32Bulk(file, counts);
+
+            var buffer = new int[1 << 20];
+            int staged = 0;
+            foreach (List<int> bin in precursorIndex)
+            {
+                if (bin == null || bin.Count == 0)
+                {
+                    continue;
+                }
+
+                ReadOnlySpan<int> ids = CollectionsMarshal.AsSpan(bin);
+                while (!ids.IsEmpty)
+                {
+                    if (staged == buffer.Length)
+                    {
+                        file.Write(MemoryMarshal.AsBytes(buffer.AsSpan(0, staged)));
+                        staged = 0;
+                    }
+
+                    int take = Math.Min(buffer.Length - staged, ids.Length);
+                    ids.Slice(0, take).CopyTo(buffer.AsSpan(staged));
+                    staged += take;
+                    ids = ids.Slice(take);
+                }
+            }
+
+            if (staged > 0)
+            {
+                file.Write(MemoryMarshal.AsBytes(buffer.AsSpan(0, staged)));
             }
         }
 
-        private static List<int>[] ReadFragmentIndex(string fragmentIndexFileName)
+        private static List<int>[] ReadPrecursorIndex(string precursorIndexFileName)
         {
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
+            using var file = new FileStream(precursorIndexFileName, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20);
 
-            using (var file = File.OpenRead(fragmentIndexFileName))
+            Span<int> header = stackalloc int[3];
+            file.ReadExactly(MemoryMarshal.AsBytes(header));
+            if (header[0] != PrecursorIndexMagic || header[1] != FragmentIndexFormatVersion)
             {
-                return (List<int>[])ser.Deserialize(file);
+                throw new MetaMorpheusException($"{precursorIndexFileName} is not a precursor index this version can read.");
+            }
+
+            var counts = new int[header[2]];
+            ReadInt32Bulk(file, counts);
+
+            var precursorIndex = new List<int>[counts.Length];
+            for (int i = 0; i < counts.Length; i++)
+            {
+                if (counts[i] == 0)
+                {
+                    continue;
+                }
+
+                var bin = new List<int>(counts[i]);
+                CollectionsMarshal.SetCount(bin, counts[i]);
+                ReadInt32Bulk(file, CollectionsMarshal.AsSpan(bin));
+                precursorIndex[i] = bin;
+            }
+
+            return precursorIndex;
+        }
+
+        private static void WriteInt32Bulk(Stream stream, int[] values)
+        {
+            // Span byte length is an int, so a >512 M-element array has to go out in chunks
+            const int chunk = 1 << 24;
+            for (int offset = 0; offset < values.Length; offset += chunk)
+            {
+                int count = Math.Min(chunk, values.Length - offset);
+                stream.Write(MemoryMarshal.AsBytes(values.AsSpan(offset, count)));
+            }
+        }
+
+        private static void ReadInt32Bulk(Stream stream, Span<int> destination)
+        {
+            const int chunk = 1 << 24;
+            while (!destination.IsEmpty)
+            {
+                int count = Math.Min(chunk, destination.Length);
+                stream.ReadExactly(MemoryMarshal.AsBytes(destination.Slice(0, count)));
+                destination = destination.Slice(count);
             }
         }
 
@@ -1363,17 +1592,72 @@ namespace TaskLayer
             return null;
         }
 
+        /// <summary>
+        /// A folder is a cache hit only if its binary indexes carry a header this build can read. On existence
+        /// alone a stale folder fails in the reader instead, which GenerateSecondIndexes does not recover from.
+        /// </summary>
         private static string CheckFiles(IndexingEngine indexEngine, DirectoryInfo folder)
         {
-            if (File.Exists(Path.Combine(folder.FullName, IndexEngineParamsFileName)) &&
+            string paramsFile = Path.Combine(folder.FullName, IndexEngineParamsFileName);
+            string fragmentIndexFile = Path.Combine(folder.FullName, FragmentIndexFileName);
+            string precursorIndexFile = Path.Combine(folder.FullName, PrecursorIndexFileName);
+            string secondFragmentIndexFile = Path.Combine(folder.FullName, SecondFragmentIndexFileName);
+
+            if (File.Exists(paramsFile) &&
                 File.Exists(Path.Combine(folder.FullName, PeptideIndexFileName)) &&
-                File.Exists(Path.Combine(folder.FullName, FragmentIndexFileName)) &&
-                (File.Exists(Path.Combine(folder.FullName, PrecursorIndexFileName)) || !indexEngine.GeneratePrecursorIndex) &&
-                SameSettings(Path.Combine(folder.FullName, IndexEngineParamsFileName), indexEngine))
+                File.Exists(fragmentIndexFile) &&
+                (File.Exists(precursorIndexFile) || !indexEngine.GeneratePrecursorIndex) &&
+                SameSettings(paramsFile, indexEngine) &&
+                HasReadableIndexHeader(fragmentIndexFile, FragmentIndexMagic) &&
+                (!indexEngine.GeneratePrecursorIndex || HasReadableIndexHeader(precursorIndexFile, PrecursorIndexMagic)) &&
+                // written on demand by GenerateSecondIndexes, so absent is fine and stale is not
+                (!File.Exists(secondFragmentIndexFile) || HasReadableIndexHeader(secondFragmentIndexFile, FragmentIndexMagic)))
             {
                 return folder.FullName;
             }
             return null;
+        }
+
+        /// <summary>
+        /// The magic and format version the readers check, read at folder-selection time, and a file at least as
+        /// long as the header says its payload is. Any failure to get at them is a miss, since the reader would
+        /// fail on the same file.
+        ///
+        /// The length is what catches a truncated file: a write cut short keeps a valid header. The fragment index
+        /// is exactly its header plus two arrays whose lengths the header gives. The precursor index's bins are
+        /// variable, so only its counts array is known from the header, which still catches a file cut off
+        /// before the bins; reading every count to size the rest would cost a full read at selection time.
+        /// </summary>
+        private static bool HasReadableIndexHeader(string indexFileName, int expectedMagic)
+        {
+            bool isFragmentIndex = expectedMagic == FragmentIndexMagic;
+            Span<int> header = stackalloc int[isFragmentIndex ? 4 : 3];
+            long fileLength;
+            try
+            {
+                using var file = new FileStream(indexFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+                fileLength = file.Length;
+                file.ReadExactly(MemoryMarshal.AsBytes(header));
+            }
+            catch
+            {
+                return false;
+            }
+
+            if (header[0] != expectedMagic || header[1] != FragmentIndexFormatVersion)
+            {
+                return false;
+            }
+
+            long headerBytes = header.Length * sizeof(int);
+            if (isFragmentIndex)
+            {
+                // FragmentIndex needs at least one bin offset
+                return header[2] >= 1 && header[3] >= 0 &&
+                       fileLength == headerBytes + sizeof(int) * ((long)header[2] + header[3]);
+            }
+
+            return header[2] >= 0 && fileLength >= headerBytes + sizeof(int) * (long)header[2];
         }
 
         private static void WriteIndexEngineParams(IndexingEngine indexEngine, string fileName)
@@ -1393,15 +1677,45 @@ namespace TaskLayer
             {
                 Directory.CreateDirectory(pathToIndexes);
             }
-            var folder = Path.Combine(pathToIndexes, DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
+            // The folder name is a timestamp with one-second resolution, so two partitions indexed within
+            // the same second used to land in the same folder and overwrite each other's indexEngine.params
+            // and peptideIndex.ind. That leaves the earlier partition's index unfindable, which is fatal for
+            // XL search: its second round re-reads each partition's peptide index and gets null instead.
+            // Only reachable when indexing is fast enough for two partitions to finish inside one second.
+            string stamp = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
+            var folder = Path.Combine(pathToIndexes, stamp);
+            for (int disambiguator = 1; Directory.Exists(folder); disambiguator++)
+            {
+                folder = Path.Combine(pathToIndexes, $"{stamp}-{disambiguator}");
+            }
             Directory.CreateDirectory(folder);
             return folder;
         }
 
-        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
+        /// <summary>
+        /// Convenience overload for the protein-only tasks (cross-link, glyco, calibration, non-specific),
+        /// which index peptides and want them back typed as peptides. Distinguished by the ref parameter,
+        /// so it cannot be ambiguous with the general one.
+        /// </summary>
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex,
+            ref FragmentIndex fragmentIndex, ref List<int>[] precursorIndex, IEnumerable<IBioPolymer> allKnownProteins, string taskId)
+        {
+            List<IBioPolymerWithSetMods> bioPolymerIndex = null;
+            GenerateIndexes(indexEngine, dbFilenameList, ref bioPolymerIndex, ref fragmentIndex, ref precursorIndex, allKnownProteins, taskId);
+            peptideIndex = bioPolymerIndex?.Cast<PeptideWithSetModifications>().ToList();
+        }
+
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<IBioPolymerWithSetMods> peptideIndex, ref FragmentIndex fragmentIndex, ref List<int>[] precursorIndex, IEnumerable<IBioPolymer> allKnownProteins, string taskId)
         {
             bool successfullyReadIndices = false;
-            string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+
+            // The on-disk peptide index only round-trips peptides: OligoWithSetMods is neither
+            // [Serializable] nor able to restore its parent the way SetNonSerializedPeptideInfo does for
+            // PeptideWithSetModifications. Nucleic acid databases are small, so build in memory each
+            // time rather than block oligo searches on an mzLib serialization change.
+            bool indexIsCacheable = GlobalVariables.AnalyteType != AnalyteType.Oligo;
+
+            string pathToFolderWithIndices = indexIsCacheable ? GetExistingFolderWithIndices(indexEngine, dbFilenameList) : null;
 
             if (pathToFolderWithIndices != null) //if indexes exist
             {
@@ -1416,24 +1730,31 @@ namespace TaskLayer
                     if (indexEngine.GeneratePrecursorIndex)
                     {
                         Status("Reading precursor index...", new List<string> { taskId });
-                        precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
+                        precursorIndex = ReadPrecursorIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
                     }
 
                     successfullyReadIndices = true;
                 }
-                catch
+                catch (Exception e)
                 {
-                    // could put something here... this basically is just to prevent a crash if the index was unable to be read.
-
-                    // if the old index couldn't be read, a new one will be generated.
-
-                    // an old index may not be able to be read because of information required by new versions of MetaMorpheus
-                    // that wasn't written by old versions.
+                    // a new one is generated below; CheckFiles cannot anticipate every way a cached index
+                    // goes bad, so report why rather than losing the reason
+                    Warn("Could not read the existing index, so it is being rebuilt. Reason: " + e.Message);
                 }
             }
 
             if (!successfullyReadIndices) //if we didn't find indexes with the same params
             {
+                if (!indexIsCacheable)
+                {
+                    Status("Running Index Engine...", new List<string> { taskId });
+                    var inMemoryResults = (IndexingResults)indexEngine.Run();
+                    peptideIndex = inMemoryResults.PeptideIndex;
+                    fragmentIndex = inMemoryResults.FragmentIndex;
+                    precursorIndex = inMemoryResults.PrecursorIndex;
+                    return;
+                }
+
                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                 Status("Writing params...", new List<string> { taskId });
                 var paramsFile = Path.Combine(output_folderForIndices, IndexEngineParamsFileName);
@@ -1461,7 +1782,7 @@ namespace TaskLayer
                 {
                     Status("Writing precursor index...", new List<string> { taskId });
                     var precursorIndexFile = Path.Combine(output_folderForIndices, PrecursorIndexFileName);
-                    WriteFragmentIndex(precursorIndex, precursorIndexFile);
+                    WritePrecursorIndex(precursorIndex, precursorIndexFile);
                     FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
                 }
             }
@@ -1482,7 +1803,7 @@ namespace TaskLayer
                     if (indexEngine.GeneratePrecursorIndex)
                     {
                         Status("Reading precursor index...", new List<string> { taskId });
-                        precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
+                        precursorIndex = ReadPrecursorIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
                     }
 
                     successfullyReadIndices = true;
@@ -1504,7 +1825,7 @@ namespace TaskLayer
             }
         }
 
-        public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref List<int>[] secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
+        public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref FragmentIndex secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
             if (!File.Exists(Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName))) //if no indexes exist
