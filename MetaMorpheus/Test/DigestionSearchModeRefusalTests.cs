@@ -1,12 +1,11 @@
 using EngineLayer;
-using EngineLayer.DatabaseLoading;
+using MetaMorpheusCommandLine;
 using NUnit.Framework;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using TaskLayer;
 using Transcriptomics.Digestion;
 
@@ -24,11 +23,11 @@ namespace Test
     /// (Classic, Modern, Glyco, crosslink, GPTMD, calibration) scores what digestion gives it as it is, so with seeds it
     /// runs to completion and quietly reports far fewer, wrong identifications. That is how semi-specific glyco searches
     /// lost most of their identifications before mzLib #1303.</para>
-    /// <para><b>Where the refusal happens.</b> <see cref="EverythingRunnerEngine"/> checks every task before running any of
-    /// them, so hours of earlier tasks are not wasted, and refuses with a warning, following the non-specific-RNA refusal
-    /// (#2759): an exception out of a task reaches the GUI as a crash, and the user never sees the message saying what to
-    /// change. <see cref="MetaMorpheusTask.RunTask"/> throws the same message as a backstop for callers that bypass the
-    /// runner.</para>
+    /// <para><b>Where the refusal happens.</b> Where every other run-level check does, before the run starts: the GUI's
+    /// Run button (TaskValidator.CheckDigestionSearchMode, called from MainWindow.RunAllTasks_Click) and the command line
+    /// (<see cref="Program.RefuseSeedDigestion"/>, next to the experimental-design check). Tasks themselves assume their
+    /// settings are valid. The rule and the message live on <see cref="MetaMorpheusTask"/> so both front ends say the same
+    /// thing; the WPF check cannot be referenced from this test project, so the rule and the command line are tested here.</para>
     /// </remarks>
     [TestFixture]
     public static class DigestionSearchModeRefusalTests
@@ -70,7 +69,7 @@ namespace Test
         public static void AsksForSeeds_IsTrueForNoneAndForSemiWithOneTerminus(CleavageSpecificity searchModeType, FragmentationTerminus terminus, bool expected)
         {
             var digestionParams = new DigestionParams("trypsin", searchModeType: searchModeType, fragmentationTerminus: terminus);
-            Assert.That(DigestionSearchModeCheck.AsksForSeeds(digestionParams), Is.EqualTo(expected));
+            Assert.That(MetaMorpheusTask.AsksForSeeds(digestionParams), Is.EqualTo(expected));
         }
 
         private static IEnumerable<TestCaseData> EveryTaskAndDigestion()
@@ -99,12 +98,13 @@ namespace Test
         /// <summary>The rule for every task type and every combination of search mode and terminus.</summary>
         [Test]
         [TestCaseSource(nameof(EveryTaskAndDigestion))]
-        public static void GetRefusal_RefusesExactlyTheSeedRequestsOfTasksThatCannotUseSeeds(string taskKind, CleavageSpecificity searchModeType, FragmentationTerminus terminus, bool expectedRefused)
+        public static void GetSeedDigestionRefusal_RefusesExactlyTheSeedRequestsOfTasksThatCannotUseSeeds(string taskKind, CleavageSpecificity searchModeType, FragmentationTerminus terminus, bool expectedRefused)
         {
-            string refusal = DigestionSearchModeCheck.GetRefusal(MakeTask(taskKind, searchModeType, terminus));
+            string refusal = MakeTask(taskKind, searchModeType, terminus).GetSeedDigestionRefusal("MyTask");
             if (expectedRefused)
             {
                 Assert.That(refusal, Does.StartWith("Cannot proceed."));
+                Assert.That(refusal, Does.Contain("\"MyTask\""), "the message must name the task");
                 Assert.That(refusal, Does.Contain("seed"), "the message must say why: these settings give seeds");
                 Assert.That(refusal, Does.Contain("FragmentationTerminus Both").Or.Contain("non-specific search"),
                     "the message must say what to do instead");
@@ -116,62 +116,49 @@ namespace Test
         }
 
         /// <summary>
-        /// The runner checks every task before it runs any: a valid first task does not run when a later task is refused,
-        /// the refusal reaches the user as a warning, and nothing is thrown (a throw would reach the GUI as a crash).
+        /// The command line checks every task before the runner starts, as it does for the experimental design: a valid
+        /// first task does not run when a later task is refused, the message names the refused task, and the exit code
+        /// tells a script that the run was refused.
         /// </summary>
         [Test]
-        [NonParallelizable] // EverythingRunnerEngine warnings go through static handlers
-        public static void Runner_WithOneTaskThatCannotUseItsSeeds_RunsNoTaskAndWarns()
+        public static void CommandLine_WithOneTaskThatCannotUseItsSeeds_RefusesTheRunWithAnExitCode()
         {
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, nameof(Runner_WithOneTaskThatCannotUseItsSeeds_RunsNoTaskAndWarns));
-            if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
-            Directory.CreateDirectory(outputFolder);
-            try
+            var tasks = new List<(string, MetaMorpheusTask)>
             {
-                var tasks = new List<(string, MetaMorpheusTask)>
-                {
-                    ("ValidClassicSearch", Search(SearchType.Classic, CleavageSpecificity.Full, FragmentationTerminus.Both)),
-                    ("GlycoWithSeeds", new GlycoSearchTask { CommonParameters = Common(CleavageSpecificity.Semi, FragmentationTerminus.N) }),
-                };
-                var runner = new EverythingRunnerEngine(tasks,
-                    new List<string> { Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf") },
-                    new List<DbForTask> { new(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "P16150.fasta"), false) },
-                    outputFolder);
+                ("Task1SearchTask", Search(SearchType.Classic, CleavageSpecificity.Full, FragmentationTerminus.Both)),
+                ("Task2GlycoSearchTask", MakeTask("Glyco", CleavageSpecificity.Semi, FragmentationTerminus.N)),
+            };
+            var output = new StringWriter();
 
-                Assert.DoesNotThrow(() => runner.Run(), "the runner refuses; it does not fault a task");
-                Assert.That(runner.Warnings.Count(w => w.StartsWith("Cannot proceed.") && w.Contains("GlycoWithSeeds")), Is.EqualTo(1),
-                    "the refusal names the task and reaches the user as a warning");
-                Assert.That(Directory.Exists(Path.Combine(outputFolder, "ValidClassicSearch")), Is.False, "no task runs, not even the valid one before it");
-                Assert.That(Directory.Exists(Path.Combine(outputFolder, "GlycoWithSeeds")), Is.False);
-            }
-            finally
-            {
-                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
-            }
+            int exitCode = Program.RefuseSeedDigestion(tasks, output, true);
+
+            Assert.That(exitCode, Is.EqualTo(6));
+            Assert.That(output.ToString().Trim(), Is.EqualTo(tasks[1].Item2.GetSeedDigestionRefusal("Task2GlycoSearchTask")));
         }
 
-        /// <summary>A caller that runs a task directly, bypassing the runner, gets the same message as an exception.</summary>
         [Test]
-        public static void RunTask_CalledDirectlyWithSeedsItCannotUse_ThrowsTheRefusal()
+        public static void CommandLine_WithOnlyUsableDigestion_CarriesOnSilently()
         {
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, nameof(RunTask_CalledDirectlyWithSeedsItCannotUse_ThrowsTheRefusal));
-            string taskFolder = Path.Combine(outputFolder, "Task");
-            if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
-            Directory.CreateDirectory(taskFolder);
-            Directory.CreateDirectory(Path.Combine(outputFolder, "Task Settings"));
-            try
+            var tasks = new List<(string, MetaMorpheusTask)>
             {
-                var task = new GlycoSearchTask { CommonParameters = Common(CleavageSpecificity.None, FragmentationTerminus.N) };
-                var thrown = Assert.Throws<MetaMorpheusException>(() => task.RunTask(taskFolder,
-                    new List<DbForTask> { new(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "P16150.fasta"), false) },
-                    new List<string> { Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf") },
-                    "Task"));
-                Assert.That(thrown.Message, Is.EqualTo(DigestionSearchModeCheck.GetRefusal(task, "Task")));
-            }
-            finally
-            {
-                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
-            }
+                ("Task1SearchTask", Search(SearchType.NonSpecific, CleavageSpecificity.None, FragmentationTerminus.N)),
+                ("Task2GlycoSearchTask", MakeTask("Glyco", CleavageSpecificity.Semi, FragmentationTerminus.Both)),
+            };
+            var output = new StringWriter();
+
+            Assert.That(Program.RefuseSeedDigestion(tasks, output, true), Is.EqualTo(0));
+            Assert.That(output.ToString(), Is.Empty);
+        }
+
+        /// <summary>With verbosity none the message is not printed, but the run is still refused.</summary>
+        [Test]
+        public static void CommandLine_Quiet_StillRefuses()
+        {
+            var tasks = new List<(string, MetaMorpheusTask)> { ("Task1GptmdTask", MakeTask("Gptmd", CleavageSpecificity.None, FragmentationTerminus.C)) };
+            var output = new StringWriter();
+
+            Assert.That(Program.RefuseSeedDigestion(tasks, output, false), Is.EqualTo(6));
+            Assert.That(output.ToString(), Is.Empty);
         }
     }
 }

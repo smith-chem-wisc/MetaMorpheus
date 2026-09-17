@@ -286,6 +286,15 @@ namespace MetaMorpheusCommandLine
                 return designExitCode;
             }
 
+            // a task whose digestion gives seed peptides it cannot use would finish with far fewer, wrong identifications
+            int digestionExitCode = RefuseSeedDigestion(taskList, Console.Out,
+                settings.Verbosity == CommandLineSettings.VerbosityType.minimal
+                    || settings.Verbosity == CommandLineSettings.VerbosityType.normal);
+            if (digestionExitCode != 0)
+            {
+                return digestionExitCode;
+            }
+
             EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, settings.OutputFolder);
 
             try
@@ -325,6 +334,29 @@ namespace MetaMorpheusCommandLine
         /// <param name="reportToConsole">True at minimal or normal verbosity. At "none" there is nobody to ask, so a recoverable problem is recovered from silently.</param>
         /// <param name="write">Console writer; defaults to <see cref="Console.WriteLine(string)"/>.</param>
         /// <param name="readLine">Console reader; defaults to <see cref="Console.ReadLine"/>.</param>
+        /// <summary>
+        /// Refuses the run when a task's digestion settings ask for seed peptides the task cannot use (see
+        /// <see cref="MetaMorpheusTask.GetSeedDigestionRefusal"/>). Checked for every task before any runs, as the GUI's Run
+        /// button does, and returns the process exit code: 0 to carry on, 6 to stop.
+        /// </summary>
+        /// <param name="print">Whether to write the reason to <paramref name="output"/>; the run is refused either way.</param>
+        public static int RefuseSeedDigestion(List<(string, MetaMorpheusTask)> taskList, TextWriter output, bool print)
+        {
+            foreach (var (taskName, task) in taskList)
+            {
+                string refusal = task.GetSeedDigestionRefusal(taskName);
+                if (refusal != null)
+                {
+                    if (print)
+                    {
+                        output.WriteLine(refusal);
+                    }
+                    return 6;
+                }
+            }
+            return 0;
+        }
+
         public static int ResolveExperimentalDesign(
             string designDirectory,
             List<string> startingRawFilenameList,

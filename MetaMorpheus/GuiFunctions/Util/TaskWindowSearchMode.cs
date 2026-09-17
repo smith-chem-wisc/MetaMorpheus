@@ -69,7 +69,7 @@ public static class TaskWindowSearchMode
 
     /// <summary>What a loaded task that asks for seeds asked for, and why this task cannot use it; null for any other task.</summary>
     private static string DescribeSeedRequest(IDigestionParams loaded) =>
-        loaded is DigestionParams digestionParams && DigestionSearchModeCheck.AsksForSeeds(digestionParams)
+        loaded is DigestionParams digestionParams && MetaMorpheusTask.AsksForSeeds(digestionParams)
             ? $"This task has SearchModeType {digestionParams.SearchModeType} with FragmentationTerminus {digestionParams.FragmentationTerminus}, " +
               "which gives seed peptides that only the non-specific search can use."
             : null;
