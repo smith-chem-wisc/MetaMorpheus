@@ -2,6 +2,7 @@ using EngineLayer;
 using NUnit.Framework;
 using Proteomics.ProteolyticDigestion;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -64,13 +65,13 @@ namespace Test
                 $"{shadowed}\tX|\tfull\t\t\t",
             });
 
-            GlobalVariables.SetUpGlobalVariables();
+            var warnings = WarningsFromStartup();
 
             Assert.Multiple(() =>
             {
-                Assert.That(GlobalVariables.StartupWarnings.Any(w => w.Contains(shadowed)),
-                    Is.True, "the shadowed name has to be named: " + string.Join(" | ", GlobalVariables.StartupWarnings));
-                Assert.That(GlobalVariables.StartupWarnings.Any(w => w.Contains("proteases_custom.tsv")),
+                Assert.That(warnings.Any(w => w.Contains(shadowed)),
+                    Is.True, "the shadowed name has to be named: " + string.Join(" | ", warnings));
+                Assert.That(warnings.Any(w => w.Contains("proteases_custom.tsv")),
                     Is.True, "and the file to fix it in");
                 // the built-in definition is the one that survives, which is the reason to warn at all
                 Assert.That(ProteaseDictionary.Dictionary[shadowed].DigestionMotifs.Any(m => m.InducingCleavage == "X"),
@@ -91,10 +92,30 @@ namespace Test
                 "NotAShadowingName_ForTest\tX|\tfull\t\t\t",
             });
 
-            GlobalVariables.SetUpGlobalVariables();
+            var warnings = WarningsFromStartup();
 
-            Assert.That(GlobalVariables.StartupWarnings.Any(w => w.Contains("could not be") || w.Contains("ignored")),
-                Is.False, "nothing to report: " + string.Join(" | ", GlobalVariables.StartupWarnings));
+            Assert.That(warnings.Any(w => w.Contains("could not be") || w.Contains("ignored")),
+                Is.False, "nothing to report: " + string.Join(" | ", warnings));
+        }
+
+        /// <summary>
+        /// Runs the startup and returns what it raised through <see cref="GlobalVariables.WarnHandler"/>,
+        /// which is the route both front ends listen on.
+        /// </summary>
+        private static List<string> WarningsFromStartup()
+        {
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> listener = (sender, e) => warnings.Add(e.S);
+            GlobalVariables.WarnHandler += listener;
+            try
+            {
+                GlobalVariables.SetUpGlobalVariables();
+            }
+            finally
+            {
+                GlobalVariables.WarnHandler -= listener;
+            }
+            return warnings;
         }
 
         /// <summary>

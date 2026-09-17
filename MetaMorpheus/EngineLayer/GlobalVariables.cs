@@ -1,4 +1,4 @@
-﻿global using obo = Omics.Modifications.IO.obo;
+global using obo = Omics.Modifications.IO.obo;
 using Chemistry;
 using Easy.Common.Extensions;
 using EngineLayer.GlycoSearch;
@@ -47,11 +47,11 @@ namespace EngineLayer
         public static List<string> ErrorsReadingMods;
 
         /// <summary>
-        /// Non-fatal things the user should know about that were noticed while starting up, and that are
-        /// not about reading a modification. Surfaced beside <see cref="ErrorsReadingMods"/> by both front
-        /// ends. Kept separate because that list's name is a promise about what is in it.
+        /// Non-fatal things the user should know about, such as a custom protease that collided with a
+        /// built-in. Each front end routes these to its own output, as it does for the engine and task
+        /// warnings; subscribe before <see cref="SetUpGlobalVariables"/> to hear the ones raised at startup.
         /// </summary>
-        public static List<string> StartupWarnings { get; private set; } = new List<string>();
+        public static event EventHandler<StringEventArgs> WarnHandler;
 
         // mzLib keeps these as private constants, so the names are repeated rather than referenced.
         // They are the shipped files whose banner and header row seed the custom counterparts.
@@ -118,8 +118,6 @@ namespace EngineLayer
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
             TmtExperimentalDesignFileName = "TmtDesign.txt";
             SeparationTypes = new List<string> { { "HPLC" }, { "CZE" } };
-
-            StartupWarnings = new List<string>();
 
             SetMetaMorpheusVersion();
             SetUpDataDirectory();
@@ -694,9 +692,14 @@ namespace EngineLayer
                 return;
             }
 
-            StartupWarnings.Add($"{skipped.Count} custom {kind}(s) in {Path.GetFileName(path)} were ignored because "
+            Warn($"{skipped.Count} custom {kind}(s) in {Path.GetFileName(path)} were ignored because "
                 + $"a built-in {kind} already uses the same name: {string.Join(", ", skipped.Select(p => "'" + p + "'"))}. "
                 + $"Rename them in {path} if you meant to define your own.");
+        }
+
+        private static void Warn(string v)
+        {
+            WarnHandler?.Invoke(null, new StringEventArgs(v, null));
         }
     }
 }

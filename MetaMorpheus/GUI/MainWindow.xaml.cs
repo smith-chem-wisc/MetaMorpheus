@@ -42,6 +42,10 @@ namespace MetaMorpheusGUI
 
         public MainWindow()
         {
+            // subscribed before startup so that what startup notices, such as a custom protease that
+            // collided with a built-in, is shown too. Queued rather than written, because the
+            // notifications box does not exist until InitializeComponent has run.
+            GlobalVariables.WarnHandler += (sender, e) => Dispatcher.BeginInvoke(new Action(() => NotificationHandler(sender, e)));
             GlobalVariables.SetUpGlobalVariables();
             InitializeComponent();
 
@@ -1633,13 +1637,6 @@ namespace MetaMorpheusGUI
                 NotificationHandler(null, new StringEventArgs(error, null));
             }
             GlobalVariables.ErrorsReadingMods.Clear();
-
-            // and anything else startup noticed, such as a custom protease that collided with a built-in
-            foreach (var warning in GlobalVariables.StartupWarnings)
-            {
-                NotificationHandler(null, new StringEventArgs(warning, null));
-            }
-            GlobalVariables.StartupWarnings.Clear();
         }
 
         private void UpdateOutputFolderTextbox()
