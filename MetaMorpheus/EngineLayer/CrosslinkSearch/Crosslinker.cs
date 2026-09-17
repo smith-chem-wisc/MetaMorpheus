@@ -98,11 +98,10 @@ namespace EngineLayer
         public static Crosslinker ParseCrosslinkerFromString(string line)
         {
             var split = line.Split('\t');
-            bool cleavable = true;
-            if (split[3] == "F")
-            {
-                cleavable = false;
-            }
+            // Crosslinkers.tsv writes T/F but ToString(true) writes the bool's own True/False, so a
+            // custom crosslinker saved as uncleavable reloaded as cleavable
+            string cleavableField = split[3].Trim().ToUpperInvariant();
+            bool cleavable = cleavableField != "F" && cleavableField != "FALSE";
 
             Crosslinker crosslinker = new Crosslinker(
                 crosslinkerName: split[0],
