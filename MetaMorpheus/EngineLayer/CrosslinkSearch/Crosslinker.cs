@@ -72,6 +72,7 @@ namespace EngineLayer
                 // sources disagree on case and a case-sensitive match silently drops entries (#2716)
                 switch (x.Trim().ToUpperInvariant())
                 {
+                    // empty or whitespace-only field, e.g. the trailing "" in "CID|HCD|"
                     case "":
                         break;
                     case "CID":
