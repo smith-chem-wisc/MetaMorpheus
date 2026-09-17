@@ -946,7 +946,7 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
             Directory.CreateDirectory(outputFolder);
 
-            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            var glycoSearchTask = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"));
             glycoSearchTask._glycoSearchParameters.Normalize = true;
 
             DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
@@ -1310,7 +1310,7 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
             Directory.CreateDirectory(outputFolder);
 
-            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            var glycoSearchTask = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"));
             glycoSearchTask._glycoSearchParameters.Normalize = true;
 
             DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
@@ -1387,7 +1387,7 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
             Directory.CreateDirectory(outputFolder);
 
-            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            var glycoSearchTask = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"));
             glycoSearchTask._glycoSearchParameters.DoParsimony = false;
 
             DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
@@ -1457,7 +1457,7 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
             Directory.CreateDirectory(outputFolder);
 
-            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            var glycoSearchTask = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"));
             glycoSearchTask._glycoSearchParameters.Normalize = true;
 
             DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
@@ -1542,7 +1542,7 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
             Directory.CreateDirectory(outputFolder);
 
-            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            var glycoSearchTask = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"));
             glycoSearchTask._glycoSearchParameters.Normalize = true;
 
             DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
@@ -1651,7 +1651,7 @@ namespace Test
                 _ = ExperimentalDesign.WriteExperimentalDesignToFile(fileInfos);
             }
 
-            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            var glycoSearchTask = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"));
             glycoSearchTask._glycoSearchParameters.DoParsimony = true;
 
             DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
@@ -1839,9 +1839,8 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestGlycoCountOnly");
             Directory.CreateDirectory(outputFolder);
 
-            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(
-                Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"),
-                MetaMorpheusTask.tomlConfig);
+            var glycoSearchTask = MetaMorpheusTask.ReadTaskTomlWithBackwardsCompatibility<GlycoSearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"));
             glycoSearchTask._glycoSearchParameters.DoLabelFreeQuantification = false;
 
             DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);

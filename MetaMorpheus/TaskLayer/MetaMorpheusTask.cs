@@ -1947,55 +1947,55 @@ namespace TaskLayer
         #region Toml Helpers
 
         /// <summary>
-        /// Reads task TOMLs with legacy compatibility migrations.
+        /// Reads task TOMLs with backwards compatibility for renamed parameter sections/properties.
         /// </summary>
-        /// <typeparam name="TTask"></typeparam>
-        /// <param name="filePath"></param>
-        /// <returns></returns>
         public static TTask ReadTaskTomlWithBackwardsCompatibility<TTask>(string filePath) where TTask : MetaMorpheusTask
         {
             TomlTable raw = Toml.ReadFile(filePath, tomlConfig);
             TTask task = raw.Get<TTask>();
-            ApplyLegacyParameterSectionFallbacks(task, raw);
 
-            if (raw.ContainsKey(nameof(CommonParameters)))
+            if (task is XLSearchTask xlTask)
             {
-                TomlTable common = raw.Get<TomlTable>(nameof(CommonParameters));
-                if (!common.ContainsKey(nameof(CommonParameters.ProductMassTolerance_LowRes)))
-                {
-                    // Legacy TOML behavior: omitted low-res follows product tolerance
-                    task.CommonParameters.ProductMassTolerance_LowRes = task.CommonParameters.ProductMassTolerance;
-                }
-            }
+                // "XLSearchParameters" was renamed to "XlSearchParameters"
+                if (!raw.ContainsKey(nameof(XLSearchTask.XlSearchParameters)) && raw.ContainsKey("XLSearchParameters"))
+                    xlTask.XlSearchParameters = raw.Get<TomlTable>("XLSearchParameters").Get<XlSearchParameters>();
 
+                if (raw.ContainsKey(nameof(XLSearchTask.XlSearchParameters)))
+                    ApplyLegacySearchParameterAliases(xlTask.XlSearchParameters, raw.Get<TomlTable>(nameof(XLSearchTask.XlSearchParameters)));
+            }
+            else if (task is GlycoSearchTask glycoTask)
+            {
+                // "_glycoSearchParameters" was previously "GlycoSearchParameters" or "SearchParameters"
+                if (!raw.ContainsKey(nameof(GlycoSearchTask._glycoSearchParameters)))
+                {
+                    string legacyKey = raw.ContainsKey("GlycoSearchParameters") ? "GlycoSearchParameters"
+                        : raw.ContainsKey(nameof(SearchTask.SearchParameters)) ? nameof(SearchTask.SearchParameters)
+                        : null;
+                    if (legacyKey != null)
+                        glycoTask._glycoSearchParameters = raw.Get<TomlTable>(legacyKey).Get<GlycoSearchParameters>();
+                }
+
+                if (raw.ContainsKey(nameof(GlycoSearchTask._glycoSearchParameters)))
+                    ApplyLegacySearchParameterAliases(glycoTask._glycoSearchParameters, raw.Get<TomlTable>(nameof(GlycoSearchTask._glycoSearchParameters)));
+            }
             return task;
         }
-        private static void ApplyLegacyParameterSectionFallbacks(MetaMorpheusTask task, TomlTable raw)
+
+        private static void ApplyLegacySearchParameterAliases(SearchParameters searchParameters, TomlTable parameterTable)
         {
-            if (task is XLSearchTask xlTask && !raw.ContainsKey(nameof(XLSearchTask.XlSearchParameters)))
-            {
-                if (raw.ContainsKey("XLSearchParameters"))
-                {
-                    xlTask.XlSearchParameters = raw.Get<TomlTable>("XLSearchParameters").Get<XlSearchParameters>();
-                }
-                else if (raw.ContainsKey(nameof(SearchTask.SearchParameters)))
-                {
-                    xlTask.XlSearchParameters = raw.Get<TomlTable>(nameof(SearchTask.SearchParameters)).Get<XlSearchParameters>();
-                }
-            }
-            else if (task is GlycoSearchTask glycoTask && !raw.ContainsKey(nameof(GlycoSearchTask._glycoSearchParameters)))
-            {
-                if (raw.ContainsKey("GlycoSearchParameters"))
-                {
-                    glycoTask._glycoSearchParameters = raw.Get<TomlTable>("GlycoSearchParameters").Get<GlycoSearchParameters>();
-                }
-                else if (raw.ContainsKey(nameof(SearchTask.SearchParameters)))
-                {
-                    glycoTask._glycoSearchParameters = raw.Get<TomlTable>(nameof(SearchTask.SearchParameters)).Get<GlycoSearchParameters>();
-                }
-            }
+            if (parameterTable.ContainsKey("DoQuantification") && !parameterTable.ContainsKey(nameof(SearchParameters.DoLabelFreeQuantification)))
+                searchParameters.DoLabelFreeQuantification = parameterTable.Get<bool>("DoQuantification");
+
+            if (parameterTable.ContainsKey("DoMbrAnalysis") && !parameterTable.ContainsKey(nameof(SearchParameters.MatchBetweenRuns)))
+                searchParameters.MatchBetweenRuns = parameterTable.Get<bool>("DoMbrAnalysis");
+
+            if (parameterTable.ContainsKey("WriteSpectrumLibrary") && !parameterTable.ContainsKey(nameof(SearchParameters.WriteSpectralLibrary)))
+                searchParameters.WriteSpectralLibrary = parameterTable.Get<bool>("WriteSpectrumLibrary");
+
+            if (parameterTable.ContainsKey("WritePrunedDataBase") && !parameterTable.ContainsKey(nameof(SearchParameters.WritePrunedDatabase)))
+                searchParameters.WritePrunedDatabase = parameterTable.Get<bool>("WritePrunedDataBase");
         }
-    }
 
         #endregion
+    }
 }
