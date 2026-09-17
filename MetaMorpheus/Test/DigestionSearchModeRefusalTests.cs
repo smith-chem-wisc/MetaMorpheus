@@ -51,6 +51,7 @@ namespace Test
             "ClassicSearch" => Search(SearchType.Classic, searchModeType, terminus),
             "ModernSearch" => Search(SearchType.Modern, searchModeType, terminus),
             "NonSpecificSearch" => Search(SearchType.NonSpecific, searchModeType, terminus),
+            "Averaging" => new SpectralAveragingTask { CommonParameters = Common(searchModeType, terminus) },
             "GlycoWithRnaDigestion" => new GlycoSearchTask { CommonParameters = new CommonParameters(digestionParams: new RnaDigestionParams()) },
             _ => throw new System.ArgumentException(kind),
         };
@@ -90,6 +91,11 @@ namespace Test
                          (CleavageSpecificity.None, FragmentationTerminus.C), (CleavageSpecificity.None, FragmentationTerminus.Both),
                          (CleavageSpecificity.Full, FragmentationTerminus.Both) })
                 yield return new TestCaseData("NonSpecificSearch", mode, terminus, false).SetName($"NonSpecificSearch {mode}+{terminus} is allowed");
+
+            // a spectral averaging task digests nothing, so no digestion settings are refused for it
+            foreach (var (mode, terminus) in new[] { (CleavageSpecificity.Semi, FragmentationTerminus.N), (CleavageSpecificity.Semi, FragmentationTerminus.C),
+                         (CleavageSpecificity.None, FragmentationTerminus.Both), (CleavageSpecificity.Full, FragmentationTerminus.Both) })
+                yield return new TestCaseData("Averaging", mode, terminus, false).SetName($"Averaging {mode}+{terminus} is allowed (it does not digest)");
 
             // RNA digestion has no protein seed request
             yield return new TestCaseData("GlycoWithRnaDigestion", CleavageSpecificity.Full, FragmentationTerminus.Both, false).SetName("RNA digestion parameters are not checked");

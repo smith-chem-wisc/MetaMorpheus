@@ -70,12 +70,15 @@ namespace TaskLayer
         /// <remarks>
         /// Only the non-specific search engine, which a Search task runs for <see cref="SearchType.NonSpecific"/>, can use seeds
         /// (it makes its own N and C passes). Classic and Modern search, Glyco, crosslink, GPTMD and calibration score digestion
-        /// products as they are, so given seeds they finish normally and report far fewer, wrong identifications.
+        /// products as they are, so given seeds they finish normally and report far fewer, wrong identifications. A spectral
+        /// averaging task digests nothing, so its digestion settings are never used and are not checked, as it is already
+        /// exempt from needing a protein database.
         /// </remarks>
         /// <param name="taskName">The name the user knows the task by, included in the message when given.</param>
         public string GetSeedDigestionRefusal(string taskName = null)
         {
             if (CommonParameters?.DigestionParams is not DigestionParams digestionParams // RNA digestion has no protein seed request
+                || TaskType == MyTask.Average // averaging does not digest, so its digestion settings are never used
                 || this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific } // the non-specific search engine trims seeds
                 || !AsksForSeeds(digestionParams))
             {
