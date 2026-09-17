@@ -321,20 +321,6 @@ namespace MetaMorpheusCommandLine
         }
 
         /// <summary>
-        /// Works out which experimental design this run will use, reports whatever is wrong with it,
-        /// and returns the process exit code: 0 to carry on, 5 to stop.
-        ///
-        /// Static, and parameterised over its console I/O, so the decision can be tested without
-        /// driving a whole command line run. These branches decide whether a search starts at all,
-        /// and before this they were reachable only by launching the CLI against real spectra.
-        /// </summary>
-        /// <param name="designDirectory">The folder beside the spectra files, where a design lives.</param>
-        /// <param name="startingRawFilenameList">Full paths of the spectra files this run will search.</param>
-        /// <param name="normalizationRequested">True when any search task asks for normalization, which is what makes a design mandatory rather than optional.</param>
-        /// <param name="reportToConsole">True at minimal or normal verbosity. At "none" there is nobody to ask, so a recoverable problem is recovered from silently.</param>
-        /// <param name="write">Console writer; defaults to <see cref="Console.WriteLine(string)"/>.</param>
-        /// <param name="readLine">Console reader; defaults to <see cref="Console.ReadLine"/>.</param>
-        /// <summary>
         /// Refuses the run when a task's digestion settings ask for seed peptides the task cannot use (see
         /// <see cref="MetaMorpheusTask.GetSeedDigestionRefusal"/>). Checked for every task before any runs, as the GUI's Run
         /// button does, and returns the process exit code: 0 to carry on, 6 to stop.
@@ -357,6 +343,20 @@ namespace MetaMorpheusCommandLine
             return 0;
         }
 
+        /// <summary>
+        /// Works out which experimental design this run will use, reports whatever is wrong with it,
+        /// and returns the process exit code: 0 to carry on, 5 to stop.
+        ///
+        /// Static, and parameterised over its console I/O, so the decision can be tested without
+        /// driving a whole command line run. These branches decide whether a search starts at all,
+        /// and before this they were reachable only by launching the CLI against real spectra.
+        /// </summary>
+        /// <param name="designDirectory">The folder beside the spectra files, where a design lives.</param>
+        /// <param name="startingRawFilenameList">Full paths of the spectra files this run will search.</param>
+        /// <param name="normalizationRequested">True when any search task asks for normalization, which is what makes a design mandatory rather than optional.</param>
+        /// <param name="reportToConsole">True at minimal or normal verbosity. At "none" there is nobody to ask, so a recoverable problem is recovered from silently.</param>
+        /// <param name="write">Console writer; defaults to <see cref="Console.WriteLine(string)"/>.</param>
+        /// <param name="readLine">Console reader; defaults to <see cref="Console.ReadLine"/>.</param>
         public static int ResolveExperimentalDesign(
             string designDirectory,
             List<string> startingRawFilenameList,
