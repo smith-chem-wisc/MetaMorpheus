@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
@@ -499,3 +499,140 @@ public class GptmdFilterTests
     }
 }
 
+
+[TestFixture]
+public class CleavageSiteFilterTests
+{
+    private static Modification Substitution(char original, char substituted)
+    {
+        ModificationMotif.TryGetMotif(original.ToString(), out var motif);
+        return new Modification(
+            _originalId: $"{original}->{substituted}",
+            _modificationType: "1 nucleotide substitution",
+            _target: motif,
+            _locationRestriction: "Anywhere.",
+            _monoisotopicMass: 1);
+    }
+
+    /// <summary>
+    /// Digests a protein and returns the peptide with the given base sequence, so the peptide
+    /// carries the digestion parameters and the parent the filter reads.
+    /// </summary>
+    private static PeptideWithSetModifications Peptide(string proteinSequence, string peptideSequence,
+        string protease = "trypsin")
+    {
+        var digestionParams = new DigestionParams(protease: protease, maxMissedCleavages: 0, minPeptideLength: 1);
+        return new Proteomics.Protein(proteinSequence, "accession")
+            .Digest(digestionParams, new List<Modification>(), new List<Modification>())
+            .Single(p => p.BaseSequence == peptideSequence);
+    }
+
+    /// <summary>
+    /// GptmdEngine passes the site in "one is N-terminus" space, so residue one arrives as two.
+    /// </summary>
+    private static bool Passes(PeptideWithSetModifications peptide, int oneBasedResidueInPeptide, Modification mod)
+        => new CleavageSiteFilter().Passes(
+            peptide,
+            GptmdFilterTests.DummySpectralMatch(),
+            newScore: 10,
+            originalScore: 1,
+            matchedIons: new List<MatchedFragmentIon>(),
+            peptideOneBasedModSite: oneBasedResidueInPeptide + 1,
+            peptideLength: peptide.BaseSequence.Length,
+            mod);
+
+    [Test]
+    public void Rejects_SubstitutionThatCreatesACleavageSiteInsideThePeptide()
+    {
+        // PEPTIDEK | AAAR. T at residue 4 becomes R, which trypsin would cut after.
+        var peptide = Peptide("PEPTIDEKAAAR", "PEPTIDEK");
+        Assert.That(Passes(peptide, 4, Substitution('T', 'R')), Is.False);
+    }
+
+    [Test]
+    public void Rejects_SubstitutionThatDestroysTheCleavageSiteEndingThePeptide()
+    {
+        // The K at residue 8 is why this peptide ends here; without it the peptide runs on.
+        var peptide = Peptide("PEPTIDEKAAAR", "PEPTIDEK");
+        Assert.That(Passes(peptide, 8, Substitution('K', 'A')), Is.False);
+    }
+
+    [Test]
+    public void Rejects_SubstitutionThatBlocksCleavageBeforeProline()
+    {
+        // trypsin|P does not cut before proline, so A at the first residue becoming P removes the
+        // cut after the preceding K that produced this peptide.
+        var peptide = Peptide("PEPTIDEKAAAR", "AAAR", protease: "trypsin|P");
+        Assert.That(Passes(peptide, 1, Substitution('A', 'P')), Is.False);
+    }
+
+    [Test]
+    public void Accepts_SubstitutionThatLeavesCleavageUnchanged()
+    {
+        // T at residue 4 becomes S: no cut site is created, destroyed or blocked.
+        var peptide = Peptide("PEPTIDEKAAAR", "PEPTIDEK");
+        Assert.That(Passes(peptide, 4, Substitution('T', 'S')), Is.True);
+    }
+
+    [Test]
+    public void Accepts_SubstitutionBetweenTwoCleavableResidues()
+    {
+        // K to R at the C terminus keeps the site, so the peptide's boundaries do not move.
+        var peptide = Peptide("PEPTIDEKAAAR", "PEPTIDEK");
+        Assert.That(Passes(peptide, 8, Substitution('K', 'R')), Is.True);
+    }
+
+    [Test]
+    public void Accepts_SubstitutionWhenProlineRuleDoesNotApply()
+    {
+        // Plain trypsin cuts after K regardless of a following proline, so the same substitution
+        // that fails under trypsin|P is inert here.
+        var peptide = Peptide("PEPTIDEKAAAR", "AAAR");
+        Assert.That(Passes(peptide, 1, Substitution('A', 'P')), Is.True);
+    }
+
+    [Test]
+    public void Accepts_ModificationsThatAreNotSubstitutions()
+    {
+        var peptide = Peptide("PEPTIDEKAAAR", "PEPTIDEK");
+        ModificationMotif.TryGetMotif("T", out var motif);
+        var phospho = new Modification(_originalId: "Phospho", _modificationType: "Common Biological",
+            _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 79.96633);
+
+        Assert.That(Passes(peptide, 4, phospho), Is.True);
+    }
+
+    [Test]
+    public void Accepts_WhenTheSiteIsNotAResidue()
+    {
+        // Site one is the peptide N terminus, not a residue, so there is nothing to substitute.
+        // GptmdEngine never sends it for a residue modification; accept rather than guess.
+        var peptide = Peptide("PEPTIDEKAAAR", "PEPTIDEK");
+
+        Assert.That(
+            new CleavageSiteFilter().Passes(
+                peptide,
+                GptmdFilterTests.DummySpectralMatch(),
+                10, 1, new List<MatchedFragmentIon>(),
+                peptideOneBasedModSite: 1,
+                peptideLength: peptide.BaseSequence.Length,
+                Substitution('K', 'A')),
+            Is.True);
+    }
+
+    [Test]
+    public void Accepts_WhenTheCandidateHasNoDigestionAgent()
+    {
+        // The dummy peptide is constructed without digestion parameters; the filter cannot reason
+        // about cleavage and must not reject on that basis.
+        Assert.That(
+            new CleavageSiteFilter().Passes(
+                GptmdFilterTests.DummyPeptide(),
+                GptmdFilterTests.DummySpectralMatch(),
+                10, 1, new List<MatchedFragmentIon>(),
+                peptideOneBasedModSite: 5,
+                peptideLength: 7,
+                Substitution('T', 'R')),
+            Is.True);
+    }
+}
