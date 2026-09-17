@@ -47,13 +47,32 @@ namespace EngineLayer
         public double DeadendMassNH2 { get; set; }
         public double DeadendMassTris { get; set; }
 
+        /// <summary>
+        /// Whether this crosslinker is cleaved by the given dissociation type. LowCID counts as CID: the
+        /// crosslinker does not know the resolution of the scan it is being fragmented in, so a crosslinker
+        /// declared CID-cleavable is also cleaved in a low-resolution CID scan such as an MS3 child scan.
+        /// </summary>
+        public bool IsCleavedBy(DissociationType dissociationType)
+        {
+            if (!Cleavable)
+            {
+                return false;
+            }
+
+            return CleaveDissociationTypes.Contains(dissociationType)
+                || (dissociationType == DissociationType.LowCID && CleaveDissociationTypes.Contains(DissociationType.CID));
+        }
+
         private List<DissociationType> GetCleaveDissociationTypes(string cleaveDissociationTypesInString)
         {
             List<DissociationType> cleaveDissociationTypes = new List<DissociationType>();
             foreach (var x in cleaveDissociationTypesInString.Split('|'))
             {
-                switch (x)
+                // ToString writes "EThcD" and "LowCID" but the GUI upper-cases its input, so the two
+                // sources disagree on case and a case-sensitive match silently drops entries (#2716)
+                switch (x.Trim().ToUpperInvariant())
                 {
+                    // empty or whitespace-only field, e.g. the trailing "" in "CID|HCD|"
                     case "":
                         break;
                     case "CID":
@@ -67,6 +86,9 @@ namespace EngineLayer
                         break;
                     case "ETHCD":
                         cleaveDissociationTypes.Add(DissociationType.EThcD);
+                        break;
+                    case "LOWCID":
+                        cleaveDissociationTypes.Add(DissociationType.LowCID);
                         break;
                     default:
                         break;
