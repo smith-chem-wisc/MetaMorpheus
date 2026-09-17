@@ -1,4 +1,4 @@
-﻿using EngineLayer.ClassicSearch;
+using EngineLayer.ClassicSearch;
 using EngineLayer;
 using NUnit.Framework;
 using Omics.Modifications;
@@ -91,6 +91,12 @@ public class SearchTaskWithRna
         {
             Assert.That(files, Does.Contain(expectedFile), $"Expected output file {expectedFile} not found.");
         }
+
+        // The OSM writer emits the 5'- and 3'-terminus columns immediately after Essential Sequence.
+        var osmHeader = File.ReadLines(Path.Combine(outputDir, "AllOSMs.osmtsv")).First().Split('\t');
+        Assert.That(osmHeader.IndexOf(SpectrumMatchFromTsvHeader.EssentialSequence), Is.GreaterThanOrEqualTo(0));
+        Assert.That(osmHeader, Does.Contain(SpectrumMatchFromTsvHeader.FivePrimeTerminus));
+        Assert.That(osmHeader, Does.Contain(SpectrumMatchFromTsvHeader.ThreePrimeTerminus));
         // Directory.Delete(outputDir, true);
     }
 }
