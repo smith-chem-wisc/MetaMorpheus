@@ -15,6 +15,7 @@ using Omics.Fragmentation;
 using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Transcriptomics.Digestion;
 using Readers;
 using System;
 using System.Collections.Generic;
@@ -424,7 +425,9 @@ namespace TaskLayer
                     if (combinedParams.DigestionParams.SearchModeType == CleavageSpecificity.Semi) //if semi, we need to do both N and C to hit everything
                     {
                         paramsToUse.Clear();
-                        List<FragmentationTerminus> terminiToUse = new List<FragmentationTerminus> { FragmentationTerminus.N, FragmentationTerminus.C };
+                        List<FragmentationTerminus> terminiToUse = combinedParams.DigestionParams is RnaDigestionParams
+                            ? new List<FragmentationTerminus> { FragmentationTerminus.FivePrime, FragmentationTerminus.ThreePrime }
+                            : new List<FragmentationTerminus> { FragmentationTerminus.N, FragmentationTerminus.C };
                         foreach (FragmentationTerminus terminus in terminiToUse) //set both termini
                         {
                             paramsToUse.Add(combinedParams.CloneWithNewTerminus(terminus));
@@ -737,3 +740,6 @@ namespace TaskLayer
         }
     }
 }
+
+
+
