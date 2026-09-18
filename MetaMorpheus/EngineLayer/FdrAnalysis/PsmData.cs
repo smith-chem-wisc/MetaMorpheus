@@ -18,6 +18,7 @@ namespace EngineLayer.FdrAnalysis
                     "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount",
                     "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore",
                     "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle",
+                    "HasHydrophobicity",
                     "PrecursorDeconvolutionScore",
                 }
             },
@@ -70,6 +71,7 @@ namespace EngineLayer.FdrAnalysis
             { "LongestFragmentIonSeries", 1 },
             { "ComplementaryIonCount", 1 },
             { "HydrophobicityZScore", -1 },
+            { "HasHydrophobicity", 1 },
             { "IsVariantPeptide",-1 },
             { "AlphaIntensity", 1 },
             { "BetaIntensity", 1 },
@@ -176,6 +178,19 @@ namespace EngineLayer.FdrAnalysis
 
         [LoadColumn(23)]
         public float HasSpectralAngle { get; set; }
+
+        /// <summary>
+        /// 1 when the retention-time predictor produced a value for this peptidoform, 0 when it could not --
+        /// most often because the peptidoform carries a modification outside the predictor's vocabulary
+        /// (Chronologer supports roughly twenty; a G-PTM-D search can enable many times that).
+        ///
+        /// Companion to <see cref="HydrophobicityZScore"/> in the same way <see cref="HasSpectralAngle"/> is the
+        /// companion to <see cref="SpectralAngle"/>: it lets the model distinguish "predicted, and disagrees with
+        /// the observed retention time" from "could not be predicted at all". Without it a failed prediction is
+        /// indistinguishable from a maximally bad one.
+        /// </summary>
+        [LoadColumn(30)]
+        public float HasHydrophobicity { get; set; }
 
         [LoadColumn(24)]
         public float PeaksInPrecursorEnvelope { get; set; }
