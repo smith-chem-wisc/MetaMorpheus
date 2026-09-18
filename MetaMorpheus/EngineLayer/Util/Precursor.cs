@@ -11,7 +11,7 @@ namespace EngineLayer.Util;
 /// Each precursor refers to one isotopic envelope observed in a single MS1 scan. 
 /// It is meant to hold experimentally observed data for a peptide/proteoform precursor.
 /// </summary>
-public record Precursor
+public record Precursor : IHasMass
 {
     /// <summary>
     /// Each precursor refers to one isotopic envelope observed in a single MS1 scan. 
@@ -28,7 +28,7 @@ public record Precursor
     {
         this.MonoisotopicPeakMz = MonoisotopicPeakMz;
         this.Charge = Charge;
-        this.MonoIsotopicMass = MonoIsotopicMass;
+        this.MonoisotopicMass = MonoIsotopicMass;
         this.Intensity = Intensity;
         this.EnvelopePeakCount = EnvelopePeakCount;
         this.FractionalIntensity = FractionalIntensity;
@@ -38,7 +38,7 @@ public record Precursor
     {
         this.MonoisotopicPeakMz = MonoisotopicPeakMz;
         this.Charge = Charge;
-        MonoIsotopicMass = MonoisotopicPeakMz.ToMass(Charge);
+        MonoisotopicMass = MonoisotopicPeakMz.ToMass(Charge);
         this.Intensity = Intensity;
         this.EnvelopePeakCount = EnvelopePeakCount;
         this.FractionalIntensity = FractionalIntensity;
@@ -48,7 +48,7 @@ public record Precursor
     {
         MonoisotopicPeakMz = MonoIsotopicMass.ToMz(Charge);
         this.Charge = Charge;
-        this.MonoIsotopicMass = MonoIsotopicMass;
+        this.MonoisotopicMass = MonoIsotopicMass;
         this.Intensity = Intensity;
         this.EnvelopePeakCount = EnvelopePeakCount;
         this.FractionalIntensity = FractionalIntensity;
@@ -59,7 +59,7 @@ public record Precursor
         this.Envelope = envelope ?? throw new ArgumentNullException(nameof(envelope));
         this.MonoisotopicPeakMz = envelope.MonoisotopicMass.ToMz(envelope.Charge);
         this.Charge = envelope.Charge;
-        this.MonoIsotopicMass = envelope.MonoisotopicMass;
+        this.MonoisotopicMass = envelope.MonoisotopicMass;
         this.Intensity = intensity ?? envelope.Peaks.Sum(p => p.intensity);
         this.EnvelopePeakCount = envelope.Peaks.Count;
         this.FractionalIntensity = fractionalIntensity;
@@ -83,7 +83,7 @@ public record Precursor
     /// <summary>
     /// The neutral monoisotopic mass of the precursor.
     /// </summary>
-    public double MonoIsotopicMass { get; init; }
+    public double MonoisotopicMass { get; init; }
 
     /// <summary>
     /// Either the most abundant isotope intensity, or the summed intensity from all isotopes. For MM decon, this is determined by CommonParameters 
