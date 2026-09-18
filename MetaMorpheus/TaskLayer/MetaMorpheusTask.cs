@@ -84,11 +84,15 @@ namespace TaskLayer
                             : tmlTable.Get<RnaDigestionParams>())))
             .ConfigureType<DigestionParams>(type => type
                 .IgnoreProperty(p => p.DigestionAgent)
+                .IgnoreProperty(p => p.SpecificDigestionAgent)
+                .IgnoreProperty(p => p.SpecificProtease)
                 .IgnoreProperty(p => p.MaxMods)
                 .IgnoreProperty(p => p.MaxLength)
                 .IgnoreProperty(p => p.MinLength))
             .ConfigureType<RnaDigestionParams>(type => type
-                .IgnoreProperty(p => p.DigestionAgent))
+                .IgnoreProperty(p => p.DigestionAgent)
+                .IgnoreProperty(p => p.SpecificDigestionAgent)
+                .IgnoreProperty(p => p.SpecificRnase))
             .ConfigureType<Rnase>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.Name)
@@ -1969,3 +1973,5 @@ namespace TaskLayer
         }
     }
 }
+
+

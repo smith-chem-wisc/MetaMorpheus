@@ -47,8 +47,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             MinimumPeptideLength = commonParameters.DigestionParams.MinLength;
             GlobalCategorySpecificPsms = globalPsms;
             ModifiedParametersNoComp = commonParameters.CloneWithNewTerminus(addCompIons: false);
-            ProductTypesToSearch = DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.DigestionParams.FragmentationTerminus]).ToList();
-            VariableTerminalModifications = GetVariableTerminalMods(commonParameters.DigestionParams.FragmentationTerminus, variableModifications);
+            ProductTypesToSearch = DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[GetSearchTerminus(commonParameters.DigestionParams)]).ToList();
+            VariableTerminalModifications = GetVariableTerminalMods(GetSearchTerminus(commonParameters.DigestionParams), variableModifications);
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -136,8 +136,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 foreach (int id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
                                 {
                                     IBioPolymerWithSetMods peptide = PeptideIndex[id];
-                                    peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts, CommonParameters.FragmentationParameters);
-                                    Tuple<int, IBioPolymerWithSetMods> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.GetPrecursorMassForSearch(CommonParameters), peptide, CommonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor, semiSpecificSearch);
+                                    peptide.Fragment(CommonParameters.DissociationType, GetSearchTerminus(CommonParameters.DigestionParams), peptideTheorProducts, CommonParameters.FragmentationParameters);
+                                    Tuple<int, IBioPolymerWithSetMods> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.GetPrecursorMassForSearch(CommonParameters), peptide, GetSearchTerminus(CommonParameters.DigestionParams), MassDiffAcceptor, semiSpecificSearch);
                                     int notch = notchAndUpdatedPeptide.Item1;
                                     if (notch >= 0)
                                     {
@@ -546,6 +546,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 int minorCategoryIndex = indexesOfInterest[i];
                 if (minorCategoryIndex != majorCategoryIndex)
                 {
+                    if (majorCategoryPsms.Count == 0)
+                    {
+                        continue;
+                    }
                     List<SpectralMatch> minorCategoryPsms = AllPsms[minorCategoryIndex].Where(x => x != null).OrderByDescending(x => x.Score).ToList(); //get sorted minor category
                     int minorPsmIndex = 0;
                     int majorPsmIndex = 0;
@@ -635,6 +639,22 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             return bestPsmsList.OrderBy(b => b.PsmFdrInfo.QValue).ThenByDescending(b => b.Score).ToList();
         }
 
+        private static FragmentationTerminus GetSearchTerminus(IDigestionParams digestionParams)
+        {
+            if (digestionParams is RnaDigestionParams)
+            {
+                return digestionParams.DigestionAgent.Name switch
+                {
+                    "singleN" => FragmentationTerminus.FivePrime,
+                    "singleC" => FragmentationTerminus.ThreePrime,
+                    _ when digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime => FragmentationTerminus.FivePrime,
+                    _ when digestionParams.FragmentationTerminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime => FragmentationTerminus.ThreePrime,
+                    _ => digestionParams.FragmentationTerminus
+                };
+            }
+            return digestionParams.FragmentationTerminus;
+        }
+
         public static List<Modification> GetVariableTerminalMods(FragmentationTerminus fragmentationTerminus, List<Modification> variableModifications)
         {
             //if singleN, want to find c-terminal mods and vice-versa
@@ -644,18 +664,23 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 FragmentationTerminus.C => "N-terminal",
                 FragmentationTerminus.FivePrime => "3'-terminal",
                 FragmentationTerminus.ThreePrime => "5'-terminal",
-                _ => throw new NotImplementedException("FragmentationTerminus must be N or C for terminal mods")
+                _ => null
             };
 
-            return variableModifications == null ?
-                new List<Modification>() :
-                variableModifications.Where(x => x.LocationRestriction.Contains(terminalStringToFind)).ToList();
+            return variableModifications == null || terminalStringToFind == null
+                ? new List<Modification>()
+                : variableModifications.Where(x => x.LocationRestriction.Contains(terminalStringToFind)).ToList();
         }
 
         public static Dictionary<int, List<Modification>> GetTerminalModPositions(IBioPolymerWithSetMods peptide, IDigestionParams digestionParams, List<Modification> variableMods)
         {
             Dictionary<int, List<Modification>> annotatedTerminalModDictionary = new Dictionary<int, List<Modification>>();
-            bool nTerminus = digestionParams.FragmentationTerminus == FragmentationTerminus.N || digestionParams.FragmentationTerminus == FragmentationTerminus.FivePrime; //is this the singleN or singleC search?
+            FragmentationTerminus searchTerminus = GetSearchTerminus(digestionParams);
+            if (searchTerminus is not (FragmentationTerminus.N or FragmentationTerminus.C or FragmentationTerminus.FivePrime or FragmentationTerminus.ThreePrime))
+            {
+                return annotatedTerminalModDictionary;
+            }
+            bool nTerminus = searchTerminus == FragmentationTerminus.N || searchTerminus == FragmentationTerminus.FivePrime; //is this the singleN or singleC search?
 
             //determine the start and end index ranges when considering the minimum peptide length
             int startResidue = nTerminus ?
@@ -665,13 +690,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 peptide.OneBasedEndResidue :
                 peptide.OneBasedEndResidue - digestionParams.MinLength + 1;
             //if singleN, want to find c-terminal mods and vice-versa
-            string terminalStringToFind = digestionParams.FragmentationTerminus switch
+            string terminalStringToFind = searchTerminus switch
             {
                 FragmentationTerminus.N => "C-terminal",
                 FragmentationTerminus.C => "N-terminal",
                 FragmentationTerminus.FivePrime => "3'-terminal",
                 FragmentationTerminus.ThreePrime => "5'-terminal",
-                _ => throw new NotImplementedException("FragmentationTerminus must be N or C for terminal mods")
+                _ => null
             };
 
             //get all the mods for this protein
@@ -748,3 +773,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         }
     }
 }
+
+
+
+

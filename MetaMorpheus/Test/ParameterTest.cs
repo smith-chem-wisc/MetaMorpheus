@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -407,6 +407,7 @@ namespace Test
             public int MaxModificationIsoforms { get; set; }
             public int MaxMods { get; set; }
             public DigestionAgent DigestionAgent { get; }
+            public DigestionAgent SpecificDigestionAgent { get; }
             public FragmentationTerminus FragmentationTerminus { get; }
             public CleavageSpecificity SearchModeType { get; }
             public IDigestionParams Clone(FragmentationTerminus? newTerminus = null) => this;
@@ -439,3 +440,4 @@ namespace Test
         }
     }
 }
+
