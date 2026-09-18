@@ -161,6 +161,12 @@ namespace TaskLayer
             MigrateLegacyMostAbundantRequest();
 
             MyTaskResults = new(this);
+
+            // Reported HERE, before a single spectrum is read, rather than only at write time --
+            // a gap named up front can still be fixed cheaply, whereas one named after a three-hour
+            // search cannot. This warns; it does not refuse the run.
+            WarnAboutSdrfGaps(currentRawFileList);
+
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
 
@@ -622,6 +628,97 @@ namespace TaskLayer
             };
             return postProcessing.Run();
         }
+
+        /// <summary>
+        /// Reports, before the search starts, which parts of the SDRF this run will not be able to
+        /// fill in. It does NOT refuse the run.
+        ///
+        /// It used to. That was stricter than the specification -- which marks organism part
+        /// required but explicitly permits the reserved words -- and stricter than the community,
+        /// a fifth of whose curated cells are one. It was also self-defeating: a user who is blocked
+        /// turns the feature off, and then there is no file at all.
+        ///
+        /// What replaces the refusal is not silence. The gaps are named here, before the run, so
+        /// they can still be fixed cheaply; they are named again in the coverage report afterwards,
+        /// against what was actually written. An SDRF padded with reserved words is honest and
+        /// spec-conformant; one whose emptiness is never mentioned is how a corpus fills with holes.
+        /// </summary>
+        private void WarnAboutSdrfGaps(List<string> currentRawFileList)
+        {
+            if (!SearchParameters.WriteSdrf || currentRawFileList is null || currentRawFileList.Count == 0)
+                return;
+
+            string designDirectory = Directory.GetParent(currentRawFileList.First()).ToString();
+
+            // An isobaric search's samples live in TmtDesign.txt, one per channel, and the SDRF is
+            // written one row per channel from it. ExperimentalDesign.tsv is not consulted, so its
+            // absence is not a gap worth naming.
+            if (SearchParameters.DoMultiplexQuantification)
+            {
+                WarnAboutIsobaricSdrfGaps(designDirectory, currentRawFileList);
+                return;
+            }
+
+            string designPath = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
+
+            if (!File.Exists(designPath))
+            {
+                Warn("SDRF output is on, but there is no " + GlobalVariables.ExperimentalDesignFileName +
+                     " beside the spectra files (" + designPath + "). The search parameters will be " +
+                     "recorded in full; condition, replicate and fraction will not, and the sample " +
+                     "columns will say 'not available'. Set up the experimental design to fix that.");
+            }
+            else
+            {
+                ExperimentalDesign.ReadExperimentalDesign(designPath, currentRawFileList, out var designErrors);
+                if (designErrors.Any())
+                    Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
+                         " cannot be used as it stands, so the SDRF will describe the search only: " +
+                         string.Join("; ", designErrors));
+            }
+
+            // SILAC cannot express comment[label]: SDRF wants one row per sample per channel, and
+            // MetaMorpheus has no channel-to-sample mapping for SILAC. Guessing would invent an
+            // experimental design.
+            if (SearchParameters.SilacLabels?.Any() == true)
+                Warn("SDRF output on a SILAC search: comment[label] is not filled in, because " +
+                     "MetaMorpheus has no map of which sample carries which label. Every other column " +
+                     "will be written.");
+        }
+
+        /// <summary>
+        /// The isobaric half of <see cref="WarnAboutSdrfGaps"/>. Without a usable TmtDesign.txt the
+        /// SDRF falls back to one row per file with no channel or sample, which is worth knowing
+        /// before a long TMT search rather than after it.
+        /// </summary>
+        private void WarnAboutIsobaricSdrfGaps(string designDirectory, List<string> currentRawFileList)
+        {
+            string tmtDesignPath = Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName);
+
+            if (!File.Exists(tmtDesignPath))
+            {
+                Warn("SDRF output is on for an isobaric search, but there is no " +
+                     GlobalVariables.TmtExperimentalDesignFileName + " beside the spectra files (" + tmtDesignPath +
+                     "). The SDRF will describe each file once, without its channels or samples.");
+                return;
+            }
+
+            TmtExperimentalDesign.Read(tmtDesignPath, currentRawFileList, out var designErrors);
+            if (designErrors.Any())
+            {
+                Warn("SDRF output is on, but " + GlobalVariables.TmtExperimentalDesignFileName +
+                     " cannot be used as it stands, so the SDRF will describe each file once, without its " +
+                     "channels or samples: " + string.Join("; ", designErrors));
+                return;
+            }
+
+            // PRIDE defines channel terms for TMT and iTRAQ only.
+            var tagType = IsobaricMassTag.GetTagTypeFromModificationId(SearchParameters.MultiplexModId);
+            if (tagType is IsobaricMassTagType.diLeu4 or IsobaricMassTagType.diLeu12)
+                Warn("SDRF output on a DiLeu search: every channel gets its own row, but comment[label] " +
+                     "cannot be filled in, because the PRIDE vocabulary defines no DiLeu channel terms.");
+        }
+
 
         private static MassDiffAcceptor ParseSearchMode(string text)
         {

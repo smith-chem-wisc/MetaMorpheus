@@ -39,6 +39,7 @@ namespace TaskLayer
             IncludeModMotifInMzid = false;
             WriteDigestionProductCountFile = false;
             WriteTargetDecoyFasta = false;
+            WriteSdrf = false;
 
             ModsToWriteSelection = DefaultModsToWriteSelection();
 
@@ -115,5 +116,17 @@ namespace TaskLayer
         public bool IncludeModMotifInMzid { get; set; }
         public bool WriteDigestionProductCountFile { get; set; }
         public bool WriteTargetDecoyFasta { get; set; }
+
+        /// <summary>
+        /// Write an SDRF-Proteomics file describing this experiment alongside the results.
+        ///
+        /// OPT-IN, and deliberately so. An SDRF's sample half -- organism part, disease, cell type,
+        /// replicate structure -- is knowledge no search has; only a human does. A run that emitted
+        /// one unconditionally would have to write "not available" wherever it could not find a
+        /// value, and a corpus of those passes every validator, produces no drift findings, and
+        /// cannot be mined. Opting in is the user saying the sample metadata exists, which is what
+        /// makes it worth naming every gap before the run starts.
+        /// </summary>
+        public bool WriteSdrf { get; set; }
     }
 }
