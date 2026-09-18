@@ -743,6 +743,16 @@ namespace EngineLayer.GlycoSearch
                     LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBoxes[iDLow], GlycanBoxes[iDLow].ChildGlycanBoxes, iDLow, obligatedSites);
                     LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, toleranceForLocalizationScan, GetProducts(), siteFragments); //create the localization graph with the glycan mass and the possible glycosite.
 
+                    // No arrangement of this box satisfies the obligation, so it explains nothing about
+                    // this spectrum. Skipping here rather than scoring it zero matters: a zero-scoring
+                    // graph can still be the best one when every box fails, and GetFirstPath would then
+                    // walk a graph that has no path.
+                    if (!localizationGraph.HasRoute)
+                    {
+                        iDLow++;
+                        continue;
+                    }
+
                     double currentLocalizationScore = localizationGraph.TotalScore;
                     if (currentLocalizationScore > bestLocalizedScore) //Try to find the best glycanBox with the highest score.
                     {

@@ -62,6 +62,20 @@ namespace EngineLayer.GlycoSearch
         /// <summary> True when any site is obligated, so the hot loops can skip the check entirely. </summary>
         public bool HasObligatedSites { get; }
 
+        /// <summary>
+        /// Whether any arrangement of this box over these sites survived. False means the box cannot be
+        /// placed at all, which an obligation makes an ORDINARY outcome rather than a caller error.
+        /// </summary>
+        /// <remarks>
+        /// Before obligations existed, an unreachable terminal node could only mean the caller had skipped
+        /// GraphCheck, so FinishGraph threw. A protease constraint changes that: "no localization puts a
+        /// glycan where the enzyme proves one must be" is a real answer about a real spectrum, and
+        /// screening it in advance is not reliably possible -- GraphCheck can compare counts, but an
+        /// obligated site whose motif does not match the box's glycans is unsatisfiable for a reason no
+        /// count reveals. So the graph reports it and the caller skips the box.
+        /// </remarks>
+        public bool HasRoute { get; private set; }
+
         public LocalizationGraph(SortedDictionary<int, string> modPos, ModBox modBox, ModBox[] childModBoxes, int id)
             : this(modPos, modBox, childModBoxes, id, null)
         {
@@ -215,6 +229,17 @@ namespace EngineLayer.GlycoSearch
                             }
                         }
                         adjNode.maxCost = maxCost;
+
+                        // A node the obligation filter has cut off from EVERY predecessor is unreachable,
+                        // and storing it anyway breaks the invariant the path walk relies on: GetFirstPath
+                        // steps back through CumulativeSources and calls First() on it. NodeCheck and the
+                        // valid chart together used to guarantee at least one source for any stored node;
+                        // the obligation is the first filter that can remove the last one, so it also has
+                        // to remove the node.
+                        if (adjNode.AllSources.Count == 0)
+                        {
+                            continue;
+                        }
                     }
 
                     localizationGraph.array[x][y] = adjNode;
@@ -298,6 +323,11 @@ namespace EngineLayer.GlycoSearch
 
                              adjNode.maxCost = maxCost;
 
+                            // Same unreachable-node guard as the cached path above.
+                            if (adjNode.AllSources.Count == 0)
+                            {
+                                continue;
+                            }
                         }
 
                         localizationGraph.array[x][y] = adjNode;
@@ -342,6 +372,15 @@ namespace EngineLayer.GlycoSearch
             // without this check the symptom is a bare NullReferenceException on the line below rather than
             // anything that names the cause.
             var terminalNode = localizationGraph.array[modPos.Count - 1][localizationGraph.ChildModBoxes.Length - 1];
+            if (terminalNode == null && localizationGraph.HasObligatedSites)
+            {
+                // No arrangement satisfies the protease's obligation. A real answer, not a precondition
+                // violation: the caller skips this box.
+                localizationGraph.HasRoute = false;
+                localizationGraph.TotalScore = 0;
+                return;
+            }
+
             if (terminalNode == null)
             {
                 throw new MetaMorpheusException(
@@ -350,6 +389,7 @@ namespace EngineLayer.GlycoSearch
                     "callers must screen with GlycoSearchEngine.GraphCheck before localizing.");
             }
 
+            localizationGraph.HasRoute = true;
             localizationGraph.TotalScore = terminalNode.maxCost + noLocalScore;
         }
 
