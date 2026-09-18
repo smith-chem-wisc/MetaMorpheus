@@ -87,6 +87,26 @@ namespace EngineLayer.Indexing
             sb.AppendLine("cleavageSpecificity: " + CommonParameters.DigestionParams.SearchModeType);
             if (CommonParameters.DigestionParams is DigestionParams digestionParam)
                 sb.AppendLine("specificProtease: " + digestionParam.SpecificProtease);
+
+            // The lines above name digestion settings ONE AT A TIME, which silently makes this method a
+            // second place every new DigestionParams option has to be remembered. Anything not named
+            // here is invisible to the fingerprint, and because SameSettings compares this text
+            // verbatim, an index built under one value of a forgotten option is reused for a run that
+            // set a different one -- a wrong-answers bug with no error and no failing test.
+            //
+            // Three options were already in that state: KeepNGlycopeptide, KeepOGlycopeptide and
+            // GeneratehUnlabeledProteinsForSilac have never appeared above. Rather than adding a line
+            // per option forever, append the whole stringification: DigestionParams.ToString() is
+            // append-only by convention, so every present and future option is covered here from the
+            // moment it exists, with no further change to this method.
+            //
+            // The repetition of fields already named above is deliberate and harmless -- this text is
+            // only ever compared whole, never parsed. Guarded the same way as the two lines above,
+            // because IDigestionParams is the declared type and RnaDigestionParams has no ToString()
+            // override, so an unguarded call would append a constant type name carrying no settings.
+            if (CommonParameters.DigestionParams is DigestionParams digestionParamsFingerprint)
+                sb.AppendLine("digestionParams: " + digestionParamsFingerprint);
+
             sb.AppendLine("maximumFragmentSize" + (int)Math.Round(MaxFragmentSize));
 
             sb.Append("Localizeable mods: " + BioPolymerList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
