@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using EngineLayer.Util;
 using IO.ThermoRawFileReader;
 using Microsoft.Win32;
@@ -1378,6 +1378,12 @@ namespace MetaMorpheusGUI
         private void AddCustomMonosaccharide_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new CustomMonosaccharideWindow();
+            dialog.ShowDialog();
+        }
+
+        private void AddCustomGlycan_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new CustomGlycanWindow();
             dialog.ShowDialog();
         }
 
