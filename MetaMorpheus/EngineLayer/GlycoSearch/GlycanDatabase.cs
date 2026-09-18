@@ -235,7 +235,7 @@ namespace EngineLayer
 
         /// <summary>
         /// Ensure the MonosaccharidesCustom.tsv exists in the directory. If the file is missing, 
-        /// write the embedded full 85-line documented template—instructions, column spec, the built-in name/code table,
+        /// write the embedded fully documented template—instructions, column spec, the built-in name/code table,
         /// worked examples — with the header row as its single non-comment line; do nothing if it already exists.
         /// </summary>
         /// <param name="path">
