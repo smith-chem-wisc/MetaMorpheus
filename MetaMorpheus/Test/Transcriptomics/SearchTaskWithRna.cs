@@ -99,4 +99,53 @@ public class SearchTaskWithRna
         Assert.That(osmHeader, Does.Contain(SpectrumMatchFromTsvHeader.ThreePrimeTerminus));
         // Directory.Delete(outputDir, true);
     }
+
+    [Test]
+    public static void LabelFreeQuantificationCanRunForRnaSearch()
+    {
+        List<DbForTask> dbForTask = [new(SixmerDatabaseFilePath, false)];
+        List<string> rawFileList = [SixmerSpectraFilePath];
+        string taskId = "RnaQuantificationTest";
+        string outputDir = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "QuantificationTestOutput");
+        if (Directory.Exists(outputDir))
+            Directory.Delete(outputDir, true);
+        Directory.CreateDirectory(outputDir);
+
+        var searchParameters = new RnaSearchParameters
+        {
+            DecoyType = DecoyType.Reverse,
+            MassDiffAcceptorType = MassDiffAcceptorType.Custom,
+            CustomMdac = "Custom interval [-5,5]",
+            DisposeOfFileWhenDone = true,
+            DoLabelFreeQuantification = true,
+            Normalize = false,
+            MatchBetweenRuns = false
+        };
+
+        var searchTask = new SearchTask
+        {
+            CommonParameters = CommonParameters,
+            SearchParameters = searchParameters
+        };
+
+        try
+        {
+            searchTask.RunTask(outputDir, dbForTask, rawFileList, taskId);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(File.Exists(Path.Combine(outputDir, "AllQuantifiedPeaks.tsv")), Is.True);
+                Assert.That(File.Exists(Path.Combine(outputDir, "AllQuantifiedOligos.tsv")), Is.True);
+                Assert.That(File.Exists(Path.Combine(outputDir, "AllQuantifiedTranscriptGroups.tsv")), Is.True);
+            });
+
+            Assert.That(File.ReadLines(Path.Combine(outputDir, "AllQuantifiedOligos.tsv")).Skip(1), Is.Not.Empty);
+            Assert.That(File.ReadLines(Path.Combine(outputDir, "AllQuantifiedPeaks.tsv")).Skip(1), Is.Not.Empty);
+        }
+        finally
+        {
+            if (Directory.Exists(outputDir))
+                Directory.Delete(outputDir, true);
+        }
+    }
 }
