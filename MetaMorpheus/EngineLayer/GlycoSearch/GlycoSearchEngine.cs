@@ -6,6 +6,7 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using MassSpectrometry;
 using EngineLayer.SpectrumMatch;
@@ -17,6 +18,13 @@ namespace EngineLayer.GlycoSearch
         public static readonly double ToleranceForMassDifferentiation = 1e-9;
         private readonly int OxoniumIon204Index = 9;               // Check Glycan.AllOxoniumIons
         protected readonly List<GlycoSpectralMatch>[] GlobalGsms;  // Why don't we call it GlobalGsms?
+
+        /// <summary>
+        /// The threads this search draws on. A task searching several spectra files at once gives every file's engine the same
+        /// budget, so threads move from files that finish to files still searching. When unset, the search uses a budget of its own
+        /// with <see cref="CommonParameters.MaxThreadsToUsePerFile"/> threads.
+        /// </summary>
+        public Util.SearchThreadBudget ThreadBudget { get; init; }
 
         private GlycoSearchType GlycoSearchType;
         private readonly int TopN;              // DDA top Peak number.
@@ -65,12 +73,26 @@ namespace EngineLayer.GlycoSearch
             Indexing.FragmentIndex fragmentIndex, Indexing.FragmentIndex secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
              string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds,
              double maxGlycanBoxMass = GlycanBox.DefaultMaximumGlycanBoxMass, List<(int Partition, int PeptideId, byte Score)>[] candidates = null)
+            : this(globalCsms, listOfSortedms2Scans, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, commonParameters, fileSpecificParameters,
+                  GlycanSearchSpace.Build(oglycanDatabase, nglycanDatabase, glycoSearchType, maxOGlycanNum, maxGlycanBoxMass),
+                  oglycanDatabase, nglycanDatabase, glycoSearchTopNum, maxOGlycanNum, oxoniumIonFilter, nestedIds, candidates)
+        {
+        }
+
+        /// <summary>
+        /// Searches with glycans and glycan boxes already built by <see cref="GlycanSearchSpace.Build"/>, so a task searching several
+        /// spectra files builds them once rather than once per file.
+        /// </summary>
+        public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, IEnumerable<IBioPolymerWithSetMods> peptideIndex,
+            Indexing.FragmentIndex fragmentIndex, Indexing.FragmentIndex secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
+            GlycanSearchSpace glycanSearchSpace, string oglycanDatabase, string nglycanDatabase, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds,
+            List<(int Partition, int PeptideId, byte Score)>[] candidates = null)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.PeptideIndex = peptideIndex.Cast<PeptideWithSetModifications>().ToList();
             this.Candidates = candidates;
             this.GlobalGsms = globalCsms;
-            this.GlycoSearchType = glycoSearchType;
+            this.GlycoSearchType = glycanSearchSpace.GlycoSearchType;
             this.TopN = glycoSearchTopNum;
             this._maxOGlycanNum = maxOGlycanNum;
             this.OxoniumIonFilter = oxoniumIonFilter;
@@ -80,45 +102,10 @@ namespace EngineLayer.GlycoSearch
             PrecusorSearchMode = commonParameters.PrecursorMassTolerance;
             ProductSearchMode = new SinglePpmAroundZeroSearchMode(20); //For Oxonium ion only
 
-
-            if (glycoSearchType == GlycoSearchType.OGlycanSearch) //if we do the O-glycan search, we need to load the O-glycan database and generate the glycoBox.
-            {
-                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == _oglycanDatabase).First(), true, true).ToArray();
-                GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum, false, maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray(); //generate glycan box for O-glycan search
-                GlycanBoxes = GlycanBox.OGlycanBoxes;
-                GlycoSpectralMatch.GlycanBoxes = GlycanBoxes;
-            }
-            else if (glycoSearchType == GlycoSearchType.NGlycanSearch) //because the there is only one glycan in N-glycanpeptide, so we don't need to build the n-glycanBox here.
-            {
-                // The single N-glycan is the whole box here, so the box mass cap applies to each glycan on its own.
-                NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == _nglycanDatabase).First(), true, false)
-                    .Where(p => (double)p.Mass / 1E5 <= maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray();
-                //TO THINK: Glycan Decoy database.
-                //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
-            }
-            else if (glycoSearchType == GlycoSearchType.N_O_GlycanSearch) //search both N-glycan and O-glycan is still not tested and build completely yet.
-            {
-                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == _oglycanDatabase).First(), true, true).ToArray();
-                GlycanBox.GlobalNGlycans = new Dictionary<int, Glycan>();
-                // For N-glycan, we use negative index to distinguish with O-glycan.
-                var nGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanDatabasePaths.First(p => System.IO.Path.GetFileName(p) == _nglycanDatabase),
-                        true, false).OrderBy(p => p.Mass);
-                int indexForNGlycan = -1;
-                foreach (var nGlycan in nGlycans)
-                {
-                    GlycanBox.GlobalNGlycans.Add(indexForNGlycan, nGlycan);
-                    indexForNGlycan--;
-                }
-
-                GlycanBox.NOGlycanBoxes = GlycanBox.BuildNOGlycanBoxes(_maxOGlycanNum, false, maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray();
-                GlycanBoxes = GlycanBox.NOGlycanBoxes;
-                GlycoSpectralMatch.GlycanBoxes = GlycanBoxes;
-                //TO THINK: Glycan Decoy database.
-                //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
-            }
-
-            GlycanBoxMasses = GlycanBoxes?.Select(p => p.Mass).ToArray();
-            NGlycanMasses = NGlycans?.Select(p => (double)p.Mass / 1E5).ToArray();
+            GlycanBoxes = glycanSearchSpace.GlycanBoxes;
+            NGlycans = glycanSearchSpace.NGlycans;
+            GlycanBoxMasses = glycanSearchSpace.GlycanBoxMasses;
+            NGlycanMasses = glycanSearchSpace.NGlycanMasses;
         }
 
         private Glycan[] NGlycans { get; }
@@ -141,15 +128,17 @@ namespace EngineLayer.GlycoSearch
                 return SecondRoundSearch();
             }
 
-            double progress = 0;
-            int oldPercentProgress = 0;
-            ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing crosslink search... " + CurrentPartition + "/" + CommonParameters.TotalPartitions, NestedIds));
+            // Counted exactly across threads, and each percent announced once, by whichever thread moves the mark (as IndexingEngine does).
+            long scansSearched = 0;
+            int lastPercentReported = 0;
+            ReportProgress(new ProgressEventArgs(lastPercentReported, "Performing crosslink search... " + CurrentPartition + "/" + CommonParameters.TotalPartitions, NestedIds));
 
             byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
 
-            int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;  // MaxThreads = deafult is 7.
-            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray(); // We can do the parallel search on different threads
-            Parallel.ForEach(threads, (scanIndex) =>
+            // Each worker takes the next unsearched scan until none are left or its thread is wanted by another file searching at the
+            // same time. Results go to each scan's own slot, so which thread searched a scan does not change them.
+            var threadBudget = ThreadBudget ?? new Util.SearchThreadBudget(CommonParameters.MaxThreadsToUsePerFile);
+            threadBudget.Run(ListOfSortedMs2Scans.Length, nextScan =>
             {
                 byte[] scoringTable = new byte[PeptideIndex.Count];
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
@@ -160,7 +149,7 @@ namespace EngineLayer.GlycoSearch
                 List<int> idsOfPeptidesTopN = new List<int>();
                 int[] candidateCountsByScore = new int[byte.MaxValue + 1];
 
-                for (; scanIndex < ListOfSortedMs2Scans.Length; scanIndex += maxThreadsPerFile)
+                for (int scanIndex = nextScan(); scanIndex >= 0; scanIndex = nextScan())
                 {
                     // Stop loop if canceled
                     if (GlobalVariables.StopLoops) { return; }
@@ -217,7 +206,7 @@ namespace EngineLayer.GlycoSearch
 
                         if (gsms.Count == 0)
                         {
-                            progress++;
+                            Interlocked.Increment(ref scansSearched);
                             continue;
                         }
 
@@ -226,12 +215,12 @@ namespace EngineLayer.GlycoSearch
                     }
 
                     // report search progress
-                    progress++;
-                    var percentProgress = (int)((progress / ListOfSortedMs2Scans.Length) * 100);
+                    long searched = Interlocked.Increment(ref scansSearched);
+                    int percentProgress = (int)(searched * 100 / ListOfSortedMs2Scans.Length);
+                    int lastPercent = Volatile.Read(ref lastPercentReported);
 
-                    if (percentProgress > oldPercentProgress)
+                    if (percentProgress > lastPercent && Interlocked.CompareExchange(ref lastPercentReported, percentProgress, lastPercent) == lastPercent)
                     {
-                        oldPercentProgress = percentProgress;
                         ReportProgress(new ProgressEventArgs(percentProgress, "Performing glyco search... " + CurrentPartition + "/" + CommonParameters.TotalPartitions, NestedIds));
                     }   //percentProgress = 100, "Performing glyco search...1/1", NestedIds = 3.
                 }
