@@ -42,12 +42,50 @@ namespace TaskLayer
 
         public GlycoSearchParameters _glycoSearchParameters { get; set; }
 
+        /// <summary>
+        /// Says so, loudly, when the search asks digestion to honour a glycoprotease's requirement -- a
+        /// setting that cannot work here and produces no results at all rather than fewer.
+        /// </summary>
+        /// <remarks>
+        /// A glyco search identifies the peptide backbone NAKED and only then makes up the precursor-mass
+        /// difference with glycans, so no glycan exists at the moment digestion decides where to cut.
+        /// Every site a glycoprotease has then looks infeasible, the site list empties, and the peptide
+        /// index comes out with zero entries: on a real OpeRATOR file the index went from 2,864 peptides
+        /// to 0 and the task still reported success, which is indistinguishable from a bad database or a
+        /// bad file.
+        ///
+        /// The setting is not overridden here, because silently ignoring what a user asked for is its own
+        /// trap. What the requirement CAN do for this search it already does without the flag: the
+        /// localizer reads the peptide's protease provenance directly, so glycans are still pinned to the
+        /// sites the enzyme proves they occupy.
+        /// </remarks>
+        private void WarnIfCleavagePromotingModificationsWereRequested(string taskId)
+        {
+            bool requested = CommonParameters.DigestionParams is DigestionParams digestionParams
+                             && digestionParams.RespectCleavagePromotingModifications
+                             && digestionParams.DigestionAgent is { HasCleavageRequirement: true };
+
+            if (!requested)
+            {
+                return;
+            }
+
+            Warn("RespectCleavagePromotingModifications is ON and " + CommonParameters.DigestionParams.DigestionAgent.Name
+                 + " requires a modification at one of its subsites. A glyco search resolves the glycan AFTER the "
+                 + "peptide is identified, so digestion cannot see it, every cleavage site looks impossible and the "
+                 + "peptide index will be EMPTY -- the search will finish successfully and report nothing. Turn this "
+                 + "setting off for a glyco search. The protease's rule still constrains glycan localization without "
+                 + "it.");
+        }
+
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             MyTaskResults = new MyTaskResults(this);
             List<List<GlycoSpectralMatch>> ListOfGsmsPerMS2Scan = new List<List<GlycoSpectralMatch>>();
 
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
+
+            WarnIfCleavagePromotingModificationsWereRequested(taskId);
 
             // load proteins
             var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, _glycoSearchParameters.DecoyType, true, localizeableModificationTypes);
