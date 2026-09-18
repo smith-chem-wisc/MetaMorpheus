@@ -673,7 +673,8 @@ namespace EngineLayer.GlycoSearch
             // the cut that produced this peptide could not have happened unless a particular residue
             // carried a glycan. Derived, so it survives the index cache round trip and adds no field to
             // the serialized peptide.
-            IReadOnlyCollection<int> obligatedSites = GetCleavageObligatedSites(theScanBestPeptide);
+            Dictionary<int, List<CleavageRequirement>> siteConditions = GetCleavageObligations(theScanBestPeptide);
+            IReadOnlyCollection<int> obligatedSites = siteConditions.Keys;
 
             var localizationScan = theScan;
             var toleranceForLocalizationScan = CommonParameters.ProductMassTolerance;
@@ -740,7 +741,7 @@ namespace EngineLayer.GlycoSearch
                 if (GraphCheck(modPosMotifs, GlycanBoxes[iDLow], obligatedSites.Count)) // the glycosite number should be larger than the possible glycan number.
                 {
                     siteFragments ??= GlycoPeptides.GetSiteFragmentMasses(GetProducts(), modPos.Keys.ToArray());
-                    LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBoxes[iDLow], GlycanBoxes[iDLow].ChildGlycanBoxes, iDLow, obligatedSites);
+                    LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBoxes[iDLow], GlycanBoxes[iDLow].ChildGlycanBoxes, iDLow, obligatedSites, siteConditions);
                     LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, toleranceForLocalizationScan, GetProducts(), siteFragments); //create the localization graph with the glycan mass and the possible glycosite.
 
                     // No arrangement of this box satisfies the obligation, so it explains nothing about
@@ -1026,15 +1027,15 @@ namespace EngineLayer.GlycoSearch
         /// <see cref="GlycoSpectralMatch.GetPossibleModSites"/>. Empty whenever the peptide has no
         /// digestion provenance or its protease requires nothing.
         /// </summary>
-        private static IReadOnlyCollection<int> GetCleavageObligatedSites(PeptideWithSetModifications peptide)
+        private static Dictionary<int, List<CleavageRequirement>> GetCleavageObligations(PeptideWithSetModifications peptide)
         {
             DigestionAgent agent = peptide?.DigestionParams?.DigestionAgent;
             if (agent == null || !agent.HasCleavageRequirement)
             {
-                return Array.Empty<int>();
+                return new Dictionary<int, List<CleavageRequirement>>();
             }
 
-            return peptide.GetCleavageObligatedSites(agent);
+            return peptide.GetCleavageObligations(agent);
         }
 
         private static bool GraphCheck(string[] modPosMotifs, GlycanBox glycanBox, int obligatedSiteCount)

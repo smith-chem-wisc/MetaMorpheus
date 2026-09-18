@@ -4,6 +4,7 @@ using Easy.Common.Extensions;
 using EngineLayer.ModSearch;
 using Omics.Fragmentation;
 using MzLibUtil;
+using Omics.Digestion;
 using Omics.Modifications;
 
 namespace EngineLayer.GlycoSearch
@@ -59,6 +60,18 @@ namespace EngineLayer.GlycoSearch
         /// </remarks>
         public bool[] SiteIsObligated { get; }
 
+        /// <summary>
+        /// Per column, the protease conditions that apply to an obligated site -- or null where the site
+        /// is not obligated, or the caller supplied positions without conditions.
+        /// </summary>
+        /// <remarks>
+        /// This is what turns "a glycan must be here" into "a glycan of at least this KIND must be here".
+        /// OpeRATOR requires at least core 1 at P1' and is blocked again by core 2, so a Tn antigen on
+        /// that residue is not a worse arrangement, it is an impossible one. A glycan is a Modification,
+        /// so each condition is evaluated against the real glycan the edge places.
+        /// </remarks>
+        public IReadOnlyList<CleavageRequirement>[] SiteConditions { get; }
+
         /// <summary> True when any site is obligated, so the hot loops can skip the check entirely. </summary>
         public bool HasObligatedSites { get; }
 
@@ -91,6 +104,18 @@ namespace EngineLayer.GlycoSearch
         /// </param>
         public LocalizationGraph(SortedDictionary<int, string> modPos, ModBox modBox, ModBox[] childModBoxes, int id,
             IReadOnlyCollection<int> obligatedSites)
+            : this(modPos, modBox, childModBoxes, id, obligatedSites, null)
+        {
+        }
+
+        /// <param name="siteConditions">
+        /// What would satisfy the obligation at each site, from mzLib's
+        /// DigestionProduct.GetCleavageObligations. Null falls back to "any modification will do", which
+        /// is the behaviour when the protease's rule names no composition.
+        /// </param>
+        public LocalizationGraph(SortedDictionary<int, string> modPos, ModBox modBox, ModBox[] childModBoxes, int id,
+            IReadOnlyCollection<int> obligatedSites,
+            IReadOnlyDictionary<int, List<CleavageRequirement>> siteConditions)
         {
             ModPos = modPos;
             ModBox = modBox;
@@ -98,6 +123,7 @@ namespace EngineLayer.GlycoSearch
             ChildModBoxes = childModBoxes;
 
             SiteIsObligated = new bool[modPos.Count];
+            SiteConditions = new IReadOnlyList<CleavageRequirement>[modPos.Count];
             if (obligatedSites != null && obligatedSites.Count > 0)
             {
                 int column = 0;
@@ -107,6 +133,11 @@ namespace EngineLayer.GlycoSearch
                     {
                         SiteIsObligated[column] = true;
                         HasObligatedSites = true;
+
+                        if (siteConditions != null && siteConditions.TryGetValue(siteKey, out var conditions))
+                        {
+                            SiteConditions[column] = conditions;
+                        }
                     }
 
                     column++;
@@ -178,7 +209,7 @@ namespace EngineLayer.GlycoSearch
                     // An obligated site must be occupied, so at the first column the box must already
                     // hold a modification; at later columns the incoming edge must add one (below).
                     if (localizationGraph.HasObligatedSites && x == 0 && localizationGraph.SiteIsObligated[0]
-                        && childBox.NumberOfMods == 0)
+                        && (childBox.NumberOfMods == 0 || !FirstColumnGlycanSatisfiesSite(localizationGraph, y)))
                     {
                         continue;
                     }
@@ -207,8 +238,10 @@ namespace EngineLayer.GlycoSearch
                         {
                             if (isValidRow[preY] && localizationGraph.array[x - 1][preY] != null && (addedMotifInThisRow[preY] == null || addedMotifInThisRow[preY] == motifInThisPos))
                             {
-                                // The obligation, as an edge predicate: this site must gain a modification.
-                                if (siteIsObligated && !PlacesModification(localizationGraph, y, preY))
+                                // The obligation, as an edge predicate: this site must gain a modification,
+                                // and it must be one the protease's rule allows there.
+                                if (siteIsObligated && (!PlacesModification(localizationGraph, y, preY)
+                                        || !PlacedGlycanSatisfiesSite(localizationGraph, x, y, preY)))
                                 {
                                     continue;
                                 }
@@ -263,7 +296,8 @@ namespace EngineLayer.GlycoSearch
                     if (NodeCheck(localizationGraph.ModBox as GlycanBox, modPos_motif, x, y)) // Check the mod number in this node is valid
                     {
                         if (localizationGraph.HasObligatedSites && x == 0 && localizationGraph.SiteIsObligated[0]
-                            && localizationGraph.ChildModBoxes[y].NumberOfMods == 0)
+                            && (localizationGraph.ChildModBoxes[y].NumberOfMods == 0
+                                || !FirstColumnGlycanSatisfiesSite(localizationGraph, y)))
                         {
                             continue;
                         }
@@ -297,7 +331,8 @@ namespace EngineLayer.GlycoSearch
                                 if (validChart[y][preY] && localizationGraph.array[x - 1][preY] != null && MotifCheck(localizationGraph.ModBox as GlycanBox, preY, y, motifInThisPos))
                                 {
                                     if (localizationGraph.HasObligatedSites && localizationGraph.SiteIsObligated[x]
-                                        && !PlacesModification(localizationGraph, y, preY))
+                                        && (!PlacesModification(localizationGraph, y, preY)
+                                            || !PlacedGlycanSatisfiesSite(localizationGraph, x, y, preY)))
                                     {
                                         continue;
                                     }
@@ -353,6 +388,77 @@ namespace EngineLayer.GlycoSearch
         {
             return localizationGraph.ChildModBoxes[y].NumberOfMods
                    > localizationGraph.ChildModBoxes[preY].NumberOfMods;
+        }
+
+        /// <summary>
+        /// Whether the glycan this edge places at column <paramref name="x"/> is one the protease's rule
+        /// actually allows there. True when the site carries no conditions, so a rule that names no
+        /// composition behaves exactly as it did before.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately permissive wherever the glycan cannot be identified -- an unknown id, a glycan
+        /// list that is not loaded, or a composition the database never recorded. An unidentifiable
+        /// glycan is not evidence that the rule is broken, and refusing it would delete arrangements over
+        /// missing metadata rather than over chemistry.
+        /// </remarks>
+        private static bool PlacedGlycanSatisfiesSite(LocalizationGraph localizationGraph, int x, int y, int preY)
+        {
+            IReadOnlyList<CleavageRequirement> conditions = localizationGraph.SiteConditions[x];
+            if (conditions == null || conditions.Count == 0)
+            {
+                return true;
+            }
+
+            int addedId = GlycanBoxLocalizationCache.AddedGlycan(
+                localizationGraph.ChildModBoxes[preY].ModIds,
+                localizationGraph.ChildModBoxes[y].ModIds,
+                out bool anyAdded);
+
+            if (!anyAdded)
+            {
+                return false;
+            }
+
+            return GlycanSatisfies(addedId, conditions);
+        }
+
+        /// <summary>The same question for the first column, which has no incoming edge.</summary>
+        private static bool FirstColumnGlycanSatisfiesSite(LocalizationGraph localizationGraph, int y)
+        {
+            IReadOnlyList<CleavageRequirement> conditions = localizationGraph.SiteConditions[0];
+            if (conditions == null || conditions.Count == 0)
+            {
+                return true;
+            }
+
+            int[] ids = localizationGraph.ChildModBoxes[y].ModIds;
+            return ids != null && ids.Length == 1 && GlycanSatisfies(ids[0], conditions);
+        }
+
+        private static bool GlycanSatisfies(int glycanId, IReadOnlyList<CleavageRequirement> conditions)
+        {
+            Glycan[] all = GlycanBox.GlobalOGlycans;
+            if (all == null || glycanId < 0 || glycanId >= all.Length)
+            {
+                return true;
+            }
+
+            Glycan glycan = all[glycanId];
+            if (glycan?.MonosaccharideComposition == null)
+            {
+                return true;
+            }
+
+            for (int i = 0; i < conditions.Count; i++)
+            {
+                CleavageRequirement condition = conditions[i];
+                if (!condition.IsConditionMet(condition.IsSatisfiedBy(glycan)))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
