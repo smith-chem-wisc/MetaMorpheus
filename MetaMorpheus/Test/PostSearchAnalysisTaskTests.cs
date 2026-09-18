@@ -1157,6 +1157,196 @@ namespace Test
         /// scans span the identifications' retention time (10.0) so the peak has a shape to integrate
         /// across rather than a single point.
         /// </summary>
+        /// <summary>
+        /// WriteContaminants reaches AllProteinGroups.tsv and MetaMorpheus's own PSM and peptide tables,
+        /// but the FlashLFQ-authored ones are written by mzLib from FlashLfqResults, which has no
+        /// contaminant concept -- so before this filter a user who unticked the box got a peptide
+        /// quantification table listing peptides whose proteins were absent from the protein table of
+        /// the same run. Both directions are asserted: a filter that dropped everything, or nothing,
+        /// would pass one of them.
+        /// </summary>
+        [Test]
+        public static void ContaminantRowsLeaveTheQuantifiedTablesOnlyWhenContaminantsAreNotWritten()
+        {
+            var written = RunQuantificationAndWriteTables("ContamWritten", writeContaminants: true);
+            var withheld = RunQuantificationAndWriteTables("ContamWithheld", writeContaminants: false);
+
+            Assert.That(written.Peptides, Does.Contain(TargetSequence));
+            Assert.That(written.Peptides, Does.Contain(ContaminantSequence));
+            Assert.That(written.Peaks, Does.Contain(ContaminantSequence));
+
+            Assert.That(withheld.Peptides, Does.Contain(TargetSequence));
+            Assert.That(withheld.Peptides, Does.Not.Contain(ContaminantSequence));
+            Assert.That(withheld.Peaks, Does.Not.Contain(ContaminantSequence));
+        }
+
+        /// <summary>
+        /// Feed wide, write narrow -- the pattern the decoy argument one line above
+        /// peptideSequencesForQuantification already establishes, now applied to contaminants.
+        ///
+        /// This is the assertion that distinguishes filtering at the writers from the one-line
+        /// alternative of narrowing peptideSequencesForQuantification. That list becomes
+        /// FlashLfqEngine.PeptideModifiedSequencesToQuantify, which mzLib consults INSIDE
+        /// quantification -- peak filtering at FlashLfqEngine.cs:711, :948, :996, :1116, and MBR peak
+        /// selection at :1400-1428, where set membership decides which of two peaks sharing an apex
+        /// survives. Under that alternative the contaminant is never quantified at all and its
+        /// intensity here would be zero; under this one the engine quantifies it exactly as before and
+        /// only the writer withholds the row. So the greater-than-zero assertion is what goes red if
+        /// this is ever "simplified" into the narrowing version, and the equality is the claim that
+        /// the target's number did not move.
+        /// </summary>
+        [Test]
+        public static void ContaminantsAreStillQuantifiedWhenTheyAreNotWritten()
+        {
+            var written = RunQuantificationAndWriteTables("ContamIntensityWritten", writeContaminants: true);
+            var withheld = RunQuantificationAndWriteTables("ContamIntensityWithheld", writeContaminants: false);
+
+            Assert.That(withheld.ContaminantIntensityInEngine, Is.GreaterThan(0),
+                "the engine must still see and quantify the contaminant; only the writer withholds it");
+            Assert.That(withheld.ContaminantIntensityInEngine, Is.EqualTo(written.ContaminantIntensityInEngine),
+                "withholding the row must not change what the engine computed for it either");
+
+            Assert.That(written.TargetIntensity, Is.GreaterThan(0),
+                "precondition: the target must actually be quantified, or the equality below is two zeroes");
+            Assert.That(withheld.TargetIntensity, Is.EqualTo(written.TargetIntensity),
+                "filtering at the writers must not move a target intensity");
+        }
+
+        private const string TargetSequence = "PEPTIDEK";
+        private const string ContaminantSequence = "ACDEFGHIK";
+
+        /// <summary>
+        /// Drives QuantificationAnalysis and then WriteFlashLFQResults over one target protein and one
+        /// contaminant protein, and returns what the two FlashLFQ tables say plus the target's intensity
+        /// as the engine computed it.
+        /// </summary>
+        private static (string Peptides, string Peaks, double TargetIntensity, double ContaminantIntensityInEngine)
+            RunQuantificationAndWriteTables(string folderName, bool writeContaminants)
+        {
+            CommonParameters commonParameters = new();
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, folderName);
+            if (Directory.Exists(outputFolder))
+            {
+                Directory.Delete(outputFolder, true);
+            }
+            Directory.CreateDirectory(outputFolder);
+
+            try
+            {
+                string mzmlPath = Path.Combine(outputFolder, "fake.mzML");
+                var digestionParams = new DigestionParams(protease: "trypsin", minPeptideLength: 1);
+
+                var target = new Protein(TargetSequence, "TARGET_ACC");
+                var contaminant = new Protein(ContaminantSequence, "CONTAM_ACC", isContaminant: true);
+
+                SpectralMatch targetPsm = ContaminantTestPsm(target, digestionParams, commonParameters, mzmlPath, 1);
+                SpectralMatch contaminantPsm = ContaminantTestPsm(contaminant, digestionParams, commonParameters, mzmlPath, 2);
+
+                // The flag is what the filter reads; if it ever stops being set, the assertions in the
+                // tests above would pass while measuring nothing.
+                Assert.That(contaminantPsm.IsContaminant, Is.True, "precondition: the contaminant PSM is flagged");
+                Assert.That(targetPsm.IsContaminant, Is.False, "precondition: the target PSM is not");
+
+                WriteMs1FixtureFor(mzmlPath, TargetSequence, ContaminantSequence);
+
+                PostSearchAnalysisParameters parameters = new()
+                {
+                    SearchParameters = new SearchParameters
+                    {
+                        DoLabelFreeQuantification = true,
+                        DoMultiplexQuantification = false,
+                        MatchBetweenRuns = false,
+                        Normalize = false,
+                        WriteContaminants = writeContaminants,
+                        WriteIndividualFiles = false,
+                    },
+                    OutputFolder = outputFolder,
+                    IndividualResultsOutputFolder = outputFolder,
+                    SearchTaskId = "TestTask",
+                    AllSpectralMatches = new List<SpectralMatch> { targetPsm, contaminantPsm },
+                    CurrentRawFileList = new List<string> { mzmlPath },
+                    MyFileManager = new MyFileManager(true),
+                    FixedModifications = new List<Modification>(),
+                    VariableModifications = new List<Modification>(),
+                    ListOfDigestionParams = new HashSet<IDigestionParams> { digestionParams },
+                    DatabaseFilenameList = new List<DbForTask>(),
+                    FileSettingsList = new FileSpecificParameters[] { null },
+                };
+
+                PostSearchAnalysisTask task = new()
+                {
+                    Parameters = parameters,
+                    CommonParameters = commonParameters,
+                    FileSpecificParameters = new List<(string, CommonParameters)> { (mzmlPath, commonParameters) },
+                };
+
+                InvokePrivate(task, "QuantificationAnalysis");
+
+                // Read the target's intensity BEFORE the writers run, so it is what the engine produced
+                // rather than what survived the filter.
+                var quantFile = parameters.FlashLfqResults.SpectraFiles.Single();
+                double targetIntensity = parameters.FlashLfqResults.PeptideModifiedSequences[TargetSequence]
+                    .GetIntensity(quantFile);
+                double contaminantIntensityInEngine =
+                    parameters.FlashLfqResults.PeptideModifiedSequences.TryGetValue(ContaminantSequence, out var contaminantPeptide)
+                        ? contaminantPeptide.GetIntensity(quantFile)
+                        : 0;
+
+                InvokePrivate(task, "WriteFlashLFQResults");
+
+                string peptidesPath = Path.Combine(outputFolder, "AllQuantified" + GlobalVariables.AnalyteType + "s.tsv");
+                string peaksPath = Path.Combine(outputFolder, "AllQuantifiedPeaks.tsv");
+                Assert.That(File.Exists(peptidesPath), Is.True, peptidesPath + " was not written");
+                Assert.That(File.Exists(peaksPath), Is.True, peaksPath + " was not written");
+
+                return (File.ReadAllText(peptidesPath), File.ReadAllText(peaksPath), targetIntensity,
+                    contaminantIntensityInEngine);
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder))
+                {
+                    Directory.Delete(outputFolder, true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// A resolved, passing PSM on the whole of a one-peptide protein, carrying PEPTIDE-level FDR
+        /// info as well as PSM-level. The peptide-level half matters here and nowhere else in this
+        /// fixture: peptideSequencesForQuantification is built with filterAtPeptideLevel, so without
+        /// PeptideFdrInfo the filter yields nothing, FlashLFQ reads the empty list as "no restriction"
+        /// (FlashLfqEngine's peptideSequencesToQuantify.IsNotNullOrEmpty() check) and quantifies every
+        /// identification. A fixture missing it measures that fallback instead of the filter, and the
+        /// contaminant would then be quantified whatever the call site said.
+        /// </summary>
+        private static SpectralMatch ContaminantTestPsm(Protein protein, DigestionParams digestionParams,
+            CommonParameters commonParameters, string mzmlPath, int scanNumber)
+        {
+            var digestionProduct = protein.Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .Cast<PeptideWithSetModifications>()
+                .First(p => p.BaseSequence == protein.BaseSequence);
+
+            SpectralMatch psm = ResolvedPsm(digestionProduct, mzmlPath, commonParameters, scanNumber);
+            psm.PeptideFdrInfo = new EngineLayer.FdrAnalysis.FdrInfo
+            {
+                CumulativeTarget = 1,
+                CumulativeDecoy = 0,
+                QValue = 0,
+                CumulativeTargetNotch = 1,
+                CumulativeDecoyNotch = 0,
+                QValueNotch = 0,
+                PEP = 0,
+                PEP_QValue = 0
+            };
+            return psm;
+        }
+
+        private static void InvokePrivate(PostSearchAnalysisTask task, string methodName) =>
+            typeof(PostSearchAnalysisTask)
+                .GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(task, null);
+
         private static void WriteMs1FixtureFor(string mzmlPath, params string[] baseSequences)
         {
             var envelopes = baseSequences
