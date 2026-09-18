@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -23,11 +23,14 @@ namespace EngineLayer
     ///     This is the rule that actually protects the user's work; everything else supports it.
     ///   </description></item>
     ///   <item><description>
-    ///     <b>Seed a documented template, not an empty file and not a copy of the data.</b> The
-    ///     template is the shipped sibling's comment banner plus its header row, and no data rows --
-    ///     so the user opens a file that explains its own format and has nothing to delete first.
-    ///     Where there is a shipped sibling, <see cref="BannerAndHeaderFrom(Stream, string)"/> derives
-    ///     exactly that from it, which keeps the two from drifting.
+    ///     <b>Seed a documented template, not an empty file and not a copy of the data.</b> Whatever
+    ///     shape it takes it carries no data rows, so the user opens a file that explains its own format
+    ///     and has nothing to delete first. Where the file has a shipped sibling that opens with a banner
+    ///     and a header row, <see cref="BannerAndHeaderFrom(Stream, string)"/> derives the template from
+    ///     it, which keeps the two from drifting. Where it does not -- a glycan database is a bare list,
+    ///     with no header row to stop at and no bannered sibling to derive from -- the template is a
+    ///     hand-written banner, read whole with <see cref="EmbeddedText(Assembly, string)"/>. It is still
+    ///     a file in the repository rather than a string literal, so it is reviewed like one.
     ///   </description></item>
     ///   <item><description>
     ///     <b>The custom file is never installer- or build-managed.</b> It must not appear in
@@ -199,6 +202,28 @@ namespace EngineLayer
                     $"Embedded resource '{resourceName}' was not found in {assembly.GetName().Name}.");
 
             return BannerAndHeaderFrom(stream, headerPrefix);
+        }
+
+        /// <summary>
+        /// The whole of an embedded template, verbatim -- for a file whose format has no header row to
+        /// stop at, so <see cref="BannerAndHeaderFrom(Assembly, string, string)"/> has nothing to derive.
+        /// A glycan database is one: it is a bare list of glycans, so its template is a hand-written
+        /// banner of comment lines and the rules of rule 2 are met by the banner alone.
+        /// </summary>
+        /// <remarks>
+        /// The template is still an embedded resource rather than a string literal here, so that what the
+        /// user is handed is reviewable as a file and cannot drift from the format it documents.
+        /// </remarks>
+        public static string EmbeddedText(Assembly assembly, string resourceName)
+        {
+            Stream stream = assembly.GetManifestResourceStream(resourceName)
+                ?? throw new MetaMorpheusException(
+                    $"Embedded resource '{resourceName}' was not found in {assembly.GetName().Name}.");
+
+            using (var reader = new StreamReader(stream))
+            {
+                return reader.ReadToEnd();
+            }
         }
 
         /// <summary>
