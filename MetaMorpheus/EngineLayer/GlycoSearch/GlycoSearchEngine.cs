@@ -1,6 +1,7 @@
 ﻿using EngineLayer.ModernSearch;
 using MzLibUtil;
 using Omics;
+using Omics.Digestion;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -667,6 +668,13 @@ namespace EngineLayer.GlycoSearch
 
             SortedDictionary<int, string> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, Motifs); //list all of the possible glycoslation site/postition
 
+            // Where the protease says a glycan MUST be. Empty for every ordinary protease, and for a
+            // glycoprotease it is derived from the peptide's own provenance rather than stored on it:
+            // the cut that produced this peptide could not have happened unless a particular residue
+            // carried a glycan. Derived, so it survives the index cache round trip and adds no field to
+            // the serialized peptide.
+            IReadOnlyCollection<int> obligatedSites = GetCleavageObligatedSites(theScanBestPeptide);
+
             var localizationScan = theScan;
             var toleranceForLocalizationScan = CommonParameters.ProductMassTolerance;
             bool childScansCarryEtd = theScan.ChildScans.Count > 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons);
@@ -729,10 +737,10 @@ namespace EngineLayer.GlycoSearch
                     iDLow++; // if the oxonium ions don't make sense (there is no 204, or without their diagnostic ion), we can skip this glycan.
                     continue;
                 }
-                if (GraphCheck(modPosMotifs, GlycanBoxes[iDLow])) // the glycosite number should be larger than the possible glycan number.
+                if (GraphCheck(modPosMotifs, GlycanBoxes[iDLow], obligatedSites.Count)) // the glycosite number should be larger than the possible glycan number.
                 {
                     siteFragments ??= GlycoPeptides.GetSiteFragmentMasses(GetProducts(), modPos.Keys.ToArray());
-                    LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBoxes[iDLow], GlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
+                    LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBoxes[iDLow], GlycanBoxes[iDLow].ChildGlycanBoxes, iDLow, obligatedSites);
                     LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, toleranceForLocalizationScan, GetProducts(), siteFragments); //create the localization graph with the glycan mass and the possible glycosite.
 
                     double currentLocalizationScore = localizationGraph.TotalScore;
@@ -1003,10 +1011,33 @@ namespace EngineLayer.GlycoSearch
         /// <param name="modPosMotifs"> The motif at each candidate glycosite of the peptide. </param>
         /// <param name="glycanBox"></param>
         /// <returns></returns>
-        private static bool GraphCheck(string[] modPosMotifs, GlycanBox glycanBox)
+        /// <summary>
+        /// The obligated sites this peptide's protease implies, in the same two-based key space as
+        /// <see cref="GlycoSpectralMatch.GetPossibleModSites"/>. Empty whenever the peptide has no
+        /// digestion provenance or its protease requires nothing.
+        /// </summary>
+        private static IReadOnlyCollection<int> GetCleavageObligatedSites(PeptideWithSetModifications peptide)
+        {
+            DigestionAgent agent = peptide?.DigestionParams?.DigestionAgent;
+            if (agent == null || !agent.HasCleavageRequirement)
+            {
+                return Array.Empty<int>();
+            }
+
+            return peptide.GetCleavageObligatedSites(agent);
+        }
+
+        private static bool GraphCheck(string[] modPosMotifs, GlycanBox glycanBox, int obligatedSiteCount)
         {
             // If the motifs number is less than the glycanBox, we can skip this graph.
             if (modPosMotifs.Length < glycanBox.NumberOfMods)
+                return false;
+
+            // A box with fewer glycans than the peptide has obligated sites cannot fill them all, so no
+            // route through the graph would survive. Screening here matters rather than merely saving
+            // work: FinishGraph throws when the terminal node is unreachable, and an unsatisfiable
+            // obligation is exactly the case its own comment says never happens in a search.
+            if (glycanBox.NumberOfMods < obligatedSiteCount)
                 return false;
 
             // Check if the motif in peptide is sufficient to cover the motif in glycanBox.

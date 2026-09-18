@@ -41,12 +41,63 @@ namespace EngineLayer.GlycoSearch
         /// </summary>
         public double TotalScore { get; set; }
 
+        /// <summary>
+        /// Candidate sites that MUST carry a modification, as column indices into <see cref="ModPos"/>.
+        /// Empty unless the peptide's protease requires a modification at one of its subsites.
+        /// </summary>
+        /// <remarks>
+        /// <para><b>Why a glycoprotease can say this at all.</b> A glyco search identifies the backbone
+        /// naked and only then makes up the precursor-mass difference with glycans, so nothing before this
+        /// point knows where a glycan is. But if OpeRATOR cut this peptide out, its first residue carried
+        /// a glycan -- that is not a hypothesis to be scored against fragment ions, it is a consequence of
+        /// the peptide existing. Until now motif was the ONLY thing constraining placement.</para>
+        ///
+        /// <para>Constraining the graph strictly shrinks the route set, and because the localization level
+        /// (1/1b/2/3) is a function of how many routes survive, and the site probabilities are re-summed
+        /// over the same reduced set, this converts Level 3 assignments into Level 2 or 1 without
+        /// distorting the probabilities.</para>
+        /// </remarks>
+        public bool[] SiteIsObligated { get; }
+
+        /// <summary> True when any site is obligated, so the hot loops can skip the check entirely. </summary>
+        public bool HasObligatedSites { get; }
+
         public LocalizationGraph(SortedDictionary<int, string> modPos, ModBox modBox, ModBox[] childModBoxes, int id)
+            : this(modPos, modBox, childModBoxes, id, null)
+        {
+        }
+
+        /// <param name="obligatedSites">
+        /// Positions, in the same two-based key space as <paramref name="modPos"/>, that must be occupied.
+        /// From mzLib's DigestionProduct.GetCleavageObligatedSites. An obligated position that is NOT a
+        /// candidate site is IGNORED rather than treated as unsatisfiable: GetPossibleModSites drops any
+        /// residue that already carries a modification, so a site can be missing for reasons that have
+        /// nothing to do with the protease, and refusing the peptide there would delete a correct answer.
+        /// Under-constraining forgoes a refinement; over-constraining forbids the truth.
+        /// </param>
+        public LocalizationGraph(SortedDictionary<int, string> modPos, ModBox modBox, ModBox[] childModBoxes, int id,
+            IReadOnlyCollection<int> obligatedSites)
         {
             ModPos = modPos;
             ModBox = modBox;
             ModBoxId = id;
             ChildModBoxes = childModBoxes;
+
+            SiteIsObligated = new bool[modPos.Count];
+            if (obligatedSites != null && obligatedSites.Count > 0)
+            {
+                int column = 0;
+                foreach (int siteKey in modPos.Keys)
+                {
+                    if (obligatedSites.Contains(siteKey))
+                    {
+                        SiteIsObligated[column] = true;
+                        HasObligatedSites = true;
+                    }
+
+                    column++;
+                }
+            }
 
             //array is localization graph matrix. array is composed of 2d array of node. From left to right, node is build under a glycosite. From up to down, node is build for each child box.
             array = new AdjNode[modPos.Count][];
@@ -110,6 +161,14 @@ namespace EngineLayer.GlycoSearch
                         continue;
                     }
 
+                    // An obligated site must be occupied, so at the first column the box must already
+                    // hold a modification; at later columns the incoming edge must add one (below).
+                    if (localizationGraph.HasObligatedSites && x == 0 && localizationGraph.SiteIsObligated[0]
+                        && childBox.NumberOfMods == 0)
+                    {
+                        continue;
+                    }
+
                     AdjNode adjNode = new AdjNode(x, y, modPos_index[x], childBox);
 
                     double cost = 0;
@@ -129,10 +188,17 @@ namespace EngineLayer.GlycoSearch
                         var motifInThisPos = modPos_motif[x];
                         var isValidRow = cache.ValidChart[y];
                         var addedMotifInThisRow = cache.AddedMotif[y];
+                        bool siteIsObligated = localizationGraph.HasObligatedSites && localizationGraph.SiteIsObligated[x];
                         for (int preY = 0; preY <= y; preY++)
                         {
                             if (isValidRow[preY] && localizationGraph.array[x - 1][preY] != null && (addedMotifInThisRow[preY] == null || addedMotifInThisRow[preY] == motifInThisPos))
                             {
+                                // The obligation, as an edge predicate: this site must gain a modification.
+                                if (siteIsObligated && !PlacesModification(localizationGraph, y, preY))
+                                {
+                                    continue;
+                                }
+
                                 adjNode.AllSources.Add(preY);
 
                                 var tempCost = cost + localizationGraph.array[x - 1][preY].maxCost;
@@ -171,6 +237,12 @@ namespace EngineLayer.GlycoSearch
                     //Check if the node is valid, if not, skip it.
                     if (NodeCheck(localizationGraph.ModBox as GlycanBox, modPos_motif, x, y)) // Check the mod number in this node is valid
                     {
+                        if (localizationGraph.HasObligatedSites && x == 0 && localizationGraph.SiteIsObligated[0]
+                            && localizationGraph.ChildModBoxes[y].NumberOfMods == 0)
+                        {
+                            continue;
+                        }
+
                         AdjNode adjNode = new AdjNode(x, y, modPos_index[x]
                             
                             , localizationGraph.ChildModBoxes[y]);
@@ -199,6 +271,12 @@ namespace EngineLayer.GlycoSearch
                                 // valid the connection between the previous node and the current node.
                                 if (validChart[y][preY] && localizationGraph.array[x - 1][preY] != null && MotifCheck(localizationGraph.ModBox as GlycanBox, preY, y, motifInThisPos))
                                 {
+                                    if (localizationGraph.HasObligatedSites && localizationGraph.SiteIsObligated[x]
+                                        && !PlacesModification(localizationGraph, y, preY))
+                                    {
+                                        continue;
+                                    }
+
                                     adjNode.AllSources.Add(preY);
 
                                     var tempCost = cost + localizationGraph.array[x - 1][preY].maxCost; //Try to get the max cost from previous AdjNode.
@@ -229,6 +307,22 @@ namespace EngineLayer.GlycoSearch
             }
 
             FinishGraph(localizationGraph, theScan, productTolerance, products, modPos_index);
+        }
+
+        /// <summary>
+        /// Whether moving from child box <paramref name="preY"/> to child box <paramref name="y"/> places a
+        /// modification at the site between them -- that is, whether this edge occupies its site.
+        /// </summary>
+        /// <remarks>
+        /// The child boxes along a route hold the modifications placed at or before each site, and an edge
+        /// is only valid when the later box holds at most one more than the earlier, so "more" means
+        /// "exactly one more". Reading the counts works on both the cached and uncached paths, where the
+        /// cached one also has AddedMotif and the uncached one does not.
+        /// </remarks>
+        private static bool PlacesModification(LocalizationGraph localizationGraph, int y, int preY)
+        {
+            return localizationGraph.ChildModBoxes[y].NumberOfMods
+                   > localizationGraph.ChildModBoxes[preY].NumberOfMods;
         }
 
         /// <summary>

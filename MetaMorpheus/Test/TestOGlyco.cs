@@ -462,6 +462,89 @@ namespace Test
         }
 
         [Test]
+        public static void OGlycoTest_ObligatedSiteConstrainsTheRoutes()
+        {
+            // An obligated site is one the PROTEASE proves was glycosylated: if OpeRATOR cut this peptide
+            // out, its first residue carried a glycan whatever the fragment ions say. Until now motif was
+            // the only thing constraining where a glycan could go, so this is the first non-spectral
+            // constraint the localizer has ever had.
+            //
+            // The assertions are deliberately RELATIONAL -- fewer routes, and every survivor occupies the
+            // obligated site -- rather than exact route counts. What matters is that the constraint prunes
+            // and prunes correctly; pinning a magic number here would just re-encode the glycan database.
+            var glycanBox = OGlycanBoxes[66];
+
+            Protein protein = new Protein("TTGSLEPSSGASGPQVSSVK", "P16150");
+            var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+            List<Product> products = new List<Product>();
+            peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
+
+            var modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" });
+            var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
+
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.EThcD, trimMsMsPeaks: false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4565.mgf");
+            var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
+            var scan = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).First();
+
+            // Unconstrained, exactly as the engine builds it today.
+            var freeGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
+            LocalizationGraph.LocalizeOGlycan(freeGraph, scan, commonParameters.ProductMassTolerance, products);
+            var freeRoutes = LocalizationGraph.GetAllHighestScorePaths(freeGraph.array, freeGraph.ChildModBoxes)
+                .Select(path => LocalizationGraph.GetLocalizedPath(freeGraph, path))
+                .ToList();
+
+            // The same graph, told that the LAST candidate site must be occupied.
+            int obligatedSite = modPos.Keys.Last();
+            var constrainedGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1, new HashSet<int> { obligatedSite });
+            Assert.That(constrainedGraph.HasObligatedSites, Is.True);
+
+            LocalizationGraph.LocalizeOGlycan(constrainedGraph, scan, commonParameters.ProductMassTolerance, products);
+            var constrainedRoutes = LocalizationGraph.GetAllHighestScorePaths(constrainedGraph.array, constrainedGraph.ChildModBoxes)
+                .Select(path => LocalizationGraph.GetLocalizedPath(constrainedGraph, path))
+                .ToList();
+
+            Assert.That(constrainedRoutes, Is.Not.Empty,
+                "the box has three glycans and one obligated site, so routes must remain");
+
+            foreach (var route in constrainedRoutes)
+            {
+                Assert.That(route.ModSitePairs.Any(pair => pair.SiteIndex == obligatedSite), Is.True,
+                    "every surviving route must place a glycan on the obligated site");
+            }
+
+            // And the constraint must actually be doing something: at least one route the unconstrained
+            // graph was willing to report leaves the obligated site empty.
+            Assert.That(freeRoutes.Any(route => route.ModSitePairs.All(pair => pair.SiteIndex != obligatedSite)), Is.True,
+                "test is vacuous unless the unconstrained graph admits a route that skips the obligated site");
+        }
+
+        [Test]
+        public static void OGlycoTest_AnObligationNotAmongTheCandidateSitesIsIgnored()
+        {
+            // GetPossibleModSites drops any residue that already carries a modification, so an obligated
+            // position can be missing from the candidate list for reasons that have nothing to do with the
+            // protease. Treating that as unsatisfiable would delete a correct answer, so it is ignored.
+            var glycanBox = OGlycanBoxes[66];
+
+            Protein protein = new Protein("TTGSLEPSSGASGPQVSSVK", "P16150");
+            var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+            List<Product> products = new List<Product>();
+            peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
+
+            var modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" });
+            var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
+
+            // A position that is not a candidate site at all.
+            int notASite = modPos.Keys.Max() + 1000;
+            var graph = new LocalizationGraph(modPos, glycanBox, boxes, -1, new HashSet<int> { notASite });
+
+            Assert.That(graph.HasObligatedSites, Is.False,
+                "an obligation that matches no candidate site must leave the graph unconstrained");
+            Assert.That(graph.SiteIsObligated.Any(x => x), Is.False);
+        }
+
+        [Test]
         public static void OGlycoTest_Localization()
         {
             //Get glycanBox
