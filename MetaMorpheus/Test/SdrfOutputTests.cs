@@ -255,6 +255,70 @@ namespace Test
         }
 
         /// <summary>
+        /// A per-file override reaches the row for THAT file, and only that file.
+        ///
+        /// MetaMorpheus lets a spectra file carry its own .toml overriding protease, tolerances and
+        /// dissociation type, and the adapter looks those up per file. When that lookup misses, the
+        /// failure is silent: every row reports the task-level values, the document still validates,
+        /// and the fill rate is unchanged. Only two files with DIFFERENT parameters can see it --
+        /// which is why every other end-to-end case here, all single-file, missed a lookup that
+        /// compared a bare file name against a stored full path and therefore never matched.
+        /// </summary>
+        [Test]
+        public static void APerFileParameterOverrideReachesThatFilesRow()
+        {
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                "SdrfOutput_" + nameof(APerFileParameterOverrideReachesThatFilesRow));
+            if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            Directory.CreateDirectory(folder);
+
+            string source = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string taskLevelFile = Path.Combine(folder, "tryptic.mzml");
+            string overriddenFile = Path.Combine(folder, "aspN.mzml");
+            File.Copy(source, taskLevelFile, true);
+            File.Copy(source, overriddenFile, true);
+
+            // A file-specific toml is named after its spectra file and sits beside it. Only the
+            // second file gets one, so the two rows must not come out the same.
+            File.WriteAllLines(Path.Combine(folder, "aspN.toml"), new[] { "Protease = \"Asp-N\"" });
+
+            var database = new DbForTask(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta"), false);
+
+            ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo>
+            {
+                new(taskLevelFile, "condition", 0, 0, 0),
+                new(overriddenFile, "condition", 1, 0, 0)
+            });
+
+            var task = BuildSearchTask(writeSdrf: true);
+            string output = Path.Combine(folder, "TaskOutput");
+            Directory.CreateDirectory(output);
+
+            task.RunTask(output, new List<DbForTask> { database },
+                new List<string> { taskLevelFile, overriddenFile }, "sdrf-file-specific");
+
+            var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
+            document.LoadResults();
+
+            Assert.That(document.Results.Count, Is.EqualTo(2), "One row per spectra file.");
+
+            SdrfRow RowFor(string path) => document.Results
+                .Single(r => r["comment[data file]"] == Path.GetFileName(path));
+
+            Assert.That(RowFor(taskLevelFile)["comment[cleavage agent details]"],
+                Does.Contain("Trypsin").IgnoreCase,
+                "The file with no toml of its own is digested with the task-level protease.");
+            Assert.That(RowFor(overriddenFile)["comment[cleavage agent details]"],
+                Does.Contain("Asp-N").IgnoreCase,
+                "This file was digested with Asp-N by its own toml, so its row has to say Asp-N -- " +
+                "reporting the task-level protease here is exactly the flattening this column exists " +
+                "to prevent.");
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
         /// comment[data file] names the ORIGINAL acquisition, never a calibrated or averaged
         /// derivative this run happened to produce. An SDRF describes data as acquired; pointing it
         /// at an intermediate makes the row unjoinable to the deposited dataset.

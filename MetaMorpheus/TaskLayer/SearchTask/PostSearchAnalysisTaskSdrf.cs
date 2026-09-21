@@ -91,8 +91,13 @@ namespace TaskLayer
                 // Per-file parameters, not task-level. MetaMorpheus supports per-file overrides of
                 // protease, tolerances and dissociation type, and using the task-level values would
                 // silently flatten real differences between rows.
+                //
+                // FileName here is the FULL PATH the task was given (MetaMorpheusTask stores
+                // currentRawDataFilepathList[i]), not a bare file name, and it comes from the same
+                // list being walked -- so match on rawFilePath. Matching on the bare name never
+                // hit, and every row quietly reported the task-level values instead.
                 var common = FileSpecificParameters
-                    ?.FirstOrDefault(f => string.Equals(f.FileName, fileName, StringComparison.OrdinalIgnoreCase))
+                    ?.FirstOrDefault(f => string.Equals(f.FileName, rawFilePath, StringComparison.OrdinalIgnoreCase))
                     .Parameters ?? CommonParameters;
 
                 design.TryGetValue(stem, out var sampleInfo);
