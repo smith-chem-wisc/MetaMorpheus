@@ -410,6 +410,34 @@ namespace EngineLayer.GlycoSearch
             return newFragments;
         }
 
+        /// <summary>
+        /// The unshifted c and zDot neutral masses between one glycosite and the next, in product order.
+        /// </summary>
+        public sealed class SiteFragmentMasses
+        {
+            public double[] C { get; init; }
+            public double[] Z { get; init; }
+        }
+
+        /// <summary>
+        /// For each site index but the last, the fragments <see cref="GetLocalFragment"/> selects for that site, before any glycan
+        /// mass is added. They depend only on the peptide's products and glycosites, so one array serves every glycan box tried
+        /// against the peptide.
+        /// </summary>
+        public static SiteFragmentMasses[] GetSiteFragmentMasses(List<Product> products, int[] modPoses)
+        {
+            var sites = new SiteFragmentMasses[modPoses.Length];
+            for (int modInd = 0; modInd < modPoses.Length - 1; modInd++)
+            {
+                sites[modInd] = new SiteFragmentMasses
+                {
+                    C = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses[modInd] - 1 && p.AminoAcidPosition < modPoses[modInd + 1] - 1).Select(p => p.NeutralMass).ToArray(),
+                    Z = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition >= modPoses[modInd] && p.AminoAcidPosition < modPoses[modInd + 1]).Select(p => p.NeutralMass).ToArray(),
+                };
+            }
+            return sites;
+        }
+
         //Find FragmentMass for the fragments that doesn't contain localization Information. For example, "A|TAABBS|B", c1 and c7, z1 and z7, z8 ion don't contain localization information.
         public static List<double> GetUnlocalFragment(List<Product> products, int[] modPoses, ModBox OGlycanBox)
         {
