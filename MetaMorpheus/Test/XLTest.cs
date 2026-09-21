@@ -1616,13 +1616,13 @@ namespace Test
             Assert.That(csm.MatchedFragmentIons.Count, Is.EqualTo(36));
             Assert.That(csm.ScanNumber == 2);
 
-            // test child scan (low-resolution CID, alpha peptide signature ion)
-            Assert.That(csm.ChildMatchedFragmentIons.First().Key == 4);
-            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 1);
-
-            // test child scan (low-resolution CID, beta peptide signature ion)
-            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 4);
-            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 5);
+            // Each peptide is annotated against exactly its own two DSSO stub-signature MS3 scans: alpha's
+            // are 6 and 7, beta's are 4 and 5. Asserting the whole dictionary rather than First(), because
+            // what matters here is which scans are annotated, not which happens to sort first.
+            Assert.That(csm.ChildMatchedFragmentIons.ToDictionary(p => p.Key, p => p.Value.Count),
+                Is.EqualTo(new Dictionary<int, int> { { 6, 10 }, { 7, 5 } }));
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.ToDictionary(p => p.Key, p => p.Value.Count),
+                Is.EqualTo(new Dictionary<int, int> { { 4, 5 }, { 5, 3 } }));
 
             // write results to TSV
             csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0);
@@ -1631,13 +1631,11 @@ namespace Test
             // read results from TSV
             var psmFromTsv = SpectrumMatchTsvReader.ReadPsmTsv(outputFile, out var warnings).First();
 
-            Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 4
-                && psmFromTsv.ChildScanMatchedIons.First().Key == 4
-                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 1);
-
-            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 4
-                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 4
-                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 5);
+            // tracks the in-memory assertions above through the TSV round trip
+            Assert.That(psmFromTsv.ChildScanMatchedIons.ToDictionary(p => p.Key, p => p.Value.Count),
+                Is.EqualTo(new Dictionary<int, int> { { 6, 10 }, { 7, 5 } }));
+            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.ToDictionary(p => p.Key, p => p.Value.Count),
+                Is.EqualTo(new Dictionary<int, int> { { 4, 5 }, { 5, 3 } }));
 
             File.Delete(outputFile);
         }
