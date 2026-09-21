@@ -150,7 +150,6 @@ namespace EngineLayer
                 .Append(trainer);
 
             List<CalibratedBinaryClassificationMetrics> allMetrics = new List<CalibratedBinaryClassificationMetrics>();
-            int sumOfAllAmbiguousPeptidesResolved = 0;
 
             for (int groupIndexNumber = 0; groupIndexNumber < numGroups; groupIndexNumber++)
             {
@@ -164,16 +163,15 @@ namespace EngineLayer
                 CalibratedBinaryClassificationMetrics metrics = mlContext.BinaryClassification.Evaluate(data: myPredictions, labelColumnName: "Label", scoreColumnName: "Score");
 
                 //model is trained on peptides but here we can use that to compute PEP for all PSMs
-                int ambiguousPeptidesResolved = Compute_PSM_PEP(peptideGroups, peptideGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], SearchType, OutputFolder);
+                Compute_PSM_PEP(peptideGroups, peptideGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], SearchType, OutputFolder);
 
                 allMetrics.Add(metrics);
-                sumOfAllAmbiguousPeptidesResolved += ambiguousPeptidesResolved;
             }
 
             int positiveTrainingCount = PSMDataGroups.SelectMany(p => p).Count(p => p.Label);
             int negativeTrainingcount = PSMDataGroups.SelectMany(p => p).Count(p => !p.Label);
 
-            return AggregateMetricsForOutput(allMetrics, sumOfAllAmbiguousPeptidesResolved, positiveTrainingCount, negativeTrainingcount, QValueCutoff);
+            return AggregateMetricsForOutput(allMetrics, positiveTrainingCount, negativeTrainingcount, QValueCutoff);
         }
 
         /// <summary>
@@ -323,7 +321,7 @@ namespace EngineLayer
             return psmDataList;
         }
 
-        public static string AggregateMetricsForOutput(List<CalibratedBinaryClassificationMetrics> allMetrics, int sumOfAllAmbiguousPeptidesResolved,
+        public static string AggregateMetricsForOutput(List<CalibratedBinaryClassificationMetrics> allMetrics,
             int positiveTrainingCount, int negativeTrainingCount, double qValueCutoff)
 
         {
@@ -374,7 +372,6 @@ namespace EngineLayer
             s.AppendLine("*       PositiveRecall:  " + positiveRecall.Average());
             s.AppendLine("*       NegativePrecision:  " + negativePrecision.Average());
             s.AppendLine("*       NegativeRecall:  " + negativeRecall.Average());
-            s.AppendLine($"*       Count of Ambiguous {char.ToUpper(GlobalVariables.AnalyteType.GetUniqueFormLabel()[0]) + GlobalVariables.AnalyteType.GetUniqueFormLabel()[1..]}s Removed:  " + sumOfAllAmbiguousPeptidesResolved);
             s.AppendLine("*       Q-Value Cutoff for Training Targets:  " + qValueCutoff);
             s.AppendLine("*       Targets Used for Training:  " + positiveTrainingCount);
             s.AppendLine("*       Decoys Used for Training:  " + negativeTrainingCount);
@@ -382,12 +379,15 @@ namespace EngineLayer
             return s.ToString();
         }
 
-        public int Compute_PSM_PEP(List<SpectralMatchGroup> peptideGroups,
+        /// <summary>
+        /// Assigns a PEP to every spectral match in the given groups. This method scores; it does not
+        /// prune. Removing ambiguous match hypotheses is the DisambiguationEngine's job.
+        /// </summary>
+        public void Compute_PSM_PEP(List<SpectralMatchGroup> peptideGroups,
             List<int> peptideGroupIndices,
             MLContext mLContext, TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>> trainedModel, string searchType, string outputFolder)
         {
             int maxThreads = FileSpecificParametersDictionary.Values.FirstOrDefault().MaxThreadsToUsePerFile;
-            int ambiguousPeptidesResolved = 0;
 
             var predictionEnginePerThread =
                 new ThreadLocal<PredictionEngine<PsmData, TruePositivePrediction>>(
@@ -406,23 +406,18 @@ namespace EngineLayer
                         // one prediction engine per thread, because the prediction engine is not thread-safe
                         var threadPredictionEngine = predictionEnginePerThread.Value;
 
-                        int ambigousPeptidesRemovedinThread = 0;
-
-                        List<int> indicesOfPeptidesToRemove = new List<int>();
                         List<double> pepValuePredictions = new List<double>();
                         for (int i = range.Item1; i < range.Item2; i++)
                         {
                             foreach (SpectralMatch psm in peptideGroups[peptideGroupIndices[i]])
                             {
-                                // I'm not sure what's going one here vis-a-vis disambiguations, but I'm not going to touch it for now
                                 if (psm != null)
                                 {
-                                    indicesOfPeptidesToRemove.Clear();
                                     pepValuePredictions.Clear();
 
-                                    //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
-                                    var bestMatchingBioPolymersWithSetMods = psm.BestMatchingBioPolymersWithSetMods.ToList();
-                                    foreach (SpectralMatchHypothesis bestMatch in bestMatchingBioPolymersWithSetMods)
+                                    // One prediction per ambiguous match hypothesis. The PSM keeps the best of them;
+                                    // the others are left in place for the DisambiguationEngine to judge.
+                                    foreach (SpectralMatchHypothesis bestMatch in psm.BestMatchingBioPolymersWithSetMods)
                                     {
                                         PsmData pd = CreateOnePsmDataEntry(searchType, psm, bestMatch, !bestMatch.IsDecoy);
                                         var pepValuePrediction = threadPredictionEngine.Predict(pd);
@@ -430,17 +425,12 @@ namespace EngineLayer
                                         //A score is available using the variable pepvaluePrediction.Score
                                     }
 
-                                    GetIndicesOfPeptidesToRemove(indicesOfPeptidesToRemove, pepValuePredictions);
-                                    RemoveBestMatchingPeptidesWithLowPEP(psm, indicesOfPeptidesToRemove, bestMatchingBioPolymersWithSetMods, ref ambigousPeptidesRemovedinThread);
-
                                     psm.PsmFdrInfo.PEP = 1 - pepValuePredictions.Max();
                                     psm.PeptideFdrInfo.PEP = 1 - pepValuePredictions.Max();
                                 }
 
                             }
                         }
-
-                        Interlocked.Add(ref ambiguousPeptidesResolved, ambigousPeptidesRemovedinThread);
                     });
             }
             finally
@@ -452,8 +442,6 @@ namespace EngineLayer
 
                 predictionEnginePerThread.Dispose();
             }
-
-            return ambiguousPeptidesResolved;
         }
 
         public PsmData CreateOnePsmDataEntry(string searchType, SpectralMatch psm, SpectralMatchHypothesis tentativeSpectralMatch, bool label)
@@ -646,6 +634,15 @@ namespace EngineLayer
             return psm.PsmData_forPEPandPercolator;
         }
 
+        /// <summary>
+        /// Removes the given ambiguous match hypotheses from the PSM.
+        /// <remarks>
+        /// NO LONGER CALLED BY THIS ENGINE. PEP scores; it does not prune. Kept public because
+        /// disambiguation-by-PEP belongs in <see cref="SpectrumMatch.DisambiguationEngine"/>, whose
+        /// own summary already names "PEPAnalysisEngine -> By PEP" as a site to consolidate there
+        /// and which carries a commented-out RemovedByPEP result for it. Covered by FdrTest.
+        /// </remarks>
+        /// </summary>
         public static void RemoveBestMatchingPeptidesWithLowPEP(SpectralMatch psm, List<int> indicesOfPeptidesToRemove, List<SpectralMatchHypothesis> allPeptides, ref int ambiguousPeptidesRemovedCount)
         {
             int peptidesRemoved = 0;
@@ -660,6 +657,11 @@ namespace EngineLayer
         /// <summary>
         /// Given a set of PEP values, this method will find the indices of BestMatchingBioPolymersWithSetMods that are not within the required tolerance
         /// This method will also remove the low scoring predictions from the set.
+        /// <remarks>
+        /// NO LONGER CALLED BY THIS ENGINE -- see <see cref="RemoveBestMatchingPeptidesWithLowPEP"/>.
+        /// Note that it never drops the maximum (max - max = 0 is not &gt; the threshold), which is why
+        /// removing the call left every assigned PEP unchanged: PEP is 1 - pepValuePredictions.Max().
+        /// </remarks>
         /// </summary>
         public static void GetIndicesOfPeptidesToRemove(List<int> indicesOfPeptidesToRemove, List<double> pepValuePredictions)
         {
