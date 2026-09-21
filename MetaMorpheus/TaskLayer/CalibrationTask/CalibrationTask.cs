@@ -111,7 +111,7 @@ namespace TaskLayer
                     UpdateCombinedParameters(combinedParams,
                         combinedParams.PrecursorMassTolerance.Value * InitialSearchToleranceMultiplier,
                         combinedParams.ProductMassTolerance.Value * InitialSearchToleranceMultiplier);
-                    WarnForWiderTolerance(combinedParams.PrecursorMassTolerance.Value, combinedParams.ProductMassTolerance.Value);
+                    WarnForWiderTolerance(combinedParams.PrecursorMassTolerance.Value, combinedParams.ProductMassTolerance.Value, Path.GetFileName(originalUncalibratedFilePath));
                     acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, combinedParams, originalUncalibratedFilePath);
                 }
                 // If there still aren't enough points, give up
@@ -413,7 +413,7 @@ namespace TaskLayer
             {
                 _unsuccessfullyCalibratedFilePaths.Add(originalUncalibratedFilePath);
                 // provide a message indicating why we couldn't calibrate
-                Warn("Calibration for " + fileExtension + " files is not supported.");
+                Warn(SpectraFilePrefix(Path.GetFileName(originalUncalibratedFilePath)) + "Calibration for " + fileExtension + " files is not supported.");
                 FinishedDataFile(originalUncalibratedFilePath, new List<string> { _taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { _taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
                 return false;
@@ -461,7 +461,7 @@ namespace TaskLayer
             unsuccessfullyCalibratedFilePaths.Add(uncalibratedNewFullFilePath);
 
             // provide a message indicating why we couldn't calibrate
-            CalibrationWarnMessage(acquisitionResults);
+            CalibrationWarnMessage(acquisitionResults, Path.GetFileName(originalUncalibratedFilePath));
 
             // mark the file as done
             FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
@@ -497,27 +497,37 @@ namespace TaskLayer
                 && acquisitionResults.Ms2List.Count >= NumRequiredMs2Datapoints;
         }
 
-        public void WarnForWiderTolerance(double newPrecursorTolerance, double newProductTolerance)
+        /// <summary>
+        /// Prefixes a warning with the spectra file it refers to, so a notification list covering many
+        /// files can be read file by file. Returns an empty prefix when no file name is available.
+        /// </summary>
+        private static string SpectraFilePrefix(string spectraFileName)
         {
-            Warn("Could not find enough PSMs to calibrate with; opening up tolerances to " +
+            return string.IsNullOrWhiteSpace(spectraFileName) ? "" : spectraFileName + ": ";
+        }
+
+        public void WarnForWiderTolerance(double newPrecursorTolerance, double newProductTolerance, string spectraFileName = null)
+        {
+            Warn(SpectraFilePrefix(spectraFileName) + "Could not find enough PSMs to calibrate with; opening up tolerances to " +
                  Math.Round(newPrecursorTolerance, 2) + " ppm precursor and " +
                  Math.Round(newProductTolerance, 2) + " ppm product");
         }
 
-        public void CalibrationWarnMessage(DataPointAquisitionResults acquisitionResults)
+        public void CalibrationWarnMessage(DataPointAquisitionResults acquisitionResults, string spectraFileName = null)
         {
             // provide a message indicating why we couldn't calibrate
+            string prefix = SpectraFilePrefix(spectraFileName);
             if (acquisitionResults.Psms.Count < NumRequiredPsms)
             {
-                Warn($"Calibration failure! Could not find enough high-quality {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s. Required " + NumRequiredPsms + ", saw " + acquisitionResults.Psms.Count);
+                Warn(prefix + $"Calibration failure! Could not find enough high-quality {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s. Required " + NumRequiredPsms + ", saw " + acquisitionResults.Psms.Count);
             }
             else if (acquisitionResults.Ms1List.Count < NumRequiredMs1Datapoints)
             {
-                Warn("Calibration failure! Could not find enough MS1 datapoints. Required " + NumRequiredMs1Datapoints + ", saw " + acquisitionResults.Ms1List.Count);
+                Warn(prefix + "Calibration failure! Could not find enough MS1 datapoints. Required " + NumRequiredMs1Datapoints + ", saw " + acquisitionResults.Ms1List.Count);
             }
             else if (acquisitionResults.Ms2List.Count < NumRequiredMs2Datapoints)
             {
-                Warn("Calibration failure! Could not find enough MS2 datapoints. Required " + NumRequiredMs2Datapoints + ", saw " + acquisitionResults.Ms2List.Count);
+                Warn(prefix + "Calibration failure! Could not find enough MS2 datapoints. Required " + NumRequiredMs2Datapoints + ", saw " + acquisitionResults.Ms2List.Count);
             }
         }
 
