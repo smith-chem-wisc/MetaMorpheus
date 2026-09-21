@@ -199,7 +199,7 @@ namespace TaskLayer
 
                 var gsmsPerFile = new List<GlycoSpectralMatch>[fileCount][];
                 Status("Searching files...", taskId);
-                Parallel.For(0, fileCount, new ParallelOptions { MaxDegreeOfParallelism = plan.FilesInParallel }, spectraFileIndex =>
+                FileParallelism.ForEachFile(fileCount, plan.FilesInParallel, spectraFileIndex =>
                 {
                     if (GlobalVariables.StopLoops) { return; }
 

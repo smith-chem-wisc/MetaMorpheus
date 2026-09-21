@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace EngineLayer.Util
 {
@@ -74,6 +77,24 @@ namespace EngineLayer.Util
             }
 
             return new FileParallelismPlan(files, Math.Max(1, budget / files), limitedBy);
+        }
+
+        /// <summary>
+        /// Runs <paramref name="searchFile"/> for every file index from 0 to <paramref name="fileCount"/> - 1, no more than
+        /// <paramref name="filesInParallel"/> of them at a time, and hands the next index out only when a worker is free.
+        /// </summary>
+        /// <remarks>
+        /// NoBuffering, rather than Parallel.For: Parallel.For claims indices in chunks that double in size (1, then 2, then
+        /// 4...) and a worker keeps the whole chunk it claimed, so a file behind a slow one in the same chunk cannot be picked
+        /// up by a worker that is free. With enough files - more than twice <paramref name="filesInParallel"/> - that brings
+        /// back the idle file slot this class is here to remove.
+        /// </remarks>
+        public static void ForEachFile(int fileCount, int filesInParallel, Action<int> searchFile)
+        {
+            Parallel.ForEach(
+                Partitioner.Create(Enumerable.Range(0, fileCount), EnumerablePartitionerOptions.NoBuffering),
+                new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, filesInParallel) },
+                searchFile);
         }
     }
 }

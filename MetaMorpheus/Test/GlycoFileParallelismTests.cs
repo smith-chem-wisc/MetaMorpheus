@@ -7,10 +7,13 @@ using MzLibUtil;
 using NUnit.Framework;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -82,6 +85,47 @@ namespace Test
             plan = FileParallelism.Decide(fileCount: 4, threadBudget: 0, availableBytes: 500 * GB, bytesPerFile: GB);
             Assert.That(plan.FilesInParallel, Is.EqualTo(1));
             Assert.That(plan.ThreadsPerFile, Is.EqualTo(1));
+        }
+
+        /// <summary>
+        /// No spectra file may sit unstarted while a file slot is free - that idle tail is what searching files in parallel is
+        /// here to remove. Parallel.For claims file indices in chunks that double in size (1, then 2, then 4...), and a worker
+        /// takes its whole chunk with it, so a file claimed behind a slow one cannot be picked up by the worker that is free:
+        /// with six files at two in parallel a worker claims file 0, then files 1 and 2 together, and file 2 waits for file 1
+        /// while the other worker runs out of files of its own and exits. Handing the indices out one at a time, only as a
+        /// worker asks for one, is what keeps both slots busy.
+        /// </summary>
+        [Test]
+        public static void ForEachFileLeavesNoFileWaitingWhileAFileSlotIsFree()
+        {
+            const int fileCount = 6;
+            const int filesInParallel = 2;
+            var slowFileMayFinish = new ManualResetEventSlim(false);
+            var everyOtherFileStarted = new CountdownEvent(fileCount - 1);
+            var started = new bool[fileCount];
+
+            var run = Task.Run(() => FileParallelism.ForEachFile(fileCount, filesInParallel, fileIndex =>
+            {
+                started[fileIndex] = true;
+                if (fileIndex == 1)
+                {
+                    // One slow file, holding one of the two slots until the test lets it go.
+                    slowFileMayFinish.Wait(TimeSpan.FromSeconds(60));
+                }
+                else
+                {
+                    everyOtherFileStarted.Signal();
+                }
+            }));
+
+            bool theFreeSlotSearchedEveryOtherFile = everyOtherFileStarted.Wait(TimeSpan.FromSeconds(20));
+            string filesLeftWaiting = string.Join(", ", Enumerable.Range(0, fileCount).Where(i => !started[i]));
+            slowFileMayFinish.Set();
+
+            Assert.That(run.Wait(TimeSpan.FromSeconds(60)), Is.True, "the run finished");
+            Assert.That(theFreeSlotSearchedEveryOtherFile, Is.True,
+                $"files not started while the slow file searched: {filesLeftWaiting}");
+            Assert.That(started, Is.All.True);
         }
 
         /// <summary>
