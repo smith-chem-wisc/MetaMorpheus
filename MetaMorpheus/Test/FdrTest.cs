@@ -893,8 +893,8 @@ namespace Test
         }
 
         [Test]
-        //[Explicit("Constructs Koina-backed Prosit predictors. Excluded from normal CI; run with: dotnet test --filter Category=Koina")]
-        //[Category("Koina")]
+        [Explicit("Constructs Koina-backed Prosit predictors. Excluded from normal CI; run with: dotnet test --filter Category=Koina")]
+        [Category("Koina")]
         [TestCase(RTPredictorNames.Prosit2019iRT, typeof(Prosit2019iRT))]
         [TestCase(RTPredictorNames.Prosit2020iRTTMT, typeof(Prosit2020iRTTMT))]
         public static void FdrAnalysisEngine_GetRTPredictor_ReturnsExpectedPrositPredictor(
