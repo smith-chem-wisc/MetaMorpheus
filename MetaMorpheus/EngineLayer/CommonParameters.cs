@@ -363,52 +363,11 @@ namespace EngineLayer
         /// </summary>
         public CommonParameters CloneWithNewMaxThreadsToUsePerFile(int maxThreadsToUsePerFile)
         {
-            CommonParameters clone = new CommonParameters(
-                                TaskDescriptor,
-                                DissociationType,
-                                MS2ChildScanDissociationType,
-                                MS3ChildScanDissociationType,
-                                SeparationType,
-                                DoPrecursorDeconvolution,
-                                UseProvidedPrecursorInfo,
-                                DeconvolutionIntensityRatio,
-                                DeconvolutionMaxAssumedChargeState,
-                                ReportAllAmbiguity,
-                                AddCompIons,
-                                TotalPartitions,
-                                QValueThreshold,
-                                PepQValueThreshold,
-                                QValueCutoffForPepCalculation,
-                                ScoreCutoff,
-                                NumberOfPeaksToKeepPerWindow,
-                                MinimumAllowedIntensityRatioToBasePeak,
-                                WindowWidthThomsons,
-                                NumberOfWindows,
-                                NormalizePeaksAccrossAllWindows,
-                                TrimMs1Peaks,
-                                TrimMsMsPeaks,
-                                ProductMassTolerance,
-                                PrecursorMassTolerance,
-                                ProductMassTolerance_LowRes,
-                                DeconvolutionMassTolerance,
-                                maxThreadsToUsePerFile, //changed
-                                DigestionParams,
-                                ListOfModsVariable,
-                                ListOfModsFixed,
-                                AssumeOrphanPeaksAreZ1Fragments,
-                                MaxHeterozygousVariants,
-                                MinVariantDepth,
-                                AddTruncations,
-                                PrecursorDeconvolutionParameters,
-                                ProductDeconvolutionParameters,
-                                UseMostAbundantPrecursorIntensity,
-                                DIAparameters,
-                                FragmentationParameters,
-                                PrecursorMassMatchMode,
-                                RTPredictorName);
-
-            // As in CloneWithNewTotalPartitions: CustomIons is read from a global list by the constructor, not passed in.
-            clone.CustomIons = CustomIons;
+            // Copied by the method that already copies everything, then the one setting that differs is set on the copy - a
+            // second copy of the constructor's argument list would be one more place to forget when CommonParameters gains a
+            // setting. The setter is private, which is no obstacle from inside the class.
+            CommonParameters clone = CloneWithNewTotalPartitions(TotalPartitions);
+            clone.MaxThreadsToUsePerFile = maxThreadsToUsePerFile;
             return clone;
         }
 
