@@ -11,6 +11,7 @@ using Proteomics.ProteolyticDigestion;
 using Proteomics.RetentionTimePrediction;
 using System;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -74,6 +75,42 @@ namespace EngineLayer
         /// step this engine previously lacked.
         /// </summary>
         private HashSet<SpectralMatch> _positiveTrainingMatches = null;
+
+        /// <summary>
+        /// Feature vectors, computed once and reused for every training round.
+        /// <remarks>
+        /// EVERY field of <see cref="PsmData"/> except Label is round-invariant: each one derives from
+        /// the match, the hypothesis, or a dictionary built once in the constructor
+        /// (FileSpecificMedianFragmentMassErrors, ChargeStateMode, chimeraCountDictionary, the
+        /// hydrophobicity tables). Retention-time prediction is deterministic from those fixed inputs.
+        /// So recomputing them per round re-derives bit-identical values -- and RT prediction is the
+        /// single most expensive thing this engine does (~67% of an entire search before #2841).
+        ///
+        /// This is only CORRECT because PEP no longer prunes. `Ambiguity` reads
+        /// BestMatchingBioPolymersWithSetMods.Count(), which the old elimination step mutated
+        /// mid-loop; caching across rounds would have frozen a stale value. Removing the pruning is
+        /// what makes the cache sound.
+        /// </remarks>
+        /// </summary>
+        private readonly ConcurrentDictionary<SpectralMatchHypothesis, PsmData> _featureCache
+            = new ConcurrentDictionary<SpectralMatchHypothesis, PsmData>(new HypothesisReferenceComparer());
+
+        /// <summary>
+        /// Identity comparer for hypotheses used as cache keys.
+        /// <remarks>
+        /// SpectralMatchHypothesis's OWN equality cannot be used here: Equals compares
+        /// MatchedIons.Count while GetHashCode hashes the MatchedIons reference, so two instances can
+        /// be Equal yet hash differently. That violates the hash/equals contract and would make
+        /// dictionary lookups miss unpredictably. Identity is what we actually want anyway -- each
+        /// hypothesis instance belongs to exactly one match, so the reference identifies the pair.
+        /// </remarks>
+        /// </summary>
+        private sealed class HypothesisReferenceComparer : IEqualityComparer<SpectralMatchHypothesis>
+        {
+            public bool Equals(SpectralMatchHypothesis x, SpectralMatchHypothesis y) => ReferenceEquals(x, y);
+
+            public int GetHashCode(SpectralMatchHypothesis obj) => RuntimeHelpers.GetHashCode(obj);
+        }
 
         //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
         //file separately. An individully measured hydrobophicty calculated for a specific PSM sequence is compared to these values by computing
@@ -676,6 +713,18 @@ namespace EngineLayer
 
         public PsmData CreateOnePsmDataEntry(string searchType, SpectralMatch psm, SpectralMatchHypothesis tentativeSpectralMatch, bool label)
         {
+            // Only Label changes between training rounds -- see _featureCache. Everything below is a
+            // pure function of inputs that are fixed for the lifetime of this engine, and computing
+            // it is dominated by retention-time prediction.
+            if (_featureCache.TryGetValue(tentativeSpectralMatch, out PsmData cached))
+            {
+                // A COPY, never the cached instance. Training and prediction both come through here,
+                // ML.NET enumerates its training set lazily, and handing out one shared object would
+                // let prediction mutate a Label inside a training list a later fold is about to fit on.
+                psm.PsmData_forPEPandPercolator = cached.WithLabel(label);
+                return psm.PsmData_forPEPandPercolator;
+            }
+
             double normalizationFactor = tentativeSpectralMatch.SpecificBioPolymer.BaseSequence.Length;
             float totalMatchingFragmentCount = 0;
             float internalMatchingFragmentCount = 0;
@@ -860,6 +909,8 @@ namespace EngineLayer
                 InternalIonCount = internalMatchingFragmentCount,
                 PrecursorDeconvolutionScore = (float)psm.PrecursorScanDeconvolutionScore,
             };
+
+            _featureCache[tentativeSpectralMatch] = psm.PsmData_forPEPandPercolator;
 
             return psm.PsmData_forPEPandPercolator;
         }
