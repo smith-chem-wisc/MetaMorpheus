@@ -37,7 +37,16 @@ namespace EngineLayer
                     {
                         continue;
                     }
-                    if (!line.Contains("HexNAc"))  // use the first data line to determine the format (kind / structure) of glycan database.
+                    // Structure lines are nested parentheses and always open with one; composition lines
+                    // are name-and-count and never do. This is the same test ValidateGlycanLine and
+                    // FormatOfExistingEntries use, and it has to be the same one: the validator tells the
+                    // user their entry was accepted, so anything it calls a composition has to load as a
+                    // composition. The older test -- "does the line contain HexNAc" -- disagreed for every
+                    // composition without that literal substring, so a validated Hex(1) was written and
+                    // then read back as a structure, where 'e' is not a monosaccharide code. Classification
+                    // is unchanged for every database that ships and every test fixture: the structure ones
+                    // open with '(', the composition ones open with "HexNAc(".
+                    if (line.TrimStart().StartsWith("(", StringComparison.Ordinal))
                     {
                         isKind = false;
                     }

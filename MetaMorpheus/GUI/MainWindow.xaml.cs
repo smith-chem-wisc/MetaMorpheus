@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using EngineLayer.Util;
 using IO.ThermoRawFileReader;
 using Microsoft.Win32;
