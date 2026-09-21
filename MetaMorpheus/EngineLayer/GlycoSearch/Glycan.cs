@@ -185,16 +185,23 @@ namespace EngineLayer
                     diagnosticIons.Add(29008759 - hydrogenAtomMonoisotopicMass);
                     diagnosticIons.Add(30809816 - hydrogenAtomMonoisotopicMass);
                 }
-                // Custom-monosaccharide diagnostic ions: emitted at the value supplied by the user
-                // in MonosaccharidesCustom.tsv (no hydrogen-mass offset is applied; users provide
-                // observed m/z directly).
+                // Custom-monosaccharide diagnostic ions. The user supplies an observed singly-charged
+                // m/z in column 4 of MonosaccharidesCustom.tsv -- the same convention as the built-in
+                // literals above -- and, like them, it has to be converted to neutral mass here. This
+                // set becomes Modification.DiagnosticIons, and mzLib assigns the value straight to
+                // Product.NeutralMass ("the diagnostic ion is assumed to be annotated in the mod info
+                // as the neutral mass", PeptideWithSetModifications). Added raw, a custom ion was
+                // searched one proton high -- at m/z 175 that is ~287x a 20 ppm window -- so it never
+                // matched and contributed nothing to the diagnostic-ion score. Only this scoring role
+                // was affected: the filter path reads the same column as m/z and does its own charge
+                // conversion (GlycoPeptides.ScanOxoniumIonFilter).
                 foreach (var kv in _customDiagnosticIonsByIndex)
                 {
                     if (kv.Key < Kind.Length && Kind[kv.Key] >= 1)
                     {
                         foreach (int ion in kv.Value)
                         {
-                            diagnosticIons.Add(ion);
+                            diagnosticIons.Add(ion - hydrogenAtomMonoisotopicMass);
                         }
                     }
                 }
@@ -331,43 +338,87 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// Half-width, in scaled (1e5) units, of the window inside which two oxonium m/z values are
-        /// considered the same ion: 0.01 Da. Wider than any realistic product tolerance at these
-        /// masses (20 ppm at m/z 204 is 0.004 Da), so a user who writes "204.087" for the built-in
-        /// 204.08720 is still caught, while genuinely distinct diagnostic ions are not.
+        /// Floor half-width, in scaled (1e5) units, of the window inside which two oxonium m/z values
+        /// are considered the same ion: 0.01 Da. It catches a user who writes "204.087" for the
+        /// built-in 204.08720, and at the low end of <see cref="AllOxoniumIons"/> it is already wider
+        /// than any realistic product tolerance (20 ppm at m/z 204 is 0.004 Da).
         /// </summary>
-        private const int DiagnosticIonCollisionWindowScaled = 1000;
+        private const int DiagnosticIonCollisionFloorScaled = 1000;
 
         /// <summary>
-        /// A custom diagnostic ion that duplicates a built-in oxonium ion (or another custom's ion)
-        /// is rejected at registration. Under the strict custom-oxonium filter such an ion would be
-        /// "observed" on essentially every glycopeptide spectrum, rejecting every candidate that
-        /// lacks the custom monosaccharide -- a silent, near-total loss of results.
+        /// Product tolerance the collision window widens to where the floor stops being conservative.
+        /// A fixed 0.01 Da is too narrow at the top of <see cref="AllOxoniumIons"/>: 20 ppm at
+        /// 657.23544 is 0.0131 Da and at 673.23035 is 0.0135 Da, so an ion ~0.012 Da away would clear
+        /// a fixed window and still match the same peak as the built-in -- exactly the collision the
+        /// check exists to prevent, and wider still at low-resolution product tolerance.
         /// </summary>
-        private static void RejectIfDiagnosticIonAlreadyClaimed(string name, int ionScaled)
+        private const double DiagnosticIonCollisionPpm = 20;
+
+        /// <summary>
+        /// Half-width of the collision window for a pair of scaled m/z values: the wider of
+        /// <see cref="DiagnosticIonCollisionFloorScaled"/> and <see cref="DiagnosticIonCollisionPpm"/>
+        /// of the heavier of the two, so the window is never narrower than the tolerance at that mass.
+        /// </summary>
+        internal static int DiagnosticIonCollisionWindowScaled(int firstScaled, int secondScaled)
+        {
+            int ppmWindow = (int)Math.Ceiling(Math.Max(firstScaled, secondScaled) * DiagnosticIonCollisionPpm / 1E6);
+            return Math.Max(DiagnosticIonCollisionFloorScaled, ppmWindow);
+        }
+
+        /// <summary>
+        /// Describes the collision between <paramref name="ionScaled"/> and an oxonium ion that is
+        /// already spoken for -- a built-in, or a diagnostic ion of an already-registered custom
+        /// monosaccharide -- or returns null when the ion is free. Under the strict custom-oxonium
+        /// filter a shared ion would be "observed" on essentially every glycopeptide spectrum,
+        /// rejecting every candidate that lacks the custom monosaccharide: a silent, near-total loss
+        /// of results.
+        ///
+        /// The collision rule lives here, but the failure mode is the caller's to choose.
+        /// <see cref="RegisterCustomMonosaccharide"/> throws, because there the user is entering the
+        /// ion now and can correct it. GlycanDatabase.LoadCustomMonosaccharides skips the ion and
+        /// warns, because a file written before this check existed may already contain one, and
+        /// throwing at load is fatal: LoadGlycans runs from GlobalVariables.SetUpGlobalVariables
+        /// before the GUI's InitializeComponent, so the window never opens and the user cannot reach
+        /// the file to fix it.
+        /// </summary>
+        public static string DescribeDiagnosticIonCollision(int ionScaled)
         {
             foreach (int builtIn in AllOxoniumIons)
             {
-                if (Math.Abs(builtIn - ionScaled) <= DiagnosticIonCollisionWindowScaled)
+                int window = DiagnosticIonCollisionWindowScaled(builtIn, ionScaled);
+                if (Math.Abs(builtIn - ionScaled) <= window)
                 {
-                    throw new ArgumentException(
-                        $"Diagnostic ion {(double)ionScaled / 1E5:F5} for monosaccharide '{name}' duplicates the built-in oxonium ion {(double)builtIn / 1E5:F5} (within 0.01 Da). " +
-                        "A custom diagnostic ion must be distinct from every built-in oxonium ion; a shared ion would be observed on nearly every glycopeptide spectrum and the strict filter would then reject every candidate lacking this monosaccharide.",
-                        nameof(name));
+                    return $"duplicates the built-in oxonium ion {(double)builtIn / 1E5:F5} (within {(double)window / 1E5:F5} Da). " +
+                           "A custom diagnostic ion must be distinct from every built-in oxonium ion; a shared ion would be observed on nearly every glycopeptide spectrum and the strict filter would then reject every candidate lacking this monosaccharide.";
                 }
             }
             foreach (var kv in _customDiagnosticIonsByIndex)
             {
                 foreach (int existing in kv.Value)
                 {
-                    if (Math.Abs(existing - ionScaled) <= DiagnosticIonCollisionWindowScaled)
+                    int window = DiagnosticIonCollisionWindowScaled(existing, ionScaled);
+                    if (Math.Abs(existing - ionScaled) <= window)
                     {
-                        throw new ArgumentException(
-                            $"Diagnostic ion {(double)ionScaled / 1E5:F5} for monosaccharide '{name}' duplicates the diagnostic ion {(double)existing / 1E5:F5} already registered for '{_kindEntries[kv.Key].CanonicalName}' (within 0.01 Da). " +
-                            "Each custom diagnostic ion must map to exactly one monosaccharide, otherwise the strict filter cannot be satisfied by any candidate.",
-                            nameof(name));
+                        return $"duplicates the diagnostic ion {(double)existing / 1E5:F5} already registered for '{_kindEntries[kv.Key].CanonicalName}' (within {(double)window / 1E5:F5} Da). " +
+                               "Each custom diagnostic ion must map to exactly one monosaccharide, otherwise the strict filter cannot be satisfied by any candidate.";
                     }
                 }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Registration-time form of <see cref="DescribeDiagnosticIonCollision"/>: a claimed ion is a
+        /// hard failure here, because the caller supplied it directly and can fix it.
+        /// </summary>
+        private static void RejectIfDiagnosticIonAlreadyClaimed(string name, int ionScaled)
+        {
+            string collision = DescribeDiagnosticIonCollision(ionScaled);
+            if (collision != null)
+            {
+                throw new ArgumentException(
+                    $"Diagnostic ion {(double)ionScaled / 1E5:F5} for monosaccharide '{name}' {collision}",
+                    nameof(name));
             }
         }
 

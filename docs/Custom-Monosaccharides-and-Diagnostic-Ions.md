@@ -189,7 +189,11 @@ These ions play **two roles**:
 
 Whenever a candidate glycan contains the monosaccharide, its diagnostic ions are added to the theoretical diagnostic-ion set, matched against the spectrum, and folded into the **diagnostic-ion score**. This happens regardless of any filter setting and never rejects a candidate.
 
-### Role 2 — Strict filter (when `OxoniumIonFilt` is enabled)
+You still enter the **observed m/z**; MetaMorpheus converts it to the neutral mass the fragment matcher works in, exactly as it does for its own built-in oxonium ions.
+
+> **Fixed in this version.** Before this release, custom diagnostic ions were handed to the scoring path as m/z where a *neutral mass* was expected, so every one of them was searched a proton too high and never matched — they contributed nothing to the diagnostic-ion score. The strict filter (Role 2) was never affected; it reads column 4 as m/z and does its own conversion. If you added diagnostic ions under **1.1.8, 1.1.9 or 1.1.10**, they are only now doing their scoring job, so diagnostic-ion scores for glycans containing your sugar may rise.
+
+### Role 2 — Strict filter (when `OxoniumIonFilt` is enabled, O-glycan and N+O-glycan searches)
 
 The Glyco Search task has a checkbox labelled **`OxoniumIonFilt`** (on by default; `OxoniumIonFilt = true` in the task `.toml`). When it is enabled, each custom diagnostic ion becomes a **strict gate**:
 
@@ -204,7 +208,16 @@ The Glyco Search task has a checkbox labelled **`OxoniumIonFilt`** (on by defaul
 
 This runs **after** the built-in oxonium rules (the 138/144 ratio, the 204 requirement, the 274/292 sialic-acid and 366 HexHexNAc rules), which are unchanged.
 
-**A custom diagnostic ion may not duplicate a built-in oxonium ion** (109.029, 115.040, 126.055, 127.040, 138.055, 144.066, 163.061, 168.066, 186.077, 204.087, 274.093, 290.088, 292.103, 308.098, 366.140, 657.235, 673.230), **or an ion already claimed by another custom monosaccharide**. Values within 0.01 Da of one of those are rejected when the file is loaded, with the offending line named. Listing something ubiquitous such as 204.087 would make the ion "observed" on essentially every glycopeptide spectrum, and the strict rule would then silently reject every candidate lacking your sugar.
+> **Search-type scope.** The strict gate runs only in **O-glycan** and **N+O-glycan** searches. A pure **N-glycan** search takes a different code path whose only oxonium requirement is the built-in 204.087 check, so custom diagnostic ions there keep their scoring role (Role 1) and filter nothing — regardless of the `OxoniumIonFilt` setting. If you want the strict gate on N-glycans, run an **N+O-glycan** search.
+
+**A custom diagnostic ion may not duplicate a built-in oxonium ion** (109.029, 115.040, 126.055, 127.040, 138.055, 144.066, 163.061, 168.066, 186.077, 204.087, 274.093, 290.088, 292.103, 308.098, 366.140, 657.235, 673.230), **or an ion already claimed by another custom monosaccharide**. Listing something ubiquitous such as 204.087 would make the ion "observed" on essentially every glycopeptide spectrum, and the strict rule would then silently reject every candidate lacking your sugar.
+
+Two ions count as the same ion when they fall within **0.01 Da, or 20 ppm of the heavier one, whichever is wider**. The 0.01 Da floor catches a user who writes `204.087` for the built-in `204.08720`; the 20 ppm arm matters at the top of the list, where 20 ppm of 657.235 is 0.0131 Da — wider than the floor, so an ion 0.012 Da away would otherwise pass the check and still match the same peak.
+
+What happens next depends on **where the ion came from**:
+
+- **Typed into the GUI dialog** — rejected outright, with a message naming the ion it collides with. You are entering it now, so you can correct it now.
+- **Found in the file at startup** — the **offending ion is skipped**, the monosaccharide loads without it, and a warning naming the file, line and ion appears in the notifications area. A file written before this check existed may already contain a colliding ion, and refusing to start would leave you unable to open MetaMorpheus to fix it.
 
 > **Turn the filter off** (uncheck `OxoniumIonFilt`) and column-4 ions keep only their scoring role.
 
@@ -216,7 +229,7 @@ Oxonium-ion prevalence depends on **collision energy, stepped-HCD settings, inst
 
 ## End-to-end worked example
 
-**Goal:** search for N-glycans containing hexuronic acid (HexA), and require its diagnostic ions when present.
+**Goal:** search for glycopeptides carrying hexuronic acid (HexA), and require its diagnostic ions when present.
 
 1. **Define the sugar with diagnostic ions** — **Settings** tab → **Create new monosaccharide**, with `175.02482,157.01425` in **Diagnostic Ions (m/z)**; or add the row to `MonosaccharidesCustom.tsv` by hand:
 
@@ -234,7 +247,9 @@ Oxonium-ion prevalence depends on **collision energy, stepped-HCD settings, inst
 
 3. **Restart MetaMorpheus** (only needed if you edited the TSV by hand; the dialog registers the sugar straight away).
 
-4. In the **Glyco Search** task: set the search type to N-glycan, point the **N-glycan database** at `NGlycan_HexA.gdb`, and leave **`OxoniumIonFilt`** checked.
+4. In the **Glyco Search** task: set the search type to **N+O-glycan**, point the **N-glycan database** at `NGlycan_HexA.gdb`, and leave **`OxoniumIonFilt`** checked.
+
+   > **N+O, not N.** The strict gate runs only in O-glycan and N+O-glycan searches (see Role 2 above). Choose plain **N-glycan** here and the ions are still scored, but nothing is filtered and nothing tells you why.
 
 5. **Run.** Candidate glycopeptides whose spectra show 175.02482 / 157.01425 but lack HexA — or that contain HexA but show neither ion — are rejected; matching candidates keep these ions in their diagnostic-ion score.
 
@@ -258,6 +273,16 @@ Conditions that raise an error:
 | Code is not an ASCII letter | `must be an ASCII letter` |
 | Mass not a number | `MonoisotopicMass "…" is not a valid decimal number` |
 | A diagnostic-ion value not a number | `DiagnosticIonMasses entry "…" is not a valid decimal number` |
+
+A **colliding diagnostic ion** is the one problem that does *not* stop the file loading. The ion is dropped, the monosaccharide keeps its remaining ions, and a warning appears in the notifications area:
+
+```
+Custom monosaccharide 'HexA' in 'MonosaccharidesCustom.tsv' at line 7: diagnostic ion 204.08700
+duplicates the built-in oxonium ion 204.08720 (within 0.01000 Da). … That ion was skipped and
+'HexA' was loaded without it. Remove or correct it in the file to clear this warning.
+```
+
+You will also see one notification per custom monosaccharide that has any diagnostic ions, reminding you that they act as strict gates while `OxoniumIonFilt` is on. Clear it by emptying column 4 or unchecking the filter.
 | Name already exists (built-in or earlier row) | `name '…' already exists` |
 | Code already exists | `code '…' already exists` |
 
@@ -288,10 +313,10 @@ No. Column 4 is optional. Without it, the monosaccharide still works in database
 They can slightly affect the *diagnostic-ion score* (they are matched and scored), but they never reject a candidate unless `OxoniumIonFilt` is enabled.
 
 **Can custom ions tie to a built-in monosaccharide?**
-Yes — put a built-in name (e.g. `HexNAc`) in column 1 with ions in column 4. The strict filter then ties those ions to that built-in sugar.
+No. Column 1 must be a **new** name. Reusing a built-in name (`Hex`, `HexNAc`, `NeuAc`, `NeuGc`, `Fuc`, `Phospho`, `Sulfo`, `Na`, `Ac`, `Xylose`, `Kdn`) is rejected, and because monosaccharides load before the main window opens, it stops MetaMorpheus starting at all — there is no window from which to reach **Open mods/data folder** and undo it. This matches the "do not redefine the built-ins" rule above. The built-in sugars already carry their own diagnostic ions; to add an ion of your own, define a new monosaccharide.
 
 **What m/z do I enter — neutral mass or observed?**
-The **observed** singly-charged oxonium m/z, exactly as it appears in the spectrum. No hydrogen offset is applied.
+The **observed** singly-charged oxonium m/z, exactly as it appears in the spectrum — for both roles. MetaMorpheus applies the m/z-to-neutral-mass conversion internally wherever it is needed, so do not subtract a proton yourself.
 
 **The strict filter is discarding good hits — what now?**
 Your listed ions may be weak under your acquisition method. Remove the unreliable ions, reduce to a single robust ion, or uncheck `OxoniumIonFilt` to keep scoring only.

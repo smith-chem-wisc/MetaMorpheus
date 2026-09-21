@@ -50,7 +50,13 @@
 #                          candidate is rejected if such an ion is observed in
 #                          the spectrum but the candidate lacks this
 #                          monosaccharide, or if the candidate contains this
-#                          monosaccharide but the ion is absent. Ion prevalence
+#                          monosaccharide but the ion is absent.
+#
+#                          The strict filter runs in O-GLYCAN and N+O-GLYCAN
+#                          searches only. A pure N-glycan search uses a
+#                          different path whose only oxonium requirement is
+#                          the built-in 204.087 check, so there these ions are
+#                          scored but filter nothing. Ion prevalence
 #                          depends on collision energy, instrument and glycan
 #                          structure, so validate an ion against your own
 #                          acquisition conditions before relying on it to filter.
@@ -66,9 +72,18 @@
 #
 #                          An ion may NOT duplicate a built-in oxonium ion, nor
 #                          one already claimed by another custom monosaccharide
-#                          in this file. Anything within 0.01 Da of one of those
-#                          is an error and the file will fail to load, naming
-#                          the offending line. The built-in oxonium ions are:
+#                          in this file. Two ions count as the same ion within
+#                          0.01 Da, or 20 ppm of the heavier one, whichever is
+#                          wider -- the ppm arm matters only near the top of
+#                          the list below, where 20 ppm exceeds 0.01 Da.
+#                          A collision found in this file does NOT stop
+#                          MetaMorpheus starting: the offending ion is skipped,
+#                          the monosaccharide loads without it, and a warning
+#                          naming the file, line and ion appears in the
+#                          notifications area. (The same ion typed into the
+#                          "Create new monosaccharide" dialog is rejected
+#                          outright -- you can correct it on the spot.)
+#                          The built-in oxonium ions are:
 #                              109.02895  115.03951  126.05550  127.03952
 #                              138.05550  144.06607  163.06064  168.06607
 #                              186.07663  204.08720  274.09268  290.08759

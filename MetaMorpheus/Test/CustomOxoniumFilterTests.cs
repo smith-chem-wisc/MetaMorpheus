@@ -1,9 +1,11 @@
-﻿using EngineLayer;
+﻿using Chemistry;
+using EngineLayer;
 using EngineLayer.GlycoSearch;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Test
 {
@@ -322,7 +324,12 @@ namespace Test
                 int customIndex = Glycan.NameCharDic["SugarU"].Item2;
 
                 double[] intensities = new double[Glycan.AllOxoniumIonsIncludingCustoms.Length];
-                intensities[OxoniumIndex_R138] = 0;                  // no reference ion at all
+                // A strong 204.087 with no 138.055 is the spectrum this test is about. Index 204 has to
+                // be set explicitly: writing 0 into index 4 of a fresh array asserts nothing, and left
+                // 204 at zero too, so GlycoSearchEngine's own "no 204 => not a glycopeptide" gate would
+                // have dropped the scan before DiagonsticFilter ever saw it.
+                intensities[OxoniumIndex_HexNAc204] = 1000;
+                Assert.That(intensities[OxoniumIndex_R138], Is.Zero, "no 138.055 reference at all");
                 byte[] kind = new byte[Glycan.KindCapacity];
                 kind[customIndex] = 1;                               // candidate DOES carry the sugar
 
@@ -347,7 +354,8 @@ namespace Test
                 Glycan.RegisterCustomMonosaccharide("SugarU", 'U', 17603209, new[] { Ion512 });
 
                 double[] intensities = new double[Glycan.AllOxoniumIonsIncludingCustoms.Length];
-                intensities[OxoniumIndex_R138] = 0;                  // no reference ion
+                intensities[OxoniumIndex_HexNAc204] = 1000;          // a glycopeptide spectrum, as above
+                Assert.That(intensities[OxoniumIndex_R138], Is.Zero, "no 138.055 reference at all");
                 intensities[Glycan.AllOxoniumIons.Length] = 500;     // custom ion slot has signal
 
                 Assert.That(GlycoPeptides.DiagonsticFilter(intensities, BoxWithKind(new byte[Glycan.KindCapacity])),
@@ -422,6 +430,65 @@ namespace Test
         }
 
         [Test]
+        public void RegisterCustomMonosaccharide_DiagnosticIonInsideProductToleranceOfHighMassBuiltIn_Throws()
+        {
+            // A fixed 0.01 Da window stops being conservative at the top of AllOxoniumIons. 20 ppm at
+            // the built-in 657.23544 is 0.0131 Da, so an ion 0.012 Da away clears a fixed window and
+            // still matches the same peak -- the exact collision the check exists to prevent. The
+            // window has to widen to the product tolerance where the tolerance is the wider of the two.
+            const int highMassBuiltIn = 65723544;  // 657.23544, second-largest built-in oxonium ion
+            const int offsetScaled = 1200;         // 0.012 Da: outside the 0.01 Da floor, inside 20 ppm
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                var ex = Assert.Throws<ArgumentException>(
+                    () => Glycan.RegisterCustomMonosaccharide("SugarU", 'U', 17603209, new[] { highMassBuiltIn + offsetScaled }));
+                Assert.That(ex.Message, Does.Contain("657.23544"));
+            }
+            finally
+            {
+                RestoreStartupMonosaccharides();
+            }
+        }
+
+        [Test]
+        public void RegisterCustomMonosaccharide_SameOffsetFromALowMassBuiltIn_IsAccepted()
+        {
+            // The companion to the test above, so widening the window is not mistaken for widening it
+            // everywhere. 20 ppm at the built-in 204.08720 is only 0.004 Da, so there the 0.01 Da floor
+            // still governs and an ion 0.012 Da away is a genuinely distinct ion that must be allowed.
+            const int lowMassBuiltIn = 20408720;   // 204.08720
+            const int offsetScaled = 1200;         // the same 0.012 Da as above
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                Glycan.RegisterCustomMonosaccharide("SugarU", 'U', 17603209, new[] { lowMassBuiltIn + offsetScaled });
+                Assert.That(Glycan.CustomOxoniumIons.Select(i => i.MzScaled),
+                    Is.EquivalentTo(new[] { lowMassBuiltIn + offsetScaled }));
+            }
+            finally
+            {
+                RestoreStartupMonosaccharides();
+            }
+        }
+
+        [Test]
+        public void DiagnosticIonCollisionWindow_IsNeverNarrowerThanProductToleranceAtAnyBuiltIn()
+        {
+            // The property the two tests above sample at one mass each, asserted across the whole array:
+            // for every built-in oxonium ion the window must be at least 20 ppm of that ion, otherwise
+            // an ion that passes the duplicate check can still match the built-in's peak.
+            foreach (int builtIn in Glycan.AllOxoniumIons)
+            {
+                int window = Glycan.DiagnosticIonCollisionWindowScaled(builtIn, builtIn);
+                Assert.That(window, Is.GreaterThanOrEqualTo(builtIn * 20 / 1000000),
+                    $"window at built-in {(double)builtIn / 1E5:F5} is narrower than a 20 ppm product tolerance");
+                Assert.That(window, Is.GreaterThanOrEqualTo(1000),
+                    $"window at built-in {(double)builtIn / 1E5:F5} dropped below the 0.01 Da floor");
+            }
+        }
+
+        [Test]
         public void RegisterCustomMonosaccharide_DiagnosticIonDuplicatingAnotherCustom_Throws()
         {
             // Two monosaccharides claiming one ion cannot both satisfy the strict rule, so no candidate
@@ -433,6 +500,43 @@ namespace Test
                 var ex = Assert.Throws<ArgumentException>(
                     () => Glycan.RegisterCustomMonosaccharide("SugarV", 'V', 18000000, new[] { Ion512 }));
                 Assert.That(ex.Message, Does.Contain("SugarU"));
+            }
+            finally
+            {
+                RestoreStartupMonosaccharides();
+            }
+        }
+
+        [Test]
+        public void GlycanDiagnosticIons_CustomIon_IsEmittedAsNeutralMassLikeTheBuiltIns()
+        {
+            // Column 4 holds observed singly-charged m/z, but GlycanDiagnosticIons becomes
+            // Modification.DiagnosticIons, which mzLib consumes as NEUTRAL mass -- it assigns the value
+            // straight to Product.NeutralMass. That is why every built-in literal in the property is
+            // emitted minus a proton. A custom ion added raw was searched a proton high (at m/z 175,
+            // ~287x a 20 ppm window), so it never matched and contributed nothing to the diagnostic-ion
+            // score, even though the filter path read the same column correctly.
+            int protonScaled = Convert.ToInt32(PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 1E5);
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                Glycan.RegisterCustomMonosaccharide("SugarU", 'U', 17603209, new[] { Ion512 });
+                int customIndex = Glycan.NameCharDic["SugarU"].Item2;
+
+                byte[] kind = new byte[Glycan.KindCapacity];
+                kind[1] = 1;                 // one HexNAc, so a built-in ion is emitted alongside
+                kind[customIndex] = 1;       // and one of the custom sugar
+                var ions = new Glycan(kind, "Nxs", GlycanType.N_glycan).GlycanDiagnosticIons;
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(ions, Does.Contain(20408720 - protonScaled),
+                        "the built-in 204.087 anchors the convention: m/z minus a proton");
+                    Assert.That(ions, Does.Contain(Ion512 - protonScaled),
+                        "a custom ion must carry the same m/z-to-neutral-mass conversion as the built-ins");
+                    Assert.That(ions, Does.Not.Contain(Ion512),
+                        "emitting the raw m/z searches the ion a proton high, where it never matches");
+                });
             }
             finally
             {
@@ -511,10 +615,50 @@ namespace Test
         }
 
         [Test]
-        public void LoadCustomMonosaccharides_DiagnosticIonDuplicatingBuiltIn_ReportsFileAndLine()
+        public void LoadCustomMonosaccharides_DiagnosticIonDuplicatingBuiltIn_SkipsThatIonAndKeepsTheRest()
         {
-            // The collision must reach the user as a MetaMorpheusException naming the file and line,
-            // not as a bare ArgumentException from deep in the glycan code.
+            // A collision at LOAD time must not throw. DiagnosticIonMasses shipped in 1.1.8 without this
+            // check, and EnsureCustomMonosaccharideFileExists only writes the template when the file is
+            // MISSING, so an upgrading user's file can already hold a colliding ion. Throwing would be
+            // fatal rather than corrective: LoadGlycans runs from SetUpGlobalVariables before the GUI's
+            // InitializeComponent, with no handler, so the window never opens and the user cannot reach
+            // "Open mods/data folder" to fix the file. Drop the ion, keep the sugar, and say so.
+            string tsv = string.Join("\n", new[]
+            {
+                "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription",
+                "HexA\tU\t176.03209\t204.08720,512.197\tHexuronic acid"
+            });
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+
+                var warnings = CaptureLoadWarnings(() => GlycanDatabase.LoadCustomMonosaccharides(path));
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(Glycan.NameCharDic.ContainsKey("HexA"), Is.True,
+                        "the monosaccharide itself must still load -- glycan databases naming it would otherwise fail to parse");
+                    Assert.That(Glycan.CustomOxoniumIons.Select(i => i.MzScaled), Is.EquivalentTo(new[] { Ion512 }),
+                        "only the colliding ion is dropped; the good one survives");
+                    Assert.That(warnings.Any(w => w.Contains("204.08720")), Is.True, "the warning must name the offending ion");
+                    Assert.That(warnings.Any(w => w.Contains(Path.GetFileName(path))), Is.True, "and the file");
+                    Assert.That(warnings.Any(w => w.Contains("line 2")), Is.True, "and the line");
+                });
+            }
+            finally
+            {
+                RestoreStartupMonosaccharides();
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public void LoadCustomMonosaccharides_EveryIonClaimed_LoadsTheMonosaccharideWithNoIons()
+        {
+            // The degenerate case of the above: nothing survives the screen. The sugar must still
+            // register, with no diagnostic ions, rather than the load failing.
             string tsv = string.Join("\n", new[]
             {
                 "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription",
@@ -526,12 +670,12 @@ namespace Test
                 Glycan.ResetCustomMonosaccharides();
                 File.WriteAllText(path, tsv);
 
-                var ex = Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.LoadCustomMonosaccharides(path));
+                CaptureLoadWarnings(() => GlycanDatabase.LoadCustomMonosaccharides(path));
+
                 Assert.Multiple(() =>
                 {
-                    Assert.That(ex.Message, Does.Contain(Path.GetFileName(path)));
-                    Assert.That(ex.Message, Does.Contain("line 2"));
-                    Assert.That(Glycan.HasCustomOxoniumIons, Is.False);
+                    Assert.That(Glycan.NameCharDic.ContainsKey("HexA"), Is.True);
+                    Assert.That(Glycan.HasCustomOxoniumIons, Is.False, "no ion survived, so there is no custom filter to run");
                 });
             }
             finally
@@ -541,10 +685,87 @@ namespace Test
             }
         }
 
+        [Test]
+        public void LoadCustomMonosaccharides_DiagnosticIonsPresent_WarnsThatTheyActAsStrictGates()
+        {
+            // The other half of the upgrade problem, and the quieter one. An existing file keeps its
+            // column-4 values, OxoniumIonFilt defaults to true, and those ions therefore become
+            // accept/reject gates -- while the banner in the shipped template that explains this never
+            // reaches the user, precisely because their file already exists and is never rewritten.
+            string tsv = string.Join("\n", new[]
+            {
+                "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription",
+                "HexA\tU\t176.03209\t512.197\tHexuronic acid"
+            });
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+
+                var warnings = CaptureLoadWarnings(() => GlycanDatabase.LoadCustomMonosaccharides(path));
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(warnings.Any(w => w.Contains("HexA") && w.Contains("OxoniumIonFilt")), Is.True,
+                        "a user whose file predates the banner has to learn about the gate somewhere");
+                    Assert.That(warnings.Any(w => w.Contains("512.19700")), Is.True);
+                });
+            }
+            finally
+            {
+                RestoreStartupMonosaccharides();
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public void LoadCustomMonosaccharides_NoDiagnosticIons_WarnsAboutNothing()
+        {
+            // The warning above is emitted once per startup, so it must not fire for the common case of
+            // a custom monosaccharide with an empty column 4 -- which includes the shipped template.
+            string tsv = string.Join("\n", new[]
+            {
+                "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription",
+                "HexA\tU\t176.03209\t\tHexuronic acid"
+            });
+            string path = Path.GetTempFileName();
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                File.WriteAllText(path, tsv);
+
+                var warnings = CaptureLoadWarnings(() => GlycanDatabase.LoadCustomMonosaccharides(path));
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(Glycan.NameCharDic.ContainsKey("HexA"), Is.True);
+                    Assert.That(warnings, Is.Empty);
+                });
+            }
+            finally
+            {
+                RestoreStartupMonosaccharides();
+                File.Delete(path);
+            }
+        }
+
+        // Non-fatal load problems go to GlobalVariables.ErrorsReadingMods, which is process-wide and
+        // drained by the GUI rather than by tests. Snapshot the length and read only the tail, so these
+        // tests neither clear messages another fixture put there nor see them as their own.
+        private static List<string> CaptureLoadWarnings(Action load)
+        {
+            GlobalVariables.ErrorsReadingMods ??= new List<string>();
+            int before = GlobalVariables.ErrorsReadingMods.Count;
+            load();
+            return GlobalVariables.ErrorsReadingMods.GetRange(before, GlobalVariables.ErrorsReadingMods.Count - before);
+        }
+
         // Reserved built-in indices used by the legacy filter. Spelled as literals (rather than the
         // OxoniumIonReservedIndices constants) so this built-in-behavior test does not depend on the
         // very constants it is meant to be independent of.
         private const int OxoniumIndex_R138 = 4;
+        private const int OxoniumIndex_HexNAc204 = 9;
         private const int OxoniumIndex_NeuAc274 = 10;
         private const int OxoniumIndex_NeuAc292 = 12;
     }
