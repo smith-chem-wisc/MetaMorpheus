@@ -428,12 +428,19 @@ namespace EngineLayer
             }
         }
 
+        /// <summary>
+        /// A composition line: a monosaccharide name and a count, repeated, e.g. HexNAc(2)Hex(5). Shared
+        /// so the loader and the entry validator cannot drift apart about what one looks like -- which is
+        /// exactly how the format-detection bug got in.
+        /// </summary>
+        private const string CompositionShape = @"^(?:(?<name>[A-Za-z][A-Za-z0-9]*)\((?<count>\d+)\))+$";
+
         private static void ValidateCompositionEntry(string entry)
         {
             // Name(count), repeated -- e.g. HexNAc(2)Hex(5)NeuAc(1). Checked here rather than by handing it
             // to String2Kind, which throws KeyNotFoundException on an unknown name and quietly accepts a
             // trailing unclosed group.
-            Match match = Regex.Match(entry, @"^(?:(?<name>[A-Za-z][A-Za-z0-9]*)\((?<count>\d+)\))+$");
+            Match match = Regex.Match(entry, CompositionShape);
             if (!match.Success)
             {
                 throw new MetaMorpheusException(
@@ -581,11 +588,13 @@ namespace EngineLayer
             using (StreamReader lines = new StreamReader(filePath))
             {
                 int id = 1;
+                int lineNumber = 0;
                 while (lines.Peek() != -1)
                 {
                     string rawLine = lines.ReadLine();
+                    lineNumber++;
 
-                    // Skipped explicitly rather than left to the Hex test below: a comment that quotes a
+                    // Skipped explicitly rather than left to the shape test below: a comment that quotes a
                     // composition -- which the documented template does, to show the format -- would otherwise
                     // reach String2Kind and die on a dictionary lookup naming neither the file nor the line.
                     if (IsCommentOrBlank(rawLine))
@@ -593,14 +602,38 @@ namespace EngineLayer
                         continue;
                     }
 
-                    string line = rawLine.Split('\t').First();
+                    string line = rawLine.Split('\t').First().Trim();
 
-                    if (!(line.Contains("HexNAc") || line.Contains("Hex"))) // Make sure the line is a glycan line. The line should contain HexNAc or Hex.
+                    // Whether the line has the SHAPE of a composition -- a name and a count, repeated. The
+                    // test used to be "does it contain Hex or HexNAc", a stand-in for "is this a data line"
+                    // from before comments were skipped above. It also threw away, without a word, every
+                    // legitimate composition built from neither: NeuAc(2)Fuc(1) is one, and the entry
+                    // validator accepts it, so a user could be told a glycan had been added and then have
+                    // it silently vanish from the search. Tolerance for a line that is not a composition at
+                    // all is unchanged -- it is still skipped, now by shape rather than by substring.
+                    if (!Regex.IsMatch(line, CompositionShape))
                     {
                         continue;
                     }
 
-                    var kind = String2Kind(line);  // Convert the database string to kind[] format (byte array).
+                    byte[] kind;
+                    try
+                    {
+                        kind = String2Kind(line);  // Convert the database string to kind[] format (byte array).
+                    }
+                    catch (Exception ex)
+                    {
+                        // A composition-shaped line that will not parse names a monosaccharide this build
+                        // does not know, or a count outside a byte. String2Kind reports those as
+                        // KeyNotFoundException and FormatException/OverflowException, naming neither the
+                        // file nor the line -- and LoadGlycans runs inside SetUpGlobalVariables, so that
+                        // is a startup crash. Named the way ValidateStructureLine names its own.
+                        throw new MetaMorpheusException(
+                            $"Could not parse glycan composition in '{Path.GetFileName(filePath)}' at line {lineNumber}: \"{line}\". " +
+                            $"{ex.Message} A composition is a monosaccharide name and a count, repeated, e.g. HexNAc(2)Hex(5); " +
+                            "a monosaccharide MetaMorpheus does not ship with must be declared in MonosaccharidesCustom.tsv first.",
+                            ex);
+                    }
 
                     if (IsOGlycan) // Load the oGlycan with two different motifs : S and T
                     {
