@@ -34,6 +34,13 @@ namespace EngineLayer.Util
         private int _threadsInUse;
         private int _runsStarted;
 
+        /// <summary>
+        /// Starts one worker on its own thread. A test replaces this to make starting a thread fail, which is otherwise only
+        /// reachable when the machine is out of threads or memory.
+        /// </summary>
+        internal Func<Action, Task> StartWorkerThread = body =>
+            Task.Factory.StartNew(body, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+
         /// <param name="totalThreads"> The threads every file together may use; below 1 means 1. </param>
         public SearchThreadBudget(int totalThreads)
         {
@@ -117,22 +124,33 @@ namespace EngineLayer.Util
                         continue;
                     }
 
-                    workers.Add(Task.Factory.StartNew(() =>
+                    try
                     {
-                        try
+                        workers.Add(StartWorkerThread(() =>
                         {
-                            worker(NextItem);
-                        }
-                        catch
-                        {
-                            Interlocked.Exchange(ref failed, 1);
-                            throw;
-                        }
-                        finally
-                        {
-                            share.ReturnThread();
-                        }
-                    }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default));
+                            try
+                            {
+                                worker(NextItem);
+                            }
+                            catch
+                            {
+                                Interlocked.Exchange(ref failed, 1);
+                                throw;
+                            }
+                            finally
+                            {
+                                share.ReturnThread();
+                            }
+                        }));
+                    }
+                    catch
+                    {
+                        // The thread was taken above and the worker whose finally would return it never ran, so return it here.
+                        // Leaving it out would count it as in use for the rest of the task, shrinking the budget every file
+                        // still to be searched draws on.
+                        share.ReturnThread();
+                        throw;
+                    }
                 }
             }
             finally

@@ -347,6 +347,39 @@ namespace Test
         }
 
         /// <summary>
+        /// A thread is taken from the budget before the worker that will use it is started. If starting that worker throws - the
+        /// machine is out of threads or memory, which LongRunning makes likelier because it takes a dedicated thread rather than a
+        /// pooled one - no worker ever runs the finally that returns it. Run has to return it itself: without that, the thread
+        /// stayed counted as in use for the rest of the task, so every file still to be searched had a budget one thread smaller,
+        /// and enough failed starts would leave a budget that hands out nothing and a search that waits forever.
+        /// </summary>
+        [Test]
+        public static void AThreadIsReturnedWhenItsWorkerCannotBeStarted()
+        {
+            var budget = new SearchThreadBudget(4);
+            budget.StartWorkerThread = _ => throw new InvalidOperationException("no thread to start the worker on");
+
+            Assert.That(() => budget.Run(1000, nextItem => { while (nextItem() >= 0) { } }),
+                Throws.InstanceOf<InvalidOperationException>());
+            Assert.That(budget.ThreadsInUse, Is.EqualTo(0), "the thread taken for a worker that was never started");
+            Assert.That(budget.SearchingFiles, Is.EqualTo(0));
+
+            // The whole budget is still there for the next file: a failed start does not shrink it.
+            budget.StartWorkerThread = body => Task.Factory.StartNew(body, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            const int items = 500;
+            var visits = new int[items];
+            budget.Run(items, nextItem =>
+            {
+                for (int i = nextItem(); i >= 0; i = nextItem())
+                {
+                    Interlocked.Increment(ref visits[i]);
+                }
+            });
+            Assert.That(visits.All(v => v == 1), Is.True, $"items visited other than once: {visits.Count(v => v != 1)}");
+            Assert.That(budget.ThreadsInUse, Is.EqualTo(0));
+        }
+
+        /// <summary>
         /// The glyco engine searches through the budget it is given, and returns every thread when it is done.
         /// </summary>
         [Test]
