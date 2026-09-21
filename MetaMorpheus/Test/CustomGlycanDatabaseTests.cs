@@ -626,5 +626,67 @@ namespace Test
                 GlobalVariables.OGlycanDatabasePaths.Remove(path);
             }
         }
+
+        /// <summary>
+        /// A composition built from neither Hex nor HexNAc -- NeuAc(2)Fuc(1) -- is validated, written,
+        /// reported as added, and was then dropped by the loader without a word, because the loader
+        /// decided what counted as a data line by looking for the substring "Hex". The user is told the
+        /// glycan is in their database and the search never sees it.
+        /// </summary>
+        [Test]
+        public static void ACompositionOfNeitherHexNorHexNAcIsNotSilentlyDropped()
+        {
+            string path = Path_("neither_hex.gdb");
+            File.WriteAllLines(path, new[] { "HexNAc(2)Hex(5)" }); // fixes the format as composition
+
+            GlycanDatabase.PersistCustomGlycan("NeuAc(2)Fuc(1)", path, false);
+
+            var glycans = GlycanDatabase.LoadGlycan(path, false, false).ToList();
+
+            Assert.Multiple(() =>
+            {
+                // two compositions, each on Nxs and Nxt
+                Assert.That(glycans.Count, Is.EqualTo(4), "the NeuAc(2)Fuc(1) entry was dropped");
+                Assert.That(glycans.Select(g => Glycan.GetKindString(g.Kind)).Distinct().Count(), Is.EqualTo(2));
+            });
+        }
+
+        /// <summary>
+        /// The other half of dropping the substring test: a line that IS shaped like a composition but
+        /// names a monosaccharide this build does not know used to die in a dictionary lookup, naming
+        /// neither the file nor the line -- and LoadGlycans runs inside SetUpGlobalVariables, so that is
+        /// a crash before any window opens.
+        /// </summary>
+        [Test]
+        public static void ACompositionShapedLineThatWillNotParseNamesTheFileAndLine()
+        {
+            string path = Path_("unknown_name.gdb");
+            File.WriteAllLines(path, new[] { "HexNAc(2)Hex(5)", "Nonsense(1)" });
+
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.LoadGlycan(path, false, false).ToList());
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(ex.Message, Does.Contain("unknown_name.gdb"));
+                Assert.That(ex.Message, Does.Contain("line 2"));
+                Assert.That(ex.Message, Does.Contain("Nonsense(1)"));
+            });
+        }
+
+        /// <summary>
+        /// A line that is not a composition at all is still skipped rather than refused, which is the
+        /// tolerance the substring test used to provide. Only the way it is recognised has changed.
+        /// </summary>
+        [Test]
+        public static void ALineThatIsNotACompositionAtAllIsStillSkipped()
+        {
+            string path = Path_("stray_line.gdb");
+            File.WriteAllLines(path, new[] { "HexNAc(2)Hex(5)", "some stray text", "HexNAc(2)Hex(3)Fuc(1)" });
+
+            var glycans = GlycanDatabase.LoadGlycan(path, false, false).ToList();
+
+            Assert.That(glycans.Count, Is.EqualTo(4));
+        }
     }
 }
