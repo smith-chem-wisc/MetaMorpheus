@@ -338,7 +338,8 @@ namespace TaskLayer
                     ListOfGsmsPerMS2Scan.AddRange(newCsmsPerMS2ScanPerFile.Where(p => p != null).ToList());
 
                     completedFiles++;
-                    ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
+                    // A percentage, as the parallel path above reports: integer division alone reported 1% until the last file.
+                    ReportProgress(new ProgressEventArgs(100 * completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
                 }
             }
 
