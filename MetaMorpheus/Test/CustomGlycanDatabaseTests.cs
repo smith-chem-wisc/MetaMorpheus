@@ -565,5 +565,66 @@ namespace Test
 
             Assert.That(ex.Message, Does.Contain("NoSuchDatabase.gdb"));
         }
+
+        /// <summary>
+        /// The validator and the loader have to sniff the format the same way, because the validator is
+        /// what tells the user their entry was accepted. They did not: the validator asks whether the line
+        /// opens with '(', the loader asked whether it contains "HexNAc". For a composition without that
+        /// substring the two disagreed, so a Hex(1) the user had been told was added went to the structure
+        /// parser on the next search and died on the 'e' in "Hex". Every composition test here used
+        /// HexNAc(2)Hex(5) or expected a refusal, which is why nothing caught it.
+        /// </summary>
+        [Test]
+        public static void AHexNAcLessCompositionLoadsBackAsWhatItWasValidatedAs()
+        {
+            string path = Path_("OGlycan_HexOnly.gdb");
+            CustomDataFile.EnsureExists(path, EmbeddedTemplate, "custom O-glycan database");
+
+            // Accepted by ValidateCompositionEntry: Hex is a monosaccharide MetaMorpheus ships, and a
+            // freshly seeded database is all banner, so its format is still undecided.
+            GlycanDatabase.PersistCustomGlycan("Hex(1)", path, true);
+
+            var glycans = GlycanDatabase.LoadGlycan(path, false, true).ToList();
+
+            Assert.Multiple(() =>
+            {
+                // one composition, on S and on T
+                Assert.That(glycans.Count, Is.EqualTo(2));
+                Assert.That(glycans.Select(g => Glycan.GetKindString(g.Kind)).Distinct().Single(), Is.EqualTo("H1"));
+            });
+        }
+
+        /// <summary>
+        /// A database can hold glycans and still yield no boxes: the box builders skip every box heavier
+        /// than the maximum box mass, so the empty-database guard above is not enough on its own. Left
+        /// alone this is the same "Sequence contains no elements", thrown one step later from
+        /// GlycanBoxes.First().Mass inside the parallel search loop.
+        /// </summary>
+        [Test]
+        public static void EveryGlycanBeingHeavierThanTheBoxMassCapIsRefusedByName()
+        {
+            string path = Path_("OGlycan_TooHeavy.gdb");
+            File.WriteAllLines(path, new[] { "(N)" }); // HexNAc, about 203 Da
+            GlobalVariables.OGlycanDatabasePaths.Add(path);
+
+            try
+            {
+                var ex = Assert.Throws<MetaMorpheusException>(() => new GlycoSearchEngine(
+                    new List<GlycoSpectralMatch>[0], new Ms2ScanWithSpecificMass[0],
+                    new List<PeptideWithSetModifications>(), null, null, 0,
+                    new CommonParameters(), null, "OGlycan_TooHeavy.gdb", "NGlycan.gdb",
+                    GlycoSearchType.OGlycanSearch, 30, 3, false, null, maxGlycanBoxMass: 10));
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(ex.Message, Does.Contain("OGlycan_TooHeavy.gdb"));
+                    Assert.That(ex.Message, Does.Contain("maximum glycan box mass"));
+                });
+            }
+            finally
+            {
+                GlobalVariables.OGlycanDatabasePaths.Remove(path);
+            }
+        }
     }
 }
