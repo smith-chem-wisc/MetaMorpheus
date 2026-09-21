@@ -97,15 +97,58 @@ namespace EngineLayer
             // This allows the PSMs to be modified and the order to be preserved
             AllPsms = psms.OrderByDescending(p => p).ToList();
             TrainingVariables = PsmData.trainingInfos[searchType];
-            RetentionTimePredictor = rtPredictor ?? new SSRCalc3RetentionTimePredictor();
             OutputFolder = outputFolder;
             SearchType = searchType;
             SetFileSpecificParameters(fileSpecificParameters);
+
+            // Predict every distinct peptidoform once, in batches, before anything else needs a retention
+            // time. Chronologer serialises its model behind a process-wide lock, so asking it for one
+            // peptide at a time -- which is what both consumers below used to do, one of them from a
+            // 32-thread Parallel.ForEach -- spends the run queueing rather than predicting. Warming here
+            // leaves every later call a dictionary lookup.
+            IRetentionTimePredictor basePredictor = rtPredictor ?? new SSRCalc3RetentionTimePredictor();
+            RetentionTimePredictor = TrainingVariables.Contains("HydrophobicityZScore")
+                ? PrewarmedRetentionTimePredictor.Warm(basePredictor, PeptidesToPredict(psms), MaxThreadsForWarming(fileSpecificParameters))
+                : basePredictor;
+
             BuildFileSpecificDictionaries(psms, TrainingVariables);
             double minQ = searchType == "top-down" ? 0.025 : 0.005; // Less stringent FDR cut-off for top-down
             QValueCutoff = Math.Max(fileSpecificParameters.Select(t => t.fileSpecificParameters.QValueCutoffForPepCalculation).Min(), minQ);
             // If we have more than 100 peptides, we will train on the peptide level. Otherwise, we will train on the PSM level
             UsePeptideLevelQValueForTraining = psms.Select(psm => psm.FullSequence).Distinct().Count(seq => seq.IsNotNullOrEmpty()) >= 100;
+        }
+
+        /// <summary>
+        /// Every peptidoform a retention time will be wanted for. Both consumers guard on
+        /// <see cref="PeptideWithSetModifications"/> before predicting, so warming anything else would
+        /// populate entries that are never read.
+        /// </summary>
+        private static IEnumerable<IRetentionPredictable> PeptidesToPredict(IEnumerable<SpectralMatch> psms)
+        {
+            foreach (SpectralMatch psm in psms ?? Enumerable.Empty<SpectralMatch>())
+            {
+                foreach (SpectralMatchHypothesis match in psm.BestMatchingBioPolymersWithSetMods)
+                {
+                    if (match.SpecificBioPolymer is PeptideWithSetModifications peptide)
+                    {
+                        yield return peptide;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Only parallelises the batched predictor's CPU-side encode phase; inference is serialised under
+        /// the model lock regardless. Falls back to 1 when no file-specific parameters were supplied.
+        /// </summary>
+        private static int MaxThreadsForWarming(
+            List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
+        {
+            int configured = fileSpecificParameters?
+                .Select(p => p.fileSpecificParameters?.MaxThreadsToUsePerFile ?? 1)
+                .DefaultIfEmpty(1)
+                .Max() ?? 1;
+            return Math.Max(1, configured);
         }
 
         public string ComputePEPValuesForAllPSMs()
@@ -173,7 +216,19 @@ namespace EngineLayer
             int positiveTrainingCount = PSMDataGroups.SelectMany(p => p).Count(p => p.Label);
             int negativeTrainingcount = PSMDataGroups.SelectMany(p => p).Count(p => !p.Label);
 
-            return AggregateMetricsForOutput(allMetrics, sumOfAllAmbiguousPeptidesResolved, positiveTrainingCount, negativeTrainingcount, QValueCutoff);
+            string output = AggregateMetricsForOutput(allMetrics, sumOfAllAmbiguousPeptidesResolved, positiveTrainingCount, negativeTrainingcount, QValueCutoff);
+
+            // Surface how many distinct peptidoforms the retention-time model was actually asked about.
+            // Without it the batching is invisible in the log and a regression -- someone reintroducing a
+            // per-peptide call -- would show up only as the run getting slower again.
+            if (RetentionTimePredictor is PrewarmedRetentionTimePredictor prewarmed)
+            {
+                output += Environment.NewLine
+                          + "Retention times predicted for " + prewarmed.WarmedSequenceCount
+                          + " distinct peptidoforms, in batches";
+            }
+
+            return output;
         }
 
         /// <summary>
