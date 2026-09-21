@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -288,6 +288,11 @@ namespace MetaMorpheusGUI
                 new FlankingIonCoverageFilter(),
                 "Flanking Ion Coverage",
                 "Requires flanking ions — a fragment from *before* and one from *after* the mod site, regardless of fragmentation direction."
+            ));
+            FilterOptions.Add(new GptmdFilterViewModel(
+                new CleavageSiteFilter(),
+                "Cleavage Site Preserved",
+                "Rejects an amino acid substitution that creates, destroys or blocks a cleavage site for the selected digestion agent. Such a substitution changes where the protein is cleaved, so the peptide it would actually produce is not the one being scored. Has no effect on modifications that are not substitutions."
             ));
 
             if (isRnaMode)
