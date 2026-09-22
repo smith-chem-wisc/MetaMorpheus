@@ -385,9 +385,9 @@ namespace TaskLayer
 
         public static List<Ms2ScanWithSpecificMass>[] _GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
-            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
-            var ms2Scans = msNScans.Where(p => p.MsnOrder == 2).ToArray();
-            var ms3Scans = msNScans.Where(p => p.MsnOrder == 3).ToArray();
+            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1 && x.RetentionTime >= commonParameters.MinRetentionTimeToSearch && x.RetentionTime <= commonParameters.MaxRetentionTimeToSearch).ToArray();
+            var ms2Scans = msNScans.Where(x => x.MsnOrder == 2 && x.RetentionTime >= commonParameters.MinRetentionTimeToSearch && x.RetentionTime <= commonParameters.MaxRetentionTimeToSearch).ToArray();
+            var ms3Scans = msNScans.Where(x => x.MsnOrder == 3 && x.RetentionTime >= commonParameters.MinRetentionTimeToSearch && x.RetentionTime <= commonParameters.MaxRetentionTimeToSearch).ToArray();
             List<Ms2ScanWithSpecificMass>[] scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[ms2Scans.Length];
 
             if (!ms2Scans.Any())
@@ -583,10 +583,14 @@ namespace TaskLayer
                 {
                     case DIAanalysisType.DIA:
                         var diaEngine = new DIAEngine(myMSDataFile, commonParameters);
-                        return diaEngine.GetPseudoMs2Scans();
+                        return diaEngine.GetPseudoMs2Scans()
+                            .Where(scan => scan.RetentionTime >= commonParameters.MinRetentionTimeToSearch
+                                && scan.RetentionTime <= commonParameters.MaxRetentionTimeToSearch);
                     case DIAanalysisType.ISD:
                         var isdEngine = new ISDEngine(myMSDataFile, commonParameters);
-                        return isdEngine.GetPseudoMs2Scans();
+                        return isdEngine.GetPseudoMs2Scans()
+                            .Where(scan => scan.RetentionTime >= commonParameters.MinRetentionTimeToSearch
+                                && scan.RetentionTime <= commonParameters.MaxRetentionTimeToSearch);
                     default:
                         throw new NotImplementedException("DIA analysis type not implemented.");
                 }
@@ -787,7 +791,9 @@ namespace TaskLayer
                 useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
-                rtPredictorName: commonParams.RTPredictorName);
+                rtPredictorName: commonParams.RTPredictorName,
+                minRetentionTimeToSearch: commonParams.MinRetentionTimeToSearch,
+                maxRetentionTimeToSearch: commonParams.MaxRetentionTimeToSearch);
 
             return returnParams;
         }

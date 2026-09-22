@@ -65,9 +65,17 @@ namespace EngineLayer
             DIAparameters diaParameters = null,
             IFragmentationParams fragmentationParams = null,
             PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic,
-            string rtPredictorName = RTPredictorNames.Chronologer)
+                string rtPredictorName = RTPredictorNames.Chronologer,
+            double minRetentionTimeToSearch = 0,
+            double maxRetentionTimeToSearch = double.MaxValue)
 
         {
+            if (double.IsNaN(minRetentionTimeToSearch) || minRetentionTimeToSearch < 0)
+                throw new ArgumentOutOfRangeException(nameof(minRetentionTimeToSearch), "Minimum retention time must be non-negative.");
+
+            if (double.IsNaN(maxRetentionTimeToSearch) || maxRetentionTimeToSearch < minRetentionTimeToSearch)
+                throw new ArgumentOutOfRangeException(nameof(maxRetentionTimeToSearch), "Maximum retention time must be greater than or equal to minimum retention time.");
+
             TaskDescriptor = taskDescriptor;
             DoPrecursorDeconvolution = doPrecursorDeconvolution;
             UseProvidedPrecursorInfo = useProvidedPrecursorInfo;
@@ -103,6 +111,8 @@ namespace EngineLayer
             MinVariantDepth = minVariantDepth;
             AddTruncations = addTruncations;
             DIAparameters = diaParameters;
+            MinRetentionTimeToSearch = minRetentionTimeToSearch;
+            MaxRetentionTimeToSearch = maxRetentionTimeToSearch;
 
             // product maximum charge state of 10 is a preexisting hard-coded value in MetaMorpheus
             if (deconvolutionMaxAssumedChargeState > 0) // positive mode
@@ -205,6 +215,8 @@ namespace EngineLayer
         public bool AddTruncations { get; private set; }
         public DissociationType DissociationType { get; private set; }
         public string SeparationType { get; private set; }
+        public double MinRetentionTimeToSearch { get; private set; } = 0;
+        public double MaxRetentionTimeToSearch { get; private set; } = double.MaxValue;
 
         public DissociationType MS2ChildScanDissociationType { get; set; }
         public DissociationType MS3ChildScanDissociationType { get; set; }
@@ -293,7 +305,9 @@ namespace EngineLayer
                                 DIAparameters,
                                 FragmentationParameters,
                                 PrecursorMassMatchMode,
-                                RTPredictorName);
+                                RTPredictorName,
+                                MinRetentionTimeToSearch,
+                                MaxRetentionTimeToSearch);
         }
 
         /// <summary>
@@ -346,7 +360,9 @@ namespace EngineLayer
                                 DIAparameters,
                                 FragmentationParameters,
                                 PrecursorMassMatchMode,
-                                RTPredictorName);
+                                RTPredictorName,
+                                MinRetentionTimeToSearch,
+                                MaxRetentionTimeToSearch);
 
             // CustomIons is not a constructor parameter — the constructor reads it from the global
             // dissociation-type dictionary — so copy it across explicitly. GlycoSearchEngine branches on

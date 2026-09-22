@@ -75,5 +75,19 @@ namespace Test
             Assert.That(combined.DigestionParams, Is.EqualTo(original),
                 $"file-specific rebuild changed digestion settings it was not asked to change: {original} became {combined.DigestionParams}");
         }
+
+        [Test]
+        public static void FileSpecificRebuild_PreservesRetentionTimeRange()
+        {
+            var task = new CommonParameters(
+                minRetentionTimeToSearch: 12.5,
+                maxRetentionTimeToSearch: 48.75);
+
+            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task,
+                new FileSpecificParameters { PrecursorMassTolerance = new PpmTolerance(7) });
+
+            Assert.That(combined.MinRetentionTimeToSearch, Is.EqualTo(12.5));
+            Assert.That(combined.MaxRetentionTimeToSearch, Is.EqualTo(48.75));
+        }
     }
 }
