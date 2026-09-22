@@ -1,6 +1,7 @@
 ﻿#nullable enable
 using EngineLayer;
 using GuiFunctions.MetaDraw;
+using EngineLayer.Util;
 using MassSpectrometry;
 using MathNet.Numerics;
 using MzLibUtil;
@@ -15,6 +16,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Input;
+using Chemistry;
+using Precursor = EngineLayer.Util.Precursor;
 
 namespace GuiFunctions;
 
@@ -84,6 +87,18 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
 
             _ = PopulateScansCollection();
             OnPropertyChanged(nameof(Mode));
+        }
+    }
+
+    private bool _applyPrecursorFiltering;
+    public bool ApplyPrecursorFiltering
+    {
+        get => _applyPrecursorFiltering;
+        set
+        {
+            if (_applyPrecursorFiltering == value) return;
+            _applyPrecursorFiltering = value;
+            OnPropertyChanged(nameof(ApplyPrecursorFiltering));
         }
     }
 
@@ -172,9 +187,11 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         DeconvolutedSpecies.Clear();
         if (SelectedMsDataScan == null) return;
 
-        IEnumerable<DeconvolutedSpeciesViewModel> results;
+        IEnumerable<IsotopicEnvelope> results;
         MzRange? isolationRange;
         MsDataScan scanToPlot;
+        var deconParams = GetDeconvolutionParameters(DeconHostViewModel, Mode, SelectedMsDataScan);
+        var deconTolerance = GetDeconvolutionTolerance(deconParams);
 
         double min;
         double max;
@@ -185,7 +202,7 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
             isolationRange = new MzRange(min, max);
 
             scanToPlot = SelectedMsDataScan;
-            results = DeconvoluteFullSpectrum(scanToPlot);
+            results = Deconvolute(scanToPlot, deconParams);
         }
         else
         {
@@ -193,15 +210,29 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
             max = MaxMzToPlot > 0 ? MaxMzToPlot : SelectedMsDataScan.IsolationRange.Maximum + 1;
             isolationRange = SelectedMsDataScan.IsolationRange;
             scanToPlot = SelectedMsDataFile!.GetOneBasedScan(SelectedMsDataScan.OneBasedPrecursorScanNumber!.Value);
-            results = DeconvoluteIsolationRegion(SelectedMsDataScan, scanToPlot);
+            results = DeconvoluteIsolationRegion(SelectedMsDataScan, scanToPlot, deconParams);
         }
 
+        if (ApplyPrecursorFiltering)
+        {
+            var set = new PrecursorSet(deconTolerance, deconParams.ExpectedIsotopeSpacing);
+            foreach (var envelope in results)
+            {
+                if (envelope != null)
+                    set.Add(new Precursor(envelope));
+            }
+            set.Sanitize();
+            results = set.Select(p => p.Envelope!).Where(p => p != null);
+        }
+
+        // Project to view models and sort
         var sortedSpecies = results
-            .Where(p => isolationRange is null || p.Envelope.Peaks.Any(peak => isolationRange.Contains(peak.mz)) 
-            && p.Envelope.Charge >= MinChargeToAnnotate && p.Envelope.Charge <= MaxChargeToAnnotate 
-            && p.MonoMz <= max && p.MonoMz >= min)
+            .Where(p => isolationRange is null || p.Peaks.Any(peak => isolationRange.Contains(peak.mz)) 
+            && p.Charge >= MinChargeToAnnotate && p.Charge <= MaxChargeToAnnotate 
+            && p.MonoisotopicMass.ToMz(p.Charge) <= max && p.MonoisotopicMass.ToMz(p.Charge) >= min)
             .OrderByDescending(p => p.MonoisotopicMass.Round(2))
             .ThenByDescending(p => p.Charge)
+            .Select(envelope => new DeconvolutedSpeciesViewModel(envelope))
             .ToList();
 
         foreach (var species in sortedSpecies)
@@ -210,13 +241,24 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
         Plot = new DeconvolutionPlot(plotView, scanToPlot, sortedSpecies, Mode, isolationRange);
     }
 
-    private IEnumerable<DeconvolutedSpeciesViewModel> DeconvoluteFullSpectrum(MsDataScan scan) 
-        => Deconvoluter.Deconvolute(scan, scan.MsnOrder == 1 ? DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters : DeconHostViewModel.ProductDeconvolutionParameters.Parameters)
-        .Select(envelope => new DeconvolutedSpeciesViewModel(envelope));
+    internal static DeconvolutionParameters GetDeconvolutionParameters(DeconHostViewModel deconHostViewModel, DeconvolutionMode mode, MsDataScan? selectedMsDataScan)
+        => mode == DeconvolutionMode.IsolationRegion || selectedMsDataScan?.MsnOrder == 1
+            ? deconHostViewModel.PrecursorDeconvolutionParameters.Parameters
+            : deconHostViewModel.ProductDeconvolutionParameters.Parameters;
 
-    private IEnumerable<DeconvolutedSpeciesViewModel> DeconvoluteIsolationRegion(MsDataScan scan, MsDataScan precursorScan) 
-        => scan.GetIsolatedMassesAndCharges(precursorScan, DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters)
-        .Select(envelope => new DeconvolutedSpeciesViewModel(envelope));
+    internal static Tolerance GetDeconvolutionTolerance(DeconvolutionParameters parameters)
+        => parameters switch
+        {
+            ClassicDeconvolutionParameters classicParameters => new PpmTolerance(classicParameters.DeconvolutionTolerancePpm),
+            IsoDecDeconvolutionParameters isoDecParameters => new PpmTolerance(isoDecParameters.MatchTolerance),
+            _ => throw new ArgumentOutOfRangeException(nameof(parameters), parameters.DeconvolutionType, "Unsupported deconvolution type")
+        };
+
+    private static IEnumerable<IsotopicEnvelope> Deconvolute(MsDataScan scan, DeconvolutionParameters deconParams)
+        => Deconvoluter.Deconvolute(scan, deconParams);
+
+    private static IEnumerable<IsotopicEnvelope> DeconvoluteIsolationRegion(MsDataScan scan, MsDataScan precursorScan, DeconvolutionParameters deconParams) 
+        => scan.GetIsolatedMassesAndCharges(precursorScan, deconParams);
 
     private async Task PopulateScansCollection()
     {
