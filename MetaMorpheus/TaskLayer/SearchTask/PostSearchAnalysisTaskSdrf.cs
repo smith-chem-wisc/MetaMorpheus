@@ -170,9 +170,27 @@ namespace TaskLayer
         /// is exactly what SDRF's <c>source name</c> is. TmtDesign.txt's replicate and fraction
         /// numbers are already 1-based, so unlike ExperimentalDesign.tsv nothing is added to them.
         ///
-        /// A channel marked Empty is skipped: it holds no sample, and without
-        /// <c>characteristics[sample type]</c> (not written yet) its row would read as a study sample.
-        /// A channel the design does not annotate is skipped for the same reason.
+        /// EVERY annotated channel is written, including one marked Empty. Skipping Empty channels was
+        /// the first attempt and it is wrong twice over (QuantProject thread 002 §5):
+        ///
+        /// 1. It breaks the round trip BY CONSTRUCTION. The document then has fewer rows than the
+        ///    design has channels, so a reader projecting the SDRF back into a design cannot
+        ///    reproduce what was searched -- a loss that would have to be enumerated rather than one
+        ///    anybody wants.
+        /// 2. It changes the plex downstream tooling infers. bigbio's <c>infer_tmtplex</c> reads the
+        ///    SET OF LABELS per file; a short set has already been measured inferring the wrong plex,
+        ///    and wrong default TMT modifications follow from that.
+        ///
+        /// An empty channel is a real channel of a real plex, not absent data, and <c>empty</c> is a
+        /// value the curated corpus writes. Still no <c>characteristics[sample type]</c> column until
+        /// QuantProject's M4 puts the concept in mzLib: when it lands, the only change here is a
+        /// column appearing, never rows reappearing.
+        ///
+        /// A channel the design does not annotate at all is still not written, and that is a
+        /// different question -- it has no biological replicate, and inventing one is QP-S6, which
+        /// QuantProject owes us. <see cref="TmtExperimentalDesign.ToMzLibDesign"/> makes such a
+        /// channel Empty for quantification's positional array; doing the same here would put a row
+        /// in the file asserting a replicate nobody stated.
         /// </summary>
         private static IEnumerable<SdrfRowInput> BuildChannelRows(TmtFileInfo tmtFile, IsobaricMassTagType tagType,
             CvParam organism, SdrfAssay assay)
@@ -184,13 +202,21 @@ namespace TaskLayer
                 return index < 0 ? int.MaxValue : index;
             }
 
-            foreach (var annotation in tmtFile.Annotations
-                         .Where(a => a.SampleType != TmtSampleType.Empty)
-                         .OrderBy(a => OrderOf(a.Tag)))
+            string stem = Path.GetFileNameWithoutExtension(tmtFile.FullFilePathWithExtension);
+
+            foreach (var annotation in tmtFile.Annotations.OrderBy(a => OrderOf(a.Tag)))
             {
                 var sample = new SdrfSample
                 {
-                    SourceName = annotation.SampleName,
+                    // An empty channel is the one case where the design may leave the sample name
+                    // blank, and source name is the column REQ-2 keys sample blocks on -- so it has
+                    // to be present and distinct. File stem plus tag is both, and it is built only
+                    // from facts already in the row. It deliberately does not spell "empty": that
+                    // belongs in characteristics[sample type] when M4 lands, and encoding it here
+                    // would mean rewriting source names -- and breaking joins -- on the day it does.
+                    SourceName = string.IsNullOrWhiteSpace(annotation.SampleName)
+                        ? stem + " " + annotation.Tag.Trim()
+                        : annotation.SampleName,
                     Organism = organism,
                     BiologicalReplicate = annotation.BiologicalReplicate,
                     Label = ResolveChannelLabel(tagType, annotation.Tag),

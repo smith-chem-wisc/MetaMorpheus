@@ -550,7 +550,9 @@ namespace Test
         /// The whole isobaric feature, end to end, on the TMT11 fixture MultiplexQuantificationTests
         /// uses. A TMT search with a TmtDesign.txt writes one row per sample per channel: the source
         /// name is the design's sample, the label is the channel's PRIDE term, the rows run in
-        /// reporter m/z order, and an Empty channel gets no row.
+        /// reporter m/z order, and EVERY annotated channel gets a row -- including the Empty one,
+        /// whose absence would shorten the label set infer_tmtplex reads and make the round trip
+        /// impossible by construction (QuantProject 002 §5).
         ///
         /// The document is then handed to mzLib's two independent readers of SDRF. The validator
         /// checks the row key (source name + assay name + label) is unique; the quantification auditor
@@ -566,9 +568,10 @@ namespace Test
             var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
             document.LoadResults();
 
-            var expectedChannels = Tmt11Channels.Take(Tmt11Channels.Length - 1).ToList();
+            var expectedChannels = Tmt11Channels.ToList();
             Assert.That(document.Results.Count, Is.EqualTo(expectedChannels.Count),
-                "One row per annotated, non-empty channel of the one file this run searched.");
+                "One row per annotated channel of the one file this run searched -- all eleven, so " +
+                "the channel count in the file is the plex size.");
 
             for (int i = 0; i < expectedChannels.Count; i++)
             {
@@ -582,8 +585,12 @@ namespace Test
                     "Every channel of one file is one assay.");
             }
 
-            Assert.That(document.Results.Any(r => r["comment[label]"].Contains("TMT131C")), Is.False,
-                "The Empty channel holds no sample and gets no row.");
+            Assert.That(document.Results.Any(r => r["comment[label]"].Contains("TMT131C")), Is.True,
+                "The Empty channel is a real channel of a real plex: it gets a row, so the set of " +
+                "labels in this file is the whole plex and not ten elevenths of it.");
+            Assert.That(document.Header.Contains("characteristics[sample type]"), Is.False,
+                "Nothing here knows what a sample type is until QuantProject's M4 lands, and a " +
+                "column that would have to guess is worse than one that is absent.");
 
             SdrfValidationResult validation = SdrfValidator.Validate(document);
             Assert.That(validation.Errors, Is.Empty, "mzLib's validator rejects the TMT SDRF: " + validation);
@@ -592,6 +599,45 @@ namespace Test
             Assert.That(audit.Kind, Is.EqualTo(SdrfQuantKind.ChannelLevel), audit.ToReport());
             Assert.That(audit.Channels, Has.Count.EqualTo(expectedChannels.Count), audit.ToReport());
             Assert.That(audit.DuplicateFileLabelPairs, Is.Empty, audit.ToReport());
+
+            Directory.Delete(root, true);
+        }
+
+        /// <summary>
+        /// An empty channel whose design row names no sample still gets a row, with a source name
+        /// that is present and distinct.
+        ///
+        /// This is the case that writing every channel creates. A design is allowed to leave an empty
+        /// channel's sample name blank, and `source name` is the one column REQ-2 keys incoming sample
+        /// blocks on (D27) -- so a blank there would either collide two empty channels into one sample
+        /// or be written as a reserved word, and both are worse than naming the channel after the file
+        /// and tag it actually is.
+        ///
+        /// What it deliberately does NOT do is spell "empty" in the source name. That fact belongs in
+        /// characteristics[sample type] when M4 lands, and putting it here would mean rewriting source
+        /// names -- and breaking every join made against them -- on the day it does.
+        /// </summary>
+        [Test]
+        public static void AnUnnamedEmptyChannelIsStillNamedInTheDocument()
+        {
+            string root = RunTmtSearchWritingSdrf("SdrfOutput_TmtUnnamedEmpty", writeDesign: true,
+                out string output, out _, emptyChannelIsUnnamed: true);
+
+            var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
+            document.LoadResults();
+
+            Assert.That(document.Results.Count, Is.EqualTo(Tmt11Channels.Length),
+                "Every annotated channel is written whether or not its sample is named.");
+
+            SdrfRow empty = document.Results.Single(r => r["comment[label]"].Contains("TMT131C"));
+            Assert.That(empty["source name"], Is.EqualTo("VA084TQ_6 131C"),
+                "The file and the tag are facts already in the row, and together they are unique.");
+            Assert.That(document.Results.Select(r => r["source name"]).Distinct().Count(),
+                Is.EqualTo(Tmt11Channels.Length),
+                "No two channels of one file may share a source name.");
+
+            SdrfValidationResult validation = SdrfValidator.Validate(document);
+            Assert.That(validation.Errors, Is.Empty, "mzLib's validator rejects the document: " + validation);
 
             Directory.Delete(root, true);
         }
@@ -699,7 +745,8 @@ namespace Test
         /// one the design reader refuses. Returns the root folder to delete.
         /// </summary>
         private static string RunTmtSearchWritingSdrf(string folderName, bool writeDesign,
-            out string output, out List<string> warnings, bool designIsUnusable = false)
+            out string output, out List<string> warnings, bool designIsUnusable = false,
+            bool emptyChannelIsUnnamed = false)
         {
             string root = Path.Combine(TestContext.CurrentContext.TestDirectory, folderName);
             if (Directory.Exists(root)) Directory.Delete(root, true);
@@ -711,10 +758,16 @@ namespace Test
 
             if (writeDesign)
             {
+                bool IsEmptyChannel(int i) => i == Tmt11Channels.Length - 1;
                 var designRows = Tmt11Channels
-                    .Select((tag, i) => $"{mzml}\tPlex1\tSample{i + 1}\t{tag}\tCond{(i % 2 == 0 ? "A" : "B")}\t{i / 2 + 1}\t1\t1\t" +
-                                        (designIsUnusable ? "not a sample type"
-                                            : i == Tmt11Channels.Length - 1 ? "empty" : "study sample"))
+                    .Select((tag, i) =>
+                        $"{mzml}	Plex1	" +
+                        // A design may leave an empty channel's sample name blank -- there is no
+                        // sample to name -- and a real one often does.
+                        (emptyChannelIsUnnamed && IsEmptyChannel(i) ? "" : $"Sample{i + 1}") +
+                        $"	{tag}	Cond{(i % 2 == 0 ? "A" : "B")}	{i / 2 + 1}	1	1	" +
+                        (designIsUnusable ? "not a sample type"
+                            : IsEmptyChannel(i) ? "empty" : "study sample"))
                     .Reverse();
                 File.WriteAllLines(Path.Combine(dataFolder, GlobalVariables.TmtExperimentalDesignFileName),
                     new[] { TmtExperimentalDesign.Header }.Concat(designRows));
