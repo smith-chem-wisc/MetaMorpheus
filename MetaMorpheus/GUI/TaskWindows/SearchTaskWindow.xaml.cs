@@ -325,6 +325,10 @@ namespace MetaMorpheusGUI
             RenameTCProteinsRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RenameProtein;
             AllAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
             MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
+            MinRetentionTimeTextBox.Text = task.CommonParameters.MinRetentionTimeToSearch.ToString(CultureInfo.InvariantCulture);
+            MaxRetentionTimeTextBox.Text = task.CommonParameters.MaxRetentionTimeToSearch == double.MaxValue
+                ? ""
+                : task.CommonParameters.MaxRetentionTimeToSearch.ToString(CultureInfo.InvariantCulture);
             TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             AddTruncationsCheckBox.IsChecked = task.CommonParameters.AddTruncations;
@@ -600,6 +604,11 @@ namespace MetaMorpheusGUI
             bool TrimMsMsPeaks = TrimMsMs.IsChecked.Value;
             bool AddTruncations = AddTruncationsCheckBox.IsChecked.Value;
 
+            if (!TryParseRetentionTimeRange(out double minRetentionTime, out double maxRetentionTime))
+            {
+                return;
+            }
+
             int? numPeaksToKeep = null;
             if (int.TryParse(NumberOfPeaksToKeepPerWindowTextBox.Text, out int numberOfPeaksToKeeep))
             {
@@ -673,6 +682,8 @@ namespace MetaMorpheusGUI
                 productDeconParams: productDeconvolutionParameters,
                 precursorMassMatchMode: _massDifferenceAcceptorViewModel.PrecursorMassMatchMode,
                 fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams(),
+                minRetentionTimeToSearch: minRetentionTime,
+                maxRetentionTimeToSearch: maxRetentionTime,
                 rtPredictorName: rtPredictorModelName);
 
             if (ClassicSearchRadioButton.IsChecked.Value)
@@ -806,6 +817,36 @@ namespace MetaMorpheusGUI
             TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;
+        }
+
+        private bool TryParseRetentionTimeRange(out double minimum, out double maximum)
+        {
+            minimum = 0;
+            maximum = double.MaxValue;
+
+            if (!string.IsNullOrWhiteSpace(MinRetentionTimeTextBox.Text)
+                && (!double.TryParse(MinRetentionTimeTextBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out minimum)
+                    || minimum < 0))
+            {
+                MessageBox.Show("Minimum retention time must be a non-negative number of minutes.", "Invalid retention time", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(MaxRetentionTimeTextBox.Text)
+                && (!double.TryParse(MaxRetentionTimeTextBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out maximum)
+                    || maximum < 0))
+            {
+                MessageBox.Show("Maximum retention time must be a non-negative number of minutes or blank.", "Invalid retention time", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+
+            if (maximum < minimum)
+            {
+                MessageBox.Show("Maximum retention time must be greater than or equal to minimum retention time.", "Invalid retention time", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+
+            return true;
         }
 
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
