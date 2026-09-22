@@ -67,11 +67,7 @@ namespace TaskLayer
 
         internal void AddResultText(string resultsText)
         {
-            // Engines report here as they finish, which can be from several threads when a task searches spectra files at once.
-            lock (resultTexts)
-            {
-                resultTexts.Add(resultsText);
-            }
+            resultTexts.Add(resultsText);
         }
 
         internal void AddPsmPeptideProteinSummaryText(string targetTextString)
