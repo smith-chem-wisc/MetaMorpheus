@@ -16,7 +16,6 @@ namespace TaskLayer
             GlycoSearchTopNum = 50;
             MaximumOGlycanAllowed = 4;
             MaximumGlycanBoxMass = EngineLayer.GlycanBox.DefaultMaximumGlycanBoxMass;
-            MaximumSpectraFilesInParallel = 0;
             DoParsimony = true;
             NoOneHitWonders = false;
             ModPeptidesAreDifferent = false;
@@ -50,12 +49,6 @@ namespace TaskLayer
         /// Applies to O-, N- and N+O searches; in an N-glycan search the box is the single N-glycan.
         /// </summary>
         public double MaximumGlycanBoxMass { get; set; }
-
-        /// <summary>
-        /// Most spectra files searched at the same time. 0 decides from the thread budget (MaxThreadsToUsePerFile, divided across the
-        /// files) and free memory; 1 searches files one after another.
-        /// </summary>
-        public int MaximumSpectraFilesInParallel { get; set; }
 
         public bool DoParsimony { get; set; }
         public bool NoOneHitWonders { get; set; }

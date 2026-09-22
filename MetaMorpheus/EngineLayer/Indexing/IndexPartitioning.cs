@@ -289,7 +289,7 @@ namespace EngineLayer.Indexing
         /// not, this process sees the whole node, so a job entitled to 16 GB of a 512 GB node would otherwise
         /// size its index against the node's free memory and be killed for exceeding its allocation.
         /// </summary>
-        public static long AvailableBytes()
+        private static long AvailableBytes()
         {
             GCMemoryInfo info = GC.GetGCMemoryInfo();
             long total = info.TotalAvailableMemoryBytes;

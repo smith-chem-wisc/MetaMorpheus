@@ -355,22 +355,6 @@ namespace EngineLayer
             return clone;
         }
 
-        /// <summary>
-        /// Copy with a different MaxThreadsToUsePerFile, for dividing a task's thread budget across spectra files searched at
-        /// once. Returns a new instance for the same reason as <see cref="CloneWithNewTotalPartitions"/>: the task's own
-        /// CommonParameters may be what a file was handed. Construct copies on one thread: the constructor reads and clears the
-        /// process-wide custom product-type list.
-        /// </summary>
-        public CommonParameters CloneWithNewMaxThreadsToUsePerFile(int maxThreadsToUsePerFile)
-        {
-            // Copied by the method that already copies everything, then the one setting that differs is set on the copy - a
-            // second copy of the constructor's argument list would be one more place to forget when CommonParameters gains a
-            // setting. The setter is private, which is no obstacle from inside the class.
-            CommonParameters clone = CloneWithNewTotalPartitions(TotalPartitions);
-            clone.MaxThreadsToUsePerFile = maxThreadsToUsePerFile;
-            return clone;
-        }
-
         public void SetCustomProductTypes()
         {
             DigestionParams.ProductsFromDissociationType()[MassSpectrometry.DissociationType.Custom] = CustomIons;
