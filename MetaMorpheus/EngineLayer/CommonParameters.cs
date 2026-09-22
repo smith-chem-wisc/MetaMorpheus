@@ -216,7 +216,7 @@ namespace EngineLayer
         public DissociationType DissociationType { get; private set; }
         public string SeparationType { get; private set; }
         public double MinRetentionTimeToSearch { get; private set; } = 0;
-        public double MaxRetentionTimeToSearch { get; private set; } = double.MaxValue;
+        public double MaxRetentionTimeToSearch { get; private set; } = 1000;
 
         public DissociationType MS2ChildScanDissociationType { get; set; }
         public DissociationType MS3ChildScanDissociationType { get; set; }
