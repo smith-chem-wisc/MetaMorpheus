@@ -5,78 +5,60 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:MetaMorpheusGUI"
       mc:Ignorable="d" 
-       Title="Add custom amino acid" Height="125" Width="380" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+        Width="380" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+    <Window.Title>
+        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Add custom amino acid" />
+    </Window.Title>
     <Grid>
         <StackPanel Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="5">
-            <!--Modification name-->
+            <!--Residue name-->
             <StackPanel Orientation="Horizontal">
-                <Label Content="Single Character Abbreviation" Width="190"></Label>
-                <TextBox x:Name="AminoAcidTextBox" Width="155" Height="20">
+                <Label Width="190">
+                    <Label.Content>
+                        <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Amino acid name"/>
+                    </Label.Content>
+                </Label>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="155" Height="20" />
+            </StackPanel>
+            <!--Single character abbreviation-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Single Character Abbreviation" Width="190" />
+                <TextBox Text="{Binding OneLetterCode, UpdateSourceTrigger=PropertyChanged}" Width="155" Height="20">
                     <ToolTipService.ToolTip>
-                        <ToolTip Content="Single amino acid character (case-sensitive)."/>
+                        <ToolTip Content="Single residue character (case-sensitive)."/>
                     </ToolTipService.ToolTip>
-                    <TextBox.Style>
-                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
-                            <Style.Resources>
-                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
-                                    <VisualBrush.Visual>
-                                        <Label Content="ex: 'a', 'z', '!', '$'" Foreground="Gray" />
-                                    </VisualBrush.Visual>
-                                </VisualBrush>
-                            </Style.Resources>
-                            <Style.Triggers>
-                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
-                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                </Trigger>
-                                <Trigger Property="Text" Value="{x:Null}">
-                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                </Trigger>
-                                <Trigger Property="IsKeyboardFocused" Value="True">
-                                    <Setter Property="Background" Value="White" />
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBox.Style>
+                </TextBox>
+            </StackPanel>
+            <!--Nucleotide symbol-->
+            <StackPanel Orientation="Horizontal"
+                        Visibility="{Binding IsSymbolVisible, Converter={StaticResource bool2VisConverter}}">
+                <Label Content="Three Letter Abbreviation" Width="190" />
+                <TextBox Text="{Binding Symbol, UpdateSourceTrigger=PropertyChanged}" Width="155" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Three-letter nucleotide symbol (case-sensitive)."/>
+                    </ToolTipService.ToolTip>
                 </TextBox>
             </StackPanel>
             <!--Chemical formula-->
             <StackPanel Orientation="Vertical" Width="350">
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="Chemical Formula" Width="190"></Label>
-                    <TextBox Name="ChemicalFormulaTextBox" Width="155" Height="20">
+                    <Label Content="Chemical Formula" Width="190" />
+                    <TextBox Text="{Binding ChemicalFormula, UpdateSourceTrigger=PropertyChanged}" Width="155" Height="20">
                         <ToolTipService.ToolTip>
-                            <ToolTip Content="Chemical formula, example: 'C3H5NOS'"/>
+                            <ToolTip Content="Chemical formula, example: 'C3H5NOS'."/>
                         </ToolTipService.ToolTip>
-                        <TextBox.Style>
-                            <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
-                                <Style.Resources>
-                                    <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
-                                        <VisualBrush.Visual>
-                                            <Label Content="ex: 'C3H5NOS'" Foreground="Gray" />
-                                        </VisualBrush.Visual>
-                                    </VisualBrush>
-                                </Style.Resources>
-                                <Style.Triggers>
-                                    <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
-                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                    </Trigger>
-                                    <Trigger Property="Text" Value="{x:Null}">
-                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                    </Trigger>
-                                    <Trigger Property="IsKeyboardFocused" Value="True">
-                                        <Setter Property="Background" Value="White" />
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBox.Style>
                     </TextBox>
                 </StackPanel>
             </StackPanel>
+            <TextBlock Text="{Binding ValidationMessage}" Foreground="DarkRed" TextWrapping="Wrap" Margin="5,3,5,0" />
         </StackPanel>
         <!--Save and cancel buttons-->
         <StackPanel Orientation="Horizontal" Height="35" VerticalAlignment="Bottom" HorizontalAlignment="Center"  >
-            <Button Name="saveButton" Content="Save Amino Acid" FontSize="13" Margin="5" Width="100" Click="SaveCustomAminoAcid_Click" />
-            <Button Name="cancelButton" Content="Cancel" FontSize="13" Margin="5" Width="100" Click="CancelCustomAminoAcid_Click" />
+            <Button Name="saveButton" FontSize="13" Margin="5" Width="100"
+                    Content="{Binding Converter={StaticResource ProteinRnaTerminologyConverter}, ConverterParameter='Save amino acid'}"
+                    Command="{Binding SaveCommand}" IsEnabled="{Binding CanSave}" />
+            <Button Name="cancelButton" Content="Cancel" FontSize="13" Margin="5" Width="100"
+                    Command="{Binding CancelCommand}" />
         </StackPanel>
     </Grid>
 </Window>
