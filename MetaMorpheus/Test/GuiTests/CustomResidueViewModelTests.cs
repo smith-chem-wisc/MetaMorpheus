@@ -211,6 +211,85 @@ namespace Test.GuiTests
             }
         }
 
+        [Test]
+        public void SaveCommandCreatesAminoAcidsFileWhenMissing()
+        {
+            bool originalMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
+            string path = Path.Combine(GlobalVariables.DataDir, "CustomAminoAcids", "CustomAminoAcids.txt");
+            bool hadFile = File.Exists(path);
+            string[] originalLines = hadFile ? File.ReadAllLines(path) : Array.Empty<string>();
+
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+
+                using var viewModel = new CustomResidueViewModel
+                {
+                    Name = "Test missing amino-acid file",
+                    OneLetterCode = GetUnusedAminoAcidLetter().ToString(),
+                    ChemicalFormula = "C2H3NO"
+                };
+
+                viewModel.SaveCommand.Execute(null);
+
+                Assert.That(File.Exists(path), Is.True);
+                char letter = viewModel.OneLetterCode[0];
+                Assert.That(File.ReadAllLines(path)
+                    .Any(line => line.StartsWith($"Test missing amino-acid file\t{letter}\t")), Is.True);
+            }
+            finally
+            {
+                if (hadFile)
+                    File.WriteAllLines(path, originalLines);
+                else if (File.Exists(path))
+                    File.Delete(path);
+
+                GuiGlobalParamsViewModel.Instance.IsRnaMode = originalMode;
+            }
+        }
+
+        [Test]
+        public void SaveCommandCreatesNucleotidesFileWhenMissing()
+        {
+            bool originalMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
+            string path = Path.Combine(GlobalVariables.DataDir, "CustomNucleotides", "CustomNucleotides.txt");
+            bool hadFile = File.Exists(path);
+            string[] originalLines = hadFile ? File.ReadAllLines(path) : Array.Empty<string>();
+
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+
+                using var viewModel = new CustomResidueViewModel
+                {
+                    Name = "Test missing nucleotide file",
+                    OneLetterCode = GetUnusedNucleotideLetter().ToString(),
+                    ChemicalFormula = "C5H5N2O2"
+                };
+                viewModel.Symbol = $"T{viewModel.OneLetterCode}m";
+
+                viewModel.SaveCommand.Execute(null);
+
+                Assert.That(File.Exists(path), Is.True);
+                char letter = viewModel.OneLetterCode[0];
+                Assert.That(File.ReadAllLines(path)
+                    .Any(line => line.StartsWith($"Test missing nucleotide file\t{letter}\t{viewModel.Symbol}\t")), Is.True);
+            }
+            finally
+            {
+                if (hadFile)
+                    File.WriteAllLines(path, originalLines);
+                else if (File.Exists(path))
+                    File.Delete(path);
+
+                GuiGlobalParamsViewModel.Instance.IsRnaMode = originalMode;
+            }
+        }
+
         // ── Identical-set guard tests ─────────────────────────────────────────
 
         [Test]
