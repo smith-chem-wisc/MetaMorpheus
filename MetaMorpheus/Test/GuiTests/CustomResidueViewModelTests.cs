@@ -211,6 +211,213 @@ namespace Test.GuiTests
             }
         }
 
+        // ── Identical-set guard tests ─────────────────────────────────────────
+
+        [Test]
+        public void SettingNameToSameValueDoesNotFirePropertyChanged()
+        {
+            bool originalMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
+
+            try
+            {
+                using var viewModel = new CustomResidueViewModel { Name = "Same" };
+                int eventCount = 0;
+                viewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(viewModel.Name)) eventCount++; };
+
+                viewModel.Name = "Same";
+
+                Assert.That(eventCount, Is.Zero);
+            }
+            finally
+            {
+                GuiGlobalParamsViewModel.Instance.IsRnaMode = originalMode;
+            }
+        }
+
+        [Test]
+        public void SettingOneLetterCodeToSameValueDoesNotFirePropertyChanged()
+        {
+            bool originalMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
+
+            try
+            {
+                using var viewModel = new CustomResidueViewModel { OneLetterCode = "q" };
+                int eventCount = 0;
+                viewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(viewModel.OneLetterCode)) eventCount++; };
+
+                viewModel.OneLetterCode = "q";
+
+                Assert.That(eventCount, Is.Zero);
+            }
+            finally
+            {
+                GuiGlobalParamsViewModel.Instance.IsRnaMode = originalMode;
+            }
+        }
+
+        [Test]
+        public void SettingSymbolToSameValueDoesNotFirePropertyChanged()
+        {
+            bool originalMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
+
+            try
+            {
+                using var viewModel = new CustomResidueViewModel { Symbol = "Xyz" };
+                int eventCount = 0;
+                viewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(viewModel.Symbol)) eventCount++; };
+
+                viewModel.Symbol = "Xyz";
+
+                Assert.That(eventCount, Is.Zero);
+            }
+            finally
+            {
+                GuiGlobalParamsViewModel.Instance.IsRnaMode = originalMode;
+            }
+        }
+
+        [Test]
+        public void SettingChemicalFormulaToSameValueDoesNotFirePropertyChanged()
+        {
+            bool originalMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
+
+            try
+            {
+                using var viewModel = new CustomResidueViewModel { ChemicalFormula = "C2H3NO" };
+                int eventCount = 0;
+                viewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(viewModel.ChemicalFormula)) eventCount++; };
+
+                viewModel.ChemicalFormula = "C2H3NO";
+
+                Assert.That(eventCount, Is.Zero);
+            }
+            finally
+            {
+                GuiGlobalParamsViewModel.Instance.IsRnaMode = originalMode;
+            }
+        }
+
+        // ── Remaining validation-message branch tests ─────────────────────────
+
+        [Test]
+        public void OneLetterCodeWrongLengthFailsValidation()
+        {
+            bool originalMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
+
+            try
+            {
+                using var viewModel = new CustomResidueViewModel
+                {
+                    Name = "Test residue",
+                    OneLetterCode = "ab"
+                };
+
+                Assert.That(viewModel.CanSave, Is.False);
+                Assert.That(viewModel.ValidationMessage,
+                    Is.EqualTo("The one-letter abbreviation must contain exactly one character."));
+            }
+            finally
+            {
+                GuiGlobalParamsViewModel.Instance.IsRnaMode = originalMode;
+            }
+        }
+
+        [Test]
+        public void ProteinModeRejectsReservedAminoAcidCharacter()
+        {
+            bool originalMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
+
+            try
+            {
+                char reserved = GlobalVariables.InvalidAminoAcids.First();
+                using var viewModel = new CustomResidueViewModel
+                {
+                    Name = "Reserved test",
+                    OneLetterCode = reserved.ToString(),
+                    ChemicalFormula = "C2H3NO"
+                };
+
+                Assert.That(viewModel.CanSave, Is.False);
+                Assert.That(viewModel.ValidationMessage,
+                    Is.EqualTo($"The amino acid character '{reserved}' is reserved and cannot be assigned."));
+            }
+            finally
+            {
+                GuiGlobalParamsViewModel.Instance.IsRnaMode = originalMode;
+            }
+        }
+
+        [Test]
+        public void RnaModeRejectsDuplicateNucleotideLetter()
+        {
+            bool originalMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
+
+            try
+            {
+                // 'A' maps to Adenine in the default nucleotide table
+                char existingLetter = 'A';
+                Assert.That(Nucleotide.TryGetResidue(existingLetter, out _), Is.True,
+                    "Precondition: 'A' must be a known nucleotide letter.");
+
+                string unusedSymbol = $"X{GetUnusedNucleotideLetter()}x";
+                using var viewModel = new CustomResidueViewModel
+                {
+                    Name = "Duplicate letter nucleotide",
+                    OneLetterCode = existingLetter.ToString(),
+                    Symbol = unusedSymbol,
+                    ChemicalFormula = "C5H5N2O2"
+                };
+
+                Assert.That(viewModel.CanSave, Is.False);
+                Assert.That(viewModel.ValidationMessage,
+                    Is.EqualTo($"The nucleotide letter '{existingLetter}' already exists."));
+            }
+            finally
+            {
+                GuiGlobalParamsViewModel.Instance.IsRnaMode = originalMode;
+            }
+        }
+
+        [Test]
+        public void RnaModeRejectsDuplicateNucleotideName()
+        {
+            bool originalMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
+
+            try
+            {
+                // "Adenine" is a standard nucleotide name
+                const string existingName = "Adenine";
+                Assert.That(Nucleotide.TryGetResidue(existingName, out _), Is.True,
+                    "Precondition: 'Adenine' must be a known nucleotide name.");
+
+                char unusedLetter = GetUnusedNucleotideLetter();
+                string unusedSymbol = $"X{unusedLetter}x";
+                using var viewModel = new CustomResidueViewModel
+                {
+                    Name = existingName,
+                    OneLetterCode = unusedLetter.ToString(),
+                    Symbol = unusedSymbol,
+                    ChemicalFormula = "C5H5N2O2"
+                };
+
+                Assert.That(viewModel.CanSave, Is.False);
+                Assert.That(viewModel.ValidationMessage,
+                    Is.EqualTo($"The nucleotide name '{existingName}' already exists."));
+            }
+            finally
+            {
+                GuiGlobalParamsViewModel.Instance.IsRnaMode = originalMode;
+            }
+        }
+
         private static char GetUnusedAminoAcidLetter() => Enumerable.Range('a', 'z' - 'a' + 1)
             .Select(value => (char)value)
             .First(letter => !Residue.TryGetResidue(letter, out _));
