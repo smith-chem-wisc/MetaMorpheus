@@ -80,14 +80,13 @@ namespace Test
         public static void FileSpecificRebuild_PreservesRetentionTimeRange()
         {
             var task = new CommonParameters(
-                minRetentionTimeToSearch: 12.5,
-                maxRetentionTimeToSearch: 48.75);
+                retentionTimeRange: new DoubleRange(12.5, 48.75));
 
             var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task,
                 new FileSpecificParameters { PrecursorMassTolerance = new PpmTolerance(7) });
 
-            Assert.That(combined.MinRetentionTimeToSearch, Is.EqualTo(12.5));
-            Assert.That(combined.MaxRetentionTimeToSearch, Is.EqualTo(48.75));
+            Assert.That(combined.RetentionTimeRange.Minimum, Is.EqualTo(12.5));
+            Assert.That(combined.RetentionTimeRange.Maximum, Is.EqualTo(48.75));
         }
     }
 }

@@ -112,8 +112,10 @@ namespace Test
             {
                 int digestionSection = lines.FindIndex(line => line.Equals("[CommonParameters.DigestionParams]", StringComparison.Ordinal));
                 Assert.That(digestionSection, Is.GreaterThan(0), "The test task must contain CommonParameters.DigestionParams.");
-                lines.Insert(digestionSection, $"MinRetentionTimeToSearch = {(minimumRetentionTime ?? 0).ToString(System.Globalization.CultureInfo.InvariantCulture)}");
-                lines.Insert(digestionSection + 1, $"MaxRetentionTimeToSearch = {(maximumRetentionTime ?? double.MaxValue).ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+                string maximum = maximumRetentionTime.HasValue
+                    ? maximumRetentionTime.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    : "MaxValue";
+                lines.Insert(digestionSection, $"RetentionTimeRange = \"{(minimumRetentionTime ?? 0).ToString(System.Globalization.CultureInfo.InvariantCulture)};{maximum}\"");
             }
 
             File.WriteAllLines(taskConfigPath, lines);

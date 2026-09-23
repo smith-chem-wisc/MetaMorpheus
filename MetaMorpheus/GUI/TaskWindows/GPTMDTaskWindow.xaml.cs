@@ -116,10 +116,10 @@ namespace MetaMorpheusGUI
             PrecursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             MaxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
-            MinRetentionTimeTextBox.Text = task.CommonParameters.MinRetentionTimeToSearch.ToString(CultureInfo.InvariantCulture);
-            MaxRetentionTimeTextBox.Text = task.CommonParameters.MaxRetentionTimeToSearch == double.MaxValue
+            MinRetentionTimeTextBox.Text = task.CommonParameters.RetentionTimeRange.Minimum.ToString(CultureInfo.InvariantCulture);
+            MaxRetentionTimeTextBox.Text = task.CommonParameters.RetentionTimeRange.Maximum == double.MaxValue
                 ? ""
-                : task.CommonParameters.MaxRetentionTimeToSearch.ToString(CultureInfo.InvariantCulture);
+                : task.CommonParameters.RetentionTimeRange.Maximum.ToString(CultureInfo.InvariantCulture);
             AddCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
             MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
@@ -598,8 +598,7 @@ namespace MetaMorpheusGUI
                      precursorDeconParams: precursorDeconvolutionParameters,
                      productDeconParams: productDeconvolutionParameters,
                      precursorMassMatchMode: UseMostAbundantMassCheckBox.IsChecked.Value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic,
-                     minRetentionTimeToSearch: minRetentionTime,
-                     maxRetentionTimeToSearch: maxRetentionTime);
+                     retentionTimeRange: new DoubleRange(minRetentionTime, maxRetentionTime));
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in GptmdModTypeForTreeViewObservableCollection)

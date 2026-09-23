@@ -325,10 +325,10 @@ namespace MetaMorpheusGUI
             RenameTCProteinsRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RenameProtein;
             AllAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
             MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
-            MinRetentionTimeTextBox.Text = task.CommonParameters.MinRetentionTimeToSearch.ToString(CultureInfo.InvariantCulture);
-            MaxRetentionTimeTextBox.Text = task.CommonParameters.MaxRetentionTimeToSearch == double.MaxValue
+            MinRetentionTimeTextBox.Text = task.CommonParameters.RetentionTimeRange.Minimum.ToString(CultureInfo.InvariantCulture);
+            MaxRetentionTimeTextBox.Text = task.CommonParameters.RetentionTimeRange.Maximum == double.MaxValue
                 ? ""
-                : task.CommonParameters.MaxRetentionTimeToSearch.ToString(CultureInfo.InvariantCulture);
+                : task.CommonParameters.RetentionTimeRange.Maximum.ToString(CultureInfo.InvariantCulture);
             TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             AddTruncationsCheckBox.IsChecked = task.CommonParameters.AddTruncations;
@@ -682,8 +682,7 @@ namespace MetaMorpheusGUI
                 productDeconParams: productDeconvolutionParameters,
                 precursorMassMatchMode: _massDifferenceAcceptorViewModel.PrecursorMassMatchMode,
                 fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams(),
-                minRetentionTimeToSearch: minRetentionTime,
-                maxRetentionTimeToSearch: maxRetentionTime,
+                retentionTimeRange: new DoubleRange(minRetentionTime, maxRetentionTime),
                 rtPredictorName: rtPredictorModelName);
 
             if (ClassicSearchRadioButton.IsChecked.Value)
