@@ -1,9 +1,11 @@
 using EngineLayer;
+using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using System;
 using TaskLayer;
 
 namespace Test
@@ -87,6 +89,28 @@ namespace Test
 
             Assert.That(combined.RetentionTimeRange.Minimum, Is.EqualTo(12.5));
             Assert.That(combined.RetentionTimeRange.Maximum, Is.EqualTo(48.75));
+        }
+
+        [Test]
+        [TestCase(-1, 10)]
+        [TestCase(double.NaN, 10)]
+        public static void CommonParameters_RejectsInvalidRetentionTimeMinimum(double minimum, double maximum)
+        {
+            var exception = Assert.Throws<ArgumentOutOfRangeException>(() => new CommonParameters(
+                retentionTimeRange: new DoubleRange(minimum, maximum)));
+
+            Assert.That(exception.ParamName, Is.EqualTo("retentionTimeRange"));
+        }
+
+        [Test]
+        [TestCase(0, double.NaN)]
+        [TestCase(10, 9)]
+        public static void CommonParameters_RejectsInvalidRetentionTimeMaximum(double minimum, double maximum)
+        {
+            var exception = Assert.Throws<ArgumentOutOfRangeException>(() => new CommonParameters(
+                retentionTimeRange: new DoubleRange(minimum, maximum)));
+
+            Assert.That(exception.ParamName, Is.EqualTo("retentionTimeRange"));
         }
     }
 }
