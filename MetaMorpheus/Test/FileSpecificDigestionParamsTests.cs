@@ -6,6 +6,7 @@ using Omics.Digestion;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
+using System.IO;
 using TaskLayer;
 
 namespace Test
@@ -111,6 +112,31 @@ namespace Test
                 retentionTimeRange: new DoubleRange(minimum, maximum)));
 
             Assert.That(exception.ParamName, Is.EqualTo("retentionTimeRange"));
+        }
+
+        [Test]
+        public static void RetentionTimeRange_RoundTripsThroughToml()
+        {
+            string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "RetentionTimeRangeRoundTrip.toml");
+            var task = new SearchTask
+            {
+                CommonParameters = new CommonParameters(
+                    retentionTimeRange: new DoubleRange(12.5, 48.75))
+            };
+
+            try
+            {
+                Nett.Toml.WriteFile(task, path, MetaMorpheusTask.tomlConfig);
+                SearchTask loaded = Nett.Toml.ReadFile<SearchTask>(path, MetaMorpheusTask.tomlConfig);
+
+                Assert.That(loaded.CommonParameters.RetentionTimeRange.Minimum, Is.EqualTo(12.5));
+                Assert.That(loaded.CommonParameters.RetentionTimeRange.Maximum, Is.EqualTo(48.75));
+            }
+            finally
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
         }
     }
 }

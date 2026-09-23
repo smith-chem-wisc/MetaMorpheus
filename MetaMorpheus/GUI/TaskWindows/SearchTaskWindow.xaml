@@ -774,7 +774,7 @@
                                             </Grid.ColumnDefinitions>
 
                                             <!-- Retention time range -->
-                                            <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="7">
+                                            <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0">
                                                 <Label Content="Min Retention Time (min):" Width="150" />
                                                 <local:DoubleTextBoxControl x:Name="MinRetentionTimeTextBox" Width="55" LowerBound="0"
                                                                 ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
@@ -788,7 +788,7 @@
                                                 </local:DoubleTextBoxControl>
                                             </StackPanel>
 
-                                            <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="7">
+                                            <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1">
                                                 <Label Content="Max Retention Time (min):" Width="150" />
                                                 <local:DoubleTextBoxControl x:Name="MaxRetentionTimeTextBox" Width="55" LowerBound="0"
                                                                 ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">

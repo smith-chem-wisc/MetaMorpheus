@@ -197,7 +197,7 @@ namespace TaskLayer
 
         private static DoubleRange ParseRetentionTimeRange(string value)
         {
-            string[] bounds = value.Split(';');
+            string[] bounds = value.Trim().Trim('[', ']').Split(';');
             if (bounds.Length != 2)
                 throw new MetaMorpheusException($"Invalid retention time range '{value}'. Expected 'minimum;maximum'.");
 
@@ -223,8 +223,8 @@ namespace TaskLayer
             .ConfigureType<DoubleRange>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(range => range.Maximum == double.MaxValue
-                        ? $"{range.Minimum.ToString(CultureInfo.InvariantCulture)};MaxValue"
-                        : range.ToString())
+                        ? $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};MaxValue"
+                        : $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};{range.Maximum.ToString("R", CultureInfo.InvariantCulture)}")
                     .FromToml(tomlString => ParseRetentionTimeRange(tomlString.Value))))
             .ConfigureType<Protease>(type => type
                 .WithConversionFor<TomlString>(convert => convert
