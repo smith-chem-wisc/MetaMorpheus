@@ -116,6 +116,10 @@ namespace MetaMorpheusGUI
             PrecursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             MaxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
+            MinRetentionTimeTextBox.Text = task.CommonParameters.RetentionTimeRange.Minimum.ToString(CultureInfo.InvariantCulture);
+            MaxRetentionTimeTextBox.Text = task.CommonParameters.RetentionTimeRange.Maximum == double.MaxValue
+                ? ""
+                : task.CommonParameters.RetentionTimeRange.Maximum.ToString(CultureInfo.InvariantCulture);
             AddCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
             MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
@@ -499,6 +503,11 @@ namespace MetaMorpheusGUI
             bool TrimMs1Peaks = TrimMs1.IsChecked.Value;
             bool TrimMsMsPeaks = TrimMsMs.IsChecked.Value;
 
+            if (!TryParseRetentionTimeRange(out double minRetentionTime, out double maxRetentionTime))
+            {
+                return;
+            }
+
             int? numPeaksToKeep = null;
             if (!string.IsNullOrWhiteSpace(NumberOfPeaksToKeepPerWindowTextBox.Text))
             {
@@ -585,10 +594,11 @@ namespace MetaMorpheusGUI
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                     addCompIons: AddCompIonCheckBox.IsChecked.Value,
                     minVariantDepth: minVariantDepth,
-                    maxHeterozygousVariants: maxHeterozygousVariants,
-                    precursorDeconParams: precursorDeconvolutionParameters,
-                    productDeconParams: productDeconvolutionParameters,
-                    precursorMassMatchMode: UseMostAbundantMassCheckBox.IsChecked.Value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic);
+                     maxHeterozygousVariants: maxHeterozygousVariants,
+                     precursorDeconParams: precursorDeconvolutionParameters,
+                     productDeconParams: productDeconvolutionParameters,
+                     precursorMassMatchMode: UseMostAbundantMassCheckBox.IsChecked.Value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic,
+                     retentionTimeRange: new DoubleRange(minRetentionTime, maxRetentionTime));
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in GptmdModTypeForTreeViewObservableCollection)
@@ -600,6 +610,36 @@ namespace MetaMorpheusGUI
             TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;
+        }
+
+        private bool TryParseRetentionTimeRange(out double minimum, out double maximum)
+        {
+            minimum = 0;
+            maximum = double.MaxValue;
+
+            if (!string.IsNullOrWhiteSpace(MinRetentionTimeTextBox.Text)
+                && (!double.TryParse(MinRetentionTimeTextBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out minimum)
+                    || minimum < 0))
+            {
+                MessageBox.Show("Minimum retention time must be a non-negative number of minutes.", "Invalid retention time", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(MaxRetentionTimeTextBox.Text)
+                && (!double.TryParse(MaxRetentionTimeTextBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out maximum)
+                    || maximum < 0))
+            {
+                MessageBox.Show("Maximum retention time must be a non-negative number of minutes or blank.", "Invalid retention time", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+
+            if (maximum < minimum)
+            {
+                MessageBox.Show("Maximum retention time must be greater than or equal to minimum retention time.", "Invalid retention time", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+
+            return true;
         }
 
         private void KeyPressed(object sender, KeyEventArgs e)
