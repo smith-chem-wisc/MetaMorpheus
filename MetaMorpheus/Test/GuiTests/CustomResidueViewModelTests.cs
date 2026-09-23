@@ -148,7 +148,8 @@ namespace Test.GuiTests
             bool originalMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
             GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
             string path = Path.Combine(GlobalVariables.DataDir, "CustomAminoAcids", "CustomAminoAcids.txt");
-            string[] originalLines = File.ReadAllLines(path);
+            bool hadFile = File.Exists(path);
+            string[] originalLines = hadFile ? File.ReadAllLines(path) : Array.Empty<string>();
 
             try
             {
@@ -171,7 +172,10 @@ namespace Test.GuiTests
             }
             finally
             {
-                File.WriteAllLines(path, originalLines);
+                if (hadFile)
+                    File.WriteAllLines(path, originalLines);
+                else if (File.Exists(path))
+                    File.Delete(path);
                 GuiGlobalParamsViewModel.Instance.IsRnaMode = originalMode;
             }
         }
@@ -182,7 +186,8 @@ namespace Test.GuiTests
             bool originalMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
             GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
             string path = Path.Combine(GlobalVariables.DataDir, "CustomNucleotides", "CustomNucleotides.txt");
-            string[] originalLines = File.ReadAllLines(path);
+            bool hadFile = File.Exists(path);
+            string[] originalLines = hadFile ? File.ReadAllLines(path) : Array.Empty<string>();
 
             try
             {
@@ -206,7 +211,10 @@ namespace Test.GuiTests
             }
             finally
             {
-                File.WriteAllLines(path, originalLines);
+                if (hadFile)
+                    File.WriteAllLines(path, originalLines);
+                else if (File.Exists(path))
+                    File.Delete(path);
                 GuiGlobalParamsViewModel.Instance.IsRnaMode = originalMode;
             }
         }
