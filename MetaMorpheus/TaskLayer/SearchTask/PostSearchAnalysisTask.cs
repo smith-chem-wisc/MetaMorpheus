@@ -34,6 +34,15 @@ namespace TaskLayer
 {
     public class PostSearchAnalysisTask : MetaMorpheusTask
     {
+        /// <summary>
+        /// The value of mzIdentML's Enzyme/@semiSpecific for a search: true when SearchModeType is Semi or the protease is
+        /// itself semi-specific. mzIdentML defines semiSpecific as exactly one terminus following the enzyme rules, so a
+        /// fully specific and a non-specific (SearchModeType None) search are both false.
+        /// </summary>
+        public static bool IsSemiSpecificForMzIdentMl(IDigestionParams digestionParams) =>
+            digestionParams.SearchModeType == CleavageSpecificity.Semi
+            || (digestionParams.SearchModeType == CleavageSpecificity.Full && digestionParams.DigestionAgent.CleavageSpecificity == CleavageSpecificity.Semi);
+
         public PostSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
 
@@ -1513,7 +1522,8 @@ namespace TaskLayer
                         CommonParameters.PrecursorMassTolerance,
                         CommonParameters.DigestionParams.MaxMissedCleavages,
                         mzidFilePath,
-                        Parameters.SearchParameters.IncludeModMotifInMzid);
+                        Parameters.SearchParameters.IncludeModMotifInMzid,
+                        IsSemiSpecificForMzIdentMl(CommonParameters.DigestionParams));
 
                     FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                 }
