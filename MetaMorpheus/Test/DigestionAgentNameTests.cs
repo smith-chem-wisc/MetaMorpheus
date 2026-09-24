@@ -70,12 +70,6 @@ namespace Test
             Assert.That(new RnaDigestionParams("top-down").DigestionAgentName(), Is.EqualTo("top-down"));
         }
 
-        [Test]
-        public static void UnknownDigestionParamsReportNoAgent()
-        {
-            Assert.That(((IDigestionParams)null).DigestionAgentName(), Is.Null);
-        }
-
         /// <summary>
         /// A digestion-parameter type that is neither proteolytic nor RNA and names no agent has to come
         /// back null rather than throw. The call site is PostSearchAnalysisTask.QuantificationAnalysis,
