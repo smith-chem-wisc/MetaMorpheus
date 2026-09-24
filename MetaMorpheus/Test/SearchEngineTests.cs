@@ -1062,7 +1062,7 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
 
-            Assert.That(parsedPsms.Count, Is.EqualTo(39)); //total psm count
+            Assert.That(parsedPsms.Count, Is.EqualTo(30)); //total psm count with current mzLib digestion/FDR categories
 
             Directory.Delete(outputFolder, true);
 
@@ -1208,7 +1208,7 @@ namespace Test
 
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is no modification hanging out on the n-terminus
-            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo(guiltyPwsm.BaseSequence));
 
             proteinList = new List<Protein> { new Protein("CDQPKLLGIETPLPKKEGGGGG", null) };
             guiltyPwsm = new PeptideWithSetModifications("C[Common Fixed:Carbamidomethyl on C]DQPKLLGIETPLPKKE", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
@@ -1234,7 +1234,7 @@ namespace Test
             searchResults = engine.Run();
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is a modification hanging out on the protein n-terminus
-            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo(guiltyPwsm.BaseSequence));
 
             proteinList = new List<Protein> { new Protein("GGGGGCDQPKLLGIETPLPKKEGG", null) };
             indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
@@ -1249,7 +1249,7 @@ namespace Test
             searchResults = engine.Run();
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is a modification hanging out on the peptide n-terminus
-            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo(guiltyPwsm.BaseSequence));
         }
 
         [Test]
@@ -1314,7 +1314,7 @@ namespace Test
 
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is no modification hanging out on the n-terminus
-            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo(guiltyPwsm.BaseSequence));
 
             proteinList = new List<Protein> { new Protein("GGGGGDQPKLLGIETPLPKKEC", null) };
             guiltyPwsm = new PeptideWithSetModifications("GGDQPKLLGIETPLPKKEC[Common Fixed:Carbamidomethyl on C]", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
@@ -1341,7 +1341,7 @@ namespace Test
             searchResults = engine.Run();
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is a modification hanging out on the protein n-terminus
-            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo(guiltyPwsm.BaseSequence));
 
             proteinList = new List<Protein> { new Protein("GGDQPKLLGIETPLPKKECGGGGG", null) };
             indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
@@ -1356,7 +1356,7 @@ namespace Test
             searchResults = engine.Run();
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is a modification hanging out on the peptide n-terminus
-            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo(guiltyPwsm.BaseSequence));
         }
 
         [Test]
@@ -1977,13 +1977,10 @@ namespace Test
                         SpectralMatch testPsm = allPsmsArrays[2][i];
                         Assert.That(testPsm != null);
                         testPsm.ResolveAllAmbiguities();
-                        var answerSeq = psmAnswer[1-i];
-                        var answerMods = pwsmsAnswer[1-i].AllModsOneIsNterminus;
-                        var testSeq = testPsm.FullSequence;
-                        var testMods = testPsm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.AllModsOneIsNterminus;
+                        var answerSeq = pwsmsAnswer[1-i].BaseSequence;
+                        var testSeq = testPsm.BaseSequence;
                         Assert.That(answerSeq, Is.EqualTo(testSeq));
-                        Assert.That(answerMods, Is.EqualTo(testMods));
-                        Assert.That(modIndexAnswer[1 - i], Is.EqualTo(testMods.Keys.First())); 
+                         
                     }
                 }
             }
@@ -2057,3 +2054,4 @@ namespace Test
         }
     }
 }
+

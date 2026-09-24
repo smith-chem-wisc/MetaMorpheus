@@ -195,6 +195,19 @@ namespace TaskLayer
                 .FirstOrDefault();
         }
 
+        private static DoubleRange ParseRetentionTimeRange(string value)
+        {
+            string[] bounds = value.Trim().Trim('[', ']').Split(';');
+            if (bounds.Length != 2)
+                throw new MetaMorpheusException($"Invalid retention time range '{value}'. Expected 'minimum;maximum'.");
+
+            double minimum = double.Parse(bounds[0], CultureInfo.InvariantCulture);
+            double maximum = bounds[1].Equals("MaxValue", StringComparison.OrdinalIgnoreCase)
+                ? double.MaxValue
+                : double.Parse(bounds[1], CultureInfo.InvariantCulture);
+            return new DoubleRange(minimum, maximum);
+        }
+
         #endregion
 
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
@@ -207,6 +220,12 @@ namespace TaskLayer
             .ConfigureType<AbsoluteTolerance>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.ToString())))
+            .ConfigureType<DoubleRange>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(range => range.Maximum == double.MaxValue
+                        ? $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};MaxValue"
+                        : $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};{range.Maximum.ToString("R", CultureInfo.InvariantCulture)}")
+                    .FromToml(tomlString => ParseRetentionTimeRange(tomlString.Value))))
             .ConfigureType<Protease>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.ToString())
@@ -234,11 +253,15 @@ namespace TaskLayer
                             : tmlTable.Get<RnaDigestionParams>())))
             .ConfigureType<DigestionParams>(type => type
                 .IgnoreProperty(p => p.DigestionAgent)
+                .IgnoreProperty(p => p.SpecificDigestionAgent)
+                .IgnoreProperty(p => p.SpecificProtease)
                 .IgnoreProperty(p => p.MaxMods)
                 .IgnoreProperty(p => p.MaxLength)
                 .IgnoreProperty(p => p.MinLength))
             .ConfigureType<RnaDigestionParams>(type => type
-                .IgnoreProperty(p => p.DigestionAgent))
+                .IgnoreProperty(p => p.DigestionAgent)
+                .IgnoreProperty(p => p.SpecificDigestionAgent)
+                .IgnoreProperty(p => p.SpecificRnase))
             .ConfigureType<Rnase>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.Name)
@@ -385,9 +408,9 @@ namespace TaskLayer
 
         public static List<Ms2ScanWithSpecificMass>[] _GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
-            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
-            var ms2Scans = msNScans.Where(p => p.MsnOrder == 2).ToArray();
-            var ms3Scans = msNScans.Where(p => p.MsnOrder == 3).ToArray();
+            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1 && commonParameters.RetentionTimeRange.Contains(x.RetentionTime)).ToArray();
+            var ms2Scans = msNScans.Where(x => x.MsnOrder == 2).ToArray();
+            var ms3Scans = msNScans.Where(x => x.MsnOrder == 3).ToArray();
             List<Ms2ScanWithSpecificMass>[] scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[ms2Scans.Length];
 
             if (!ms2Scans.Any())
@@ -583,10 +606,12 @@ namespace TaskLayer
                 {
                     case DIAanalysisType.DIA:
                         var diaEngine = new DIAEngine(myMSDataFile, commonParameters);
-                        return diaEngine.GetPseudoMs2Scans();
+                        return diaEngine.GetPseudoMs2Scans()
+                            .Where(scan => commonParameters.RetentionTimeRange.Contains(scan.RetentionTime));
                     case DIAanalysisType.ISD:
                         var isdEngine = new ISDEngine(myMSDataFile, commonParameters);
-                        return isdEngine.GetPseudoMs2Scans();
+                        return isdEngine.GetPseudoMs2Scans()
+                            .Where(scan => commonParameters.RetentionTimeRange.Contains(scan.RetentionTime));
                     default:
                         throw new NotImplementedException("DIA analysis type not implemented.");
                 }
@@ -787,7 +812,8 @@ namespace TaskLayer
                 useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
-                rtPredictorName: commonParams.RTPredictorName);
+                rtPredictorName: commonParams.RTPredictorName,
+                retentionTimeRange: commonParams.RetentionTimeRange);
 
             return returnParams;
         }
@@ -2125,3 +2151,5 @@ namespace TaskLayer
         }
     }
 }
+
+

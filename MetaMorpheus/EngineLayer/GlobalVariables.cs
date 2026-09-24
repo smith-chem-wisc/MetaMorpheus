@@ -6,6 +6,7 @@ using MassSpectrometry;
 using Nett;
 using Omics.Modifications;
 using Proteomics.AminoAcidPolymer;
+using Transcriptomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -145,6 +146,7 @@ namespace EngineLayer
             LoadRnaModifications();
             LoadGlycans();
             LoadCustomAminoAcids();
+            LoadCustomNucleotides();
             SetUpGlobalSettings();
             LoadDissociationTypes();
             LoadAvailableProteomes();
@@ -290,6 +292,76 @@ namespace EngineLayer
                 }
             }
             File.WriteAllLines(aminoAcidPath, linesToWrite.ToArray());
+        }
+
+        public static void LoadCustomNucleotides()
+        {
+            string nucleotidePath = Path.Combine(DataDir, "CustomNucleotides", "CustomNucleotides.txt");
+            if (!File.Exists(nucleotidePath))
+            {
+                WriteNucleotidesFile();
+                return;
+            }
+
+            string[] nucleotideLines = File.ReadAllLines(nucleotidePath);
+            for (int i = 1; i < nucleotideLines.Length; i++)
+            {
+                string[] line = nucleotideLines[i].Split('\t');
+                if (line.Length < 4 || string.IsNullOrWhiteSpace(nucleotideLines[i]))
+                    continue;
+
+                try
+                {
+                    char letter = line[1][0];
+                    ChemicalFormula formula = ChemicalFormula.ParseFormula(line[3]);
+
+                    bool letterExists = Nucleotide.TryGetResidue(letter, out Nucleotide existingByLetter);
+                    bool symbolExists = Nucleotide.TryGetResidue(line[2], out Nucleotide existingBySymbol);
+                    bool nameExists = Nucleotide.TryGetResidue(line[0], out Nucleotide existingByName);
+
+                    if (letterExists || symbolExists || nameExists)
+                    {
+                        bool isSameResidue = existingByLetter != null
+                            && existingBySymbol != null
+                            && existingByName != null
+                            && existingByLetter.Equals(existingBySymbol)
+                            && existingByLetter.Equals(existingByName)
+                            && existingByLetter.Name.Equals(line[0])
+                            && existingByLetter.Letter == letter
+                            && existingByLetter.Symbol.Equals(line[2])
+                            && existingByLetter.BaseChemicalFormula.Equals(formula);
+
+                        if (!isSameResidue)
+                        {
+                            throw new MetaMorpheusException("The nucleotide name, letter, or symbol is already assigned to a different nucleotide.");
+                        }
+
+                        continue;
+                    }
+
+                    Nucleotide.AddResidue(line[0], letter, line[2], formula);
+                }
+                catch (Exception e)
+                {
+                    throw new MetaMorpheusException("Error while reading 'CustomNucleotides.txt'. Line " +
+                        (i + 1).ToString() + " was not in the correct format: " + e.Message);
+                }
+            }
+        }
+
+        public static void WriteNucleotidesFile()
+        {
+            string directory = Path.Combine(DataDir, "CustomNucleotides");
+            if (!Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            string nucleotidePath = Path.Combine(directory, "CustomNucleotides.txt");
+            List<string> linesToWrite = new List<string>
+            {
+                "Name\tOneLetterAbbr.\tSymbol\tBaseChemicalFormula"
+            };
+
+            File.WriteAllLines(nucleotidePath, linesToWrite);
         }
 
         // Does the same thing as Process.Start() except it works on .NET Core
@@ -513,7 +585,8 @@ namespace EngineLayer
             // Omics.dll while preserving the property #2752 established when it made these an
             // embedded resource here: they are carried in an assembly, so no installer, repair or
             // upgrade can leave them missing. A file in Mods\ could.
-            AddMods(Omics.Modifications.Mods.MetaMorpheusRnaModifications, false, true);
+            AddMods(Mods.MetaMorpheusRnaModifications, false, true);
+            AddMods(Mods.ModomicsRnaModifications, false, true);
 
             var customModsPath = Path.Combine(DataDir, @"Mods", "RnaCustomModifications.txt");
             CustomDataFile.EnsureExists(customModsPath,
