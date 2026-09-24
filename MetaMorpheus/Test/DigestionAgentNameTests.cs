@@ -133,6 +133,7 @@ namespace Test
             public int MaxModificationIsoforms { get; set; }
             public int MaxMods { get; set; }
             public DigestionAgent DigestionAgent => null;
+            public DigestionAgent SpecificDigestionAgent => null;
             public FragmentationTerminus FragmentationTerminus => FragmentationTerminus.Both;
             public CleavageSpecificity SearchModeType => CleavageSpecificity.Full;
             public IDigestionParams Clone(FragmentationTerminus? newTerminus = null) => this;
