@@ -9,8 +9,14 @@
     <Window.Title>
         <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" ConverterParameter="Add custom amino acid" />
     </Window.Title>
-    <Grid>
-        <StackPanel Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="5">
+    <Grid Margin="5">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <StackPanel Grid.Row="0" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="5">
             <!--Residue name-->
             <StackPanel Orientation="Horizontal">
                 <Label Width="190">
@@ -53,7 +59,7 @@
             <TextBlock Text="{Binding ValidationMessage}" Foreground="DarkRed" TextWrapping="Wrap" Margin="5,3,5,0" />
         </StackPanel>
         <!--Save and cancel buttons-->
-        <StackPanel Orientation="Horizontal" Height="35" VerticalAlignment="Bottom" HorizontalAlignment="Center"  >
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Height="35" VerticalAlignment="Bottom" HorizontalAlignment="Center"  >
             <Button Name="saveButton" FontSize="13" Margin="5" Width="100"
                     Content="{Binding Converter={StaticResource ProteinRnaTerminologyConverter}, ConverterParameter='Save amino acid'}"
                     Command="{Binding SaveCommand}" IsEnabled="{Binding CanSave}" />
