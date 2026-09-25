@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using EngineLayer;
 using MzLibUtil;
 using Nett;
@@ -73,6 +73,8 @@ namespace TaskLayer
                     case nameof(CustomIons):
                         CustomIons = keyValuePair.Value.Get<List<ProductType>>(); break;
 
+                    case nameof(Ms1FeatureFilePath):
+                        Ms1FeatureFilePath = keyValuePair.Value.Get<string>(); break;
                     case nameof(PrecursorDeconvolutionParameters):
                         PrecursorDeconvolutionParameters = keyValuePair.Value.Get<DeconvolutionParameters>(); break;
                     case nameof(ProductDeconvolutionParameters):
@@ -102,6 +104,14 @@ namespace TaskLayer
 
         public List<ProductType> CustomIons { get; set; }
 
+        /// <summary>
+        /// Optional path to an external whole-file MS1 deconvolution result (a "&lt;basename&gt;_ms1.feature" file).
+        /// When set, the features are joined per MS2 scan via mzLib's FromFileDeconvolutionParameters and
+        /// the envelopes are added to the precursor set alongside the classic decon results.
+        /// Leave null to disable. If null and a file named "&lt;basename&gt;_ms1.feature" exists next to the
+        /// raw file, it is auto-discovered.
+        /// </summary>
+        public string Ms1FeatureFilePath { get; set; }
         public DeconvolutionParameters PrecursorDeconvolutionParameters { get; set; }
         public DeconvolutionParameters ProductDeconvolutionParameters { get; set; }
 
@@ -120,6 +130,7 @@ namespace TaskLayer
                 DissociationType = this.DissociationType,
                 SeparationType = this.SeparationType,
                 CustomIons = this.CustomIons != null ? new List<ProductType>(this.CustomIons) : null,
+                Ms1FeatureFilePath = this.Ms1FeatureFilePath,
                 PrecursorDeconvolutionParameters = this.PrecursorDeconvolutionParameters,
                 ProductDeconvolutionParameters = this.ProductDeconvolutionParameters
             };
