@@ -30,8 +30,15 @@ namespace Test
         private static readonly string[] Tmt11Channels =
             { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" };
 
-        /// <summary>The staged spectra file's name without extension, which prefixes every sample column.</summary>
+        /// <summary>The staged spectra file's name without extension, which every sample column carries.</summary>
         private const string StagedMzmlName = "VA084TQ_6";
+
+        /// <summary>
+        /// The column label of channel <paramref name="channel"/> under <see cref="WriteTmtDesign"/>'s design,
+        /// which names every channel: mzLib labels a named channel {sample}_{file}_{channel}.
+        /// </summary>
+        private static string ChannelColumnLabel(int channel) =>
+            $"Sample{channel + 1}_{StagedMzmlName}_{Tmt11Channels[channel]}";
 
         /// <summary>
         /// Writes a TmtDesign.txt beside <paramref name="stagedMzmlPath"/> annotating every channel of
@@ -121,7 +128,7 @@ namespace Test
                 // values would still look plausible and would be under the wrong sample.
                 for (int channel = 0; channel < Tmt11Channels.Length; channel++)
                 {
-                    Assert.That(header[1 + channel], Is.EqualTo($"{StagedMzmlName}_{Tmt11Channels[channel]}"),
+                    Assert.That(header[1 + channel], Is.EqualTo(ChannelColumnLabel(channel)),
                         "column order must follow the plex's channel order, not merely be distinct");
                 }
 
@@ -221,9 +228,9 @@ namespace Test
 
             var header = lines[0].Split('\t');
 
-            foreach (string channel in Tmt11Channels)
+            for (int channel = 0; channel < Tmt11Channels.Length; channel++)
             {
-                string label = $"{StagedMzmlName}_{channel}";
+                string label = ChannelColumnLabel(channel);
                 Assert.That(header, Contains.Item($"SpectralCount_{label}"),
                     "the count columns must survive quantification");
                 Assert.That(header, Contains.Item($"CountOccupancy_{label}"),

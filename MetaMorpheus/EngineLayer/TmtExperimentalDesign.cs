@@ -533,7 +533,12 @@ namespace EngineLayer
                         plexId: plexIds[file.Plex ?? string.Empty],
                         channelLabel: label,
                         reporterIonMz: tag.ReporterIonMzs[i],
-                        isReferenceChannel: IsReferenceChannel(sampleType));
+                        isReferenceChannel: IsReferenceChannel(sampleType))
+                    {
+                        // Names the channel's output columns; an unannotated or unnamed channel keeps
+                        // mzLib's {file}_{channel} label.
+                        SampleName = annotation?.SampleName
+                    };
                 }
 
                 design[fileName] = samples;

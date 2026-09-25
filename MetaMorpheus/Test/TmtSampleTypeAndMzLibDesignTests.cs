@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using NUnit.Framework;
+using Omics.BioPolymerGroup;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System;
 using System.Collections.Generic;
@@ -244,6 +245,36 @@ namespace Test
                 Assert.Less(((IsobaricQuantSampleInfo)samples[i - 1]).ReporterIonMz,
                             ((IsobaricQuantSampleInfo)samples[i]).ReporterIonMz);
             }
+        }
+
+        /// <summary>
+        /// The design's Sample Name reaches mzLib, which puts it in the channel's column label. A channel
+        /// the design leaves unnamed or unannotated keeps {file}_{channel}, so it is not labelled by
+        /// something the user never wrote.
+        /// </summary>
+        [Test]
+        public static void ToMzLibDesign_NamesAChannelByItsSample_AndLeavesAnUnnamedOneByFileAndChannel()
+        {
+            var tag = Tmt10();
+            var file = new TmtFileInfo(FixturePath("data", "run1.raw"), "PlexA", 1, 1, new List<TmtPlexAnnotation>
+            {
+                new() { Tag = "126", SampleName = "Pool", Condition = "Reference", BiologicalReplicate = 1, SampleType = TmtSampleType.Reference },
+                new() { Tag = "127N", SampleName = "", Condition = "Treated", BiologicalReplicate = 1, SampleType = TmtSampleType.StudySample }
+            });
+
+            var design = TmtExperimentalDesign.ToMzLibDesign(new[] { file }, tag, out var errors);
+
+            Assert.IsEmpty(errors);
+            var byChannel = design.FileNameSampleInfoDictionary["run1.raw"]
+                .Cast<IsobaricQuantSampleInfo>()
+                .ToDictionary(s => s.ChannelLabel);
+
+            Assert.AreEqual("Pool", byChannel["126"].SampleName);
+            Assert.AreEqual("Pool_run1_126", SampleGroupLabels.ForSample(byChannel["126"]));
+
+            Assert.AreEqual("run1_127N", SampleGroupLabels.ForSample(byChannel["127N"]), "named blank in the design");
+            Assert.IsNull(byChannel["127C"].SampleName, "not annotated at all");
+            Assert.AreEqual("run1_127C", SampleGroupLabels.ForSample(byChannel["127C"]));
         }
 
         [Test]
