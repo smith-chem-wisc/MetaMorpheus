@@ -510,6 +510,46 @@ namespace Test
             Directory.Delete(folder, true);
         }
 
+        /// <summary>
+        /// The pre-run SDRF check only warns, so it must never be what stops a search. An
+        /// ExperimentalDesign.tsv held open by another program (Excel locks what it opens) cannot be
+        /// read; the search should start anyway, told why the design could not be checked.
+        /// </summary>
+        [Test]
+        public static void AnUnreadableDesignIsAWarningNotAFailedSearch()
+        {
+            string folder = SetUpIsolatedRun(nameof(AnUnreadableDesignIsAWarningNotAFailedSearch),
+                out string spectraPath, out _);
+            string designPath = Path.Combine(Path.GetDirectoryName(spectraPath)!,
+                GlobalVariables.ExperimentalDesignFileName);
+            File.WriteAllText(designPath, "FileName\tCondition\tBiorep\tFraction\tTechrep\n");
+
+            var task = new SearchTask { SearchParameters = new SearchParameters { WriteSdrf = true } };
+
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                using (new FileStream(designPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                {
+                    Assert.DoesNotThrow(() => typeof(SearchTask)
+                        .GetMethod("WarnAboutSdrfGaps", BindingFlags.NonPublic | BindingFlags.Instance)!
+                        .Invoke(task, new object[] { new List<string> { spectraPath } }));
+                }
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+            }
+
+            Assert.That(warnings.Any(w => w.Contains(GlobalVariables.ExperimentalDesignFileName)
+                                          && w.Contains("could not be read")),
+                Is.True, string.Join(" | ", warnings));
+
+            Directory.Delete(folder, true);
+        }
+
         #endregion
 
         #region Isobaric searches
@@ -821,6 +861,31 @@ namespace Test
             (CvParam)typeof(PostSearchAnalysisTask)
                 .GetMethod("ResolveAcquisitionMethod", BindingFlags.NonPublic | BindingFlags.Static)!
                 .Invoke(null, new object[] { common });
+
+        /// <summary>
+        /// A modification is identified by (ModificationType, IdWithMotif), and the lookup must key
+        /// on both. Keyed on the id alone, a search that fixes one mod gets every known mod sharing
+        /// its id -- a wrong mod, or the same column written twice.
+        /// </summary>
+        [Test]
+        public static void AModificationIsResolvedByItsTypeAsWellAsItsId()
+        {
+            var shared = GlobalVariables.AllModsKnown
+                .GroupBy(m => m.IdWithMotif)
+                .FirstOrDefault(g => g.Select(m => m.ModificationType).Distinct().Count() > 1);
+            Assert.That(shared, Is.Not.Null,
+                "The known mods no longer contain two types sharing an id; this test needs one.");
+
+            Modification wanted = shared!.First();
+            var resolved = (IReadOnlyList<Modification>)typeof(PostSearchAnalysisTask)
+                .GetMethod("ResolveModifications", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { new List<(string, string)> { (wanted.ModificationType, wanted.IdWithMotif) } });
+
+            Assert.That(resolved, Is.Not.Empty);
+            Assert.That(resolved.Select(m => m.ModificationType).Distinct().ToList(), Is.EqualTo(new[] { wanted.ModificationType }),
+                $"Asked for '{wanted.IdWithMotif}' of type '{wanted.ModificationType}' only, and " +
+                $"'{wanted.IdWithMotif}' is also known under another type.");
+        }
 
         private static CvParam InvokeLabel(SearchParameters searchParameters) =>
             (CvParam)typeof(PostSearchAnalysisTask)
