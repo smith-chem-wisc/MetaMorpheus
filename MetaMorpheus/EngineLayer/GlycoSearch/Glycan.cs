@@ -75,6 +75,16 @@ namespace EngineLayer
             ModificationMotif.TryGetMotif(motif, out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
             var id = Glycan.GetKindString(Kind);
 
+            // The same counts, in the form a cleavage rule can read. A glycan IS a Modification, so once
+            // it carries its composition the protease's own rule -- "OpeRATOR needs at least core 1 here,
+            // and core 2 blocks it" -- can be evaluated against this object directly during localization.
+            // GetKindString already writes the one-letter shorthand the parser accepts, so the two
+            // vocabularies cannot drift apart.
+            if (Omics.Modifications.MonosaccharideComposition.TryParse(id, out var composition))
+            {
+                MonosaccharideComposition = composition;
+            }
+
             OriginalId = id; // Set the original ID to the glycan kind string, which is unique for each glycan.
             Target = finalMotif; // Set the target motif for the modification.
             NeutralLosses = neutralLosses; // Set the neutral losses for the modification.
