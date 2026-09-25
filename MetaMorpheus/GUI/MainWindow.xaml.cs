@@ -42,6 +42,10 @@ namespace MetaMorpheusGUI
 
         public MainWindow()
         {
+            // subscribed before startup so that what startup notices, such as a custom protease that
+            // collided with a built-in, is shown too. Queued rather than written, because the
+            // notifications box does not exist until InitializeComponent has run.
+            GlobalVariables.WarnHandler += (sender, e) => Dispatcher.BeginInvoke(new Action(() => NotificationHandler(sender, e)));
             GlobalVariables.SetUpGlobalVariables();
             InitializeComponent();
 
@@ -928,6 +932,15 @@ namespace MetaMorpheusGUI
             if (!ProteinDatabases.Any() && PreRunTasks.Any(p => p.metaMorpheusTask.TaskType != MyTask.Average)) // will not throw this if averaging is the only task
             {
                 NotificationHandler(null, new StringEventArgs("You need to add at least one protein database!", null));
+            }
+
+            // check that no task's digestion asks for seed peptides it cannot use
+            foreach (var preRunTask in PreRunTasks)
+            {
+                if (!TaskValidator.CheckDigestionSearchMode(preRunTask.metaMorpheusTask, preRunTask.DisplayName))
+                {
+                    return;
+                }
             }
 
             // only checked spectra files are run, so only they may define the experimental design
