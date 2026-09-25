@@ -1,4 +1,4 @@
-using Chemistry;
+﻿using Chemistry;
 using Chromatography.RetentionTimePrediction;
 using Chromatography.RetentionTimePrediction.SSRCalc;
 using EngineLayer.CrosslinkSearch;
@@ -51,11 +51,18 @@ namespace EngineLayer
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
 
         /// <summary>
-        /// Upper bound on training rounds. This is a safety cap, NOT the number of rounds that will
-        /// run -- <see cref="TrainingImprovementTolerance"/> decides that. A fixed count tuned on one
-        /// dataset is wrong on the next, so the stopping rule is a criterion and this is only a stop.
+        /// The cap on training rounds used when iterative training is switched on
+        /// (<c>SearchParameters.IterativePepTraining</c>). A safety stop, not the number of rounds that
+        /// will run: <see cref="TrainingImprovementTolerance"/> decides that.
         /// </summary>
-        public int MaxTrainingRounds { get; set; } = 10;
+        public const int IterativeTrainingRoundCap = 10;
+
+        /// <summary>
+        /// Upper bound on training rounds. The default of 1 trains once, on labels from the search-score
+        /// q-value, which is the algorithm this engine had before iteration existed. Values above 1 turn on
+        /// semi-supervised iteration, and the stopping criterion then decides how many rounds actually run.
+        /// </summary>
+        public int MaxTrainingRounds { get; set; } = 1;
 
         /// <summary>
         /// Stop when a round grows the accepted target count by less than this fraction. 0.001 = 0.1%.
@@ -63,18 +70,18 @@ namespace EngineLayer
         public double TrainingImprovementTolerance { get; set; } = 0.001;
 
         /// <summary>
-        /// The q-value below which a target counts as "accepted" when judging whether a round helped.
-        /// Matches the threshold results are reported at, so the criterion optimises the reported number.
+        /// The PEP q-value below which a target peptide counts as "accepted" when judging whether a round
+        /// helped. The count is computed the way <see cref="FdrAnalysisEngine"/> computes the reported
+        /// peptide PEP q-value (see <see cref="CountAcceptedPeptides"/>), so the criterion tracks what users see.
         /// </summary>
         public double AcceptanceQValueCutoff { get; set; } = 0.01;
 
         /// <summary>
-        /// The peptide groups whose best match qualifies as a POSITIVE training example this round.
-        /// Null for the first round, which falls back to the search-score q-value exactly as before.
-        /// Rounds after the first re-derive this from the model's own output -- the semi-supervised
-        /// step this engine previously lacked.
+        /// Picks a fold's positives for the next round from its own model's PEPs on its own training
+        /// matches. <see cref="SelectPositives"/> at <see cref="QValueCutoff"/>. Settable only so tests can
+        /// reach the path where a later round has no positives.
         /// </summary>
-        private double _positiveTrainingPepThreshold = double.NaN;
+        internal Func<List<SpectralMatch>, double[], HashSet<SpectralMatch>> SelectNextRoundPositives { get; set; }
 
         /// <summary>
         /// Feature vectors, computed once and reused for every training round.
@@ -90,6 +97,11 @@ namespace EngineLayer
         /// BestMatchingBioPolymersWithSetMods.Count(), which the old elimination step mutated
         /// mid-loop; caching across rounds would have frozen a stale value. Removing the pruning is
         /// what makes the cache sound.
+        ///
+        /// The cached instances are never handed out: callers get a copy via <see cref="PsmData.WithLabel"/>.
+        /// Memory: one PsmData (~200 B) per hypothesis for the engine's lifetime. That is tens of MB for a
+        /// few hundred thousand matches and some hundreds of MB for multi-million-match runs. The entry
+        /// count is written to pep_training_rounds.txt.
         /// </remarks>
         /// </summary>
         private readonly ConcurrentDictionary<SpectralMatchHypothesis, PsmData> _featureCache
@@ -177,6 +189,7 @@ namespace EngineLayer
             QValueCutoff = Math.Max(fileSpecificParameters.Select(t => t.fileSpecificParameters.QValueCutoffForPepCalculation).Min(), minQ);
             // If we have more than 100 peptides, we will train on the peptide level. Otherwise, we will train on the PSM level
             UsePeptideLevelQValueForTraining = psms.Select(psm => psm.FullSequence).Distinct().Count(seq => seq.IsNotNullOrEmpty()) >= 100;
+            SelectNextRoundPositives = (matches, pep) => SelectPositives(matches, pep, QValueCutoff);
         }
 
         public string ComputePEPValuesForAllPSMs()
@@ -194,8 +207,41 @@ namespace EngineLayer
 
             int numGroups = 4;
             List<int>[] peptideGroupIndices = GetPeptideGroupIndices(peptideGroups, numGroups);
-            IEnumerable<PsmData>[] PSMDataGroups = new IEnumerable<PsmData>[numGroups];
             int maxThreads = FileSpecificParametersDictionary.Values.FirstOrDefault().MaxThreadsToUsePerFile;
+            // Pruning deletes hypotheses irreversibly, so a later, better round could not bring them back.
+            // Callers that prune (glyco, crosslink) therefore train once, exactly as before iteration existed.
+            int maxRounds = PruneAmbiguousHypotheses ? 1 : Math.Max(1, MaxTrainingRounds);
+
+            // Timings go to pep_training_rounds.txt, never to the results block (see below).
+            WriteRoundProgress($"=== PEP {DateTime.Now:yyyy-MM-dd HH:mm:ss}  search type {SearchType}, " +
+                $"digestion {string.Join("+", AllPsms.Select(p => p.DigestionParams?.DigestionAgent?.Name).Distinct())}, " +
+                $"{AllPsms.Count} matches, {peptideGroups.Count} training groups " +
+                $"({(UsePeptideLevelQValueForTraining ? "peptide" : "PSM")} level), max rounds {maxRounds} ===");
+            var roundClock = System.Diagnostics.Stopwatch.StartNew();
+
+            // Round 0's labels come from the search-score q-value. They depend on no model and no fold, so the
+            // four groups are built once, in parallel, before anything trains -- as before iteration existed.
+            IEnumerable<PsmData>[] roundZeroData = new IEnumerable<PsmData>[numGroups];
+            bool allGroupsHavePositiveAndNegativeTrainingExamples = true;
+            Parallel.ForEach(
+                Enumerable.Range(0, numGroups),
+                new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
+                group =>
+                {
+                    roundZeroData[group] = CreatePsmData(SearchType, peptideGroups, peptideGroupIndices[group]);
+                    if (!HasPositiveAndNegativeExamples(roundZeroData[group]))
+                    {
+                        allGroupsHavePositiveAndNegativeTrainingExamples = false;
+                    }
+                });
+            // Checked for every group, before any fold trains or scores, so a failure leaves no PEP half-assigned.
+            // It also guarantees that each held-out fold, which is evaluated against these same labels, has both classes.
+            if (!allGroupsHavePositiveAndNegativeTrainingExamples)
+            {
+                return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.";
+            }
+            WriteRoundProgress($"round 0 features built  ({roundClock.Elapsed.TotalSeconds:F1} s)");
+            roundClock.Restart();
 
             MLContext mlContext = new MLContext(seed: _randomSeed);
             TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[numGroups];
@@ -204,153 +250,158 @@ namespace EngineLayer
             var pipeline = mlContext.Transforms.Concatenate("Features", TrainingVariables)
                 .Append(trainer);
 
+            // What each fold's model trains on: the three groups it does not score.
+            var trainingGroupIndices = new List<int>[numGroups];
+            var trainingData = new List<PsmData>[numGroups];
+            for (int fold = 0; fold < numGroups; fold++)
+            {
+                trainingGroupIndices[fold] = Enumerable.Range(0, numGroups).Where(g => g != fold)
+                    .SelectMany(g => peptideGroupIndices[g]).ToList();
+                //concat doesn't work in a loop, therefore I had to hard code the concat to group 3 out of 4 lists. if the const int numGroups value is changed, then the concat has to be changed accordingly.
+                var others = Enumerable.Range(0, numGroups).Where(g => g != fold).ToList();
+                trainingData[fold] = roundZeroData[others[0]].Concat(roundZeroData[others[1]].Concat(roundZeroData[others[2]])).ToList();
+            }
+
             List<CalibratedBinaryClassificationMetrics> allMetrics = new List<CalibratedBinaryClassificationMetrics>();
-            int positiveTrainingCount = 0;
-            int negativeTrainingcount = 0;
+            int positiveTrainingCount = roundZeroData.SelectMany(p => p).Count(p => p.Label);
+            int negativeTrainingcount = roundZeroData.SelectMany(p => p).Count(p => !p.Label);
             int roundsRun = 0;
-            // Per-round trace. Without it a long run is completely opaque: the metrics block is only
-            // emitted at the end, which is the same complaint AggregateMetricsForOutput already earns.
             var roundLog = new StringBuilder();
-            var roundClock = System.Diagnostics.Stopwatch.StartNew();
             int previousAccepted = 0;
             // Snapshot so a round that makes things worse can be undone. One double per PSM.
             double[] bestPepSnapshot = null;
 
-            // Pruning deletes hypotheses irreversibly, so a later, better round could not bring them back.
-            // Callers that prune (glyco, crosslink) therefore train once, exactly as before iteration existed.
-            int maxRounds = PruneAmbiguousHypotheses ? 1 : Math.Max(1, MaxTrainingRounds);
             for (int round = 0; round < maxRounds; round++)
             {
-                var roundMetrics = new List<CalibratedBinaryClassificationMetrics>();
-                bool foldStarved = false;
-                int roundPositives = 0;
-                int roundNegatives = 0;
-
-                // Round 0's labels come from the search score and do not depend on the fold, so its data is
-                // built once, up front, before any fold's model has scored anything -- as before iteration
-                // existed. Building it per fold instead would let a pruning caller's earlier folds delete
-                // hypotheses from the data a later fold trains on.
-                IEnumerable<PsmData>[] roundZeroData = null;
-                if (round == 0)
+                if (round > 0)
                 {
-                    _positiveTrainingPepThreshold = double.NaN;
-                    roundZeroData = new IEnumerable<PsmData>[numGroups];
-                    for (int group = 0; group < numGroups; group++)
+                    // FOLD-LOCAL, MODEL-LOCAL LABELS. Each fold's next positives come from ITS OWN previous
+                    // model's scores on ITS OWN training folds, as in mokapot's brew(). No model that saw a
+                    // fold's held-out data takes part in that fold's labels, and no held-out score is read.
+                    // All four label sets are derived before any model is refitted or any PEP overwritten,
+                    // so the result does not depend on the order the folds run in.
+                    bool foldStarved = false;
+                    var nextTrainingData = new List<PsmData>[numGroups];
+                    for (int fold = 0; fold < numGroups && !foldStarved; fold++)
                     {
-                        roundZeroData[group] = CreatePsmData(SearchType, peptideGroups, peptideGroupIndices[group]);
-                    }
-                }
-
-                for (int groupIndexNumber = 0; groupIndexNumber < numGroups; groupIndexNumber++)
-                {
-                    List<int> allGroupIndexes = Enumerable.Range(0, numGroups).ToList();
-                    allGroupIndexes.RemoveAt(groupIndexNumber);
-
-                    // FOLD-LOCAL LABELS. The threshold that decides which matches are positive
-                    // training examples is derived ONLY from the folds this model trains on. Deriving
-                    // it globally would let a held-out peptide's own score influence the labels of the
-                    // peptides that train the model which then scores it -- a leak that compounds every
-                    // round. mokapot avoids it by running its whole iteration inside each fold
-                    // (brew() deep-copies a model per fold); this is the same guarantee.
-                    // Round 0 has nothing to leak: its labels come from the search score, not from us.
-                    _positiveTrainingPepThreshold = round == 0
-                        ? double.NaN
-                        : ComputeTrainingPepThreshold(peptideGroups,
-                            allGroupIndexes.SelectMany(i => peptideGroupIndices[i]));
-
-                    // Built per model, not per group, because the label of a given peptide now depends
-                    // on WHICH model is being trained. Cheap only because the feature vectors are
-                    // cached -- this is what _featureCache was for.
-                    var trainingParts = new List<IEnumerable<PsmData>>();
-                    foreach (int trainingGroup in allGroupIndexes)
-                    {
-                        trainingParts.Add(round == 0
-                            ? roundZeroData[trainingGroup]
-                            : CreatePsmData(SearchType, peptideGroups, peptideGroupIndices[trainingGroup]));
+                        var trainingMatches = trainingGroupIndices[fold]
+                            .SelectMany(i => peptideGroups[i].GetBestMatches())
+                            .Where(m => m != null)
+                            .ToList();
+                        double[] ownPep = PredictPep(mlContext, trainedModels[fold], trainingMatches, maxThreads);
+                        HashSet<SpectralMatch> positives = SelectNextRoundPositives(trainingMatches, ownPep);
+                        nextTrainingData[fold] = CreatePsmData(SearchType, peptideGroups, trainingGroupIndices[fold], positives.Contains);
+                        foldStarved = !HasPositiveAndNegativeExamples(nextTrainingData[fold]);
                     }
 
-                    if (!trainingParts.Any(part => part.Any(p => p.Label)) || !trainingParts.Any(part => part.Any(p => !p.Label)))
+                    if (foldStarved)
                     {
-                        foldStarved = true;
+                        // Nothing has been refitted or rescored this round, so the previous round's PEPs stand.
+                        WriteRoundProgress($"round {round}: a fold has no positive or no negative examples; keeping round {round - 1}");
                         break;
                     }
 
-                    //concat doesn't work in a loop, therefore I had to hard code the concat to group 3 out of 4 lists. if the const int numGroups value is changed, then the concat has to be changed accordingly.
-                    IDataView dataView = mlContext.Data.LoadFromEnumerable(trainingParts[0].Concat(trainingParts[1].Concat(trainingParts[2])));
-                    trainedModels[groupIndexNumber] = pipeline.Fit(dataView);
+                    trainingData = nextTrainingData;
+                }
 
-                    // The held-out fold, labelled by the SAME threshold, so the evaluation measures the
-                    // model against the rule it was trained under rather than a different one.
-                    var heldOut = round == 0
-                        ? roundZeroData[groupIndexNumber]
-                        : CreatePsmData(SearchType, peptideGroups, peptideGroupIndices[groupIndexNumber]);
-                    var myPredictions = trainedModels[groupIndexNumber].Transform(mlContext.Data.LoadFromEnumerable(heldOut));
-                    CalibratedBinaryClassificationMetrics metrics = mlContext.BinaryClassification.Evaluate(data: myPredictions, labelColumnName: "Label", scoreColumnName: "Score");
+                var roundMetrics = new List<CalibratedBinaryClassificationMetrics>();
+                for (int fold = 0; fold < numGroups; fold++)
+                {
+                    trainedModels[fold] = pipeline.Fit(mlContext.Data.LoadFromEnumerable(trainingData[fold]));
+
+                    // Evaluated against the round-0 labels in every round: a fixed yardstick, the one master used,
+                    // and one that the all-groups check above guarantees has both classes.
+                    var myPredictions = trainedModels[fold].Transform(mlContext.Data.LoadFromEnumerable(roundZeroData[fold]));
+                    roundMetrics.Add(mlContext.BinaryClassification.Evaluate(data: myPredictions, labelColumnName: "Label", scoreColumnName: "Score"));
 
                     //model is trained on peptides but here we can use that to compute PEP for all PSMs
-                    Compute_PSM_PEP(peptideGroups, peptideGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], SearchType, OutputFolder);
-
-                    roundMetrics.Add(metrics);
-                    roundPositives += trainingParts.Sum(part => part.Count(p => p.Label));
-                    roundNegatives += trainingParts.Sum(part => part.Count(p => !p.Label));
+                    Compute_PSM_PEP(peptideGroups, peptideGroupIndices[fold], mlContext, trainedModels[fold], SearchType, OutputFolder);
                 }
 
-                if (foldStarved)
-                {
-                    if (round == 0)
-                    {
-                        return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.";
-                    }
-
-                    // A later round starved a fold. Keep what the previous round produced.
-                    RestorePepValues(bestPepSnapshot);
-                    break;
-                }
-
-                // Global count, for REPORTING and for the stopping decision only -- never for labels.
-                // The one-bit-per-round channel this opens (whether to run again) is the same one
-                // mokapot's max_iter and BestFeatureIsBetterError use.
-                int accepted = CountAcceptedTargets(peptideGroups);
-
-                if (round > 0 && accepted <= previousAccepted)
-                {
-                    // No better than the round before. Keep the better one and stop -- an unguarded loop
-                    // can make a search worse and nothing downstream would notice.
-                    RestorePepValues(bestPepSnapshot);
-                    break;
-                }
-
-                bestPepSnapshot = SnapshotPepValues();
-                allMetrics = roundMetrics;
-                // Averaged over the folds: each peptide appears in the training set of 3 of the 4 models.
-                positiveTrainingCount = roundPositives / (numGroups - 1);
-                negativeTrainingcount = roundNegatives / (numGroups - 1);
-                roundsRun = round + 1;
-                // NO TIMINGS in the results block. It is compared for byte equality across two runs of
-                // the same data by PepAnalysisEngineHasReproducibleOutput, and a wall clock is not
-                // reproducible. Timings go to the streamed file below, which nothing asserts on.
-                roundLog.AppendLine($"*         round {round}:  accepted {accepted}");
-                string roundLine = $"round {round}:  accepted {accepted}  ({roundClock.Elapsed.TotalSeconds:F1} s)";
-                // Also stream it to disk as it happens. The metrics block is only emitted when the
-                // whole engine finishes, so without this a multi-round run on a large dataset shows
-                // nothing at all for as long as it takes -- which makes it impossible to tell a slow
-                // run from a hung one, or to see the trajectory before it is over.
-                WriteRoundProgress(roundLine);
+                // Only after every fold of this round has scored. REPORTING and the stopping decision only --
+                // never labels.
+                int accepted = CountAcceptedPeptides(AllPsms, AcceptanceQValueCutoff);
+                var verdict = JudgeRound(round, accepted, previousAccepted, TrainingImprovementTolerance, maxRounds);
+                WriteRoundProgress($"round {round}: accepted {accepted}  {verdict}  ({roundClock.Elapsed.TotalSeconds:F1} s)");
                 roundClock.Restart();
 
-                double improvement = previousAccepted == 0
-                    ? double.PositiveInfinity
-                    : (accepted - previousAccepted) / (double)previousAccepted;
-                previousAccepted = accepted;
-
-                if (round > 0 && improvement < TrainingImprovementTolerance)
+                if (verdict == RoundVerdict.RevertAndStop)
                 {
-                    break; // converged by criterion, not by a hard-coded count
+                    // No better than the round before. Keep the better one -- an unguarded loop can make a
+                    // search worse and nothing downstream would notice.
+                    RestorePepValues(bestPepSnapshot);
+                    break;
+                }
+
+                if (maxRounds > 1)
+                {
+                    bestPepSnapshot = SnapshotPepValues();
+                }
+                allMetrics = roundMetrics;
+                if (round > 0)
+                {
+                    // Averaged over the folds: each peptide appears in the training set of 3 of the 4 models.
+                    positiveTrainingCount = trainingData.Sum(d => d.Count(p => p.Label)) / (numGroups - 1);
+                    negativeTrainingcount = trainingData.Sum(d => d.Count(p => !p.Label)) / (numGroups - 1);
+                }
+                roundsRun = round + 1;
+                previousAccepted = accepted;
+                // NO TIMINGS in the results block. It is compared for byte equality across two runs of
+                // the same data by PepAnalysisEngineHasReproducibleOutput, and a wall clock is not
+                // reproducible. Timings go to pep_training_rounds.txt, which nothing asserts on.
+                roundLog.AppendLine($"*         round {round}:  accepted {accepted}");
+
+                if (verdict == RoundVerdict.KeepAndStop)
+                {
+                    break;
                 }
             }
 
+            WriteRoundProgress($"done: {roundsRun} round(s) kept; feature cache holds {_featureCache.Count} vectors");
+
             return AggregateMetricsForOutput(allMetrics, positiveTrainingCount, negativeTrainingcount, QValueCutoff,
-                roundsRun, previousAccepted, roundLog.ToString(), PruneAmbiguousHypotheses ? _ambiguousHypothesesRemoved : null);
+                PruneAmbiguousHypotheses ? _ambiguousHypothesesRemoved : null, roundsRun, previousAccepted, roundLog.ToString());
+        }
+
+        /// <summary>
+        /// What to do after a training round has scored every fold.
+        /// </summary>
+        internal enum RoundVerdict
+        {
+            /// <summary>Keep this round and train another.</summary>
+            Continue,
+            /// <summary>Keep this round and stop: the cap is reached or the gain fell below the tolerance.</summary>
+            KeepAndStop,
+            /// <summary>This round accepted no more than the last one. Restore the last one and stop.</summary>
+            RevertAndStop
+        }
+
+        /// <summary>
+        /// The stopping rule, as a pure function so that every branch can be tested without training a model.
+        /// A round is kept only if it accepts MORE targets than the round before, and the loop continues only
+        /// while the relative gain is at least <paramref name="tolerance"/> and the cap allows another round.
+        /// </summary>
+        internal static RoundVerdict JudgeRound(int round, int accepted, int previousAccepted, double tolerance, int maxRounds)
+        {
+            if (round > 0 && accepted <= previousAccepted)
+            {
+                return RoundVerdict.RevertAndStop;
+            }
+
+            if (round + 1 >= maxRounds)
+            {
+                return RoundVerdict.KeepAndStop;
+            }
+
+            double improvement = round == 0 || previousAccepted == 0
+                ? double.PositiveInfinity
+                : (accepted - previousAccepted) / (double)previousAccepted;
+            return improvement < tolerance ? RoundVerdict.KeepAndStop : RoundVerdict.Continue;
+        }
+
+        private static bool HasPositiveAndNegativeExamples(IEnumerable<PsmData> data)
+        {
+            return data.Any(p => p.Label) && data.Any(p => !p.Label);
         }
 
         /// <summary>
@@ -431,50 +482,88 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// Does this match count as a positive training example for the model currently being trained?
-        /// <remarks>
-        /// Round 0 uses the SEARCH-SCORE q-value, which is all this engine ever used. Later rounds use
-        /// a PEP threshold derived by <see cref="ComputeTrainingPepThreshold"/> from the folds THIS
-        /// model trains on -- never from the fold it will score.
-        ///
-        /// That is the semi-supervised step: without it the model only ever learns from matches the
-        /// raw score already trusted, so the population that rescoring exists to rescue is absent from
-        /// every training set it sees.
-        /// </remarks>
+        /// Round 0's rule for a positive training example: the SEARCH-SCORE q-value, which is all this
+        /// engine used before iteration existed. Later rounds use <see cref="SelectPositives"/> instead.
         /// </summary>
-        private bool IsPositiveTrainingExample(SpectralMatch psm)
+        private bool IsPositiveBySearchScore(SpectralMatch psm)
         {
-            return double.IsNaN(_positiveTrainingPepThreshold)
-                ? psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff
-                : psm.GetFdrInfo(UsePeptideLevelQValueForTraining).PEP <= _positiveTrainingPepThreshold;
+            return psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff;
         }
 
         /// <summary>
-        /// Walks a population in PEP order accumulating a target-decoy q-value, and returns the
-        /// monotone q for each position alongside the matches.
+        /// PEP (1 - the best hypothesis's predicted probability) of each match under the given model, written
+        /// to an array and NOT to the match. Used to relabel a model's own training folds, which must never
+        /// disturb the PEPs other folds have assigned.
+        /// </summary>
+        private double[] PredictPep(MLContext mLContext,
+            TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>> trainedModel,
+            List<SpectralMatch> matches, int maxThreads)
+        {
+            var pep = new double[matches.Count];
+            var predictionEnginePerThread =
+                new ThreadLocal<PredictionEngine<PsmData, TruePositivePrediction>>(
+                    () => mLContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel),
+                    trackAllValues: true);
+            try
+            {
+                Parallel.ForEach(Partitioner.Create(0, matches.Count),
+                    new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
+                    range =>
+                    {
+                        var threadPredictionEngine = predictionEnginePerThread.Value;
+                        for (int i = range.Item1; i < range.Item2; i++)
+                        {
+                            double best = double.MinValue;
+                            foreach (SpectralMatchHypothesis hypothesis in matches[i].BestMatchingBioPolymersWithSetMods)
+                            {
+                                best = Math.Max(best, threadPredictionEngine.Predict(GetFeatures(SearchType, matches[i], hypothesis)).Probability);
+                            }
+                            pep[i] = 1 - best;
+                        }
+                    });
+            }
+            finally
+            {
+                foreach (var engine in predictionEnginePerThread.Values)
+                {
+                    engine?.Dispose();
+                }
+
+                predictionEnginePerThread.Dispose();
+            }
+
+            return pep;
+        }
+
+        /// <summary>
+        /// The next round's positive training examples: walk the matches in order of the model's own PEP,
+        /// accumulate a target-decoy q-value, and take every target ranked at or above the last target
+        /// whose q-value is within <paramref name="qValueCutoff"/>.
         /// <remarks>
-        /// q must be monotone in score, so the running ratio is swept once forward and then minimised
-        /// from the bottom up -- the same shape as FdrAnalysisEngine.QValueInverted.
+        /// The cut is by RANK, not by PEP value. A threshold (PEP &lt;= t) would also admit every target
+        /// tied at t, including tied targets the sweep had ordered past the point where q crosses the cutoff;
+        /// ties are common where the calibrated output saturates near 0. Within a tie the order is the
+        /// default SpectralMatch comparer's, as in <see cref="FdrAnalysisEngine"/>.
         ///
         /// The population is GetBestMatches(), one per full sequence: the unit the model is trained on.
-        /// SpectralMatchGroup.BestMatch (one per BASE sequence) would silently drop every modified
-        /// variant.
+        /// SpectralMatchGroup.BestMatch (one per BASE sequence) would silently drop every modified variant.
         /// </remarks>
         /// </summary>
-        private (List<SpectralMatch> Ordered, double[] MonotoneQ) SweepByPep(IEnumerable<SpectralMatch> matches)
+        internal static HashSet<SpectralMatch> SelectPositives(List<SpectralMatch> matches, double[] pep, double qValueCutoff)
         {
-            var ordered = matches
-                .Where(m => m != null)
-                .OrderBy(m => m.GetFdrInfo(UsePeptideLevelQValueForTraining).PEP)
-                .ThenByDescending(m => m)
-                .ToList();
+            int[] order = Enumerable.Range(0, matches.Count)
+                .OrderBy(i => pep[i])
+                .ThenByDescending(i => matches[i])
+                .ToArray();
 
-            var runningQ = new double[ordered.Count];
+            // q must be monotone in rank, so the running ratio is swept once forward and then minimised
+            // from the bottom up -- the same shape as FdrAnalysisEngine.QValueInverted.
+            var q = new double[order.Length];
             double cumulativeTarget = 0;
             double cumulativeDecoy = 0;
-            for (int i = 0; i < ordered.Count; i++)
+            for (int r = 0; r < order.Length; r++)
             {
-                if (ordered[i].IsDecoy)
+                if (matches[order[r]].IsDecoy)
                 {
                     cumulativeDecoy++;
                 }
@@ -483,52 +572,77 @@ namespace EngineLayer
                     cumulativeTarget++;
                 }
 
-                runningQ[i] = cumulativeDecoy / Math.Max(cumulativeTarget, 1);
+                q[r] = cumulativeDecoy / Math.Max(cumulativeTarget, 1);
             }
 
             double best = double.PositiveInfinity;
-            for (int i = ordered.Count - 1; i >= 0; i--)
+            for (int r = order.Length - 1; r >= 0; r--)
             {
-                best = Math.Min(best, runningQ[i]);
-                runningQ[i] = best;
+                best = Math.Min(best, q[r]);
+                q[r] = best;
             }
 
-            return (ordered, runningQ);
-        }
-
-        /// <summary>
-        /// The PEP at which the target-decoy q-value of the given TRAINING population crosses
-        /// <see cref="QValueCutoff"/>. Matches at or below it are the next round's positives.
-        /// </summary>
-        private double ComputeTrainingPepThreshold(List<SpectralMatchGroup> peptideGroups, IEnumerable<int> populationIndices)
-        {
-            var population = populationIndices.SelectMany(i => peptideGroups[i].GetBestMatches());
-            var (ordered, monotoneQ) = SweepByPep(population);
-
-            double threshold = double.NegativeInfinity;
-            for (int i = 0; i < ordered.Count; i++)
+            int lastRank = -1;
+            for (int r = 0; r < order.Length; r++)
             {
-                if (!ordered[i].IsDecoy && monotoneQ[i] <= QValueCutoff)
+                if (!matches[order[r]].IsDecoy && q[r] <= qValueCutoff)
                 {
-                    threshold = ordered[i].GetFdrInfo(UsePeptideLevelQValueForTraining).PEP;
+                    lastRank = r;
                 }
             }
 
-            return threshold;
+            var positives = new HashSet<SpectralMatch>(ReferenceEqualityComparer.Instance);
+            for (int r = 0; r <= lastRank; r++)
+            {
+                if (!matches[order[r]].IsDecoy)
+                {
+                    positives.Add(matches[order[r]]);
+                }
+            }
+
+            return positives;
         }
 
         /// <summary>
-        /// Target groups accepted at <see cref="AcceptanceQValueCutoff"/> across ALL folds.
-        /// Reporting and the stopping decision only -- never labels.
+        /// Target peptides whose peptide-level PEP q-value is below <paramref name="qValueCutoff"/>, computed
+        /// the way <see cref="FdrAnalysisEngine"/> computes the reported one: the PEP-best match per full
+        /// sequence (ties broken by the default comparer), fractional target and decoy counts per hypothesis
+        /// as in CalculateQValue, and q = min over the tail of (decoys + 1) / targets as in PepQValueInverted.
+        /// Reads the matches' current PEP. For reporting and the stopping decision only -- never labels.
+        /// <remarks>
+        /// Not written through CalculateQValue itself because that method stores its counts on the matches,
+        /// and FdrAnalysisEngine leaves some of those fields untouched after PEP, so writing them here
+        /// would change output.
+        /// </remarks>
         /// </summary>
-        private int CountAcceptedTargets(List<SpectralMatchGroup> peptideGroups)
+        internal static int CountAcceptedPeptides(IEnumerable<SpectralMatch> psms, double qValueCutoff)
         {
-            var (ordered, monotoneQ) = SweepByPep(peptideGroups.SelectMany(g => g.GetBestMatches()));
+            var peptides = psms
+                .Where(p => p != null)
+                .OrderBy(p => p.FdrInfo.PEP)
+                .ThenByDescending(p => p)
+                .GroupBy(p => p.FullSequence)
+                .Select(g => g.First())
+                .ToList();
+
+            var q = new double[peptides.Count];
+            double cumulativeTarget = 0;
+            double cumulativeDecoy = 0;
+            for (int i = 0; i < peptides.Count; i++)
+            {
+                double totalHits = peptides[i].BestMatchingBioPolymersWithSetMods.Count();
+                double targetHits = peptides[i].BestMatchingBioPolymersWithSetMods.Count(h => !h.IsDecoy);
+                cumulativeTarget += targetHits / totalHits;
+                cumulativeDecoy += (totalHits - targetHits) / totalHits;
+                q[i] = (cumulativeDecoy + 1) / cumulativeTarget;
+            }
 
             int accepted = 0;
-            for (int i = 0; i < ordered.Count; i++)
+            double best = double.PositiveInfinity;
+            for (int i = peptides.Count - 1; i >= 0; i--)
             {
-                if (!ordered[i].IsDecoy && monotoneQ[i] < AcceptanceQValueCutoff)
+                best = Math.Min(best, q[i]);
+                if (!peptides[i].IsDecoy && best < qValueCutoff)
                 {
                     accepted++;
                 }
@@ -596,8 +710,22 @@ namespace EngineLayer
         }
 
 
+        /// <summary>
+        /// Training data for the given groups, labelled by the search-score q-value (round 0's rule).
+        /// </summary>
         public IEnumerable<PsmData> CreatePsmData(string searchType,
             List<SpectralMatchGroup> peptideGroups, List<int> peptideGroupIndices)
+        {
+            return CreatePsmData(searchType, peptideGroups, peptideGroupIndices, IsPositiveBySearchScore);
+        }
+
+        /// <summary>
+        /// Training data for the given groups. Decoys are negatives; a target is a positive when
+        /// <paramref name="isPositive"/> says so and is left out otherwise. The rule is a parameter, not
+        /// engine state, so the labels a caller gets never depend on what ran before.
+        /// </summary>
+        private List<PsmData> CreatePsmData(string searchType,
+            List<SpectralMatchGroup> peptideGroups, List<int> peptideGroupIndices, Func<SpectralMatch, bool> isPositive)
         {
             List<PsmData> psmDataList = new List<PsmData>();
 
@@ -617,7 +745,7 @@ namespace EngineLayer
                             label = false;
                             newPsmData = CreateOnePsmDataEntry(searchType, csm, csm.BestMatchingBioPolymersWithSetMods.First(), label);
                         }
-                        else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && IsPositiveTrainingExample(csm))
+                        else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && isPositive(csm))
                         {
                             label = true;
                             newPsmData = CreateOnePsmDataEntry(searchType, csm, csm.BestMatchingBioPolymersWithSetMods.First(), label);
@@ -641,7 +769,7 @@ namespace EngineLayer
                                 newPsmData = CreateOnePsmDataEntry(searchType, psm, bestMatch, label);
                             }
                             else if (!bestMatch.SpecificBioPolymer.Parent.IsDecoy
-                                && IsPositiveTrainingExample(psm))
+                                && isPositive(psm))
                             {
                                 label = true;
                                 newPsmData = CreateOnePsmDataEntry(searchType, psm, bestMatch, label);
@@ -663,8 +791,8 @@ namespace EngineLayer
         }
 
         public static string AggregateMetricsForOutput(List<CalibratedBinaryClassificationMetrics> allMetrics,
-            int positiveTrainingCount, int negativeTrainingCount, double qValueCutoff,
-            int trainingRounds = 1, int acceptedTargets = 0, string roundLog = null, int? ambiguousHypothesesRemoved = null)
+            int positiveTrainingCount, int negativeTrainingCount, double qValueCutoff, int? ambiguousHypothesesRemoved = null,
+            int trainingRounds = 1, int acceptedTargets = 0, string roundLog = null)
 
         {
             List<double> accuracy = allMetrics.Select(m => m.Accuracy).ToList();
@@ -823,18 +951,26 @@ namespace EngineLayer
 
         public PsmData CreateOnePsmDataEntry(string searchType, SpectralMatch psm, SpectralMatchHypothesis tentativeSpectralMatch, bool label)
         {
-            // Only Label changes between training rounds -- see _featureCache. Everything below is a
-            // pure function of inputs that are fixed for the lifetime of this engine, and computing
-            // it is dominated by retention-time prediction.
-            if (_featureCache.TryGetValue(tentativeSpectralMatch, out PsmData cached))
-            {
-                // A COPY, never the cached instance. Training and prediction both come through here,
-                // ML.NET enumerates its training set lazily, and handing out one shared object would
-                // let prediction mutate a Label inside a training list a later fold is about to fit on.
-                psm.PsmData_forPEPandPercolator = cached.WithLabel(label);
-                return psm.PsmData_forPEPandPercolator;
-            }
+            // A COPY, never the cached instance. Training and prediction both come through here,
+            // ML.NET enumerates its training set lazily, and handing out one shared object would
+            // let prediction mutate a Label inside a training list a later fold is about to fit on.
+            psm.PsmData_forPEPandPercolator = GetFeatures(searchType, psm, tentativeSpectralMatch).WithLabel(label);
+            return psm.PsmData_forPEPandPercolator;
+        }
 
+        /// <summary>
+        /// The feature vector of one hypothesis, from <see cref="_featureCache"/>. Only Label changes between
+        /// training rounds. Everything else is a pure function of inputs that are fixed for the lifetime of
+        /// this engine, and computing it is dominated by retention-time prediction. The returned instance is
+        /// the cached one: read it, never modify it. Its Label is meaningless.
+        /// </summary>
+        private PsmData GetFeatures(string searchType, SpectralMatch psm, SpectralMatchHypothesis tentativeSpectralMatch)
+        {
+            return _featureCache.GetOrAdd(tentativeSpectralMatch, _ => ComputeFeatures(searchType, psm, tentativeSpectralMatch));
+        }
+
+        private PsmData ComputeFeatures(string searchType, SpectralMatch psm, SpectralMatchHypothesis tentativeSpectralMatch)
+        {
             double normalizationFactor = tentativeSpectralMatch.SpecificBioPolymer.BaseSequence.Length;
             float totalMatchingFragmentCount = 0;
             float internalMatchingFragmentCount = 0;
@@ -983,7 +1119,7 @@ namespace EngineLayer
                 isIntra = Convert.ToSingle(csm.CrossType == PsmCrossType.Intra);
             }
 
-            psm.PsmData_forPEPandPercolator = new PsmData
+            return new PsmData
             {
                 TotalMatchingFragmentCount = totalMatchingFragmentCount,
                 Intensity = intensity,
@@ -1008,7 +1144,7 @@ namespace EngineLayer
                 IsInter = isInter,
                 IsIntra = isIntra,
 
-                Label = label,
+                Label = false,
 
                 SpectralAngle = spectralAngle,
                 HasSpectralAngle = hasSpectralAngle,
@@ -1019,10 +1155,6 @@ namespace EngineLayer
                 InternalIonCount = internalMatchingFragmentCount,
                 PrecursorDeconvolutionScore = (float)psm.PrecursorScanDeconvolutionScore,
             };
-
-            _featureCache[tentativeSpectralMatch] = psm.PsmData_forPEPandPercolator;
-
-            return psm.PsmData_forPEPandPercolator;
         }
 
         /// <summary>
