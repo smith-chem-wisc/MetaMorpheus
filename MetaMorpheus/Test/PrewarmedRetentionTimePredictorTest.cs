@@ -222,6 +222,69 @@ namespace Test
             Assert.DoesNotThrow(() => warm.PredictRetentionTimeEquivalent(blank, out _));
         }
 
+        /// <summary>
+        /// The batched entry point must serve warmed peptidoforms from the table and send ONLY the misses to
+        /// the model, in one call, so a later batched consumer cannot reintroduce per-peptide traffic.
+        /// </summary>
+        [Test]
+        public static void BatchedLookupSendsOnlyUnwarmedPeptidesToTheModel()
+        {
+            var script = new Dictionary<string, (double?, RetentionTimeFailureReason?)>
+            {
+                ["WARM"] = (3.0, RetentionTimeFailureReason.IncompatibleModifications),
+                ["COLD1"] = (4.0, null),
+                ["COLD2"] = (5.0, null),
+            };
+            var inner = new ScriptedPredictor(script);
+            var warm = PrewarmedRetentionTimePredictor.Warm(inner, new[] { Peptide("WARM") }, maxThreads: 1);
+            int batchCallsAfterWarming = inner.BatchCalls;
+            int peptidesSeenAfterWarming = inner.PeptidesSeen;
+
+            var results = warm.PredictRetentionTimeEquivalents(new[] { "WARM", "COLD1", "COLD2" }.Select(Peptide), maxThreads: 1)
+                .ToDictionary(r => r.Peptide.FullSequence);
+
+            Assert.That(inner.BatchCalls - batchCallsAfterWarming, Is.EqualTo(1), "the misses go to the model in one call");
+            Assert.That(inner.PeptidesSeen - peptidesSeenAfterWarming, Is.EqualTo(2), "a warmed peptidoform must not reach the model");
+            Assert.That(inner.SingleCalls, Is.Zero);
+            Assert.That(results["WARM"].PredictedValue, Is.EqualTo(3.0));
+            Assert.That(results["WARM"].FailureReason, Is.EqualTo(RetentionTimeFailureReason.IncompatibleModifications));
+            Assert.That(results["COLD1"].PredictedValue, Is.EqualTo(4.0));
+            Assert.That(results["COLD2"].PredictedValue, Is.EqualTo(5.0));
+
+            // Everything warmed: no call reaches the model at all.
+            warm.PredictRetentionTimeEquivalents(new[] { Peptide("WARM") });
+            Assert.That(inner.BatchCalls - batchCallsAfterWarming, Is.EqualTo(1));
+        }
+
+        /// <summary>
+        /// The encode phase allocates per peptide before inference starts, so the warm set is handed over in
+        /// bounded chunks rather than in one call.
+        /// </summary>
+        [Test]
+        public static void WarmingALargeSetIsChunked()
+        {
+            var inner = new ScriptedPredictor(new Dictionary<string, (double?, RetentionTimeFailureReason?)>());
+            var peptides = Enumerable.Range(0, 50_001).Select(i => Peptide("P" + i));
+
+            PrewarmedRetentionTimePredictor.Warm(inner, peptides, maxThreads: 1);
+
+            Assert.That(inner.BatchCalls, Is.EqualTo(2));
+            Assert.That(inner.PeptidesSeen, Is.EqualTo(50_001));
+        }
+
+        /// <summary>The decorator must not change what the predictor says about itself.</summary>
+        [Test]
+        public static void IdentityAndFormattingComeFromTheWrappedPredictor()
+        {
+            var inner = new ScriptedPredictor(new Dictionary<string, (double?, RetentionTimeFailureReason?)>());
+            var warm = PrewarmedRetentionTimePredictor.Warm(inner, Array.Empty<IRetentionPredictable>(), maxThreads: 1);
+
+            Assert.That(warm.PredictorName, Is.EqualTo("Scripted"));
+            Assert.That(warm.SeparationType, Is.EqualTo(SeparationType.HPLC));
+            Assert.That(warm.GetFormattedSequence(Peptide("AAA"), out var reason), Is.EqualTo("AAA"));
+            Assert.That(reason, Is.Null);
+        }
+
         [Test]
         public static void WarmingANullPredictorThrows()
         {
