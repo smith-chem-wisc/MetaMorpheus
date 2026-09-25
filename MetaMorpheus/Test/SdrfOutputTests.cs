@@ -576,8 +576,10 @@ namespace Test
             for (int i = 0; i < expectedChannels.Count; i++)
             {
                 SdrfRow row = document.Results[i];
-                Assert.That(row["comment[label]"], Does.Contain("NT=TMT" + expectedChannels[i] + ";"),
-                    "Rows follow the plex's reporter m/z order, not the design file's row order.");
+                Assert.That(row["comment[label]"], Is.EqualTo("TMT" + expectedChannels[i]),
+                    "Rows follow the plex's reporter m/z order, not the design file's row order, and " +
+                    "the label is written bare (D25): it is what the community writes, and quantms " +
+                    "crashes on the accessioned form.");
                 Assert.That(row["source name"], Is.EqualTo("Sample" + (i + 1)),
                     "The source name is the sample the design put in this channel.");
                 Assert.That(row["comment[data file]"], Is.EqualTo("VA084TQ_6.mzML"));

@@ -51,7 +51,10 @@ namespace TaskLayer
                     // The sample metadata is only as complete as the input allowed. Gaps were named
                     // before the run; by here it is committed, so accept what we have and let
                     // SdrfCoverage report on it rather than throwing mid-write.
-                    RequireSampleMetadata = false
+                    RequireSampleMetadata = false,
+                    // comment[label] is written bare (TMT126), not accessioned: it is what the
+                    // community writes, and quantms crashes on the accessioned form.
+                    LabelForm = SdrfLabelForm.Bare
                 });
 
                 string path = Path.Combine(Parameters.OutputFolder, "experiment.sdrf.tsv");
