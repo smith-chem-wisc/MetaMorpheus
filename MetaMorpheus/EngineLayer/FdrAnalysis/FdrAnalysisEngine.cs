@@ -4,7 +4,6 @@ using Chromatography.RetentionTimePrediction.SSRCalc;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.SpectrumMatch;
 using PredictionClients.Koina.SupportedModels.RetentionTimeModels;
-using Omics.SequenceConversion;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -17,13 +16,7 @@ namespace EngineLayer.FdrAnalysis
     {
         private static readonly Lazy<ChronologerRetentionTimePredictor> _chronologerInstance =
             new Lazy<ChronologerRetentionTimePredictor>(
-                // ReturnNull, not the default RemoveIncompatibleElements. Under the default a modification
-                // outside Chronologer's vocabulary is silently deleted and the residue encoded bare, so the
-                // model predicts the retention time of a DIFFERENT molecule and reports success. That is
-                // particularly damaging within a single scan: two peptidoforms the spectrum cannot separate can
-                // receive different predictions purely because one modification is in the vocabulary and the
-                // other is not. Reporting the failure lets PsmData.HasHydrophobicity mark the value unusable.
-                () => new ChronologerRetentionTimePredictor(SequenceConversionHandlingMode.ReturnNull),
+                () => new ChronologerRetentionTimePredictor(),
                 System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 
         // When non-null, GetChronologer() calls this factory instead of the real Lazy<>.
