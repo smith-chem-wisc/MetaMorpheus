@@ -116,7 +116,15 @@ namespace EngineLayer
         /// m/z values are stored as supplied (no hydrogen-mass offset).
         ///
         /// A malformed line throws MetaMorpheusException with the file name, line number, raw line
-        /// content, and the specific problem (collision with built-in, bad char, non-numeric mass).
+        /// content, and the specific problem (bad char, non-numeric mass).
+        ///
+        /// A diagnostic ion that collides with an already-claimed oxonium ion is the one problem that
+        /// does NOT throw: the ion is dropped, the monosaccharide is loaded without it, and a warning
+        /// goes to GlobalVariables.ErrorsReadingMods. DiagnosticIonMasses shipped in 1.1.8 without
+        /// this check, and EnsureCustomMonosaccharideFileExists only writes the template when the file
+        /// is missing, so an upgrading user's file can already contain one. Throwing would be fatal
+        /// rather than corrective -- LoadGlycans runs from SetUpGlobalVariables before the GUI's
+        /// InitializeComponent, so the window never opens and "Open mods/data folder" is unreachable.
         /// </summary>
         public static void LoadCustomMonosaccharides(string filePath)
         {
@@ -184,6 +192,13 @@ namespace EngineLayer
                         }
                     }
 
+                    // Screen the ions before registering rather than letting RegisterCustomMonosaccharide
+                    // throw: see the note on this method about why a collision must not be fatal here.
+                    if (ionsScaled != null)
+                    {
+                        ionsScaled = KeepUnclaimedDiagnosticIons(ionsScaled, name, filePath, lineNumber);
+                    }
+
                     try
                     {
                         Glycan.RegisterCustomMonosaccharide(name, code, massScaled, ionsScaled);
@@ -194,8 +209,71 @@ namespace EngineLayer
                             $"Could not register custom monosaccharide in '{Path.GetFileName(filePath)}' at line {lineNumber}: \"{line}\". {ex.Message}",
                             ex);
                     }
+
+                    WarnThatDiagnosticIonsActAsFilterGates(name, ionsScaled);
                 }
             }
+        }
+
+        /// <summary>
+        /// Returns the subset of <paramref name="ionsScaled"/> that no built-in oxonium ion and no
+        /// already-registered custom monosaccharide has claimed, warning about each one dropped.
+        /// Returns null when nothing survives, which is what RegisterCustomMonosaccharide expects for
+        /// "no diagnostic ions" -- the monosaccharide itself still loads and still works in glycan
+        /// databases, it just contributes no ions.
+        /// </summary>
+        private static int[] KeepUnclaimedDiagnosticIons(int[] ionsScaled, string name, string filePath, int lineNumber)
+        {
+            List<int> kept = new List<int>(ionsScaled.Length);
+            foreach (int ionScaled in ionsScaled)
+            {
+                string collision = Glycan.DescribeDiagnosticIonCollision(ionScaled);
+                if (collision == null)
+                {
+                    kept.Add(ionScaled);
+                    continue;
+                }
+
+                AddModWarning(
+                    $"Custom monosaccharide '{name}' in '{Path.GetFileName(filePath)}' at line {lineNumber}: " +
+                    $"diagnostic ion {(double)ionScaled / 1E5:F5} {collision} " +
+                    $"That ion was skipped and '{name}' was loaded without it. Remove or correct it in the file to clear this warning.");
+            }
+
+            return kept.Count > 0 ? kept.ToArray() : null;
+        }
+
+        /// <summary>
+        /// Tells the user, once per startup, that this monosaccharide's diagnostic ions act as strict
+        /// accept/reject gates. The other half of the upgrade problem: a file that predates this
+        /// feature keeps its column-4 values, OxoniumIonFilt defaults to true, and the banner in the
+        /// shipped template explaining all this never reaches them precisely because their file
+        /// already exists and is therefore never rewritten.
+        /// </summary>
+        private static void WarnThatDiagnosticIonsActAsFilterGates(string name, int[] ionsScaled)
+        {
+            if (ionsScaled == null || ionsScaled.Length == 0)
+            {
+                return;
+            }
+
+            string ions = string.Join(", ", ionsScaled.Select(i => ((double)i / 1E5).ToString("F5", CultureInfo.InvariantCulture)));
+            AddModWarning(
+                $"Custom monosaccharide '{name}' declares diagnostic ion(s) {ions}. With OxoniumIonFilt enabled (the default) " +
+                $"these act as strict gates in O-glycan and N+O-glycan searches: a candidate is rejected when one of these ions " +
+                $"is observed but the candidate does not contain '{name}', and when the candidate contains '{name}' but the ion " +
+                $"is not observed. Uncheck OxoniumIonFilt to score these ions without filtering on them.");
+        }
+
+        /// <summary>
+        /// Routes a non-fatal load problem to the notifications area. GlobalVariables.LoadModifications
+        /// initialises ErrorsReadingMods one line before LoadGlycans, and the GUI drains it in
+        /// PrintErrorsReadingMods once its window is up; the null guard is for callers that load
+        /// monosaccharides without SetUpGlobalVariables, i.e. tests.
+        /// </summary>
+        private static void AddModWarning(string message)
+        {
+            GlobalVariables.ErrorsReadingMods?.Add(message);
         }
 
         /// <summary>
@@ -806,7 +884,7 @@ namespace EngineLayer
 
         /// <summary>
         /// Ensure the MonosaccharidesCustom.tsv exists in the directory. If the file is missing, 
-        /// write the embedded full 85-line documented template—instructions, column spec, the built-in name/code table,
+        /// write the embedded fully documented template—instructions, column spec, the built-in name/code table,
         /// worked examples — with the header row as its single non-comment line; do nothing if it already exists.
         /// </summary>
         /// <param name="path">
