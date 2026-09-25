@@ -585,29 +585,24 @@ namespace EngineLayer
 
             //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
             //The reason why not include Glycan into modification database is for users to apply their own database.
-            foreach (var path in OGlycanDatabasePaths)
+            // Read through LoadGlycansOrWarn rather than LoadGlycan directly: this runs inside
+            // SetUpGlobalVariables, so a typo in a user's own database would otherwise stop MetaMorpheus
+            // opening -- and with it the only window that could fix the file.
+            foreach (var glycan in GlycanDatabase.LoadGlycansOrWarn(OGlycanDatabasePaths, true, Warn))
             {
-                var oGlycans = GlycanDatabase.LoadGlycan(path, false, true);
-                foreach (var glycan in oGlycans)
+                if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
                 {
-                    if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
-                    {
-                        AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
-                    }
-                    _AllModsKnown.Add(glycan);
+                    AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
                 }
+                _AllModsKnown.Add(glycan);
             }
-            foreach (var path in NGlycanDatabasePaths)
+            foreach (var glycan in GlycanDatabase.LoadGlycansOrWarn(NGlycanDatabasePaths, false, Warn))
             {
-                var nGlycans = GlycanDatabase.LoadGlycan(path, false, false);
-                foreach (var glycan in nGlycans)
+                if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
                 {
-                    if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
-                    {
-                        AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
-                    }
-                    _AllModsKnown.Add(glycan);
+                    AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
                 }
+                _AllModsKnown.Add(glycan);
             }
             LoadTxtGlycan();
         }

@@ -64,6 +64,39 @@ namespace EngineLayer
             }
         }
 
+        /// <summary>
+        /// Every glycan in the given databases, without ions, reporting a database that cannot be read
+        /// through <paramref name="warn"/> and carrying on with the rest instead of throwing.
+        /// </summary>
+        /// <remarks>
+        /// For the startup load in <see cref="GlobalVariables.SetUpGlobalVariables"/>, which is only
+        /// there to give MetaDraw the glycan names. A throw from there stops MetaMorpheus opening, and a
+        /// user's own database is hand-edited, so one typo would lock them out of the window that could
+        /// fix it. A database that fails here is left in the list the GlycoSearch task offers: a search
+        /// that selects it reads it again and stops with the same named error, which is where it matters.
+        /// </remarks>
+        public static List<Glycan> LoadGlycansOrWarn(IEnumerable<string> databasePaths, bool isOGlycan, Action<string> warn)
+        {
+            var glycans = new List<Glycan>();
+            foreach (string path in databasePaths)
+            {
+                try
+                {
+                    // Materialised here: the loaders are lazy, so the parse error surfaces on enumeration,
+                    // and a half-read database is not added.
+                    glycans.AddRange(LoadGlycan(path, false, isOGlycan).ToList());
+                }
+                // Anything, not only the loaders' own named errors: a file locked by an editor, or a parse
+                // failure deeper in Struct2Glycan, would stop startup just the same.
+                catch (Exception ex)
+                {
+                    warn($"The glycan database '{Path.GetFileName(path)}' could not be read, so its glycans are not " +
+                        $"available to MetaDraw in this session. {ex.Message} Fix the file at {path} and restart MetaMorpheus.");
+                }
+            }
+            return glycans;
+        }
+
         public const string MonoSaccharidesHeader = "Name\tSingleCharCode\tMonoisotopicMass\tDiagnosticIonMasses\tDescription";
 
         /// <summary>
@@ -319,9 +352,11 @@ namespace EngineLayer
                     "so the two cannot be mixed in one file. Convert the entry, or keep it in a database of its own.");
             }
 
-            if (ContainsEntry(databasePath, entry))
+            string duplicate = ExistingEntryFor(databasePath, entry, format);
+            if (duplicate != null)
             {
-                throw new MetaMorpheusException($"Could not add the glycan: '{fileName}' already contains \"{entry}\".");
+                string sameGlycan = duplicate == entry ? "" : $", which is the same glycan as \"{entry}\"";
+                throw new MetaMorpheusException($"Could not add the glycan: '{fileName}' already contains \"{duplicate}\"{sameGlycan}.");
             }
 
             try
@@ -364,7 +399,7 @@ namespace EngineLayer
         {
             if (entry.StartsWith("(", StringComparison.Ordinal))
             {
-                ValidateStructureEntry(entry, fileName, isOGlycan);
+                ValidateStructureEntry(entry, isOGlycan);
                 return GlycanLineFormat.Structure;
             }
 
@@ -372,33 +407,33 @@ namespace EngineLayer
             return GlycanLineFormat.Composition;
         }
 
-        private static void ValidateStructureEntry(string entry, string fileName, bool isOGlycan)
-        {
-            // The same character check the loader runs, so an unknown monosaccharide code is rejected here
-            // rather than being silently counted as zero mass at search time.
-            ValidateStructureLine(entry, fileName, 1);
+        /// <summary>
+        /// The most monosaccharides a glycan entered through <see cref="PersistCustomGlycan"/> may hold --
+        /// twice the largest glycan in any database MetaMorpheus ships (20, in NGlycan.gdb).
+        /// </summary>
+        /// <remarks>
+        /// Zero is refused because it means nothing; this is the other end of the same range. The child ions
+        /// of a glycan grow combinatorially with its size, and they are built when a search first reads the
+        /// database: HexNAc(255)Hex(255)NeuAc(255) takes nearly four minutes there, with no sign of why. The
+        /// loader applies no cap -- a database that already loads is not refused after the fact.
+        /// </remarks>
+        public const int MaxMonosaccharidesPerGlycan = 40;
 
-            int depth = 0;
-            foreach (char c in entry)
+        private static void ValidateStructureEntry(string entry, bool isOGlycan)
+        {
+            // The same checks the loader runs -- characters, balance, one root -- so a structure is refused
+            // here, naming what was typed, rather than being told it was added and failing at search time.
+            string problem = StructureProblem(entry);
+            if (problem != null)
             {
-                if (c == '(')
-                {
-                    depth++;
-                }
-                else if (c == ')')
-                {
-                    depth--;
-                    if (depth < 0)
-                    {
-                        throw new MetaMorpheusException(
-                            $"Could not add the glycan \"{entry}\": the parentheses do not balance -- a ')' closes a branch that was never opened.");
-                    }
-                }
+                throw new MetaMorpheusException($"Could not add the glycan \"{entry}\": {problem}");
             }
-            if (depth != 0)
+
+            // Counted before Struct2Glycan, which is where the combinatorial cost is paid.
+            int residues = entry.Count(c => c != '(' && c != ')');
+            if (residues > MaxMonosaccharidesPerGlycan)
             {
-                throw new MetaMorpheusException(
-                    $"Could not add the glycan \"{entry}\": the parentheses do not balance -- {depth} branch(es) are left open.");
+                throw new MetaMorpheusException(TooLarge(entry, residues));
             }
 
             try
@@ -429,52 +464,153 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// A composition line: a monosaccharide name and a count, repeated, e.g. HexNAc(2)Hex(5). Shared
-        /// so the loader and the entry validator cannot drift apart about what one looks like -- which is
-        /// exactly how the format-detection bug got in.
+        /// Why a structure line cannot be read, or null when it can. Only the reason: the loader and the
+        /// entry validator each say where it came from -- a file and a line, or what the user typed.
         /// </summary>
-        private const string CompositionShape = @"^(?:(?<name>[A-Za-z][A-Za-z0-9]*)\((?<count>\d+)\))+$";
-
-        private static void ValidateCompositionEntry(string entry)
+        private static string StructureProblem(string structure)
         {
-            // Name(count), repeated -- e.g. HexNAc(2)Hex(5)NeuAc(1). Checked here rather than by handing it
-            // to String2Kind, which throws KeyNotFoundException on an unknown name and quietly accepts a
-            // trailing unclosed group.
-            Match match = Regex.Match(entry, CompositionShape);
+            // Struct2Glycan silently miscounts a character it has no mass for, so an unknown monosaccharide
+            // code would be searched as a lighter glycan than the one written. Consults the live registry,
+            // so codes declared in MonosaccharidesCustom.tsv are accepted too.
+            foreach (char c in structure)
+            {
+                if (c != '(' && c != ')' && !Glycan.CharMassDic.ContainsKey(c))
+                {
+                    return $"Unrecognized character '{c}'. Allowed: parentheses and one of {string.Concat(Glycan.CharMassDic.Keys)}. " +
+                        "A monosaccharide MetaMorpheus does not ship with must be declared in MonosaccharidesCustom.tsv first.";
+                }
+            }
+
+            int depth = 0;
+            int firstTreeEnds = -1;
+            for (int i = 0; i < structure.Length; i++)
+            {
+                if (structure[i] == '(')
+                {
+                    depth++;
+                }
+                else if (structure[i] == ')')
+                {
+                    depth--;
+                    if (depth < 0)
+                    {
+                        return "The parentheses do not balance -- a ')' closes a branch that was never opened.";
+                    }
+                    if (depth == 0 && firstTreeEnds < 0)
+                    {
+                        firstTreeEnds = i;
+                    }
+                }
+            }
+            if (depth != 0)
+            {
+                return $"The parentheses do not balance -- {depth} branch(es) are left open.";
+            }
+
+            // Struct2Node reads one tree and stops, so "(N)(H)" -- which balances -- would be searched as
+            // (N) with the H quietly gone. A second root is a second tree.
+            if (firstTreeEnds >= 0 && firstTreeEnds < structure.Length - 1)
+            {
+                return "A structure is a single tree with one root, and this has more than one: " +
+                    $"\"{structure.Substring(0, firstTreeEnds + 1)}\" is complete before \"{structure.Substring(firstTreeEnds + 1)}\" begins.";
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// A composition: a monosaccharide name and a count, repeated, e.g. HexNAc(2)Hex(5). Shared so the
+        /// loader and the entry validator cannot drift apart about what one looks like -- which is exactly
+        /// how the format-detection bug got in. The name is anything but a parenthesis, because that is all
+        /// MonosaccharidesCustom.tsv asks of one: Hex-6P and Neu5,9Ac2 are legal names.
+        /// </summary>
+        private const string CompositionShape = @"^(?:(?<name>[^()]+)\((?<count>\d+)\))+$";
+
+        /// <summary>
+        /// The part of a line in a composition database that is the glycan: before the first tab (the
+        /// shipped .txt databases carry name and mass columns there), before any '#' note, and up to the
+        /// last ')' -- so a column lined up with spaces is dropped the way a tabbed one is. String2Kind
+        /// always ignored whatever followed the last ')'; this keeps that tolerance explicit.
+        /// </summary>
+        private static string CompositionPart(string line)
+        {
+            string glycan = line.Split('\t')[0];
+            int note = glycan.IndexOf('#');
+            if (note >= 0)
+            {
+                glycan = glycan.Substring(0, note);
+            }
+            int lastClose = glycan.LastIndexOf(')');
+            if (lastClose >= 0)
+            {
+                glycan = glycan.Substring(0, lastClose + 1);
+            }
+            return glycan.Trim();
+        }
+
+        /// <summary>
+        /// Parse a composition into its kind[], or say why it cannot be. Throws FormatException carrying only
+        /// the reason, for the caller to say where the composition came from.
+        /// </summary>
+        /// <remarks>
+        /// Unlike String2Kind, which throws KeyNotFoundException on an unknown name, quietly accepts a
+        /// trailing unclosed group, and lets a second name for the same monosaccharide (Fuc and dHex are one
+        /// slot) overwrite the first.
+        /// </remarks>
+        private static byte[] ParseComposition(string composition)
+        {
+            Match match = Regex.Match(composition, CompositionShape);
             if (!match.Success)
             {
-                throw new MetaMorpheusException(
-                    $"Could not add the glycan \"{entry}\": it is neither a structure -- which starts with '(', e.g. (N(H(A))) -- " +
+                throw new FormatException(
+                    "It is neither a structure -- which starts with '(', e.g. (N(H(A))) -- " +
                     "nor a composition, which is a name and a count repeated, e.g. HexNAc(2)Hex(5).");
             }
 
             CaptureCollection names = match.Groups["name"].Captures;
             CaptureCollection counts = match.Groups["count"].Captures;
-            HashSet<string> seen = new HashSet<string>(StringComparer.Ordinal);
-            int total = 0;
+            byte[] kind = new byte[Glycan.KindCapacity];
+            var nameInSlot = new Dictionary<int, string>();
 
             for (int i = 0; i < names.Count; i++)
             {
                 string name = names[i].Value;
-                if (!Glycan.NameCharDic.ContainsKey(name))
+                if (!Glycan.NameCharDic.TryGetValue(name, out var code))
                 {
-                    string allowed = string.Join(", ", Glycan.NameCharDic.Keys);
-                    throw new MetaMorpheusException(
-                        $"Could not add the glycan \"{entry}\": '{name}' is not a monosaccharide MetaMorpheus knows. Known: {allowed}. " +
+                    throw new FormatException(
+                        $"'{name}' is not a monosaccharide MetaMorpheus knows. Known: {string.Join(", ", Glycan.NameCharDic.Keys)}. " +
                         "A monosaccharide it does not ship with must be declared in MonosaccharidesCustom.tsv first.");
                 }
-                if (!seen.Add(name))
+                if (nameInSlot.TryGetValue(code.Item2, out string earlier))
                 {
-                    throw new MetaMorpheusException(
-                        $"Could not add the glycan \"{entry}\": '{name}' appears more than once. Give each monosaccharide a single total count.");
+                    throw new FormatException(earlier == name
+                        ? $"'{name}' appears more than once. Give each monosaccharide a single total count."
+                        : $"'{earlier}' and '{name}' are two names for the same monosaccharide. Give it once, with a single total count.");
                 }
                 if (!byte.TryParse(counts[i].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out byte count))
                 {
-                    throw new MetaMorpheusException(
-                        $"Could not add the glycan \"{entry}\": the count for '{name}' must be a whole number between 0 and 255.");
+                    throw new FormatException($"The count for '{name}' must be a whole number between 0 and 255.");
                 }
-                total += count;
+                nameInSlot[code.Item2] = name;
+                kind[code.Item2] = count;
             }
+
+            return kind;
+        }
+
+        private static void ValidateCompositionEntry(string entry)
+        {
+            byte[] kind;
+            try
+            {
+                kind = ParseComposition(entry);
+            }
+            catch (FormatException ex)
+            {
+                throw new MetaMorpheusException($"Could not add the glycan \"{entry}\": {ex.Message}");
+            }
+
+            int total = kind.Sum(count => (int)count);
 
             // Same reason as the structure case: a composition that totals nothing is a zero-mass glycan.
             if (total == 0)
@@ -482,7 +618,16 @@ namespace EngineLayer
                 throw new MetaMorpheusException(
                     $"Could not add the glycan \"{entry}\": it contains no monosaccharides.");
             }
+            if (total > MaxMonosaccharidesPerGlycan)
+            {
+                throw new MetaMorpheusException(TooLarge(entry, total));
+            }
         }
+
+        private static string TooLarge(string entry, int residues) =>
+            $"Could not add the glycan \"{entry}\": it has {residues} monosaccharides, and a glycan may have at most " +
+            $"{MaxMonosaccharidesPerGlycan}. The ions a glycan search builds grow combinatorially with its size, so one this " +
+            "large would stall the first search that reads the database.";
 
         /// <summary>
         /// The format the entries already in a database are written in, or null when it holds no entries
@@ -510,25 +655,54 @@ namespace EngineLayer
             return null;
         }
 
-        /// <summary>Whether the database already holds this exact glycan, so it is not added twice.</summary>
-        private static bool ContainsEntry(string databasePath, string entry)
+        /// <summary>
+        /// The line already in the database that is the same glycan as the entry, or null. A composition is a
+        /// set of counts, so HexNAc(1)Hex(1), Hex(1)HexNAc(1), HexNAc(1)Hex(1)Fuc(0) and -- Fuc and dHex being
+        /// one slot -- Fuc(1) and dHex(1) are compared by what they parse to. A structure is compared as
+        /// written: two trees of one composition are different glycans.
+        /// </summary>
+        private static string ExistingEntryFor(string databasePath, string entry, GlycanLineFormat format)
         {
             if (!File.Exists(databasePath))
             {
-                return false;
+                return null;
             }
+
+            byte[] entryKind = format == GlycanLineFormat.Composition ? ParseComposition(entry) : null;
 
             foreach (string line in File.ReadLines(databasePath))
             {
-                // Split on tab first: the shipped .txt databases carry name and mass columns after the
-                // glycan, and it is the glycan that has to be unique.
-                if (!IsCommentOrBlank(line) && line.Split('\t')[0].Trim().Equals(entry, StringComparison.Ordinal))
+                if (IsCommentOrBlank(line))
                 {
-                    return true;
+                    continue;
+                }
+
+                if (entryKind == null)
+                {
+                    // Split on tab first: a database may carry columns after the glycan.
+                    string structure = line.Split('\t')[0].Trim();
+                    if (structure.Equals(entry, StringComparison.Ordinal))
+                    {
+                        return structure;
+                    }
+                    continue;
+                }
+
+                string composition = CompositionPart(line);
+                try
+                {
+                    if (ParseComposition(composition).SequenceEqual(entryKind))
+                    {
+                        return composition;
+                    }
+                }
+                catch (FormatException)
+                {
+                    // A line this cannot read is the loader's to report, not a reason to refuse the entry.
                 }
             }
 
-            return false;
+            return null;
         }
 
         /// <summary>
@@ -602,16 +776,13 @@ namespace EngineLayer
                         continue;
                     }
 
-                    string line = rawLine.Split('\t').First().Trim();
+                    string line = CompositionPart(rawLine);
 
-                    // Whether the line has the SHAPE of a composition -- a name and a count, repeated. The
-                    // test used to be "does it contain Hex or HexNAc", a stand-in for "is this a data line"
-                    // from before comments were skipped above. It also threw away, without a word, every
-                    // legitimate composition built from neither: NeuAc(2)Fuc(1) is one, and the entry
-                    // validator accepts it, so a user could be told a glycan had been added and then have
-                    // it silently vanish from the search. Tolerance for a line that is not a composition at
-                    // all is unchanged -- it is still skipped, now by shape rather than by substring.
-                    if (!Regex.IsMatch(line, CompositionShape))
+                    // A line with no parenthesis in it has not begun to be a composition -- a column header,
+                    // or stray text -- and is skipped, as it always was. The test used to be "does it contain
+                    // Hex or HexNAc", which also threw away, without a word, every composition built from
+                    // neither: NeuAc(2)Fuc(1) is one, and the entry validator accepts it.
+                    if (line.IndexOf('(') < 0)
                     {
                         continue;
                     }
@@ -619,19 +790,15 @@ namespace EngineLayer
                     byte[] kind;
                     try
                     {
-                        kind = String2Kind(line);  // Convert the database string to kind[] format (byte array).
+                        kind = ParseComposition(line);  // Convert the database string to kind[] format (byte array).
                     }
-                    catch (Exception ex)
+                    catch (FormatException ex)
                     {
-                        // A composition-shaped line that will not parse names a monosaccharide this build
-                        // does not know, or a count outside a byte. String2Kind reports those as
-                        // KeyNotFoundException and FormatException/OverflowException, naming neither the
-                        // file nor the line -- and LoadGlycans runs inside SetUpGlobalVariables, so that
-                        // is a startup crash. Named the way ValidateStructureLine names its own.
+                        // A line that has started to be a composition and is not one is named rather than
+                        // dropped: skipping it would search a database the user did not write, and say
+                        // nothing. Named the way a bad structure line is.
                         throw new MetaMorpheusException(
-                            $"Could not parse glycan composition in '{Path.GetFileName(filePath)}' at line {lineNumber}: \"{line}\". " +
-                            $"{ex.Message} A composition is a monosaccharide name and a count, repeated, e.g. HexNAc(2)Hex(5); " +
-                            "a monosaccharide MetaMorpheus does not ship with must be declared in MonosaccharidesCustom.tsv first.",
+                            $"Could not parse glycan composition in '{Path.GetFileName(filePath)}' at line {lineNumber}: \"{line}\". {ex.Message}",
                             ex);
                     }
 
@@ -717,17 +884,21 @@ namespace EngineLayer
                     lineNumber++;
 
                     // A '#' banner or a blank spacer is not a glycan. Without this, the seeded template --
-                    // and any database a user has annotated -- reaches ValidateStructureLine and throws on
+                    // and any database a user has annotated -- reaches the structure check and throws on
                     // the '#' itself during startup, before any window opens.
                     if (IsCommentOrBlank(line))
                     {
                         continue;
                     }
 
-                    // ValidateStructureLine catches characters the parser would otherwise silently
-                    // miscount as zero-mass. It consults the live monosaccharide registry, so any
-                    // codes registered via MonosaccharidesCustom.tsv are accepted here too.
-                    ValidateStructureLine(line.Trim(), filePath, lineNumber);
+                    // Characters the parser would silently miscount as zero mass, parentheses that do not
+                    // balance, and a second root Struct2Node would silently drop.
+                    string structureProblem = StructureProblem(line.Trim());
+                    if (structureProblem != null)
+                    {
+                        throw new MetaMorpheusException(
+                            $"Could not parse glycan structure in '{Path.GetFileName(filePath)}' at line {lineNumber}: \"{line.Trim()}\". {structureProblem}");
+                    }
 
                     // For each glycan, two versions will be generated:
                     // For O-glycan, one modified on serine (S), and the other on threonine (T).
@@ -752,27 +923,6 @@ namespace EngineLayer
             // a round-trip through Excel.  Strip a leading '"' before checking for '#'.
             string trimmed = line.TrimStart().TrimStart('"');
             return trimmed.StartsWith("#");
-        }
-
-        // Valid characters in structure-format lines: parens plus any single-char monosaccharide
-        // code currently registered with Glycan (built-ins + customs loaded from
-        // MonosaccharidesCustom.tsv). Struct2Glycan silently miscounts unknown chars (no entry in
-        // CharMassDic), so we pre-validate to give the user a clear error instead of a silently
-        // wrong glycan mass.
-        private static void ValidateStructureLine(string trimmedLine, string filePath, int lineNumber)
-        {
-            foreach (char c in trimmedLine)
-            {
-                if (c == '(' || c == ')') continue;
-                if (!Glycan.CharMassDic.ContainsKey(c))
-                {
-                    string allowed = string.Concat(Glycan.CharMassDic.Keys);
-                    throw new MetaMorpheusException(
-                        $"Could not parse glycan structure in '{Path.GetFileName(filePath)}' at line {lineNumber}: \"{trimmedLine}\". " +
-                        $"Unrecognized character '{c}'. Allowed: parentheses and one of {allowed}. " +
-                        "A monosaccharide MetaMorpheus does not ship with must be declared in MonosaccharidesCustom.tsv first.");
-                }
-            }
         }
 
         //This function build fragments based on the general core of NGlyco fragments. 
