@@ -184,6 +184,9 @@ namespace EngineLayer
 
         public double Score { get; private set; }
         public double SpectralAngle { get; set; }
+        /// <summary>Score divided by a high percentile of this spectrum's candidate score
+        /// distribution; NaN when the spectrum was not calibrated. See TailorScoreCalculator.</summary>
+        public double TailorScore { get; set; } = double.NaN;
 
         public double DeltaScore { get { return (Score - RunnerUpScore); } }
 
@@ -416,9 +419,9 @@ namespace EngineLayer
 
         #region IO
 
-        public static string GetTabSeparatedHeader(bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false, bool includeMostAbundantColumn = false)
+        public static string GetTabSeparatedHeader(bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false, bool includeMostAbundantColumn = false, bool includeTailorScoreColumn = false)
         {
-            return string.Join("\t", DataDictionary(null, null, includeOneOverK0Column: includeOneOverK0Column, includeCollisionalEnergyColumn: includeCollisionalEnergyColumn, includeMostAbundantColumn: includeMostAbundantColumn).Keys);
+            return string.Join("\t", DataDictionary(null, null, includeOneOverK0Column: includeOneOverK0Column, includeCollisionalEnergyColumn: includeCollisionalEnergyColumn, includeMostAbundantColumn: includeMostAbundantColumn, includeTailorScoreColumn: includeTailorScoreColumn).Keys);
         }
 
         public override string ToString()
@@ -426,15 +429,15 @@ namespace EngineLayer
             return ToString(new Dictionary<string, int>());
         }
 
-        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false, bool includeMostAbundantColumn = false)
+        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false, bool includeMostAbundantColumn = false, bool includeTailorScoreColumn = false)
         {
-            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr, includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn).Values.Select(v => v?.Trim() ?? string.Empty));
+            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr, includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn, includeTailorScoreColumn).Values.Select(v => v?.Trim() ?? string.Empty));
         }
 
-        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false, bool includeMostAbundantColumn = false)
+        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false, bool includeMostAbundantColumn = false, bool includeTailorScoreColumn = false)
         {
             Dictionary<string, string> s = new Dictionary<string, string>();
-            PsmTsvWriter.AddBasicMatchData(s, psm, includeOneOverK0Column, includeCollisionalEnergyColumn);
+            PsmTsvWriter.AddBasicMatchData(s, psm, includeOneOverK0Column, includeCollisionalEnergyColumn, includeTailorScoreColumn);
             PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned, includeMostAbundantColumn);
             PsmTsvWriter.AddMatchedIonsData(s, psm?.MatchedFragmentIons);
             PsmTsvWriter.AddMatchScoreData(s, psm, writePeptideLevelFdr);
