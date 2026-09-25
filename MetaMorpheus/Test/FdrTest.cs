@@ -266,7 +266,10 @@ namespace Test
             List<SpectralMatch> psmCopyForPEPFailure = nonNullPsms.ToList();
             List<SpectralMatch> psmCopyForNoOutputFolder = nonNullPsms.ToList();
 
+            int hypothesesBeforePep = nonNullPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count());
             pepEngine.ComputePEPValuesForAllPSMs();
+            // PEP scores; by default it does not prune ambiguous hypotheses
+            Assert.That(nonNullPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count()), Is.EqualTo(hypothesesBeforePep));
 
             int trueCount = 0;
 
@@ -526,6 +529,36 @@ namespace Test
             PepAnalysisEngine.RemoveBestMatchingPeptidesWithLowPEP(psm, indicesOfPeptidesToRemove, psm.BestMatchingBioPolymersWithSetMods.ToList(), ref ambiguousPeptidesRemovedCount);
             Assert.That(ambiguousPeptidesRemovedCount, Is.EqualTo(1));
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Select(b => b.Notch).ToList().Count, Is.EqualTo(2));
+        }
+
+        [Test]
+        [TestCase(false, 3, 0)]
+        [TestCase(true, 2, 1)]
+        public static void AssignPep_PrunesAmbiguousHypothesesOnlyWhenAsked(bool prune, int expectedHypotheses, int expectedRemoved)
+        {
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(
+                    new MzSpectrum(new double[] { }, new double[] { }, false),
+                    2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
+                100, 1, null, new CommonParameters(), null);
+
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            SpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.AddOrReplace(pwsm, 1, 1, true, new List<MatchedFragmentIon>());
+            psm.AddOrReplace(pwsm, 1, 2, true, new List<MatchedFragmentIon>());
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 1, 0);
+            psm.PeptideFdrInfo = new FdrInfo();
+
+            // the third hypothesis sits more than 0.05 below the best
+            List<double> pepValuePredictions = new List<double> { 1.0d, 0.99d, 0.9d };
+            int removed = PepAnalysisEngine.AssignPep(psm, psm.BestMatchingBioPolymersWithSetMods.ToList(), pepValuePredictions, prune);
+
+            Assert.That(removed, Is.EqualTo(expectedRemoved));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(expectedHypotheses));
+            // PEP comes from the best hypothesis, so pruning never changes it
+            Assert.That(psm.PsmFdrInfo.PEP, Is.EqualTo(0).Within(1e-12));
+            Assert.That(psm.PeptideFdrInfo.PEP, Is.EqualTo(0).Within(1e-12));
         }
 
         [Test]

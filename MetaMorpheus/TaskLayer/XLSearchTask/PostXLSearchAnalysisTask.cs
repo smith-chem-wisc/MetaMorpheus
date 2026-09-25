@@ -178,10 +178,10 @@ namespace TaskLayer
         public void ComputeXlinkQandPValues(List<CrosslinkSpectralMatch> allPsms, List<CrosslinkSpectralMatch> intraCsms, List<CrosslinkSpectralMatch> interCsms, CommonParameters commonParameters, string taskId)
         {
             List<CrosslinkSpectralMatch> crossCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Inter || p.CrossType == PsmCrossType.Intra).OrderByDescending(p => p.XLTotalScore).ToList();
-            new FdrAnalysisEngine(crossCsms.ToList<SpectralMatch>(), 0, commonParameters, this.FileSpecificParameters, new List<string> { taskId }, "crosslink").Run();
+            new FdrAnalysisEngine(crossCsms.ToList<SpectralMatch>(), 0, commonParameters, this.FileSpecificParameters, new List<string> { taskId }, "crosslink", pruneAmbiguousHypotheses: true).Run();
 
             List<CrosslinkSpectralMatch> singles = allPsms.Where(p => p.CrossType != PsmCrossType.Inter).Where(p => p.CrossType != PsmCrossType.Intra).OrderByDescending(p => p.Score).ToList();
-            new FdrAnalysisEngine(singles.ToList<SpectralMatch>(), 0, commonParameters, this.FileSpecificParameters, new List<string> { taskId }, "PSM").Run();
+            new FdrAnalysisEngine(singles.ToList<SpectralMatch>(), 0, commonParameters, this.FileSpecificParameters, new List<string> { taskId }, "PSM", pruneAmbiguousHypotheses: true).Run();
             SingleFDRAnalysis(singles, commonParameters, new List<string> { taskId });
 
             // calculate FDR
