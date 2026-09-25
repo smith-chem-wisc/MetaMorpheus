@@ -688,5 +688,186 @@ namespace Test
 
             Assert.That(glycans.Count, Is.EqualTo(4));
         }
+
+        // ---------------------------------------------------------------------------------------------
+        // Review of cfb25be8b: what a hand-edited composition line may carry, and what the loader says
+        // about one it cannot read
+        // ---------------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// A composition followed by an inline note, or by columns lined up with spaces rather than tabs,
+        /// loaded before the shape test was anchored. It has to load still: the note is not the glycan.
+        /// </summary>
+        [TestCase("HexNAc(1)Hex(1) # core 1")]
+        [TestCase("HexNAc(1)Hex(1) N1H1F0S0 365.1322")]
+        [TestCase("HexNAc(1)Hex(1)\tN1H1F0S0\t365.1322")]
+        public static void ACompositionWithTrailingTextStillLoads(string annotated)
+        {
+            string path = Path_("annotated.gdb");
+            File.WriteAllLines(path, new[] { annotated, "HexNAc(2)Hex(5)" });
+
+            var glycans = GlycanDatabase.LoadGlycan(path, false, true).ToList();
+
+            Assert.That(glycans.Count, Is.EqualTo(4));
+            Assert.That(glycans[0].Kind, Is.EqualTo(GlycanDatabase.String2Kind("HexNAc(1)Hex(1)")));
+        }
+
+        /// <summary>
+        /// A line that has started to be a composition but is not one was dropped without a word. It is
+        /// named now, file and line, the way a bad structure line already is -- dropping it would search a
+        /// database the user did not write.
+        /// </summary>
+        [TestCase("HexNAc(2) Hex(5)")]
+        [TestCase("HexNAc(2)Hex5)")]
+        public static void AMalformedCompositionLineIsNamedNotDropped(string malformed)
+        {
+            string path = Path_("malformed.gdb");
+            File.WriteAllLines(path, new[] { "HexNAc(2)Hex(3)", malformed });
+
+            var ex = Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.LoadGlycan(path, false, false).ToList());
+
+            Assert.That(ex.Message, Does.Contain("'malformed.gdb' at line 2"));
+        }
+
+        /// <summary>
+        /// MonosaccharidesCustom.tsv accepts any non-blank name, so a composition using one that is not
+        /// purely alphanumeric has to be both accepted on entry and loaded back.
+        /// </summary>
+        [Test]
+        public static void ACustomMonosaccharideWhoseNameIsNotAlphanumericLoadsAndCanBeAdded()
+        {
+            Glycan.RegisterCustomMonosaccharide("Hex-6P", 'U', (int)Math.Round(242.01916 * 1E5), null);
+            string path = Path_("phospho.gdb");
+
+            GlycanDatabase.PersistCustomGlycan("HexNAc(1)Hex-6P(1)", path, true);
+            var glycans = GlycanDatabase.LoadGlycan(path, false, true).ToList();
+
+            Assert.That(glycans.Count, Is.EqualTo(2));
+            Assert.That(glycans[0].Kind[Glycan.NameCharDic["Hex-6P"].Item2], Is.EqualTo(1));
+        }
+
+        // ---------------------------------------------------------------------------------------------
+        // Review of cfb25be8b: duplicates are the same glycan, not the same text
+        // ---------------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// A composition is a set of counts: order, a zero count and an alias name do not make a new glycan.
+        /// </summary>
+        [TestCase("HexNAc(1)Hex(1)", "Hex(1)HexNAc(1)")]
+        [TestCase("HexNAc(1)Hex(1)", "HexNAc(1)Hex(1)Fuc(0)")]
+        [TestCase("Fuc(1)", "dHex(1)")]
+        public static void TheSameCompositionWrittenAnotherWayIsADuplicate(string first, string second)
+        {
+            string path = Path_("dedup.gdb");
+            GlycanDatabase.PersistCustomGlycan(first, path, true);
+
+            var ex = Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.PersistCustomGlycan(second, path, true));
+
+            Assert.That(ex.Message, Does.Contain("already contains").And.Contain(first));
+            Assert.That(File.ReadAllLines(path), Is.EqualTo(new[] { first }));
+        }
+
+        /// <summary>
+        /// Fuc and dHex are one slot. Naming both in one entry would be written as a two-residue glycan and
+        /// searched as a one-residue one.
+        /// </summary>
+        [Test]
+        public static void TwoNamesForTheSameMonosaccharideInOneEntryAreRefused()
+        {
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomGlycan("Fuc(1)dHex(1)", Path_("alias.gdb"), true));
+
+            Assert.That(ex.Message, Does.Contain("dHex").And.Contain("Fuc"));
+        }
+
+        // ---------------------------------------------------------------------------------------------
+        // Review of cfb25be8b: the other structure and size checks
+        // ---------------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// A typed entry was refused with a message pointing at "line 1" of a file it was never written to.
+        /// </summary>
+        [Test]
+        public static void AnUnknownCodeInATypedStructureNamesTheEntryNotALine()
+        {
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomGlycan("(Z)", Path_("typed.gdb"), true));
+
+            Assert.That(ex.Message, Does.StartWith("Could not add the glycan \"(Z)\""));
+            Assert.That(ex.Message, Does.Not.Contain("line"));
+        }
+
+        /// <summary>
+        /// "(N)(H)" balances, but a glycan has one root; Struct2Node reads the first tree and ignores the rest.
+        /// </summary>
+        [Test]
+        public static void AStructureWithTwoRootsIsRefusedOnEntryAndOnLoad()
+        {
+            var entry = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomGlycan("(N)(H)", Path_("typed.gdb"), true));
+            Assert.That(entry.Message, Does.Contain("one root"));
+
+            string path = Path_("two_roots.gdb");
+            File.WriteAllLines(path, new[] { "(N(H))", "(N)(H)" });
+            var load = Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.LoadGlycan(path, false, true).ToList());
+            Assert.That(load.Message, Does.Contain("'two_roots.gdb' at line 2").And.Contain("one root"));
+        }
+
+        /// <summary>
+        /// Zero is refused at one end; the other end was open, and a glycan of hundreds of residues stalls
+        /// the first search that builds its ions for minutes. Twice the largest glycan any shipped database
+        /// holds is still accepted.
+        /// </summary>
+        [TestCase("HexNAc(255)Hex(255)NeuAc(255)", false)]
+        [TestCase("HexNAc(30)Hex(11)", false)]
+        [TestCase("HexNAc(20)Hex(20)", true)]
+        public static void AGlycanOfTooManyMonosaccharidesIsRefused(string composition, bool accepted)
+        {
+            TestDelegate add = () => GlycanDatabase.PersistCustomGlycan(composition, Path_("big.gdb"), true);
+
+            if (accepted)
+            {
+                Assert.DoesNotThrow(add);
+            }
+            else
+            {
+                Assert.That(Assert.Throws<MetaMorpheusException>(add).Message, Does.Contain("at most 40"));
+            }
+        }
+
+        [Test]
+        public static void AStructureOfTooManyMonosaccharidesIsRefused()
+        {
+            string big = "(N" + string.Concat(Enumerable.Repeat("(H", 40)) + new string(')', 41);
+
+            var ex = Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.PersistCustomGlycan(big, Path_("big.gdb"), true));
+
+            Assert.That(ex.Message, Does.Contain("at most 40"));
+        }
+
+        // ---------------------------------------------------------------------------------------------
+        // Review of cfb25be8b: a bad line in a user's database must not stop MetaMorpheus opening
+        // ---------------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// The startup load of glycans for MetaDraw warns about a database it cannot read instead of
+        /// throwing out of SetUpGlobalVariables. The database stays offered, so a search that selects it
+        /// still gets the named error.
+        /// </summary>
+        [Test]
+        public static void AnUnreadableDatabaseIsReportedAtStartupNotThrown()
+        {
+            string good = Path_("good.gdb");
+            string bad = Path_("bad.gdb");
+            File.WriteAllLines(good, new[] { "(N(H))" });
+            File.WriteAllLines(bad, new[] { "(N(H))", "(N(Z))" });
+            var warnings = new List<string>();
+
+            var glycans = GlycanDatabase.LoadGlycansOrWarn(new[] { good, bad }, true, warnings.Add);
+
+            Assert.That(glycans.Count, Is.EqualTo(2));
+            Assert.That(warnings.Count, Is.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("'bad.gdb' at line 2"));
+        }
     }
 }
