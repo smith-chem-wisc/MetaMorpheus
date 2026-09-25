@@ -235,7 +235,6 @@ namespace TaskLayer
             .ConfigureType<DigestionParams>(type => type
                 .IgnoreProperty(p => p.DigestionAgent)
                 .IgnoreProperty(p => p.SpecificDigestionAgent)
-                .IgnoreProperty(p => p.SpecificProtease)
                 .IgnoreProperty(p => p.MaxMods)
                 .IgnoreProperty(p => p.MaxLength)
                 .IgnoreProperty(p => p.MinLength))

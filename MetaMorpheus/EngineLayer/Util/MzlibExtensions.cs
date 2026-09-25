@@ -19,7 +19,12 @@ public static class MzlibExtensions
     /// </summary>
     public static string DigestionAgentName(this IDigestionParams digestionParams)
     {
-        return digestionParams.SpecificDigestionAgent?.Name ?? digestionParams.DigestionAgent?.Name;
+        if (digestionParams is DigestionParams proteolytic)
+        {
+            return proteolytic.SpecificProtease.Name;
+        }
+
+        return digestionParams?.DigestionAgent?.Name;
     }
 
     public static Dictionary<DissociationType, List<ProductType>> ProductsFromDissociationType(this IDigestionParams digestionParams)
