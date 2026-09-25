@@ -977,9 +977,10 @@ namespace EngineLayer
         }
 
         /// <param name="predictionAvailable">
-        /// False when the retention-time predictor could not produce a value for this peptidoform -- most often
-        /// because it carries a modification outside the predictor's vocabulary. Callers must surface this to the
-        /// model (see PsmData.HasHydrophobicity) rather than letting the returned z-score stand on its own.
+        /// False when the retention-time predictor could not produce a value for this peptidoform -- Chronologer
+        /// rejects a sequence longer than 50 residues, shorter than 7, or carrying a non-canonical amino acid
+        /// such as selenocysteine, and any predictor can fail outright. Callers must surface this to the model
+        /// (see PsmData.HasHydrophobicity) rather than letting the returned z-score stand on its own.
         /// </param>
         private static float GetRetentionTimeEquivalentZscore(SpectralMatch psm, IBioPolymerWithSetMods Peptide, Dictionary<string, Dictionary<int, Tuple<double, double>>> d, IRetentionTimePredictor predictor, out bool predictionAvailable)
         {
@@ -999,18 +1000,15 @@ namespace EngineLayer
                     // let the companion feature tell the model to ignore the value.
                     if (Peptide is PeptideWithSetModifications pep)
                     {
-                        double? predicted = predictor.PredictRetentionTimeEquivalent(pep, out RetentionTimeFailureReason? failureReason);
+                        double? predicted = predictor.PredictRetentionTimeEquivalent(pep, out _);
                         if (predicted.HasValue)
                         {
                             predictionAvailable = true;
                             hydrophobicityZscore = Math.Abs(d[Path.GetFileName(psm.FullFilePath)][time].Item1 - predicted.Value) / d[Path.GetFileName(psm.FullFilePath)][time].Item2;
                         }
-                        else if (failureReason == RetentionTimeFailureReason.IncompatibleModifications)
-                        {
-                            // The peptidoform carries a modification outside the predictor's vocabulary. Its
-                            // retention time is not evidence about THIS peptidoform, and in particular it must not
-                            // be used to choose between two peptidoforms that the spectrum cannot separate.
-                        }
+                        // Otherwise leave the z-score at NaN. It saturates to the maximum below exactly as before,
+                        // but predictionAvailable stays false, so HasHydrophobicity tells the model that the value
+                        // carries no information about this peptidoform.
                     }
                 }
             }

@@ -180,9 +180,9 @@ namespace EngineLayer.FdrAnalysis
         public float HasSpectralAngle { get; set; }
 
         /// <summary>
-        /// 1 when the retention-time predictor produced a value for this peptidoform, 0 when it could not --
-        /// most often because the peptidoform carries a modification outside the predictor's vocabulary
-        /// (Chronologer supports roughly twenty; a G-PTM-D search can enable many times that).
+        /// 1 when the retention-time predictor produced a value for this peptidoform, 0 when it could not.
+        /// Chronologer declines a sequence longer than 50 residues, shorter than 7, or carrying a non-canonical
+        /// amino acid such as selenocysteine; any predictor can also fail outright.
         ///
         /// Companion to <see cref="HydrophobicityZScore"/> in the same way <see cref="HasSpectralAngle"/> is the
         /// companion to <see cref="SpectralAngle"/>: it lets the model distinguish "predicted, and disagrees with
