@@ -1440,5 +1440,55 @@ namespace Test
         }
 
         #endregion
+
+        #region Entrapment label
+
+        /// <summary>
+        /// The Decoy/Contaminant/Target column wrote only D/C/T, so no psmtsv recorded entrapment even
+        /// though the loader flags it. Entrapment stays a target for FDR; the label just says so.
+        /// </summary>
+        [TestCase(false, false, "T")]
+        [TestCase(true, false, "D")]
+        [TestCase(false, true, "ET")]
+        [TestCase(true, true, "ED")]
+        public static void PsmLabelWritesEntrapment(bool isDecoy, bool isEntrapment, string expected)
+        {
+            var protein = new Protein("PEPTIDEK", isEntrapment ? "Random_P1_f0" : "P1", isDecoy: isDecoy, isEntrapment: isEntrapment);
+            SpectralMatch psm = PsmOn(protein);
+
+            Assert.That(LabelOf(psm), Is.EqualTo(expected));
+            Assert.That(psm.IsDecoy, Is.EqualTo(isDecoy), "entrapment must not change how FDR sees the PSM");
+        }
+
+        [Test]
+        public static void APeptideSharedWithAnEntrapmentProteinIsLabelledWithBoth()
+        {
+            var real = new Protein("PEPTIDEK", "P1");
+            var partner = new Protein("PEPTIDEK", "Random_P1_f0", isEntrapment: true);
+            SpectralMatch psm = PsmOn(real);
+            var shared = new PeptideWithSetModifications(partner, new DigestionParams(), 1, 8, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            psm.AddOrReplace(shared, psm.Score, 0, true, new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+
+            Assert.That(LabelOf(psm), Is.EqualTo("T|ET"));
+        }
+
+        private static SpectralMatch PsmOn(Protein protein)
+        {
+            var peptide = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 8, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            var scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""), peptide.MonoisotopicMass.ToMz(1), 1, "", new CommonParameters());
+            SpectralMatch psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+            return psm;
+        }
+
+        private static string LabelOf(SpectralMatch psm)
+        {
+            int column = SpectralMatch.GetTabSeparatedHeader().Split('\t').IndexOf(SpectrumMatchFromTsvHeader.DecoyContaminantTarget);
+            return psm.ToString().Split('\t')[column];
+        }
+
+        #endregion
     }
 }
