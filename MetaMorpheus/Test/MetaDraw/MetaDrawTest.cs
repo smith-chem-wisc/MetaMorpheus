@@ -2749,6 +2749,63 @@ namespace Test.MetaDraw
         }
 
         [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_GroupsAcrossFiles_HandlesEmptySourceFile()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("0.000", "AAA"),
+                ("1.003", "BBB"),
+                ("2.007", "CCC")
+            });
+
+            try
+            {
+                var allPsms = SpectrumMatchTsvReader.ReadTsv(tempFile, out _).ToList();
+                var fileWithData = new ObservableCollection<SpectrumMatchFromTsv>(allPsms);
+                var emptyFile = new ObservableCollection<SpectrumMatchFromTsv>();
+
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "FileWithData", fileWithData },
+                    { "EmptyFile", emptyFile }
+                };
+
+                var parameters = new PlotModelStatParameters
+                {
+                    GroupingProperty = "None",
+                    MinRelativeCutoff = 0,
+                    MaxRelativeCutoff = 100,
+                    AllowAmbiguousGroups = true,
+                    NormalizeHistogramToFile = false,
+                    UseLogScaleYAxis = false
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    new ObservableCollection<SpectrumMatchFromTsv>(allPsms),
+                    psmsByFile,
+                    parameters);
+
+                var seriesByTitle = plot.Model.Series
+                    .OfType<PlotColumnSeries>()
+                    .ToDictionary(s => s.Title, s => s);
+
+                Assert.That(seriesByTitle.Count, Is.EqualTo(2));
+                Assert.That(seriesByTitle["FileWithData"].Items.Count, Is.GreaterThan(0));
+                Assert.That(seriesByTitle["EmptyFile"].Items.Count, Is.EqualTo(0));
+
+                Assert.That(plot.PlotData.Select(r => r["Source File"]).Distinct().ToList(),
+                    Is.EqualTo(new[] { "FileWithData" }));
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
         public static void TestPlotModelStat_AmbiguityLevel_LeadingPipeDefaultsToOne()
         {
             MetaDrawSettings.ResetSettings();
