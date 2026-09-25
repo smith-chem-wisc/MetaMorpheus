@@ -94,8 +94,9 @@ namespace TaskLayer
 
             foreach (var rawFilePath in Parameters.CurrentRawFileList)
             {
-                // The ORIGINAL file, not a -calib or -averaged derivative: those are intermediates
-                // this run produced, and an SDRF describes the data as acquired.
+                // The file the SEARCH read (D40): after Calibrate or Average that is the -calib /
+                // -averaged derivative, not the acquired file. A consumer joining to the deposited
+                // data strips those suffixes from the stem.
                 string fileName = Path.GetFileName(rawFilePath);
                 string stem = Path.GetFileNameWithoutExtension(rawFilePath);
 

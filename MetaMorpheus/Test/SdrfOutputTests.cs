@@ -320,14 +320,13 @@ namespace Test
         }
 
         /// <summary>
-        /// comment[data file] names the ORIGINAL acquisition, never a calibrated or averaged
-        /// derivative this run happened to produce. An SDRF describes data as acquired; pointing it
-        /// at an intermediate makes the row unjoinable to the deposited dataset.
+        /// comment[data file] names the file the SEARCH read (D40). In a search-only run that is the
+        /// acquired file itself, so no derivative suffix appears.
         /// </summary>
         [Test]
-        public static void TheWrittenSdrfNamesTheOriginalDataFile()
+        public static void TheWrittenSdrfNamesTheSearchedDataFile()
         {
-            string output = RunSearchWritingSdrf(nameof(TheWrittenSdrfNamesTheOriginalDataFile),
+            string output = RunSearchWritingSdrf(nameof(TheWrittenSdrfNamesTheSearchedDataFile),
                 out string folder, out string spectraPath);
 
             var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
@@ -336,7 +335,39 @@ namespace Test
 
             Assert.That(row["comment[data file]"], Is.EqualTo(Path.GetFileName(spectraPath)));
             Assert.That(row["comment[data file]"], Does.Not.Contain("-calib"),
-                "A calibrated intermediate is not the acquisition the SDRF describes.");
+                "Nothing was calibrated, so the searched file is the acquired one.");
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// Calibrate -> Search: the search reads the -calib derivative, and comment[data file] names THAT
+        /// file (D40), not the acquired one. A consumer joining to the deposited data strips the
+        /// -calib / -averaged suffix from the stem.
+        /// </summary>
+        [Test]
+        public static void AfterCalibrationTheSdrfNamesTheCalibratedFileTheSearchRead()
+        {
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "SdrfOutput_" + nameof(AfterCalibrationTheSdrfNamesTheCalibratedFileTheSearchRead));
+            if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            Directory.CreateDirectory(folder);
+            string spectraPath = Path.Combine(folder, "sample1.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), spectraPath, true);
+            string database = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
+            ExperimentalDesign.WriteExperimentalDesignToFile(
+                new List<SpectraFileInfo> { new(spectraPath, "condition", 0, 0, 0) });
+
+            var engine = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("Task1-Calibrate", new CalibrationTask()), ("Task2-Search", BuildSearchTask(writeSdrf: true)) },
+                new List<string> { spectraPath }, new List<DbForTask> { new DbForTask(database, false) }, folder);
+            engine.Run();
+
+            var document = new SdrfDocument(Path.Combine(folder, "Task2-Search", SdrfFileName));
+            document.LoadResults();
+            SdrfRow row = document.Results.Single();
+
+            Assert.That(row["comment[data file]"], Is.EqualTo("sample1-calib.mzML"),
+                "the search read the calibrated derivative, so the SDRF names it (D40)");
 
             Directory.Delete(folder, true);
         }
