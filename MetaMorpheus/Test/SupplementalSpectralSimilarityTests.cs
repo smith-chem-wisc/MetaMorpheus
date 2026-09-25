@@ -1,8 +1,10 @@
-﻿using Chemistry;
-﻿using NUnit.Framework;
+using Chemistry;
+using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
@@ -17,24 +19,47 @@ using TaskLayer;
 namespace Test
 {
     /// <summary>
-    /// Covers the spectral-angle path that <see cref="SupplementalSpectralSimilarityTests"/> does
-    /// not reach. Those tests build PSMs without calling ResolveAllAmbiguities, so FullSequence is
-    /// null, so GetSpectralMatchesWithoutComputedSpectralAngle filters every one of them out and
-    /// ComputeSpectrumSimilarity returns before it does anything. Every test here resolves its PSMs
-    /// first, which is what gets past that gate.
+    /// The opt-in spectral-angle path in PostSearchAnalysisTask.ComputeSpectrumSimilarity.
     ///
-    /// Nothing here touches the network. The one part that genuinely needs Koina is the Predict call
-    /// itself; the logic around it is separated into BuildPredictionInputs and ResolveCollisionEnergy
-    /// so it can be asserted on directly.
+    /// Every PSM here has its ambiguities resolved, because GetSpectralMatchesWithoutComputedSpectralAngle
+    /// filters out any PSM whose FullSequence is null - an unresolved PSM never reaches the code under test.
+    ///
+    /// Nothing here touches the network except the one [Category("ExternalService")] test. The remote
+    /// call is replaced through PostSearchAnalysisTask.SpectrumPredictor, and the real Prosit wrapper is
+    /// exercised with an input the model rejects before it builds a request.
     /// </summary>
     [TestFixture]
-    public static class SupplementalSpectralSimilarityCoverageTests
+    public class SupplementalSpectralSimilarityTests
     {
         private static readonly CommonParameters CommonParams = new(
             digestionParams: new DigestionParams(protease: "trypsin"),
             scoreCutoff: 1,
             productMassTolerance: new PpmTolerance(20),
             precursorMassTolerance: new PpmTolerance(5));
+
+        private readonly List<(SpectralLibrary Library, string Path)> _libraries = new();
+        private readonly List<string> _warnings = new();
+
+        private void CaptureWarning(object sender, StringEventArgs e) => _warnings.Add(e.S);
+
+        [SetUp]
+        public void SetUp()
+        {
+            _warnings.Clear();
+            MetaMorpheusTask.WarnHandler += CaptureWarning;
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            MetaMorpheusTask.WarnHandler -= CaptureWarning;
+            foreach (var (library, path) in _libraries)
+            {
+                library.CloseConnections();
+                File.Delete(path);
+            }
+            _libraries.Clear();
+        }
 
         /// <summary>
         /// A PSM whose ambiguities are resolved, so FullSequence is populated and the PSM actually
@@ -67,27 +92,22 @@ namespace Test
                 CommonParams, matched);
 
             psm.ResolveAllAmbiguities();
-
-            // Ms2Scan is opt-in on SpectralMatch and only some paths populate it, so set it
-            // explicitly when the test is about the recorded collision energy.
-            if (hcdEnergy != null)
-            {
-                psm.SetMs2Scan(scan);
-            }
-
             psm.SpectralAngle = -1;
             return psm;
         }
 
+        /// <summary>A task with predictions switched on, and the remote call stubbed to return nothing.</summary>
         private static PostSearchAnalysisTask TaskWith(params SpectralMatch[] psms) =>
             new()
             {
                 Parameters = new PostSearchAnalysisParameters
                 {
-                    SearchParameters = new SearchParameters(),
+                    SearchParameters = new SearchParameters { UsePredictedSpectraForSpectralAngle = true },
                     AllSpectralMatches = psms.ToList(),
-                    OutputFolder = Path.GetTempPath()
-                }
+                    OutputFolder = Path.GetTempPath(),
+                    SearchTaskId = "test"
+                },
+                SpectrumPredictor = _ => new List<LibrarySpectrum>()
             };
 
         private static LibrarySpectrum LibrarySpectrumFor(SpectralMatch psm) =>
@@ -97,45 +117,102 @@ namespace Test
         /// <summary>
         /// A real, file-backed library. SpectralLibrary.GetAllLibrarySpectra reads spectra from disk
         /// by byte offset, so setting Results on a default-constructed instance does not produce a
-        /// readable library - it throws on enumeration.
+        /// readable library - it throws on enumeration. The file is deleted in TearDown.
         /// </summary>
-        private static SpectralLibrary LibraryOf(params SpectralMatch[] psms)
+        private SpectralLibrary LibraryOf(params SpectralMatch[] psms)
         {
-            string path = Path.Combine(Path.GetTempPath(), "spectralAngleCoverage_" + System.Guid.NewGuid().ToString("N") + ".msp");
+            string path = Path.Combine(Path.GetTempPath(), "spectralAngle_" + Guid.NewGuid().ToString("N") + ".msp");
             File.WriteAllLines(path, psms.Select(psm => LibrarySpectrumFor(psm).ToString()));
-            return new SpectralLibrary(new List<string> { path });
+            var library = new SpectralLibrary(new List<string> { path });
+            _libraries.Add((library, path));
+            return library;
+        }
+
+        // ---------- the opt-in gate ----------
+
+        /// <summary>
+        /// Prediction is a call to Koina, a third-party web service, and turning it on changes the PEP
+        /// features. A search must not start doing either unless the user asked, so the default stays off.
+        /// </summary>
+        [Test]
+        public void PredictedSpectraAreOffByDefault()
+        {
+            Assert.That(new SearchParameters().UsePredictedSpectraForSpectralAngle, Is.False);
+        }
+
+        /// <summary>
+        /// Off means the method does nothing: no prediction is requested, and not even a PSM the library
+        /// covers is rescored, so a default search is identical to one without the feature. The stub
+        /// throws if asked, so a regression that re-enables the call fails here.
+        /// </summary>
+        [Test]
+        public void WithPredictionsOffNothingIsRequestedOrScored()
+        {
+            var covered = ResolvedPsm("PEPTIDEK", 2);
+            var uncovered = ResolvedPsm("ELVISLIVESK", 3);
+            var task = TaskWith(covered, uncovered);
+            task.Parameters.SearchParameters.UsePredictedSpectraForSpectralAngle = false;
+            bool predictorCalled = false;
+            task.SpectrumPredictor = _ => { predictorCalled = true; throw new InvalidOperationException("must not be called"); };
+
+            task.ComputeSpectrumSimilarity(LibraryOf(covered));
+
+            Assert.That(predictorCalled, Is.False, "no prediction may be requested with the flag off");
+            Assert.That(covered.SpectralAngle, Is.EqualTo(-1));
+            Assert.That(uncovered.SpectralAngle, Is.EqualTo(-1));
+            Assert.That(_warnings, Is.Empty);
         }
 
         // ---------- the scoring loop ----------
 
-        /// <summary>
-        /// A PSM the library covers must come out with a real angle. This is the feature working:
-        /// before this test nothing asserted that a spectral angle is ever actually computed.
-        /// </summary>
+        /// <summary>A PSM the library covers comes out with a real angle.</summary>
         [Test]
-        public static void PsmCoveredByTheLibraryGetsAComputedAngle()
+        public void PsmCoveredByTheLibraryGetsAComputedAngle()
         {
             var psm = ResolvedPsm("PEPTIDEK", 2);
             var task = TaskWith(psm);
 
             task.ComputeSpectrumSimilarity(LibraryOf(psm));
 
-            Assert.That(psm.SpectralAngle, Is.GreaterThan(-1),
+            Assert.That(psm.SpectralAngle, Is.InRange(0.0, 1.0),
                 "a PSM present in the library must be scored, not left at the sentinel");
         }
 
         /// <summary>
-        /// The other arm of the same loop: the lookup is non-empty, so the method does not return
-        /// early, but this PSM is not in it. It must be left at the sentinel rather than scored
-        /// against somebody else's spectrum.
+        /// A PSM the library misses is scored against its predicted spectrum, and only that PSM is sent
+        /// for prediction.
         /// </summary>
         [Test]
-        public static void PsmMissingFromANonEmptyLookupKeepsTheSentinel()
+        public void PsmTheLibraryMissedIsScoredAgainstItsPrediction()
         {
             var covered = ResolvedPsm("PEPTIDEK", 2);
             var uncovered = ResolvedPsm("ELVISLIVESK", 3);
             var task = TaskWith(covered, uncovered);
-            task.Parameters.SearchParameters.UsePredictedSpectraForSpectralAngle = false;
+            List<FragmentIntensityPredictionInput> requested = null;
+            task.SpectrumPredictor = inputs =>
+            {
+                requested = inputs;
+                return new List<LibrarySpectrum> { LibrarySpectrumFor(uncovered) };
+            };
+
+            task.ComputeSpectrumSimilarity(LibraryOf(covered));
+
+            Assert.That(requested.Select(i => (i.FullSequence, i.PrecursorCharge)),
+                Is.EquivalentTo(new[] { (uncovered.FullSequence, 3) }));
+            Assert.That(covered.SpectralAngle, Is.InRange(0.0, 1.0));
+            Assert.That(uncovered.SpectralAngle, Is.InRange(0.0, 1.0));
+        }
+
+        /// <summary>
+        /// A PSM with neither a library spectrum nor a prediction keeps the sentinel rather than being
+        /// scored against somebody else's spectrum.
+        /// </summary>
+        [Test]
+        public void PsmMissingFromANonEmptyLookupKeepsTheSentinel()
+        {
+            var covered = ResolvedPsm("PEPTIDEK", 2);
+            var uncovered = ResolvedPsm("ELVISLIVESK", 3);
+            var task = TaskWith(covered, uncovered);
 
             task.ComputeSpectrumSimilarity(LibraryOf(covered));
 
@@ -149,7 +226,7 @@ namespace Test
         /// "not computed". A PSM that already has an angle must not be recomputed.
         /// </summary>
         [Test]
-        public static void AlreadyScoredPsmsAreLeftAlone()
+        public void AlreadyScoredPsmsAreLeftAlone()
         {
             var psm = ResolvedPsm("PEPTIDEK", 2);
             psm.SpectralAngle = 0;
@@ -160,6 +237,101 @@ namespace Test
             Assert.That(psm.SpectralAngle, Is.EqualTo(0), "zero is a score, not a sentinel");
         }
 
+        // ---------- failure is not fatal ----------
+
+        /// <summary>
+        /// Koina being down must cost the predicted angles, not the search: this runs before FDR, so an
+        /// exception escaping here would lose every output file of a search that had already finished.
+        /// The library half still scores, and the user is told why the rest did not.
+        /// </summary>
+        [Test]
+        public void AServiceFailureWarnsAndLeavesTheSentinel()
+        {
+            var covered = ResolvedPsm("PEPTIDEK", 2);
+            var uncovered = ResolvedPsm("ELVISLIVESK", 3);
+            var task = TaskWith(covered, uncovered);
+            task.SpectrumPredictor = _ => throw new HttpRequestException("Koina is down");
+
+            Assert.DoesNotThrow(() => task.ComputeSpectrumSimilarity(LibraryOf(covered)));
+
+            Assert.That(covered.SpectralAngle, Is.GreaterThan(-1), "the library half must survive the outage");
+            Assert.That(uncovered.SpectralAngle, Is.EqualTo(-1));
+            Assert.That(_warnings, Has.Exactly(1).Contains("HttpRequestException").And.Contains("Koina is down"));
+        }
+
+        /// <summary>
+        /// The real Prosit wrapper, offline: charge 7 is outside what Prosit accepts, so the model drops
+        /// the input before building a request. The PSM keeps the sentinel and the drop is reported
+        /// rather than silently lost.
+        /// </summary>
+        [Test]
+        public void InputsPrositRejectsAreReportedAndNeverSent()
+        {
+            var psm = ResolvedPsm("PEPTIDEK", 7);
+            var task = TaskWith(psm);
+            task.SpectrumPredictor = null;
+
+            Assert.DoesNotThrow(() => task.ComputeSpectrumSimilarity(null));
+
+            Assert.That(psm.SpectralAngle, Is.EqualTo(-1));
+            Assert.That(_warnings, Has.Exactly(1).Contains("could not predict 1 of 1"));
+        }
+
+        /// <summary>
+        /// SearchTask closes the spectral library before post-search analysis runs, unless the run is
+        /// updating it. Reading it here therefore hits a closed file on an ordinary search with a
+        /// supplied library. That must cost the angles, not the whole completed search.
+        /// </summary>
+        [Test]
+        public void ClosedLibraryDegradesInsteadOfLosingTheSearch()
+        {
+            var psm = ResolvedPsm("PEPTIDEK", 2);
+            var task = TaskWith(psm);
+
+            var library = LibraryOf(psm);
+            library.CloseConnections();
+
+            Assert.DoesNotThrow(() => task.ComputeSpectrumSimilarity(library));
+            Assert.That(psm.SpectralAngle, Is.EqualTo(-1),
+                "a closed library yields no spectra, so the PSM keeps the sentinel");
+        }
+
+        // ---------- the combined lookup ----------
+
+        /// <summary>
+        /// The lookup holds the library's spectra and the predictions for what the library missed,
+        /// under the key PSMs query with, and a prediction never displaces a measured spectrum.
+        /// </summary>
+        [Test]
+        public void CombinedLookupHoldsLibraryAndPredictedSpectra()
+        {
+            var covered = ResolvedPsm("PEPTIDEK", 2);
+            var uncovered = ResolvedPsm("ELVISLIVESK", 3);
+            var task = TaskWith(covered, uncovered);
+            var predictedForCovered = new LibrarySpectrum(covered.FullSequence, 500, 2, covered.MatchedFragmentIons, 10);
+            task.SpectrumPredictor = _ => new List<LibrarySpectrum> { LibrarySpectrumFor(uncovered), predictedForCovered };
+
+            var lookup = task.BuildCombinedSpectrumLookup(new List<SpectralMatch> { covered, uncovered }, LibraryOf(covered));
+
+            Assert.That(lookup.Keys, Is.EquivalentTo(new[] { (covered.FullSequence, 2), (uncovered.FullSequence, 3) }));
+            Assert.That(lookup[(covered.FullSequence, 2)], Is.Not.SameAs(predictedForCovered),
+                "a measured spectrum beats a predicted one");
+        }
+
+        /// <summary>A measured spectrum beats a predicted one for the same peptide and charge.</summary>
+        [Test]
+        public void RealLibrarySpectraAreNotOverwrittenByPredictions()
+        {
+            var psm = ResolvedPsm("PEPTIDEK", 2);
+            var real = LibrarySpectrumFor(psm);
+            var lookup = new Dictionary<(string, int), LibrarySpectrum> { [("PEPTIDEK", 2)] = real };
+            var predicted = new LibrarySpectrum("PEPTIDEK", 500, 2, psm.MatchedFragmentIons, 10);
+
+            PostSearchAnalysisTask.MergePredictedSpectra(new[] { predicted }, lookup);
+
+            Assert.That(lookup[("PEPTIDEK", 2)], Is.SameAs(real));
+        }
+
         // ---------- what would be sent for prediction ----------
 
         /// <summary>
@@ -167,7 +339,7 @@ namespace Test
         /// real spectrum for would be a wasted call and a worse answer.
         /// </summary>
         [Test]
-        public static void OnlyPsmsTheLibraryMissedAreQueuedForPrediction()
+        public void OnlyPsmsTheLibraryMissedAreQueuedForPrediction()
         {
             var covered = ResolvedPsm("PEPTIDEK", 2);
             var uncovered = ResolvedPsm("ELVISLIVESK", 3);
@@ -187,13 +359,10 @@ namespace Test
         /// case: the same peptide is routinely matched in many scans.
         /// </summary>
         [Test]
-        public static void DuplicateSequenceAndChargeIsRequestedOnce()
+        public void DuplicateSequenceAndChargeIsRequestedOnce()
         {
-            var first = ResolvedPsm("PEPTIDEK", 2);
-            var second = ResolvedPsm("PEPTIDEK", 2);
-
             var inputs = PostSearchAnalysisTask.BuildPredictionInputs(
-                new List<SpectralMatch> { first, second },
+                new List<SpectralMatch> { ResolvedPsm("PEPTIDEK", 2), ResolvedPsm("PEPTIDEK", 2) },
                 new Dictionary<(string, int), LibrarySpectrum>());
 
             Assert.That(inputs, Has.Count.EqualTo(1));
@@ -204,7 +373,7 @@ namespace Test
         /// separately - the dedup key has to include the charge.
         /// </summary>
         [Test]
-        public static void SameSequenceAtADifferentChargeIsRequestedSeparately()
+        public void SameSequenceAtADifferentChargeIsRequestedSeparately()
         {
             var inputs = PostSearchAnalysisTask.BuildPredictionInputs(
                 new List<SpectralMatch> { ResolvedPsm("PEPTIDEK", 2), ResolvedPsm("PEPTIDEK", 3) },
@@ -213,11 +382,17 @@ namespace Test
             Assert.That(inputs, Has.Count.EqualTo(2));
         }
 
+        /// <summary>
+        /// The energy comes from the scan through SpectralMatch.CollisionalEnergy, which every search
+        /// PSM carries - not from Ms2Scan, which a search never sets.
+        /// </summary>
         [Test]
-        public static void CollisionEnergyComesFromTheScanWhenItRecordedOne()
+        public void CollisionEnergyComesFromTheScanWhenItRecordedOne()
         {
-            Assert.That(PostSearchAnalysisTask.ResolveCollisionEnergy(ResolvedPsm("PEPTIDEK", 2, hcdEnergy: "27")),
-                Is.EqualTo(27));
+            var psm = ResolvedPsm("PEPTIDEK", 2, hcdEnergy: "27.0");
+
+            Assert.That(psm.Ms2Scan, Is.Null, "a search PSM has no Ms2Scan; the energy must not depend on it");
+            Assert.That(PostSearchAnalysisTask.ResolveCollisionEnergy(psm), Is.EqualTo(27));
         }
 
         /// <summary>
@@ -225,141 +400,40 @@ namespace Test
         /// about what energy unlabelled spectra are predicted at, rather than an accident.
         /// </summary>
         [Test]
-        public static void CollisionEnergyFallsBackToThirtyWithoutARecordedEnergy()
+        public void CollisionEnergyFallsBackToThirtyWithoutARecordedEnergy()
         {
             Assert.That(PostSearchAnalysisTask.ResolveCollisionEnergy(ResolvedPsm("PEPTIDEK", 2, hcdEnergy: null)),
                 Is.EqualTo(30));
         }
 
         [Test]
-        public static void CollisionEnergyFallsBackWhenTheScanEnergyIsNotANumber()
+        public void CollisionEnergyFallsBackWhenTheScanEnergyIsNotANumber()
         {
             Assert.That(PostSearchAnalysisTask.ResolveCollisionEnergy(ResolvedPsm("PEPTIDEK", 2, hcdEnergy: "not a number")),
                 Is.EqualTo(30));
         }
 
-        // ---------- the library lifecycle ----------
+        // ---------- live ----------
 
         /// <summary>
-        /// SearchTask closes the spectral library before post-search analysis runs, unless the run is
-        /// updating it. Reading it here therefore hits a closed file on an ordinary search with a
-        /// supplied library. That must cost the angles, not the whole completed search.
+        /// End to end against Koina: an unmodified tryptic peptide comes back with a real angle. An
+        /// outage is reported by the production code as a warning, which this test turns into a skip.
         /// </summary>
         [Test]
-        public static void ClosedLibraryDegradesInsteadOfLosingTheSearch()
+        [Category("ExternalService")]
+        public void PrositPredictionProducesARealAngle()
         {
-            var psm = ResolvedPsm("PEPTIDEK", 2);
+            var psm = ResolvedPsm("PEPTIDEK", 2, hcdEnergy: "28");
             var task = TaskWith(psm);
+            task.SpectrumPredictor = null;
 
-            var library = LibraryOf(psm);
-            library.CloseConnections();
+            task.ComputeSpectrumSimilarity(null);
 
-            Assert.DoesNotThrow(() => task.ComputeSpectrumSimilarity(library));
-            Assert.That(psm.SpectralAngle, Is.EqualTo(-1),
-                "a closed library yields no spectra, so the PSM keeps the sentinel");
+            if (_warnings.Any(w => w.StartsWith("Predicted spectra were unavailable")))
+            {
+                Assert.Ignore("Skipping external-service test: Koina unavailable. " + string.Join(" | ", _warnings));
+            }
+            Assert.That(psm.SpectralAngle, Is.InRange(0.0, 1.0));
         }
-
-        // ---------- filing predictions back under the key PSMs ask with ----------
-
-        /// <summary>
-        /// Predictions come back keyed by the UNIMOD form the service accepted, while PSMs look
-        /// themselves up by their own FullSequence. Without the mapping the spectrum is in the
-        /// lookup under a key nothing queries - present, and invisible.
-        /// </summary>
-        [Test]
-        public static void PredictedSpectrumIsFiledUnderTheOriginalSequence()
-        {
-            var psm = ResolvedPsm("PEPTIDEK", 2);
-            var prediction = new PeptideFragmentIntensityPrediction(
-                FullSequence: "PEPTIDEK",
-                ValidatedFullSequence: "PEPTIDEK[UNIMOD:1]",
-                PrecursorCharge: 2,
-                FragmentAnnotations: new List<string>(),
-                FragmentMZs: new List<double>(),
-                FragmentIntensities: new List<double>());
-
-            var predicted = new LibrarySpectrum("PEPTIDEK[UNIMOD:1]", 500, 2, psm.MatchedFragmentIons, 10);
-            var lookup = new Dictionary<(string, int), LibrarySpectrum>();
-
-            PostSearchAnalysisTask.MergePredictedSpectra(new[] { prediction }, new[] { predicted }, lookup);
-
-            Assert.That(lookup.ContainsKey(("PEPTIDEK", 2)), Is.True,
-                "filed under the validated sequence, no PSM would ever find it");
-        }
-
-        /// <summary>A measured spectrum beats a predicted one for the same peptide and charge.</summary>
-        [Test]
-        public static void RealLibrarySpectraAreNotOverwrittenByPredictions()
-        {
-            var psm = ResolvedPsm("PEPTIDEK", 2);
-            var real = LibrarySpectrumFor(psm);
-            var lookup = new Dictionary<(string, int), LibrarySpectrum> { [("PEPTIDEK", 2)] = real };
-
-            var prediction = new PeptideFragmentIntensityPrediction(
-                FullSequence: "PEPTIDEK", ValidatedFullSequence: "PEPTIDEK", PrecursorCharge: 2,
-                FragmentAnnotations: new List<string>(), FragmentMZs: new List<double>(),
-                FragmentIntensities: new List<double>());
-            var predicted = new LibrarySpectrum("PEPTIDEK", 500, 2, psm.MatchedFragmentIons, 10);
-
-            PostSearchAnalysisTask.MergePredictedSpectra(new[] { prediction }, new[] { predicted }, lookup);
-
-            Assert.That(lookup[("PEPTIDEK", 2)], Is.SameAs(real));
-        }
-
-        /// <summary>
-        /// An unconvertible sequence comes back with a null ValidatedFullSequence, which must not
-        /// blow up the mapping. Relevant right now: the model is configured to return null for these.
-        /// </summary>
-        [Test]
-        public static void NullValidatedSequencesAreSkippedRatherThanThrowing()
-        {
-            var psm = ResolvedPsm("PEPTIDEK", 2);
-            var prediction = new PeptideFragmentIntensityPrediction(
-                FullSequence: "PEPTIDEK", ValidatedFullSequence: null, PrecursorCharge: 2,
-                FragmentAnnotations: new List<string>(), FragmentMZs: new List<double>(),
-                FragmentIntensities: new List<double>());
-            var predicted = new LibrarySpectrum("PEPTIDEK", 500, 2, psm.MatchedFragmentIons, 10);
-            var lookup = new Dictionary<(string, int), LibrarySpectrum>();
-
-            Assert.DoesNotThrow(() => PostSearchAnalysisTask.MergePredictedSpectra(
-                new[] { prediction }, new[] { predicted }, lookup));
-            Assert.That(lookup.ContainsKey(("PEPTIDEK", 2)), Is.True);
-        }
-
-        // ---------- the opt-in gate ----------
-
-        /// <summary>
-        /// With predictions off, a PSM the library does not cover is simply not scored. The library
-        /// half still works, which is the point of gating only the prediction.
-        /// </summary>
-        [Test]
-        public static void PredictionsOffStillScoresFromTheLibrary()
-        {
-            var covered = ResolvedPsm("PEPTIDEK", 2);
-            var uncovered = ResolvedPsm("ELVISLIVESK", 3);
-            var task = TaskWith(covered, uncovered);
-            task.Parameters.SearchParameters.UsePredictedSpectraForSpectralAngle = false;
-
-            task.ComputeSpectrumSimilarity(LibraryOf(covered));
-
-            Assert.That(covered.SpectralAngle, Is.GreaterThan(-1), "the library half must not be gated");
-            Assert.That(uncovered.SpectralAngle, Is.EqualTo(-1));
-        }
-
-        /// <summary>
-        /// No library and predictions off means there is nothing to score against at all, and the
-        /// method must say so by leaving the sentinel rather than by throwing.
-        /// </summary>
-        [Test]
-        public static void NoLibraryAndPredictionsOffLeavesEverySentinelInPlace()
-        {
-            var psm = ResolvedPsm("PEPTIDEK", 2);
-            var task = TaskWith(psm);
-            task.Parameters.SearchParameters.UsePredictedSpectraForSpectralAngle = false;
-
-            Assert.DoesNotThrow(() => task.ComputeSpectrumSimilarity(null));
-            Assert.That(psm.SpectralAngle, Is.EqualTo(-1));
-        }
-
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UsefulProteomicsDatabases;
 using EngineLayer;
 using Omics.Modifications;
@@ -111,8 +111,9 @@ namespace TaskLayer
         /// Opt in to filling missing spectral angles with Prosit-predicted spectra. Off by
         /// default because it is a call to a third-party web service (Koina) on every search:
         /// a search that would otherwise run offline should not start depending on someone
-        /// else's uptime unless the user asked for it. Angles from a real spectral library are
-        /// unaffected and still computed either way.
+        /// else's uptime unless the user asked for it. Turning it on changes q-values: the
+        /// spectral angle is a PEP feature, which a search without a spectral library otherwise
+        /// trains at the -1 sentinel for every PSM.
         /// </summary>
         public bool UsePredictedSpectraForSpectralAngle { get; set; }
         public bool UpdateSpectralLibrary { get; set; }

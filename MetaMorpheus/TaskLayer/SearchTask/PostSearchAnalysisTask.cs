@@ -158,13 +158,21 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Computes spectral contrast angles for PSMs that don't yet have one.
+        /// Computes spectral contrast angles for PSMs that don't yet have one, when the search opts in
+        /// with SearchParameters.UsePredictedSpectraForSpectralAngle (default off).
         /// For each PSM, we use a real library spectrum when available; otherwise we
         /// request a predicted spectrum from Prosit and use that. PSMs we can't score
         /// for any reason are left with SpectralAngle = -1 (the sentinel).
+        ///
+        /// Turning this on changes q-values. SpectralAngle and HasSpectralAngle are PEP features, and
+        /// without a spectral library every PSM otherwise trains PEP at the -1 sentinel.
         /// </summary>
         internal void ComputeSpectrumSimilarity(SpectralLibrary spectralLibrary)
         {
+            // Off means this does nothing at all, so a default search is untouched by the feature.
+            if (!Parameters.SearchParameters.UsePredictedSpectraForSpectralAngle)
+                return;
+
             var psmsToScore = GetSpectralMatchesWithoutComputedSpectralAngle();
             if (psmsToScore.Count == 0)
                 return;
@@ -172,22 +180,26 @@ namespace TaskLayer
             // Build a combined lookup: real library spectra take precedence, predicted
             // spectra fill in the gaps.
             var lookup = BuildCombinedSpectrumLookup(psmsToScore, spectralLibrary);
-            if (lookup.Count == 0)
-                return;
 
+            int scored = 0;
             foreach (var psm in psmsToScore)
             {
                 var key = (psm.FullSequence, psm.ScanPrecursorCharge);
                 if (lookup.TryGetValue(key, out var spectrum))
                 {
                     string result = spectrum.CalculateSpectralAngleOnTheFly(psm.MatchedFragmentIons);
-                    psm.SpectralAngle = double.TryParse(result, out double angle) ? angle : -1;
+                    psm.SpectralAngle = double.TryParse(result, NumberStyles.Float, CultureInfo.InvariantCulture, out double angle) ? angle : -1;
                 }
                 else
                 {
                     psm.SpectralAngle = -1;
                 }
+
+                if (psm.SpectralAngle >= 0)
+                    scored++;
             }
+
+            Log($"Supplemental spectral angles assigned to {scored} of {psmsToScore.Count} {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s", new List<string> { Parameters.SearchTaskId });
         }
 
         /// <summary>
@@ -233,55 +245,67 @@ namespace TaskLayer
             //    Deduplicate on (FullSequence, PrecursorCharge) — different CEs for the
             //    same peptide/charge would otherwise spawn redundant API calls.
             var needsPrediction = BuildPredictionInputs(psmsToScore, lookup);
-
-            if (needsPrediction.Count == 0 || !Parameters.SearchParameters.UsePredictedSpectraForSpectralAngle)
+            if (needsPrediction.Count == 0)
                 return lookup;
 
-            // 3. Run the predictions and merge the results in.
-            var model = new Prosit2020IntensityHCD(
-                modHandlingMode: Omics.SequenceConversion.SequenceConversionHandlingMode.ReturnNull, fragmentIonMappingMode: FragmentIonMappingMode.MapToInputFullSequence);
-            var inputs = needsPrediction.Values.ToList();
-            model.Predict(inputs);
+            // 3. Run the predictions and merge the results in. Koina is a third-party web service,
+            //    and an outage, a timeout or a malformed response must cost the angles, not a search
+            //    that has already finished. This runs before FDR, so a throw here would lose every
+            //    output file.
+            List<LibrarySpectrum> predictedSpectra;
+            try
+            {
+                predictedSpectra = (SpectrumPredictor ?? PredictWithProsit)(needsPrediction.Values.ToList());
+            }
+            catch (Exception e)
+            {
+                Warn($"Predicted spectra were unavailable, so {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s without a library spectrum keep a spectral angle of -1. {e.GetType().Name}: {e.Message}");
+                return lookup;
+            }
 
-            var predictedSpectra = model.GenerateLibrarySpectraFromPredictions(
-                new double?[model.Predictions.Count],
-                out _);
-
-            MergePredictedSpectra(model.Predictions, predictedSpectra, lookup);
+            MergePredictedSpectra(predictedSpectra, lookup);
             return lookup;
         }
 
         /// <summary>
-        /// Files predicted spectra into the lookup under the key the PSMs will query with.
-        ///
-        /// A predicted spectrum comes back keyed by ValidatedFullSequence, which is the UNIMOD form
-        /// the prediction service accepted, while PSMs look themselves up by their own FullSequence.
-        /// Without mapping back through the predictions, every prediction for a modified peptide
-        /// would be filed under a key nothing ever asks for - present in the lookup, and invisible.
+        /// Stands in for <see cref="PredictWithProsit"/> when set, so tests can exercise what happens
+        /// around the remote call - a service failure, or spectra coming back - without the network.
+        /// Null in production.
+        /// </summary>
+        internal Func<List<FragmentIntensityPredictionInput>, List<LibrarySpectrum>> SpectrumPredictor { get; set; }
+
+        /// <summary>
+        /// The remote call. Inputs Prosit cannot take (an unsupported modification, a charge above 6,
+        /// a peptide longer than 30) are dropped by the model before the request is sent and come back
+        /// with no spectrum; they are counted in a warning rather than silently lost.
+        /// </summary>
+        private static List<LibrarySpectrum> PredictWithProsit(List<FragmentIntensityPredictionInput> inputs)
+        {
+            var model = new Prosit2020IntensityHCD(
+                modHandlingMode: Omics.SequenceConversion.SequenceConversionHandlingMode.ReturnNull, fragmentIonMappingMode: FragmentIonMappingMode.MapToInputFullSequence);
+            model.Predict(inputs);
+
+            int rejected = model.Predictions.Count(p => p.FragmentIntensities == null);
+            if (rejected > 0)
+                Warn($"Prosit could not predict {rejected} of {inputs.Count} peptide/charge pairs (unsupported sequence, modification or charge); those keep a spectral angle of -1.");
+
+            return model.GenerateLibrarySpectraFromPredictions(new double?[model.Predictions.Count], out _);
+        }
+
+        /// <summary>
+        /// Files predicted spectra into the lookup. The model is built with
+        /// FragmentIonMappingMode.MapToInputFullSequence, so each spectrum already comes back under
+        /// the FullSequence it was requested with - the same key the PSMs query with.
         ///
         /// Real library entries already in the lookup win: a measured spectrum beats a predicted one.
-        ///
-        /// Pure, and separate from the request, so it can be tested without the network.
         /// </summary>
         internal static void MergePredictedSpectra(
-            IEnumerable<PeptideFragmentIntensityPrediction> predictions,
             IEnumerable<LibrarySpectrum> predictedSpectra,
             Dictionary<(string, int), LibrarySpectrum> lookup)
         {
-            var validatedToOriginal = new Dictionary<string, string>();
-            foreach (var prediction in predictions)
-            {
-                if (prediction.ValidatedFullSequence != null)
-                {
-                    validatedToOriginal[prediction.ValidatedFullSequence] = prediction.FullSequence;
-                }
-            }
-
             foreach (var spectrum in predictedSpectra)
             {
-                string originalSequence = validatedToOriginal.GetValueOrDefault(spectrum.Sequence, spectrum.Sequence);
-                var key = (originalSequence, spectrum.ChargeState);
-
+                var key = (spectrum.Sequence, spectrum.ChargeState);
                 if (!lookup.ContainsKey(key))
                     lookup[key] = spectrum;
             }
@@ -319,14 +343,13 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// The collision energy to predict at. Prosit needs a number, and the scan only carries one
-        /// for HCD data that recorded it, so 30 is the fallback - a mid-range HCD energy rather than
-        /// a meaningful default. Ms2Scan is null on any PSM that did not come through a path which
-        /// set it, so the null check is the normal case, not a defensive one.
+        /// The collision energy to predict at: the scan's recorded HCD energy, which every PSM already
+        /// carries as CollisionalEnergy. Prosit needs a number, so 30 - a mid-range HCD energy rather
+        /// than a meaningful default - stands in when the scan did not record one.
         /// </summary>
         internal static int ResolveCollisionEnergy(SpectralMatch psm) =>
-            psm.Ms2Scan != null && int.TryParse(psm.Ms2Scan.HcdEnergy, out int parsedEnergy)
-                ? parsedEnergy
+            psm.CollisionalEnergy is double energy
+                ? (int)Math.Round(energy)
                 : 30;
 
         internal List<SpectralMatch> GetSpectralMatchesWithoutComputedSpectralAngle()
@@ -334,7 +357,7 @@ namespace TaskLayer
             // SpectralAngle < 0 is the "not computed" sentinel; 0 is a legitimate
             // (terrible) score and must not trigger recomputation.
             return Parameters.AllSpectralMatches
-                .Where(psm => psm.FullSequence != null && psm.SpectralAngle < 0) //TODO allow supported mods
+                .Where(psm => psm.FullSequence != null && psm.SpectralAngle < 0)
                 .ToList();
         }
         /// <summary>
