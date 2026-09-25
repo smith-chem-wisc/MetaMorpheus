@@ -714,7 +714,8 @@ namespace TaskLayer
                         searchModeType: digestionParams.SearchModeType,
                         generateUnlabeledProteinsForSilac: digestionParams.GeneratehUnlabeledProteinsForSilac,
                         keepNGlycopeptide: digestionParams.KeepNGlycopeptide,
-                        keepOGlycopeptide: digestionParams.KeepOGlycopeptide);
+                        keepOGlycopeptide: digestionParams.KeepOGlycopeptide,
+                        respectCleavageBlockingModifications: digestionParams.RespectCleavageBlockingModifications);
                     break;
                 case RnaDigestionParams:
                     fileSpecificDigestionParams = new RnaDigestionParams(
