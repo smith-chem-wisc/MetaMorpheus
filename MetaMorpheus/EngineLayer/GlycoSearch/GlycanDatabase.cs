@@ -624,6 +624,105 @@ namespace EngineLayer
             }
         }
 
+        /// <summary>
+        /// A warning when a glycan does not start from HexNAc, or null when it does -- or when it is not a
+        /// glycan at all, which is the validator's and the loader's business, not this.
+        /// </summary>
+        /// <remarks>
+        /// Nearly every O-glycan starts from a GalNAc on the serine or threonine, and every N-glycan from the
+        /// GlcNAc of the chitobiose core on the asparagine, so a custom glycan that does not is usually a typo
+        /// or a glycan entered backwards. Usually, not always: O-mannose, O-fucose and O-glucose glycans are
+        /// real, and "Olgycan Database 36 glycans with Mann.txt" ships four. So this warns and never refuses.
+        /// A structure is judged by its root. A composition has no order, so it is judged by whether it has
+        /// a HexNAc at all. Shared by the custom glycan window, which shows it on adding a glycan, and by
+        /// startup, which reports the custom databases through <see cref="CoreWarningsFor"/>.
+        /// </remarks>
+        public static string CoreWarning(string glycan, bool isOGlycan)
+        {
+            string text = (glycan ?? string.Empty).Trim();
+            if (!StartsWithoutHexNAc(text))
+            {
+                return null;
+            }
+
+            string startsWith = text.StartsWith("(", StringComparison.Ordinal) ? "does not begin with HexNAc" : "contains no HexNAc";
+            return isOGlycan
+                ? $"\"{text}\" {startsWith}. Nearly every O-glycan starts from a GalNAc (HexNAc) on the serine or threonine; " +
+                  "O-mannose, O-fucose and O-glucose glycans are the exceptions. If this is not one of those, check the entry."
+                : $"\"{text}\" {startsWith}. Every N-glycan starts from the GlcNAc (HexNAc) of the chitobiose core on the " +
+                  "asparagine, so check the entry.";
+        }
+
+        /// <summary>
+        /// <see cref="CoreWarning"/> over a whole database: one message naming every glycan in it, by line,
+        /// that does not start from HexNAc, or null when there are none or the file is not there.
+        /// </summary>
+        public static string CoreWarningsFor(string databasePath, bool isOGlycan)
+        {
+            if (!File.Exists(databasePath))
+            {
+                return null;
+            }
+
+            var offenders = new List<string>();
+            int lineNumber = 0;
+            foreach (string line in File.ReadLines(databasePath))
+            {
+                lineNumber++;
+                if (IsCommentOrBlank(line))
+                {
+                    continue;
+                }
+
+                // Read the way the loaders read it, so a '#' note or a tab column is not mistaken for the glycan.
+                string glycan = line.TrimStart().StartsWith("(", StringComparison.Ordinal)
+                    ? line.Split('\t')[0].Trim()
+                    : CompositionPart(line);
+                if (StartsWithoutHexNAc(glycan))
+                {
+                    offenders.Add($"line {lineNumber}: {glycan}");
+                }
+            }
+
+            if (offenders.Count == 0)
+            {
+                return null;
+            }
+
+            string core = isOGlycan
+                ? "Nearly every O-glycan starts from a GalNAc (HexNAc); O-mannose, O-fucose and O-glucose glycans are the exceptions"
+                : "Every N-glycan starts from the GlcNAc (HexNAc) of the chitobiose core";
+            return $"{offenders.Count} glycan(s) in '{Path.GetFileName(databasePath)}' do not start with HexNAc -- {string.Join("; ", offenders)}. " +
+                $"{core}. They are loaded as written; check them at {databasePath}.";
+        }
+
+        /// <summary>
+        /// Whether a glycan that can be read does not start from HexNAc: a structure whose root is not the
+        /// HexNAc code, or a composition with no HexNAc. False for anything that cannot be read as either.
+        /// </summary>
+        private static bool StartsWithoutHexNAc(string glycan)
+        {
+            if (string.IsNullOrEmpty(glycan) || IsCommentOrBlank(glycan))
+            {
+                return false;
+            }
+
+            var hexNAc = Glycan.NameCharDic["HexNAc"];
+            if (glycan.StartsWith("(", StringComparison.Ordinal))
+            {
+                return StructureProblem(glycan) == null && glycan.Length > 1 && glycan[1] != hexNAc.Item1;
+            }
+
+            try
+            {
+                return ParseComposition(glycan)[hexNAc.Item2] == 0;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+        }
+
         private static string TooLarge(string entry, int residues) =>
             $"Could not add the glycan \"{entry}\": it has {residues} monosaccharides, and a glycan may have at most " +
             $"{MaxMonosaccharidesPerGlycan}. The ions a glycan search builds grow combinatorially with its size, so one this " +

@@ -48,10 +48,21 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            MessageBox.Show(
-                $"The glycan \"{glycanText}\" was added to {Path.GetFileName(databasePath)}. Select that database in a "
-                + "GlycoSearch task to search for it.",
-                "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            string added = $"The glycan \"{glycanText}\" was added to {Path.GetFileName(databasePath)}. Select that database in a "
+                + "GlycoSearch task to search for it.";
+
+            // Added either way -- a glycan that does not start from HexNAc can be real -- but said so while
+            // the user still has the entry in front of them.
+            string coreWarning = GlycanDatabase.CoreWarning(glycanText, IsOGlycanSelected);
+            if (coreWarning != null)
+            {
+                MessageBox.Show(added + Environment.NewLine + Environment.NewLine + "Warning: " + coreWarning,
+                    "Added, with a warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            else
+            {
+                MessageBox.Show(added, "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
 
             DialogResult = true;
         }

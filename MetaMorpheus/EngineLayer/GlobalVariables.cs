@@ -622,6 +622,12 @@ namespace EngineLayer
                 }
                 _AllModsKnown.Add(glycan);
             }
+
+            // Only the user's own databases: a shipped O-glycan database legitimately holds O-mannose glycans,
+            // and warning about it at every launch would teach the user to ignore the warning.
+            WarnAboutGlycansWithoutHexNAcCore(CustomOGlycanDatabasePath, true);
+            WarnAboutGlycansWithoutHexNAcCore(CustomNGlycanDatabasePath, false);
+
             LoadTxtGlycan();
         }
 
@@ -762,6 +768,24 @@ namespace EngineLayer
                 + $"name was already taken: {string.Join(", ", skipped.Select(p => "'" + p + "'"))}. The "
                 + $"definition already loaded is kept and the custom one discarded. Rename them in {path} "
                 + $"if you meant to define your own.");
+        }
+
+        private static void WarnAboutGlycansWithoutHexNAcCore(string customDatabasePath, bool isOGlycan)
+        {
+            try
+            {
+                string warning = GlycanDatabase.CoreWarningsFor(customDatabasePath, isOGlycan);
+                if (warning != null)
+                {
+                    Warn(warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Advice, not a check: a file that cannot be read has already been reported by the load above,
+                // and this must not be what stops MetaMorpheus opening.
+                Warn($"Could not check '{Path.GetFileName(customDatabasePath)}' for glycans that do not start with HexNAc: {ex.Message}");
+            }
         }
 
         private static void Warn(string v)
