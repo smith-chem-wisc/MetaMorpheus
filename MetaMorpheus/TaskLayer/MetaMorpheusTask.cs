@@ -1729,8 +1729,9 @@ namespace TaskLayer
 
                 if (!Directory.Exists(indexDirectory.FullName))
                 {
-                    // Keep looking. The index for a multi-database search is written beside the FIRST
-                    // database only, so returning here strands a usable cache sitting under a later one.
+                    // Keep looking, as the loop already does when this folder holds no match. Returning
+                    // here made whether a later database's index is found depend on whether the first
+                    // database happens to have an index folder of its own.
                     continue;
                 }
 

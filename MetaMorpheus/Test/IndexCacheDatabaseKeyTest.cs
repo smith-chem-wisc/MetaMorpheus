@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -282,6 +283,12 @@ namespace Test
 
         // ----- the lookup that consumes the key -----
 
+        /// <summary>
+        /// Plants an index folder the lookup can accept on everything but its key. CheckFiles also requires
+        /// a fragment index whose header this build can read, so the fragment index is written by the
+        /// production writer rather than left empty -- an empty one is rejected on its header, and a test of
+        /// the key or the lookup would then pass or fail for that reason instead.
+        /// </summary>
         private static void PlantIndexFolder(FileInfo besideDatabase, IndexingEngine engine)
         {
             string folder = Path.Combine(besideDatabase.DirectoryName, MetaMorpheusTask.IndexFolderName, "2026-09-10-00-00-00");
@@ -289,15 +296,20 @@ namespace Test
 
             File.WriteAllText(Path.Combine(folder, MetaMorpheusTask.IndexEngineParamsFileName), engine.ToString());
             File.WriteAllText(Path.Combine(folder, MetaMorpheusTask.PeptideIndexFileName), string.Empty);
-            File.WriteAllText(Path.Combine(folder, MetaMorpheusTask.FragmentIndexFileName), string.Empty);
+            WriteFragmentIndex(new FragmentIndex(new[] { 0 }, Array.Empty<int>()), Path.Combine(folder, MetaMorpheusTask.FragmentIndexFileName));
         }
+
+        private static void WriteFragmentIndex(FragmentIndex fragmentIndex, string path) =>
+            typeof(MetaMorpheusTask)
+                .GetMethod("WriteFragmentIndex", BindingFlags.NonPublic | BindingFlags.Static, null, new[] { typeof(FragmentIndex), typeof(string) }, null)
+                .Invoke(null, new object[] { fragmentIndex, path });
 
         [Test]
         public static void AnIndexUnderALaterDatabaseIsFoundWhenTheFirstHasNoIndexFolder()
         {
-            // The index of a multi-database search is written beside the FIRST database only. Reorder the
-            // databases and the cache now sits under a later one; the lookup used to give up at the first
-            // database without an index folder and rebuild from scratch.
+            // The lookup used to give up at the first database without an index folder, while a first
+            // database WITH a folder but no matching index let it go on to the next one. The outcome for an
+            // index under a later database depended on which of those the first one happened to be.
             FileInfo first = WriteDatabase("lookup/first/a.fasta", OneProtein);
             FileInfo second = WriteDatabase("lookup/second/b.fasta", OtherProtein);
 
@@ -336,7 +348,12 @@ namespace Test
             FileInfo first = WriteDatabase("mismatch/first/a.fasta", OneProtein);
             FileInfo second = WriteDatabase("mismatch/second/b.fasta", OtherProtein);
 
-            PlantIndexFolder(second, EngineFor(first, second));
+            IndexingEngine plantedFor = EngineFor(first, second);
+            PlantIndexFolder(second, plantedFor);
+
+            // the planted folder is acceptable apart from its key, so a miss below is the key's doing
+            Assert.That(MetaMorpheusTask.GetExistingFolderWithIndices(plantedFor,
+                new List<DbForTask> { new DbForTask(first.FullName, false), new DbForTask(second.FullName, false) }), Is.Not.Null);
 
             // now the search asks for the second database only, so the planted key must not match
             string found = MetaMorpheusTask.GetExistingFolderWithIndices(EngineFor(second),
