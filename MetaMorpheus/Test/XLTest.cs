@@ -570,7 +570,8 @@ namespace Test
 
             // We have pretty high peptide-level q values for crosslinks, so we need to up the cut-off is we want PEP to run
             commonParameters2.QValueCutoffForPepCalculation = 0.05;
-            var fdrResultsXLink = new FdrAnalysisEngine(firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Inter || c.CrossType == PsmCrossType.Intra).ToList<SpectralMatch>(), 1, commonParameters2, fsp, new List<string>(), "crosslink").Run();
+            var fdrResultsXLink = new FdrAnalysisEngine(firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Inter || c.CrossType == PsmCrossType.Intra).ToList<SpectralMatch>(), 1, commonParameters2, fsp, new List<string>(), "crosslink",
+                pruneAmbiguousHypotheses: true).Run(); // as PostXLSearchAnalysisTask runs it
 
             unnasignedCrossType = 0;
             inter = 0;
