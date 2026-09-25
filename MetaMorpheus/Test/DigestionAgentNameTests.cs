@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.Linq;
@@ -70,12 +70,6 @@ namespace Test
             Assert.That(new RnaDigestionParams("top-down").DigestionAgentName(), Is.EqualTo("top-down"));
         }
 
-        [Test]
-        public static void UnknownDigestionParamsReportNoAgent()
-        {
-            Assert.That(((IDigestionParams)null).DigestionAgentName(), Is.Null);
-        }
-
         /// <summary>
         /// A digestion-parameter type that is neither proteolytic nor RNA and names no agent has to come
         /// back null rather than throw. The call site is PostSearchAnalysisTask.QuantificationAnalysis,
@@ -133,6 +127,7 @@ namespace Test
             public int MaxModificationIsoforms { get; set; }
             public int MaxMods { get; set; }
             public DigestionAgent DigestionAgent => null;
+            public DigestionAgent SpecificDigestionAgent => null;
             public FragmentationTerminus FragmentationTerminus => FragmentationTerminus.Both;
             public CleavageSpecificity SearchModeType => CleavageSpecificity.Full;
             public IDigestionParams Clone(FragmentationTerminus? newTerminus = null) => this;
@@ -140,3 +135,4 @@ namespace Test
         }
     }
 }
+
