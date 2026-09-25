@@ -33,6 +33,8 @@ using EngineLayer.DIA;
 using EngineLayer.SpectrumMatch;
 using Omics.Fragmentation;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Test")]
+
 namespace TaskLayer
 {
     public enum MyTask
@@ -1718,7 +1720,7 @@ namespace TaskLayer
             }
         }
 
-        private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
+        internal static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
         {
             foreach (var database in dbFilenameList)
             {
@@ -1727,7 +1729,10 @@ namespace TaskLayer
 
                 if (!Directory.Exists(indexDirectory.FullName))
                 {
-                    return null;
+                    // Keep looking, as the loop already does when this folder holds no match. Returning
+                    // here made whether a later database's index is found depend on whether the first
+                    // database happens to have an index folder of its own.
+                    continue;
                 }
 
                 // all directories in the same directory as the bioPolymer database
