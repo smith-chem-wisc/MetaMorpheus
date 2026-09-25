@@ -226,6 +226,21 @@ namespace EngineLayer
                 int roundPositives = 0;
                 int roundNegatives = 0;
 
+                // Round 0's labels come from the search score and do not depend on the fold, so its data is
+                // built once, up front, before any fold's model has scored anything -- as before iteration
+                // existed. Building it per fold instead would let a pruning caller's earlier folds delete
+                // hypotheses from the data a later fold trains on.
+                IEnumerable<PsmData>[] roundZeroData = null;
+                if (round == 0)
+                {
+                    _positiveTrainingPepThreshold = double.NaN;
+                    roundZeroData = new IEnumerable<PsmData>[numGroups];
+                    for (int group = 0; group < numGroups; group++)
+                    {
+                        roundZeroData[group] = CreatePsmData(SearchType, peptideGroups, peptideGroupIndices[group]);
+                    }
+                }
+
                 for (int groupIndexNumber = 0; groupIndexNumber < numGroups; groupIndexNumber++)
                 {
                     List<int> allGroupIndexes = Enumerable.Range(0, numGroups).ToList();
@@ -249,7 +264,9 @@ namespace EngineLayer
                     var trainingParts = new List<IEnumerable<PsmData>>();
                     foreach (int trainingGroup in allGroupIndexes)
                     {
-                        trainingParts.Add(CreatePsmData(SearchType, peptideGroups, peptideGroupIndices[trainingGroup]));
+                        trainingParts.Add(round == 0
+                            ? roundZeroData[trainingGroup]
+                            : CreatePsmData(SearchType, peptideGroups, peptideGroupIndices[trainingGroup]));
                     }
 
                     if (!trainingParts.Any(part => part.Any(p => p.Label)) || !trainingParts.Any(part => part.Any(p => !p.Label)))
@@ -264,7 +281,9 @@ namespace EngineLayer
 
                     // The held-out fold, labelled by the SAME threshold, so the evaluation measures the
                     // model against the rule it was trained under rather than a different one.
-                    var heldOut = CreatePsmData(SearchType, peptideGroups, peptideGroupIndices[groupIndexNumber]);
+                    var heldOut = round == 0
+                        ? roundZeroData[groupIndexNumber]
+                        : CreatePsmData(SearchType, peptideGroups, peptideGroupIndices[groupIndexNumber]);
                     var myPredictions = trainedModels[groupIndexNumber].Transform(mlContext.Data.LoadFromEnumerable(heldOut));
                     CalibratedBinaryClassificationMetrics metrics = mlContext.BinaryClassification.Evaluate(data: myPredictions, labelColumnName: "Label", scoreColumnName: "Score");
 
