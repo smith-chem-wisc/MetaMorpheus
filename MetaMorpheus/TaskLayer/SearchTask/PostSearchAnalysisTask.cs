@@ -1013,6 +1013,8 @@ namespace TaskLayer
 
                     foreach (var psm in spectraFile)
                     {
+
+
                         flashLFQIdentifications.Add(
                             new Identification(
                                 fileInfo: rawfileinfo,
@@ -1022,6 +1024,7 @@ namespace TaskLayer
                                 psm.ScanRetentionTime,
                                 psm.ScanPrecursorCharge,
                                 psmToProteinGroups[psm],
+                                optionalChemicalFormula: GlobalVariables.AnalyteType == AnalyteType.Oligo ? psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.ThisChemicalFormula : null,
                                 psmScore: psm.Score,
                                 qValue: psmsForQuantification.FilterType == FilterType.QValue ? psm.FdrInfo.QValue : psm.FdrInfo.PEP_QValue,
                                 decoy: psm.IsDecoy,
@@ -1037,6 +1040,7 @@ namespace TaskLayer
                     normalize: Parameters.SearchParameters.Normalize,
                     ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
                     matchBetweenRunsPpmTolerance: Parameters.SearchParameters.QuantifyPpmTol,  // If these tolerances are not equivalent, then MBR will falsely classify peptides found in the initial search as MBR peaks
+                    rnaMode: GlobalVariables.AnalyteType == AnalyteType.Oligo,
                     matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
                     matchBetweenRunsFdrThreshold: Parameters.SearchParameters.MbrFdrThreshold,
                     useSharedPeptidesForProteinQuant: Parameters.SearchParameters.UseSharedPeptidesForLFQ,
