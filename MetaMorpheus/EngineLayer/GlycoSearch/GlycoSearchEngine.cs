@@ -1016,13 +1016,6 @@ namespace EngineLayer.GlycoSearch
         }
 
         /// <summary>
-        /// Valid the Graph created by this modPos and glycanBox.
-        /// Check if the motif in peptide is sufficient to cover the motif in glycanBox.
-        /// </summary>
-        /// <param name="modPosMotifs"> The motif at each candidate glycosite of the peptide. </param>
-        /// <param name="glycanBox"></param>
-        /// <returns></returns>
-        /// <summary>
         /// The obligated sites this peptide's protease implies, in the same two-based key space as
         /// <see cref="GlycoSpectralMatch.GetPossibleModSites"/>. Empty whenever the peptide has no
         /// digestion provenance or its protease requires nothing.
@@ -1038,6 +1031,14 @@ namespace EngineLayer.GlycoSearch
             return peptide.GetCleavageObligations(agent);
         }
 
+        /// <summary>
+        /// Valid the Graph created by this modPos and glycanBox.
+        /// Check if the motif in peptide is sufficient to cover the motif in glycanBox.
+        /// </summary>
+        /// <param name="modPosMotifs"> The motif at each candidate glycosite of the peptide. </param>
+        /// <param name="glycanBox"></param>
+        /// <param name="obligatedSiteCount"> The number of sites the protease obligates to carry a glycan; a box with fewer glycans cannot fill them and is rejected. </param>
+        /// <returns></returns>
         private static bool GraphCheck(string[] modPosMotifs, GlycanBox glycanBox, int obligatedSiteCount)
         {
             // If the motifs number is less than the glycanBox, we can skip this graph.
