@@ -264,16 +264,18 @@ namespace TaskLayer
             };
         }
 
-        private IReadOnlyList<Modification> ResolveModifications(IEnumerable<(string, string)> mods)
+        private static IReadOnlyList<Modification> ResolveModifications(IEnumerable<(string, string)> mods)
         {
             if (mods is null) return Array.Empty<Modification>();
 
             // The (ModificationType, IdWithMotif) tuples are resolved to real Modification objects
             // so the builder can read the UNIMOD accession off DatabaseReference rather than being
-            // handed a string to guess from.
-            var wanted = new HashSet<string>(mods.Select(m => m.Item2), StringComparer.Ordinal);
+            // handed a string to guess from. Both halves are the identity: the same IdWithMotif is
+            // known under more than one type (Hex on Y is one), and keying on
+            // the id alone would write every one of them.
+            var wanted = new HashSet<(string, string)>(mods);
             return GlobalVariables.AllModsKnown
-                .Where(m => wanted.Contains(m.IdWithMotif))
+                .Where(m => wanted.Contains((m.ModificationType, m.IdWithMotif)))
                 .ToList();
         }
 

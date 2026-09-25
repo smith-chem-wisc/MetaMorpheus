@@ -648,8 +648,10 @@ namespace TaskLayer
             if (!SearchParameters.WriteSdrf || currentRawFileList is null || currentRawFileList.Count == 0)
                 return;
 
+            // This check only warns, so it must never be what stops a search: a design another
+            // program holds open (Excel locks what it opens) is reported, not thrown.
             string designPath = Path.Combine(
-                Directory.GetParent(currentRawFileList.First()).ToString(),
+                Path.GetDirectoryName(currentRawFileList.First()) ?? string.Empty,
                 GlobalVariables.ExperimentalDesignFileName);
 
             if (!File.Exists(designPath))
@@ -661,11 +663,26 @@ namespace TaskLayer
             }
             else
             {
-                ExperimentalDesign.ReadExperimentalDesign(designPath, currentRawFileList, out var designErrors);
-                if (designErrors.Any())
+                try
+                {
+                    ExperimentalDesign.ReadExperimentalDesign(designPath, currentRawFileList, out var designErrors);
+                    if (designErrors.Any())
+                        Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
+                             " cannot be used as it stands, so the SDRF will describe the search only: " +
+                             string.Join("; ", designErrors));
+                }
+                catch (IOException e)
+                {
                     Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
-                         " cannot be used as it stands, so the SDRF will describe the search only: " +
-                         string.Join("; ", designErrors));
+                         " could not be read before the search (" + e.Message + "). If it is still " +
+                         "unreadable when the SDRF is written, the SDRF will describe the search only.");
+                }
+                catch (UnauthorizedAccessException e)
+                {
+                    Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
+                         " could not be read before the search (" + e.Message + "). If it is still " +
+                         "unreadable when the SDRF is written, the SDRF will describe the search only.");
+                }
             }
 
             // Labelled runs do not yet express comment[label]: SDRF wants one row per sample per
