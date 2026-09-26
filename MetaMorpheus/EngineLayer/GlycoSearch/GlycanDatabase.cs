@@ -165,6 +165,17 @@ namespace EngineLayer
                     string massStr = cols[2].Trim();
                     string ionsStr = cols.Length > 3 ? cols[3].Trim() : string.Empty;
 
+                    // Skipped with a warning rather than thrown: this runs at startup, and a name that was legal
+                    // before the rule existed must not lock the user out of MetaMorpheus. Nothing is lost by
+                    // skipping, since no composition can use the name and still load as written.
+                    if (name.IndexOfAny(Glycan.CharsNotAllowedInName) >= 0)
+                    {
+                        AddModWarning(
+                            $"Custom monosaccharide in '{Path.GetFileName(filePath)}' at line {lineNumber} was not loaded. " +
+                            $"{Glycan.NameHasReservedCharacter(name)} Rename it in {filePath}.");
+                        continue;
+                    }
+
                     if (codeStr.Length != 1)
                     {
                         throw new MetaMorpheusException(
@@ -564,14 +575,33 @@ namespace EngineLayer
 
             int depth = 0;
             int firstTreeEnds = -1;
+            // The branches opened so far under each open node, innermost last. Struct2Node has three child
+            // slots; a fourth branch is skipped but its ')' still climbs a level, so it walks off the root and
+            // the search later fails on a null tree, naming neither the glycan nor the line.
+            var branchCounts = new Stack<int>();
             for (int i = 0; i < structure.Length; i++)
             {
                 if (structure[i] == '(')
                 {
+                    if (branchCounts.Count > 0)
+                    {
+                        int branches = branchCounts.Pop() + 1;
+                        branchCounts.Push(branches);
+                        if (branches > 3)
+                        {
+                            return "A monosaccharide can carry at most three branches, and one here carries more: " +
+                                $"the branch at position {i + 1} is its fourth.";
+                        }
+                    }
+                    branchCounts.Push(0);
                     depth++;
                 }
                 else if (structure[i] == ')')
                 {
+                    if (branchCounts.Count > 0)
+                    {
+                        branchCounts.Pop();
+                    }
                     depth--;
                     if (depth < 0)
                     {
