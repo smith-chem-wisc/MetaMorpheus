@@ -75,6 +75,27 @@ namespace Test
         }
 
         [Test]
+        public static void DecideChargesTheScoringTablesOnceForAllFiles()
+        {
+            // Two tables of one byte per peptide for each thread; the threads are one budget across every file.
+            Assert.That(FileParallelism.ScoringTableBytes(threadBudget: 32, peptideCount: 50_000_000), Is.EqualTo(3_200_000_000L));
+            Assert.That(FileParallelism.ScoringTableBytes(threadBudget: 0, peptideCount: 10), Is.EqualTo(20));
+
+            // 10 GB free at 80% is 8 GB; the 3.2 GB of tables come off it once, leaving room for four more 1 GB files beside the
+            // first. Charged once per file instead (4.2 GB each), only one more would have fit.
+            long tables = FileParallelism.ScoringTableBytes(threadBudget: 32, peptideCount: 50_000_000);
+            var plan = FileParallelism.Decide(fileCount: 8, threadBudget: 32, availableBytes: 10 * GB, bytesPerFile: GB, fixedBytes: tables);
+            Assert.That(plan.FilesInParallel, Is.EqualTo(5));
+            Assert.That(plan.LimitedBy, Is.EqualTo("free memory"));
+
+            // Tables that take the whole budget leave only the first file, even with scans too small to measure.
+            plan = FileParallelism.Decide(fileCount: 8, threadBudget: 32, availableBytes: 3 * GB, bytesPerFile: 1, fixedBytes: tables);
+            Assert.That(plan.FilesInParallel, Is.EqualTo(1));
+            Assert.That(plan.ThreadsPerFile, Is.EqualTo(32));
+            Assert.That(plan.LimitedBy, Is.EqualTo("free memory"));
+        }
+
+        [Test]
         public static void DecideHonorsAUserCapAndACappedBudget()
         {
             var plan = FileParallelism.Decide(fileCount: 8, threadBudget: 64, availableBytes: 500 * GB, bytesPerFile: GB, maximumFilesInParallel: 3);

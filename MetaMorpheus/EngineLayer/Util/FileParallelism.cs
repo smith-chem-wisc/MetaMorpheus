@@ -32,12 +32,24 @@ namespace EngineLayer.Util
         /// </summary>
         public const double MemoryBudgetFraction = 0.8;
 
+        /// <summary>
+        /// Memory the search's scoring tables take: each thread searching holds two tables of one byte per peptide in the index.
+        /// The threads are one budget shared by every file searched at once, so this is paid once per task, not once per file.
+        /// </summary>
+        public static long ScoringTableBytes(int threadBudget, int peptideCount)
+        {
+            return 2L * Math.Max(1, threadBudget) * peptideCount;
+        }
+
         /// <param name="fileCount"> Spectra files the task will search. </param>
         /// <param name="threadBudget"> The task's MaxThreadsToUsePerFile, treated as the budget for all files together. </param>
         /// <param name="availableBytes"> Free physical memory, measured with the index and one file already in memory. </param>
         /// <param name="bytesPerFile"> Estimated memory one more file adds while it is searched; 0 when unknown. </param>
         /// <param name="maximumFilesInParallel"> A user cap: 0 for no cap, 1 to search files one after another. </param>
-        public static FileParallelismPlan Decide(int fileCount, int threadBudget, long availableBytes, long bytesPerFile, int maximumFilesInParallel = 0)
+        /// <param name="fixedBytes"> Memory the search needs however many files run at once (see <see cref="ScoringTableBytes"/>), so it
+        /// comes off the budget rather than being charged to each file, as <c>IndexPartitioning.PartitionsForBudget</c> does. </param>
+        public static FileParallelismPlan Decide(int fileCount, int threadBudget, long availableBytes, long bytesPerFile, int maximumFilesInParallel = 0,
+            long fixedBytes = 0)
         {
             int budget = Math.Max(1, threadBudget);
             if (fileCount <= 1)
@@ -61,7 +73,8 @@ namespace EngineLayer.Util
 
             if (bytesPerFile > 0)
             {
-                long byMemoryLong = 1 + (long)(Math.Max(0, availableBytes) * MemoryBudgetFraction) / bytesPerFile;
+                long budgetBytes = Math.Max(0, (long)(Math.Max(0, availableBytes) * MemoryBudgetFraction) - Math.Max(0, fixedBytes));
+                long byMemoryLong = 1 + budgetBytes / bytesPerFile;
                 int byMemory = (int)Math.Min(int.MaxValue, byMemoryLong);
                 if (byMemory < files)
                 {

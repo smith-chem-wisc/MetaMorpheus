@@ -177,12 +177,14 @@ namespace TaskLayer
                 scansPerFile[0] = LoadMs2Scans(0, combinedParamsPerFile[0]);
                 long scanBytes = Math.Max(0, GC.GetTotalMemory(forceFullCollection: true) - heapBeforeFirstFile);
 
-                // A file being searched also holds its results and, per thread, two scoring tables the size of the index; doubling the
-                // scans covers the results, and the tables are counted at the whole budget since the split is not known yet.
+                // A file being searched also holds its results; doubling the scans covers them. The scoring tables belong to the threads,
+                // and the threads are one budget across every file, so they are charged once rather than per file. At least a byte a file,
+                // since Decide reads 0 as "unknown" and would drop the memory limit.
                 int threadBudget = CommonParameters.MaxThreadsToUsePerFile;
-                long bytesPerFile = 2 * scanBytes + 2L * Math.Max(1, threadBudget) * peptideIndex.Count;
+                long bytesPerFile = Math.Max(1, 2 * scanBytes);
+                long tableBytes = FileParallelism.ScoringTableBytes(threadBudget, peptideIndex.Count);
                 long freeBytes = IndexPartitioning.AvailableBytes();
-                FileParallelismPlan plan = FileParallelism.Decide(fileCount, threadBudget, freeBytes, bytesPerFile, _glycoSearchParameters.MaximumSpectraFilesInParallel);
+                FileParallelismPlan plan = FileParallelism.Decide(fileCount, threadBudget, freeBytes, bytesPerFile, _glycoSearchParameters.MaximumSpectraFilesInParallel, tableBytes);
 
                 // The split above sets how many files run at once and how many threads load each; the search itself draws on one budget
                 // shared by every file, so threads move from files that finish to files still searching.
@@ -191,7 +193,7 @@ namespace TaskLayer
                     + ", each loaded with " + plan.ThreadsPerFile + " threads and searched with threads shared from a budget of " + searchThreads.TotalThreads
                     + " that move from files that finish to files still searching; \n");
                 ProseCreatedWhileRunning.Append("memory free after building the index and loading the first spectra file = " + (freeBytes / 1e9).ToString("0.0") + " GB, estimated "
-                    + (bytesPerFile / 1e9).ToString("0.0") + " GB for each further file; \n");
+                    + (bytesPerFile / 1e9).ToString("0.0") + " GB for each further file and " + (tableBytes / 1e9).ToString("0.0") + " GB of scoring tables shared by all files; \n");
 
                 // Each file's own copies of its parameters with the divided thread count, built here on one thread (see above).
                 var loadParamsPerFile = combinedParamsPerFile.Select(p => p.CloneWithNewMaxThreadsToUsePerFile(plan.ThreadsPerFile)).ToArray();
