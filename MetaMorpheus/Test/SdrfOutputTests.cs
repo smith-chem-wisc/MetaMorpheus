@@ -541,6 +541,44 @@ namespace Test
             Directory.Delete(folder, true);
         }
 
+        /// <summary>
+        /// A search that describes no spectra file writes no SDRF and says so, rather than handing the
+        /// builder an empty table.
+        /// </summary>
+        [Test]
+        public static void ASearchWithNoSpectraFilesWritesNoSdrfAndSaysSo()
+        {
+            string output = Path.Combine(TestContext.CurrentContext.TestDirectory, nameof(ASearchWithNoSpectraFilesWritesNoSdrfAndSaysSo));
+            Directory.CreateDirectory(output);
+            var task = new PostSearchAnalysisTask
+            {
+                Parameters = new PostSearchAnalysisParameters
+                {
+                    OutputFolder = output,
+                    SearchTaskId = "no-files",
+                    CurrentRawFileList = new List<string>()
+                }
+            };
+
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                typeof(PostSearchAnalysisTask).GetMethod("WriteSdrf", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(task, null);
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+            }
+
+            Assert.That(warnings.Any(w => w.Contains("No spectra files to describe")), Is.True, string.Join(" | ", warnings));
+            Assert.That(File.Exists(Path.Combine(output, SdrfFileName)), Is.False);
+            Assert.That(File.Exists(Path.Combine(output, "SdrfWriter_crash.txt")), Is.False, "an empty search is not a crash");
+
+            Directory.Delete(output, true);
+        }
+
         #endregion
 
         #region Warnings before the run
