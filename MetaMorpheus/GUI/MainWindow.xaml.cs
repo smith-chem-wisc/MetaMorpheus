@@ -1944,6 +1944,12 @@ namespace MetaMorpheusGUI
                                     var average = Toml.ReadFile<SpectralAveragingTask>(filePath, MetaMorpheusTask.tomlConfig);
                                     AddTaskToCollection(average);
                                     break;
+
+                                default:
+                                    // e.g. a Truncation task, which runs from the command line only.
+                                    NotificationHandler(null, new StringEventArgs("Task type \"" + tomlFile.Get<string>("TaskType")
+                                        + "\" cannot be run from the GUI; run it from the command line: " + filePath, null));
+                                    break;
                             }
                         }
                         catch (Exception e)
