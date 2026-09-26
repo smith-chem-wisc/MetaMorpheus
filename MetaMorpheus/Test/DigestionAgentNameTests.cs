@@ -1,7 +1,10 @@
 ﻿using EngineLayer;
+using Nett;
 using NUnit.Framework;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using TaskLayer;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -68,6 +71,53 @@ namespace Test
         public static void ReportsTheRnaseForOligos()
         {
             Assert.That(new RnaDigestionParams("top-down").DigestionAgentName(), Is.EqualTo("top-down"));
+        }
+
+        [Test]
+        public static void UnknownDigestionParamsReportNoAgent()
+        {
+            Assert.That(((IDigestionParams)null).DigestionAgentName(), Is.Null);
+        }
+
+        private static SearchTask SavedAndReloaded(IDigestionParams digestionParams, string fileName)
+        {
+            var task = new SearchTask { CommonParameters = new CommonParameters(digestionParams: digestionParams) };
+            string path = Path.Combine(TestContext.CurrentContext.WorkDirectory, fileName);
+            Toml.WriteFile(task, path, MetaMorpheusTask.tomlConfig);
+            var reloaded = Toml.ReadFile<SearchTask>(path, MetaMorpheusTask.tomlConfig);
+            File.Delete(path);
+            return reloaded;
+        }
+
+        /// <summary>
+        /// SpecificProtease has to survive a .toml round trip. Ignoring it in the toml config left every
+        /// reloaded task on the parameterless constructor's trypsin, and file-specific digestion, the
+        /// non-specific clones and this name all read it.
+        /// </summary>
+        [Test]
+        [TestCase("chymotrypsin|P", CleavageSpecificity.Full)]
+        [TestCase("StcE-trypsin", CleavageSpecificity.Full)]
+        [TestCase("Glu-C", CleavageSpecificity.None)]
+        public static void ASavedTaskReloadsWithItsProtease(string protease, CleavageSpecificity specificity)
+        {
+            var reloaded = (DigestionParams)SavedAndReloaded(Params(protease, specificity),
+                nameof(ASavedTaskReloadsWithItsProtease) + ".toml").CommonParameters.DigestionParams;
+
+            Assert.That(reloaded.SpecificProtease.Name, Is.EqualTo(protease));
+            Assert.That(reloaded.DigestionAgentName(), Is.EqualTo(protease));
+        }
+
+        /// <summary>
+        /// The RNA half. SpecificRnase is not written to the .toml, so after a reload it is the
+        /// constructor's top-down; the name has to come from the RNase, which is written.
+        /// </summary>
+        [Test]
+        public static void ASavedRnaTaskReloadsWithItsRnase()
+        {
+            var reloaded = SavedAndReloaded(new RnaDigestionParams("RNase T1"),
+                nameof(ASavedRnaTaskReloadsWithItsRnase) + ".toml").CommonParameters.DigestionParams;
+
+            Assert.That(reloaded.DigestionAgentName(), Is.EqualTo("RNase T1"));
         }
 
         /// <summary>
