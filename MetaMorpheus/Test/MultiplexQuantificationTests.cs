@@ -30,17 +30,37 @@ namespace Test
         private static readonly string[] Tmt11Channels =
             { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" };
 
-        /// <summary>The staged spectra file's name without extension, which prefixes every sample column.</summary>
+        /// <summary>The staged spectra file's name without extension, which every sample column carries.</summary>
         private const string StagedMzmlName = "VA084TQ_6";
 
+        /// <summary>A channel the design annotates but leaves the Sample Name blank.</summary>
+        private const int BlankNameChannel = 3;
+
+        /// <summary>A channel the design leaves out entirely.</summary>
+        private const int UnannotatedChannel = 10;
+
         /// <summary>
-        /// Writes a TmtDesign.txt beside <paramref name="stagedMzmlPath"/> annotating every channel of
-        /// the TMT11 plex as a study sample, alternating between two conditions.
+        /// The column label of channel <paramref name="channel"/> under <see cref="WriteTmtDesign"/>'s design:
+        /// mzLib labels a named channel {sample}_{file}_{channel}, and a channel with no name, blank or
+        /// unannotated, keeps {file}_{channel}.
+        /// </summary>
+        private static string ChannelColumnLabel(int channel) =>
+            channel == BlankNameChannel || channel == UnannotatedChannel
+                ? $"{StagedMzmlName}_{Tmt11Channels[channel]}"
+                : $"Sample{channel + 1}_{StagedMzmlName}_{Tmt11Channels[channel]}";
+
+        /// <summary>
+        /// Writes a TmtDesign.txt beside <paramref name="stagedMzmlPath"/> annotating the channels of the
+        /// TMT11 plex as study samples, alternating between two conditions. One channel's Sample Name is
+        /// blank and one channel has no row, so both unnamed forms reach the real writers.
         /// </summary>
         private static void WriteTmtDesign(string dataFolder, string stagedMzmlPath)
         {
-            var rows = Tmt11Channels.Select((tag, i) =>
-                $"{stagedMzmlPath}\tPlex1\tSample{i + 1}\t{tag}\tCond{(i % 2 == 0 ? "A" : "B")}\t{i / 2 + 1}\t1\t1\tstudy sample");
+            var rows = Tmt11Channels
+                .Select((tag, i) => (tag, i))
+                .Where(c => c.i != UnannotatedChannel)
+                .Select(c =>
+                    $"{stagedMzmlPath}\tPlex1\t{(c.i == BlankNameChannel ? "" : $"Sample{c.i + 1}")}\t{c.tag}\tCond{(c.i % 2 == 0 ? "A" : "B")}\t{c.i / 2 + 1}\t1\t1\tstudy sample");
 
             File.WriteAllLines(
                 Path.Combine(dataFolder, GlobalVariables.TmtExperimentalDesignFileName),
@@ -121,7 +141,7 @@ namespace Test
                 // values would still look plausible and would be under the wrong sample.
                 for (int channel = 0; channel < Tmt11Channels.Length; channel++)
                 {
-                    Assert.That(header[1 + channel], Is.EqualTo($"{StagedMzmlName}_{Tmt11Channels[channel]}"),
+                    Assert.That(header[1 + channel], Is.EqualTo(ChannelColumnLabel(channel)),
                         "column order must follow the plex's channel order, not merely be distinct");
                 }
 
@@ -183,7 +203,16 @@ namespace Test
 
             var peptideLines = File.ReadAllLines(Path.Combine(searchOut, QuantificationWriter.PeptideFileName));
             Assert.That(peptideLines, Has.Length.GreaterThan(1), "at least one peptide must be quantified");
-            Assert.That(peptideLines[0].Split('\t'), Has.Length.EqualTo(1 + Tmt11Channels.Length));
+            var peptideHeader = peptideLines[0].Split('\t');
+            Assert.That(peptideHeader, Has.Length.EqualTo(1 + Tmt11Channels.Length));
+
+            // The peptide table is renamed too, so check its headers by name as the protein table's
+            // are, not only by count.
+            for (int channel = 0; channel < Tmt11Channels.Length; channel++)
+            {
+                Assert.That(peptideHeader[1 + channel], Is.EqualTo(ChannelColumnLabel(channel)),
+                    "the peptide table must name each channel as the protein table does");
+            }
 
             int compared = 0;
             foreach (var line in peptideLines.Skip(1))
@@ -221,9 +250,9 @@ namespace Test
 
             var header = lines[0].Split('\t');
 
-            foreach (string channel in Tmt11Channels)
+            for (int channel = 0; channel < Tmt11Channels.Length; channel++)
             {
-                string label = $"{StagedMzmlName}_{channel}";
+                string label = ChannelColumnLabel(channel);
                 Assert.That(header, Contains.Item($"SpectralCount_{label}"),
                     "the count columns must survive quantification");
                 Assert.That(header, Contains.Item($"CountOccupancy_{label}"),
