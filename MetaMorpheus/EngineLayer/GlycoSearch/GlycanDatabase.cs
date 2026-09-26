@@ -20,7 +20,10 @@ namespace EngineLayer
         /// <param name="ToGenerateIons"> Do we need to generate the glycanIon? </param>
         /// <param name="IsOGlycanSearch"></param>
         /// <returns> A glycan object collection </returns>
-        public static IEnumerable<Glycan> LoadGlycan(string filePath, bool ToGenerateIons, bool IsOGlycan)
+        /// <param name="warn">
+        /// Told about a composition line that loaded with part of it ignored; see <see cref="LoadKindGlycan"/>.
+        /// </param>
+        public static IEnumerable<Glycan> LoadGlycan(string filePath, bool ToGenerateIons, bool IsOGlycan, Action<string> warn = null)
         {
             // The format is inferred from the first DATA line; it is never declared. Comment and blank lines
             // are skipped while sniffing because a documented database -- such as the seeded custom one --
@@ -56,7 +59,7 @@ namespace EngineLayer
 
             if (isKind)
             {
-                return LoadKindGlycan(filePath, ToGenerateIons, IsOGlycan); // open the file of the kind format, example: HexNAc(2)Hex(5)NeuAc(1)Fuc(1)
+                return LoadKindGlycan(filePath, ToGenerateIons, IsOGlycan, warn); // open the file of the kind format, example: HexNAc(2)Hex(5)NeuAc(1)Fuc(1)
             }
             else
             {
@@ -84,7 +87,7 @@ namespace EngineLayer
                 {
                     // Materialised here: the loaders are lazy, so the parse error surfaces on enumeration,
                     // and a half-read database is not added.
-                    glycans.AddRange(LoadGlycan(path, false, isOGlycan).ToList());
+                    glycans.AddRange(LoadGlycan(path, false, isOGlycan, warn).ToList());
                 }
                 // Anything, not only the loaders' own named errors: a file locked by an editor, or a parse
                 // failure deeper in Struct2Glycan, would stop startup just the same.
@@ -610,8 +613,14 @@ namespace EngineLayer
         /// last ')' -- so a column lined up with spaces is dropped the way a tabbed one is. String2Kind
         /// always ignored whatever followed the last ')'; this keeps that tolerance explicit.
         /// </summary>
-        private static string CompositionPart(string line)
+        /// <param name="ignored">
+        /// What was cut after the last ')' and may have been meant as part of the glycan -- a half-written
+        /// NeuAc(1, or a misspelled name -- or null when nothing was cut or only a column was: text that
+        /// starts with whitespace and has no letter or '(' in it, such as a mass lined up with spaces.
+        /// </param>
+        private static string CompositionPart(string line, out string ignored)
         {
+            ignored = null;
             string glycan = line.Split('\t')[0];
             int note = glycan.IndexOf('#');
             if (note >= 0)
@@ -621,6 +630,13 @@ namespace EngineLayer
             int lastClose = glycan.LastIndexOf(')');
             if (lastClose >= 0)
             {
+                string tail = glycan.Substring(lastClose + 1);
+                bool isColumn = tail.Length == 0
+                    || char.IsWhiteSpace(tail[0]) && !tail.Any(c => char.IsLetter(c) || c == '(');
+                if (!isColumn)
+                {
+                    ignored = tail.Trim();
+                }
                 glycan = glycan.Substring(0, lastClose + 1);
             }
             return glycan.Trim();
@@ -766,7 +782,7 @@ namespace EngineLayer
                     continue;
                 }
 
-                string composition = CompositionPart(line);
+                string composition = CompositionPart(line, out _);
                 try
                 {
                     if (ParseComposition(composition).SequenceEqual(entryKind))
@@ -834,8 +850,13 @@ namespace EngineLayer
         /// <param name="filePath"></param>
         /// <param name="ToGenerateIons"></param>
         /// <param name="IsOGlycanSearch"></param>
+        /// <param name="warn">
+        /// Told, naming the file and line, about a line that loaded with part of it ignored or was skipped
+        /// for having no composition in it. Both load leniently, so without this the user searches a
+        /// glycan they did not write and is not told.
+        /// </param>
         /// <returns>The glycan collection </returns>
-        public static IEnumerable<Glycan> LoadKindGlycan(string filePath, bool ToGenerateIons, bool IsOGlycan)
+        public static IEnumerable<Glycan> LoadKindGlycan(string filePath, bool ToGenerateIons, bool IsOGlycan, Action<string> warn = null)
         {
             using (StreamReader lines = new StreamReader(filePath))
             {
@@ -854,14 +875,17 @@ namespace EngineLayer
                         continue;
                     }
 
-                    string line = CompositionPart(rawLine);
+                    string line = CompositionPart(rawLine, out string ignored);
 
                     // A line with no parenthesis in it has not begun to be a composition -- a column header,
                     // or stray text -- and is skipped, as it always was. The test used to be "does it contain
                     // Hex or HexNAc", which also threw away, without a word, every composition built from
-                    // neither: NeuAc(2)Fuc(1) is one, and the entry validator accepts it.
+                    // neither: NeuAc(2)Fuc(1) is one, and the entry validator accepts it. No database that
+                    // ships has such a line, so one here is most likely a glycan typed without its counts.
                     if (line.IndexOf('(') < 0)
                     {
+                        warn?.Invoke($"Skipped a line in '{Path.GetFileName(filePath)}' at line {lineNumber}: \"{rawLine.Trim()}\" " +
+                            "is not a glycan composition, which is a name and a count repeated, e.g. HexNAc(2)Hex(5).");
                         continue;
                     }
 
@@ -878,6 +902,14 @@ namespace EngineLayer
                         throw new MetaMorpheusException(
                             $"Could not parse glycan composition in '{Path.GetFileName(filePath)}' at line {lineNumber}: \"{line}\". {ex.Message}",
                             ex);
+                    }
+
+                    // Warned only once the kept part has parsed: a line that throws is already named above.
+                    if (ignored != null)
+                    {
+                        warn?.Invoke($"Read the glycan in '{Path.GetFileName(filePath)}' at line {lineNumber} as \"{line}\", " +
+                            $"ignoring \"{ignored}\" after it. If that was meant to be part of the glycan, fix the line: " +
+                            "a composition is a name and a count repeated, e.g. HexNAc(2)Hex(5)NeuAc(1).");
                     }
 
                     if (IsOGlycan) // Load the oGlycan with two different motifs : S and T

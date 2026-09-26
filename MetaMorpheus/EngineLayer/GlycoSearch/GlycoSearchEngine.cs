@@ -153,7 +153,7 @@ namespace EngineLayer.GlycoSearch
                     $"The {kind} database '{databaseFileName}' was not found. Available: {string.Join(", ", databasePaths.Select(System.IO.Path.GetFileName))}.");
             }
 
-            Glycan[] glycans = GlycanDatabase.LoadGlycan(path, true, isOGlycan).ToArray();
+            Glycan[] glycans = GlycanDatabase.LoadGlycan(path, true, isOGlycan, WarnStatic).ToArray();
             if (glycans.Length == 0)
             {
                 throw new MetaMorpheusException(

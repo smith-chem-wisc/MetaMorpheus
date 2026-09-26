@@ -713,6 +713,90 @@ namespace Test
         }
 
         /// <summary>
+        /// The loader keeps everything up to the last ')', so a half-written or misspelled tail used to be cut
+        /// off without a word and the glycan searched at the wrong mass. It still loads leniently, but the user
+        /// is told which line lost what.
+        /// </summary>
+        [TestCase("HexNAc(2)Hex(5)NeuAc(1", "NeuAc(1")]
+        [TestCase("HexNAc(2)Hex(5)NeuAc(", "NeuAc(")]
+        [TestCase("HexNAc(2)Hex(5)x(1", "x(1")]
+        [TestCase("HexNAc(2)Hex(5) HexNo", "HexNo")]
+        [TestCase("HexNAc(2)Hex(5) N2H5F0S0 1216.4229", "N2H5F0S0 1216.4229")]
+        [TestCase("HexNAc(2)Hex(5)NeuAc(1 # sialylated", "NeuAc(1")]
+        public static void ACompositionLineWhoseTailIsDroppedLoadsWithAWarning(string line, string dropped)
+        {
+            string path = Path_("tail.gdb");
+            File.WriteAllLines(path, new[] { "HexNAc(1)Hex(1)", line });
+            var warnings = new List<string>();
+
+            var glycans = GlycanDatabase.LoadGlycan(path, false, true, warnings.Add).ToList();
+
+            Assert.That(glycans.Count, Is.EqualTo(4));
+            Assert.That(glycans[2].Kind, Is.EqualTo(GlycanDatabase.String2Kind("HexNAc(2)Hex(5)")));
+            Assert.That(warnings.Count, Is.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("'tail.gdb' at line 2"));
+            Assert.That(warnings[0], Does.Contain($"\"{dropped}\""));
+            Assert.That(warnings[0], Does.Contain("\"HexNAc(2)Hex(5)\""));
+        }
+
+        /// <summary>
+        /// A line with no '(' at all is skipped, as it always was, but no longer silently: HexNAc HexNo is a
+        /// glycan the user meant to search, not a header.
+        /// </summary>
+        [Test]
+        public static void ALineWithNoCompositionIsSkippedWithAWarning()
+        {
+            string path = Path_("words.gdb");
+            File.WriteAllLines(path, new[] { "HexNAc(1)Hex(1)", "HexNAc HexNo" });
+            var warnings = new List<string>();
+
+            var glycans = GlycanDatabase.LoadGlycan(path, false, true, warnings.Add).ToList();
+
+            Assert.That(glycans.Count, Is.EqualTo(2));
+            Assert.That(warnings.Count, Is.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("'words.gdb' at line 2"));
+            Assert.That(warnings[0], Does.Contain("\"HexNAc HexNo\""));
+        }
+
+        /// <summary>
+        /// What is dropped without a word: a note after '#', columns after a tab, and a number lined up with
+        /// spaces. None of these can be a monosaccharide the user meant to include.
+        /// </summary>
+        [TestCase("HexNAc(2)Hex(5) # high mannose")]
+        [TestCase("HexNAc(2)Hex(5)\tN2H5F0S0\t1216.4229")]
+        [TestCase("HexNAc(2)Hex(5)   1216.4229")]
+        [TestCase("HexNAc(2)Hex(5)")]
+        public static void AColumnOrNoteAfterACompositionIsDroppedQuietly(string line)
+        {
+            string path = Path_("quiet.gdb");
+            File.WriteAllLines(path, new[] { "# a banner", "", line });
+            var warnings = new List<string>();
+
+            var glycans = GlycanDatabase.LoadGlycan(path, false, true, warnings.Add).ToList();
+
+            Assert.That(glycans.Count, Is.EqualTo(2));
+            Assert.That(warnings, Is.Empty);
+        }
+
+        /// <summary>
+        /// The startup load passes its warning channel through, so a hand-edited database that lost part of a
+        /// line says so when MetaMorpheus opens, not only when a search reads it.
+        /// </summary>
+        [Test]
+        public static void TheStartupLoadReportsADroppedTail()
+        {
+            string path = Path_("startup.gdb");
+            File.WriteAllLines(path, new[] { "HexNAc(2)Hex(5)NeuAc(1" });
+            var warnings = new List<string>();
+
+            var glycans = GlycanDatabase.LoadGlycansOrWarn(new[] { path }, true, warnings.Add);
+
+            Assert.That(glycans.Count, Is.EqualTo(2));
+            Assert.That(warnings.Count, Is.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("\"NeuAc(1\""));
+        }
+
+        /// <summary>
         /// A line that has started to be a composition but is not one was dropped without a word. It is
         /// named now, file and line, the way a bad structure line already is -- dropping it would search a
         /// database the user did not write.
