@@ -80,7 +80,7 @@ namespace EngineLayer
 
         /// <summary>
         /// When true, PEP also removes ambiguous match hypotheses predicted well below the best one. Only for
-        /// callers with no DisambiguationEngine downstream (glyco and crosslink searches); SearchTask leaves it false.
+        /// callers with no DisambiguationEngine downstream (glyco, crosslink, and nonspecific or semi-specific searches); a classic or modern SearchTask leaves it false.
         /// </summary>
         public bool PruneAmbiguousHypotheses { get; }
         private int _ambiguousHypothesesRemoved;
@@ -672,7 +672,7 @@ namespace EngineLayer
         /// <summary>
         /// Removes the given ambiguous match hypotheses from the PSM.
         /// <remarks>
-        /// Called only when <see cref="PruneAmbiguousHypotheses"/> is set (glyco and crosslink searches,
+        /// Called only when <see cref="PruneAmbiguousHypotheses"/> is set (glyco, crosslink and nonspecific searches,
         /// which have no DisambiguationEngine downstream). Otherwise PEP scores and does not prune:
         /// disambiguation-by-PEP belongs in <see cref="SpectrumMatch.DisambiguationEngine"/>, whose
         /// own summary already names "PEPAnalysisEngine -> By PEP" as a site to consolidate there.
