@@ -141,12 +141,20 @@ namespace Test
                 PredictRetentionTimeEquivalents(IEnumerable<IRetentionPredictable> peptides, int maxThreads = 1)
             {
                 Interlocked.Increment(ref _batchCalls);
+                if (BatchThrows)
+                {
+                    throw new InvalidOperationException("counting batch failure");
+                }
                 var list = peptides.ToList();
                 Interlocked.Add(ref _peptidesSeen, list.Count);
                 return list.Select(p => (Predict(p), p, (RetentionTimeFailureReason?)null)).ToList();
             }
 
-            private static double? Predict(IRetentionPredictable peptide) => peptide.FullSequence.Length;
+            /// <summary>Makes every batched call throw, while the single-peptide path keeps working.</summary>
+            internal bool BatchThrows { get; init; }
+
+            // Null-tolerant like the shipped predictors, so a test can hand the decorator null peptides.
+            private static double? Predict(IRetentionPredictable peptide) => peptide?.FullSequence?.Length;
 
             public string GetFormattedSequence(
                 IRetentionPredictable peptide, out RetentionTimeFailureReason? failureReason)
@@ -323,6 +331,70 @@ namespace Test
             Assert.That(inner.BatchCalls, Is.EqualTo(1));
             Assert.That(inner.SingleCalls, Is.Zero, "every retention time must come from the warm set");
             Assert.That(log, Does.Contain(" distinct peptidoforms, in batches, and 0 one at a time"));
+        }
+
+        /// <summary>
+        /// The engine-level half of the fault-isolation fix: when every batched call throws, PEP still
+        /// completes on the one-at-a-time path and the log says so, instead of the task failing.
+        /// </summary>
+        [Test]
+        public static void PepAnalysisCompletesAndWarnsWhenTheBatchedCallThrows()
+        {
+            var (psms, fsp) = SearchForPep("HPLC");
+            var inner = new CountingPredictor { BatchThrows = true };
+
+            string log = null;
+            Assert.DoesNotThrow(() => log = new PepAnalysisEngine(psms, "standard", fsp, PepOutputFolder(), inner).ComputePEPValuesForAllPSMs());
+
+            Assert.That(log, Does.Not.StartWith("Posterior error probability analysis failed"));
+            Assert.That(log, Does.Contain("Warning: 1 batch(es) of retention-time predictions failed"));
+            Assert.That(log, Does.Contain("(counting batch failure)"));
+            Assert.That(log, Does.Contain(" distinct peptidoforms, in batches, and " + inner.SingleCalls + " one at a time"));
+            Assert.That(inner.SingleCalls, Is.GreaterThan(0), "the unwarmed peptidoforms must have been predicted singly");
+        }
+
+        /// <summary>
+        /// The batched entry point must also serve a miss it has already answered from memory, so asking
+        /// twice for a cold peptidoform reaches the model once.
+        /// </summary>
+        [Test]
+        public static void BatchedLookupServesAnAnsweredMissFromMemory()
+        {
+            var inner = new CountingPredictor();
+            var warm = PrewarmedRetentionTimePredictor.Warm(inner, Array.Empty<IRetentionPredictable>(), maxThreads: 1);
+
+            var first = warm.PredictRetentionTimeEquivalents(new[] { Peptide("COLD") });
+            var second = warm.PredictRetentionTimeEquivalents(new[] { Peptide("COLD") });
+
+            Assert.That(inner.PeptidesSeen, Is.EqualTo(1), "the second lookup must not reach the model");
+            Assert.That(second.Single().PredictedValue, Is.EqualTo(first.Single().PredictedValue));
+            Assert.That(warm.MissCount, Is.EqualTo(1));
+
+            // And a miss answered on the batched path is remembered for the single path too.
+            Assert.That(warm.PredictRetentionTimeEquivalent(Peptide("COLD"), out _), Is.EqualTo(4));
+            Assert.That(inner.SingleCalls, Is.Zero);
+        }
+
+        /// <summary>
+        /// The decorator documents that it tolerates absent input the way the shipped predictors do: a null
+        /// peptide list, a null peptide, and a peptide with no full sequence all pass through to the wrapped
+        /// predictor rather than throwing.
+        /// </summary>
+        [Test]
+        public static void NullAndBlankInputsPassThroughWithoutThrowing()
+        {
+            var inner = new CountingPredictor();
+            var blank = new StubPeptide { BaseSequence = "AAA", FullSequence = string.Empty };
+
+            Assert.That(PrewarmedRetentionTimePredictor.Warm(inner, null, maxThreads: 1).WarmedSequenceCount, Is.Zero);
+            var warm = PrewarmedRetentionTimePredictor.Warm(inner, new IRetentionPredictable[] { null, blank, Peptide("AAA") }, maxThreads: 1);
+            Assert.That(warm.WarmedSequenceCount, Is.EqualTo(1));
+
+            Assert.That(warm.PredictRetentionTimeEquivalents(null), Is.Empty);
+            var results = warm.PredictRetentionTimeEquivalents(new IRetentionPredictable[] { null, blank, Peptide("AAA") });
+            Assert.That(results.Select(r => r.PredictedValue), Is.EquivalentTo(new double?[] { null, 0, 3 }));
+
+            Assert.That(warm.PredictRetentionTimeEquivalent(null, out _), Is.Null);
         }
 
         /// <summary>
