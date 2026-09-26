@@ -35,6 +35,7 @@
       <ComponentGroupRef Id="Appsrc_OGlycan_files" />
       <ComponentGroupRef Id="Appsrc_Proteomes_files" />
       <ComponentGroupRef Id="Appsrc_Contaminants_files" />
+      <ComponentGroupRef Id="Appsrc_ContaminantSubsets_files" />
       <ComponentGroupRef Id="ExcelDefaults" />
       <ComponentRef Id="RemoveApp" />
       <ComponentRef Id="DesktopShortcut" />
@@ -123,7 +124,10 @@
           </Directory>
 
           <!--Contaminants Folder-->
-          <Directory Id="MetaAppContaminantsFolder" Name="Contaminants" />
+          <!--Subsets is a sub folder so that ADD DEFAULT CONTAMINANTS, which adds every file in Contaminants, still adds only the full panel-->
+          <Directory Id="MetaAppContaminantsFolder" Name="Contaminants">
+            <Directory Id="MetaAppContaminantSubsetsFolder" Name="Subsets" />
+          </Directory>
 
           <!--Proteomes Folder-->
           <Directory Id="MetaAppProteomesFolder" Name="Proteomes" />
@@ -723,6 +727,24 @@
       <Component Id="Appsrc_Contaminants_MetaMorpheus_Contaminants.xml" Guid="d840b7a1-dfce-418a-bd4a-f3805625f53d" Condition="OVERWRITEAPPDATA">
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Contaminants_MetaMorpheusContaminants.xml" Name="MetaMorpheusContaminants.xml" Source="$(var.GUI_TargetDir)Contaminants\MetaMorpheusContaminants.xml" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!--Builds the App Contaminants Subsets folder-->
+  <Fragment>
+    <ComponentGroup Id="Appsrc_ContaminantSubsets_files" Directory="MetaAppContaminantSubsetsFolder">
+      <Component Id="RemoveContaminantSubsets" Guid="3FE15A2E-58BF-4C9F-A857-BC4BEA758A7C" Condition="OVERWRITEAPPDATA">
+        <RemoveFolder Id="MetaAppContaminantSubsetsFolder" On="both" />
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+      <Component Id="Appsrc_ContaminantSubsets_NoUPS.xml" Guid="4217D588-1D0C-4250-B81C-E72603E49131" Condition="OVERWRITEAPPDATA">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        <File ReadOnly="no" Id="Appsrc_ContaminantSubsets_MetaMorpheusContaminants_NoUPS.xml" Name="MetaMorpheusContaminants_NoUPS.xml" Source="$(var.GUI_TargetDir)Contaminants\Subsets\MetaMorpheusContaminants_NoUPS.xml" />
+      </Component>
+      <Component Id="Appsrc_ContaminantSubsets_UPS.xml" Guid="CB313C62-49B2-4810-B45F-87035B3E04F4" Condition="OVERWRITEAPPDATA">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        <File ReadOnly="no" Id="Appsrc_ContaminantSubsets_MetaMorpheusContaminants_UPS.xml" Name="MetaMorpheusContaminants_UPS.xml" Source="$(var.GUI_TargetDir)Contaminants\Subsets\MetaMorpheusContaminants_UPS.xml" />
       </Component>
     </ComponentGroup>
   </Fragment>
