@@ -29,6 +29,7 @@ namespace EngineLayer.FdrAnalysis
         private readonly string OutputFolder; // used for storing PEP training models  
         private readonly bool DoPEP;
         private readonly bool PruneAmbiguousHypotheses;
+        private readonly bool IterativePepTraining;
         private static readonly int PsmCountThresholdForInvertedQvalue = 1000;
         /// <summary>
         /// This is to be used only for unit testing. Threshold for q-value calculation is set to 1000
@@ -41,7 +42,7 @@ namespace EngineLayer.FdrAnalysis
         }
         public FdrAnalysisEngine(List<SpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM", 
-            bool doPEP = true, string outputFolder = null, bool pruneAmbiguousHypotheses = false) : base(commonParameters, fileSpecificParameters, nestedIds)
+            bool doPEP = true, string outputFolder = null, bool pruneAmbiguousHypotheses = false, bool iterativePepTraining = false) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllPsms = psms.OrderByDescending(p => p).ToList();
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
@@ -49,6 +50,7 @@ namespace EngineLayer.FdrAnalysis
             OutputFolder = outputFolder;
             DoPEP = doPEP;
             PruneAmbiguousHypotheses = pruneAmbiguousHypotheses;
+            IterativePepTraining = iterativePepTraining;
             if (AllPsms.Any())
                 AddPsmAndPeptideFdrInfoIfNotPresent();
             if (fileSpecificParameters == null) throw new ArgumentNullException("file specific parameters cannot be null");
@@ -79,9 +81,9 @@ namespace EngineLayer.FdrAnalysis
             return myAnalysisResults;
         }
 
-        private void DoFalseDiscoveryRateAnalysis(FdrAnalysisResults myAnalysisResults) => DoFalseDiscoveryRateAnalysis(AllPsms, DoPEP, FileSpecificParameters, OutputFolder, myAnalysisResults, CommonParameters, PruneAmbiguousHypotheses);
+        private void DoFalseDiscoveryRateAnalysis(FdrAnalysisResults myAnalysisResults) => DoFalseDiscoveryRateAnalysis(AllPsms, DoPEP, FileSpecificParameters, OutputFolder, myAnalysisResults, CommonParameters, PruneAmbiguousHypotheses, IterativePepTraining);
 
-        internal static void DoFalseDiscoveryRateAnalysis(List<SpectralMatch> allPsms, bool doPep, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, FdrAnalysisResults myAnalysisResults, CommonParameters commonParameters, bool pruneAmbiguousHypotheses = false)
+        internal static void DoFalseDiscoveryRateAnalysis(List<SpectralMatch> allPsms, bool doPep, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, FdrAnalysisResults myAnalysisResults, CommonParameters commonParameters, bool pruneAmbiguousHypotheses = false, bool iterativePepTraining = false)
         {
             // Stop if canceled
             if (GlobalVariables.StopLoops) { return; }
@@ -108,7 +110,7 @@ namespace EngineLayer.FdrAnalysis
                         CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
 
                         //PEP will model will be developed using peptides and then applied to all PSMs. 
-                        Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, pruneAmbiguousHypotheses);
+                        Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, pruneAmbiguousHypotheses, iterativePepTraining);
 
                         // peptides are ordered by PEP score from good to bad in order to select the best PSM for each peptide
                         peptides = psms
@@ -126,7 +128,7 @@ namespace EngineLayer.FdrAnalysis
                     else //we have more than 100 psms but less than 100 peptides so
                     {
                         //this will be done using PSMs because we dont' have enough peptides
-                        Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, pruneAmbiguousHypotheses);
+                        Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, pruneAmbiguousHypotheses, iterativePepTraining);
                         psms = psms.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
                         CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
                     }
@@ -403,7 +405,7 @@ namespace EngineLayer.FdrAnalysis
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
 
-        public static void Compute_PEPValue(FdrAnalysisResults myAnalysisResults, List<SpectralMatch> psms, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, bool pruneAmbiguousHypotheses = false)
+        public static void Compute_PEPValue(FdrAnalysisResults myAnalysisResults, List<SpectralMatch> psms, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, bool pruneAmbiguousHypotheses = false, bool iterativePepTraining = false)
         {
             // Currently, searches of mixed data (bottom-up + top-down) are not supported
             // PEP will be calculated based on the search type of the first file/PSM in the list, which isn't ideal
@@ -418,7 +420,14 @@ namespace EngineLayer.FdrAnalysis
             };
 
             var rtPredictor = GetRTPredictor(searchType, fileSpecificParameters);
-            myAnalysisResults.BinarySearchTreeMetrics = new PepAnalysisEngine(psms, searchType, fileSpecificParameters, outputFolder, rtPredictor, pruneAmbiguousHypotheses).ComputePEPValuesForAllPSMs();
+            // Iteration is opt-in (SearchParameters.IterativePepTraining), read only by PostSearchAnalysisTask's main
+            // FDR pass. Every other caller trains once, as before iteration existed: glyco, crosslink and nonspecific
+            // searches (which prune, and so could not iterate anyway), and the variant-peptide passes.
+            var pepEngine = new PepAnalysisEngine(psms, searchType, fileSpecificParameters, outputFolder, rtPredictor, pruneAmbiguousHypotheses)
+            {
+                MaxTrainingRounds = iterativePepTraining ? PepAnalysisEngine.IterativeTrainingRoundCap : 1
+            };
+            myAnalysisResults.BinarySearchTreeMetrics = pepEngine.ComputePEPValuesForAllPSMs();
         }
 
         private static IRetentionTimePredictor GetRTPredictor(string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
