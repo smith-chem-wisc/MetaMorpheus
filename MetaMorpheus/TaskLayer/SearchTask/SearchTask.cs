@@ -685,13 +685,7 @@ namespace TaskLayer
                              " cannot be used as it stands, so the SDRF will describe the search only: " +
                              string.Join("; ", designErrors));
                 }
-                catch (IOException e)
-                {
-                    Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
-                         " could not be read before the search (" + e.Message + "). If it is still " +
-                         "unreadable when the SDRF is written, the SDRF will describe the search only.");
-                }
-                catch (UnauthorizedAccessException e)
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
                 {
                     Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
                          " could not be read before the search (" + e.Message + "). If it is still " +
