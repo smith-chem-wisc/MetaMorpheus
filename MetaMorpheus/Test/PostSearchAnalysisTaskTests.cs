@@ -1150,14 +1150,6 @@ namespace Test
         }
 
         /// <summary>
-        /// Writes an mzML whose MS1 scans carry the real isotopic envelope of each named peptide at
-        /// charge 2. A single monoisotopic peak is not enough -- FlashLFQ accepts a feature only when it
-        /// can build an envelope -- and the envelopes are derived from the sequences rather than
-        /// hardcoded, so the fixture cannot drift away from the identifications the tests build. Three
-        /// scans span the identifications' retention time (10.0) so the peak has a shape to integrate
-        /// across rather than a single point.
-        /// </summary>
-        /// <summary>
         /// WriteContaminants reaches AllProteinGroups.tsv and MetaMorpheus's own PSM and peptide tables,
         /// but the FlashLFQ-authored ones are written by mzLib from FlashLfqResults, which has no
         /// contaminant concept -- so before this filter a user who unticked the box got a peptide
@@ -1346,6 +1338,14 @@ namespace Test
                 .GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance)!
                 .Invoke(task, null);
 
+        /// <summary>
+        /// Writes an mzML whose MS1 scans carry the real isotopic envelope of each named peptide at
+        /// charge 2. A single monoisotopic peak is not enough -- FlashLFQ accepts a feature only when it
+        /// can build an envelope -- and the envelopes are derived from the sequences rather than
+        /// hardcoded, so the fixture cannot drift away from the identifications the tests build. Three
+        /// scans span the identifications' retention time (10.0) so the peak has a shape to integrate
+        /// across rather than a single point.
+        /// </summary>
         private static void WriteMs1FixtureFor(string mzmlPath, params string[] baseSequences)
         {
             var envelopes = baseSequences

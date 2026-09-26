@@ -1556,9 +1556,11 @@ namespace TaskLayer
         /// written by mzLib from FlashLfqResults, which has no contaminant concept, so the filter has
         /// to be applied here.
         ///
-        /// A sequence is dropped only when EVERY spectral match carrying it is a contaminant. One
-        /// shared with a target protein keeps its row, because SpectralMatch.IsContaminant is
-        /// Any(parent.IsContaminant) and the peptide tables beside these apply the same rule.
+        /// A sequence is dropped only when EVERY spectral match carrying it is a contaminant. A
+        /// sequence shared with a target protein is itself a contaminant, because
+        /// SpectralMatch.IsContaminant is Any(parent.IsContaminant), so it is withheld here exactly
+        /// as from AllPeptides.tsv. The target-match set only guards matches of one sequence that
+        /// disagree on the flag.
         ///
         /// DELIBERATELY AT WRITE TIME, not by narrowing peptideSequencesForQuantification above.
         /// That list becomes FlashLfqEngine.PeptideModifiedSequencesToQuantify, which mzLib consults
