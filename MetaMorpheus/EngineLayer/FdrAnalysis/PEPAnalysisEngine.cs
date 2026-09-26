@@ -97,15 +97,71 @@ namespace EngineLayer
             // This allows the PSMs to be modified and the order to be preserved
             AllPsms = psms.OrderByDescending(p => p).ToList();
             TrainingVariables = PsmData.trainingInfos[searchType];
-            RetentionTimePredictor = rtPredictor ?? new SSRCalc3RetentionTimePredictor();
             OutputFolder = outputFolder;
             SearchType = searchType;
             SetFileSpecificParameters(fileSpecificParameters);
+
+            // Predict every distinct peptidoform once, in batches, before anything else needs a retention
+            // time. Chronologer serialises its model behind a process-wide lock, so asking it for one
+            // peptide at a time -- which is what both consumers below used to do, one of them from a
+            // 32-thread Parallel.ForEach -- spends the run queueing rather than predicting. Warming here
+            // leaves every later call a dictionary lookup.
+            IRetentionTimePredictor basePredictor = rtPredictor ?? new SSRCalc3RetentionTimePredictor();
+            RetentionTimePredictor = TrainingVariables.Contains("HydrophobicityZScore")
+                ? PrewarmedRetentionTimePredictor.Warm(basePredictor, PeptidesToPredict(psms), MaxThreadsForWarming(fileSpecificParameters))
+                : basePredictor;
+
             BuildFileSpecificDictionaries(psms, TrainingVariables);
             double minQ = searchType == "top-down" ? 0.025 : 0.005; // Less stringent FDR cut-off for top-down
             QValueCutoff = Math.Max(fileSpecificParameters.Select(t => t.fileSpecificParameters.QValueCutoffForPepCalculation).Min(), minQ);
             // If we have more than 100 peptides, we will train on the peptide level. Otherwise, we will train on the PSM level
             UsePeptideLevelQValueForTraining = psms.Select(psm => psm.FullSequence).Distinct().Count(seq => seq.IsNotNullOrEmpty()) >= 100;
+        }
+
+        /// <summary>
+        /// Every peptidoform a retention time will be wanted for. Both consumers guard on
+        /// <see cref="PeptideWithSetModifications"/> before predicting, so warming anything else would
+        /// populate entries that are never read.
+        /// </summary>
+        /// <remarks>
+        /// A CZE file's PSMs are scored on electrophoretic mobility, not retention time, so the only ones the
+        /// predictor sees are the q &lt;= 0.01 targets that <see cref="ComputeRetentionTimeEquivalentValues"/>
+        /// puts in the reference distribution. Warming the rest would be inference nothing reads.
+        /// </remarks>
+        private IEnumerable<IRetentionPredictable> PeptidesToPredict(IEnumerable<SpectralMatch> psms)
+        {
+            foreach (SpectralMatch psm in psms ?? Enumerable.Empty<SpectralMatch>())
+            {
+                bool fileIsCze = psm.FullFilePath != null
+                    && FileSpecificParametersDictionary.TryGetValue(Path.GetFileName(psm.FullFilePath), out CommonParameters fileParams)
+                    && fileParams.SeparationType == "CZE";
+                if (fileIsCze && (psm.IsDecoy || psm.FdrInfo.QValue > 0.01))
+                {
+                    continue;
+                }
+
+                foreach (SpectralMatchHypothesis match in psm.BestMatchingBioPolymersWithSetMods)
+                {
+                    if (match.SpecificBioPolymer is PeptideWithSetModifications peptide)
+                    {
+                        yield return peptide;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Only parallelises the batched predictor's CPU-side encode phase; inference is serialised under
+        /// the model lock regardless. Falls back to 1 when no file-specific parameters were supplied.
+        /// </summary>
+        private static int MaxThreadsForWarming(
+            List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
+        {
+            int configured = fileSpecificParameters?
+                .Select(p => p.fileSpecificParameters?.MaxThreadsToUsePerFile ?? 1)
+                .DefaultIfEmpty(1)
+                .Max() ?? 1;
+            return Math.Max(1, configured);
         }
 
         public string ComputePEPValuesForAllPSMs()
@@ -173,7 +229,26 @@ namespace EngineLayer
             int positiveTrainingCount = PSMDataGroups.SelectMany(p => p).Count(p => p.Label);
             int negativeTrainingcount = PSMDataGroups.SelectMany(p => p).Count(p => !p.Label);
 
-            return AggregateMetricsForOutput(allMetrics, sumOfAllAmbiguousPeptidesResolved, positiveTrainingCount, negativeTrainingcount, QValueCutoff);
+            string output = AggregateMetricsForOutput(allMetrics, sumOfAllAmbiguousPeptidesResolved, positiveTrainingCount, negativeTrainingcount, QValueCutoff);
+
+            // Surface how many distinct peptidoforms the retention-time model was actually asked about.
+            // Without it the batching is invisible in the log and a regression -- someone reintroducing a
+            // per-peptide call -- would show up only as the run getting slower again.
+            if (RetentionTimePredictor is PrewarmedRetentionTimePredictor prewarmed)
+            {
+                output += Environment.NewLine
+                          + "Retention times predicted for " + prewarmed.WarmedSequenceCount
+                          + " distinct peptidoforms, in batches, and " + prewarmed.MissCount + " one at a time";
+                if (prewarmed.FailedChunkCount > 0)
+                {
+                    output += Environment.NewLine
+                              + "Warning: " + prewarmed.FailedChunkCount
+                              + " batch(es) of retention-time predictions failed and were predicted one at a time instead ("
+                              + prewarmed.FirstChunkFailure + ")";
+                }
+            }
+
+            return output;
         }
 
         /// <summary>
@@ -479,6 +554,7 @@ namespace EngineLayer
             float longestSeq = 0;
             float complementaryIonCount = 0;
             float hydrophobicityZscore = float.NaN;
+            float hasHydrophobicity = 0;
             bool isVariantPeptide = false;
 
             //crosslink specific features
@@ -542,11 +618,13 @@ namespace EngineLayer
                             var dict = isUnmodified
                                 ? FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified
                                 : FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified;
-                            hydrophobicityZscore = (float)Math.Round(GetRetentionTimeEquivalentZscore(psm, tentativeSpectralMatch.SpecificBioPolymer, dict, RetentionTimePredictor) * 10.0, 0);
+                            hydrophobicityZscore = (float)Math.Round(GetRetentionTimeEquivalentZscore(psm, tentativeSpectralMatch.SpecificBioPolymer, dict, RetentionTimePredictor, out bool retentionTimePredicted) * 10.0, 0);
+                            hasHydrophobicity = Convert.ToSingle(retentionTimePredicted);
                         }
                         else
                         {
                             hydrophobicityZscore = (float)Math.Round(GetMobilityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer) * 10.0, 0);
+                            hasHydrophobicity = 1; // CZE mobility is computed from composition and always available
                         }
                     }
                 }
@@ -620,6 +698,7 @@ namespace EngineLayer
                 LongestFragmentIonSeries = longestSeq,
                 ComplementaryIonCount = complementaryIonCount,
                 HydrophobicityZScore = hydrophobicityZscore,
+                HasHydrophobicity = hasHydrophobicity,
                 IsVariantPeptide = Convert.ToSingle(isVariantPeptide),
 
                 AlphaIntensity = alphaIntensity,
@@ -713,7 +792,22 @@ namespace EngineLayer
                         }
                         fullSequences.Add(bestMatch.SpecificBioPolymer.FullSequence);
 
-                        double predictedHydrophobicity = bestMatch.SpecificBioPolymer is PeptideWithSetModifications pep ? predictor.PredictRetentionTimeEquivalent(pep, out _) ?? 0 : 0;
+                        // A peptidoform the predictor cannot represent must not contribute to the reference
+                        // distribution. `?? 0` would enter it as a predicted hydrophobicity of zero, which is a
+                        // real and extreme value on this scale, and would drag the median and standard deviation
+                        // that every other peptide in this retention-time bin is then scored against.
+                        if (bestMatch.SpecificBioPolymer is not PeptideWithSetModifications pep)
+                        {
+                            continue;
+                        }
+
+                        double? predicted = predictor.PredictRetentionTimeEquivalent(pep, out _);
+                        if (!predicted.HasValue)
+                        {
+                            continue;
+                        }
+
+                        double predictedHydrophobicity = predicted.Value;
 
                         //here i'm grouping this in 2 minute increments becuase there are cases where you get too few data points to get a good standard deviation an average. This is for stability.
                         int possibleKey = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
@@ -902,8 +996,15 @@ namespace EngineLayer
             return mobility;
         }
 
-        private static float GetRetentionTimeEquivalentZscore(SpectralMatch psm, IBioPolymerWithSetMods Peptide, Dictionary<string, Dictionary<int, Tuple<double, double>>> d, IRetentionTimePredictor predictor)
+        /// <param name="predictionAvailable">
+        /// False when the retention-time predictor could not produce a value for this peptidoform -- Chronologer
+        /// rejects a sequence longer than 50 residues, shorter than 7, or carrying a non-canonical amino acid
+        /// such as selenocysteine, and any predictor can fail outright. Callers must surface this to the model
+        /// (see PsmData.HasHydrophobicity) rather than letting the returned z-score stand on its own.
+        /// </param>
+        private static float GetRetentionTimeEquivalentZscore(SpectralMatch psm, IBioPolymerWithSetMods Peptide, Dictionary<string, Dictionary<int, Tuple<double, double>>> d, IRetentionTimePredictor predictor, out bool predictionAvailable)
         {
+            predictionAvailable = false;
             //Using SSRCalc3 but probably any number of different calculators could be used instead. One could also use the CE mobility.
             double hydrophobicityZscore = double.NaN;
 
@@ -912,9 +1013,23 @@ namespace EngineLayer
                 int time = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
                 if (d[Path.GetFileName(psm.FullFilePath)].Keys.Contains(time))
                 {
-                    double predictedHydrophobicity = Peptide is PeptideWithSetModifications pep ? predictor.PredictRetentionTimeEquivalent(pep, out _) ?? 0 : 0;
-
-                    hydrophobicityZscore = Math.Abs(d[Path.GetFileName(psm.FullFilePath)][time].Item1 - predictedHydrophobicity) / d[Path.GetFileName(psm.FullFilePath)][time].Item2;
+                    // A failed prediction is not a hydrophobicity of zero. Zero is a real and extreme value on
+                    // this scale, so `?? 0` turned "could not predict" into "disagrees with the observed
+                    // retention time as badly as possible" -- the z-score saturates at the maximum below and the
+                    // model reads it as strong evidence against the candidate. Report unavailability instead and
+                    // let the companion feature tell the model to ignore the value.
+                    if (Peptide is PeptideWithSetModifications pep)
+                    {
+                        double? predicted = predictor.PredictRetentionTimeEquivalent(pep, out _);
+                        if (predicted.HasValue)
+                        {
+                            predictionAvailable = true;
+                            hydrophobicityZscore = Math.Abs(d[Path.GetFileName(psm.FullFilePath)][time].Item1 - predicted.Value) / d[Path.GetFileName(psm.FullFilePath)][time].Item2;
+                        }
+                        // Otherwise leave the z-score at NaN. It saturates to the maximum below exactly as before,
+                        // but predictionAvailable stays false, so HasHydrophobicity tells the model that the value
+                        // carries no information about this peptidoform.
+                    }
                 }
             }
 
