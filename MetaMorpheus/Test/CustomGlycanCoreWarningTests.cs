@@ -2,7 +2,9 @@ using EngineLayer;
 using EngineLayer.GlycoSearch;
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Test
 {
@@ -46,6 +48,8 @@ namespace Test
         [TestCase("(F(H))", true)]
         [TestCase("Hex(1)", true)]
         [TestCase("Hex(2)Fuc(1)", true)]
+        [TestCase("(X(H(H)))", true)]
+        [TestCase("Xylose(1)Hex(2)", true)]
         [TestCase("(N)", false)]
         [TestCase("(N(H(A)))", false)]
         [TestCase("HexNAc(1)", false)]
@@ -73,6 +77,21 @@ namespace Test
         {
             Assert.That(GlycanDatabase.CoreWarning("(H)", true), Does.Contain("GalNAc").And.Contain("O-mannose"));
             Assert.That(GlycanDatabase.CoreWarning("(H)", false), Does.Contain("GlcNAc"));
+        }
+
+        /// <summary>
+        /// O-xylose is one of the exceptions too: every proteoglycan attaches through it (Ser-Xyl-Gal-Gal-GlcA).
+        /// A GAG linker still warns, because it does not start from HexNAc, but the message must not tell the
+        /// user it is outside the known exceptions.
+        /// </summary>
+        [Test]
+        public static void TheOGlycanWarningListsOXyloseAmongTheExceptions()
+        {
+            string path = Path_("OGlycan_Custom.gdb");
+            File.WriteAllLines(path, new[] { "Xylose(1)Hex(2)" });
+
+            Assert.That(GlycanDatabase.CoreWarning("(X(H(H)))", true), Does.Contain("O-xylose"));
+            Assert.That(GlycanDatabase.CoreWarningsFor(path, true), Does.Contain("O-xylose"));
         }
 
         /// <summary>
@@ -157,6 +176,79 @@ namespace Test
             Glycan.RegisterCustomMonosaccharide("HexA", 'U', (int)Math.Round(176.03209 * 1E5), null);
 
             Assert.That(GlycanDatabase.CoreWarning("(U(N))", true), Is.Not.Null);
+        }
+
+        // ---------------------------------------------------------------------------------------------
+        // Startup: what SetUpGlobalVariables actually raises through WarnHandler
+        // ---------------------------------------------------------------------------------------------
+
+        private const string CoreMessage = "do not start with HexNAc";
+
+        /// <summary>
+        /// Runs the startup with the user's own O-glycan database holding <paramref name="lines"/>, and
+        /// returns what it raised through <see cref="GlobalVariables.WarnHandler"/>, the route both front ends
+        /// listen on. The real file is put back afterwards.
+        /// </summary>
+        private static List<string> WarningsFromStartupWithCustomOGlycans(params string[] lines)
+        {
+            string path = GlobalVariables.CustomOGlycanDatabasePath;
+            bool existedBefore = File.Exists(path);
+            string originalContent = existedBefore ? File.ReadAllText(path) : null;
+
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> listener = (sender, e) => warnings.Add(e.S);
+            GlobalVariables.WarnHandler += listener;
+            try
+            {
+                File.WriteAllLines(path, lines);
+                GlobalVariables.SetUpGlobalVariables();
+            }
+            finally
+            {
+                GlobalVariables.WarnHandler -= listener;
+                if (existedBefore)
+                {
+                    File.WriteAllText(path, originalContent);
+                }
+                else if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+            return warnings;
+        }
+
+        /// <summary>
+        /// One message, for the user's own database only. The shipped "Olgycan Database 36 glycans with
+        /// Mann.txt" holds four O-mannose glycans and must stay silent.
+        /// </summary>
+        [Test]
+        public static void StartupWarnsOnceAboutTheCustomDatabaseAndNotTheShippedOnes()
+        {
+            var warnings = WarningsFromStartupWithCustomOGlycans("HexNAc(1)Hex(1)", "Hex(1)");
+
+            var core = warnings.Where(w => w.Contains(CoreMessage)).ToList();
+            Assert.That(core, Has.Count.EqualTo(1), string.Join(Environment.NewLine, warnings));
+            Assert.That(core[0], Does.Contain("'OGlycan_Custom.gdb'").And.Contain("line 2: Hex(1)"));
+        }
+
+        /// <summary>
+        /// A database the startup load could not read has already been reported as unavailable. Checking it
+        /// for HexNAc as well used to add a second message saying its glycans "are loaded as written", which
+        /// contradicts the first. That includes a file mixing the two formats: the loader picks one format
+        /// for the whole file from its first glycan, so a mixed file never loads.
+        /// </summary>
+        [TestCase("Hex(1)", "HexNAc(1)Foo(1)")]
+        [TestCase("Hex(1)", "(H)")]
+        [TestCase("(H)", "Hex(1)")]
+        public static void StartupDoesNotCoreCheckACustomDatabaseItCouldNotRead(string first, string second)
+        {
+            var warnings = WarningsFromStartupWithCustomOGlycans(first, second);
+
+            var aboutTheFile = warnings.Where(w => w.Contains("OGlycan_Custom.gdb")).ToList();
+            Assert.That(aboutTheFile, Has.Count.EqualTo(1), string.Join(Environment.NewLine, warnings));
+            Assert.That(aboutTheFile[0], Does.Contain("could not be read"));
+            Assert.That(warnings.Any(w => w.Contains(CoreMessage)), Is.False);
         }
     }
 }

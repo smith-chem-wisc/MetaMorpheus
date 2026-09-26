@@ -78,7 +78,12 @@ namespace EngineLayer
         /// fix it. A database that fails here is left in the list the GlycoSearch task offers: a search
         /// that selects it reads it again and stops with the same named error, which is where it matters.
         /// </remarks>
-        public static List<Glycan> LoadGlycansOrWarn(IEnumerable<string> databasePaths, bool isOGlycan, Action<string> warn)
+        /// <param name="unreadable">
+        /// If given, each database that could not be read is added to it, so a caller can leave it out of
+        /// anything else it says about the glycans in it.
+        /// </param>
+        public static List<Glycan> LoadGlycansOrWarn(IEnumerable<string> databasePaths, bool isOGlycan, Action<string> warn,
+            ICollection<string> unreadable = null)
         {
             var glycans = new List<Glycan>();
             foreach (string path in databasePaths)
@@ -93,6 +98,7 @@ namespace EngineLayer
                 // failure deeper in Struct2Glycan, would stop startup just the same.
                 catch (Exception ex)
                 {
+                    unreadable?.Add(path);
                     warn($"The glycan database '{Path.GetFileName(path)}' could not be read, so its glycans are not " +
                         $"available to MetaDraw in this session. {ex.Message} Fix the file at {path} and restart MetaMorpheus.");
                 }
@@ -771,11 +777,17 @@ namespace EngineLayer
         /// <remarks>
         /// Nearly every O-glycan starts from a GalNAc on the serine or threonine, and every N-glycan from the
         /// GlcNAc of the chitobiose core on the asparagine, so a custom glycan that does not is usually a typo
-        /// or a glycan entered backwards. Usually, not always: O-mannose, O-fucose and O-glucose glycans are
-        /// real, and "Olgycan Database 36 glycans with Mann.txt" ships four. So this warns and never refuses.
+        /// or a glycan entered backwards. Usually, not always: O-mannose, O-fucose, O-glucose and O-xylose
+        /// glycans are real -- every proteoglycan attaches through O-xylose -- and "Olgycan Database 36 glycans
+        /// with Mann.txt" ships four O-mannose ones. So this warns and never refuses.
         /// A structure is judged by its root. A composition has no order, so it is judged by whether it has
-        /// a HexNAc at all. Shared by the custom glycan window, which shows it on adding a glycan, and by
-        /// startup, which reports the custom databases through <see cref="CoreWarningsFor"/>.
+        /// a HexNAc at all. Shared by the custom glycan window, which asks about it before adding a glycan,
+        /// and by startup, which reports the custom databases through <see cref="CoreWarningsFor"/>.
+        /// <para>
+        /// Only the built-in HexNAc code counts as HexNAc. A custom monosaccharide is never HexNAc, whatever its
+        /// mass, so a user who registers HexNAc-mass codes to tell GalNAc and GlcNAc apart is warned about
+        /// every structure rooted on one. That is rare enough to leave as it is.
+        /// </para>
         /// </remarks>
         public static string CoreWarning(string glycan, bool isOGlycan)
         {
@@ -788,15 +800,23 @@ namespace EngineLayer
             string startsWith = text.StartsWith("(", StringComparison.Ordinal) ? "does not begin with HexNAc" : "contains no HexNAc";
             return isOGlycan
                 ? $"\"{text}\" {startsWith}. Nearly every O-glycan starts from a GalNAc (HexNAc) on the serine or threonine; " +
-                  "O-mannose, O-fucose and O-glucose glycans are the exceptions. If this is not one of those, check the entry."
+                  $"{OGlycanExceptions} are the exceptions. If this is not one of those, check the entry."
                 : $"\"{text}\" {startsWith}. Every N-glycan starts from the GlcNAc (HexNAc) of the chitobiose core on the " +
                   "asparagine, so check the entry.";
         }
+
+        /// <summary>The O-glycans that really do not start from HexNAc, named in both messages.</summary>
+        private const string OGlycanExceptions = "O-mannose, O-fucose, O-glucose and O-xylose glycans";
 
         /// <summary>
         /// <see cref="CoreWarning"/> over a whole database: one message naming every glycan in it, by line,
         /// that does not start from HexNAc, or null when there are none or the file is not there.
         /// </summary>
+        /// <remarks>
+        /// Only for a database that loaded. The message says its glycans are loaded as written, which is
+        /// false for one the load gave up on -- including any file that mixes the two formats, since the
+        /// loader reads the whole file in the format of its first glycan.
+        /// </remarks>
         public static string CoreWarningsFor(string databasePath, bool isOGlycan)
         {
             if (!File.Exists(databasePath))
@@ -830,7 +850,7 @@ namespace EngineLayer
             }
 
             string core = isOGlycan
-                ? "Nearly every O-glycan starts from a GalNAc (HexNAc); O-mannose, O-fucose and O-glucose glycans are the exceptions"
+                ? $"Nearly every O-glycan starts from a GalNAc (HexNAc); {OGlycanExceptions} are the exceptions"
                 : "Every N-glycan starts from the GlcNAc (HexNAc) of the chitobiose core";
             return $"{offenders.Count} glycan(s) in '{Path.GetFileName(databasePath)}' do not start with HexNAc -- {string.Join("; ", offenders)}. " +
                 $"{core}. They are loaded as written; check them at {databasePath}.";

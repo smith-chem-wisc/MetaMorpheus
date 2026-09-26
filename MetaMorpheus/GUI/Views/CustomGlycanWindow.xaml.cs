@@ -37,6 +37,20 @@ namespace MetaMorpheusGUI
                 return;
             }
 
+            // Asked before anything is written. Nothing in the GUI can take a glycan out of the database again,
+            // so the user decides while the entry is still in the box and can be corrected there. A warning,
+            // never a refusal: a glycan that does not start from HexNAc can be real.
+            string coreWarning = GlycanDatabase.CoreWarning(glycanText, IsOGlycanSelected);
+            if (coreWarning != null)
+            {
+                var result = MessageBox.Show(coreWarning + Environment.NewLine + Environment.NewLine + "Add it anyway?",
+                    "Glycan does not start with HexNAc", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (result == MessageBoxResult.No)
+                {
+                    return;
+                }
+            }
+
             string databasePath = SelectedDatabasePath;
             string warning;
             try
@@ -49,24 +63,16 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            string added = warning ?? $"The glycan \"{glycanText}\" was added to {Path.GetFileName(databasePath)}. Select that database in a "
-                + "GlycoSearch task to search for it.";
-
-            // Added either way -- a glycan that does not start from HexNAc can be real -- but said so while
-            // the user still has the entry in front of them.
-            string coreWarning = GlycanDatabase.CoreWarning(glycanText, IsOGlycanSelected);
-            if (coreWarning != null)
-            {
-                MessageBox.Show(added + Environment.NewLine + Environment.NewLine + "Warning: " + coreWarning,
-                    "Added, with a warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-            else if (warning != null)
+            if (warning != null)
             {
                 MessageBox.Show(warning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             else
             {
-                MessageBox.Show(added, "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(
+                    $"The glycan \"{glycanText}\" was added to {Path.GetFileName(databasePath)}. Select that database in a "
+                    + "GlycoSearch task to search for it.",
+                    "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
 
             DialogResult = true;
