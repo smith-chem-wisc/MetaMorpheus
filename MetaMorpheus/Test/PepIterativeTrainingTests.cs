@@ -189,6 +189,38 @@ namespace Test
         }
 
         /// <summary>
+        /// One positive example per group. That passes the all-groups check, and round 0 trains, but a later round's
+        /// labels can leave a held-out fold with no positives. Held-out folds are evaluated against the round-0 labels,
+        /// so iterating must finish normally with a PEP on every match instead of throwing in ML.NET's Evaluate.
+        /// </summary>
+        [Test]
+        public static void OnePositivePerGroup_IteratesWithoutThrowing()
+        {
+            var psms = SearchHelaSubset(out var commonParameters);
+            var engine = NewEngine(psms, commonParameters, PepAnalysisEngine.IterativeTrainingRoundCap);
+
+            var groups = engine.UsePeptideLevelQValueForTraining
+                ? SpectralMatchGroup.GroupByBaseSequence(engine.AllPsms)
+                : SpectralMatchGroup.GroupByIndividualPsm(engine.AllPsms);
+            var indices = PepAnalysisEngine.GetPeptideGroupIndices(groups, 4);
+            foreach (var group in indices)
+            {
+                int keep = group.First(i => groups[i].GetBestMatches()
+                    .Any(p => !p.IsDecoy && p.GetFdrInfo(engine.UsePeptideLevelQValueForTraining).QValue <= engine.QValueCutoff));
+                foreach (var psm in group.Where(i => i != keep).SelectMany(i => groups[i]).Where(p => !p.IsDecoy))
+                {
+                    psm.PsmFdrInfo.QValue = 1;
+                    psm.PeptideFdrInfo.QValue = 1;
+                }
+            }
+
+            string metrics = engine.ComputePEPValuesForAllPSMs();
+
+            Assert.That(RoundsRun(metrics), Is.GreaterThanOrEqualTo(1));
+            Assert.That(Peps(psms).All(p => p >= 0 && p <= 1));
+        }
+
+        /// <summary>
         /// The stopping count must be the number FdrAnalysisEngine reports: target peptides whose PEP q-value
         /// is below the cutoff, with the PEP-best match per full sequence.
         /// </summary>

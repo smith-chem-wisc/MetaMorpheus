@@ -93,10 +93,12 @@ namespace EngineLayer
         /// So recomputing them per round re-derives bit-identical values -- and RT prediction is the
         /// single most expensive thing this engine does (~67% of an entire search before #2841).
         ///
-        /// This is only CORRECT because PEP no longer prunes. `Ambiguity` reads
-        /// BestMatchingBioPolymersWithSetMods.Count(), which the old elimination step mutated
-        /// mid-loop; caching across rounds would have frozen a stale value. Removing the pruning is
-        /// what makes the cache sound.
+        /// This is only CORRECT because no caller that prunes runs more than one round. `Ambiguity` reads
+        /// BestMatchingBioPolymersWithSetMods.Count(), which pruning (<see cref="PruneAmbiguousHypotheses"/>:
+        /// glyco, crosslink, nonspecific) reduces in place. A pruned match's surviving hypotheses keep their cache
+        /// keys, so a second round would reuse vectors whose `Ambiguity` still counts the removed hypotheses.
+        /// Pruning callers train once (see maxRounds), so the stale value is never read. Lifting that limit
+        /// needs the cache invalidated for pruned matches first.
         ///
         /// The cached instances are never handed out: callers get a copy via <see cref="PsmData.WithLabel"/>.
         /// Memory: one PsmData (~200 B) per hypothesis for the engine's lifetime. That is tens of MB for a
@@ -208,8 +210,9 @@ namespace EngineLayer
             int numGroups = 4;
             List<int>[] peptideGroupIndices = GetPeptideGroupIndices(peptideGroups, numGroups);
             int maxThreads = FileSpecificParametersDictionary.Values.FirstOrDefault().MaxThreadsToUsePerFile;
-            // Pruning deletes hypotheses irreversibly, so a later, better round could not bring them back.
-            // Callers that prune (glyco, crosslink) therefore train once, exactly as before iteration existed.
+            // Pruning deletes hypotheses irreversibly, so a later, better round could not bring them back. It also
+            // leaves _featureCache holding a stale Ambiguity for the pruned matches. Callers that prune (glyco,
+            // crosslink, nonspecific) therefore train once, exactly as before iteration existed.
             int maxRounds = PruneAmbiguousHypotheses ? 1 : Math.Max(1, MaxTrainingRounds);
 
             // Timings go to pep_training_rounds.txt, never to the results block (see below).
