@@ -203,7 +203,16 @@ namespace Test
 
             var peptideLines = File.ReadAllLines(Path.Combine(searchOut, QuantificationWriter.PeptideFileName));
             Assert.That(peptideLines, Has.Length.GreaterThan(1), "at least one peptide must be quantified");
-            Assert.That(peptideLines[0].Split('\t'), Has.Length.EqualTo(1 + Tmt11Channels.Length));
+            var peptideHeader = peptideLines[0].Split('\t');
+            Assert.That(peptideHeader, Has.Length.EqualTo(1 + Tmt11Channels.Length));
+
+            // The peptide table is renamed too, so check its headers by name as the protein table's
+            // are, not only by count.
+            for (int channel = 0; channel < Tmt11Channels.Length; channel++)
+            {
+                Assert.That(peptideHeader[1 + channel], Is.EqualTo(ChannelColumnLabel(channel)),
+                    "the peptide table must name each channel as the protein table does");
+            }
 
             int compared = 0;
             foreach (var line in peptideLines.Skip(1))
