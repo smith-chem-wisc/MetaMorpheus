@@ -475,6 +475,85 @@ namespace Test
         }
 
         /// <summary>
+        /// The command line dispatches a "Truncation" task TOML. Run standalone with no upstream search and no
+        /// AllProteoforms file, it has no parents, so it still writes both result files, header-only (#16).
+        /// </summary>
+        [Test]
+        public void CommandLine_RunsATruncationToml_AndWritesEmptyResultsWithoutParents()
+        {
+            var (data, db, _) = TopDownFixture();
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TruncationCmd");
+            if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            Directory.CreateDirectory(folder);
+            try
+            {
+                var task = new TruncationSearchTask();
+                task.TruncationSearchParameters.Pass1ProteoformsFilePath = Path.Combine(folder, "missing.psmtsv");
+                string taskPath = Path.Combine(folder, "TruncationSearchTask.toml");
+                Toml.WriteFile(task, taskPath, MetaMorpheusTask.tomlConfig);
+                string output = Path.Combine(folder, "output");
+
+                int exitCode = MetaMorpheusCommandLine.Program.Main(new[] { "-s", data, "-d", db, "-t", taskPath, "-o", output });
+
+                Assert.That(exitCode, Is.EqualTo(0));
+                string taskOut = Path.Combine(output, "Task1TruncationSearchTask");
+                string header = SpectralMatch.GetTabSeparatedHeader().TrimEnd();
+                foreach (string file in new[] { TruncationSearchTask.TruncatedPsmsFileName, TruncationSearchTask.TruncatedProteoformsFileName })
+                {
+                    string[] lines = File.ReadAllLines(Path.Combine(taskOut, file));
+                    Assert.That(lines.Select(l => l.TrimEnd()), Is.EqualTo(new[] { header }), file);
+                }
+            }
+            finally
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// In-memory ingest: an upstream PSM with no FDR assigned cannot pass the parent filter (#3), so it seeds
+        /// no parent. The upstream search's CommonParameters, deposited beside its PSMs, differ from the task's in
+        /// precursor tolerance, and the task says so.
+        /// </summary>
+        [Test]
+        public void ContextIngest_UnscoredPsmSeedsNoParent_AndParameterMismatchIsWarned()
+        {
+            var (data, db, _) = TopDownFixture();
+            string outDir = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TruncationContextIngest");
+            if (Directory.Exists(outDir)) Directory.Delete(outDir, true);
+            Directory.CreateDirectory(outDir); // EverythingRunnerEngine normally creates the task folder
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> onWarn = (_, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += onWarn;
+            try
+            {
+                var cp = new CommonParameters(precursorMassTolerance: new PpmTolerance(5));
+                var scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new[] { 100.0 }, new[] { 1.0 }, false), 1, 2, true,
+                    Polarity.Positive, 1, new MzRange(0, 1000), "f", MZAnalyzerType.Orbitrap, 1, 1, null, "scan=1"), 500, 1, data, cp);
+                var form = new Protein("PEPTIDE", "U").Digest(new DigestionParams(protease: "top-down"),
+                    new List<Modification>(), new List<Modification>()).First();
+                var unscored = new PeptideSpectralMatch(form, 0, 10, 0, scan, cp, new List<Omics.Fragmentation.MatchedFragmentIon>());
+
+                var context = new TaskChainContext();
+                context.Deposit("Task1-SearchTask", new List<SpectralMatch> { unscored });
+                context.Deposit(TaskChainContext.CommonParametersKey("Task1-SearchTask"),
+                    new CommonParameters(precursorMassTolerance: new PpmTolerance(10)));
+                var task = new TruncationSearchTask { CommonParameters = cp, TaskChainContext = context };
+
+                task.RunTask(outDir, new List<DbForTask> { new DbForTask(db, false) }, new List<string> { data }, "Task2-TruncationSearchTask");
+
+                Assert.That(warnings, Has.Some.Contains("differ from the upstream search").And.Contains("PrecursorMassTolerance"));
+                Assert.That(warnings, Has.Some.Contains("found no proteoforms to seed the search"));
+                Assert.That(File.ReadAllLines(Path.Combine(outDir, TruncationSearchTask.TruncatedPsmsFileName)), Has.Length.EqualTo(1));
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= onWarn;
+                if (Directory.Exists(outDir)) Directory.Delete(outDir, true);
+            }
+        }
+
+        /// <summary>
         /// Disk-ingest path: first run the search alone to produce an AllProteoforms.psmtsv (a separate
         /// engine, so there is no in-memory hand-off), then point the truncation task at that file to force
         /// BuildParentsFromDisk + the disk parent filter.
