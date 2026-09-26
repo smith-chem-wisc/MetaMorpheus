@@ -713,6 +713,90 @@ namespace Test
         }
 
         /// <summary>
+        /// The loader keeps everything up to the last ')', so a half-written or misspelled tail used to be cut
+        /// off without a word and the glycan searched at the wrong mass. It still loads leniently, but the user
+        /// is told which line lost what.
+        /// </summary>
+        [TestCase("HexNAc(2)Hex(5)NeuAc(1", "NeuAc(1")]
+        [TestCase("HexNAc(2)Hex(5)NeuAc(", "NeuAc(")]
+        [TestCase("HexNAc(2)Hex(5)x(1", "x(1")]
+        [TestCase("HexNAc(2)Hex(5) HexNo", "HexNo")]
+        [TestCase("HexNAc(2)Hex(5) N2H5F0S0 1216.4229", "N2H5F0S0 1216.4229")]
+        [TestCase("HexNAc(2)Hex(5)NeuAc(1 # sialylated", "NeuAc(1")]
+        public static void ACompositionLineWhoseTailIsDroppedLoadsWithAWarning(string line, string dropped)
+        {
+            string path = Path_("tail.gdb");
+            File.WriteAllLines(path, new[] { "HexNAc(1)Hex(1)", line });
+            var warnings = new List<string>();
+
+            var glycans = GlycanDatabase.LoadGlycan(path, false, true, warnings.Add).ToList();
+
+            Assert.That(glycans.Count, Is.EqualTo(4));
+            Assert.That(glycans[2].Kind, Is.EqualTo(GlycanDatabase.String2Kind("HexNAc(2)Hex(5)")));
+            Assert.That(warnings.Count, Is.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("'tail.gdb' at line 2"));
+            Assert.That(warnings[0], Does.Contain($"\"{dropped}\""));
+            Assert.That(warnings[0], Does.Contain("\"HexNAc(2)Hex(5)\""));
+        }
+
+        /// <summary>
+        /// A line with no '(' at all is skipped, as it always was, but no longer silently: HexNAc HexNo is a
+        /// glycan the user meant to search, not a header.
+        /// </summary>
+        [Test]
+        public static void ALineWithNoCompositionIsSkippedWithAWarning()
+        {
+            string path = Path_("words.gdb");
+            File.WriteAllLines(path, new[] { "HexNAc(1)Hex(1)", "HexNAc HexNo" });
+            var warnings = new List<string>();
+
+            var glycans = GlycanDatabase.LoadGlycan(path, false, true, warnings.Add).ToList();
+
+            Assert.That(glycans.Count, Is.EqualTo(2));
+            Assert.That(warnings.Count, Is.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("'words.gdb' at line 2"));
+            Assert.That(warnings[0], Does.Contain("\"HexNAc HexNo\""));
+        }
+
+        /// <summary>
+        /// What is dropped without a word: a note after '#', columns after a tab, and a number lined up with
+        /// spaces. None of these can be a monosaccharide the user meant to include.
+        /// </summary>
+        [TestCase("HexNAc(2)Hex(5) # high mannose")]
+        [TestCase("HexNAc(2)Hex(5)\tN2H5F0S0\t1216.4229")]
+        [TestCase("HexNAc(2)Hex(5)   1216.4229")]
+        [TestCase("HexNAc(2)Hex(5)")]
+        public static void AColumnOrNoteAfterACompositionIsDroppedQuietly(string line)
+        {
+            string path = Path_("quiet.gdb");
+            File.WriteAllLines(path, new[] { "# a banner", "", line });
+            var warnings = new List<string>();
+
+            var glycans = GlycanDatabase.LoadGlycan(path, false, true, warnings.Add).ToList();
+
+            Assert.That(glycans.Count, Is.EqualTo(2));
+            Assert.That(warnings, Is.Empty);
+        }
+
+        /// <summary>
+        /// The startup load passes its warning channel through, so a hand-edited database that lost part of a
+        /// line says so when MetaMorpheus opens, not only when a search reads it.
+        /// </summary>
+        [Test]
+        public static void TheStartupLoadReportsADroppedTail()
+        {
+            string path = Path_("startup.gdb");
+            File.WriteAllLines(path, new[] { "HexNAc(2)Hex(5)NeuAc(1" });
+            var warnings = new List<string>();
+
+            var glycans = GlycanDatabase.LoadGlycansOrWarn(new[] { path }, true, warnings.Add);
+
+            Assert.That(glycans.Count, Is.EqualTo(2));
+            Assert.That(warnings.Count, Is.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("\"NeuAc(1\""));
+        }
+
+        /// <summary>
         /// A line that has started to be a composition but is not one was dropped without a word. It is
         /// named now, file and line, the way a bad structure line already is -- dropping it would search a
         /// database the user did not write.
@@ -811,6 +895,79 @@ namespace Test
             File.WriteAllLines(path, new[] { "(N(H))", "(N)(H)" });
             var load = Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.LoadGlycan(path, false, true).ToList());
             Assert.That(load.Message, Does.Contain("'two_roots.gdb' at line 2").And.Contain("one root"));
+        }
+
+        /// <summary>
+        /// Struct2Node has three child slots. A fourth branch walked it off the root, so the user saw a raw
+        /// "Object reference not set" on entry, and a bare NullReferenceException at search time. Three
+        /// branches, the most a node can hold, still load.
+        /// </summary>
+        [TestCase("(N(H)(H)(H)(H))")]
+        [TestCase("(N(N(H(H)(H)(H)(A))))")]
+        public static void ANodeWithFourBranchesIsRefusedOnEntryAndOnLoad(string structure)
+        {
+            var entry = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomGlycan(structure, Path_("typed.gdb"), true));
+            Assert.That(entry.Message, Does.Contain("at most three branches"));
+            Assert.That(entry.Message, Does.Not.Contain("Object reference"));
+
+            string path = Path_("four_branches.gdb");
+            File.WriteAllLines(path, new[] { "(N(H)(H)(H))", structure });
+            var load = Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.LoadGlycan(path, false, true).ToList());
+            Assert.That(load.Message, Does.Contain("'four_branches.gdb' at line 2").And.Contain("at most three branches"));
+        }
+
+        [Test]
+        public static void ANodeWithThreeBranchesIsStillAccepted()
+        {
+            string path = Path_("three_branches.gdb");
+
+            GlycanDatabase.PersistCustomGlycan("(N(H)(H)(H))", path, true);
+
+            Assert.That(GlycanDatabase.LoadGlycan(path, false, true).Count(), Is.EqualTo(2));
+        }
+
+        /// <summary>
+        /// A composition line is cut at '#' and read as name(count), so a monosaccharide named Sia#2 or
+        /// Sia(2) registered, and HexNAc(1)Sia#2(1) was accepted on entry and loaded back as HexNAc(1).
+        /// Such a name is refused where it is typed.
+        /// </summary>
+        [TestCase("Sia#2")]
+        [TestCase("Sia(2)")]
+        [TestCase("Sia)")]
+        public static void AMonosaccharideNameWithAReservedCharacterIsRefused(string name)
+        {
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide(name, "Z", null, "291.09542", null, null));
+
+            Assert.That(ex.Message, Does.Contain("cannot contain '#', '(' or ')'"));
+            Assert.That(Glycan.NameCharDic.ContainsKey(name), Is.False);
+        }
+
+        /// <summary>
+        /// In MonosaccharidesCustom.tsv the same name is skipped with a warning rather than thrown: that file
+        /// is read at startup, and a name that was legal before must not stop MetaMorpheus opening.
+        /// </summary>
+        [Test]
+        public static void AReservedCharacterInTheMonosaccharideFileIsSkippedWithAWarning()
+        {
+            string path = Path_("MonosaccharidesCustom.tsv");
+            File.WriteAllLines(path, new[]
+            {
+                GlycanDatabase.MonoSaccharidesHeader,
+                "Sia#2\tZ\t291.09542",
+                "TestSugar\tW\t250.06887",
+            });
+            GlobalVariables.ErrorsReadingMods ??= new List<string>();
+            int before = GlobalVariables.ErrorsReadingMods.Count;
+
+            GlycanDatabase.LoadCustomMonosaccharides(path);
+
+            var warnings = GlobalVariables.ErrorsReadingMods.Skip(before).ToList();
+            Assert.That(Glycan.NameCharDic.ContainsKey("Sia#2"), Is.False);
+            Assert.That(Glycan.NameCharDic.ContainsKey("TestSugar"), Is.True, "the lines after it still load");
+            Assert.That(warnings.Count, Is.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("'MonosaccharidesCustom.tsv' at line 2").And.Contain("Sia#2"));
         }
 
         /// <summary>

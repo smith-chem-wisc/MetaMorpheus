@@ -32,7 +32,10 @@
 # STRUCTURE format. Nested parentheses are the tree, and each letter is one
 # monosaccharide written with its SINGLE-CHARACTER CODE:
 #
-#     (N(N(H(H(H)))))
+#     (N(N(H(H)(H))))
+#
+#   That is the trimannosyl core, Man3GlcNAc2: the beta-Man carries both
+#   alpha-Man arms. Hang antennae off those two arms.
 #
 #     H  Hex        N  HexNAc     A  NeuAc      G  NeuGc     F  Fuc
 #     P  Phospho    S  Sulfo      Y  Na         C  Ac        X  Xylose
