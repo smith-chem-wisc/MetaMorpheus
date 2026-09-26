@@ -725,7 +725,7 @@ namespace TaskLayer
                 return;
             }
 
-            TmtExperimentalDesign.Read(tmtDesignPath, currentRawFileList, out var designErrors);
+            var files = TmtExperimentalDesign.Read(tmtDesignPath, currentRawFileList, out var designErrors);
             if (designErrors.Any())
             {
                 Warn("SDRF output is on, but " + GlobalVariables.TmtExperimentalDesignFileName +
@@ -734,11 +734,25 @@ namespace TaskLayer
                 return;
             }
 
-            // PRIDE defines channel terms for TMT and iTRAQ only.
             var tagType = IsobaricMassTag.GetTagTypeFromModificationId(SearchParameters.MultiplexModId);
-            if (tagType is IsobaricMassTagType.diLeu4 or IsobaricMassTagType.diLeu12)
-                Warn("SDRF output on a DiLeu search: every channel gets its own row, but comment[label] " +
-                     "cannot be filled in, because the PRIDE vocabulary defines no DiLeu channel terms.");
+            if (tagType is null)
+            {
+                Warn("SDRF output is on, but the multiplex label '" + SearchParameters.MultiplexModId + "' is not " +
+                     "an isobaric tag MetaMorpheus recognises, so the SDRF will describe each file once, without " +
+                     "its channels or samples.");
+                return;
+            }
+
+            // The gate the SDRF writer applies file by file: no PRIDE channel terms (DiLeu), a plex with no
+            // annotated channels, or a channel off the searched plex.
+            var reasons = files
+                .Select(f => PostSearchAnalysisTask.ChannelRowsUnusableReason(f, tagType.Value))
+                .Where(r => r is not null)
+                .Distinct()
+                .ToList();
+            if (reasons.Any())
+                Warn("SDRF output is on, but the SDRF will describe these files once, without their channels or " +
+                     "samples: " + string.Join("; ", reasons) + ".");
         }
 
 

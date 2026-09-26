@@ -86,11 +86,14 @@ namespace TaskLayer
             // An isobaric search keeps its design in TmtDesign.txt instead, and that file is the only
             // place the channel-to-sample map exists. When it is usable the SDRF gets one row per
             // sample per channel, as the specification wants; when it is not, the search is described
-            // one row per file with the label left unresolved, exactly as before.
+            // one row per file with the label left unresolved, exactly as before. A file whose channel
+            // rows could not say which channel is which (ChannelRowsUnusableReason) gets the same
+            // fallback, keeping the fraction and technical replicate the design gives it.
             var isobaric = ReadIsobaricDesignIfPresent(out var tagType);
             var design = isobaric is null
                 ? ReadExperimentalDesignIfPresent()
                 : new Dictionary<string, SpectraFileInfo>(StringComparer.OrdinalIgnoreCase);
+            var describedOnce = new List<string>();
 
             var organism = ResolveOrganismFromSearchDatabase();
 
@@ -112,12 +115,20 @@ namespace TaskLayer
                     ?.FirstOrDefault(f => string.Equals(f.FileName, rawFilePath, StringComparison.OrdinalIgnoreCase))
                     .Parameters ?? CommonParameters;
 
-                if (isobaric is not null && isobaric.TryGetValue(Path.GetFullPath(rawFilePath), out var tmtFile))
+                TmtFileInfo tmtFile = null;
+                if (isobaric is not null && isobaric.TryGetValue(Path.GetFullPath(rawFilePath), out tmtFile))
                 {
-                    foreach (var row in BuildChannelRows(tmtFile, tagType!.Value, organism,
-                                 BuildAssay(rawFilePath, common, tmtFile.TechnicalReplicate, tmtFile.Fraction)))
-                        yield return row;
-                    continue;
+                    if (ChannelRowsUnusableReason(tmtFile, tagType!.Value) is { } reason)
+                    {
+                        describedOnce.Add(reason);
+                    }
+                    else
+                    {
+                        foreach (var row in BuildChannelRows(tmtFile, tagType.Value, organism,
+                                     BuildAssay(rawFilePath, common, tmtFile.TechnicalReplicate, tmtFile.Fraction)))
+                            yield return row;
+                        continue;
+                    }
                 }
 
                 design.TryGetValue(stem, out var sampleInfo);
@@ -145,11 +156,53 @@ namespace TaskLayer
                 };
 
                 var assay = BuildAssay(rawFilePath, common,
-                    technicalReplicate: (sampleInfo?.TechnicalReplicate ?? 0) + 1,
-                    fraction: (sampleInfo?.Fraction ?? 0) + 1);
+                    technicalReplicate: tmtFile?.TechnicalReplicate ?? (sampleInfo?.TechnicalReplicate ?? 0) + 1,
+                    fraction: tmtFile?.Fraction ?? (sampleInfo?.Fraction ?? 0) + 1);
 
                 yield return new SdrfRowInput(sample, assay);
             }
+
+            if (describedOnce.Any())
+                Warn("The SDRF describes these files once, without their channels or samples: " +
+                     string.Join("; ", describedOnce.Distinct()) + ".");
+        }
+
+        /// <summary>
+        /// Why channel rows cannot be written for <paramref name="file"/>, or null when they can. Each
+        /// case falls back to one row per file, because a channel row that cannot say which channel it
+        /// is misdescribes the file:
+        ///
+        /// 1. A tag type PRIDE has no channel terms for (DiLeu). Every row would carry
+        ///    `not available` in comment[label], which mzLib's SdrfQuantAuditor reads as a label-free
+        ///    file holding that many samples.
+        /// 2. A plex with no annotated channels: the placeholder row TmtExperimentalDesign.Write emits,
+        ///    which Read accepts without error. There are no channel rows to write, and the file used to
+        ///    vanish from the SDRF.
+        /// 3. A channel the search's plex does not have (a TMT6 "127" on a TMT11 search). Read does not
+        ///    know the tag type; this is the check <see cref="TmtExperimentalDesign.ToMzLibDesign"/>
+        ///    makes, and quantification skips such a channel. Written, it would carry another kit's label.
+        ///
+        /// Shared with SearchTask's pre-run warning, so a search is told before it runs.
+        /// </summary>
+        internal static string ChannelRowsUnusableReason(TmtFileInfo file, IsobaricMassTagType tagType)
+        {
+            if (PrideLabelFamily(tagType) is null)
+                return $"the PRIDE vocabulary defines channel terms for TMT and iTRAQ only, not {tagType}, " +
+                       "so comment[label] could not say which channel a row is";
+
+            string fileName = Path.GetFileName(file.FullFilePathWithExtension);
+            if (file.Annotations is not { Count: > 0 })
+                return $"{fileName} has no annotated channels in {GlobalVariables.TmtExperimentalDesignFileName}";
+
+            var channels = IsobaricMassTag.GetReporterIonLabels(tagType) ?? new List<string>();
+            var offPlex = file.Annotations
+                .Select(a => a.Tag?.Trim() ?? "")
+                .Where(tag => !channels.Contains(tag, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+            return offPlex.Any()
+                ? $"{fileName} annotates {string.Join(", ", offPlex.Select(t => "'" + t + "'"))}, which is not a " +
+                  $"channel of {tagType}"
+                : null;
         }
 
         /// <summary>
@@ -198,9 +251,11 @@ namespace TaskLayer
         ///    and wrong default TMT modifications follow from that.
         ///
         /// An empty channel is a real channel of a real plex, not absent data, and <c>empty</c> is a
-        /// value the curated corpus writes. Still no <c>characteristics[sample type]</c> column until
-        /// QuantProject's M4 puts the concept in mzLib: when it lands, the only change here is a
-        /// column appearing, never rows reappearing.
+        /// value the curated corpus writes. The design does state each channel's sample type
+        /// (<see cref="TmtPlexAnnotation.SampleType"/>); writing it is DEFERRED, not impossible.
+        /// <c>characteristics[sample type]</c> waits for QuantProject's M4 to put the concept in mzLib
+        /// (MAP-08), so every writer spells it one way. When it lands, the only change here is a column
+        /// appearing, never rows reappearing or source names changing.
         ///
         /// A channel the design does not annotate at all is still not written, and that is a
         /// different question -- it has no biological replicate, and inventing one is QP-S6, which
@@ -230,14 +285,17 @@ namespace TaskLayer
                         ["characteristics[disease]"] = null,
                         ["characteristics[cell type]"] = null
                     },
-                    // An empty channel is the one case where the design may leave the sample name
-                    // blank, and source name is the column REQ-2 keys sample blocks on -- so it has
-                    // to be present and distinct. File stem plus tag is both, and it is built only
-                    // from facts already in the row. It deliberately does not spell "empty": that
-                    // belongs in characteristics[sample type] when M4 lands, and encoding it here
-                    // would mean rewriting source names -- and breaking joins -- on the day it does.
+                    // The design may leave a channel's sample name blank (an empty channel, or one the
+                    // user never named: AnnotatePlexWindow defaults it to ""), and source name is the
+                    // column REQ-2 keys sample blocks on -- so it has to be present and distinct. Plex
+                    // plus tag is both, and it is the same in every fraction of the plex, which shares
+                    // one channel-to-sample map: keyed on the file, one channel of a 12-fraction plex
+                    // became 12 samples. The file stem stands in only when the plex has no name. It
+                    // deliberately does not spell "empty": that belongs in characteristics[sample type]
+                    // when M4 lands, and encoding it here would mean rewriting source names -- and
+                    // breaking joins -- on the day it does.
                     SourceName = string.IsNullOrWhiteSpace(annotation.SampleName)
-                        ? stem + " " + annotation.Tag.Trim()
+                        ? (string.IsNullOrWhiteSpace(tmtFile.Plex) ? stem : tmtFile.Plex.Trim()) + " " + annotation.Tag.Trim()
                         : annotation.SampleName,
                     Organism = organism,
                     BiologicalReplicate = annotation.BiologicalReplicate,
@@ -300,19 +358,22 @@ namespace TaskLayer
         /// </summary>
         private static CvParam ResolveChannelLabel(IsobaricMassTagType tagType, string channel)
         {
-            string family = tagType switch
-            {
-                IsobaricMassTagType.TMT6 or IsobaricMassTagType.TMT10 or IsobaricMassTagType.TMT11
-                    or IsobaricMassTagType.TMT18 => "TMT",
-                IsobaricMassTagType.iTRAQ4 or IsobaricMassTagType.iTRAQ8 => "ITRAQ",
-                _ => null
-            };
+            string family = PrideLabelFamily(tagType);
 
             if (family is null || string.IsNullOrWhiteSpace(channel))
                 return null;
 
             return ControlledVocabulary.Pride.TryGetByName(family + channel.Trim(), out var term) ? term : null;
         }
+
+        /// <summary>The prefix PRIDE's channel terms carry for this tag type, or null when PRIDE has none.</summary>
+        private static string PrideLabelFamily(IsobaricMassTagType tagType) => tagType switch
+        {
+            IsobaricMassTagType.TMT6 or IsobaricMassTagType.TMT10 or IsobaricMassTagType.TMT11
+                or IsobaricMassTagType.TMT18 => "TMT",
+            IsobaricMassTagType.iTRAQ4 or IsobaricMassTagType.iTRAQ8 => "ITRAQ",
+            _ => null
+        };
 
         /// <summary>
         /// The acquired file a searched file came from: the run's starting file with the same stem once the
