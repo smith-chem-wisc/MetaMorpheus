@@ -38,9 +38,10 @@ namespace MetaMorpheusGUI
             }
 
             string databasePath = SelectedDatabasePath;
+            string warning;
             try
             {
-                GlycanDatabase.PersistCustomGlycan(glycanText, databasePath, IsOGlycanSelected);
+                warning = GlycanDatabase.PersistCustomGlycan(glycanText, databasePath, IsOGlycanSelected);
             }
             catch (Exception ex)
             {
@@ -48,10 +49,17 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            MessageBox.Show(
-                $"The glycan \"{glycanText}\" was added to {Path.GetFileName(databasePath)}. Select that database in a "
-                + "GlycoSearch task to search for it.",
-                "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            if (warning != null)
+            {
+                MessageBox.Show(warning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            else
+            {
+                MessageBox.Show(
+                    $"The glycan \"{glycanText}\" was added to {Path.GetFileName(databasePath)}. Select that database in a "
+                    + "GlycoSearch task to search for it.",
+                    "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
 
             DialogResult = true;
         }
@@ -68,6 +76,14 @@ namespace MetaMorpheusGUI
         /// </summary>
         private bool ErrorsDetected(string glycanText)
         {
+            // No default: a composition has no O/N-specific check, so an N-glycan saved under a pre-selected
+            // O would be written to the O database, and nothing in the GUI can take it out again.
+            if (databaseComboBox.SelectedIndex < 0)
+            {
+                MessageBox.Show("Please choose whether this is an O-glycan or an N-glycan.", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
+                return true;
+            }
+
             if (string.IsNullOrWhiteSpace(glycanText))
             {
                 MessageBox.Show("Please enter a glycan.", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);

@@ -16,6 +16,7 @@ using TaskLayer;
 using UsefulProteomicsDatabases;
 using System.IO;
 using GuiFunctions;
+using GuiFunctions.Util;
 
 
 namespace MetaMorpheusGUI
@@ -131,6 +132,7 @@ namespace MetaMorpheusGUI
             RbtNGlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.NGlycanSearch;
             Rbt_N_O_GlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.N_O_GlycanSearch;
             TbMaxOGlycanNum.Text = task._glycoSearchParameters.MaximumOGlycanAllowed.ToString(CultureInfo.InvariantCulture);
+            TbMaxGlycanBoxMass.Text = task._glycoSearchParameters.MaximumGlycanBoxMass.ToString(CultureInfo.InvariantCulture);
             CkbOxoniumIonFilt.IsChecked = task._glycoSearchParameters.OxoniumIonFilt;
 
             txtTopNum.Text = task._glycoSearchParameters.GlycoSearchTopNum.ToString(CultureInfo.InvariantCulture);
@@ -198,7 +200,12 @@ namespace MetaMorpheusGUI
             MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxLength.ToString(CultureInfo.InvariantCulture);
             if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
             {
-                proteaseComboBox.SelectedItem = digestionParams.Protease;
+                proteaseComboBox.SelectedItem = TaskWindowSearchMode.ProteaseToShow(digestionParams);
+                SemiSpecificCheckBox.IsChecked = TaskWindowSearchMode.IsSemiSpecific(digestionParams);
+                // a loaded task that asks for seed peptides cannot be shown here as it is, so say what happens to it
+                string searchModeWarning = TaskWindowSearchMode.ForSemiSpecificChoiceWarning(digestionParams);
+                SearchModeWarningTextBlock.Text = searchModeWarning;
+                SearchModeWarningTextBlock.Visibility = searchModeWarning == null ? Visibility.Collapsed : Visibility.Visible;
                 initiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
             }
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
@@ -328,6 +335,7 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.SelectedGlycans = GlycanSelectionViewModel.ToSelectedGlycans();
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
+            TheTask._glycoSearchParameters.MaximumGlycanBoxMass = double.Parse(TbMaxGlycanBoxMass.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.OxoniumIonFilt = CkbOxoniumIonFilt.IsChecked.Value;
             TheTask._glycoSearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
             TheTask._glycoSearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
@@ -378,6 +386,8 @@ namespace MetaMorpheusGUI
             int MaxModificationIsoforms = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
             int MaxModPerPep = (int.Parse(TxtBoxMaxModPerPep.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
+            // Semi-specific peptides (SearchModeType Semi, terminus Both) or fully specific ones; never seeds, which a glyco search cannot use
+            var (searchModeType, fragmentationTerminus) = TaskWindowSearchMode.ForSemiSpecificChoice(SemiSpecificCheckBox.IsChecked == true);
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
                 maxMissedCleavages: MaxMissedCleavages,
@@ -385,7 +395,9 @@ namespace MetaMorpheusGUI
                 maxPeptideLength: MaxPeptideLength,
                 maxModificationIsoforms: MaxModificationIsoforms,
                 maxModsForPeptides: MaxModPerPep,
-                initiatorMethionineBehavior: InitiatorMethionineBehavior);
+                initiatorMethionineBehavior: InitiatorMethionineBehavior,
+                searchModeType: searchModeType,
+                fragmentationTerminus: fragmentationTerminus);
 
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)

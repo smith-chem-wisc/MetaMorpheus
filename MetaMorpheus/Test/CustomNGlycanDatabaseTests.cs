@@ -173,5 +173,112 @@ namespace Test
                 GlobalVariables.NGlycanDatabasePaths.Remove(path);
             }
         }
+
+        /// <summary>
+        /// The N-only search filters its glycans by the box mass cap after the empty-database check, so a
+        /// database whose every glycan is over the cap used to search nothing and report nothing. 4028.42 Da:
+        /// tetra-antennary, tetrasialylated, core-fucosylated, with one LacNAc repeat.
+        /// </summary>
+        [Test]
+        public static void SearchingANGlycanDatabaseWhollyOverTheMassCapIsRefusedByName()
+        {
+            string path = Path_("NGlycan_Heavy.gdb");
+            GlycanDatabase.PersistCustomGlycan("HexNAc(7)Hex(8)NeuAc(4)Fuc(1)", path, false);
+            GlobalVariables.NGlycanDatabasePaths.Add(path);
+
+            try
+            {
+                var ex = Assert.Throws<MetaMorpheusException>(() => new GlycoSearchEngine(
+                    new List<GlycoSpectralMatch>[0], new Ms2ScanWithSpecificMass[0],
+                    new List<PeptideWithSetModifications>(), null, null, 0,
+                    new CommonParameters(), null, "OGlycan.gdb", "NGlycan_Heavy.gdb",
+                    GlycoSearchType.NGlycanSearch, 30, 3, false, null));
+
+                Assert.That(ex.Message, Does.Contain("NGlycan_Heavy.gdb").And.Contain("4000 Da"));
+            }
+            finally
+            {
+                GlobalVariables.NGlycanDatabasePaths.Remove(path);
+            }
+        }
+
+        /// <summary>
+        /// Adding a glycan the default search will leave out says so, instead of reporting a plain success.
+        /// </summary>
+        [TestCase("HexNAc(7)Hex(8)NeuAc(4)Fuc(1)", true)]
+        [TestCase("HexNAc(4)Hex(5)Fuc(1)NeuAc(1)", false)]
+        public static void AddingAGlycanOverTheDefaultMassCapWarns(string composition, bool warns)
+        {
+            string warning = GlycanDatabase.PersistCustomGlycan(composition, Path_("NGlycan_Custom.gdb"), false);
+
+            if (warns)
+            {
+                Assert.That(warning, Does.Contain("4028.42 Da").And.Contain("Maximum Glycan Mass"));
+            }
+            else
+            {
+                Assert.That(warning, Is.Null);
+            }
+        }
+
+        [Test]
+        public static void AddingAStructureOverTheDefaultMassCapWarns()
+        {
+            // 21 NeuAc residues on one HexNAc: about 6.3 kDa, and 22 residues, under the 40-residue cap.
+            string structure = "(N" + string.Concat(Enumerable.Repeat("(A", 21)) + new string(')', 22);
+
+            string warning = GlycanDatabase.PersistCustomGlycan(structure, Path_("NGlycan_Custom.gdb"), false);
+
+            Assert.That(warning, Does.Contain("Maximum Glycan Mass"));
+        }
+
+        /// <summary>
+        /// The one example structure the template gives is the one users copy, so it has to be the
+        /// trimannosyl core -- the beta-Man carrying both alpha-Man arms -- not a linear chain.
+        /// </summary>
+        [Test]
+        public static void TheTemplateStructureExampleIsTheTrimannosylCore()
+        {
+            string template = EmbeddedTemplate();
+
+            Assert.That(template, Does.Contain("(N(N(H(H)(H))))"));
+            Assert.That(template, Does.Not.Contain("(N(N(H(H(H)))))"));
+        }
+
+        /// <summary>
+        /// End to end: a glycan in the user's own N-glycan database is searched and identified. The same
+        /// spectrum GlyTest_RunTask searches against NGlycan.gdb identifies HexNAc(2)Hex(5) on DANNTQFQFTSR;
+        /// here that glycan is the only one, typed into a custom database.
+        /// </summary>
+        [Test]
+        public static void AGlycanInACustomNGlycanDatabaseIsSearched()
+        {
+            string databasePath = Path_("NGlycan_Mine.gdb");
+            GlycanDatabase.PersistCustomGlycan("HexNAc(2)Hex(5)", databasePath, false);
+            GlobalVariables.NGlycanDatabasePaths.Add(databasePath);
+            string outputFolder = Path_("output");
+
+            try
+            {
+                var task = Nett.Toml.ReadFile<TaskLayer.GlycoSearchTask>(
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"),
+                    TaskLayer.MetaMorpheusTask.tomlConfig);
+                task._glycoSearchParameters.NGlycanDatabasefile = "NGlycan_Mine.gdb";
+                var db = new EngineLayer.DatabaseLoading.DbForTask(
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\Q9C0Y4.fasta"), false);
+                string spectra = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\yeast_glycan_25170.mgf");
+
+                new TaskLayer.EverythingRunnerEngine(new List<(string, TaskLayer.MetaMorpheusTask)> { ("Task", task) },
+                    new List<string> { spectra }, new List<EngineLayer.DatabaseLoading.DbForTask> { db }, outputFolder).Run();
+
+                string[] rows = File.ReadAllLines(Path.Combine(outputFolder, "Task", "nglyco.psmtsv"));
+                Assert.That(rows.Length, Is.EqualTo(2), "one glycopeptide identified");
+                Assert.That(rows[1], Does.Contain("DANNTQFQFTSR").And.Contain("H5N2"));
+            }
+            finally
+            {
+                GlobalVariables.NGlycanDatabasePaths.Remove(databasePath);
+            }
+        }
     }
 }

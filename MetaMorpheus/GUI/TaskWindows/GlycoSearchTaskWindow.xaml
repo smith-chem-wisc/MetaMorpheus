@@ -98,6 +98,7 @@
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
+                                    <RowDefinition Height="1*"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="1*"/>
@@ -142,6 +143,21 @@
                                     <local:IntegerTexBoxControl x:Name="TbMaxOGlycanNum" Width="45"/>
                                 </StackPanel>
                                 <CheckBox x:Name="CkbOxoniumIonFilt" Content="OxoniumIonFilt" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" Grid.Row="4" Margin="0,5,0,0" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <StackPanel.ToolTip>
+                                        <TextBlock>
+                                            The heaviest total glycan mass, in Da, searched on one peptide. Default 4000.
+                                            <LineBreak />
+                                            Applies to every search type: O-glycan, N-glycan, and N-O-glycan.
+                                            <LineBreak />
+                                            The limit is on the sum of all glycans placed on the peptide (the single N-glycan in an N-glycan search).
+                                            <LineBreak />
+                                            Heavier combinations are never built or searched; raising the limit makes large glycan lists much slower.
+                                        </TextBlock>
+                                    </StackPanel.ToolTip>
+                                    <Label Content="Maximum Glycan Mass (Da)"/>
+                                    <local:DoubleTextBoxControl x:Name="TbMaxGlycanBoxMass" Width="45" LowerBound="0"/>
+                                </StackPanel>
                             </Grid>
                         </Grid>
                     </Expander>
@@ -278,6 +294,21 @@
                                             <Label x:Name="label_Copy" Content="Protease" />
                                             <ComboBox x:Name="proteaseComboBox" SelectionChanged="NonSpecificUpdate" />
                                         </StackPanel>
+                                        <CheckBox x:Name="SemiSpecificCheckBox" Content="Semi-specific digestion" Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <CheckBox.ToolTip>
+                                                <TextBlock>
+                                                    Also search peptides with only one terminus made by the protease, the other made elsewhere
+                                                    <LineBreak />
+                                                    (for example by StcE or another glycoprotease before trypsin, or by endogenous processing).
+                                                    <LineBreak />
+                                                    This replaces the former "semi-trypsin" protease: choose trypsin and check this box.
+                                                    <LineBreak />
+                                                    The search space is much larger, so the search is slower.
+                                                </TextBlock>
+                                            </CheckBox.ToolTip>
+                                        </CheckBox>
+                                        <!-- shown only for a loaded task this window cannot show as it is (see TaskWindowSearchMode) -->
+                                        <TextBlock x:Name="SearchModeWarningTextBlock" Visibility="Collapsed" TextWrapping="Wrap" MaxWidth="450" HorizontalAlignment="Left" Margin="10,0,5,5" Foreground="DarkRed" FontWeight="DemiBold" />
                                         <StackPanel Orientation="Horizontal" Margin="1">
                                             <Label x:Name="label2" Content="Number of Database Partitions" />
                                             <local:IntegerTexBoxControl x:Name="numberOfDatabaseSearchesTextBox" Width="45" />

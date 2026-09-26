@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using EngineLayer.Util;
 using IO.ThermoRawFileReader;
 using Microsoft.Win32;
@@ -42,6 +42,10 @@ namespace MetaMorpheusGUI
 
         public MainWindow()
         {
+            // subscribed before startup so that what startup notices, such as a custom protease that
+            // collided with a built-in, is shown too. Queued rather than written, because the
+            // notifications box does not exist until InitializeComponent has run.
+            GlobalVariables.WarnHandler += (sender, e) => Dispatcher.BeginInvoke(new Action(() => NotificationHandler(sender, e)));
             GlobalVariables.SetUpGlobalVariables();
             InitializeComponent();
 
@@ -207,6 +211,8 @@ namespace MetaMorpheusGUI
                 }
 
                 UpdateOutputFolderTextbox();
+                SeedTmtExperimentalDesign();
+                dataGridSpectraFiles.Items.Refresh();
             }
         }
 
@@ -584,6 +590,16 @@ namespace MetaMorpheusGUI
             var dialog = new ExperimentalDesignWindow(SpectraFiles);
             dialog.ShowDialog();
         }
+        private void SetTmtExperimentalDesign_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new TmtExperimentalDesignWindow(SpectraFiles)
+            {
+                Owner = this,
+                Title = "TMT Experimental Design"
+            };
+
+            dialog.ShowDialog();
+        }
 
         /// <summary>
         /// Event fires when the "Add Protein Database" button is clicked.
@@ -918,12 +934,29 @@ namespace MetaMorpheusGUI
                 NotificationHandler(null, new StringEventArgs("You need to add at least one protein database!", null));
             }
 
+            // check that no task's digestion asks for seed peptides it cannot use
+            foreach (var preRunTask in PreRunTasks)
+            {
+                if (!TaskValidator.CheckDigestionSearchMode(preRunTask.metaMorpheusTask, preRunTask.DisplayName))
+                {
+                    return;
+                }
+            }
+
+            // only checked spectra files are run, so only they may define the experimental design
+            List<string> spectraFilePathsToUse = SpectraFiles.Where(p => p.Use).Select(p => p.FilePath).ToList();
+            if (!spectraFilePathsToUse.Any())
+            {
+                NotificationHandler(null, new StringEventArgs("You need to check at least one spectra file!", null));
+                return;
+            }
+
             // check that experimental design is defined if normalization is enabled
             var searchTasks = PreRunTasks
                 .Where(p => p.metaMorpheusTask.TaskType == MyTask.Search)
                 .Select(p => (SearchTask)p.metaMorpheusTask);
 
-            string pathToExperDesign = Directory.GetParent(SpectraFiles.First().FilePath).FullName;
+            string pathToExperDesign = Directory.GetParent(spectraFilePathsToUse.First()).FullName;
             pathToExperDesign = Path.Combine(pathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
 
             if (!File.Exists(pathToExperDesign))
@@ -937,7 +970,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                ExperimentalDesign.ReadExperimentalDesign(pathToExperDesign, SpectraFiles.Select(p => p.FilePath).ToList(), out var errors);
+                ExperimentalDesign.ReadExperimentalDesign(pathToExperDesign, spectraFilePathsToUse, out var errors);
 
                 if (errors.Any())
                 {
@@ -948,15 +981,15 @@ namespace MetaMorpheusGUI
                     }
                     else
                     {
+                        // Proceed without reading the file rather than deleting it. The prompt only ever
+                        // offered to continue without an experimental design, and deleting was both
+                        // undisclosed and irreversible -- and it did not affect the run either way, since
+                        // PostSearchAnalysisTask resolves the design from the used-file list itself.
                         var result = MessageBox.Show("An experimental design file was found, but an error " +
-                            "occurred reading it. Do you wish to continue with an empty experimental design?" +
+                            "occurred reading it. Do you wish to continue without an experimental design?" +
                             "\nThe error was: " + errors.First(), "Error", MessageBoxButton.YesNo);
 
-                        if (result == MessageBoxResult.Yes)
-                        {
-                            File.Delete(pathToExperDesign);
-                        }
-                        else
+                        if (result != MessageBoxResult.Yes)
                         {
                             return;
                         }
@@ -1019,7 +1052,7 @@ namespace MetaMorpheusGUI
 
             // everything is ready to run
             EverythingRunnerEngine a = new EverythingRunnerEngine(InProgressTasks.Select(b => (b.DisplayName, b.Task)).ToList(),
-                SpectraFiles.Where(b => b.Use).Select(b => b.FilePath).ToList(),
+                spectraFilePathsToUse,
                 ProteinDatabases.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant, b.DecoyIdentifier)).ToList(),
                 outputFolder);
 
@@ -1639,13 +1672,6 @@ namespace MetaMorpheusGUI
                 NotificationHandler(null, new StringEventArgs(error, null));
             }
             GlobalVariables.ErrorsReadingMods.Clear();
-
-            // and anything else startup noticed, such as a custom protease that collided with a built-in
-            foreach (var warning in GlobalVariables.StartupWarnings)
-            {
-                NotificationHandler(null, new StringEventArgs(warning, null));
-            }
-            GlobalVariables.StartupWarnings.Clear();
         }
 
         private void UpdateOutputFolderTextbox()
@@ -1693,7 +1719,23 @@ namespace MetaMorpheusGUI
             {
                 AddPreRunFileRecursiveHelper(path);
             }
+
+            SeedTmtExperimentalDesign();
             UpdateGuiOnPreRunChange();
+        }
+
+        /// <summary>
+        /// Refreshes the TMT experimental design state from any TmtDesign.txt sitting next to the
+        /// CHECKED spectra files. Seeding from every file in the grid warned about files the user had
+        /// deliberately unchecked, while the design window only ever lists the checked ones.
+        /// </summary>
+        private void SeedTmtExperimentalDesign()
+        {
+            TmtExperimentalDesignWindow.SeedFromDesignFiles(
+                SpectraFiles.Where(sf => sf.Use)
+                            .Select(sf => sf.FilePath)
+                            .Where(p => !string.IsNullOrWhiteSpace(p))
+                            .ToList());
         }
 
         private void AddPreRunFileRecursiveHelper(string path)
@@ -2255,6 +2297,7 @@ namespace MetaMorpheusGUI
             AddDefaultContaminantsButton.IsEnabled = enable;
             AddSpectraButton.IsEnabled = enable;
             SetFileSpecificSettingsButton.IsEnabled = enable;
+            SetTmtExperimentalDesignButton.IsEnabled = enable;
             SetExperimentalDesignButton.IsEnabled = enable;
             AddSearchTaskButton.IsEnabled = enable;
             AddCalibTaskButton.IsEnabled = enable;

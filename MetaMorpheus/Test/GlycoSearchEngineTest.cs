@@ -22,6 +22,90 @@ namespace Test
     public class GlycoSearchEngineTest
     {
         /// <summary>
+        /// The localization cache replaces LocalizationGraph.TryGetLeft and the first element of LocalizationGraph.GetDiff with
+        /// allocation-free versions; they must agree on every small multiset of glycan ids, including repeats and N-glycan ids.
+        /// </summary>
+        [Test]
+        public static void LocalizationCacheSetOperationsMatchLocalizationGraph()
+        {
+            var tryGetLeft = typeof(LocalizationGraph).GetMethod("TryGetLeft", BindingFlags.NonPublic | BindingFlags.Static);
+            var random = new System.Random(914);
+            for (int trial = 0; trial < 20000; trial++)
+            {
+                int[] whole = Enumerable.Range(0, random.Next(0, 5)).Select(_ => random.Next(-3, 4)).ToArray();
+                int[] part = Enumerable.Range(0, random.Next(0, 5)).Select(_ => random.Next(-3, 4)).ToArray();
+
+                bool expectedContains = (bool)tryGetLeft.Invoke(null, new object[] { whole, part });
+                Assert.That(GlycanBoxLocalizationCache.IsGlycanCoveredBy(part, whole), Is.EqualTo(expectedContains), $"whole [{string.Join(",", whole)}] part [{string.Join(",", part)}]");
+
+                if (expectedContains)
+                {
+                    int[] diff = LocalizationGraph.GetDiff(part, whole);
+                    int first = GlycanBoxLocalizationCache.AddedGlycan(part, whole, out bool anyAdded);
+                    Assert.That(anyAdded, Is.EqualTo(diff.Length > 0));
+                    if (anyAdded)
+                    {
+                        Assert.That(first, Is.EqualTo(diff[0]), $"pre [{string.Join(",", part)}] current [{string.Join(",", whole)}]");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// SelectTopCandidates must keep exactly the ids, in exactly the order, that the engine's former selection did: a stable
+        /// descending sort by byte score, skipping ids below the cutoff, stopping at the first id scoring below the topN-th.
+        /// </summary>
+        [Test]
+        public static void SelectTopCandidatesMatchesStableSortSelection()
+        {
+            var random = new System.Random(20260914);
+            int[] counts = new int[256];
+            var actual = new List<int> { -1 }; // must be cleared by the method
+            int[] topNs = { -1, 0, 1, 2, 5, 50, 1000 };
+
+            for (int trial = 0; trial < 2000; trial++)
+            {
+                int peptideCount = random.Next(1, 400);
+                byte[] scores = new byte[peptideCount];
+                // Few distinct scores forces ties; the full byte range exercises 0 and 255.
+                int maxScore = trial % 3 == 0 ? 256 : random.Next(1, 12);
+                for (int i = 0; i < peptideCount; i++)
+                {
+                    scores[i] = (byte)random.Next(0, maxScore);
+                }
+                var candidateIds = Enumerable.Range(0, peptideCount).OrderBy(_ => random.Next()).Take(random.Next(0, peptideCount + 1)).ToList();
+                int cutoff = random.Next(0, 5);
+                int topN = topNs[trial % topNs.Length];
+
+                var expected = new List<int>();
+                int scoreAtTopN = 0;
+                int kept = 0;
+                foreach (int id in candidateIds.OrderByDescending(p => scores[p]))
+                {
+                    if (scores[id] < cutoff)
+                    {
+                        continue;
+                    }
+                    kept++;
+                    if (kept == topN)
+                    {
+                        scoreAtTopN = scores[id];
+                    }
+                    if (scores[id] < scoreAtTopN)
+                    {
+                        break;
+                    }
+                    expected.Add(id);
+                }
+
+                GlycoSearchEngine.SelectTopCandidates(candidateIds, scores, cutoff, topN, counts, actual);
+
+                Assert.That(actual, Is.EqualTo(expected), $"trial {trial}, topN {topN}, cutoff {cutoff}");
+                Assert.That(counts, Is.All.EqualTo(0));
+            }
+        }
+
+        /// <summary>
         /// Registers a glycan database that ships in GlycoTestData with the global path list that
         /// GlycoSearchEngine resolves against.
         /// <para>
@@ -118,6 +202,35 @@ namespace Test
             return new GlycoSearchEngine(new List<GlycoSpectralMatch>[0], new Ms2ScanWithSpecificMass[0],
                 new List<PeptideWithSetModifications>(), null, null, 0, commonParameters, null, "OGlycan.gdb", null,
                 glycoSearchType: GlycoSearchType.OGlycanSearch, 30, 3, false, null);
+        }
+
+        /// <summary>
+        /// An N-glycan search places a single N-glycan on the peptide, so the box mass cap must drop every N-glycan heavier than it,
+        /// as the O- and N+O searches drop heavier boxes.
+        /// </summary>
+        [Test]
+        public static void NGlycanSearchDropsNGlycansHeavierThanMaximumGlycanBoxMass()
+        {
+            var commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, trimMsMsPeaks: false);
+            var nGlycansProperty = typeof(GlycoSearchEngine).GetProperty("NGlycans", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.That(nGlycansProperty, Is.Not.Null, "Unable to find private NGlycans property via reflection.");
+
+            Glycan[] MakeEngineNGlycans(double maxGlycanBoxMass) => (Glycan[])nGlycansProperty.GetValue(new GlycoSearchEngine(
+                new List<GlycoSpectralMatch>[0], new Ms2ScanWithSpecificMass[0], new List<PeptideWithSetModifications>(), null, null, 0,
+                commonParameters, null, null, "NGlycan.gdb", GlycoSearchType.NGlycanSearch, 30, 3, false, null, maxGlycanBoxMass));
+
+            Glycan[] uncapped = MakeEngineNGlycans(double.MaxValue);
+            Assert.That(uncapped.Length, Is.GreaterThan(1));
+
+            double cap = (double)uncapped[uncapped.Length / 2].Mass / 1E5;
+            Glycan[] capped = MakeEngineNGlycans(cap);
+            Assert.That(capped, Is.EqualTo(uncapped.Where(p => (double)p.Mass / 1E5 <= cap).ToArray()));
+            Assert.That(capped.Length, Is.LessThan(uncapped.Length));
+
+            // A cap that leaves nothing is refused by name, as CheckedGlycanBoxes refuses it for O and N+O,
+            // rather than searching nothing and reporting nothing.
+            var ex = Assert.Throws<MetaMorpheusException>(() => MakeEngineNGlycans(0));
+            Assert.That(ex.Message, Does.Contain("NGlycan.gdb").And.Contain("maximum glycan box mass of 0 Da"));
         }
 
         private static Ms2ScanWithSpecificMass InvokeGetLocalizationScan(GlycoSearchEngine engine, Ms2ScanWithSpecificMass parentScan)
