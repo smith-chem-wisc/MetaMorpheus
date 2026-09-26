@@ -465,7 +465,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                        .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.GetObservedMonoisotopicMass(b.BioPolymerWithSetModsMonoisotopicMass.Value, commonParameters) - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
                        .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
 
-                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }).Run();
+                    // Nonspecific searches skip PostSearchAnalysisTask's FDR pass and its DisambiguationEngine, so this PEP is
+                    // final and nothing downstream resolves ambiguity: keep PEP's pruning, as glyco and crosslink do.
+                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }, pruneAmbiguousHypotheses: true).Run();
 
                     for (int i = 0; i < psmsArray.Count; i++)
                     {
@@ -594,7 +596,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                        .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.GetObservedMonoisotopicMass(b.BioPolymerWithSetModsMonoisotopicMass.Value, commonParameters) - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
                        .ToList();
 
-                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }).Run();
+                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }, pruneAmbiguousHypotheses: true).Run();
                 }
             }
 
