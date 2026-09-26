@@ -132,7 +132,7 @@ namespace TaskLayer
 
                     Status("Searching files...", taskId);
                     new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams, this.FileSpecificParameters,
-                        _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisId).Run();
+                        _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisId, _glycoSearchParameters.MaximumGlycanBoxMass).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                     if (GlobalVariables.StopLoops) { break; }
@@ -202,12 +202,15 @@ namespace TaskLayer
                 }
             }
 
+            // Localization is done, so let go of what the search built on the glycan boxes before FDR and PEP (see ReleaseSearchCaches).
+            GlycanBox.ReleaseSearchCaches(GlycanBox.OGlycanBoxes);
+            GlycanBox.ReleaseSearchCaches(GlycanBox.NOGlycanBoxes);
+
             PostGlycoSearchAnalysisParameters pgsap = new()
             {
                 GlycoSearchTaskResults = MyTaskResults,
                 SearchTaskId = taskId,
                 GlycoSearchParameters = _glycoSearchParameters,
-                ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => (DigestionParams)p.DigestionParams)),
                 ProteinList = proteinList,
                 VariableModifications = variableModifications,
                 FixedModifications = fixedModifications,

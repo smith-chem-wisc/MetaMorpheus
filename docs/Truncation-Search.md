@@ -2,8 +2,10 @@
 
 `TruncationSearchTask` is a follow-on MetaMorpheus task that discovers **N- and C-terminally
 truncated proteoforms** of the parents identified by an upstream top-down `SearchTask`. It is a
-normal task: it has its own TOML schema, it runs from the GUI or from CMD in a run list such as
-`[Search, Truncation]`, and it writes results using the standard `.psmtsv` columns.
+normal task: it has its own TOML schema, it runs from CMD in a run list such as
+`[Search, Truncation]`, and it writes results using the standard `.psmtsv` columns. It is
+command-line only: the GUI does not list it, and a truncation TOML dropped on the GUI is reported as
+not runnable there rather than silently ignored.
 
 This document is the design contract the `EngineLayer/Truncation` and
 `TaskLayer/TruncationSearchTask` code refers to. Numbered decisions (`#1`-`#21`) are cited from
@@ -80,9 +82,15 @@ whole pool gets one fresh per-class FDR/PEP analysis.
 ### #4a - Which MS2 scans enter Pass 2
 
 - Every MS2 scan, including ones Pass 1 already identified.
-- A scan is skipped only when Pass 1 has a PSM for it **and** that parent's theoretical mass equals
-  the scan's precursor mass within `CommonParameters.PrecursorMassTolerance`. Those scans inherit
-  their Pass 1 PSM into the Pass 3 output with `Description = full-length`.
+- A scan's precursor entry is skipped only when a Pass 1 PSM on that scan explains **that
+  precursor**: the observed precursor mass the PSM was matched on (so a match at any notch counts),
+  or its theoretical mass, equals the entry's precursor mass within
+  `CommonParameters.PrecursorMassTolerance`. Every Pass 1 PSM on the scan is considered, so each
+  precursor of a chimeric scan is matched to its own PSM. Skipped entries inherit their Pass 1 PSM
+  into the Pass 3 output with `Description = full-length`, at the notch Pass 1 matched it at and with
+  all of its protein-ambiguous hypotheses.
+- Any Pass 1 PSM counts here, target or decoy, whatever its q-value: that is what carries the decoys
+  into the pooled FDR (#18).
 
 ### #5 - Fragment ion types
 
@@ -118,7 +126,11 @@ whole pool gets one fresh per-class FDR/PEP analysis.
   **plus any PTM locked to that residue** in one step; an N-terminal acetyl-Ala leaves as a single
   step.
 - Notch behaviour is inherited from the task's `MassDiffAcceptorType` (see #15) and applies to
-  `M_obs - M_truncated_theo`. Tolerance is `CommonParameters.PrecursorMassTolerance`.
+  `M_obs - M_truncated_theo`. Tolerance is the file's `PrecursorMassTolerance`, the same one Pass 2
+  uses. Only acceptors with a fixed set of notches around the monoisotopic mass can chop (`Exact`,
+  `OneMM`/`TwoMM`/`ThreeMM`, `PlusOrMinusThreeMM`, or a `Custom` dot or around-zero acceptor); the
+  task refuses `Open`, `ModOpen` and the `MostAbundant_*` types at start-up, since they would absorb
+  a mass shift or never match.
 - Stop at the first match, or when no residues remain. Because chopping is monotonic in mass, the
   loop also stops as soon as the truncated form falls below the lowest mass the acceptor could
   accept for that scan - the acceptor reports that bound itself, via
@@ -131,11 +143,16 @@ whole pool gets one fresh per-class FDR/PEP analysis.
 
 - PTMs lock to residues. Chopping a residue removes its mod; a terminal mod survives only while its
   terminus is intact.
-- Parents that chop down to the same truncated `FullSequence` for the same scan **collapse into one
-  PSM**; protein-accession ambiguity is retained as pipe-separated accessions, per MetaMorpheus
-  convention.
+- Pass 2 keeps every `(parent, series)` pair that ties the winning score exactly (the same sequence
+  under another accession, a pipe-split alternative), and Pass 3 chops each of them. The scan then
+  reports **one PSM**: the best Pass 3 score, with every chop that ties it - typically the same
+  truncated `FullSequence` from another parent - kept as ambiguity, so protein-accession ambiguity
+  is retained as pipe-separated accessions, per MetaMorpheus convention.
 - A clean removal of exactly the initiator methionine is labelled *N-terminal Met excision*, not a
-  1-residue truncation, so NME is not miscounted.
+  1-residue truncation, so NME is not miscounted. There is no *NME + acetylation* label: chopping
+  removes the N-terminal mod and adds no mass, so it can never produce a newly acetylated N-terminus.
+- A truncated form keeps the parent's fixed/variable split: a surviving mod counts as fixed only if it
+  is one of the task's fixed mods.
 
 ### #12 - Pass 3 scoring
 
@@ -151,7 +168,11 @@ whole pool gets one fresh per-class FDR/PEP analysis.
   `N-terminal truncation(<start>-<end>)`, `C-terminal truncation(<start>-<end>)`,
   `internal truncation(<start>-<end>)`, `N-terminal Met excision(...)`, or `full-length`.
 - **Protein accession** is the parent's, unchanged. **Start/end residue** are the truncated
-  coordinates within the parent protein, which makes downstream cleavage-motif analysis trivial.
+  coordinates within the parent protein, which makes downstream cleavage-motif analysis trivial. On
+  the disk fallback path the parent is placed at the start its `AllProteoforms.psmtsv` row reports,
+  so its coordinates are protein-relative there too.
+- **Essential Sequence** writes the mod types in `ModsToWriteSelection`, which defaults to the same
+  selection as `SearchParameters`, so the column joins to the search's own output.
 
 ### #14 - Decoys
 
@@ -177,7 +198,8 @@ whole pool gets one fresh per-class FDR/PEP analysis.
 - `AllTruncatedProteoforms.psmtsv` - deduped by truncated `FullSequence`.
 - **No q-value or PEP cutoff at write time.** Both files carry the full FDR columns (q-value, notch
   q-value, PEP, PEP q-value) and the user filters downstream, exactly as with `AllPSMs.psmtsv`.
-- `WriteDecoys` and `WriteContaminants` default to `true`; either can be turned off in the TOML.
+- `WriteDecoys` and `WriteContaminants` default to `true`; either can be turned off in the TOML,
+  which drops those rows from both files (FDR is computed before the filter, so it is unaffected).
 
 ### #18 - Pooled FDR universe
 
@@ -196,8 +218,12 @@ whole pool gets one fresh per-class FDR/PEP analysis.
 
 ### #20 - Task wiring
 
-- Own TOML schema; most parameters follow Pass 1 conventions (dissociation type, precursor and
-  product tolerances, notch type, decoy type).
+- Own TOML schema, including its own `CommonParameters`. These are **not** inherited from the
+  upstream search and default to MetaMorpheus's general (bottom-up) defaults, so for top-down data
+  copy the search's `CommonParameters` into the truncation task. When the task consumes a search in
+  the same run list, it warns if the settings that drive MS2 deconvolution and matching (precursor
+  and product tolerances, precursor deconvolution, max charge states, dissociation type) differ
+  from that search's.
 - Plumbed into the existing runner, so `[Search, Truncation]` works end-to-end with in-memory
   result passing, and into `CMD/Program.cs` so the task dispatches from a TOML on the command line.
 

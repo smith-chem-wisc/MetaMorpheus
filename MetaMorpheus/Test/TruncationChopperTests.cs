@@ -365,14 +365,13 @@ namespace Test
         }
 
         /// <summary>
-        /// The combined canonical proteoform: initiator-Met excision exposes a residue that is then
-        /// N-terminally acetylated. Must be labeled NTerminalMetExcisionPlusAcetyl. Together with the three
-        /// tests above this completes the four-branch Met / extra-residues / acetyl labeling decision tree.
+        /// A residue mod on the residue that NME exposes is a side-chain mod, not N-terminal acetylation, and
+        /// chopping cannot add an N-terminal acetyl (it drops the N-terminal mod and adds no mass). So a
+        /// Met chop that leaves an acetyl on the new first residue is plain NME, not "NME + acetylation".
         /// </summary>
         [Test]
-        public void ChopFromNTerm_MetExcisionWithAcetyl_LabeledMetExcisionPlusAcetyl()
+        public void ChopFromNTerm_MetExcisionWithResidueAcetyl_IsPlainMetExcision()
         {
-            // Parent M-A(acetyl)-...; chopping the initiator Met yields the Met-excised, N-acetylated form.
             var acetyl = MakeAcetyl();
             var parent = MakeProteoform("MADEKRHSTNQGVLIF", "MAcX",
                 new Dictionary<int, Modification> { { 3, acetyl } });   // acetyl on parent residue 2 (A) -> key 3
@@ -383,7 +382,31 @@ namespace Test
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result.ResiduesChopped, Is.EqualTo(1));
-            Assert.That(result.TruncatedForm.Description, Does.StartWith(TruncationPass3.NTerminalMetExcisionPlusAcetyl));
+            Assert.That(result.TruncatedForm.Description, Is.EqualTo(TruncationPass3.NTerminalMetExcision + "(2-16)"));
+        }
+
+        /// <summary>
+        /// A variable mod that survives the chop stays variable: NumVariableMods is 1 before and after. With the
+        /// search's fixed mods supplied, a surviving fixed mod is counted as fixed instead.
+        /// </summary>
+        [Test]
+        public void Chop_KeepsTheFixedAndVariableModSplit()
+        {
+            var acetyl = MakeAcetyl();
+            var parent = new PeptideWithSetModifications(new Protein("MADEKRHSTNQGVLIF", "V"), new DigestionParams(),
+                1, 16, CleavageSpecificity.Full, null, 0, new Dictionary<int, Modification> { { 3, acetyl } }, numFixedMods: 0);
+            Assert.That(parent.NumVariableMods, Is.EqualTo(1));
+            double target = MakeProteoform("MADEKRHSTNQGV", "x",
+                new Dictionary<int, Modification> { { 3, acetyl } }).MonoisotopicMass; // 3 residues off the C-terminus
+
+            ChopResult variable = ProteoformChopper.ChopUntilMassMatches(parent, FragmentationTerminus.C, target, _exactAcceptor);
+            Assert.That(variable.TruncatedForm.NumVariableMods, Is.EqualTo(1));
+            Assert.That(variable.TruncatedForm.NumFixedMods, Is.EqualTo(0));
+
+            ChopResult fixedMod = ProteoformChopper.ChopUntilMassMatches(parent, FragmentationTerminus.C, target, _exactAcceptor,
+                new List<Modification> { acetyl });
+            Assert.That(fixedMod.TruncatedForm.NumFixedMods, Is.EqualTo(1));
+            Assert.That(fixedMod.TruncatedForm.NumVariableMods, Is.EqualTo(0));
         }
 
         /// <summary>

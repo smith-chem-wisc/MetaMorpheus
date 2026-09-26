@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Nett;
 
 namespace TaskLayer
@@ -32,7 +33,7 @@ namespace TaskLayer
         /// Notch acceptor used when chopping a parent down to the precursor mass in Pass 3 (decisions #9, #15).
         /// Inherited from the Pass 1 search convention; defaults to the top-down ThreeMM notches so
         /// precursor isotope errors do not block a chop. Also sets the FDR notch count for the pooled
-        /// analysis.
+        /// analysis. Open, ModOpen and the MostAbundant types cannot chop and are refused when the task starts.
         /// </summary>
         public MassDiffAcceptorType MassDiffAcceptorType { get; set; } = MassDiffAcceptorType.ThreeMM;
 
@@ -82,11 +83,20 @@ namespace TaskLayer
         /// </summary>
         public bool UsePerScanTagRestriction { get; set; } = false;
 
+        /// <summary>
+        /// Default <see cref="TagLength"/>. Also the value TruncationSearchTask substitutes, with a warning,
+        /// when a TOML supplies one below 1 -- ProteinTagIndex throws on that.
+        /// </summary>
+        public const int DefaultTagLength = 4;
+
+        /// <summary>Default <see cref="MinTagHits"/>, substituted the same way when a TOML supplies one below 1.</summary>
+        public const int DefaultMinTagHits = 2;
+
         /// <summary>Length (residues) of the de-novo sequence tags and the matching protein k-mer index.</summary>
-        public int TagLength { get; set; } = 4;
+        public int TagLength { get; set; } = DefaultTagLength;
 
         /// <summary>Minimum number of distinct extracted tags a protein must contain to be a tag-filter candidate.</summary>
-        public int MinTagHits { get; set; } = 2;
+        public int MinTagHits { get; set; } = DefaultMinTagHits;
 
         /// <summary>
         /// Maximum parent proteoform monoisotopic mass (Da) placed in the Pass 2 index (decision #6); heavier
@@ -112,5 +122,11 @@ namespace TaskLayer
 
         /// <summary>Write contaminant rows to the output TSVs (decision #17).</summary>
         public bool WriteContaminants { get; set; } = true;
+
+        /// <summary>
+        /// Which mod types are written into the Essential Sequence column, as <see cref="SearchParameters.ModsToWriteSelection"/>;
+        /// the same default, so the truncation files join to the search's AllPSMs/AllProteoforms on that column.
+        /// </summary>
+        public Dictionary<string, int> ModsToWriteSelection { get; set; } = SearchParameters.DefaultModsToWriteSelection();
     }
 }

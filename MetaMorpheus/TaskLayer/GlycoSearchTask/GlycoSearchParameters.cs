@@ -15,6 +15,7 @@ namespace TaskLayer
             DecoyType = DecoyType.Reverse;
             GlycoSearchTopNum = 50;
             MaximumOGlycanAllowed = 4;
+            MaximumGlycanBoxMass = EngineLayer.GlycanBox.DefaultMaximumGlycanBoxMass;
             DoParsimony = true;
             NoOneHitWonders = false;
             ModPeptidesAreDifferent = false;
@@ -33,26 +34,7 @@ namespace TaskLayer
             DisposeOfFileWhenDone = true;
             WritePrunedDataBase = false;
 
-            ModsToWriteSelection = new Dictionary<string, int>
-            {
-                //Key is modification type.
-
-                //Value is integer 0, 1, 2 and 3 interpreted as:
-                //   0:   Do not Write
-                //   1:   Write if in DB and Observed
-                //   2:   Write if in DB
-                //   3:   Write if Observed
-
-                {"N-linked glycosylation", 3},
-                {"O-linked glycosylation", 3},
-                {"Other glycosylation", 3},
-                {"Common Biological", 3},
-                {"Less Common", 3},
-                {"Metal", 3},
-                {"2+ nucleotide substitution", 3},
-                {"1 nucleotide substitution", 3},
-                {"UniProt", 2},
-            };
+            ModsToWriteSelection = SearchParameters.DefaultModsToWriteSelection();
         }
         public string OGlycanDatabasefile { get; set; }
         public string NGlycanDatabasefile { get; set; }
@@ -61,6 +43,12 @@ namespace TaskLayer
         public DecoyType DecoyType { get; set; }
         public int GlycoSearchTopNum { get; set; }
         public int MaximumOGlycanAllowed { get; set; }
+
+        /// <summary>
+        /// Glycan boxes (the summed glycans placed on one peptide) heavier than this, in Da, are never built or searched.
+        /// Applies to O-, N- and N+O searches; in an N-glycan search the box is the single N-glycan.
+        /// </summary>
+        public double MaximumGlycanBoxMass { get; set; }
 
         public bool DoParsimony { get; set; }
         public bool NoOneHitWonders { get; set; }

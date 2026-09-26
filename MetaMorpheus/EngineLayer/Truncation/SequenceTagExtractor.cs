@@ -7,12 +7,16 @@ namespace EngineLayer.Truncation
     /// <summary>
     /// Extracts short de-novo sequence tags from a deconvoluted MS2 scan: amino-acid strings spelled by runs
     /// of fragment-mass gaps that each match a residue mass. Tags are I/L-normalized (the two residues are
-    /// isobaric, both -> 'L'). They are used only as a recall-oriented candidate-protein FILTER for the
-    /// database-seeded truncation search (docs/Truncation-Search.md, Sequence-tag filtering / pTop §3.4.4); Pass 2/3 scoring + FDR police precision.
+    /// isobaric, both -> 'L'). They are used only as a candidate-protein FILTER for the database-seeded
+    /// truncation search (docs/Truncation-Search.md, Sequence-tag filtering / pTop 3.4.4); Pass 2/3 scoring
+    /// + FDR decide the answer.
     ///
-    /// Top-down caveat: at large fragment masses the per-peak absolute tolerance is wide relative to
-    /// residue-mass differences, so a gap may match several residues (e.g. K vs Q). Such gaps emit one edge
-    /// per matching residue, deliberately over-generating tags so the true protein is not missed.
+    /// Top-down caveat, and the reason the edge rule is precision-oriented rather than recall-oriented: at
+    /// large fragment masses the per-peak absolute tolerance is wide relative to residue-mass differences, so
+    /// a gap may match several residues (e.g. K vs Q). Such gaps emit NO edge at all -- they are dropped
+    /// rather than guessed, because emitting one edge per matching residue over-generates tags until the
+    /// filter selects most of the database and stops being a filter. See <see cref="ExtractTags"/> for the
+    /// recall this costs and the masses at which it starts.
     /// </summary>
     public static class SequenceTagExtractor
     {
@@ -65,6 +69,15 @@ namespace EngineLayer.Truncation
                     // Emit an edge only when the gap matches EXACTLY ONE residue within the window. Gaps that
                     // are ambiguous (two residues in range, e.g. K vs Q at high mass) are dropped rather than
                     // guessed — high precision over recall, so spurious tags do not select the whole database.
+                    //
+                    // The recall this costs, stated plainly because it is not small in top-down: K and Q differ
+                    // by 0.03638 Da, and `window` is the SUM of the two peaks' tolerances, so it reaches that
+                    // gap at roughly 910 Da at 20 ppm, 1,819 Da at 10 ppm and 3,638 Da at 5 ppm. Above its
+                    // ppm's crossover no K/Q gap can ever emit an edge, so tags spanning a K or a Q stop being
+                    // produced over most of a top-down fragment ladder. That is what MinTagHits is trading
+                    // against: raising it demands more tags from a scan whose tags are already thinned this
+                    // way. No other residue pair is close enough to matter here: the next narrowest is K vs
+                    // E at 0.948 Da, whose crossover is around 23.7 kDa at 20 ppm.
                     double window = peakTolI + (tolerance.GetMaximumValue(masses[j]) - masses[j]);
                     char matched = '\0';
                     int matchCount = 0;

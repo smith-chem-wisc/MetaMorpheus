@@ -5,6 +5,7 @@ using EngineLayer.DatabaseLoading;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
+using EngineLayer.Util;
 using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
@@ -170,9 +171,10 @@ namespace TaskLayer
 
             if (SearchParameters.DoLabelFreeQuantification)
             {
-                // disable quantification if a .mgf or .d files are  being used
+                // disable quantification if a .mgf or Bruker file is being used. Bruker paths are normally the ".d"
+                // folder, but an inner file (analysis.baf, analysis.tdf, ...) can reach here too, so check for both.
                 if (currentRawFileList.Select(filepath => Path.GetExtension(filepath))
-                    .Any(ext => ext.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || ext.Equals(".d", StringComparison.OrdinalIgnoreCase) || ext.Equals(".msalign", StringComparison.OrdinalIgnoreCase)))
+                    .Any(ext => ext.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || ext.Equals(".d", StringComparison.OrdinalIgnoreCase) || ext.Equals(".msalign", StringComparison.OrdinalIgnoreCase) || BrukerDataDirectory.IsInnerFileExtension(ext)))
                 {
                     SearchParameters.DoLabelFreeQuantification = false;
                 }
@@ -376,13 +378,11 @@ namespace TaskLayer
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
                 {
-                    // Assume modern search is for proteins. 
-                    var proteinList = bioPolymerList.Cast<Protein>().ToList();
                     for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
                     {
-                        List<PeptideWithSetModifications> peptideIndex = null;
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / combinedParams.TotalPartitions,
-                            ((currentPartition + 1) * proteinList.Count / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count / combinedParams.TotalPartitions));
+                        List<IBioPolymerWithSetMods> peptideIndex = null;
+                        List<IBioPolymer> proteinListSubset = bioPolymerList.GetRange(currentPartition * bioPolymerList.Count / combinedParams.TotalPartitions,
+                            ((currentPartition + 1) * bioPolymerList.Count / combinedParams.TotalPartitions) - (currentPartition * bioPolymerList.Count / combinedParams.TotalPartitions));
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
@@ -393,7 +393,7 @@ namespace TaskLayer
 
                         lock (indexLock)
                         {
-                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
+                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, bioPolymerList, taskId);
                         }
 
                         Status("Searching files...", taskId);
@@ -450,6 +450,16 @@ namespace TaskLayer
                     //foreach terminus we're going to look at
                     foreach (CommonParameters paramToUse in paramsToUse)
                     {
+                        // Non-specific search is built around proteases -- terminal mod placement, the
+                        // "single" agents, the FDR categories -- none of which have a nucleic acid
+                        // counterpart yet. Say so, rather than letting the cast below throw a bare
+                        // InvalidCastException that names Protein and RNA and explains neither.
+                        if (bioPolymerList.Any(p => p is not Protein))
+                        {
+                            throw new MetaMorpheusException(
+                                "Non-specific search is only implemented for proteins. Use Classic or Modern search for nucleic acid databases.");
+                        }
+
                         var proteinList = bioPolymerList.Cast<Protein>().ToList();
 
                         //foreach database partition
@@ -610,6 +620,8 @@ namespace TaskLayer
             // no-op) unless the run list actually contains a consumer, and the runner clears it once that
             // consumer has run.
             TaskChainContext?.Deposit(taskId, parameters.AllSpectralMatches);
+            // Its CommonParameters ride along so the consumer can warn when its own settings disagree.
+            TaskChainContext?.Deposit(TaskChainContext.CommonParametersKey(taskId), CommonParameters);
 
             return postSearchResults;
         }

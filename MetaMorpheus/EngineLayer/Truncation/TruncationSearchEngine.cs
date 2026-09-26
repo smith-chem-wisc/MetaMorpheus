@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MassSpectrometry;
+using MzLibUtil;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 
@@ -56,6 +57,17 @@ namespace EngineLayer.Truncation
         public FragmentationTerminus WinningSeries { get; init; } = FragmentationTerminus.None;
         public double Score { get; init; }
 
+        /// <summary>
+        /// Other (parent, series) pairs that tied <see cref="WinningParent"/>/<see cref="WinningSeries"/> exactly on
+        /// the Pass 2 score, e.g. an identical sequence under another accession. Pass 3 chops each of them so the
+        /// parent ambiguity survives into the output (#10). Empty when the winner was unique.
+        /// </summary>
+        public IReadOnlyList<(TruncationParent Parent, FragmentationTerminus Series)> TiedWinners { get; init; }
+            = Array.Empty<(TruncationParent, FragmentationTerminus)>();
+
+        /// <summary>The Pass 1 match that explained this scan's precursor, for an <see cref="TruncationScanOutcome.IntactInherited"/> outcome.</summary>
+        public SpectralMatch IntactMatch { get; init; }
+
         /// <summary>0-based rank of the winning parent in the per-scan index match-count ordering (diagnostic:
         /// how deep into the rescored top-N the winner sat). -1 when not a Winner.</summary>
         public int CandidateRank { get; init; } = -1;
@@ -95,7 +107,7 @@ namespace EngineLayer.Truncation
         private readonly Ms2ScanWithSpecificMass[] _scans;
         private readonly CommonParameters _commonParameters;
         private readonly TruncationAcceptor _acceptor;
-        private readonly IReadOnlyDictionary<int, double> _pass1TheoreticalMassByScanNumber;
+        private readonly IReadOnlyDictionary<int, IReadOnlyList<SpectralMatch>> _pass1PsmsByScanNumber;
         private readonly DissociationType[] _dissociationTypes; // index is built over all of these (#5)
         private readonly int _minMatchedFragments; // below this a single series cannot reach ScoreCutoff
         private List<int>[] _nIndex; // N-series (b/c) fragment-mass bin -> ids of parents with a fragment there
@@ -127,16 +139,22 @@ namespace EngineLayer.Truncation
             Ms2ScanWithSpecificMass[] scans,
             CommonParameters commonParameters,
             TruncationAcceptor acceptor,
-            IReadOnlyDictionary<int, double> pass1TheoreticalMassByScanNumber = null,
+            IReadOnlyDictionary<int, IReadOnlyList<SpectralMatch>> pass1PsmsByScanNumber = null,
             double maxFragmentSize = DefaultMaxFragmentSize,
             IReadOnlyDictionary<Ms2ScanWithSpecificMass, HashSet<string>> allowedProteinAccessionsByScan = null)
         {
             var allParents = parents.ToList();
 
             // Exclude oversized parents from the index; emit a single summary line (#6).
+            // OrderBy is stable, so a mass-only sort leaves equal-mass parents in the order they were
+            // built -- and Pass 2 breaks a score tie with `nScore > bestScore`, handing the win to
+            // whichever of them came first. Tie-breaking on accession and then full sequence makes the
+            // winner a function of the parents themselves, whatever order the caller assembled them in.
             _parents = allParents
                 .Where(p => p.MonoisotopicMass <= maxFragmentSize)
                 .OrderBy(p => p.MonoisotopicMass)
+                .ThenBy(p => p.ProteinAccession, StringComparer.Ordinal)
+                .ThenBy(p => p.Proteoform.FullSequence, StringComparer.Ordinal)
                 .ToList();
             ExcludedOversizedParentCount = allParents.Count - _parents.Count;
             if (ExcludedOversizedParentCount > 0)
@@ -147,13 +165,14 @@ namespace EngineLayer.Truncation
             _scans = scans;
             _commonParameters = commonParameters;
             _acceptor = acceptor;
-            _pass1TheoreticalMassByScanNumber = pass1TheoreticalMassByScanNumber;
+            _pass1PsmsByScanNumber = pass1PsmsByScanNumber;
             _allowedAccessionsByScan = allowedProteinAccessionsByScan;
 
-            // A single series scores 1 + intensityFraction (<2) per matched ion, so a parent matching fewer
-            // than floor(ScoreCutoff/2)+1 fragments in a series can never reach ScoreCutoff and is safe to
-            // prune before the authoritative rescoring (result-preserving for the default cutoff).
-            _minMatchedFragments = Math.Max(1, (int)Math.Floor(_commonParameters.ScoreCutoff / 2.0) + 1);
+            // A single series scores N + f, where N is the matched-ion count and f < 1 is the matched share of
+            // the scan's total intensity (summed over ALL matched ions, not per ion). So N <= ScoreCutoff - 1
+            // can never reach the cutoff; ceil(ScoreCutoff) - 1 leaves one ion of slack for the index's
+            // bin-level count, so pruning below it is result-preserving.
+            _minMatchedFragments = Math.Max(1, (int)Math.Ceiling(_commonParameters.ScoreCutoff) - 1);
 
             // When the dissociation type is Autodetect it is resolved per scan from the scan header
             // (mirroring ClassicSearchEngine). The index must hold fragments for every type the scans use.
@@ -194,17 +213,17 @@ namespace EngineLayer.Truncation
             {
                 Ms2ScanWithSpecificMass scan = _scans[scanIndex];
 
-                // Intact-skip (#4a): Pass 1 matched this scan and the parent's theoretical mass equals the
-                // scan precursor mass within tolerance. No Pass 2 scoring; carry it through as intact.
-                if (_pass1TheoreticalMassByScanNumber != null
-                    && _pass1TheoreticalMassByScanNumber.TryGetValue(scan.OneBasedScanNumber, out double pass1Mass)
-                    && _commonParameters.PrecursorMassTolerance.Within(scan.PrecursorMass, pass1Mass))
+                // Intact-skip (#4a): a Pass 1 match already explains this precursor. No Pass 2 scoring; carry
+                // it through as intact.
+                SpectralMatch intactMatch = FindIntactMatch(scan);
+                if (intactMatch != null)
                 {
                     results[scanIndex] = new TruncationParentSelection
                     {
                         ScanIndex = scanIndex,
                         Scan = scan,
-                        Outcome = TruncationScanOutcome.IntactInherited
+                        Outcome = TruncationScanOutcome.IntactInherited,
+                        IntactMatch = intactMatch
                     };
                     return;
                 }
@@ -226,6 +245,7 @@ namespace EngineLayer.Truncation
                 FragmentationTerminus bestSeries = FragmentationTerminus.None;
                 double bestScore = 0;
                 int bestRank = -1;
+                var tied = new List<(TruncationParent, FragmentationTerminus)>();
 
                 DissociationType dissociationType = ResolveDissociationType(scan);
 
@@ -241,20 +261,25 @@ namespace EngineLayer.Truncation
                     double cScore = MetaMorpheusEngine.CalculatePeptideScore(scan.TheScan,
                         MetaMorpheusEngine.MatchFragmentIons(scan, cTermProducts, _commonParameters));
 
-                    if (nScore > bestScore)
-                    {
-                        bestScore = nScore;
-                        bestParent = parent;
-                        bestSeries = FragmentationTerminus.N;
-                        bestRank = rank;
-                    }
+                    Consider(parent, FragmentationTerminus.N, nScore, rank);
+                    Consider(parent, FragmentationTerminus.C, cScore, rank);
+                }
 
-                    if (cScore > bestScore)
+                void Consider(TruncationParent parent, FragmentationTerminus series, double score, int rank)
+                {
+                    if (score > bestScore)
                     {
-                        bestScore = cScore;
+                        bestScore = score;
                         bestParent = parent;
-                        bestSeries = FragmentationTerminus.C;
+                        bestSeries = series;
                         bestRank = rank;
+                        tied.Clear();
+                    }
+                    else if (bestParent != null && score == bestScore)
+                    {
+                        // An exact tie (e.g. the same sequence under another accession) is kept rather than
+                        // lost to candidate order, so Pass 3 can report the parent ambiguity (#10).
+                        tied.Add((parent, series));
                     }
                 }
 
@@ -267,6 +292,7 @@ namespace EngineLayer.Truncation
                         WinningParent = bestParent,
                         WinningSeries = bestSeries,
                         Score = bestScore,
+                        TiedWinners = tied,
                         CandidateRank = bestRank,
                         CandidatePoolSize = candidateIds.Count
                     }
@@ -275,6 +301,34 @@ namespace EngineLayer.Truncation
 
             ScoringSeconds = stopwatch.Elapsed.TotalSeconds;
             return results.ToList();
+        }
+
+        /// <summary>
+        /// The best Pass 1 match on this scan whose precursor is the one this scan entry carries: the observed
+        /// precursor mass the match was made on (the same deconvolution, so this holds at any notch) or its
+        /// theoretical mass, within the precursor tolerance. Keying on the precursor rather than the scan number
+        /// keeps each precursor of a chimeric scan separate (#4a).
+        /// </summary>
+        private SpectralMatch FindIntactMatch(Ms2ScanWithSpecificMass scan)
+        {
+            if (_pass1PsmsByScanNumber == null
+                || !_pass1PsmsByScanNumber.TryGetValue(scan.OneBasedScanNumber, out IReadOnlyList<SpectralMatch> pass1Psms))
+            {
+                return null;
+            }
+
+            Tolerance tolerance = _commonParameters.PrecursorMassTolerance;
+            foreach (SpectralMatch psm in pass1Psms) // best first
+            {
+                if (tolerance.Within(scan.PrecursorMass, psm.ScanPrecursorMass)
+                    || (psm.BioPolymerWithSetModsMonoisotopicMass.HasValue
+                        && tolerance.Within(scan.PrecursorMass, psm.BioPolymerWithSetModsMonoisotopicMass.Value)))
+                {
+                    return psm;
+                }
+            }
+
+            return null;
         }
 
         private static TruncationParentSelection NoWinner(int scanIndex, Ms2ScanWithSpecificMass scan) =>

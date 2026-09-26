@@ -1,0 +1,9 @@
+# Test.yml runs the Windows suite as two jobs, so every commit produces two coverage uploads.
+# Without this, Codecov posts a status as soon as the first one lands, reporting one half of the
+# suite as the whole thing.
+codecov:
+  notify:
+    after_n_builds: 2
+
+comment:
+  after_n_builds: 2
