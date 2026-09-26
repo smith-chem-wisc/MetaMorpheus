@@ -935,6 +935,37 @@ namespace Test
         }
 
         /// <summary>
+        /// After the search, the same unrecognised multiplex label leaves no isobaric design to write
+        /// channel rows from, even with a usable TmtDesign.txt beside the spectra: with no tag type
+        /// there is no plex to check the channels against, so the file is described once.
+        /// </summary>
+        [Test]
+        public static void AnUnrecognisedMultiplexLabelReadsNoIsobaricDesign()
+        {
+            string folder = SetUpIsolatedRun(nameof(AnUnrecognisedMultiplexLabelReadsNoIsobaricDesign), out string spectraPath, out _);
+            File.WriteAllLines(Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName),
+                new[] { TmtExperimentalDesign.Header, $"{spectraPath}	Plex1	Sample1	126	CondA	1	1	1	study sample" });
+            var task = new PostSearchAnalysisTask
+            {
+                Parameters = new PostSearchAnalysisParameters
+                {
+                    CurrentRawFileList = new List<string> { spectraPath },
+                    SearchParameters = new SearchParameters { DoMultiplexQuantification = true, MultiplexModId = "Nonsense on K" }
+                }
+            };
+
+            var args = new object[] { null };
+            var design = typeof(PostSearchAnalysisTask)
+                .GetMethod("ReadIsobaricDesignIfPresent", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(task, args);
+
+            Assert.That(design, Is.Null);
+            Assert.That(args[0], Is.Null, "no tag type");
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
         /// An unnamed channel belongs to the plex, and every fraction of a plex carries the same
         /// channel-to-sample map. So its source name is built from the plex, not the file: with the
         /// file stem, one unnamed channel of a two-fraction plex became two samples downstream.
