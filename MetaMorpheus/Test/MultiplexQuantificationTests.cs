@@ -33,21 +33,34 @@ namespace Test
         /// <summary>The staged spectra file's name without extension, which every sample column carries.</summary>
         private const string StagedMzmlName = "VA084TQ_6";
 
-        /// <summary>
-        /// The column label of channel <paramref name="channel"/> under <see cref="WriteTmtDesign"/>'s design,
-        /// which names every channel: mzLib labels a named channel {sample}_{file}_{channel}.
-        /// </summary>
-        private static string ChannelColumnLabel(int channel) =>
-            $"Sample{channel + 1}_{StagedMzmlName}_{Tmt11Channels[channel]}";
+        /// <summary>A channel the design annotates but leaves the Sample Name blank.</summary>
+        private const int BlankNameChannel = 3;
+
+        /// <summary>A channel the design leaves out entirely.</summary>
+        private const int UnannotatedChannel = 10;
 
         /// <summary>
-        /// Writes a TmtDesign.txt beside <paramref name="stagedMzmlPath"/> annotating every channel of
-        /// the TMT11 plex as a study sample, alternating between two conditions.
+        /// The column label of channel <paramref name="channel"/> under <see cref="WriteTmtDesign"/>'s design:
+        /// mzLib labels a named channel {sample}_{file}_{channel}, and a channel with no name, blank or
+        /// unannotated, keeps {file}_{channel}.
+        /// </summary>
+        private static string ChannelColumnLabel(int channel) =>
+            channel == BlankNameChannel || channel == UnannotatedChannel
+                ? $"{StagedMzmlName}_{Tmt11Channels[channel]}"
+                : $"Sample{channel + 1}_{StagedMzmlName}_{Tmt11Channels[channel]}";
+
+        /// <summary>
+        /// Writes a TmtDesign.txt beside <paramref name="stagedMzmlPath"/> annotating the channels of the
+        /// TMT11 plex as study samples, alternating between two conditions. One channel's Sample Name is
+        /// blank and one channel has no row, so both unnamed forms reach the real writers.
         /// </summary>
         private static void WriteTmtDesign(string dataFolder, string stagedMzmlPath)
         {
-            var rows = Tmt11Channels.Select((tag, i) =>
-                $"{stagedMzmlPath}\tPlex1\tSample{i + 1}\t{tag}\tCond{(i % 2 == 0 ? "A" : "B")}\t{i / 2 + 1}\t1\t1\tstudy sample");
+            var rows = Tmt11Channels
+                .Select((tag, i) => (tag, i))
+                .Where(c => c.i != UnannotatedChannel)
+                .Select(c =>
+                    $"{stagedMzmlPath}\tPlex1\t{(c.i == BlankNameChannel ? "" : $"Sample{c.i + 1}")}\t{c.tag}\tCond{(c.i % 2 == 0 ? "A" : "B")}\t{c.i / 2 + 1}\t1\t1\tstudy sample");
 
             File.WriteAllLines(
                 Path.Combine(dataFolder, GlobalVariables.TmtExperimentalDesignFileName),

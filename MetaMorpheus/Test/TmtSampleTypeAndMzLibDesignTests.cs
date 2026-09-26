@@ -272,6 +272,7 @@ namespace Test
             Assert.AreEqual("Pool", byChannel["126"].SampleName);
             Assert.AreEqual("Pool_run1_126", SampleGroupLabels.ForSample(byChannel["126"]));
 
+            Assert.That(byChannel["127N"].SampleName, Is.Null.Or.Empty, "a blank Sample Name is handed over blank");
             Assert.AreEqual("run1_127N", SampleGroupLabels.ForSample(byChannel["127N"]), "named blank in the design");
             Assert.IsNull(byChannel["127C"].SampleName, "not annotated at all");
             Assert.AreEqual("run1_127C", SampleGroupLabels.ForSample(byChannel["127C"]));
