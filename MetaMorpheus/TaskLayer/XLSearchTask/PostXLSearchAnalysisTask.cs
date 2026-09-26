@@ -194,18 +194,18 @@ namespace TaskLayer
         {
             // calculate single PSM FDR
             List<SpectralMatch> psms = items.Where(p => p.CrossType == PsmCrossType.Single).Select(p => p as SpectralMatch).OrderByDescending(p => p.Score).ToList();
-            new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds, "skippep").Run();
+            new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds, "skippep", pruneAmbiguousHypotheses: true).Run();
 
             // calculate loop PSM FDR
             psms = items.Where(p => p.CrossType == PsmCrossType.Loop).Select(p => p as SpectralMatch).OrderByDescending(p => p.Score).ToList();
-            new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds, "skippep").Run();
+            new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds, "skippep", pruneAmbiguousHypotheses: true).Run();
 
             // calculate deadend FDR
             psms = items.Where(p => p.CrossType == PsmCrossType.DeadEnd ||
                 p.CrossType == PsmCrossType.DeadEndH2O ||
                 p.CrossType == PsmCrossType.DeadEndNH2 ||
                 p.CrossType == PsmCrossType.DeadEndTris).Select(p => p as SpectralMatch).OrderByDescending(p => p.Score).ToList();
-            new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds, "skippep").Run();
+            new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds, "skippep", pruneAmbiguousHypotheses: true).Run();
         }
 
         //Calculate the FDR of crosslinked peptide FP/TP
