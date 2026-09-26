@@ -527,6 +527,32 @@ namespace EngineLayer
         /// </remarks>
         public const int MaxMonosaccharidesPerGlycan = 40;
 
+        /// <summary>
+        /// The most fragment sub-trees a structure entered through <see cref="PersistCustomGlycan"/> may give.
+        /// The largest shipped structure gives 21; a tetra-antennary, tetrasialylated, core-fucosylated
+        /// N-glycan gives 582; a 29-residue one with a fucose on every antenna 84,106, which Struct2Glycan
+        /// builds in about a second. Applied on entry only, like the residue cap.
+        /// </summary>
+        public const int MaxSubtreesPerStructure = 100_000;
+
+        /// <summary>
+        /// How many sub-trees rooted at <paramref name="node"/> Struct2Glycan will enumerate: a leaf is one,
+        /// and a node is the product over its children of (theirs + 1), each child being absent or one of
+        /// its own sub-trees. A double, because the bushy trees this exists to refuse overflow a long.
+        /// </summary>
+        private static double SubtreeCount(Node node)
+        {
+            double count = 1;
+            foreach (Node child in new[] { node.LeftChild, node.RightChild, node.MiddleChild })
+            {
+                if (child != null)
+                {
+                    count *= SubtreeCount(child) + 1;
+                }
+            }
+            return count;
+        }
+
         private static void ValidateStructureEntry(string entry, bool isOGlycan)
         {
             // The same checks the loader runs -- characters, balance, one root -- so a structure is refused
@@ -546,6 +572,19 @@ namespace EngineLayer
 
             try
             {
+                // The residue cap does not bound a structure's cost: Struct2Glycan enumerates every sub-tree, and
+                // their number multiplies across branches, so 40 residues in a bushy enough tree is ~4e8 of them.
+                // Counted from the tree before any are built. Inside the try because a nesting the tree builder
+                // cannot follow, such as "(N())", comes back as a null tree.
+                double subtrees = SubtreeCount(Glycan.Struct2Node(entry));
+                if (subtrees > MaxSubtreesPerStructure)
+                {
+                    throw new MetaMorpheusException(
+                        $"Could not add the glycan \"{entry}\": its branching gives {subtrees:G3} fragment sub-trees, and a structure may " +
+                        $"give at most {MaxSubtreesPerStructure:N0}. Every one of them is built as a fragment ion, so a tree this bushy " +
+                        "would stall the window and the first search that reads the database. Enter it as a composition instead.");
+                }
+
                 // Parsed exactly as LoadStructureGlycan would parse it: Struct2Glycan is the only thing that
                 // knows whether the nesting describes a tree it can actually build.
                 List<Glycan> parsed = Glycan.Struct2Glycan(entry, 1, isOGlycan);
@@ -656,8 +695,8 @@ namespace EngineLayer
         /// <summary>
         /// The part of a line in a composition database that is the glycan: before the first tab (the
         /// shipped .txt databases carry name and mass columns there), before any '#' note, and up to the
-        /// last ')' -- so a column lined up with spaces is dropped the way a tabbed one is. String2Kind
-        /// always ignored whatever followed the last ')'; this keeps that tolerance explicit.
+        /// last ')' -- so a column lined up with spaces is dropped the way a tabbed one is. The old
+        /// parser always ignored whatever followed the last ')'; this keeps that tolerance explicit.
         /// </summary>
         /// <param name="ignored">
         /// What was cut after the last ')' and may have been meant as part of the glycan -- a half-written
@@ -693,11 +732,12 @@ namespace EngineLayer
         /// the reason, for the caller to say where the composition came from.
         /// </summary>
         /// <remarks>
-        /// Unlike String2Kind, which throws KeyNotFoundException on an unknown name, quietly accepts a
-        /// trailing unclosed group, and lets a second name for the same monosaccharide (Fuc and dHex are one
-        /// slot) overwrite the first.
+        /// The one composition parser: the database loader, the entry validator and glyco.txt all use it.
+        /// The parser it replaced threw KeyNotFoundException on an unknown name, quietly accepted a trailing
+        /// unclosed group, and let a second name for the same monosaccharide (Fuc and dHex are one slot)
+        /// overwrite the first.
         /// </remarks>
-        private static byte[] ParseComposition(string composition)
+        internal static byte[] ParseComposition(string composition)
         {
             Match match = Regex.Match(composition, CompositionShape);
             if (!match.Success)
@@ -796,10 +836,35 @@ namespace EngineLayer
         }
 
         /// <summary>
+        /// A structure with each node's branches sorted, recursively, so two orderings of the same siblings
+        /// compare equal. Only for a structure <see cref="StructureProblem"/> accepts.
+        /// </summary>
+        private static string CanonicalStructure(string structure)
+        {
+            int position = 0;
+            return CanonicalNode(structure, ref position);
+        }
+
+        private static string CanonicalNode(string structure, ref int position)
+        {
+            position++;                                   // '('
+            char residue = structure[position++];
+            var branches = new List<string>();
+            while (structure[position] == '(')
+            {
+                branches.Add(CanonicalNode(structure, ref position));
+            }
+            position++;                                   // ')'
+            branches.Sort(StringComparer.Ordinal);
+            return "(" + residue + string.Concat(branches) + ")";
+        }
+
+        /// <summary>
         /// The line already in the database that is the same glycan as the entry, or null. A composition is a
         /// set of counts, so HexNAc(1)Hex(1), Hex(1)HexNAc(1), HexNAc(1)Hex(1)Fuc(0) and -- Fuc and dHex being
-        /// one slot -- Fuc(1) and dHex(1) are compared by what they parse to. A structure is compared as
-        /// written: two trees of one composition are different glycans.
+        /// one slot -- Fuc(1) and dHex(1) are compared by what they parse to. A structure is compared as a
+        /// tree: two trees of one composition are different glycans, but (N(H)(A)) and (N(A)(H)) are one
+        /// tree written two ways.
         /// </summary>
         private static string ExistingEntryFor(string databasePath, string entry, GlycanLineFormat format)
         {
@@ -809,6 +874,7 @@ namespace EngineLayer
             }
 
             byte[] entryKind = format == GlycanLineFormat.Composition ? ParseComposition(entry) : null;
+            string entryTree = format == GlycanLineFormat.Structure ? CanonicalStructure(entry) : null;
 
             foreach (string line in File.ReadLines(databasePath))
             {
@@ -821,7 +887,8 @@ namespace EngineLayer
                 {
                     // Split on tab first: a database may carry columns after the glycan.
                     string structure = line.Split('\t')[0].Trim();
-                    if (structure.Equals(entry, StringComparison.Ordinal))
+                    // A line this cannot read is the loader's to report, not a reason to refuse the entry.
+                    if (StructureProblem(structure) == null && CanonicalStructure(structure) == entryTree)
                     {
                         return structure;
                     }
@@ -915,7 +982,7 @@ namespace EngineLayer
 
                     // Skipped explicitly rather than left to the shape test below: a comment that quotes a
                     // composition -- which the documented template does, to show the format -- would otherwise
-                    // reach String2Kind and die on a dictionary lookup naming neither the file nor the line.
+                    // reach the parser and fail on a line that was never meant as a glycan.
                     if (IsCommentOrBlank(rawLine))
                     {
                         continue;
@@ -1008,18 +1075,15 @@ namespace EngineLayer
         /// </summary>
         /// <param name="line"> ex. HexNAc(2)Hex(5)NeuAc(1)Fuc(1) </param>
         /// <returns> The glycan Kind List ex. [2, 5, 0, 0, 1, 0, 0, 0, 0, 1] </returns>
-        public static byte[] String2Kind(string line) 
+        /// <remarks>
+        /// Kept for one release for outside callers; it is now ParseComposition, so a bad composition throws
+        /// FormatException naming the problem, where the old parser threw KeyNotFoundException or quietly
+        /// accepted an unclosed tail.
+        /// </remarks>
+        [Obsolete("Use the composition parser the glycan databases use; String2Kind now delegates to it and will be removed.")]
+        public static byte[] String2Kind(string line)
         {
-            byte[] kind = new byte[Glycan.KindCapacity];
-            var x = line.Split(new char[] { '(', ')' });
-            int i = 0;
-            while (i < x.Length - 1)
-            {
-                kind[Glycan.NameCharDic[x[i]].Item2] = byte.Parse(x[i + 1]);
-                i = i + 2;
-            }
-
-            return kind;
+            return ParseComposition(line);
         }
 
         /// <summary>

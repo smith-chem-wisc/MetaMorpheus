@@ -670,10 +670,25 @@ namespace EngineLayer
             var glycoMods = ModificationLoader.ReadModsFromFile(glycoFile, out var errorMods);
             foreach (var glycoMod in glycoMods)
             {
-                var kind = GlycanDatabase.String2Kind(glycoMod.OriginalId);
+                // An ID with no '(' -- Hex, dHex, Galactosyl on N-term -- names a single residue, not a
+                // composition, and is kept as an ordinary modification. One that has a '(' but is not a
+                // composition is kept the same way, but said: this runs at startup, outside any try, so it
+                // must not throw, and it must not quietly become a different glycan either.
+                byte[] kind = null;
+                if (glycoMod.OriginalId.IndexOf('(') >= 0)
+                {
+                    try
+                    {
+                        kind = GlycanDatabase.ParseComposition(glycoMod.OriginalId);
+                    }
+                    catch (FormatException ex)
+                    {
+                        Warn($"The glyco modification '{glycoMod.OriginalId}' in {glycoFile} is not a glycan composition, so it is " +
+                            $"kept as an ordinary modification. {ex.Message}");
+                    }
+                }
 
-                // If we cannot parse the glycan string, we add the glycoMod as a normal modification.
-                if (kind.Sum(p => p) == 0)
+                if (kind == null || kind.Sum(p => p) == 0)
                 {
                     _AllModsKnown.Add(glycoMod);
                     continue;
