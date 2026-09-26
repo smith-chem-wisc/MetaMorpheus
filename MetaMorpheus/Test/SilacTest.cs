@@ -697,17 +697,37 @@ namespace Test
         /// WriteContaminants = false withholds a contaminant's rows from AllQuantifiedPeptides.tsv and
         /// AllQuantifiedPeaks.tsv. Under SILAC the PSMs and peaks name the labelled form
         /// (PEPTIDER(+3.988)) while the peptide table is keyed by the unlabeled one, and a channel no
-        /// spectrum identified has peaks but no PSM; every one of them must still be withheld.
+        /// spectrum identified has peaks but no PSM; every one of them must still be withheld. Under a
+        /// lysine label that carries arginine as its additional label, both residues are written back.
         /// </summary>
         [Test]
-        [TestCase(false, TestName = "SilacContaminantRowsAreWithheld_HeavyOnlyIdentified")]
-        [TestCase(true, TestName = "SilacContaminantRowsAreWithheld_LightIdentifiedHeavyQuantified")]
-        public static void SilacContaminantRowsAreWithheldInEveryLabelForm(bool lightIdentified)
+        [TestCase(false, false, TestName = "SilacContaminantRowsAreWithheld_HeavyOnlyIdentified")]
+        [TestCase(true, false, TestName = "SilacContaminantRowsAreWithheld_LightIdentifiedHeavyQuantified")]
+        [TestCase(false, true, TestName = "SilacContaminantRowsAreWithheld_LabelWithAnAdditionalLabel")]
+        public static void SilacContaminantRowsAreWithheldInEveryLabelForm(bool lightIdentified, bool withAdditionalLabel)
         {
             Residue heavyArginine = new("c", 'c', "c", Chemistry.ChemicalFormula.ParseFormula("C6H12N{15}4O"), ModificationSites.All); //+4 arginine
             Residue.AddNewResiduesToDictionary(new List<Residue> { heavyArginine });
             Residue lightArginine = Residue.GetResidue('R');
             SilacLabel heavyLabel = new(lightArginine.Letter, heavyArginine.Letter, heavyArginine.ThisChemicalFormula.Formula, heavyArginine.MonoisotopicMass - lightArginine.MonoisotopicMass);
+
+            // The spectra carry one identified form and the other channel's envelope beside it.
+            string proteinSequence = "PEPTIDER";
+            string identified = lightIdentified ? "PEPTIDER" : "PEPTIDEc";
+            double toOtherChannel = heavyArginine.MonoisotopicMass - lightArginine.MonoisotopicMass;
+            if (withAdditionalLabel)
+            {
+                // Trypsin does not cleave K before P, so the peptide carries both labelled residues.
+                Residue heavyLysine = new("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
+                Residue.AddNewResiduesToDictionary(new List<Residue> { heavyLysine });
+                Residue lightLysine = Residue.GetResidue('K');
+                SilacLabel lysineLabel = new(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass);
+                lysineLabel.AddAdditionalSilacLabel(heavyLabel);
+                heavyLabel = lysineLabel;
+                proteinSequence = "PEPKPTIDER";
+                identified = "PEPaPTIDEc";
+                toOtherChannel += heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass;
+            }
 
             SearchTask task = new()
             {
@@ -719,9 +739,6 @@ namespace Test
                 CommonParameters = new CommonParameters(digestionParams: new DigestionParams(generateUnlabeledProteinsForSilac: lightIdentified))
             };
 
-            // The spectra carry one identified form and the other channel's envelope beside it.
-            string identified = lightIdentified ? "PEPTIDER" : "PEPTIDEc";
-            double toOtherChannel = heavyArginine.MonoisotopicMass - lightArginine.MonoisotopicMass;
             List<PeptideWithSetModifications> peptides = new() { new PeptideWithSetModifications(identified, new Dictionary<string, Modification>()) };
             List<List<double>> massDifferences = new() { new List<double> { lightIdentified ? toOtherChannel : -toOtherChannel } };
             string mzmlName = @"silacContaminant.mzML";
@@ -729,7 +746,7 @@ namespace Test
 
             string xmlName = "SilacContaminantDb.xml";
             _ = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(),
-                new List<Protein> { new("PEPTIDER", "accession1") }, xmlName);
+                new List<Protein> { new(proteinSequence, "accession1") }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilacContaminant");
             _ = Directory.CreateDirectory(outputFolder);
