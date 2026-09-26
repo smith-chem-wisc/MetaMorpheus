@@ -287,6 +287,41 @@ namespace Test
             }
             var unpredictableData = unpredictableEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
             Assert.That(unpredictableData.HasHydrophobicity, Is.EqualTo(0));
+
+            // The reference distribution. A peptidoform the predictor cannot represent must be left out of the
+            // per-file, per-retention-time-bin average and spread that every other peptide is scored against, not
+            // entered as a predicted hydrophobicity of zero. Decline one unmodified peptidoform that shares its bin
+            // with another, so the bin survives and a zero would move its average. PSMs are kept only when all of
+            // their hypotheses are declined or none is, so "declined" and "absent" describe the same PSMs.
+            static int RetentionTimeBin(SpectralMatch p) => (int)(2 * Math.Round(p.ScanRetentionTime / 2d, 0));
+            var unmodifiedUnambiguous = nonNullPsms
+                .Where(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && p.FullSequence != null)
+                .Where(p => !p.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.AllModsOneIsNterminus.Any())
+                .ToList();
+            SpectralMatch declinedPsm = unmodifiedUnambiguous.First(p => unmodifiedUnambiguous
+                .Any(q => RetentionTimeBin(q) == RetentionTimeBin(p) && q.FullSequence != p.FullSequence));
+            string declined = declinedPsm.FullSequence;
+            var psmsForReference = nonNullPsms
+                .Where(p => p.BestMatchingBioPolymersWithSetMods.All(b => b.SpecificBioPolymer.FullSequence == declined)
+                         || p.BestMatchingBioPolymersWithSetMods.All(b => b.SpecificBioPolymer.FullSequence != declined))
+                .ToList();
+            string referenceFile = Path.GetFileName(declinedPsm.FullFilePath);
+            int declinedBin = RetentionTimeBin(declinedPsm);
+
+            var referenceWithDeclined = pepEngine.ComputeRetentionTimeEquivalentValues(psmsForReference, false,
+                new DeclinesSelectedRetentionTimes(new[] { declined }));
+            var referenceWithoutDeclined = pepEngine.ComputeRetentionTimeEquivalentValues(
+                psmsForReference.Where(p => p.FullSequence != declined).ToList(), false, new SSRCalc3RetentionTimePredictor());
+            var referenceWithAll = pepEngine.ComputeRetentionTimeEquivalentValues(psmsForReference, false, new SSRCalc3RetentionTimePredictor());
+
+            // A declined prediction leaves the reference exactly as if the peptidoform had never been identified...
+            Assert.That(referenceWithDeclined[referenceFile], Is.EqualTo(referenceWithoutDeclined[referenceFile]));
+            // ...and that is not vacuous: predicted, the same peptidoform does move its bin's average.
+            Assert.That(referenceWithDeclined[referenceFile][declinedBin].Item1,
+                Is.Not.EqualTo(referenceWithAll[referenceFile][declinedBin].Item1));
+            // When nothing can be predicted there is nothing to build a bin from, so there are no bins at all.
+            Assert.That(pepEngine.ComputeRetentionTimeEquivalentValues(psmsForReference, false, new NeverPredictsRetentionTime())[referenceFile],
+                Is.Empty);
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
@@ -406,6 +441,20 @@ namespace Test
             pepEngine = new PepAnalysisEngine(moreNonNullPSMsCZE, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             metrics = pepEngine.ComputePEPValuesForAllPSMs();
             Assert.That(32 >= trueCount);
+
+            // CZE: HasHydrophobicity means what it means for LC. It is 1 only when the mobility z-score was actually
+            // computed, and 0 when this file and retention-time bin have no reference distribution, so that the
+            // z-score is just the saturated maximum standing in for a missing value.
+            var czeReference = pepEngine.GetType().GetProperty("FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE");
+            czeReference.SetValue(pepEngine, new Dictionary<string, Dictionary<int, Tuple<double, double>>>
+            {
+                { Path.GetFileName(maxScorePsm.FullFilePath), new Dictionary<int, Tuple<double, double>> { { RetentionTimeBin(maxScorePsm), at } } }
+            });
+            Assert.That(pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy).HasHydrophobicity, Is.EqualTo(1));
+            czeReference.SetValue(pepEngine, new Dictionary<string, Dictionary<int, Tuple<double, double>>>());
+            PsmData czeWithoutReference = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
+            Assert.That(czeWithoutReference.HasHydrophobicity, Is.EqualTo(0));
+            Assert.That(czeWithoutReference.HydrophobicityZScore, Is.EqualTo(100));
 
             //TEST PEP calculation failure
             psmCopyForPEPFailure.RemoveAll(x => x.IsDecoy);

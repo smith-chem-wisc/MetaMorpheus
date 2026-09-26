@@ -548,8 +548,8 @@ namespace EngineLayer
                         }
                         else
                         {
-                            hydrophobicityZscore = (float)Math.Round(GetMobilityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer) * 10.0, 0);
-                            hasHydrophobicity = 1; // CZE mobility is computed from composition and always available
+                            hydrophobicityZscore = (float)Math.Round(GetMobilityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer, out bool mobilityAvailable) * 10.0, 0);
+                            hasHydrophobicity = Convert.ToSingle(mobilityAvailable);
                         }
                     }
                 }
@@ -922,10 +922,12 @@ namespace EngineLayer
         }
 
         /// <param name="predictionAvailable">
-        /// False when the retention-time predictor could not produce a value for this peptidoform -- Chronologer
-        /// rejects a sequence longer than 50 residues, shorter than 7, or carrying a non-canonical amino acid
-        /// such as selenocysteine, and any predictor can fail outright. Callers must surface this to the model
-        /// (see PsmData.HasHydrophobicity) rather than letting the returned z-score stand on its own.
+        /// False when the returned z-score carries no information about this peptidoform: either the retention-time
+        /// predictor could not produce a value for it -- Chronologer rejects a sequence longer than 50 residues,
+        /// shorter than 7, or carrying a non-canonical amino acid such as selenocysteine, and any predictor can fail
+        /// outright -- or there is no reference distribution for this file and retention-time bin to compare it
+        /// against. Either way the z-score saturates at its maximum. Callers must surface this to the model (see
+        /// PsmData.HasHydrophobicity) rather than letting the returned z-score stand on its own.
         /// </param>
         private static float GetRetentionTimeEquivalentZscore(SpectralMatch psm, IBioPolymerWithSetMods Peptide, Dictionary<string, Dictionary<int, Tuple<double, double>>> d, IRetentionTimePredictor predictor, out bool predictionAvailable)
         {
@@ -967,8 +969,14 @@ namespace EngineLayer
             return (float)hydrophobicityZscore;
         }
 
-        private float GetMobilityZScore(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide)
+        /// <param name="mobilityAvailable">
+        /// False when there is no reference distribution for this file and retention-time bin, so the z-score
+        /// saturates at its maximum and carries no information. Same meaning as the predictionAvailable flag of
+        /// <see cref="GetRetentionTimeEquivalentZscore"/>, so HasHydrophobicity means one thing for LC and CZE alike.
+        /// </param>
+        private float GetMobilityZScore(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide, out bool mobilityAvailable)
         {
+            mobilityAvailable = false;
             double mobilityZScore = double.NaN;
 
             if (FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE.ContainsKey(Path.GetFileName(psm.FullFilePath)))
@@ -977,6 +985,7 @@ namespace EngineLayer
                 if (FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE[Path.GetFileName(psm.FullFilePath)].Keys.Contains(time))
                 {
                     double predictedMobility = 100.0 * GetCifuentesMobility(selectedPeptide);
+                    mobilityAvailable = true;
 
                     mobilityZScore = Math.Abs(FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE[Path.GetFileName(psm.FullFilePath)][time].Item1 - predictedMobility) / FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE[Path.GetFileName(psm.FullFilePath)][time].Item2;
                 }
