@@ -392,6 +392,53 @@ namespace Test
             string nullOutputFolderResults = pepEngine.ComputePEPValuesForAllPSMs();
         }
 
+        /// <summary>
+        /// A full PEP run with pruning on, as glyco, crosslink and nonspecific searches do. Within one run, pruning must
+        /// not change any PEP (it never drops a match's best hypothesis), and the results block must report the count
+        /// of hypotheses it removed. With pruning off, the block must not carry that line.
+        /// </summary>
+        [Test]
+        public static void ComputePEPValues_Pruning_RemovesHypothesesButChangesNoPep()
+        {
+            List<SpectralMatch> Search(out List<(string fileName, CommonParameters fileSpecificParameters)> fsp)
+            {
+                var commonParameters = new CommonParameters(digestionParams: new DigestionParams());
+                fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("TaGe_SA_HeLa_04_subset_longestSeq.mzML", commonParameters) };
+                var dataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+                var msDataFile = new MyFileManager(true).LoadFile(dataFile, commonParameters);
+                List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, out _,
+                    ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex, ProteinDbLoader.UniprotOrganismRegex, -1);
+                var scans = MetaMorpheusTask.GetMs2Scans(msDataFile, dataFile, commonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+                SpectralMatch[] psmArray = new PeptideSpectralMatch[scans.Length];
+                new ClassicSearchEngine(psmArray, scans, new List<Modification>(), new List<Modification>(), null, null, null,
+                    proteins, new SinglePpmAroundZeroSearchMode(5), commonParameters, fsp, null, new List<string>(), false).Run();
+                var psms = psmArray.Where(p => p != null).ToList();
+                // Make some matches ambiguous: a decoy peptide as a second hypothesis at the same score.
+                var decoyPeptides = psms.Where(p => p.IsDecoy).Select(p => p.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer).ToList();
+                foreach (var (psm, decoy) in psms.Where(p => !p.IsDecoy).Zip(decoyPeptides).Take(30))
+                {
+                    psm.AddOrReplace(decoy, psm.Score, 0, true, psm.BestMatchingBioPolymersWithSetMods.First().MatchedIons);
+                    psm.ResolveAllAmbiguities();
+                }
+                new FdrAnalysisEngine(psms, 1, commonParameters, fsp, new List<string>()).Run();
+                return psms;
+            }
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\");
+
+            var keptPsms = Search(out var fsp);
+            string keptMetrics = new PepAnalysisEngine(keptPsms, "standard", fsp, outputFolder).ComputePEPValuesForAllPSMs();
+
+            var prunedPsms = Search(out fsp);
+            int hypothesesBefore = prunedPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count());
+            string prunedMetrics = new PepAnalysisEngine(prunedPsms, "standard", fsp, outputFolder, pruneAmbiguousHypotheses: true).ComputePEPValuesForAllPSMs();
+            int removed = hypothesesBefore - prunedPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count());
+
+            Assert.That(removed, Is.GreaterThan(0), "the fixture must have hypotheses to prune");
+            Assert.That(keptMetrics, Does.Not.Contain("Count of Ambiguous"));
+            Assert.That(prunedMetrics, Does.Contain($"Count of Ambiguous Peptides Removed:  {removed}"));
+            Assert.That(prunedPsms.Select(p => p.PsmFdrInfo.PEP), Is.EqualTo(keptPsms.Select(p => p.PsmFdrInfo.PEP)));
+        }
+
         [Test]
         public static void TestComputePEPValueTopDown()
         {
