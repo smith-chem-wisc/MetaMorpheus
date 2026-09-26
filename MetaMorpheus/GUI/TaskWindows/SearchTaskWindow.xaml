@@ -712,6 +712,22 @@
                                         </TextBlock>
                                     </CheckBox.ToolTip>
                                 </CheckBox>
+                                <CheckBox x:Name="WriteSdrfCheckBox" Content="Write SDRF experimental-design file">
+                                    <CheckBox.ToolTip>
+                                        <TextBlock>
+                                            Writes an SDRF-Proteomics file describing this experiment alongside the results,
+                                            so searches can be compared and mined across experiments.
+                                            <LineBreak/>
+                                            Reads the sample metadata from ExperimentalDesign.tsv beside the spectra files: an SDRF
+                                            records which sample each file came from, and nothing in a search knows that. Without
+                                            it the search still runs, a warning names what is missing, and those columns say
+                                            "not available".
+                                            <LineBreak/>
+                                            A TMT or iTRAQ search reads TmtDesign.txt instead, and writes one row for each sample
+                                            in each channel.
+                                        </TextBlock>
+                                    </CheckBox.ToolTip>
+                                </CheckBox>
 
                             </StackPanel>
                         </Grid>

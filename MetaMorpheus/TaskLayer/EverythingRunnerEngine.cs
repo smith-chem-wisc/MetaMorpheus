@@ -15,6 +15,9 @@ namespace TaskLayer
         private readonly List<(string, MetaMorpheusTask)> TaskList;
         private string OutputFolder;
         private List<string> CurrentRawDataFilenameList;
+
+        /// <summary>The files the run started from; CurrentRawDataFilenameList moves on to derivatives.</summary>
+        private readonly List<string> AcquiredRawDataFilenameList;
         private List<DbForTask> CurrentXmlDbFilenameList;
         private List<string> _warnings;
 
@@ -24,6 +27,7 @@ namespace TaskLayer
             OutputFolder = outputFolder.Trim('"');
 
             CurrentRawDataFilenameList = startingRawFilenameList;
+            AcquiredRawDataFilenameList = startingRawFilenameList?.ToList();
             CurrentXmlDbFilenameList = startingXmlDbFilenameList;
             _warnings = new();
         }
@@ -114,6 +118,7 @@ namespace TaskLayer
                     Directory.CreateDirectory(outputFolderForThisTask);
 
                 // Actual task running code
+                ok.Item2.AcquiredSpectraFiles = AcquiredRawDataFilenameList;
                 var myTaskResults = ok.Item2.RunTask(outputFolderForThisTask, CurrentXmlDbFilenameList, CurrentRawDataFilenameList, ok.Item1);
 
                 if (myTaskResults.NewDatabases != null)
