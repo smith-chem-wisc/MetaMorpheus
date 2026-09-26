@@ -172,6 +172,7 @@ namespace TaskLayer
 
             // start loading first spectra file in the background
             string fileToLoad = currentRawFileList[0];
+            var instrumentModelsByFile = new Dictionary<string, CvParam>(StringComparer.OrdinalIgnoreCase);
             Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(fileToLoad, SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
             nextFileLoadingTask.Start();
 
@@ -313,6 +314,8 @@ namespace TaskLayer
                 // ensure that the next file has finished loading from the async method
                 nextFileLoadingTask.Wait();
                 var myMsDataFile = nextFileLoadingTask.Result;
+                // Kept for the SDRF, which would otherwise read every file again after the search.
+                instrumentModelsByFile[origDataFile] = myMsDataFile.SourceFile?.InstrumentModel;
 
                 // If the file is one which does not have precursor scans, but only precursor information, then we need to set the parameters accordingly
                 // We do this by adjusting the transient combined params so that this can be done on a file by file basis. 
@@ -609,6 +612,8 @@ namespace TaskLayer
                 FixedModifications = fixedModifications,
                 ListOfDigestionParams = [.. fileSpecificCommonParams.Select(p => p.DigestionParams)],
                 CurrentRawFileList = currentRawFileList,
+                AcquiredSpectraFiles = AcquiredSpectraFiles,
+                InstrumentModelsByFile = instrumentModelsByFile,
                 MyFileManager = myFileManager,
                 NumNotches = numNotches,
                 OutputFolder = OutputFolder,
