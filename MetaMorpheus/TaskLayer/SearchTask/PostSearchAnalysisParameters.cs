@@ -7,6 +7,7 @@ using EngineLayer.DatabaseLoading;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics;
+using MzLibUtil;
 using Readers.SpectralLibrary;
 
 namespace TaskLayer
@@ -42,6 +43,15 @@ namespace TaskLayer
         public MyFileManager MyFileManager { get; set; }
         public List<DbForTask> DatabaseFilenameList { get; set; }
         public List<string> CurrentRawFileList { get; set; }
+
+        /// <summary>The acquired files the run started from (see MetaMorpheusTask.AcquiredSpectraFiles), or null.</summary>
+        public List<string> AcquiredSpectraFiles { get; set; }
+
+        /// <summary>
+        /// Each searched file's instrument model, as the search's own load of the file read it (SourceFile), keyed
+        /// by path. The SDRF takes it from here rather than opening every file a second time.
+        /// </summary>
+        public Dictionary<string, CvParam> InstrumentModelsByFile { get; set; }
         public SpectralLibrary SpectralLibrary { get; set; }
     }
 }

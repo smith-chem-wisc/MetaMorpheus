@@ -32,7 +32,9 @@ using ProteinGroup = FlashLFQ.ProteinGroup;
 
 namespace TaskLayer
 {
-    public class PostSearchAnalysisTask : MetaMorpheusTask
+    // partial so the SDRF adapter can live in its own file (PostSearchAnalysisTaskSdrf.cs) rather
+    // than adding another ~200 lines to a class that is already 1,700.
+    public partial class PostSearchAnalysisTask : MetaMorpheusTask
     {
         /// <summary>
         /// The value of mzIdentML's Enzyme/@semiSpecific for a search: true when SearchModeType is Semi or the protease is
@@ -132,6 +134,11 @@ namespace TaskLayer
             {
                 WriteDigestionCountByProtein();
                 WriteDigestionCountHistogram();
+            }
+
+            if (Parameters.SearchParameters.WriteSdrf)
+            {
+                WriteSdrf();
             }
 
             WriteFlashLFQResults();

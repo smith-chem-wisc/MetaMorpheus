@@ -161,11 +161,18 @@ namespace TaskLayer
             MigrateLegacyMostAbundantRequest();
 
             MyTaskResults = new(this);
+
+            // Reported HERE, before a single spectrum is read, rather than only at write time --
+            // a gap named up front can still be fixed cheaply, whereas one named after a three-hour
+            // search cannot. This warns; it does not refuse the run.
+            WarnAboutSdrfGaps(currentRawFileList);
+
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
 
             // start loading first spectra file in the background
             string fileToLoad = currentRawFileList[0];
+            var instrumentModelsByFile = new Dictionary<string, CvParam>(StringComparer.OrdinalIgnoreCase);
             Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(fileToLoad, SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
             nextFileLoadingTask.Start();
 
@@ -307,6 +314,8 @@ namespace TaskLayer
                 // ensure that the next file has finished loading from the async method
                 nextFileLoadingTask.Wait();
                 var myMsDataFile = nextFileLoadingTask.Result;
+                // Kept for the SDRF, which would otherwise read every file again after the search.
+                instrumentModelsByFile[origDataFile] = myMsDataFile.SourceFile?.InstrumentModel;
 
                 // If the file is one which does not have precursor scans, but only precursor information, then we need to set the parameters accordingly
                 // We do this by adjusting the transient combined params so that this can be done on a file by file basis. 
@@ -603,6 +612,8 @@ namespace TaskLayer
                 FixedModifications = fixedModifications,
                 ListOfDigestionParams = [.. fileSpecificCommonParams.Select(p => p.DigestionParams)],
                 CurrentRawFileList = currentRawFileList,
+                AcquiredSpectraFiles = AcquiredSpectraFiles,
+                InstrumentModelsByFile = instrumentModelsByFile,
                 MyFileManager = myFileManager,
                 NumNotches = numNotches,
                 OutputFolder = OutputFolder,
@@ -622,6 +633,68 @@ namespace TaskLayer
             };
             return postProcessing.Run();
         }
+
+        /// <summary>
+        /// Reports, before the search starts, which parts of the SDRF this run will not be able to
+        /// fill in. It does NOT refuse the run.
+        ///
+        /// It used to. That was stricter than the specification -- which marks organism part
+        /// required but explicitly permits the reserved words -- and stricter than the community,
+        /// a fifth of whose curated cells are one. It was also self-defeating: a user who is blocked
+        /// turns the feature off, and then there is no file at all.
+        ///
+        /// What replaces the refusal is not silence. The gaps are named here, before the run, so
+        /// they can still be fixed cheaply; they are named again in the coverage report afterwards,
+        /// against what was actually written. An SDRF padded with reserved words is honest and
+        /// spec-conformant; one whose emptiness is never mentioned is how a corpus fills with holes.
+        /// </summary>
+        private void WarnAboutSdrfGaps(List<string> currentRawFileList)
+        {
+            if (!SearchParameters.WriteSdrf || currentRawFileList is null || currentRawFileList.Count == 0)
+                return;
+
+            // This check only warns, so it must never be what stops a search: a design another
+            // program holds open (Excel locks what it opens) is reported, not thrown.
+            string designPath = Path.Combine(
+                Path.GetDirectoryName(currentRawFileList.First()) ?? string.Empty,
+                GlobalVariables.ExperimentalDesignFileName);
+
+            if (!File.Exists(designPath))
+            {
+                Warn("SDRF output is on, but there is no " + GlobalVariables.ExperimentalDesignFileName +
+                     " beside the spectra files (" + designPath + "). The search parameters will be " +
+                     "recorded in full; condition, replicate and fraction will not, and the sample " +
+                     "columns will say 'not available'. Set up the experimental design to fix that.");
+            }
+            else
+            {
+                try
+                {
+                    ExperimentalDesign.ReadExperimentalDesign(designPath, currentRawFileList, out var designErrors);
+                    if (designErrors.Any())
+                        Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
+                             " cannot be used as it stands, so the SDRF will describe the search only: " +
+                             string.Join("; ", designErrors));
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                    Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
+                         " could not be read before the search (" + e.Message + "). If it is still " +
+                         "unreadable when the SDRF is written, the SDRF will describe the search only.");
+                }
+            }
+
+            // Labelled runs do not yet express comment[label]: SDRF wants one row per sample per
+            // channel. SILAC has no channel-to-sample mapping at all; isobaric runs have one in
+            // TmtDesign.txt, but the SDRF writer does not read it yet. Guessing would invent an
+            // experimental design.
+            if (SearchParameters.DoMultiplexQuantification
+                || SearchParameters.SilacLabels?.Any() == true)
+                Warn("SDRF output on a labelled search: comment[label] is not filled in yet, because " +
+                     "the SDRF is written one row per file, not one row per channel. Every other column " +
+                     "will be written.");
+        }
+
 
         private static MassDiffAcceptor ParseSearchMode(string text)
         {
