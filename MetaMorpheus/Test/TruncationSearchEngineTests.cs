@@ -317,6 +317,44 @@ namespace Test
                 Is.EquivalentTo(new[] { "P1", "P1b" }));
         }
 
+        /// <summary>
+        /// An inherited full-length PSM keeps every Pass 1 hypothesis, so a Pass 1 match that was ambiguous
+        /// between two accessions stays ambiguous in the truncation output (#4a).
+        /// </summary>
+        [Test]
+        public void InheritAsFullLength_KeepsPass1ProteinAmbiguity()
+        {
+            var isoform = BuildTopDownProteoform(RepeatTo(AlphabetP1, 50), "P1b");
+            Ms2ScanWithSpecificMass scan = BuildScan(1, _p1.MonoisotopicMass, SeriesMasses(_p1, FragmentationTerminus.Both));
+            SpectralMatch pass1Match = Pass1Match(_p1, scan, notch: 0);
+            pass1Match.AddOrReplace(isoform, pass1Match.Score, 0, reportAllAmbiguity: true, new List<MatchedFragmentIon>());
+
+            SpectralMatch inherited = TruncationPass3.InheritAsFullLength(pass1Match, scan, 0, _cp);
+            inherited.ResolveAllAmbiguities();
+
+            Assert.That(inherited.BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.Parent.Accession),
+                Is.EquivalentTo(new[] { "P1", "P1b" }));
+            Assert.That(inherited.BestMatchingBioPolymersWithSetMods.Select(b => ((PeptideWithSetModifications)b.SpecificBioPolymer).Description),
+                Is.All.EqualTo(TruncationPass3.FullLength));
+        }
+
+        /// <summary>
+        /// When every parent is excluded as oversized, the index is empty and every scan is a no-winner rather
+        /// than an index-out-of-range on the missing heaviest parent.
+        /// </summary>
+        [Test]
+        public void NoIndexableParents_EveryScanIsNoWinner()
+        {
+            Ms2ScanWithSpecificMass scan = BuildScan(2, _p1.MonoisotopicMass - 500, SeriesMasses(_p1, FragmentationTerminus.N));
+            var engine = new TruncationSearchEngine(new List<TruncationParent> { new(_p1, "P1", "P1", false) },
+                new[] { scan }, _cp, new TruncationAcceptor(_cp.PrecursorMassTolerance), maxFragmentSize: 1000);
+
+            List<TruncationParentSelection> selections = engine.Run();
+
+            Assert.That(engine.IndexedParentCount, Is.EqualTo(0));
+            Assert.That(selections.Single().Outcome, Is.EqualTo(TruncationScanOutcome.NoWinner));
+        }
+
         [Test]
         public void OversizedParent_ExcludedAndWarned()
         {
