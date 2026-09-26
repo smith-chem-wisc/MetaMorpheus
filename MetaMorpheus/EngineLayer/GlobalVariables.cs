@@ -571,8 +571,9 @@ namespace EngineLayer
             }
 
             // Added by name because it deliberately does not live in the swept folder -- see
-            // CustomOGlycanDatabasePath. Guarded so that a seeding failure earlier cannot put a path to a
-            // file that is not there into the list the task window offers.
+            // CustomOGlycanDatabasePath. A failed seeding does not get this far: EnsureExists throws and
+            // startup stops, as it does for every custom file. The guard is the same File.Exists check the
+            // other custom files make, and only matters if the file is gone again by the time we get here.
             if (File.Exists(CustomOGlycanDatabasePath))
             {
                 OGlycanDatabasePaths.Add(CustomOGlycanDatabasePath);
