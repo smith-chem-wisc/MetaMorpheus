@@ -28,7 +28,9 @@ using Omics.Modifications;
 using Omics.SpectrumMatch;
 using EngineLayer.SpectrumMatch;
 using Omics.Fragmentation;
+using MassSpectrometry.MzSpectra;
 using PredictionClients.Koina.AbstractClasses;
+using PredictionClients.Koina.Client;
 using PredictionClients.Koina.SupportedModels.FragmentIntensityModels;
 using PredictionClients.Koina.Util;
 using Readers.SpectralLibrary;
@@ -96,6 +98,12 @@ namespace TaskLayer
                 ComputeSpectrumSimilarity(Parameters.SpectralLibrary);
                 CalculatePsmAndPeptideFdr(Parameters.AllSpectralMatches);
                 DisambiguateSpectralMatches();
+            }
+            else if (Parameters.SearchParameters.UsePredictedSpectraForSpectralAngle)
+            {
+                // Semi- and non-specific searches run FDR inside the search engine, before this task, so
+                // there is no point at which a predicted angle could still reach PEP.
+                SkipPredictedSpectralAngles("semi- and non-specific searches compute FDR before post-search analysis");
             }
             ConstructResultsDictionary();
             DoMassDifferenceLocalizationAnalysis();
@@ -173,34 +181,140 @@ namespace TaskLayer
             if (!Parameters.SearchParameters.UsePredictedSpectraForSpectralAngle)
                 return;
 
-            var psmsToScore = GetSpectralMatchesWithoutComputedSpectralAngle();
-            if (psmsToScore.Count == 0)
-                return;
-
-            // Build a combined lookup: real library spectra take precedence, predicted
-            // spectra fill in the gaps.
-            var lookup = BuildCombinedSpectrumLookup(psmsToScore, spectralLibrary);
-
-            int scored = 0;
-            foreach (var psm in psmsToScore)
+            if (UnsupportedForPrositHcd() is string reason)
             {
-                var key = (psm.FullSequence, psm.ScanPrecursorCharge);
-                if (lookup.TryGetValue(key, out var spectrum))
-                {
-                    string result = spectrum.CalculateSpectralAngleOnTheFly(psm.MatchedFragmentIons);
-                    psm.SpectralAngle = double.TryParse(result, NumberStyles.Float, CultureInfo.InvariantCulture, out double angle) ? angle : -1;
-                }
-                else
-                {
-                    psm.SpectralAngle = -1;
-                }
-
-                if (psm.SpectralAngle >= 0)
-                    scored++;
+                SkipPredictedSpectralAngles(reason);
+                return;
             }
 
-            Log($"Supplemental spectral angles assigned to {scored} of {psmsToScore.Count} {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s", new List<string> { Parameters.SearchTaskId });
+            _predictionReport = new PredictionReport();
+            var psmsToScore = GetSpectralMatchesWithoutComputedSpectralAngle();
+            if (psmsToScore.Count > 0)
+            {
+                // Build a combined lookup: real library spectra take precedence, predicted
+                // spectra fill in the gaps.
+                var lookup = BuildCombinedSpectrumLookup(psmsToScore, spectralLibrary);
+
+                foreach (var psm in psmsToScore)
+                {
+                    var key = (psm.FullSequence, psm.ScanPrecursorCharge);
+                    psm.SpectralAngle = lookup.TryGetValue(key, out var spectrum)
+                        ? SpectralAngleByAnnotation(psm.MatchedFragmentIons, spectrum.MatchedFragmentIons)
+                        : -1;
+
+                    if (psm.SpectralAngle >= 0)
+                        _predictionReport.Scored++;
+                }
+            }
+            _predictionReport.Considered = psmsToScore.Count;
+
+            Log($"Supplemental spectral angles assigned to {_predictionReport.Scored} of {psmsToScore.Count} {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s", new List<string> { Parameters.SearchTaskId });
+            Parameters.SearchTaskResults.AddTaskSummaryText(_predictionReport.ToString());
         }
+
+        /// <summary>
+        /// Why Prosit 2020 HCD cannot score this search, or null if it can. The model predicts b and y ions
+        /// of peptides under beam-type fragmentation, so anything else would be scored against ions it
+        /// never predicts: an ETD search's c and z ions never pair, and every PSM would get a confident
+        /// looking 0 that PEP reads as real. Oligos would also be sent to Koina as if they were peptides.
+        /// </summary>
+        private string UnsupportedForPrositHcd()
+        {
+            if (GlobalVariables.AnalyteType != AnalyteType.Peptide)
+                return $"Prosit predicts peptides, and this is a {GlobalVariables.AnalyteType} search";
+
+            // Autodetect and LowCID are refused too: the first is decided per scan, which a PSM does not
+            // record, and the second stores binned XCorr intensities that no prediction resembles.
+            var dissociationTypes = new[] { CommonParameters.DissociationType }
+                .Concat(FileSpecificParameters?.Select(f => f.Parameters.DissociationType) ?? Enumerable.Empty<DissociationType>())
+                .Distinct()
+                .ToList();
+            var unsupported = dissociationTypes.Where(d => d != DissociationType.HCD && d != DissociationType.CID).ToList();
+            if (unsupported.Count > 0)
+                return $"Prosit 2020 predicts HCD spectra, and this search uses {string.Join(", ", unsupported)}";
+
+            if (dissociationTypes.Contains(DissociationType.CID))
+                Warn("Predicted spectral angles come from an HCD model; on CID spectra they are an approximation.");
+            return null;
+        }
+
+        /// <summary>The flag is on but this search cannot use it: say so, both now and in results.txt.</summary>
+        private void SkipPredictedSpectralAngles(string reason)
+        {
+            string message = $"Predicted spectral angles were requested but not computed: {reason}.";
+            Warn(message);
+            Parameters.SearchTaskResults.AddTaskSummaryText(message);
+        }
+
+        /// <summary>
+        /// Normalized spectral contrast angle between a PSM's matched ions and a library or predicted
+        /// spectrum, with ions paired by annotation (type, number, charge, neutral loss) rather than by m/z.
+        /// Both sides are already annotated, so pairing needs no tolerance: the experimental ions were
+        /// accepted at the search's own product tolerance, and on low-resolution data their m/z can sit far
+        /// enough from the predicted m/z that an m/z pairing would score the mass error instead of the
+        /// intensities.
+        ///
+        /// Otherwise this follows the spectral-library search angle (SpectralLibrarySearchFunction):
+        /// square-root intensities, and every library ion counts, with an unobserved one at intensity 0,
+        /// while experimental ions the library lacks are ignored. Unlike that path there is no 300 m/z floor.
+        ///
+        /// Returns -1, the "not computed" sentinel, when the library spectrum has no ions.
+        /// </summary>
+        internal static double SpectralAngleByAnnotation(List<MatchedFragmentIon> experimental, List<MatchedFragmentIon> library)
+        {
+            if (library == null || library.Count == 0)
+                return -1;
+
+            // First wins: MatchFragmentIons adds the directly matched ions before any complementary ions,
+            // so a directly observed intensity is not replaced by one derived from the complement.
+            var observed = new Dictionary<IonAnnotation, double>();
+            foreach (var ion in experimental)
+                observed.TryAdd(IonAnnotation.Of(ion), ion.Intensity);
+
+            var experimentalIntensities = new double[library.Count];
+            var libraryIntensities = new double[library.Count];
+            for (int i = 0; i < library.Count; i++)
+            {
+                libraryIntensities[i] = Math.Sqrt(Math.Max(0, library[i].Intensity));
+                experimentalIntensities[i] = observed.TryGetValue(IonAnnotation.Of(library[i]), out double intensity)
+                    ? Math.Sqrt(Math.Max(0, intensity))
+                    : 0;
+            }
+
+            // Clamped: proportional vectors can give a cosine a hair above 1, and Acos of that is NaN.
+            double cosine = Math.Clamp(SpectralSimilarity.CosineOfAlignedVectors(experimentalIntensities, libraryIntensities), -1, 1);
+            return 1 - 2 * Math.Acos(cosine) / Math.PI;
+        }
+
+        /// <summary>What identifies a fragment ion independently of where it was measured.</summary>
+        private readonly record struct IonAnnotation(ProductType ProductType, int FragmentNumber,
+            ProductType? SecondaryProductType, int SecondaryFragmentNumber, int Charge, double NeutralLoss)
+        {
+            public static IonAnnotation Of(MatchedFragmentIon ion) => new(
+                ion.NeutralTheoreticalProduct.ProductType, ion.NeutralTheoreticalProduct.FragmentNumber,
+                ion.NeutralTheoreticalProduct.SecondaryProductType, ion.NeutralTheoreticalProduct.SecondaryFragmentNumber,
+                ion.Charge, Math.Round(ion.NeutralTheoreticalProduct.NeutralLoss, 2));
+        }
+
+        /// <summary>
+        /// What the predicted-angle step did, for results.txt. With the flag on, q-values depend on whether
+        /// Koina answered, so two runs of the same data can differ; this is the record that explains why.
+        /// </summary>
+        private sealed class PredictionReport
+        {
+            public string Model;
+            public int Considered, FromLibrary, Requested, Predicted, Rejected, Scored;
+            public string Failure;
+
+            public override string ToString() =>
+                $"Predicted spectral angles: model {Model ?? "none called"} at {HTTP.ModelsURL}; "
+                + $"{Considered} spectral matches without an angle, {FromLibrary} spectral library entries available; "
+                + $"{Requested} peptide/charge pairs requested, {Predicted} predicted, {Rejected} rejected by the model"
+                + (Failure == null ? "" : $", request failed ({Failure})")
+                + $"; {Scored} angles assigned.";
+        }
+
+        private PredictionReport _predictionReport = new();
 
         /// <summary>
         /// Builds a (FullSequence, Charge) -> LibrarySpectrum map by merging two
@@ -240,18 +354,20 @@ namespace TaskLayer
                     lookup.Clear();
                 }
             }
+            _predictionReport.FromLibrary = lookup.Count;
 
             // 2. Figure out which PSMs the library didn't cover and predict only those.
             //    Deduplicate on (FullSequence, PrecursorCharge) — different CEs for the
             //    same peptide/charge would otherwise spawn redundant API calls.
             var needsPrediction = BuildPredictionInputs(psmsToScore, lookup);
-            if (needsPrediction.Count == 0)
+            if (needsPrediction.Count == 0 || GlobalVariables.StopLoops)
                 return lookup;
 
             // 3. Run the predictions and merge the results in. Koina is a third-party web service,
             //    and an outage, a timeout or a malformed response must cost the angles, not a search
             //    that has already finished. This runs before FDR, so a throw here would lose every
             //    output file.
+            _predictionReport.Requested = needsPrediction.Count;
             List<LibrarySpectrum> predictedSpectra;
             try
             {
@@ -259,10 +375,16 @@ namespace TaskLayer
             }
             catch (Exception e)
             {
-                Warn($"Predicted spectra were unavailable, so {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s without a library spectrum keep a spectral angle of -1. {e.GetType().Name}: {e.Message}");
+                _predictionReport.Failure = $"{e.GetType().Name}: {e.Message}";
+                Warn($"Predicted spectra were unavailable, so {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s without a library spectrum keep a spectral angle of -1. {_predictionReport.Failure}");
                 return lookup;
             }
 
+            // The call cannot be interrupted, so a Stop pressed while it ran takes effect here.
+            if (GlobalVariables.StopLoops)
+                return lookup;
+
+            _predictionReport.Predicted = predictedSpectra.Count;
             MergePredictedSpectra(predictedSpectra, lookup);
             return lookup;
         }
@@ -279,15 +401,37 @@ namespace TaskLayer
         /// a peptide longer than 30) are dropped by the model before the request is sent and come back
         /// with no spectrum; they are counted in a warning rather than silently lost.
         /// </summary>
-        private static List<LibrarySpectrum> PredictWithProsit(List<FragmentIntensityPredictionInput> inputs)
+        private List<LibrarySpectrum> PredictWithProsit(List<FragmentIntensityPredictionInput> inputs)
         {
             var model = new Prosit2020IntensityHCD(
-                modHandlingMode: Omics.SequenceConversion.SequenceConversionHandlingMode.ReturnNull, fragmentIonMappingMode: FragmentIonMappingMode.MapToInputFullSequence);
+                modHandlingMode: Omics.SequenceConversion.SequenceConversionHandlingMode.ReturnNull,
+                fragmentIonMappingMode: FragmentIonMappingMode.MapToInputFullSequence,
+                maxNumberOfBatchesPerRequest: MaxConcurrentPredictionRequests);
+            _predictionReport.Model = model.ModelName;
             model.Predict(inputs);
+            return LibrarySpectraFrom(model);
+        }
 
+        /// <summary>
+        /// How many requests go to Koina at once. mzLib's default sends every batch of a request
+        /// together, about 60 simultaneous POSTs for a 60,000-peptide search, to a public academic
+        /// service; and one failed batch fails the whole call, so fewer in flight is also fewer ways
+        /// to lose the batches that did succeed.
+        /// </summary>
+        internal const int MaxConcurrentPredictionRequests = 4;
+
+        /// <summary>
+        /// Library spectra from a model that has run. Inputs Prosit rejected come back with no
+        /// intensities and are counted rather than silently lost. Separate from the request so the
+        /// conversion - including a modified FullSequence mapped back through
+        /// FragmentIonMappingMode.MapToInputFullSequence - can be tested without the network.
+        /// </summary>
+        internal List<LibrarySpectrum> LibrarySpectraFrom(FragmentIntensityModel model)
+        {
             int rejected = model.Predictions.Count(p => p.FragmentIntensities == null);
+            _predictionReport.Rejected = rejected;
             if (rejected > 0)
-                Warn($"Prosit could not predict {rejected} of {inputs.Count} peptide/charge pairs (unsupported sequence, modification or charge); those keep a spectral angle of -1.");
+                Warn($"Prosit could not predict {rejected} of {model.Predictions.Count} peptide/charge pairs (unsupported sequence, modification or charge); those keep a spectral angle of -1.");
 
             return model.GenerateLibrarySpectraFromPredictions(new double?[model.Predictions.Count], out _);
         }
@@ -313,8 +457,11 @@ namespace TaskLayer
 
         /// <summary>
         /// Which PSMs the library did not cover, as one prediction request each. Deduplicated on
-        /// (FullSequence, PrecursorCharge): the same peptide and charge acquired at different
-        /// collision energies would otherwise spawn redundant calls for the same answer.
+        /// (FullSequence, PrecursorCharge), deliberately not on collision energy: the lookup that
+        /// scores PSMs is keyed the same way, as the spectral library is. The prediction is made at the
+        /// energy of the first PSM for that key, and the PSMs arrive sorted best first, so it is the
+        /// best-scoring PSM's energy. In a multi-file run acquired at different NCEs, every file is
+        /// scored against the prediction at that one energy.
         ///
         /// Separate from the request itself so it can be unit tested. Everything here is a pure
         /// function of the PSMs and the library lookup; only the Predict call that consumes it

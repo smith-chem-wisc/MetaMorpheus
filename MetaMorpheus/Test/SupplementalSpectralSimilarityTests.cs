@@ -14,6 +14,8 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Readers.SpectralLibrary;
 using PredictionClients.Koina.AbstractClasses;
+using Omics.Digestion;
+using EngineLayer.DatabaseLoading;
 using TaskLayer;
 
 namespace Test
@@ -96,19 +98,38 @@ namespace Test
             return psm;
         }
 
-        /// <summary>A task with predictions switched on, and the remote call stubbed to return nothing.</summary>
-        private static PostSearchAnalysisTask TaskWith(params SpectralMatch[] psms) =>
-            new()
+        /// <summary>
+        /// A task with predictions switched on for an HCD peptide search, and the remote call stubbed to
+        /// return nothing.
+        /// </summary>
+        private static PostSearchAnalysisTask TaskWith(params SpectralMatch[] psms)
+        {
+            var task = new PostSearchAnalysisTask
             {
-                Parameters = new PostSearchAnalysisParameters
-                {
-                    SearchParameters = new SearchParameters { UsePredictedSpectraForSpectralAngle = true },
-                    AllSpectralMatches = psms.ToList(),
-                    OutputFolder = Path.GetTempPath(),
-                    SearchTaskId = "test"
-                },
+                CommonParameters = CommonParams,
                 SpectrumPredictor = _ => new List<LibrarySpectrum>()
             };
+            task.Parameters = new PostSearchAnalysisParameters
+            {
+                SearchParameters = new SearchParameters { UsePredictedSpectraForSpectralAngle = true },
+                AllSpectralMatches = psms.ToList(),
+                OutputFolder = Path.GetTempPath(),
+                SearchTaskId = "test",
+                SearchTaskResults = new MyTaskResults(task)
+            };
+            return task;
+        }
+
+        /// <summary>A PSM whose matched ions are replaced, keeping its annotations.</summary>
+        private static void SetMatchedIons(SpectralMatch psm, IEnumerable<MatchedFragmentIon> ions)
+        {
+            var list = ions.ToList();
+            psm.MatchedFragmentIons.Clear();
+            psm.MatchedFragmentIons.AddRange(list);
+        }
+
+        private static MatchedFragmentIon WithMzAndIntensity(MatchedFragmentIon ion, double mz, double intensity) =>
+            new(ion.NeutralTheoreticalProduct, mz, intensity, ion.Charge);
 
         private static LibrarySpectrum LibrarySpectrumFor(SpectralMatch psm) =>
             new(psm.FullSequence, psm.ScanPrecursorMonoisotopicPeakMz, psm.ScanPrecursorCharge,
@@ -235,6 +256,266 @@ namespace Test
             task.ComputeSpectrumSimilarity(LibraryOf(psm));
 
             Assert.That(psm.SpectralAngle, Is.EqualTo(0), "zero is a score, not a sentinel");
+        }
+
+        // ---------- the angle itself ----------
+
+        /// <summary>
+        /// Ions are paired by annotation, so an m/z offset between the matched ions and the prediction does
+        /// not move the angle. Identical intensities at 50 ppm (wider than a fixed 20 ppm window) score 1.
+        /// Pairing by m/z scored exactly this case 0.
+        /// </summary>
+        [Test]
+        public void MassErrorDoesNotChangeTheAngle()
+        {
+            var psm = ResolvedPsm("ELVISLIVESK", 2);
+            var ideal = psm.MatchedFragmentIons.Select((m, i) => WithMzAndIntensity(m, m.Mz, 100 + 50 * i)).ToList();
+            SetMatchedIons(psm, ideal.Select(m => WithMzAndIntensity(m, m.Mz * (1 + 50e-6), m.Intensity)));
+            var task = TaskWith(psm);
+            task.SpectrumPredictor = _ => new List<LibrarySpectrum>
+            {
+                new(psm.FullSequence, psm.ScanPrecursorMonoisotopicPeakMz, 2, ideal, 1.0)
+            };
+
+            task.ComputeSpectrumSimilarity(null);
+
+            Assert.That(psm.SpectralAngle, Is.EqualTo(1).Within(1e-7));
+        }
+
+        /// <summary>
+        /// A value, not a range. Two library ions of equal intensity, one observed: the square-root
+        /// vectors are (1, 0) and (1, 1), the cosine is 1/sqrt(2), so the normalized angle is exactly 0.5.
+        /// An experimental ion the library lacks is ignored, as in the spectral-library search.
+        /// </summary>
+        [Test]
+        public void HalfTheLibraryObservedScoresOneHalf()
+        {
+            var ions = ResolvedPsm("ELVISLIVESK", 2).MatchedFragmentIons;
+            var library = new List<MatchedFragmentIon> { WithMzAndIntensity(ions[0], ions[0].Mz, 4), WithMzAndIntensity(ions[1], ions[1].Mz, 4) };
+            var experimental = new List<MatchedFragmentIon> { WithMzAndIntensity(ions[0], ions[0].Mz, 9), WithMzAndIntensity(ions[2], ions[2].Mz, 1000) };
+
+            Assert.That(PostSearchAnalysisTask.SpectralAngleByAnnotation(experimental, library), Is.EqualTo(0.5).Within(1e-12));
+        }
+
+        /// <summary>The same fragment at another charge is a different peak and does not pair.</summary>
+        [Test]
+        public void ChargeIsPartOfTheAnnotation()
+        {
+            var ion = ResolvedPsm("ELVISLIVESK", 2).MatchedFragmentIons[0];
+            var library = new List<MatchedFragmentIon> { ion };
+            var experimental = new List<MatchedFragmentIon> { new(ion.NeutralTheoreticalProduct, ion.Mz, ion.Intensity, 2) };
+
+            Assert.That(PostSearchAnalysisTask.SpectralAngleByAnnotation(experimental, library), Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// A library or predicted spectrum with no ions cannot be compared: the PSM keeps the sentinel rather
+        /// than throwing between the search and FDR.
+        /// </summary>
+        [Test]
+        public void AnEmptyLibrarySpectrumLeavesTheSentinel()
+        {
+            var psm = ResolvedPsm("PEPTIDEK", 2);
+            var task = TaskWith(psm);
+            task.SpectrumPredictor = _ => new List<LibrarySpectrum>
+            {
+                new(psm.FullSequence, psm.ScanPrecursorMonoisotopicPeakMz, 2, new List<MatchedFragmentIon>(), 1.0)
+            };
+
+            Assert.DoesNotThrow(() => task.ComputeSpectrumSimilarity(null));
+            Assert.That(psm.SpectralAngle, Is.EqualTo(-1));
+        }
+
+        // ---------- what Prosit HCD can score ----------
+
+        /// <summary>
+        /// Prosit 2020 HCD predicts b and y ions. On any other fragmentation the matched ions never pair, and
+        /// every PSM would carry a 0 that PEP reads as real, so nothing is requested or scored and the user is
+        /// told, in results.txt as well as the log.
+        /// </summary>
+        [TestCase(DissociationType.ETD)]
+        [TestCase(DissociationType.EThcD)]
+        [TestCase(DissociationType.LowCID)]
+        [TestCase(DissociationType.Autodetect)]
+        public void DissociationTypesPrositCannotPredictAreSkipped(DissociationType dissociationType)
+        {
+            var psm = ResolvedPsm("PEPTIDEK", 2);
+            var task = TaskWith(psm);
+            task.CommonParameters = new CommonParameters(dissociationType: dissociationType);
+            task.SpectrumPredictor = _ => throw new InvalidOperationException("must not be called");
+
+            task.ComputeSpectrumSimilarity(LibraryOf(psm));
+
+            Assert.That(psm.SpectralAngle, Is.EqualTo(-1));
+            Assert.That(_warnings, Has.Exactly(1).Contains("not computed").And.Contains(dissociationType.ToString()));
+            Assert.That(task.Parameters.SearchTaskResults.ToString(), Does.Contain("not computed"));
+        }
+
+        /// <summary>A file-specific override to ETD disqualifies the search just as the task setting would.</summary>
+        [Test]
+        public void AFileSpecificDissociationTypeIsCheckedToo()
+        {
+            var psm = ResolvedPsm("PEPTIDEK", 2);
+            var task = TaskWith(psm);
+            task.FileSpecificParameters = new List<(string, CommonParameters)> { ("etd.raw", new CommonParameters(dissociationType: DissociationType.ETD)) };
+            task.SpectrumPredictor = _ => throw new InvalidOperationException("must not be called");
+
+            task.ComputeSpectrumSimilarity(null);
+
+            Assert.That(_warnings, Has.Exactly(1).Contains("ETD"));
+        }
+
+        /// <summary>CID is close enough to be useful, but the user is told the model is HCD.</summary>
+        [Test]
+        public void CidIsScoredWithAWarning()
+        {
+            var psm = ResolvedPsm("PEPTIDEK", 2);
+            var task = TaskWith(psm);
+            task.CommonParameters = new CommonParameters(dissociationType: DissociationType.CID);
+
+            task.ComputeSpectrumSimilarity(LibraryOf(psm));
+
+            Assert.That(psm.SpectralAngle, Is.EqualTo(1).Within(1e-7));
+            Assert.That(_warnings, Has.Exactly(1).Contains("approximation"));
+        }
+
+        /// <summary>An oligo search must not send its sequences to Koina as if they were peptides.</summary>
+        [Test]
+        public void OligoSearchesAreSkipped()
+        {
+            var psm = ResolvedPsm("PEPTIDEK", 2);
+            var task = TaskWith(psm);
+            task.SpectrumPredictor = _ => throw new InvalidOperationException("must not be called");
+            var analyteType = GlobalVariables.AnalyteType;
+            try
+            {
+                GlobalVariables.AnalyteType = AnalyteType.Oligo;
+                task.ComputeSpectrumSimilarity(null);
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = analyteType;
+            }
+
+            Assert.That(_warnings, Has.Exactly(1).Contains("Oligo"));
+        }
+
+        // ---------- the record in results.txt ----------
+
+        /// <summary>
+        /// With the flag on, q-values depend on whether Koina answered. The counts go into results.txt so
+        /// two runs that disagree can be explained afterwards.
+        /// </summary>
+        [Test]
+        public void TheOutcomeIsRecordedInTheTaskSummary()
+        {
+            var covered = ResolvedPsm("PEPTIDEK", 2);
+            var uncovered = ResolvedPsm("ELVISLIVESK", 3);
+            var task = TaskWith(covered, uncovered);
+            task.SpectrumPredictor = _ => new List<LibrarySpectrum> { LibrarySpectrumFor(uncovered) };
+
+            task.ComputeSpectrumSimilarity(LibraryOf(covered));
+
+            Assert.That(task.Parameters.SearchTaskResults.ToString(), Does.Contain(
+                "2 spectral matches without an angle, 1 spectral library entries available; 1 peptide/charge pairs requested, 1 predicted, 0 rejected by the model; 2 angles assigned."));
+        }
+
+        [Test]
+        public void AFailedRequestIsRecordedInTheTaskSummary()
+        {
+            var psm = ResolvedPsm("PEPTIDEK", 2);
+            var task = TaskWith(psm);
+            task.SpectrumPredictor = _ => throw new HttpRequestException("Koina is down");
+
+            task.ComputeSpectrumSimilarity(null);
+
+            Assert.That(task.Parameters.SearchTaskResults.ToString(), Does.Contain("request failed (HttpRequestException: Koina is down)"));
+        }
+
+        /// <summary>
+        /// The prediction-to-library conversion for a MODIFIED peptide, offline. The FullSequence is the one
+        /// MetaMorpheus writes (fixed carbamidomethyl C, variable oxidised M); under MapToInputFullSequence
+        /// mzLib rebuilds the peptide from that string, and the spectrum must come back under the same key
+        /// the PSM looks up with. A throw here would land in the catch and silently drop every prediction.
+        /// </summary>
+        [Test]
+        public void AModifiedPredictionComesBackUnderThePsmKey()
+        {
+            var carbamidomethyl = GlobalVariables.AllModsKnown.First(m => m.IdWithMotif == "Carbamidomethyl on C" && m.ModificationType == "Common Fixed");
+            var oxidation = GlobalVariables.AllModsKnown.First(m => m.IdWithMotif == "Oxidation on M" && m.ModificationType == "Common Variable");
+            var peptide = new Protein("PEPCTIDEMK", "accession")
+                .Digest(CommonParams.DigestionParams, new List<Omics.Modifications.Modification> { carbamidomethyl },
+                        new List<Omics.Modifications.Modification> { oxidation })
+                .First(p => p.AllModsOneIsNterminus.Count == 2);
+            var model = new PredictedProsit(new PeptideFragmentIntensityPrediction(
+                peptide.FullSequence, peptide.FullSequence, 2,
+                new List<string> { "b2+1", "y3+1", "y4+1" }, new List<double> { 0, 0, 0 }, new List<double> { 0.2, 1.0, 0.5 }));
+
+            var spectra = TaskWith().LibrarySpectraFrom(model);
+
+            Assert.That(spectra, Has.Count.EqualTo(1));
+            Assert.That(spectra[0].Sequence, Is.EqualTo(peptide.FullSequence));
+            Assert.That(spectra[0].MatchedFragmentIons.Select(i => i.Annotation), Is.EquivalentTo(new[] { "b2+1", "y3+1", "y4+1" }));
+            var y3 = spectra[0].MatchedFragmentIons.Single(i => i.Annotation == "y3+1");
+            Assert.That(y3.NeutralTheoreticalProduct.NeutralMass,
+                Is.EqualTo(new PeptideWithSetModifications("EM[Common Variable:Oxidation on M]K", GlobalVariables.AllModsKnownDictionary).MonoisotopicMass).Within(1e-6),
+                "the oxidised M must be in the fragment masses");
+        }
+
+        /// <summary>
+        /// Whole searches with the flag on that the feature cannot serve, from the call site to results.txt.
+        /// Semi-specific searches run FDR before post-search analysis, and an ETD search has no b/y ions to
+        /// pair; both must say so in results.txt rather than silently match a run with the flag off. Neither
+        /// reaches the network, so this runs offline.
+        /// </summary>
+        [TestCase("semi")]
+        [TestCase("etd")]
+        public void ASearchTheFeatureCannotServeSaysSoInResults(string kind)
+        {
+            var searchTask = kind == "semi"
+                ? new SearchTask
+                {
+                    SearchParameters = new SearchParameters
+                    {
+                        SearchType = SearchType.NonSpecific,
+                        LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific, FdrCategory.SemiSpecific },
+                        UsePredictedSpectraForSpectralAngle = true
+                    },
+                    CommonParameters = new CommonParameters(scoreCutoff: 11,
+                        digestionParams: new DigestionParams(minPeptideLength: 7, searchModeType: CleavageSpecificity.Semi, fragmentationTerminus: FragmentationTerminus.N))
+                }
+                : new SearchTask
+                {
+                    SearchParameters = new SearchParameters { DoLabelFreeQuantification = false, UsePredictedSpectraForSpectralAngle = true },
+                    CommonParameters = new CommonParameters(dissociationType: DissociationType.ETD)
+                };
+            string spectra = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", kind == "semi" ? "tinySemi.mgf" : "SmallCalibratible_Yeast.mzML");
+            string database = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", kind == "semi" ? "semiTest.fasta" : "smalldb.fasta");
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "PredictedAngleSkipped_" + kind);
+            Directory.CreateDirectory(folder);
+            try
+            {
+                searchTask.RunTask(folder, new List<DbForTask> { new(database, false) }, new List<string> { spectra }, "");
+
+                string results = File.ReadAllText(Path.Combine(folder, "results.txt"));
+                Assert.That(results, Does.Contain("Predicted spectral angles were requested but not computed: "
+                    + (kind == "semi" ? "semi- and non-specific searches" : "Prosit 2020 predicts HCD spectra, and this search uses ETD")));
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>A Prosit model whose predictions are set directly, standing in for a completed request.</summary>
+        private class PredictedProsit : PredictionClients.Koina.SupportedModels.FragmentIntensityModels.Prosit2020IntensityHCD
+        {
+            public PredictedProsit(params PeptideFragmentIntensityPrediction[] predictions)
+                : base(fragmentIonMappingMode: PredictionClients.Koina.Util.FragmentIonMappingMode.MapToInputFullSequence)
+            {
+                Predictions = predictions.ToList();
+                ValidInputsMask = predictions.Select(p => p.FragmentIntensities != null).ToArray();
+            }
         }
 
         // ---------- failure is not fatal ----------

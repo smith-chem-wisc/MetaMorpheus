@@ -114,6 +114,11 @@ namespace TaskLayer
         /// else's uptime unless the user asked for it. Turning it on changes q-values: the
         /// spectral angle is a PEP feature, which a search without a spectral library otherwise
         /// trains at the -1 sentinel for every PSM.
+        ///
+        /// Applies only to classic and modern peptide searches with HCD or CID fragmentation, since the
+        /// model is Prosit 2020 HCD. Semi- and non-specific searches (which compute FDR before
+        /// post-search analysis), other dissociation types, and oligo or proteoform searches are
+        /// skipped with a warning and a line in results.txt.
         /// </summary>
         public bool UsePredictedSpectraForSpectralAngle { get; set; }
         public bool UpdateSpectralLibrary { get; set; }
