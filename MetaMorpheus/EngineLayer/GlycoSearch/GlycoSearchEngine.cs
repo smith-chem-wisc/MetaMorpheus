@@ -24,6 +24,7 @@ namespace EngineLayer.GlycoSearch
         private readonly bool OxoniumIonFilter; // To filt Oxonium Ion before searching a spectrum as glycopeptides. If we filter spectrum, it must contain oxonium ions such as 204 (HexNAc). 
         private readonly string _oglycanDatabase;
         private readonly string _nglycanDatabase;
+        private readonly List<(string, string)> _selectedGlycans; // (database file name, glycan IdWithMotif); null/empty = whole database
         private readonly GlycanBox[] GlycanBoxes; // GlycanBoxes for glycan search.
         private readonly double[] GlycanBoxMasses; // GlycanBoxes[i].Mass, built once so each candidate peptide does not copy it.
 
@@ -64,7 +65,8 @@ namespace EngineLayer.GlycoSearch
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, IEnumerable<IBioPolymerWithSetMods> peptideIndex,
             Indexing.FragmentIndex fragmentIndex, Indexing.FragmentIndex secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
              string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds,
-             double maxGlycanBoxMass = GlycanBox.DefaultMaximumGlycanBoxMass, List<(int Partition, int PeptideId, byte Score)>[] candidates = null)
+             double maxGlycanBoxMass = GlycanBox.DefaultMaximumGlycanBoxMass, List<(int Partition, int PeptideId, byte Score)>[] candidates = null,
+             List<(string, string)> selectedGlycans = null)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.PeptideIndex = peptideIndex.Cast<PeptideWithSetModifications>().ToList();
@@ -76,6 +78,7 @@ namespace EngineLayer.GlycoSearch
             this.OxoniumIonFilter = oxoniumIonFilter;
             this._oglycanDatabase = oglycanDatabase;
             this._nglycanDatabase = nglycanDatabase;
+            this._selectedGlycans = selectedGlycans;
             SecondFragmentIndex = secondFragmentIndex;
             PrecusorSearchMode = commonParameters.PrecursorMassTolerance;
             ProductSearchMode = new SinglePpmAroundZeroSearchMode(20); //For Oxonium ion only
@@ -83,26 +86,36 @@ namespace EngineLayer.GlycoSearch
 
             if (glycoSearchType == GlycoSearchType.OGlycanSearch) //if we do the O-glycan search, we need to load the O-glycan database and generate the glycoBox.
             {
-                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == _oglycanDatabase).First(), true, true).ToArray();
-                GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum, false, maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray(); //generate glycan box for O-glycan search
+                GlycanBox.GlobalOGlycans = ApplySelection(LoadGlycanDatabase(GlobalVariables.OGlycanDatabasePaths, _oglycanDatabase, "O-glycan", true), _oglycanDatabase);
+                GlycanBox.OGlycanBoxes = CheckedGlycanBoxes( //generate glycan box for O-glycan search
+                    GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum, false, maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray(),
+                    $"the O-glycan database '{_oglycanDatabase}'", maxGlycanBoxMass);
                 GlycanBoxes = GlycanBox.OGlycanBoxes;
                 GlycoSpectralMatch.GlycanBoxes = GlycanBoxes;
             }
             else if (glycoSearchType == GlycoSearchType.NGlycanSearch) //because the there is only one glycan in N-glycanpeptide, so we don't need to build the n-glycanBox here.
             {
                 // The single N-glycan is the whole box here, so the box mass cap applies to each glycan on its own.
-                NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == _nglycanDatabase).First(), true, false)
+                NGlycans = ApplySelection(LoadGlycanDatabase(GlobalVariables.NGlycanDatabasePaths, _nglycanDatabase, "N-glycan", false), _nglycanDatabase)
                     .Where(p => (double)p.Mass / 1E5 <= maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray();
+                // LoadGlycanDatabase refused an empty file, but the cap can still empty it here, and the search
+                // would then skip every scan and report nothing. The O and N+O paths refuse this in
+                // CheckedGlycanBoxes; this is the same refusal for the path that builds no boxes.
+                if (NGlycans.Length == 0)
+                {
+                    throw new MetaMorpheusException(
+                        $"No glycan in the N-glycan database '{_nglycanDatabase}' is within the maximum glycan box mass of {maxGlycanBoxMass} Da, " +
+                        "so there is nothing to search for. Raise that maximum, or choose a database of lighter glycans.");
+                }
                 //TO THINK: Glycan Decoy database.
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
             else if (glycoSearchType == GlycoSearchType.N_O_GlycanSearch) //search both N-glycan and O-glycan is still not tested and build completely yet.
             {
-                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == _oglycanDatabase).First(), true, true).ToArray();
+                GlycanBox.GlobalOGlycans = ApplySelection(LoadGlycanDatabase(GlobalVariables.OGlycanDatabasePaths, _oglycanDatabase, "O-glycan", true), _oglycanDatabase);
                 GlycanBox.GlobalNGlycans = new Dictionary<int, Glycan>();
                 // For N-glycan, we use negative index to distinguish with O-glycan.
-                var nGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanDatabasePaths.First(p => System.IO.Path.GetFileName(p) == _nglycanDatabase),
-                        true, false).OrderBy(p => p.Mass);
+                var nGlycans = ApplySelection(LoadGlycanDatabase(GlobalVariables.NGlycanDatabasePaths, _nglycanDatabase, "N-glycan", false), _nglycanDatabase).OrderBy(p => p.Mass);
                 int indexForNGlycan = -1;
                 foreach (var nGlycan in nGlycans)
                 {
@@ -110,7 +123,9 @@ namespace EngineLayer.GlycoSearch
                     indexForNGlycan--;
                 }
 
-                GlycanBox.NOGlycanBoxes = GlycanBox.BuildNOGlycanBoxes(_maxOGlycanNum, false, maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray();
+                GlycanBox.NOGlycanBoxes = CheckedGlycanBoxes(
+                    GlycanBox.BuildNOGlycanBoxes(_maxOGlycanNum, false, maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray(),
+                    $"the O-glycan database '{_oglycanDatabase}' and the N-glycan database '{_nglycanDatabase}'", maxGlycanBoxMass);
                 GlycanBoxes = GlycanBox.NOGlycanBoxes;
                 GlycoSpectralMatch.GlycanBoxes = GlycanBoxes;
                 //TO THINK: Glycan Decoy database.
@@ -119,6 +134,109 @@ namespace EngineLayer.GlycoSearch
 
             GlycanBoxMasses = GlycanBoxes?.Select(p => p.Mass).ToArray();
             NGlycanMasses = NGlycans?.Select(p => (double)p.Mass / 1E5).ToArray();
+        }
+
+        /// <summary>
+        /// Narrows a loaded database to the glycans the user checked in the task window, if any.
+        /// </summary>
+        /// <remarks>
+        /// Applied HERE, before the glycans reach GlycanBox.GlobalOGlycans and before any box is built,
+        /// because GlycanBox identifies a glycan by its POSITION in that array
+        /// (BuildOGlycanBoxes enumerates Range(0, GlobalOGlycans.Length)). Filtering after the array is
+        /// assigned would silently re-point every box at a different glycan. Filtering here means the
+        /// dense re-index falls out for free.
+        ///
+        /// It is deliberately not applied inside GlycanDatabase.LoadGlycan: GlobalVariables shares that
+        /// method to populate AllModsKnown for MetaDraw, which must keep seeing every glycan.
+        ///
+        /// A selection naming none of THIS database means the whole database, so choosing individual
+        /// O-glycans does not silently narrow the N-glycan side too.
+        /// </remarks>
+        private Glycan[] ApplySelection(Glycan[] loaded, string databaseFileName)
+        {
+            if (_selectedGlycans == null || _selectedGlycans.Count == 0)
+            {
+                return loaded;
+            }
+
+            var wanted = new HashSet<string>(_selectedGlycans
+                .Where(s => s.Item1 == databaseFileName)
+                .Select(s => s.Item2));
+
+            if (wanted.Count == 0)
+            {
+                return loaded;
+            }
+
+            var subset = loaded.Where(g => wanted.Contains(g.IdWithMotif)).ToArray();
+
+            // Every checked glycan is gone from the file it named. Falling back to the whole database beats
+            // handing BuildOGlycanBoxes an empty array, whose failure surfaces much later and elsewhere.
+            return subset.Length == 0 ? loaded : subset;
+        }
+
+        /// <summary>
+        /// Resolves a glycan database by file name and loads it, failing with something the user can act on.
+        /// </summary>
+        /// <remarks>
+        /// Both failures this replaces used to surface as <c>InvalidOperationException: Sequence contains no
+        /// elements</c>, which names neither the database nor the problem:
+        /// <list type="bullet">
+        ///   <item><description>
+        ///     a selected file that is no longer in the folder threw from the <c>.First()</c> on the path
+        ///     lookup, here in the constructor;
+        ///   </description></item>
+        ///   <item><description>
+        ///     a database holding no glycans built an EMPTY box array without complaint, and then threw much
+        ///     later from <c>GlycanBoxes.First().Mass</c> inside the parallel search loop -- or, if no scan
+        ///     reached that branch, returned zero results and looked like a search that simply found nothing.
+        ///   </description></item>
+        /// </list>
+        /// An empty database is now rejected up front, which matters more since a user can be handed one: a
+        /// freshly seeded custom database is all banner and no glycans until they add some.
+        /// </remarks>
+        private static Glycan[] LoadGlycanDatabase(List<string> databasePaths, string databaseFileName, string kind, bool isOGlycan)
+        {
+            string path = databasePaths.FirstOrDefault(p => System.IO.Path.GetFileName(p) == databaseFileName);
+            if (path == null)
+            {
+                throw new MetaMorpheusException(
+                    $"The {kind} database '{databaseFileName}' was not found. Available: {string.Join(", ", databasePaths.Select(System.IO.Path.GetFileName))}.");
+            }
+
+            Glycan[] glycans = GlycanDatabase.LoadGlycan(path, true, isOGlycan, WarnStatic).ToArray();
+            if (glycans.Length == 0)
+            {
+                throw new MetaMorpheusException(
+                    $"The {kind} database '{databaseFileName}' contains no glycans, so there is nothing to search for. " +
+                    $"Add at least one glycan to it, or choose a different {kind} database.");
+            }
+
+            return glycans;
+        }
+
+        /// <summary>
+        /// The glycan boxes the search will compare precursors against, having refused an empty set with
+        /// something the user can act on.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="LoadGlycanDatabase"/> has already guaranteed the database holds at least one glycan,
+        /// but the box builders skip every box heavier than the maximum box mass -- so a database whose
+        /// glycans are all heavier than the cap yields no boxes at all. Left alone that is the same
+        /// <c>Sequence contains no elements</c> the empty-database guard closes, arriving one step later,
+        /// from <c>GlycanBoxes.First().Mass</c> inside the parallel search loop. The N-glycan branch needs
+        /// no equivalent: its own mass filter's result is length-checked where it is read.
+        /// </remarks>
+        private static GlycanBox[] CheckedGlycanBoxes(GlycanBox[] boxes, string databaseDescription, double maxGlycanBoxMass)
+        {
+            if (boxes.Length == 0)
+            {
+                throw new MetaMorpheusException(
+                    $"No combination of glycans from {databaseDescription} is within the maximum glycan box mass of {maxGlycanBoxMass} Da, " +
+                    "so there is nothing to search for. Raise that maximum, or choose a database of lighter glycans.");
+            }
+
+            return boxes;
         }
 
         private Glycan[] NGlycans { get; }
