@@ -479,6 +479,7 @@ namespace EngineLayer
             float longestSeq = 0;
             float complementaryIonCount = 0;
             float hydrophobicityZscore = float.NaN;
+            float hasHydrophobicity = 0;
             bool isVariantPeptide = false;
 
             //crosslink specific features
@@ -542,11 +543,13 @@ namespace EngineLayer
                             var dict = isUnmodified
                                 ? FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified
                                 : FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified;
-                            hydrophobicityZscore = (float)Math.Round(GetRetentionTimeEquivalentZscore(psm, tentativeSpectralMatch.SpecificBioPolymer, dict, RetentionTimePredictor) * 10.0, 0);
+                            hydrophobicityZscore = (float)Math.Round(GetRetentionTimeEquivalentZscore(psm, tentativeSpectralMatch.SpecificBioPolymer, dict, RetentionTimePredictor, out bool retentionTimePredicted) * 10.0, 0);
+                            hasHydrophobicity = Convert.ToSingle(retentionTimePredicted);
                         }
                         else
                         {
-                            hydrophobicityZscore = (float)Math.Round(GetMobilityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer) * 10.0, 0);
+                            hydrophobicityZscore = (float)Math.Round(GetMobilityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer, out bool mobilityAvailable) * 10.0, 0);
+                            hasHydrophobicity = Convert.ToSingle(mobilityAvailable);
                         }
                     }
                 }
@@ -620,6 +623,7 @@ namespace EngineLayer
                 LongestFragmentIonSeries = longestSeq,
                 ComplementaryIonCount = complementaryIonCount,
                 HydrophobicityZScore = hydrophobicityZscore,
+                HasHydrophobicity = hasHydrophobicity,
                 IsVariantPeptide = Convert.ToSingle(isVariantPeptide),
 
                 AlphaIntensity = alphaIntensity,
@@ -713,7 +717,22 @@ namespace EngineLayer
                         }
                         fullSequences.Add(bestMatch.SpecificBioPolymer.FullSequence);
 
-                        double predictedHydrophobicity = bestMatch.SpecificBioPolymer is PeptideWithSetModifications pep ? predictor.PredictRetentionTimeEquivalent(pep, out _) ?? 0 : 0;
+                        // A peptidoform the predictor cannot represent must not contribute to the reference
+                        // distribution. `?? 0` would enter it as a predicted hydrophobicity of zero, which is a
+                        // real and extreme value on this scale, and would drag the median and standard deviation
+                        // that every other peptide in this retention-time bin is then scored against.
+                        if (bestMatch.SpecificBioPolymer is not PeptideWithSetModifications pep)
+                        {
+                            continue;
+                        }
+
+                        double? predicted = predictor.PredictRetentionTimeEquivalent(pep, out _);
+                        if (!predicted.HasValue)
+                        {
+                            continue;
+                        }
+
+                        double predictedHydrophobicity = predicted.Value;
 
                         //here i'm grouping this in 2 minute increments becuase there are cases where you get too few data points to get a good standard deviation an average. This is for stability.
                         int possibleKey = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
@@ -902,8 +921,17 @@ namespace EngineLayer
             return mobility;
         }
 
-        private static float GetRetentionTimeEquivalentZscore(SpectralMatch psm, IBioPolymerWithSetMods Peptide, Dictionary<string, Dictionary<int, Tuple<double, double>>> d, IRetentionTimePredictor predictor)
+        /// <param name="predictionAvailable">
+        /// False when the returned z-score carries no information about this peptidoform: either the retention-time
+        /// predictor could not produce a value for it -- Chronologer rejects a sequence longer than 50 residues,
+        /// shorter than 7, or carrying a non-canonical amino acid such as selenocysteine, and any predictor can fail
+        /// outright -- or there is no reference distribution for this file and retention-time bin to compare it
+        /// against. Either way the z-score saturates at its maximum. Callers must surface this to the model (see
+        /// PsmData.HasHydrophobicity) rather than letting the returned z-score stand on its own.
+        /// </param>
+        private static float GetRetentionTimeEquivalentZscore(SpectralMatch psm, IBioPolymerWithSetMods Peptide, Dictionary<string, Dictionary<int, Tuple<double, double>>> d, IRetentionTimePredictor predictor, out bool predictionAvailable)
         {
+            predictionAvailable = false;
             //Using SSRCalc3 but probably any number of different calculators could be used instead. One could also use the CE mobility.
             double hydrophobicityZscore = double.NaN;
 
@@ -912,9 +940,23 @@ namespace EngineLayer
                 int time = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
                 if (d[Path.GetFileName(psm.FullFilePath)].Keys.Contains(time))
                 {
-                    double predictedHydrophobicity = Peptide is PeptideWithSetModifications pep ? predictor.PredictRetentionTimeEquivalent(pep, out _) ?? 0 : 0;
-
-                    hydrophobicityZscore = Math.Abs(d[Path.GetFileName(psm.FullFilePath)][time].Item1 - predictedHydrophobicity) / d[Path.GetFileName(psm.FullFilePath)][time].Item2;
+                    // A failed prediction is not a hydrophobicity of zero. Zero is a real and extreme value on
+                    // this scale, so `?? 0` turned "could not predict" into "disagrees with the observed
+                    // retention time as badly as possible" -- the z-score saturates at the maximum below and the
+                    // model reads it as strong evidence against the candidate. Report unavailability instead and
+                    // let the companion feature tell the model to ignore the value.
+                    if (Peptide is PeptideWithSetModifications pep)
+                    {
+                        double? predicted = predictor.PredictRetentionTimeEquivalent(pep, out _);
+                        if (predicted.HasValue)
+                        {
+                            predictionAvailable = true;
+                            hydrophobicityZscore = Math.Abs(d[Path.GetFileName(psm.FullFilePath)][time].Item1 - predicted.Value) / d[Path.GetFileName(psm.FullFilePath)][time].Item2;
+                        }
+                        // Otherwise leave the z-score at NaN. It saturates to the maximum below exactly as before,
+                        // but predictionAvailable stays false, so HasHydrophobicity tells the model that the value
+                        // carries no information about this peptidoform.
+                    }
                 }
             }
 
@@ -927,8 +969,14 @@ namespace EngineLayer
             return (float)hydrophobicityZscore;
         }
 
-        private float GetMobilityZScore(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide)
+        /// <param name="mobilityAvailable">
+        /// False when there is no reference distribution for this file and retention-time bin, so the z-score
+        /// saturates at its maximum and carries no information. Same meaning as the predictionAvailable flag of
+        /// <see cref="GetRetentionTimeEquivalentZscore"/>, so HasHydrophobicity means one thing for LC and CZE alike.
+        /// </param>
+        private float GetMobilityZScore(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide, out bool mobilityAvailable)
         {
+            mobilityAvailable = false;
             double mobilityZScore = double.NaN;
 
             if (FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE.ContainsKey(Path.GetFileName(psm.FullFilePath)))
@@ -937,6 +985,7 @@ namespace EngineLayer
                 if (FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE[Path.GetFileName(psm.FullFilePath)].Keys.Contains(time))
                 {
                     double predictedMobility = 100.0 * GetCifuentesMobility(selectedPeptide);
+                    mobilityAvailable = true;
 
                     mobilityZScore = Math.Abs(FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE[Path.GetFileName(psm.FullFilePath)][time].Item1 - predictedMobility) / FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE[Path.GetFileName(psm.FullFilePath)][time].Item2;
                 }

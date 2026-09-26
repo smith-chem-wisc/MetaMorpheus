@@ -18,6 +18,7 @@ namespace EngineLayer.FdrAnalysis
                     "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount",
                     "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore",
                     "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle",
+                    "HasHydrophobicity",
                     "PrecursorDeconvolutionScore",
                 }
             },
@@ -70,6 +71,7 @@ namespace EngineLayer.FdrAnalysis
             { "LongestFragmentIonSeries", 1 },
             { "ComplementaryIonCount", 1 },
             { "HydrophobicityZScore", -1 },
+            { "HasHydrophobicity", 1 },
             { "IsVariantPeptide",-1 },
             { "AlphaIntensity", 1 },
             { "BetaIntensity", 1 },
@@ -176,6 +178,23 @@ namespace EngineLayer.FdrAnalysis
 
         [LoadColumn(23)]
         public float HasSpectralAngle { get; set; }
+
+        /// <summary>
+        /// 1 when <see cref="HydrophobicityZScore"/> was actually computed for this peptidoform, 0 when it is only the
+        /// saturated maximum standing in for a missing value. That happens in two cases:
+        /// - the retention-time predictor could not produce a value. Chronologer declines a sequence longer than 50
+        ///   residues, shorter than 7, or carrying a non-canonical amino acid such as selenocysteine; any predictor
+        ///   can also fail outright.
+        /// - there is no reference distribution for this file and retention-time bin (for LC or CZE), so there is
+        ///   nothing to compare the prediction against.
+        ///
+        /// Companion to <see cref="HydrophobicityZScore"/> in the same way <see cref="HasSpectralAngle"/> is the
+        /// companion to <see cref="SpectralAngle"/>: it lets the model distinguish "predicted, and disagrees with
+        /// the observed retention time" from "could not be predicted at all". Without it a failed prediction is
+        /// indistinguishable from a maximally bad one.
+        /// </summary>
+        [LoadColumn(30)]
+        public float HasHydrophobicity { get; set; }
 
         [LoadColumn(24)]
         public float PeaksInPrecursorEnvelope { get; set; }
