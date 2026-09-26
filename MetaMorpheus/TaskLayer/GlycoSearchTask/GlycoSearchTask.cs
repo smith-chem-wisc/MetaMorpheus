@@ -9,9 +9,13 @@ using Omics;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Readers;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using EngineLayer.Util;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -93,128 +97,252 @@ namespace TaskLayer
 
             FlashLfqResults flashLfqResults = null;
             int? decidedPartitions = null;
+            int fileCount = currentRawFileList.Count;
 
-            for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
+            // Every file's parameters, built here on one thread: the CommonParameters constructor reads and clears a process-wide
+            // list of custom product types, so building them from parallel searches would race.
+            var combinedParamsPerFile = new CommonParameters[fileCount];
+            var indexParamsPerFile = new CommonParameters[fileCount];
+            for (int spectraFileIndex = 0; spectraFileIndex < fileCount; spectraFileIndex++)
             {
-                var origDataFile = currentRawFileList[spectraFileIndex];
-                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-
-                var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
-                NewCollection(Path.GetFileName(origDataFile), thisId);
-
-                Status("Loading spectra file...", thisId);
-                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams);
-
-                Status("Getting ms2 scans...", thisId);
-
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
-                
-                List<GlycoSpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<GlycoSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
-                
-                myFileManager.DoneWithFile(origDataFile);
+                combinedParamsPerFile[spectraFileIndex] = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
                 // scoped to indexing/searching only, so the settings the task reports stay as configured.
                 // every TotalPartitions read below comes from indexParams, including the loop bound and the
                 // protein-range slicing, which previously read from two different objects.
-                CommonParameters indexParams = RaisePartitionsToFitMemory(proteinList, combinedParams, fixedModifications,
+                indexParamsPerFile[spectraFileIndex] = RaisePartitionsToFitMemory(proteinList, combinedParamsPerFile[spectraFileIndex], fixedModifications,
                     variableModifications, null, null, null, 30000.0, ref decidedPartitions);
+            }
 
-                IndexingEngine MakeIndexEngine(int currentPartition)
+            // The glycans and glycan boxes depend on the glycan databases and settings alone, so they are built once for every file.
+            Status("Building glycan boxes...", taskId);
+            GlycanSearchSpace glycanSearchSpace = GlycanSearchSpace.Build(_glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile,
+                _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.MaximumGlycanBoxMass);
+
+            var thisIds = currentRawFileList.Select(file => new List<string> { taskId, "Individual Spectra Files", file }).ToList();
+            var databaseFileInfos = dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList();
+
+            Ms2ScanWithSpecificMass[] LoadMs2Scans(int spectraFileIndex, CommonParameters loadParams)
+            {
+                var origDataFile = currentRawFileList[spectraFileIndex];
+                Status("Loading spectra file...", thisIds[spectraFileIndex]);
+                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, loadParams);
+
+                Status("Getting ms2 scans...", thisIds[spectraFileIndex]);
+                Ms2ScanWithSpecificMass[] scans = GetMs2Scans(myMsDataFile, origDataFile, loadParams).OrderBy(b => b.PrecursorMass).ToArray();
+
+                myFileManager.DoneWithFile(origDataFile);
+                return scans;
+            }
+
+            // Files can be searched at once only when they share one unpartitioned index: every file's index-relevant settings must
+            // agree, since a file-specific toml can change the protease, lengths, missed cleavages, mods or dissociation type.
+            string sequentialReason = null;
+            if (fileCount < 2)
+            {
+                sequentialReason = "there is one spectra file";
+            }
+            else if (indexParamsPerFile[0].TotalPartitions > 1)
+            {
+                sequentialReason = "the index was split into " + indexParamsPerFile[0].TotalPartitions + " partitions to fit in memory";
+            }
+            else if (indexParamsPerFile.Select(p => new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 0, _glycoSearchParameters.DecoyType, p, this.FileSpecificParameters, 30000.0, false, databaseFileInfos, TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId }).ToString()
+                         + "\nCustom ions: " + string.Join(",", p.CustomIons ?? new List<Omics.Fragmentation.ProductType>())).Distinct().Count() > 1)
+            {
+                sequentialReason = "file-specific settings give the spectra files different indexes";
+            }
+            else if (_glycoSearchParameters.MaximumSpectraFilesInParallel == 1)
+            {
+                sequentialReason = "the task setting MaximumSpectraFilesInParallel = 1";
+            }
+
+            if (sequentialReason == null)
+            {
+                for (int spectraFileIndex = 0; spectraFileIndex < fileCount; spectraFileIndex++)
                 {
-                    //When partition, the proteinList will be split for each Thread.
-                    List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / indexParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / indexParams.TotalPartitions) - (currentPartition * proteinList.Count() / indexParams.TotalPartitions));
-
-                    //Only reverse Decoy for glyco search has been tested and are set as fixed parameter.
-                    return new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, currentPartition, _glycoSearchParameters.DecoyType, indexParams, this.FileSpecificParameters, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
+                    NewCollection(Path.GetFileName(currentRawFileList[spectraFileIndex]), thisIds[spectraFileIndex]);
                 }
 
-                GlycoSearchEngine MakeSearchEngine(List<PeptideWithSetModifications> peptideIndex, FragmentIndex fragmentIndex, int currentPartition, List<(int Partition, int PeptideId, byte Score)>[] candidates)
+                // One unpartitioned index for every file, so each file is searched in a single pass; the two rounds below are for partitions.
+                Status("Getting fragment dictionary...", new List<string> { taskId });
+                List<PeptideWithSetModifications> peptideIndex = null;
+                FragmentIndex fragmentIndex = null;
+                List<int>[] precursorIndex = null;
+                var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 0, _glycoSearchParameters.DecoyType, indexParamsPerFile[0], this.FileSpecificParameters, 30000.0, false, databaseFileInfos, TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
+                GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
+
+                // Load the first file with the whole thread budget, and take what its scans hold in memory as the measure of a file.
+                long heapBeforeFirstFile = GC.GetTotalMemory(forceFullCollection: true);
+                var scansPerFile = new Ms2ScanWithSpecificMass[fileCount][];
+                scansPerFile[0] = LoadMs2Scans(0, combinedParamsPerFile[0]);
+                long scanBytes = Math.Max(0, GC.GetTotalMemory(forceFullCollection: true) - heapBeforeFirstFile);
+
+                // A file being searched also holds its results; doubling the scans covers them. The scoring tables belong to the threads,
+                // and the threads are one budget across every file, so they are charged once rather than per file. At least a byte a file,
+                // since Decide reads 0 as "unknown" and would drop the memory limit.
+                int threadBudget = CommonParameters.MaxThreadsToUsePerFile;
+                long bytesPerFile = Math.Max(1, 2 * scanBytes);
+                long tableBytes = FileParallelism.ScoringTableBytes(threadBudget, peptideIndex.Count);
+                long freeBytes = IndexPartitioning.AvailableBytes();
+                FileParallelismPlan plan = FileParallelism.Decide(fileCount, threadBudget, freeBytes, bytesPerFile, _glycoSearchParameters.MaximumSpectraFilesInParallel, tableBytes);
+
+                // The split above sets how many files run at once and how many threads load each; the search itself draws on one budget
+                // shared by every file, so threads move from files that finish to files still searching.
+                var searchThreads = new SearchThreadBudget(threadBudget);
+                ProseCreatedWhileRunning.Append("spectra files searched in parallel = " + plan.FilesInParallel + " of " + fileCount + " (limited by " + plan.LimitedBy + ")"
+                    + ", each loaded with " + plan.ThreadsPerFile + " threads and searched with threads shared from a budget of " + searchThreads.TotalThreads
+                    + " that move from files that finish to files still searching; \n");
+                ProseCreatedWhileRunning.Append("memory free after building the index and loading the first spectra file = " + (freeBytes / 1e9).ToString("0.0") + " GB, estimated "
+                    + (bytesPerFile / 1e9).ToString("0.0") + " GB for each further file and " + (tableBytes / 1e9).ToString("0.0") + " GB of scoring tables shared by all files; \n");
+
+                // Each file's own copies of its parameters with the divided thread count, built here on one thread (see above).
+                var loadParamsPerFile = combinedParamsPerFile.Select(p => p.CloneWithNewMaxThreadsToUsePerFile(plan.ThreadsPerFile)).ToArray();
+                var searchParamsPerFile = indexParamsPerFile.Select(p => p.CloneWithNewMaxThreadsToUsePerFile(plan.ThreadsPerFile)).ToArray();
+
+                var gsmsPerFile = new List<GlycoSpectralMatch>[fileCount][];
+                Status("Searching files...", taskId);
+                FileParallelism.ForEachFile(fileCount, plan.FilesInParallel, spectraFileIndex =>
                 {
-                    //The second Fragment index is for 'MS1-HCD_MS1-ETD_MS2s' type of data. If LowCID is used for MS1, ion-index is not allowed to use.
-                    FragmentIndex secondFragmentIndex = null;
+                    if (GlobalVariables.StopLoops) { return; }
 
-                    return new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, indexParams, this.FileSpecificParameters,
-                        _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisId, _glycoSearchParameters.MaximumGlycanBoxMass, candidates);
-                }
+                    Ms2ScanWithSpecificMass[] scans = scansPerFile[spectraFileIndex] ?? LoadMs2Scans(spectraFileIndex, loadParamsPerFile[spectraFileIndex]);
+                    scansPerFile[spectraFileIndex] = null;
 
-                // The TopN candidate cut has to be taken over the whole database, or which glycopeptides are reported
-                // depends on the partition count -- and RaisePartitionsToFitMemory can raise that count on its own.
-                // So a partitioned search scores every partition first and glycan-matches afterwards, the same two
-                // rounds XLSearchTask uses. One partition keeps the single pass, which is the same cut already.
-                List<(int Partition, int PeptideId, byte Score)>[] candidates = indexParams.TotalPartitions > 1
-                    ? new List<(int Partition, int PeptideId, byte Score)>[arrayOfMs2ScansSortedByMass.Length]
-                    : null;
+                    var gsms = new List<GlycoSpectralMatch>[scans.Length];
+                    new GlycoSearchEngine(gsms, scans, peptideIndex, fragmentIndex, null, 0, searchParamsPerFile[spectraFileIndex], this.FileSpecificParameters, glycanSearchSpace,
+                        _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisIds[spectraFileIndex])
+                    {
+                        ThreadBudget = searchThreads
+                    }.Run();
+                    gsmsPerFile[spectraFileIndex] = gsms;
 
-                // Round 2 has only peptide ids from round 1, so it must see each partition's index in the same order.
-                // Recorded per partition in round 1 and checked in round 2.
-                int[] peptideOrderFingerprints = candidates == null ? null : new int[indexParams.TotalPartitions];
+                    ReportProgress(new ProgressEventArgs(100, "Done with search 1/1!", thisIds[spectraFileIndex]));
+                    int done = Interlocked.Increment(ref completedFiles);
+                    ReportProgress(new ProgressEventArgs(100 * done / fileCount, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
+                });
 
-                for (int currentPartition = 0; currentPartition < indexParams.TotalPartitions; currentPartition++)
+                // Results in file order, exactly as searching the files one after another adds them.
+                foreach (var gsms in gsmsPerFile.Where(p => p != null))
                 {
-                    List<PeptideWithSetModifications> peptideIndex = null;
-
-                    Status("Getting fragment dictionary...", new List<string> { taskId });
-
-                    var indexEngine = MakeIndexEngine(currentPartition);
-                    FragmentIndex fragmentIndex = null;
-                    List<int>[] precursorIndex = null;
-                    GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
-
-                    Status("Searching files...", taskId);
-                    var glycoSearchEngine = MakeSearchEngine(peptideIndex, fragmentIndex, currentPartition, candidates);
-                    if (candidates == null)
-                    {
-                        glycoSearchEngine.Run();
-                    }
-                    else
-                    {
-                        glycoSearchEngine.FirstRoundSearch();
-                        peptideOrderFingerprints[currentPartition] = IndexingEngine.PeptideOrderFingerprint(peptideIndex);
-                    }
-
-                    ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + indexParams.TotalPartitions + "!", thisId));
-                    if (GlobalVariables.StopLoops) { break; }
+                    ListOfGsmsPerMS2Scan.AddRange(gsms.Where(p => p != null).ToList());
                 }
+            }
+            else
+            {
+                ProseCreatedWhileRunning.Append("spectra files searched one after another because " + sequentialReason + "; \n");
 
-                // glycan matching, one partition at a time, for the candidates that survived the whole-database cut
-                for (int currentPartition = 0; candidates != null && currentPartition < indexParams.TotalPartitions; currentPartition++)
+                for (int spectraFileIndex = 0; spectraFileIndex < fileCount; spectraFileIndex++)
                 {
-                    if (GlobalVariables.StopLoops) { break; }
+                    var origDataFile = currentRawFileList[spectraFileIndex];
+                    CommonParameters combinedParams = combinedParamsPerFile[spectraFileIndex];
 
-                    Status("Getting peptide index...", new List<string> { taskId });
+                    var thisId = thisIds[spectraFileIndex];
+                    NewCollection(Path.GetFileName(origDataFile), thisId);
 
-                    var indexEngine = MakeIndexEngine(currentPartition);
-                    List<PeptideWithSetModifications> peptideIndex = null;
-                    List<int>[] precursorIndex = null;
-                    GenerateIndexes_PeptideOnly(indexEngine, dbFilenameList, ref peptideIndex, ref precursorIndex, proteinList, taskId);
-                    if (peptideIndex == null)
+                    Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = LoadMs2Scans(spectraFileIndex, combinedParams);
+
+                    List<GlycoSpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<GlycoSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
+
+                    CommonParameters indexParams = indexParamsPerFile[spectraFileIndex];
+
+                    IndexingEngine MakeIndexEngine(int currentPartition)
                     {
-                        // the first round's index could not be read back, so build it again
-                        FragmentIndex unusedFragmentIndex = null;
-                        GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref unusedFragmentIndex, ref precursorIndex, proteinList, taskId);
+                        //When partition, the proteinList will be split for each Thread.
+                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / indexParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / indexParams.TotalPartitions) - (currentPartition * proteinList.Count() / indexParams.TotalPartitions));
+
+                        //Only reverse Decoy for glyco search has been tested and are set as fixed parameter.
+                        return new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, currentPartition, _glycoSearchParameters.DecoyType, indexParams, this.FileSpecificParameters, 30000.0, false, databaseFileInfos, TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
                     }
 
-                    // A rebuild, or a different cache folder, can hold the same peptides in a different order: mass ties
-                    // are broken by digestion order, which depends on the thread count, and the thread count is not part
-                    // of the cache key. The candidates would then point at other peptides and report wrong
-                    // glycopeptides without any error, so stop instead.
-                    if (IndexingEngine.PeptideOrderFingerprint(peptideIndex) != peptideOrderFingerprints[currentPartition])
+                    GlycoSearchEngine MakeSearchEngine(List<PeptideWithSetModifications> peptideIndex, FragmentIndex fragmentIndex, int currentPartition, List<(int Partition, int PeptideId, byte Score)>[] candidates)
                     {
-                        throw new MetaMorpheusException($"The peptide index for partition {currentPartition + 1} of {indexParams.TotalPartitions} " +
-                            "changed between the two rounds of the glyco search, so the first round's candidates no longer point at the right " +
-                            $"peptides. Delete the {IndexFolderName} folder next to the database and run the search again.");
+                        //The second Fragment index is for 'MS1-HCD_MS1-ETD_MS2s' type of data. If LowCID is used for MS1, ion-index is not allowed to use.
+                        FragmentIndex secondFragmentIndex = null;
+
+                        return new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, indexParams, this.FileSpecificParameters, glycanSearchSpace,
+                            _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisId, candidates);
                     }
 
-                    Status("Searching files...", taskId);
-                    MakeSearchEngine(peptideIndex, null, currentPartition, candidates).Run();
+                    // The TopN candidate cut has to be taken over the whole database, or which glycopeptides are reported
+                    // depends on the partition count -- and RaisePartitionsToFitMemory can raise that count on its own.
+                    // So a partitioned search scores every partition first and glycan-matches afterwards, the same two
+                    // rounds XLSearchTask uses. One partition keeps the single pass, which is the same cut already.
+                    List<(int Partition, int PeptideId, byte Score)>[] candidates = indexParams.TotalPartitions > 1
+                        ? new List<(int Partition, int PeptideId, byte Score)>[arrayOfMs2ScansSortedByMass.Length]
+                        : null;
 
-                    ReportProgress(new ProgressEventArgs(100, "Done with glycan matching " + (currentPartition + 1) + "/" + indexParams.TotalPartitions + "!", thisId));
+                    // Round 2 has only peptide ids from round 1, so it must see each partition's index in the same order.
+                    // Recorded per partition in round 1 and checked in round 2.
+                    int[] peptideOrderFingerprints = candidates == null ? null : new int[indexParams.TotalPartitions];
+
+                    for (int currentPartition = 0; currentPartition < indexParams.TotalPartitions; currentPartition++)
+                    {
+                        List<PeptideWithSetModifications> peptideIndex = null;
+
+                        Status("Getting fragment dictionary...", new List<string> { taskId });
+
+                        var indexEngine = MakeIndexEngine(currentPartition);
+                        FragmentIndex fragmentIndex = null;
+                        List<int>[] precursorIndex = null;
+                        GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
+
+                        Status("Searching files...", taskId);
+                        var glycoSearchEngine = MakeSearchEngine(peptideIndex, fragmentIndex, currentPartition, candidates);
+                        if (candidates == null)
+                        {
+                            glycoSearchEngine.Run();
+                        }
+                        else
+                        {
+                            glycoSearchEngine.FirstRoundSearch();
+                            peptideOrderFingerprints[currentPartition] = IndexingEngine.PeptideOrderFingerprint(peptideIndex);
+                        }
+
+                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + indexParams.TotalPartitions + "!", thisId));
+                        if (GlobalVariables.StopLoops) { break; }
+                    }
+
+                    // glycan matching, one partition at a time, for the candidates that survived the whole-database cut
+                    for (int currentPartition = 0; candidates != null && currentPartition < indexParams.TotalPartitions; currentPartition++)
+                    {
+                        if (GlobalVariables.StopLoops) { break; }
+
+                        Status("Getting peptide index...", new List<string> { taskId });
+
+                        var indexEngine = MakeIndexEngine(currentPartition);
+                        List<PeptideWithSetModifications> peptideIndex = null;
+                        List<int>[] precursorIndex = null;
+                        GenerateIndexes_PeptideOnly(indexEngine, dbFilenameList, ref peptideIndex, ref precursorIndex, proteinList, taskId);
+                        if (peptideIndex == null)
+                        {
+                            // the first round's index could not be read back, so build it again
+                            FragmentIndex unusedFragmentIndex = null;
+                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref unusedFragmentIndex, ref precursorIndex, proteinList, taskId);
+                        }
+
+                        // A rebuild, or a different cache folder, can hold the same peptides in a different order: mass ties
+                        // are broken by digestion order, which depends on the thread count, and the thread count is not part
+                        // of the cache key. The candidates would then point at other peptides and report wrong
+                        // glycopeptides without any error, so stop instead.
+                        if (IndexingEngine.PeptideOrderFingerprint(peptideIndex) != peptideOrderFingerprints[currentPartition])
+                        {
+                            throw new MetaMorpheusException($"The peptide index for partition {currentPartition + 1} of {indexParams.TotalPartitions} " +
+                                "changed between the two rounds of the glyco search, so the first round's candidates no longer point at the right " +
+                                $"peptides. Delete the {IndexFolderName} folder next to the database and run the search again.");
+                        }
+
+                        Status("Searching files...", taskId);
+                        MakeSearchEngine(peptideIndex, null, currentPartition, candidates).Run();
+
+                        ReportProgress(new ProgressEventArgs(100, "Done with glycan matching " + (currentPartition + 1) + "/" + indexParams.TotalPartitions + "!", thisId));
+                    }
+
+                    ListOfGsmsPerMS2Scan.AddRange(newCsmsPerMS2ScanPerFile.Where(p => p != null).ToList());
+
+                    completedFiles++;
+                    // A percentage, as the parallel path above reports: integer division alone reported 1% until the last file.
+                    ReportProgress(new ProgressEventArgs(100 * completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
                 }
-
-                ListOfGsmsPerMS2Scan.AddRange(newCsmsPerMS2ScanPerFile.Where(p => p != null).ToList());
-
-                completedFiles++;
-                ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
             }
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
