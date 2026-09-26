@@ -59,10 +59,16 @@ namespace TaskLayer
             MyTaskResults = new MyTaskResults(this);
             var wallStopwatch = System.Diagnostics.Stopwatch.StartNew();
 
+            // The chop acceptor must map a precursor to a whole-residue chop at a notch (decisions #9, #15);
+            // fail before any work if the configured type cannot (see ValidateChopAcceptor).
+            MassDiffAcceptor chopAcceptor = GetChopAcceptor(CommonParameters.PrecursorMassTolerance);
+            ValidateChopAcceptor(chopAcceptor, TruncationSearchParameters.MassDiffAcceptorType);
+
             // 1. Ingest the deduped Pass 1 proteoform-level matches (decision #1). The in-memory list
             //    keeps the matched proteoform's Protein + DigestionParams, which Pass 3 chopping and
             //    decoy generation need; the disk path reconstructs them.
             bool haveInMemoryProvenance = TryIngestFromContext(out List<SpectralMatch> pass1Psms);
+            WarnOnUpstreamParameterMismatch();
 
             // Per-file Pass 1 PSM lookup, used only on the in-memory path to inherit intact matches as
             // full-length forms (#4a). Disk-ingested parents have no per-scan provenance.
@@ -70,35 +76,13 @@ namespace TaskLayer
                 ? pass1Psms.Where(p => p != null).ToLookup(p => p.FullFilePath)
                 : null;
 
-            // Load every file's MS2 scans up front (kept in memory) plus its intact-skip dicts. Hoisted so the
-            // sequence-tag filter can see all scans before parents are built; the engine loop reuses them.
-            var myFileManager = new MyFileManager(true);
-            var loaded = new List<(string Raw, CommonParameters FileParams, Ms2ScanWithSpecificMass[] Scans,
-                Dictionary<int, SpectralMatch> Pass1PsmByScan, Dictionary<int, double> Pass1MassByScan)>();
-            for (int i = 0; i < currentRawFileList.Count; i++)
-            {
-                string rawFilePath = currentRawFileList[i];
-                CommonParameters fileParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i]);
-
-                MsDataFile dataFile = myFileManager.LoadFile(rawFilePath, fileParams);
-                Ms2ScanWithSpecificMass[] scans = GetMs2Scans(dataFile, rawFilePath, fileParams)
-                    .OrderBy(s => s.OneBasedScanNumber).ToArray();
-                myFileManager.DoneWithFile(rawFilePath);
-
-                Dictionary<int, SpectralMatch> pass1PsmByScan = pass1ByFile?[rawFilePath]
-                    .GroupBy(p => p.ScanNumber)
-                    .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p).First());
-                Dictionary<int, double> pass1MassByScan = pass1PsmByScan?
-                    .Where(kv => kv.Value.BioPolymerWithSetModsMonoisotopicMass.HasValue)
-                    .ToDictionary(kv => kv.Key, kv => kv.Value.BioPolymerWithSetModsMonoisotopicMass.Value);
-
-                loaded.Add((rawFilePath, fileParams, scans, pass1PsmByScan, pass1MassByScan));
-            }
+            LoadModifications(taskId, out List<Modification> variableModifications,
+                out List<Modification> fixedModifications, out List<string> localizableModificationTypes);
 
             // Build parents: database-seeded (decision: remove the observed-parent requirement) takes
             // precedence; otherwise seed from the upstream-identified proteoforms (in-memory, else disk).
             List<TruncationParent> parents = TruncationSearchParameters.SeedParentsFromDatabase
-                ? BuildParentsFromDatabase(taskId, dbFilenameList)
+                ? BuildParentsFromDatabase(dbFilenameList, variableModifications, fixedModifications, localizableModificationTypes)
                 : (haveInMemoryProvenance ? BuildParentsFromPsms(pass1Psms) : BuildParentsFromDisk());
 
             if (parents.Count == 0)
@@ -113,12 +97,6 @@ namespace TaskLayer
             parents = TruncationParentBuilder.AddReverseDecoys(parents);
             int decoysGenerated = parents.Count - targetAndPass1DecoyParents;
 
-            // 3. Notch acceptor for Pass 3 chopping (decision #80); its notch count drives the pooled FDR.
-            MassDiffAcceptor chopAcceptor = SearchTask.GetMassDiffAcceptor(
-                CommonParameters.PrecursorMassTolerance,
-                TruncationSearchParameters.MassDiffAcceptorType,
-                TruncationSearchParameters.CustomMdac);
-
             var pooled = new List<SpectralMatch>();
             // Diagnostic: winning parent's 0-based rank in each scan's index match-count ordering (validates
             // the engine's MaxCandidatesToScore cap). Written to CandidateRanks.tsv.
@@ -129,10 +107,30 @@ namespace TaskLayer
             double pass2IndexSeconds = 0, pass2ScoringSeconds = 0;
             int totalMs2Scans = 0, indexedParents = 0, oversizeExcluded = 0;
 
-            foreach (var file in loaded)
+            var myFileManager = new MyFileManager(true);
+            for (int i = 0; i < currentRawFileList.Count; i++)
             {
+                // Load one file's MS2 scans at a time, so only the file being searched is held in memory.
+                string rawFilePath = currentRawFileList[i];
+                CommonParameters fileParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i]);
+
+                MsDataFile dataFile = myFileManager.LoadFile(rawFilePath, fileParams);
+                Ms2ScanWithSpecificMass[] scans = GetMs2Scans(dataFile, rawFilePath, fileParams)
+                    .OrderBy(s => s.OneBasedScanNumber).ToArray();
+                myFileManager.DoneWithFile(rawFilePath);
+
+                // Every Pass 1 PSM on each scan, best first: a chimeric scan can carry several confident
+                // intact matches, one per precursor, and the engine matches each precursor entry to its own (#4a).
+                Dictionary<int, IReadOnlyList<SpectralMatch>> pass1PsmsByScan = pass1ByFile?[rawFilePath]
+                    .GroupBy(p => p.ScanNumber)
+                    .ToDictionary(g => g.Key, g => (IReadOnlyList<SpectralMatch>)g.OrderByDescending(p => p).ToList());
+
+                // Pass 3 chop acceptor at this file's precursor tolerance, the same one Pass 2 uses (#9, #15).
+                MassDiffAcceptor fileChopAcceptor = GetChopAcceptor(fileParams.PrecursorMassTolerance);
+
+                var file = (Raw: rawFilePath, FileParams: fileParams, Scans: scans);
                 var engine = new TruncationSearchEngine(parents, file.Scans, file.FileParams,
-                    new TruncationAcceptor(file.FileParams.PrecursorMassTolerance), file.Pass1MassByScan,
+                    new TruncationAcceptor(file.FileParams.PrecursorMassTolerance), pass1PsmsByScan,
                     TruncationSearchParameters.MaxParentMass);
                 List<TruncationParentSelection> selections = engine.Run();
                 foreach (string warning in engine.Warnings)
@@ -152,25 +150,21 @@ namespace TaskLayer
                 {
                     if (selection.Outcome == TruncationScanOutcome.Winner)
                     {
-                        TruncationPsm psm = TruncationPass3.ScoreTruncation(selection, file.FileParams, chopAcceptor, pass3Timings);
-                        if (psm != null)
-                        {
-                            truncationPsms.Add(psm);
-                        }
+                        List<TruncationPsm> psms = TruncationPass3.ScoreTruncations(selection, file.FileParams,
+                            fileChopAcceptor, pass3Timings, fixedModifications);
+                        truncationPsms.AddRange(psms);
                         winnerRankRows.Add(string.Join("\t", Path.GetFileNameWithoutExtension(file.Raw),
                             selection.Scan.OneBasedScanNumber, selection.CandidateRank, selection.CandidatePoolSize,
                             selection.Score.ToString("F3", System.Globalization.CultureInfo.InvariantCulture),
-                            psm != null ? 1 : 0));
+                            psms.Count > 0 ? 1 : 0));
                     }
-                    else if (selection.Outcome == TruncationScanOutcome.IntactInherited
-                             && file.Pass1PsmByScan != null
-                             && file.Pass1PsmByScan.TryGetValue(selection.Scan.OneBasedScanNumber, out SpectralMatch intactHit))
+                    else if (selection.Outcome == TruncationScanOutcome.IntactInherited && selection.IntactMatch != null)
                     {
-                        pooled.Add(TruncationPass3.InheritAsFullLength(intactHit, selection.Scan, selection.ScanIndex, file.FileParams));
+                        pooled.Add(TruncationPass3.InheritAsFullLength(selection.IntactMatch, selection.Scan, selection.ScanIndex, file.FileParams));
                     }
                 }
 
-                // Collapse duplicate truncations (same truncated FullSequence + scan) before pooling (#10).
+                // One truncation PSM per scan, tied parents kept as ambiguity (#10), before pooling.
                 pooled.AddRange(TruncationPass3.CollapseDuplicateTruncations(truncationPsms));
             }
 
@@ -274,15 +268,107 @@ namespace TaskLayer
             return pwsm?.Description ?? string.Empty;
         }
 
-        /// <summary>Writes AllTruncatedPSMs.psmtsv and AllTruncatedProteoforms.psmtsv (always, even when empty).</summary>
+        /// <summary>
+        /// Writes AllTruncatedPSMs.psmtsv and AllTruncatedProteoforms.psmtsv (always, even when empty). No q/PEP
+        /// cutoff; decoy and contaminant rows follow WriteDecoys/WriteContaminants (#17), as in PostSearchAnalysisTask.
+        /// </summary>
         private void WriteOutputs(List<SpectralMatch> psms, string outputFolder, string taskId)
         {
+            List<SpectralMatch> toWrite = RowsToWrite(psms, TruncationSearchParameters);
+
             string psmsPath = Path.Combine(outputFolder, TruncatedPsmsFileName);
             string proteoformsPath = Path.Combine(outputFolder, TruncatedProteoformsFileName);
-            TruncationOutput.WritePsms(psms, psmsPath);
-            TruncationOutput.WriteProteoforms(psms, proteoformsPath);
+            TruncationOutput.WritePsms(toWrite, psmsPath, TruncationSearchParameters.ModsToWriteSelection);
+            TruncationOutput.WriteProteoforms(toWrite, proteoformsPath, TruncationSearchParameters.ModsToWriteSelection);
             FinishedWritingFile(psmsPath, new List<string> { taskId });
             FinishedWritingFile(proteoformsPath, new List<string> { taskId });
+        }
+
+        /// <summary>The PSMs that reach the output files: decoys and contaminants only when WriteDecoys / WriteContaminants say so (#17).</summary>
+        public static List<SpectralMatch> RowsToWrite(IEnumerable<SpectralMatch> psms, TruncationSearchParameters parameters) =>
+            psms.Where(p => p != null
+                    && (parameters.WriteDecoys || !p.IsDecoy)
+                    && (parameters.WriteContaminants || !p.IsContaminant))
+                .ToList();
+
+        /// <summary>The Pass 3 chop acceptor for a precursor tolerance; its notch count drives the pooled FDR (#9, #15).</summary>
+        private MassDiffAcceptor GetChopAcceptor(MzLibUtil.Tolerance precursorMassTolerance) =>
+            SearchTask.GetMassDiffAcceptor(precursorMassTolerance,
+                TruncationSearchParameters.MassDiffAcceptorType, TruncationSearchParameters.CustomMdac);
+
+        /// <summary>
+        /// Chopping only works with an acceptor that accepts the observed monoisotopic precursor at a fixed set of
+        /// notches: an exact window or the 1/2/3 mm and ±3 mm notch sets (a Custom string must parse to one of
+        /// these). Open and interval acceptors (Open, ModOpen) accept a mass shift, so the chopper would stop early
+        /// and absorb it (#9 rules that out); the MostAbundant types expect the most-abundant mass, not the
+        /// monoisotopic precursor the chopper passes, and never match.
+        /// </summary>
+        public static void ValidateChopAcceptor(MassDiffAcceptor chopAcceptor, MassDiffAcceptorType type)
+        {
+            if (chopAcceptor is DotMassDiffAcceptor or SinglePpmAroundZeroSearchMode or SingleAbsoluteAroundZeroSearchMode)
+            {
+                return;
+            }
+
+            throw new MetaMorpheusException($"TruncationSearchTask cannot chop with MassDiffAcceptorType {type} " +
+                $"({chopAcceptor.GetType().Name}). Use Exact, OneMM, TwoMM, ThreeMM, PlusOrMinusThreeMM, or a Custom dot or ppm/da-around-zero acceptor.");
+        }
+
+        /// <summary>
+        /// The task searches with its own CommonParameters, which default to bottom-up settings. Warns when the
+        /// settings that decide MS2 deconvolution, precursor matching and fragment matching differ from the upstream
+        /// search whose matches it consumes (a top-down run usually wants them identical).
+        /// </summary>
+        private void WarnOnUpstreamParameterMismatch()
+        {
+            if (TaskChainContext == null)
+            {
+                return;
+            }
+
+            string upstreamId = TruncationSearchParameters.UpstreamSearchTaskId;
+            bool found = upstreamId != null
+                ? TaskChainContext.TryGet(TaskChainContext.CommonParametersKey(upstreamId), out CommonParameters upstream)
+                : TaskChainContext.TryGetMostRecent(out upstream);
+            if (!found || upstream == null)
+            {
+                return;
+            }
+
+            List<string> differences = DescribeParameterDifferences(upstream, CommonParameters);
+            if (differences.Count > 0)
+            {
+                Warn("TruncationSearchTask settings differ from the upstream search it consumes: " + string.Join("; ", differences)
+                    + ". Copy the search's CommonParameters into the truncation task unless this is intended.");
+            }
+        }
+
+        /// <summary>Human-readable "name: upstream vs this" differences in the settings that decide deconvolution and matching.</summary>
+        public static List<string> DescribeParameterDifferences(CommonParameters upstream, CommonParameters mine)
+        {
+            var settings = new (string Name, Func<CommonParameters, object> Get)[]
+            {
+                ("PrecursorMassTolerance", c => c.PrecursorMassTolerance),
+                ("ProductMassTolerance", c => c.ProductMassTolerance),
+                ("DoPrecursorDeconvolution", c => c.DoPrecursorDeconvolution),
+                ("UseProvidedPrecursorInfo", c => c.UseProvidedPrecursorInfo),
+                ("PrecursorDeconvolution max charge", c => c.PrecursorDeconvolutionParameters?.MaxAssumedChargeState),
+                ("ProductDeconvolution max charge", c => c.ProductDeconvolutionParameters?.MaxAssumedChargeState),
+                ("DissociationType", c => c.DissociationType),
+            };
+
+            var differences = new List<string>();
+            foreach ((string name, Func<CommonParameters, object> get) in settings)
+            {
+                string theirs = get(upstream)?.ToString() ?? "null";
+                string ours = get(mine)?.ToString() ?? "null";
+                if (theirs != ours)
+                {
+                    differences.Add($"{name} {ours} (search: {theirs})");
+                }
+            }
+
+            return differences;
         }
 
         /// <summary>
@@ -377,11 +463,9 @@ namespace TaskLayer
         /// intact (the dominant recall ceiling). Oversized parents are filtered later by the engine's
         /// <see cref="TruncationSearchParameters.MaxParentMass"/>.
         /// </summary>
-        private List<TruncationParent> BuildParentsFromDatabase(string taskId, List<DbForTask> dbFilenameList)
+        private List<TruncationParent> BuildParentsFromDatabase(List<DbForTask> dbFilenameList, List<Modification> variableModifications,
+            List<Modification> fixedModifications, List<string> localizableModificationTypes)
         {
-            LoadModifications(taskId, out List<Modification> variableModifications,
-                out List<Modification> fixedModifications, out List<string> localizableModificationTypes);
-
             var parents = new List<TruncationParent>();
             foreach (DbForTask db in dbFilenameList)
             {
@@ -410,8 +494,10 @@ namespace TaskLayer
 
         /// <summary>
         /// Disk fallback (decision #1): build parents from an AllProteoforms.psmtsv. Disk rows carry no
-        /// Protein, so a synthetic single-chain Protein is reconstructed per parent (whole sequence,
-        /// start=1) so Pass 3 chopping and reverse-decoy generation still work; mods are parsed from the
+        /// Protein, so a synthetic single-chain Protein is reconstructed per parent so Pass 3 chopping and
+        /// reverse-decoy generation still work. The proteoform is placed at its real start in the protein
+        /// (from the row's "Start and End Residues In Protein", with unknown residues before it), so truncation
+        /// coordinates stay protein-relative (#13) as on the in-memory path; mods are parsed from the
         /// FullSequence. Pipe-ambiguous rows expand into separate parents (#2). Intact-match inheritance
         /// (#4a) is unavailable on this path (no per-scan provenance).
         /// </summary>
@@ -437,26 +523,44 @@ namespace TaskLayer
 
                 string[] sequences = row.FullSequence.Split('|');
                 string[] accessions = (row.Accession ?? string.Empty).Split('|');
+                List<int> starts = ParseStartResidues(row.StartAndEndResiduesInProtein);
 
                 for (int i = 0; i < sequences.Length; i++)
                 {
                     string fullSequence = sequences[i];
                     string accession = i < accessions.Length && accessions[i].Length > 0 ? accessions[i]
                         : accessions.Length > 0 && accessions[0].Length > 0 ? accessions[0] : "UNKNOWN";
-                    string baseSequence = IBioPolymerWithSetMods.GetBaseSequenceFromFullSequence(fullSequence);
+                    int start = i < starts.Count ? starts[i] : starts.Count > 0 ? starts[0] : 1;
 
-                    var protein = new Protein(baseSequence, accession, isDecoy: row.IsDecoy);
-                    var proteoform = new PeptideWithSetModifications(fullSequence, GlobalVariables.AllModsKnownDictionary,
-                        digestionParams: digestionParams, p: protein,
-                        oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: baseSequence.Length,
-                        cleavageSpecificity: Omics.Digestion.CleavageSpecificity.Full);
-
-                    parents.Add(new TruncationParent(proteoform, accession, row, row.IsDecoy));
+                    parents.Add(new TruncationParent(BuildDiskProteoform(fullSequence, accession, start, row.IsDecoy, digestionParams),
+                        accession, row, row.IsDecoy));
                 }
             }
 
             return parents;
         }
+
+        /// <summary>
+        /// A disk parent on a synthetic protein: unknown residues ('X') up to <paramref name="oneBasedStart"/>, then the
+        /// proteoform, so its coordinates (and every truncation chopped from it) are the protein's own (#13).
+        /// </summary>
+        public static PeptideWithSetModifications BuildDiskProteoform(string fullSequence, string accession, int oneBasedStart,
+            bool isDecoy, DigestionParams digestionParams)
+        {
+            string baseSequence = IBioPolymerWithSetMods.GetBaseSequenceFromFullSequence(fullSequence);
+            var protein = new Protein(new string('X', oneBasedStart - 1) + baseSequence, accession, isDecoy: isDecoy);
+            return new PeptideWithSetModifications(fullSequence, GlobalVariables.AllModsKnownDictionary,
+                digestionParams: digestionParams, p: protein,
+                oneBasedStartResidueInProtein: oneBasedStart, oneBasedEndResidueInProtein: oneBasedStart + baseSequence.Length - 1,
+                cleavageSpecificity: Omics.Digestion.CleavageSpecificity.Full);
+        }
+
+        /// <summary>One-based start residues from a "[2 to 120]|[5 to 123]" cell, one per pipe-separated alternative.</summary>
+        public static List<int> ParseStartResidues(string startAndEndResidues) =>
+            System.Text.RegularExpressions.Regex.Matches(startAndEndResidues ?? string.Empty, @"\[(\d+) to \d+\]")
+                .Select(m => int.Parse(m.Groups[1].Value))
+                .Where(start => start >= 1)
+                .ToList();
 
         /// <summary>Permissive parent filter (#3) for disk rows (PsmFromTsv stores PEP_QValue/QValueNotch).</summary>
         private static bool PassesDiskParentFilter(PsmFromTsv row, double threshold)

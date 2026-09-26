@@ -11,6 +11,7 @@ using Omics.Fragmentation;
 using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using TaskLayer;
 
 namespace Test
 {
@@ -152,7 +153,11 @@ namespace Test
             };
 
             // Pass 1 hits: S1 -> P1 intact, S6 -> P2 intact (keyed by one-based scan number).
-            var pass1 = new Dictionary<int, double> { { 1, _p1.MonoisotopicMass }, { 6, _p2.MonoisotopicMass } };
+            var pass1 = new Dictionary<int, IReadOnlyList<SpectralMatch>>
+            {
+                { 1, new[] { Pass1Match(_p1, scans[0], notch: 0) } },
+                { 6, new[] { Pass1Match(_p2, scans[5], notch: 0) } }
+            };
 
             var parents = new List<TruncationParent>
             {
@@ -229,6 +234,87 @@ namespace Test
         public void ScanS8_AllParentsTooLight()
         {
             Assert.That(_results[7].Outcome, Is.EqualTo(TruncationScanOutcome.NoWinner));
+        }
+
+        /// <summary>
+        /// Top-down Pass 1 runs with ThreeMM, so an intact match can sit at notch 1: the observed precursor is one
+        /// C13 heavier than the theoretical mass. It must still be inherited, at its own notch, not searched for
+        /// truncations (#4a).
+        /// </summary>
+        [Test]
+        public void IntactMatchAtNonzeroNotch_IsInheritedAtThatNotch()
+        {
+            Ms2ScanWithSpecificMass scan = BuildScan(1, _p1.MonoisotopicMass + Constants.C13MinusC12,
+                SeriesMasses(_p1, FragmentationTerminus.Both));
+            SpectralMatch pass1Match = Pass1Match(_p1, scan, notch: 1);
+            var engine = new TruncationSearchEngine(new List<TruncationParent> { new(_p1, "P1", "P1", false) },
+                new[] { scan }, _cp, new TruncationAcceptor(_cp.PrecursorMassTolerance),
+                new Dictionary<int, IReadOnlyList<SpectralMatch>> { { 1, new[] { pass1Match } } });
+
+            TruncationParentSelection selection = engine.Run().Single();
+
+            Assert.That(selection.Outcome, Is.EqualTo(TruncationScanOutcome.IntactInherited));
+            Assert.That(selection.IntactMatch, Is.SameAs(pass1Match));
+            SpectralMatch inherited = TruncationPass3.InheritAsFullLength(selection.IntactMatch, scan, 0, _cp);
+            inherited.ResolveAllAmbiguities();
+            Assert.That(inherited.Notch, Is.EqualTo(1));
+            Assert.That(inherited.BaseSequence, Is.EqualTo(_p1.BaseSequence));
+        }
+
+        /// <summary>
+        /// A chimeric scan carries one entry per precursor, and Pass 1 can match both. Each entry must be
+        /// inherited with its own Pass 1 match, not only the best match on the scan (#4a).
+        /// </summary>
+        [Test]
+        public void ChimericScan_EachPrecursorInheritsItsOwnPass1Match()
+        {
+            var fragments = SeriesMasses(_p1, FragmentationTerminus.Both).Concat(SeriesMasses(_p2, FragmentationTerminus.Both)).ToList();
+            Ms2ScanWithSpecificMass p1Entry = BuildScan(9, _p1.MonoisotopicMass, fragments);
+            Ms2ScanWithSpecificMass p2Entry = BuildScan(9, _p2.MonoisotopicMass, fragments);
+            SpectralMatch p1Match = Pass1Match(_p1, p1Entry, notch: 0, score: 20);
+            SpectralMatch p2Match = Pass1Match(_p2, p2Entry, notch: 0, score: 30);
+            var engine = new TruncationSearchEngine(
+                new List<TruncationParent> { new(_p1, "P1", "P1", false), new(_p2, "P2", "P2", false) },
+                new[] { p1Entry, p2Entry }, _cp, new TruncationAcceptor(_cp.PrecursorMassTolerance),
+                new Dictionary<int, IReadOnlyList<SpectralMatch>> { { 9, new[] { p2Match, p1Match } } }); // best first
+
+            List<TruncationParentSelection> selections = engine.Run();
+
+            Assert.That(selections.Select(s => s.Outcome), Is.All.EqualTo(TruncationScanOutcome.IntactInherited));
+            Assert.That(selections[0].IntactMatch, Is.SameAs(p1Match));
+            Assert.That(selections[1].IntactMatch, Is.SameAs(p2Match));
+        }
+
+        /// <summary>
+        /// Two parents with the same sequence under different accessions tie exactly in Pass 2. Both must reach
+        /// Pass 3 so the truncation is reported once with both accessions, as decision #10 describes, instead of
+        /// under whichever parent the candidate order put first.
+        /// </summary>
+        [Test]
+        public void TiedParents_AreCarriedToPass3_AndCollapseToOneAmbiguousPsm()
+        {
+            string p1Seq = RepeatTo(AlphabetP1, 50);
+            var isoform = BuildTopDownProteoform(p1Seq, "P1b");
+            var p1ToResidue40 = BuildTopDownProteoform(p1Seq.Substring(0, 40), "P1_1-40");
+            Ms2ScanWithSpecificMass scan = BuildScan(2, p1ToResidue40.MonoisotopicMass, SeriesMasses(p1ToResidue40, FragmentationTerminus.N));
+            var engine = new TruncationSearchEngine(
+                new List<TruncationParent> { new(_p1, "P1", "P1", false), new(isoform, "P1b", "P1b", false) },
+                new[] { scan }, _cp, new TruncationAcceptor(_cp.PrecursorMassTolerance));
+
+            TruncationParentSelection selection = engine.Run().Single();
+
+            Assert.That(selection.Outcome, Is.EqualTo(TruncationScanOutcome.Winner));
+            Assert.That(selection.TiedWinners.Select(t => t.Parent.ProteinAccession),
+                Is.EquivalentTo(new[] { "P1", "P1b" }.Except(new[] { selection.WinningParent.ProteinAccession })));
+
+            List<TruncationPsm> psms = TruncationPass3.ScoreTruncations(selection, _cp,
+                SearchTask.GetMassDiffAcceptor(_cp.PrecursorMassTolerance, MassDiffAcceptorType.Exact, null));
+            Assert.That(psms, Has.Count.EqualTo(2));
+
+            SpectralMatch collapsed = TruncationPass3.CollapseDuplicateTruncations(psms).Single();
+            collapsed.ResolveAllAmbiguities();
+            Assert.That(collapsed.BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.Parent.Accession).Distinct(),
+                Is.EquivalentTo(new[] { "P1", "P1b" }));
         }
 
         [Test]
@@ -317,6 +403,9 @@ namespace Test
             var digestionParams = new DigestionParams(protease: "top-down", minPeptideLength: 1, maxPeptideLength: 100000);
             return protein.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
         }
+
+        private SpectralMatch Pass1Match(PeptideWithSetModifications form, Ms2ScanWithSpecificMass scan, int notch, double score = 10) =>
+            new PeptideSpectralMatch(form, notch, score, 0, scan, _cp, new List<MatchedFragmentIon>());
 
         private List<double> SeriesMasses(PeptideWithSetModifications form, FragmentationTerminus terminus)
         {

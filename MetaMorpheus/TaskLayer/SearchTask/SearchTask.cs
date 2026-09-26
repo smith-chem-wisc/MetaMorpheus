@@ -620,6 +620,8 @@ namespace TaskLayer
             // no-op) unless the run list actually contains a consumer, and the runner clears it once that
             // consumer has run.
             TaskChainContext?.Deposit(taskId, parameters.AllSpectralMatches);
+            // Its CommonParameters ride along so the consumer can warn when its own settings disagree.
+            TaskChainContext?.Deposit(TaskChainContext.CommonParametersKey(taskId), CommonParameters);
 
             return postSearchResults;
         }
