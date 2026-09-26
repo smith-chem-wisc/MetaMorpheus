@@ -1552,10 +1552,107 @@ namespace TaskLayer
             }
         }
 
+        /// <summary>
+        /// Removes contaminant rows from the FlashLFQ-authored tables when the user asked not to write
+        /// contaminants, so AllQuantifiedPeptides.tsv and AllQuantifiedPeaks.tsv agree with the tables
+        /// beside them instead of contradicting them. WriteContaminants already reaches the protein
+        /// table (ProteinGroupIsWritten) and MetaMorpheus's own PSM and peptide tables; these two are
+        /// written by mzLib from FlashLfqResults, which has no contaminant concept, so the filter has
+        /// to be applied here.
+        ///
+        /// A sequence is dropped only when EVERY spectral match carrying it is a contaminant. A
+        /// sequence shared with a target protein is itself a contaminant, because
+        /// SpectralMatch.IsContaminant is Any(parent.IsContaminant), so it is withheld here exactly
+        /// as from AllPeptides.tsv. The target-match set only guards matches of one sequence that
+        /// disagree on the flag.
+        ///
+        /// DELIBERATELY AT WRITE TIME, not by narrowing peptideSequencesForQuantification above.
+        /// That list becomes FlashLfqEngine.PeptideModifiedSequencesToQuantify, which mzLib consults
+        /// INSIDE quantification rather than only on the way out - in its peak filtering, and in the MBR
+        /// choice between two peaks sharing an apex, where set membership decides which survives.
+        /// Narrowing it can therefore move target intensities. Filtering here cannot: the engine sees exactly what it saw before.
+        ///
+        /// Safe to mutate the results object because every consumer that reads a NUMBER out of it has
+        /// already run - protein group intensities at QuantificationAnalysis (the IntensitiesByFile
+        /// assignment), DistributeQuantifiedIntensities, and WriteProteinResults all precede this in
+        /// Run(). Nothing after this reads FlashLfqResults.
+        ///
+        /// Under SILAC the three sets of names do not agree: PSMs and peak identifications carry the
+        /// label's mass difference (PEPTIDEK(+8.014)), the peptide table is keyed by the unlabeled
+        /// sequence, and a label channel no spectrum identified has peaks but no PSM. So every name is
+        /// compared in the unlabeled form the peptide table uses.
+        /// </summary>
+        private void RemoveContaminantsFromQuantificationTables()
+        {
+            if (Parameters.SearchParameters.WriteContaminants)
+            {
+                return;
+            }
+
+            var sequencesWithATargetMatch = new HashSet<string>(Parameters.AllSpectralMatches
+                .Where(psm => !psm.IsContaminant && psm.FullSequence != null)
+                .Select(psm => UnlabeledSequence(psm.FullSequence)));
+
+            var contaminantOnlySequences = new HashSet<string>(Parameters.AllSpectralMatches
+                .Where(psm => psm.IsContaminant && psm.FullSequence != null)
+                .Select(psm => UnlabeledSequence(psm.FullSequence))
+                .Where(sequence => !sequencesWithATargetMatch.Contains(sequence)));
+
+            if (contaminantOnlySequences.Count == 0)
+            {
+                return;
+            }
+
+            foreach (string sequence in Parameters.FlashLfqResults.PeptideModifiedSequences.Keys.ToList())
+            {
+                if (contaminantOnlySequences.Contains(UnlabeledSequence(sequence)))
+                {
+                    Parameters.FlashLfqResults.PeptideModifiedSequences.Remove(sequence);
+                }
+            }
+
+            // A peak carries every identification that resolved to it, so it is a contaminant row only
+            // when none of them is a sequence still being written.
+            foreach (var file in Parameters.FlashLfqResults.Peaks.Keys.ToList())
+            {
+                Parameters.FlashLfqResults.Peaks[file].RemoveAll(peak =>
+                    peak.Identifications.Count > 0
+                    && peak.Identifications.All(id => contaminantOnlySequences.Contains(UnlabeledSequence(id.ModifiedSequence))));
+            }
+        }
+
+        /// <summary>
+        /// A sequence with every SILAC label written back as its original residue, the form the
+        /// SILAC peptide table is keyed by. Unchanged when the search has no SILAC labels.
+        /// </summary>
+        private string UnlabeledSequence(string sequence)
+        {
+            var labels = new List<SilacLabel>();
+            foreach (var label in (Parameters.SearchParameters.SilacLabels ?? new List<SilacLabel>())
+                .Append(Parameters.SearchParameters.StartTurnoverLabel)
+                .Append(Parameters.SearchParameters.EndTurnoverLabel)
+                .Where(label => label != null))
+            {
+                labels.Add(label);
+                if (label.AdditionalLabels != null)
+                {
+                    labels.AddRange(label.AdditionalLabels);
+                }
+            }
+
+            foreach (var label in labels)
+            {
+                sequence = sequence.Replace(SilacConversions.HeavyStringForPeptides(label), label.OriginalAminoAcid.ToString());
+            }
+            return sequence;
+        }
+
         private void WriteFlashLFQResults()
         {
             if (Parameters.SearchParameters.DoLabelFreeQuantification && Parameters.FlashLfqResults != null)
             {
+                RemoveContaminantsFromQuantificationTables();
+
                 // write peaks
                 WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
 
