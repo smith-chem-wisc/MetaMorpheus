@@ -898,6 +898,79 @@ namespace Test
         }
 
         /// <summary>
+        /// Struct2Node has three child slots. A fourth branch walked it off the root, so the user saw a raw
+        /// "Object reference not set" on entry, and a bare NullReferenceException at search time. Three
+        /// branches, the most a node can hold, still load.
+        /// </summary>
+        [TestCase("(N(H)(H)(H)(H))")]
+        [TestCase("(N(N(H(H)(H)(H)(A))))")]
+        public static void ANodeWithFourBranchesIsRefusedOnEntryAndOnLoad(string structure)
+        {
+            var entry = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomGlycan(structure, Path_("typed.gdb"), true));
+            Assert.That(entry.Message, Does.Contain("at most three branches"));
+            Assert.That(entry.Message, Does.Not.Contain("Object reference"));
+
+            string path = Path_("four_branches.gdb");
+            File.WriteAllLines(path, new[] { "(N(H)(H)(H))", structure });
+            var load = Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.LoadGlycan(path, false, true).ToList());
+            Assert.That(load.Message, Does.Contain("'four_branches.gdb' at line 2").And.Contain("at most three branches"));
+        }
+
+        [Test]
+        public static void ANodeWithThreeBranchesIsStillAccepted()
+        {
+            string path = Path_("three_branches.gdb");
+
+            GlycanDatabase.PersistCustomGlycan("(N(H)(H)(H))", path, true);
+
+            Assert.That(GlycanDatabase.LoadGlycan(path, false, true).Count(), Is.EqualTo(2));
+        }
+
+        /// <summary>
+        /// A composition line is cut at '#' and read as name(count), so a monosaccharide named Sia#2 or
+        /// Sia(2) registered, and HexNAc(1)Sia#2(1) was accepted on entry and loaded back as HexNAc(1).
+        /// Such a name is refused where it is typed.
+        /// </summary>
+        [TestCase("Sia#2")]
+        [TestCase("Sia(2)")]
+        [TestCase("Sia)")]
+        public static void AMonosaccharideNameWithAReservedCharacterIsRefused(string name)
+        {
+            var ex = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomMonosaccharide(name, "Z", null, "291.09542", null, null));
+
+            Assert.That(ex.Message, Does.Contain("cannot contain '#', '(' or ')'"));
+            Assert.That(Glycan.NameCharDic.ContainsKey(name), Is.False);
+        }
+
+        /// <summary>
+        /// In MonosaccharidesCustom.tsv the same name is skipped with a warning rather than thrown: that file
+        /// is read at startup, and a name that was legal before must not stop MetaMorpheus opening.
+        /// </summary>
+        [Test]
+        public static void AReservedCharacterInTheMonosaccharideFileIsSkippedWithAWarning()
+        {
+            string path = Path_("MonosaccharidesCustom.tsv");
+            File.WriteAllLines(path, new[]
+            {
+                GlycanDatabase.MonoSaccharidesHeader,
+                "Sia#2\tZ\t291.09542",
+                "TestSugar\tW\t250.06887",
+            });
+            GlobalVariables.ErrorsReadingMods ??= new List<string>();
+            int before = GlobalVariables.ErrorsReadingMods.Count;
+
+            GlycanDatabase.LoadCustomMonosaccharides(path);
+
+            var warnings = GlobalVariables.ErrorsReadingMods.Skip(before).ToList();
+            Assert.That(Glycan.NameCharDic.ContainsKey("Sia#2"), Is.False);
+            Assert.That(Glycan.NameCharDic.ContainsKey("TestSugar"), Is.True, "the lines after it still load");
+            Assert.That(warnings.Count, Is.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("'MonosaccharidesCustom.tsv' at line 2").And.Contain("Sia#2"));
+        }
+
+        /// <summary>
         /// Zero is refused at one end; the other end was open, and a glycan of hundreds of residues stalls
         /// the first search that builds its ions for minutes. Twice the largest glycan any shipped database
         /// holds is still accepted.
