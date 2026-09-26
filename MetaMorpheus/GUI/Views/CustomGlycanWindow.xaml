@@ -18,7 +18,7 @@
             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                 <Label Content="Database" Width="60"></Label>
                 <Label Content="*" Foreground="Red" FontWeight="Bold"/>
-                <ComboBox x:Name="databaseComboBox" Width="330" Height="22" SelectedIndex="0">
+                <ComboBox x:Name="databaseComboBox" Width="330" Height="22" SelectedIndex="-1">
                     <ToolTipService.ToolTip>
                         <ToolTip Content="Which of your custom databases the glycan is added to" />
                     </ToolTipService.ToolTip>
