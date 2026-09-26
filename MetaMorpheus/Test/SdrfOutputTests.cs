@@ -550,6 +550,7 @@ namespace Test
         public static void ASearchWithNoSpectraFilesWritesNoSdrfAndSaysSo()
         {
             string output = Path.Combine(TestContext.CurrentContext.TestDirectory, nameof(ASearchWithNoSpectraFilesWritesNoSdrfAndSaysSo));
+            if (Directory.Exists(output)) Directory.Delete(output, true);
             Directory.CreateDirectory(output);
             var task = new PostSearchAnalysisTask
             {
@@ -557,6 +558,7 @@ namespace Test
                 {
                     OutputFolder = output,
                     SearchTaskId = "no-files",
+                    SearchParameters = new SearchParameters(),
                     CurrentRawFileList = new List<string>()
                 }
             };
