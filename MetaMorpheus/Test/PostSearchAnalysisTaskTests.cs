@@ -1187,9 +1187,8 @@ namespace Test
         /// This is the assertion that distinguishes filtering at the writers from the one-line
         /// alternative of narrowing peptideSequencesForQuantification. That list becomes
         /// FlashLfqEngine.PeptideModifiedSequencesToQuantify, which mzLib consults INSIDE
-        /// quantification -- peak filtering at FlashLfqEngine.cs:711, :948, :996, :1116, and MBR peak
-        /// selection at :1400-1428, where set membership decides which of two peaks sharing an apex
-        /// survives. Under that alternative the contaminant is never quantified at all and its
+        /// quantification -- in its peak filtering, and in the MBR choice between two peaks sharing an
+        /// apex, where set membership decides which survives. Under that alternative the contaminant is never quantified at all and its
         /// intensity here would be zero; under this one the engine quantifies it exactly as before and
         /// only the writer withholds the row. So the greater-than-zero assertion is what goes red if
         /// this is ever "simplified" into the narrowing version, and the equality is the claim that
