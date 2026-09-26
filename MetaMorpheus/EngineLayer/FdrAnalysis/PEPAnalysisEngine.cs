@@ -392,8 +392,8 @@ namespace EngineLayer
 
         /// <summary>
         /// Assigns a PEP to every spectral match in the given groups. Unless <see cref="PruneAmbiguousHypotheses"/>
-        /// is set, this method scores; it does not prune. Removing ambiguous match hypotheses is the
-        /// DisambiguationEngine's job.
+        /// is set, this method scores; it does not prune. The DisambiguationEngine that runs after a SearchTask resolves
+        /// only hypotheses at different notches; hypotheses at the same notch stay ambiguous.
         /// </summary>
         public void Compute_PSM_PEP(List<SpectralMatchGroup> peptideGroups,
             List<int> peptideGroupIndices,
@@ -428,8 +428,10 @@ namespace EngineLayer
                                 {
                                     pepValuePredictions.Clear();
 
-                                    // One prediction per ambiguous match hypothesis. The PSM keeps the best of them;
-                                    // the others are left in place for the DisambiguationEngine to judge.
+                                    // One prediction per ambiguous match hypothesis. The PSM keeps the best of them, and the
+                                    // others stay in place. The DisambiguationEngine only judges matches that are ambiguous
+                                    // across notches (Notch == null). Hypotheses at the same notch (equal-mass sequences, mod
+                                    // positions, variant vs canonical) are not resolved by anything before parsimony.
                                     var hypotheses = psm.BestMatchingBioPolymersWithSetMods.ToList();
                                     foreach (SpectralMatchHypothesis bestMatch in hypotheses)
                                     {
@@ -676,6 +678,7 @@ namespace EngineLayer
         /// which have no DisambiguationEngine downstream). Otherwise PEP scores and does not prune:
         /// disambiguation-by-PEP belongs in <see cref="SpectrumMatch.DisambiguationEngine"/>, whose
         /// own summary already names "PEPAnalysisEngine -> By PEP" as a site to consolidate there.
+        /// That engine resolves only cross-notch ambiguity today; same-notch hypotheses stay ambiguous.
         /// </remarks>
         /// </summary>
         public static void RemoveBestMatchingPeptidesWithLowPEP(SpectralMatch psm, List<int> indicesOfPeptidesToRemove, List<SpectralMatchHypothesis> allPeptides, ref int ambiguousPeptidesRemovedCount)
@@ -694,8 +697,10 @@ namespace EngineLayer
         /// This method will also remove the low scoring predictions from the set.
         /// <remarks>
         /// Called only when pruning -- see <see cref="RemoveBestMatchingPeptidesWithLowPEP"/>.
-        /// Note that it never drops the maximum (max - max = 0 is not &gt; the threshold), which is why
-        /// pruning or not leaves every assigned PEP unchanged: PEP is 1 - pepValuePredictions.Max().
+        /// Note that it never drops the maximum (max - max = 0 is not &gt; the threshold), which is why,
+        /// within one engine run, pruning or not leaves every assigned PEP unchanged: PEP is 1 - pepValuePredictions.Max().
+        /// Across runs on the same matches it does not hold: pruning changes the next run's training rows (one per
+        /// hypothesis), the Ambiguity feature and the sequence grouping. NonSpecificEnzymeSearchEngine runs PEP twice.
         /// </remarks>
         /// </summary>
         public static void GetIndicesOfPeptidesToRemove(List<int> indicesOfPeptidesToRemove, List<double> pepValuePredictions)
