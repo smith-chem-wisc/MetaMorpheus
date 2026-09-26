@@ -235,14 +235,12 @@ namespace TaskLayer
             .ConfigureType<DigestionParams>(type => type
                 .IgnoreProperty(p => p.DigestionAgent)
                 .IgnoreProperty(p => p.SpecificDigestionAgent)
-                .IgnoreProperty(p => p.SpecificProtease)
                 .IgnoreProperty(p => p.MaxMods)
                 .IgnoreProperty(p => p.MaxLength)
                 .IgnoreProperty(p => p.MinLength))
             .ConfigureType<RnaDigestionParams>(type => type
                 .IgnoreProperty(p => p.DigestionAgent)
-                .IgnoreProperty(p => p.SpecificDigestionAgent)
-                .IgnoreProperty(p => p.SpecificRnase))
+                .IgnoreProperty(p => p.SpecificDigestionAgent))
             .ConfigureType<Rnase>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.Name)
@@ -346,6 +344,15 @@ namespace TaskLayer
 
         [TomlIgnore]
         public virtual string OutputFolder { get; private set; }
+
+        /// <summary>
+        /// The spectra files the whole run started from, before a Calibrate or Average task replaced them with
+        /// -calib / -averaged derivatives. Set by <see cref="EverythingRunnerEngine"/>; null when a task is run on
+        /// its own, in which case the files it is given are the acquired ones. An SDRF names these in
+        /// comment[data file] and the file the search read in comment[searched data file] (sdrf D46).
+        /// </summary>
+        [TomlIgnore]
+        public List<string> AcquiredSpectraFiles { get; set; }
 
         protected MyTaskResults MyTaskResults;
 
