@@ -4,7 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
+using System.Net.Sockets;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
@@ -14,6 +20,7 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Readers.SpectralLibrary;
 using PredictionClients.Koina.AbstractClasses;
+using PredictionClients.Koina.Client;
 using Omics.Digestion;
 using EngineLayer.DatabaseLoading;
 using TaskLayer;
@@ -26,11 +33,13 @@ namespace Test
     /// Every PSM here has its ambiguities resolved, because GetSpectralMatchesWithoutComputedSpectralAngle
     /// filters out any PSM whose FullSequence is null - an unresolved PSM never reaches the code under test.
     ///
-    /// Nothing here touches the network except the one [Category("ExternalService")] test. The remote
-    /// call is replaced through PostSearchAnalysisTask.SpectrumPredictor, and the real Prosit wrapper is
-    /// exercised with an input the model rejects before it builds a request.
+    /// Nothing here touches the network; the live Koina test is in SupplementalSpectralSimilarityLiveTests,
+    /// a separate fixture so its class-level ExternalService tag does not pull these out of the required
+    /// CI job. The remote call is replaced through PostSearchAnalysisTask.SpectrumPredictor, and the real
+    /// Prosit wrapper is exercised with an input the model rejects before it builds a request.
     /// </summary>
     [TestFixture]
+    [ExcludeFromCodeCoverage]
     public class SupplementalSpectralSimilarityTests
     {
         private static readonly CommonParameters CommonParams = new(
@@ -67,7 +76,7 @@ namespace Test
         /// A PSM whose ambiguities are resolved, so FullSequence is populated and the PSM actually
         /// survives the filter. hcdEnergy null means the scan carries no recorded energy.
         /// </summary>
-        private static SpectralMatch ResolvedPsm(string sequence, int charge, string hcdEnergy = null)
+        internal static SpectralMatch ResolvedPsm(string sequence, int charge, string hcdEnergy = null)
         {
             // digested from a real protein rather than constructed directly: ResolveAllAmbiguities
             // reaches through to the parent to decide decoy status, and a parentless peptide NREs
@@ -102,7 +111,7 @@ namespace Test
         /// A task with predictions switched on for an HCD peptide search, and the remote call stubbed to
         /// return nothing.
         /// </summary>
-        private static PostSearchAnalysisTask TaskWith(params SpectralMatch[] psms)
+        internal static PostSearchAnalysisTask TaskWith(params SpectralMatch[] psms)
         {
             var task = new PostSearchAnalysisTask
             {
@@ -694,27 +703,265 @@ namespace Test
                 Is.EqualTo(30));
         }
 
-        // ---------- live ----------
+        // ---------- Stop ----------
 
         /// <summary>
-        /// End to end against Koina: an unmodified tryptic peptide comes back with a real angle. An
-        /// outage is reported by the production code as a warning, which this test turns into a skip.
+        /// A Stop pressed before the call means no request is sent: the search is being abandoned, so
+        /// nothing it would wait on is worth asking for.
         /// </summary>
         [Test]
-        [Category("ExternalService")]
-        public void PrositPredictionProducesARealAngle()
+        [NonParallelizable] // writes the process-wide StopLoops flag
+        public void StopBeforeThePredictionSendsNoRequest()
         {
-            var psm = ResolvedPsm("PEPTIDEK", 2, hcdEnergy: "28");
+            var psm = ResolvedPsm("PEPTIDEK", 2);
             var task = TaskWith(psm);
-            task.SpectrumPredictor = null;
+            bool predictorCalled = false;
+            task.SpectrumPredictor = _ => { predictorCalled = true; return new List<LibrarySpectrum> { LibrarySpectrumFor(psm) }; };
+            bool stopLoops = GlobalVariables.StopLoops;
+            try
+            {
+                GlobalVariables.StopLoops = true;
+                task.ComputeSpectrumSimilarity(null);
+            }
+            finally
+            {
+                GlobalVariables.StopLoops = stopLoops;
+            }
+
+            Assert.That(predictorCalled, Is.False, "no prediction may be requested once Stop is pressed");
+            Assert.That(psm.SpectralAngle, Is.EqualTo(-1));
+        }
+
+        /// <summary>
+        /// The remote call cannot be interrupted, so a Stop pressed while it ran is honoured when it
+        /// returns: what came back is discarded rather than scored. TheSamePredictionWithoutStopIsScored
+        /// is this test without the Stop, so -1 here is the Stop and not a spectrum that failed to match.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // writes the process-wide StopLoops flag
+        public void StopDuringThePredictionDiscardsWhatCameBack()
+        {
+            var psm = ResolvedPsm("PEPTIDEK", 2);
+            var task = TaskWith(psm);
+            task.SpectrumPredictor = _ =>
+            {
+                GlobalVariables.StopLoops = true;
+                return new List<LibrarySpectrum> { LibrarySpectrumFor(psm) };
+            };
+            bool stopLoops = GlobalVariables.StopLoops;
+            try
+            {
+                task.ComputeSpectrumSimilarity(null);
+            }
+            finally
+            {
+                GlobalVariables.StopLoops = stopLoops;
+            }
+
+            Assert.That(psm.SpectralAngle, Is.EqualTo(-1), "spectra returned after Stop must not be scored");
+        }
+
+        [Test]
+        public void TheSamePredictionWithoutStopIsScored()
+        {
+            var psm = ResolvedPsm("PEPTIDEK", 2);
+            var task = TaskWith(psm);
+            task.SpectrumPredictor = _ => new List<LibrarySpectrum> { LibrarySpectrumFor(psm) };
 
             task.ComputeSpectrumSimilarity(null);
 
-            if (_warnings.Any(w => w.StartsWith("Predicted spectra were unavailable")))
+            Assert.That(psm.SpectralAngle, Is.EqualTo(1).Within(1e-7));
+        }
+
+        // ---------- classifying a live Koina failure ----------
+
+        /// <summary>
+        /// Koina being unable to answer is not our bug, so the live test skips: no HTTP answer at all,
+        /// a timeout, 408/429/5xx, or a 400 whose body mzLib recognises as the model failing to run.
+        /// </summary>
+        [Test]
+        [TestCase(typeof(TaskCanceledException))]
+        [TestCase(typeof(SocketException))]
+        public void KoinaTransportFailuresAreUnavailability(Type exceptionType)
+        {
+            var e = (Exception)Activator.CreateInstance(exceptionType);
+
+            Assert.That(() => SupplementalSpectralSimilarityLiveTests.ThrowAsTestOutcome(e),
+                Throws.TypeOf<ExternalServiceUnavailableException>());
+        }
+
+        [Test]
+        [TestCase("No such host is known. (koina.wilhelmlab.org:443)")]
+        [TestCase("Request failed with status 408 Request Timeout: ")]
+        [TestCase("Request failed with status 429 Too Many Requests: ")]
+        [TestCase("Request failed with status 502 Bad Gateway: <html>")]
+        [TestCase("Koina unreachable: 503 Service Unavailable")]
+        public void KoinaHttpFailuresNotOfOurMakingAreUnavailability(string message)
+        {
+            Assert.That(() => SupplementalSpectralSimilarityLiveTests.ThrowAsTestOutcome(new HttpRequestException(message)),
+                Throws.TypeOf<ExternalServiceUnavailableException>());
+        }
+
+        [Test]
+        public void KoinaModelFaultIsUnavailability()
+        {
+            var fault = KoinaServiceException.ForFailedResponse(400, "Bad Request",
+                "{\"error\":\"PyTorch execute failure: CUDA error\"}");
+
+            Assert.That(fault, Is.TypeOf<KoinaServiceException>(), "precondition: mzLib classifies this body as a server fault");
+            Assert.That(() => SupplementalSpectralSimilarityLiveTests.ThrowAsTestOutcome(fault),
+                Throws.TypeOf<ExternalServiceUnavailableException>());
+        }
+
+        /// <summary>
+        /// The status is read from HttpRequestException.StatusCode when the thrower set it, not only
+        /// from the message.
+        /// </summary>
+        [Test]
+        public void KoinaStatusCodePropertyIsHonoured()
+        {
+            var unavailable = new HttpRequestException("gateway", null, System.Net.HttpStatusCode.GatewayTimeout);
+            var rejected = new HttpRequestException("rejected", null, System.Net.HttpStatusCode.BadRequest);
+
+            Assert.That(() => SupplementalSpectralSimilarityLiveTests.ThrowAsTestOutcome(unavailable),
+                Throws.TypeOf<ExternalServiceUnavailableException>());
+            Assert.That(() => SupplementalSpectralSimilarityLiveTests.ThrowAsTestOutcome(rejected),
+                Throws.TypeOf<AssertionException>());
+        }
+
+        /// <summary>
+        /// Everything else is ours and must fail the live test: Koina rejecting a request we built (a
+        /// 400 that is not a model fault, a 404 for a renamed model), a response we can no longer read,
+        /// or a bug in turning the answer into library spectra.
+        /// </summary>
+        [Test]
+        [TestCase("Request failed with status 400 Bad Request: {\"error\":\"unexpected shape for input 'peptide_sequences'\"}")]
+        [TestCase("Request failed with status 404 Not Found: model 'Prosit_2020_intensity_HCD' is unknown")]
+        public void KoinaRejectingOurRequestIsAFailure(string message)
+        {
+            Assert.That(() => SupplementalSpectralSimilarityLiveTests.ThrowAsTestOutcome(new HttpRequestException(message)),
+                Throws.TypeOf<AssertionException>());
+        }
+
+        [Test]
+        [TestCase(typeof(NullReferenceException))]
+        [TestCase(typeof(ArgumentException))]
+        [TestCase(typeof(Exception))]
+        public void ACodeFailureAroundTheCallIsAFailure(Type exceptionType)
+        {
+            var e = (Exception)Activator.CreateInstance(exceptionType);
+
+            Assert.That(() => SupplementalSpectralSimilarityLiveTests.ThrowAsTestOutcome(e),
+                Throws.TypeOf<AssertionException>());
+        }
+
+        /// <summary>Reflection and Task wrappers are seen through, so the classification is of what they wrap.</summary>
+        [Test]
+        public void WrappedFailuresAreClassifiedByWhatTheyWrap()
+        {
+            var wrappedOutage = new AggregateException(new TargetInvocationException(new TaskCanceledException()));
+            var wrappedBug = new TargetInvocationException(new AggregateException(new NullReferenceException()));
+
+            Assert.That(() => SupplementalSpectralSimilarityLiveTests.ThrowAsTestOutcome(wrappedOutage),
+                Throws.TypeOf<ExternalServiceUnavailableException>());
+            Assert.That(() => SupplementalSpectralSimilarityLiveTests.ThrowAsTestOutcome(wrappedBug),
+                Throws.TypeOf<AssertionException>());
+        }
+    }
+
+    /// <summary>
+    /// The live Koina check for the opt-in spectral angle. Its own fixture because the ExternalService
+    /// tag is class-level: CI runs it only in the non-blocking external-service job.
+    ///
+    /// Production turns every exception from the prediction into a warning so a finished search is not
+    /// lost to an outage, which means the warning cannot tell an outage from our bug. The test therefore
+    /// routes the real call through SpectrumPredictor, keeps the exception it threw, and classifies that:
+    /// an availability failure skips (via ExternalServiceTestHelper.RunAsync), anything else fails.
+    /// </summary>
+    [TestFixture]
+    [Category("ExternalService")]
+    [Category("Koina")]
+    [ExcludeFromCodeCoverage]
+    public class SupplementalSpectralSimilarityLiveTests
+    {
+        /// <summary>
+        /// End to end against Koina: an unmodified tryptic peptide comes back with a real angle.
+        /// </summary>
+        [Test]
+        public Task PrositPredictionProducesARealAngle() =>
+            ExternalServiceTestHelper.RunAsync("Koina", () =>
             {
-                Assert.Ignore("Skipping external-service test: Koina unavailable. " + string.Join(" | ", _warnings));
-            }
-            Assert.That(psm.SpectralAngle, Is.InRange(0.0, 1.0));
+                var psm = SupplementalSpectralSimilarityTests.ResolvedPsm("PEPTIDEK", 2, hcdEnergy: "28");
+                var task = SupplementalSpectralSimilarityTests.TaskWith(psm);
+
+                // The production call itself, not a copy of how it configures the model. Looked up by
+                // name because it is private; a rename fails here rather than skipping.
+                var predictWithProsit = typeof(PostSearchAnalysisTask).GetMethod("PredictWithProsit",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+                Assert.That(predictWithProsit, Is.Not.Null, "PostSearchAnalysisTask.PredictWithProsit was renamed; update this test");
+
+                Exception failure = null;
+                task.SpectrumPredictor = inputs =>
+                {
+                    try
+                    {
+                        return (List<LibrarySpectrum>)predictWithProsit.Invoke(task, new object[] { inputs });
+                    }
+                    catch (TargetInvocationException e) when (e.InnerException != null)
+                    {
+                        failure = e.InnerException;
+                        ExceptionDispatchInfo.Capture(e.InnerException).Throw();
+                        throw;
+                    }
+                };
+
+                task.ComputeSpectrumSimilarity(null);
+
+                if (failure != null)
+                    ThrowAsTestOutcome(failure);
+                Assert.That(psm.SpectralAngle, Is.InRange(0.0, 1.0));
+                return Task.CompletedTask;
+            });
+
+        private static readonly Regex HttpStatus = new(@"(?:status|unreachable:) (\d{3})\b", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Rethrows a failure from the live call as the test's outcome: ExternalServiceUnavailableException
+        /// (RunAsync skips) when Koina could not answer, an assertion failure otherwise.
+        ///
+        /// Stricter than RunAsync alone, which skips every HttpRequestException. mzLib's Koina client
+        /// raises a plain HttpRequestException for any non-success status, so a 400 caused by a request
+        /// we built wrong would otherwise be reported as an outage. A 400 that mzLib recognises as the
+        /// model failing to run arrives as KoinaServiceException and is an outage.
+        /// </summary>
+        internal static void ThrowAsTestOutcome(Exception failure)
+        {
+            while (failure is AggregateException { InnerExceptions.Count: 1 } or TargetInvocationException { InnerException: not null })
+                failure = failure.InnerException;
+
+            string unavailable = failure switch
+            {
+                KoinaServiceException e => $"model failed to run ({e.ServerError})",
+                HttpRequestException e => StatusOf(e) is not int status || status is 408 or 429 or >= 500
+                    ? e.Message
+                    : null,
+                TaskCanceledException => "timed out",
+                SocketException e => e.Message,
+                _ => null
+            };
+
+            if (unavailable != null)
+                throw new ExternalServiceUnavailableException(unavailable);
+            Assert.Fail($"The Koina prediction failed for a reason that is not Koina being unavailable: {failure}");
+        }
+
+        /// <summary>The HTTP status, or null when the call never got an HTTP answer.</summary>
+        private static int? StatusOf(HttpRequestException e)
+        {
+            if (e.StatusCode is { } code)
+                return (int)code;
+            var match = HttpStatus.Match(e.Message);
+            return match.Success ? int.Parse(match.Groups[1].Value) : null;
         }
     }
 }
