@@ -27,11 +27,36 @@ jobs:
         run: dotnet add ./MetaMorpheus/Test/Test.csproj package coverlet.collector -v 6.0.2
         
       - name: Run unit tests with coverage
-        run: dotnet test .\MetaMorpheus\Test\Test.csproj --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
-        
+        # Exclude live external-service tests (UniProt, etc.) from the required run; they run in the
+        # separate, non-blocking external-service-tests job below.
+        run: dotnet test .\MetaMorpheus\Test\Test.csproj --configuration Release --verbosity normal --filter "Category!=ExternalService" --collect:"XPlat Code Coverage"
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
           flags: unittests
+
+  # Runs tests that depend on live external web services (UniProt, ...). Kept separate and
+  # intentionally NOT a required status check, so a third-party outage never blocks a PR. The tests
+  # self-classify: an outage is reported as Skipped (Assert.Ignore) and only a genuine contract
+  # break fails this job. Do NOT add this job to branch-protection required checks.
+  external-service-tests:
+    name: External-service tests (non-blocking)
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.204
+      - name: Restore dependencies
+        run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
+
+      - name: Build
+        run: dotnet build --no-restore ./MetaMorpheus/MetaMorpheus.sln --configuration Release
+
+      - name: Run external-service tests
+        run: dotnet test .\MetaMorpheus\Test\Test.csproj --configuration Release --no-build --verbosity normal --filter "Category=ExternalService"
