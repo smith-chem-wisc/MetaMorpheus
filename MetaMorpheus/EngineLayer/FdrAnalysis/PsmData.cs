@@ -89,6 +89,23 @@ namespace EngineLayer.FdrAnalysis
             { "PrecursorDeconvolutionScore", 1 },
             }.ToImmutableDictionary();
 
+        /// <summary>
+        /// A copy of this feature vector carrying a different Label.
+        /// <remarks>
+        /// Used by the PEP engine's feature cache. The features are round-invariant but the label is
+        /// not, and the same vector is handed both to training and to prediction, so callers must not
+        /// share one instance -- ML.NET reads the training set lazily, and mutating a Label in place
+        /// would reach back into a training list a later fold is about to fit on. Copying ~30 value
+        /// fields is free next to recomputing a retention-time prediction.
+        /// </remarks>
+        /// </summary>
+        public PsmData WithLabel(bool label)
+        {
+            var copy = (PsmData)MemberwiseClone();
+            copy.Label = label;
+            return copy;
+        }
+
         public string ToString(string searchType)
         {
             StringBuilder sb = new StringBuilder();
