@@ -123,10 +123,23 @@ namespace EngineLayer
         /// <see cref="PeptideWithSetModifications"/> before predicting, so warming anything else would
         /// populate entries that are never read.
         /// </summary>
-        private static IEnumerable<IRetentionPredictable> PeptidesToPredict(IEnumerable<SpectralMatch> psms)
+        /// <remarks>
+        /// A CZE file's PSMs are scored on electrophoretic mobility, not retention time, so the only ones the
+        /// predictor sees are the q &lt;= 0.01 targets that <see cref="ComputeRetentionTimeEquivalentValues"/>
+        /// puts in the reference distribution. Warming the rest would be inference nothing reads.
+        /// </remarks>
+        private IEnumerable<IRetentionPredictable> PeptidesToPredict(IEnumerable<SpectralMatch> psms)
         {
             foreach (SpectralMatch psm in psms ?? Enumerable.Empty<SpectralMatch>())
             {
+                bool fileIsCze = psm.FullFilePath != null
+                    && FileSpecificParametersDictionary.TryGetValue(Path.GetFileName(psm.FullFilePath), out CommonParameters fileParams)
+                    && fileParams.SeparationType == "CZE";
+                if (fileIsCze && (psm.IsDecoy || psm.FdrInfo.QValue > 0.01))
+                {
+                    continue;
+                }
+
                 foreach (SpectralMatchHypothesis match in psm.BestMatchingBioPolymersWithSetMods)
                 {
                     if (match.SpecificBioPolymer is PeptideWithSetModifications peptide)
@@ -225,7 +238,14 @@ namespace EngineLayer
             {
                 output += Environment.NewLine
                           + "Retention times predicted for " + prewarmed.WarmedSequenceCount
-                          + " distinct peptidoforms, in batches";
+                          + " distinct peptidoforms, in batches, and " + prewarmed.MissCount + " one at a time";
+                if (prewarmed.FailedChunkCount > 0)
+                {
+                    output += Environment.NewLine
+                              + "Warning: " + prewarmed.FailedChunkCount
+                              + " batch(es) of retention-time predictions failed and were predicted one at a time instead ("
+                              + prewarmed.FirstChunkFailure + ")";
+                }
             }
 
             return output;

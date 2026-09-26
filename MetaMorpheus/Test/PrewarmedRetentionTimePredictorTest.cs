@@ -1,11 +1,21 @@
 using Chromatography;
 using Chromatography.RetentionTimePrediction;
+using EngineLayer;
+using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using NUnit.Framework;
 using Omics;
+using Omics.Modifications;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -39,6 +49,9 @@ namespace Test
             internal int BatchCalls { get; private set; }
             internal int PeptidesSeen { get; private set; }
 
+            /// <summary>Makes the batched call throw, the way a fault inside Chronologer's batched override would.</summary>
+            internal bool BatchThrows { get; init; }
+
             public string PredictorName => "Scripted";
             public SeparationType SeparationType => SeparationType.HPLC;
 
@@ -60,6 +73,10 @@ namespace Test
                 PredictRetentionTimeEquivalents(IEnumerable<IRetentionPredictable> peptides, int maxThreads = 1)
             {
                 BatchCalls++;
+                if (BatchThrows)
+                {
+                    throw new AggregateException(new InvalidOperationException("scripted batch failure"));
+                }
                 var list = peptides.ToList();
                 PeptidesSeen += list.Count;
                 return list
@@ -79,17 +96,79 @@ namespace Test
             public void Dispose() { }
         }
 
+        /// <summary>
+        /// Predicts a value for every peptidoform, counts both entry points thread-safely, and records the
+        /// most calls it ever saw in flight at once, so a test can prove calls were serialised.
+        /// </summary>
+        private sealed class CountingPredictor : IRetentionTimePredictor
+        {
+            private int _singleCalls;
+            private int _batchCalls;
+            private int _peptidesSeen;
+            private int _inFlight;
+            private int _maxConcurrentCalls;
+
+            internal int SingleCallDelayMs { get; init; }
+            internal int SingleCalls => _singleCalls;
+            internal int BatchCalls => _batchCalls;
+            internal int PeptidesSeen => _peptidesSeen;
+            internal int MaxConcurrentCalls => _maxConcurrentCalls;
+
+            public string PredictorName => "Counting";
+            public SeparationType SeparationType => SeparationType.HPLC;
+
+            public double? PredictRetentionTimeEquivalent(
+                IRetentionPredictable peptide, out RetentionTimeFailureReason? failureReason)
+            {
+                Interlocked.Increment(ref _singleCalls);
+                int inFlight = Interlocked.Increment(ref _inFlight);
+                int seen;
+                while (inFlight > (seen = Volatile.Read(ref _maxConcurrentCalls))
+                       && Interlocked.CompareExchange(ref _maxConcurrentCalls, inFlight, seen) != seen)
+                {
+                }
+                if (SingleCallDelayMs > 0)
+                {
+                    Thread.Sleep(SingleCallDelayMs);
+                }
+                Interlocked.Decrement(ref _inFlight);
+
+                failureReason = null;
+                return Predict(peptide);
+            }
+
+            public IReadOnlyList<(double? PredictedValue, IRetentionPredictable Peptide, RetentionTimeFailureReason? FailureReason)>
+                PredictRetentionTimeEquivalents(IEnumerable<IRetentionPredictable> peptides, int maxThreads = 1)
+            {
+                Interlocked.Increment(ref _batchCalls);
+                var list = peptides.ToList();
+                Interlocked.Add(ref _peptidesSeen, list.Count);
+                return list.Select(p => (Predict(p), p, (RetentionTimeFailureReason?)null)).ToList();
+            }
+
+            private static double? Predict(IRetentionPredictable peptide) => peptide.FullSequence.Length;
+
+            public string GetFormattedSequence(
+                IRetentionPredictable peptide, out RetentionTimeFailureReason? failureReason)
+            {
+                failureReason = null;
+                return peptide.FullSequence;
+            }
+
+            public void Dispose() { }
+        }
+
         private static StubPeptide Peptide(string fullSequence)
             => new() { BaseSequence = fullSequence, FullSequence = fullSequence, FullSequenceWithMassShifts = fullSequence };
 
         /// <summary>
-        /// The contract is FOUR states, not two: a value and a failure reason can arrive TOGETHER. A
-        /// predictor in UsePrimarySequence mode reports why it could not represent the peptidoform exactly
-        /// and still returns a usable prediction from the primary sequence. Caching only the double would
-        /// throw that diagnostic away, which is precisely what PsmData.HasHydrophobicity exists to carry.
+        /// A warmed lookup returns the pair the BATCHED call gave, in all four combinations. That is not a
+        /// promise that it matches the single-peptide path: Chronologer's batched override returns a null
+        /// reason for every success, so a UsePrimarySequence reason the single path would keep never reaches
+        /// this table. Nothing reads the reason today; both consumers only ask whether a value exists.
         /// </summary>
         [Test]
-        public static void WarmedLookupKeepsValueAndFailureReasonTogether()
+        public static void WarmedLookupReturnsThePairTheBatchedCallGave()
         {
             var script = new Dictionary<string, (double?, RetentionTimeFailureReason?)>
             {
@@ -111,11 +190,10 @@ namespace Test
             Assert.That(unpredictable, Is.Null);
             Assert.That(unpredictableReason, Is.EqualTo(RetentionTimeFailureReason.IncompatibleModifications));
 
-            // The one that a value-only cache would corrupt.
             double? both = warm.PredictRetentionTimeEquivalent(Peptide("BOTH"), out var bothReason);
-            Assert.That(both, Is.EqualTo(34.0), "a warmed prediction must keep its value");
+            Assert.That(both, Is.EqualTo(34.0));
             Assert.That(bothReason, Is.EqualTo(RetentionTimeFailureReason.IncompatibleModifications),
-                "a warmed prediction must keep its failure reason even when it also has a value");
+                "the table stores what the batched call returned, value and reason together");
 
             double? quiet = warm.PredictRetentionTimeEquivalent(Peptide("QUIET"), out var quietReason);
             Assert.That(quiet, Is.Null);
@@ -156,12 +234,12 @@ namespace Test
         }
 
         /// <summary>
-        /// PredictionError is where a blanket catch puts transient native faults, so it must NOT be
-        /// memoized -- one bad moment would otherwise poison that peptidoform for the rest of the run.
-        /// Every other reason is a pure function of the peptidoform and is safe to keep.
+        /// Koina marks every row of a failed HTTP batch PredictionError, so a batched PredictionError is not
+        /// kept from warming: it gets ONE retry on the single path, and that answer is then remembered, so
+        /// the peptidoform does not go back to the model once per hypothesis.
         /// </summary>
         [Test]
-        public static void TransientPredictionErrorIsRetriedRatherThanCached()
+        public static void BatchedPredictionErrorIsRetriedOnceThenRemembered()
         {
             var script = new Dictionary<string, (double?, RetentionTimeFailureReason?)>
             {
@@ -181,8 +259,167 @@ namespace Test
             Assert.That(deterministicReason, Is.EqualTo(RetentionTimeFailureReason.SequenceTooLong));
 
             warm.PredictRetentionTimeEquivalent(Peptide("TRANSIENT"), out var transientReason);
-            Assert.That(inner.SingleCalls, Is.EqualTo(1), "a transient failure must be retried against the model");
+            Assert.That(inner.SingleCalls, Is.EqualTo(1), "a batched PredictionError must be retried against the model");
             Assert.That(transientReason, Is.EqualTo(RetentionTimeFailureReason.PredictionError));
+
+            warm.PredictRetentionTimeEquivalent(Peptide("TRANSIENT"), out var secondReason);
+            Assert.That(inner.SingleCalls, Is.EqualTo(1), "the retry's answer is remembered, not asked again");
+            Assert.That(secondReason, Is.EqualTo(RetentionTimeFailureReason.PredictionError));
+            Assert.That(warm.MissCount, Is.EqualTo(1));
+        }
+
+        /// <summary>
+        /// Chronologer's batched override has no catch, unlike the single path, which turns an exception into
+        /// one PredictionError. A batch that throws must cost that batch's warming, not the run.
+        /// </summary>
+        [Test]
+        public static void ABatchThatThrowsIsLeftUnwarmedAndFallsThrough()
+        {
+            var script = new Dictionary<string, (double?, RetentionTimeFailureReason?)> { ["AAA"] = (1.0, null) };
+            var inner = new ScriptedPredictor(script) { BatchThrows = true };
+
+            PrewarmedRetentionTimePredictor warm = null;
+            Assert.DoesNotThrow(() => warm = PrewarmedRetentionTimePredictor.Warm(inner, new[] { Peptide("AAA") }, maxThreads: 1));
+
+            Assert.That(warm.WarmedSequenceCount, Is.Zero);
+            Assert.That(warm.FailedChunkCount, Is.EqualTo(1));
+            Assert.That(warm.FirstChunkFailure, Is.EqualTo("scripted batch failure"));
+            Assert.That(warm.PredictRetentionTimeEquivalent(Peptide("AAA"), out _), Is.EqualTo(1.0));
+            Assert.That(warm.PredictRetentionTimeEquivalent(Peptide("AAA"), out _), Is.EqualTo(1.0));
+            Assert.That(inner.SingleCalls, Is.EqualTo(1), "the fall-through is asked once per peptidoform");
+        }
+
+        /// <summary>
+        /// Misses arrive from PEP's Parallel.ForEach, and Koina's RetentionTimeModel is documented as not
+        /// thread-safe. Each missed peptidoform must reach the wrapped predictor once, and never concurrently.
+        /// </summary>
+        [Test]
+        public static void ConcurrentMissesReachTheWrappedPredictorOnceEachAndNeverAtOnce()
+        {
+            var inner = new CountingPredictor { SingleCallDelayMs = 1 };
+            var warm = PrewarmedRetentionTimePredictor.Warm(inner, Array.Empty<IRetentionPredictable>(), maxThreads: 1);
+            var sequences = Enumerable.Range(0, 20).Select(i => "SEQ" + i).ToArray();
+
+            Parallel.For(0, 2_000, new ParallelOptions { MaxDegreeOfParallelism = 16 },
+                i => warm.PredictRetentionTimeEquivalent(Peptide(sequences[i % sequences.Length]), out _));
+
+            Assert.That(inner.SingleCalls, Is.EqualTo(sequences.Length));
+            Assert.That(warm.MissCount, Is.EqualTo(sequences.Length));
+            Assert.That(inner.MaxConcurrentCalls, Is.EqualTo(1));
+        }
+
+        /// <summary>
+        /// The regression the log line exists to reveal, pinned end to end: after warming, a full PEP pass
+        /// never asks the model about one peptide at a time.
+        /// </summary>
+        [Test]
+        public static void PepAnalysisMakesNoSinglePeptideCallsAfterWarming()
+        {
+            var (psms, fsp) = SearchForPep("HPLC");
+            var inner = new CountingPredictor();
+
+            string log = new PepAnalysisEngine(psms, "standard", fsp, PepOutputFolder(), inner).ComputePEPValuesForAllPSMs();
+
+            Assert.That(inner.BatchCalls, Is.EqualTo(1));
+            Assert.That(inner.SingleCalls, Is.Zero, "every retention time must come from the warm set");
+            Assert.That(log, Does.Contain(" distinct peptidoforms, in batches, and 0 one at a time"));
+        }
+
+        /// <summary>
+        /// A CZE file is scored on mobility, so the only retention times read for it are the q &lt;= 0.01
+        /// targets in the reference distribution. Warm exactly those, and still make no single-peptide calls.
+        /// </summary>
+        [Test]
+        public static void CzeFilesWarmOnlyTheReferenceTargets()
+        {
+            var (psms, fsp) = SearchForPep("CZE");
+            var inner = new CountingPredictor();
+            int referenceTargets = psms
+                .Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01)
+                .SelectMany(p => p.BestMatchingBioPolymersWithSetMods)
+                .Select(h => h.SpecificBioPolymer)
+                .OfType<PeptideWithSetModifications>()
+                .Select(p => p.FullSequence)
+                .Distinct()
+                .Count();
+            int everyHypothesis = psms
+                .SelectMany(p => p.BestMatchingBioPolymersWithSetMods)
+                .Select(h => h.SpecificBioPolymer.FullSequence)
+                .Distinct()
+                .Count();
+            Assert.That(referenceTargets, Is.GreaterThan(0).And.LessThan(everyHypothesis), "the data must contain PSMs the filter drops");
+
+            new PepAnalysisEngine(psms, "standard", fsp, PepOutputFolder(), inner).ComputePEPValuesForAllPSMs();
+
+            Assert.That(inner.PeptidesSeen, Is.EqualTo(referenceTargets));
+            Assert.That(inner.SingleCalls, Is.Zero);
+        }
+
+        /// <summary>
+        /// ScriptedPredictor cannot show that the shipped predictor's batched answers match its single-peptide
+        /// answers. Warm the real Chronologer and compare, on modified and unmodified peptidoforms.
+        /// </summary>
+        [Test]
+        public static void WarmedChronologerAgreesWithItsSinglePeptidePath()
+        {
+            IRetentionTimePredictor chronologer = FdrAnalysisEngine.GetChronologer();
+            Assert.That(chronologer, Is.Not.Null, "Chronologer's native libraries could not be loaded");
+
+            Modification oxidation = GlobalVariables.AllModsKnown.First(m => m.IdWithMotif == "Oxidation on M");
+            Modification carbamidomethyl = GlobalVariables.AllModsKnown.First(m => m.IdWithMotif == "Carbamidomethyl on C");
+            var protein = new Protein("MPEPTIDEKCAMSTERDAMKLVNELTEFAKTCVADESHAGCEKSLHTLFGDELCKMLLVGGAR", "P0");
+            List<IRetentionPredictable> peptides = protein
+                .Digest(new DigestionParams(), new List<Modification> { carbamidomethyl }, new List<Modification> { oxidation })
+                .Cast<IRetentionPredictable>()
+                .ToList();
+            Assert.That(peptides.Any(p => p.FullSequence.Contains("Oxidation")), "need a variably modified peptidoform");
+
+            var warm = PrewarmedRetentionTimePredictor.Warm(chronologer, peptides, maxThreads: 2);
+
+            int compared = 0;
+            foreach (IRetentionPredictable peptide in peptides)
+            {
+                double? single = chronologer.PredictRetentionTimeEquivalent(peptide, out _);
+                double? warmed = warm.PredictRetentionTimeEquivalent(peptide, out _);
+                if (single.HasValue)
+                {
+                    Assert.That(warmed, Is.EqualTo(single.Value).Within(1e-4), peptide.FullSequence);
+                    compared++;
+                }
+                else
+                {
+                    Assert.That(warmed, Is.Null, peptide.FullSequence);
+                }
+            }
+
+            Assert.That(compared, Is.GreaterThan(0));
+            Assert.That(warm.FailedChunkCount, Is.Zero);
+            Assert.That(warm.MissCount, Is.Zero);
+        }
+
+        private static string PepOutputFolder() => Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\");
+
+        /// <summary>The same search <see cref="FdrTest.TestComputePEPValue"/> runs, with the file's separation type set.</summary>
+        private static (List<SpectralMatch> Psms, List<(string fileName, CommonParameters fileSpecificParameters)> Fsp) SearchForPep(string separationType)
+        {
+            string origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            var commonParameters = new CommonParameters(digestionParams: new DigestionParams(), separationType: separationType);
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>
+            {
+                ("TaGe_SA_HeLa_04_subset_longestSeq.mzML", commonParameters)
+            };
+
+            var myMsDataFile = new MyFileManager(true).LoadFile(origDataFile, commonParameters);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, out _,
+                ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                ProteinDbLoader.UniprotOrganismRegex, -1);
+            var scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, commonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            SpectralMatch[] allPsms = new PeptideSpectralMatch[scans.Length];
+            new ClassicSearchEngine(allPsms, scans, new List<Modification>(), new List<Modification>(), null, null, null,
+                proteinList, new SinglePpmAroundZeroSearchMode(5), commonParameters, fsp, null, new List<string>(), false).Run();
+            List<SpectralMatch> psms = allPsms.Where(p => p != null).ToList();
+            new FdrAnalysisEngine(psms, 1, commonParameters, fsp, new List<string>(), doPEP: false).Run();
+            return (psms, fsp);
         }
 
         /// <summary>

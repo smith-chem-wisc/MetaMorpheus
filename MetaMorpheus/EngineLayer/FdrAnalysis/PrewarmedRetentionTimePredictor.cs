@@ -2,8 +2,10 @@ using Chromatography;                        // SeparationType (NOT CommonParame
 using Chromatography.RetentionTimePrediction;
 using Omics;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace EngineLayer.FdrAnalysis
 {
@@ -32,7 +34,10 @@ namespace EngineLayer.FdrAnalysis
     /// dispose it: MetaMorpheus shares one Chronologer through a process-lifetime <c>static Lazy</c>.
     /// </para>
     /// <para>
-    /// A miss falls through to the wrapped predictor, so behaviour is unchanged for anything not warmed.
+    /// A miss falls through to the wrapped predictor, so behaviour is unchanged for anything not warmed. Each
+    /// missed peptidoform is asked about once: the answer is memoized, and the calls are serialised because
+    /// Koina's <c>RetentionTimeModel</c> documents its instances as not thread-safe while the misses come from
+    /// PEP's parallel loop.
     /// </para>
     /// </remarks>
     internal sealed class PrewarmedRetentionTimePredictor : IRetentionTimePredictor
@@ -50,24 +55,51 @@ namespace EngineLayer.FdrAnalysis
         /// Keyed on full sequence, because that is what the prediction is a function of.
         /// </summary>
         /// <remarks>
-        /// The value is the PAIR, not the value alone. <c>(value, reason)</c> is not "value XOR reason":
-        /// a predictor in <c>UsePrimarySequence</c> mode reports a failure reason AND returns a usable
-        /// sequence, so a successful prediction can legitimately arrive with a reason attached. Storing only
-        /// the double would silently discard the diagnostic that <see cref="PsmData.HasHydrophobicity"/>
-        /// exists to carry.
+        /// Stores whatever pair the batched call returned. Do not rely on a warmed reason matching what the
+        /// single-peptide path would have said: Chronologer's batched override (mzLib 1.0.591) returns a null
+        /// reason for every successful row, so a <c>UsePrimarySequence</c> reason the single path keeps is
+        /// already gone. Nothing reads the reason today -- both consumers pass <c>out _</c>, and
+        /// <see cref="PsmData.HasHydrophobicity"/> comes from whether a value exists.
         /// </remarks>
         private readonly Dictionary<string, (double? Value, RetentionTimeFailureReason? Reason)> _byFullSequence;
 
+        /// <summary>
+        /// Answers for peptidoforms that were not warmed, recorded the first time the wrapped predictor is
+        /// asked, so a miss costs one call to the model rather than one per hypothesis.
+        /// </summary>
+        private readonly ConcurrentDictionary<string, (double? Value, RetentionTimeFailureReason? Reason)> _missed = new();
+
+        /// <summary>Serialises every call that reaches the wrapped predictor after warming.</summary>
+        private readonly object _innerLock = new();
+
+        private int _missCount;
+
         private PrewarmedRetentionTimePredictor(
             IRetentionTimePredictor inner,
-            Dictionary<string, (double? Value, RetentionTimeFailureReason? Reason)> byFullSequence)
+            Dictionary<string, (double? Value, RetentionTimeFailureReason? Reason)> byFullSequence,
+            int failedChunkCount,
+            string firstChunkFailure)
         {
             _inner = inner;
             _byFullSequence = byFullSequence;
+            FailedChunkCount = failedChunkCount;
+            FirstChunkFailure = firstChunkFailure;
         }
 
         /// <summary>Distinct full sequences warmed. Logged so the batching ratio stays visible.</summary>
         internal int WarmedSequenceCount => _byFullSequence.Count;
+
+        /// <summary>
+        /// Calls that reached the wrapped predictor because the answer was not warmed. Logged beside
+        /// <see cref="WarmedSequenceCount"/>, so a regression back to one-at-a-time prediction shows up in the log.
+        /// </summary>
+        internal int MissCount => Volatile.Read(ref _missCount);
+
+        /// <summary>Batched calls that threw during warming. Their peptidoforms fall through to the miss path.</summary>
+        internal int FailedChunkCount { get; }
+
+        /// <summary>The message of the first batched call that threw, or null when none did.</summary>
+        internal string FirstChunkFailure { get; }
 
         /// <summary>
         /// Predicts every distinct peptidoform in <paramref name="peptides"/> in batches and returns a
@@ -99,19 +131,35 @@ namespace EngineLayer.FdrAnalysis
             }
 
             Dictionary<string, (double?, RetentionTimeFailureReason?)> warmed = new(representatives.Count);
+            int failedChunkCount = 0;
+            string firstChunkFailure = null;
             foreach (IRetentionPredictable[] chunk in Chunk(representatives.Values, WarmChunkSize))
             {
                 // Two things about this loop. maxThreads parallelises the batched call's CPU-side
                 // format-and-encode phase only -- inference is serialised under the model lock either way.
                 // And results are keyed back by the tuple's OWN peptide rather than by position, because
                 // IRetentionTimePredictor does not promise the result order matches the input order.
-                foreach ((double? value, IRetentionPredictable peptide, RetentionTimeFailureReason? reason)
-                         in inner.PredictRetentionTimeEquivalents(chunk, maxThreads))
+                IReadOnlyList<(double?, IRetentionPredictable, RetentionTimeFailureReason?)> batch;
+                try
                 {
-                    // PredictionError is the bucket a blanket catch puts transient native faults into
-                    // (mzLib #1075 fixed one that only appeared in high-volume runs). Every other reason is
-                    // a pure function of the peptidoform and is safe to reuse; this one is not, so leave it
-                    // out and let the miss path retry it against the model.
+                    batch = inner.PredictRetentionTimeEquivalents(chunk, maxThreads);
+                }
+                catch (Exception e)
+                {
+                    // The single-peptide path turns a thrown exception into one PredictionError; Chronologer's
+                    // batched override has no such catch, so without this one fault would fail the whole task.
+                    // Leave the chunk unwarmed and let its peptidoforms take the miss path instead.
+                    failedChunkCount++;
+                    firstChunkFailure ??= e.GetBaseException().Message;
+                    continue;
+                }
+
+                foreach ((double? value, IRetentionPredictable peptide, RetentionTimeFailureReason? reason) in batch)
+                {
+                    // Koina marks every row of an HTTP batch that failed as PredictionError, which may well
+                    // succeed on a retry, so leave those out and give each one a single, memoized retry on the
+                    // miss path. Chronologer returns PredictionError only for format and encode failures, which
+                    // its single path rejects before taking the model lock, so the retry is cheap there.
                     if (reason == RetentionTimeFailureReason.PredictionError)
                     {
                         continue;
@@ -125,7 +173,7 @@ namespace EngineLayer.FdrAnalysis
                 }
             }
 
-            return new PrewarmedRetentionTimePredictor(inner, warmed);
+            return new PrewarmedRetentionTimePredictor(inner, warmed, failedChunkCount, firstChunkFailure);
         }
 
         /// <summary>Splits the warm set into batches small enough that the encode phase stays bounded.</summary>
@@ -165,7 +213,42 @@ namespace EngineLayer.FdrAnalysis
                 return warmed.Value;
             }
 
-            return _inner.PredictRetentionTimeEquivalent(peptide, out failureReason);
+            if (string.IsNullOrEmpty(fullSequence))
+            {
+                lock (_innerLock)
+                {
+                    Interlocked.Increment(ref _missCount);
+                    return _inner.PredictRetentionTimeEquivalent(peptide, out failureReason);
+                }
+            }
+
+            (double? Value, RetentionTimeFailureReason? Reason) missed = PredictMiss(peptide, fullSequence);
+            failureReason = missed.Reason;
+            return missed.Value;
+        }
+
+        /// <summary>
+        /// Asks the wrapped predictor about a peptidoform that was not warmed, once, and remembers the answer.
+        /// </summary>
+        private (double? Value, RetentionTimeFailureReason? Reason) PredictMiss(IRetentionPredictable peptide, string fullSequence)
+        {
+            if (_missed.TryGetValue(fullSequence, out var known))
+            {
+                return known;
+            }
+
+            lock (_innerLock)
+            {
+                if (_missed.TryGetValue(fullSequence, out known))
+                {
+                    return known;
+                }
+
+                Interlocked.Increment(ref _missCount);
+                double? value = _inner.PredictRetentionTimeEquivalent(peptide, out RetentionTimeFailureReason? reason);
+                _missed[fullSequence] = (value, reason);
+                return (value, reason);
+            }
         }
 
         public IReadOnlyList<(double? PredictedValue, IRetentionPredictable Peptide, RetentionTimeFailureReason? FailureReason)>
@@ -182,6 +265,10 @@ namespace EngineLayer.FdrAnalysis
                 {
                     results.Add((warmed.Value, peptide, warmed.Reason));
                 }
+                else if (!string.IsNullOrEmpty(fullSequence) && _missed.TryGetValue(fullSequence, out var known))
+                {
+                    results.Add((known.Value, peptide, known.Reason));
+                }
                 else
                 {
                     (misses ??= new List<IRetentionPredictable>()).Add(peptide);
@@ -190,7 +277,20 @@ namespace EngineLayer.FdrAnalysis
 
             if (misses != null)
             {
-                results.AddRange(_inner.PredictRetentionTimeEquivalents(misses, maxThreads));
+                lock (_innerLock)
+                {
+                    Interlocked.Add(ref _missCount, misses.Count);
+                    foreach ((double? value, IRetentionPredictable peptide, RetentionTimeFailureReason? reason)
+                             in _inner.PredictRetentionTimeEquivalents(misses, maxThreads))
+                    {
+                        string fullSequence = peptide?.FullSequence;
+                        if (!string.IsNullOrEmpty(fullSequence))
+                        {
+                            _missed.TryAdd(fullSequence, (value, reason));
+                        }
+                        results.Add((value, peptide, reason));
+                    }
+                }
             }
 
             return results;
