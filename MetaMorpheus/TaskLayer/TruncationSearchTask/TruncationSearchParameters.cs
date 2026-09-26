@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Nett;
 
 namespace TaskLayer
@@ -32,7 +33,7 @@ namespace TaskLayer
         /// Notch acceptor used when chopping a parent down to the precursor mass in Pass 3 (decisions #9, #15).
         /// Inherited from the Pass 1 search convention; defaults to the top-down ThreeMM notches so
         /// precursor isotope errors do not block a chop. Also sets the FDR notch count for the pooled
-        /// analysis.
+        /// analysis. Open, ModOpen and the MostAbundant types cannot chop and are refused when the task starts.
         /// </summary>
         public MassDiffAcceptorType MassDiffAcceptorType { get; set; } = MassDiffAcceptorType.ThreeMM;
 
@@ -110,5 +111,11 @@ namespace TaskLayer
 
         /// <summary>Write contaminant rows to the output TSVs (decision #17).</summary>
         public bool WriteContaminants { get; set; } = true;
+
+        /// <summary>
+        /// Which mod types are written into the Essential Sequence column, as <see cref="SearchParameters.ModsToWriteSelection"/>;
+        /// the same default, so the truncation files join to the search's AllPSMs/AllProteoforms on that column.
+        /// </summary>
+        public Dictionary<string, int> ModsToWriteSelection { get; set; } = SearchParameters.DefaultModsToWriteSelection();
     }
 }

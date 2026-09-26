@@ -5,7 +5,11 @@ using System.Linq;
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using EngineLayer.Truncation;
+using MassSpectrometry;
 using MzLibUtil;
+using Omics.Modifications;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using Nett;
 using NUnit.Framework;
 using TaskLayer;
@@ -31,6 +35,93 @@ namespace Test
             Assert.That(task.TruncationSearchParameters.ParentQValueThreshold, Is.EqualTo(0.10));
             Assert.That(task.TruncationSearchParameters.WriteDecoys, Is.True);
             Assert.That(task.TruncationSearchParameters.WriteContaminants, Is.True);
+        }
+
+        /// <summary>Only acceptors that map a monoisotopic precursor to a chop at fixed notches are allowed (#9).</summary>
+        [TestCase(MassDiffAcceptorType.Exact, true)]
+        [TestCase(MassDiffAcceptorType.ThreeMM, true)]
+        [TestCase(MassDiffAcceptorType.PlusOrMinusThreeMM, true)]
+        [TestCase(MassDiffAcceptorType.Open, false)]
+        [TestCase(MassDiffAcceptorType.ModOpen, false)]
+        [TestCase(MassDiffAcceptorType.MostAbundant_Exact, false)]
+        [TestCase(MassDiffAcceptorType.MostAbundant_PlusMinusOne, false)]
+        public void ValidateChopAcceptor_RejectsAcceptorsThatCannotChop(MassDiffAcceptorType type, bool allowed)
+        {
+            MassDiffAcceptor acceptor = SearchTask.GetMassDiffAcceptor(new PpmTolerance(10), type, null);
+            if (allowed)
+                Assert.DoesNotThrow(() => TruncationSearchTask.ValidateChopAcceptor(acceptor, type));
+            else
+                Assert.Throws<MetaMorpheusException>(() => TruncationSearchTask.ValidateChopAcceptor(acceptor, type));
+        }
+
+        [Test]
+        public void DescribeParameterDifferences_ReportsOnlyTheSettingsThatDiffer()
+        {
+            var search = new CommonParameters(precursorMassTolerance: new PpmTolerance(10), productMassTolerance: new PpmTolerance(20));
+            var same = new CommonParameters(precursorMassTolerance: new PpmTolerance(10), productMassTolerance: new PpmTolerance(20));
+            var looser = new CommonParameters(precursorMassTolerance: new PpmTolerance(5), productMassTolerance: new PpmTolerance(20));
+
+            Assert.That(TruncationSearchTask.DescribeParameterDifferences(search, same), Is.Empty);
+            List<string> differences = TruncationSearchTask.DescribeParameterDifferences(search, looser);
+            Assert.That(differences, Has.Count.EqualTo(1));
+            Assert.That(differences[0], Does.StartWith("PrecursorMassTolerance"));
+        }
+
+        /// <summary>WriteDecoys / WriteContaminants decide which rows reach the output files (#17).</summary>
+        [TestCase(true, true, 3)]
+        [TestCase(false, true, 2)]
+        [TestCase(true, false, 2)]
+        [TestCase(false, false, 1)]
+        public void RowsToWrite_HonorsWriteDecoysAndWriteContaminants(bool writeDecoys, bool writeContaminants, int expectedRows)
+        {
+            var cp = new CommonParameters();
+            var scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new[] { 100.0 }, new[] { 1.0 }, false), 1, 2, true,
+                Polarity.Positive, 1, new MzRange(0, 1000), "f", MZAnalyzerType.Orbitrap, 1, 1, null, "scan=1"), 500, 1, "f", cp);
+            SpectralMatch Psm(string accession, bool isDecoy, bool isContaminant)
+            {
+                var protein = new Protein("PEPTIDE", accession, isDecoy: isDecoy, isContaminant: isContaminant);
+                var form = protein.Digest(new DigestionParams(protease: "top-down"), new List<Modification>(), new List<Modification>()).First();
+                var psm = new PeptideSpectralMatch(form, 0, 10, 0, scan, cp, new List<Omics.Fragmentation.MatchedFragmentIon>());
+                psm.ResolveAllAmbiguities();
+                return psm;
+            }
+
+            var parameters = new TruncationSearchParameters { WriteDecoys = writeDecoys, WriteContaminants = writeContaminants };
+            List<SpectralMatch> rows = TruncationSearchTask.RowsToWrite(
+                new[] { Psm("T", false, false), Psm("DECOY_T", true, false), Psm("C", false, true), null }, parameters);
+
+            Assert.That(rows, Has.Count.EqualTo(expectedRows));
+            Assert.That(rows.Any(p => p.IsDecoy), Is.EqualTo(writeDecoys));
+            Assert.That(rows.Any(p => p.IsContaminant), Is.EqualTo(writeContaminants));
+        }
+
+        /// <summary>
+        /// A disk parent reported at [2 to 120] (Met cleaved) keeps those coordinates, so a 5-residue C-chop is
+        /// (2-115), not (1-114), and a parent that starts with M away from residue 1 is not read as NME (#13).
+        /// </summary>
+        [Test]
+        public void DiskParent_KeepsProteinCoordinatesThroughTheChop()
+        {
+            string sequence = "ADEKRHSTNQGVLIFYWPC" + "ADEKRHSTNQGVLIFYWPC";
+            var parent = TruncationSearchTask.BuildDiskProteoform(sequence, "P", 2, false, new DigestionParams());
+            Assert.That((parent.OneBasedStartResidueInProtein, parent.OneBasedEndResidueInProtein), Is.EqualTo((2, 39)));
+            var exact = SearchTask.GetMassDiffAcceptor(new PpmTolerance(10), MassDiffAcceptorType.Exact, null);
+
+            double cChopMass = TruncationSearchTask.BuildDiskProteoform(sequence.Substring(0, sequence.Length - 5), "x", 1, false, new DigestionParams()).MonoisotopicMass;
+            ChopResult cChop = ProteoformChopper.ChopUntilMassMatches(parent, Omics.Fragmentation.FragmentationTerminus.C, cChopMass, exact);
+            Assert.That(cChop.TruncatedForm.Description, Is.EqualTo(TruncationPass3.CTerminalTruncation + "(2-34)"));
+
+            var startsWithMet = TruncationSearchTask.BuildDiskProteoform("M" + sequence, "Q", 30, false, new DigestionParams());
+            ChopResult nChop = ProteoformChopper.ChopUntilMassMatches(startsWithMet, Omics.Fragmentation.FragmentationTerminus.N, parent.MonoisotopicMass, exact);
+            Assert.That(nChop.TruncatedForm.Description, Is.EqualTo(TruncationPass3.NTerminalTruncation + "(31-68)"));
+        }
+
+        [Test]
+        public void ParseStartResidues_ReadsEachAlternative()
+        {
+            Assert.That(TruncationSearchTask.ParseStartResidues("[2 to 120]"), Is.EqualTo(new[] { 2 }));
+            Assert.That(TruncationSearchTask.ParseStartResidues("[2 to 120]|[31 to 149]"), Is.EqualTo(new[] { 2, 31 }));
+            Assert.That(TruncationSearchTask.ParseStartResidues(null), Is.Empty);
         }
 
         [Test]
@@ -317,6 +408,22 @@ namespace Test
                 Assert.That(psmLines.Skip(1).Any(line => line.Contains(TruncationPass3.FullLength)),
                     Is.True, "Expected an inherited full-length row in the truncation PSM output.");
 
+                // Every confident Pass 1 PSM is inherited exactly once as full-length, on its own precursor, with
+                // the same Essential Sequence as AllPSMs; none of those precursors is also reported as a truncation (#4a).
+                var pass1 = ReadTsv(Directory.GetFiles(Path.Combine(outDirectory, "Task1-SearchTask"), "AllPSMs.psmtsv", SearchOption.AllDirectories).Single());
+                var truncation = ReadTsv(psmsPath);
+                var confident = pass1.Where(r => r["Decoy/Contaminant/Target"] == "T" && double.Parse(r["QValue"]) <= 0.01).ToList();
+                Assert.That(confident, Is.Not.Empty);
+                foreach (var row in confident)
+                {
+                    var samePrecursor = truncation.Where(t => t["Scan Number"] == row["Scan Number"]
+                        && Math.Abs(double.Parse(t["Precursor Mass"]) - double.Parse(row["Precursor Mass"])) < 0.01).ToList();
+                    Assert.That(samePrecursor.Count(t => t["Description"] == TruncationPass3.FullLength), Is.EqualTo(1),
+                        $"scan {row["Scan Number"]} should be inherited once as full-length");
+                    Assert.That(samePrecursor, Has.Count.EqualTo(1), $"scan {row["Scan Number"]} also carries a truncation");
+                    Assert.That(samePrecursor[0]["Essential Sequence"], Is.EqualTo(row["Essential Sequence"]));
+                }
+
                 // Perf log got one TruncationSearchTask row (header + >=1 data row).
                 Assert.That(File.Exists(perfLogPath), Is.True, "perf_log.tsv was not written.");
                 string[] perfLines = File.ReadAllLines(perfLogPath);
@@ -457,6 +564,18 @@ namespace Test
             var engine = new EverythingRunnerEngine(taskList, new List<string> { data },
                 new List<DbForTask> { new DbForTask(db, false) }, outDir);
             Assert.DoesNotThrow(() => engine.Run());
+        }
+
+        /// <summary>Rows of a psmtsv as column-name -> cell dictionaries.</summary>
+        private static List<Dictionary<string, string>> ReadTsv(string path)
+        {
+            string[] lines = File.ReadAllLines(path);
+            string[] header = lines[0].Split('\t');
+            return lines.Skip(1)
+                .Select(line => line.Split('\t'))
+                .Select(cells => header.Select((name, i) => (name, cell: i < cells.Length ? cells[i] : ""))
+                    .GroupBy(c => c.name).ToDictionary(g => g.Key, g => g.First().cell))
+                .ToList();
         }
 
         private static void AssertTruncationOutputsWellFormed(string truncationTaskOutDir)

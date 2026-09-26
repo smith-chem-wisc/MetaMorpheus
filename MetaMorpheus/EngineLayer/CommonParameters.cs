@@ -10,6 +10,7 @@ using Omics.Digestion;
 using Transcriptomics.Digestion;
 using EngineLayer.DIA;
 using Transcriptomics;
+using EngineLayer.FdrAnalysis;
 
 namespace EngineLayer
 {
@@ -64,7 +65,7 @@ namespace EngineLayer
             DIAparameters diaParameters = null,
             IFragmentationParams fragmentationParams = null,
             PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic,
-            string rtPredictorName = "Chronologer")
+            string rtPredictorName = RTPredictorNames.Chronologer)
 
         {
             TaskDescriptor = taskDescriptor;

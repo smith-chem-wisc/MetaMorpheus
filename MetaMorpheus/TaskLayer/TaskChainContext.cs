@@ -19,6 +19,9 @@ namespace TaskLayer
         private readonly Dictionary<string, object> _results = new();
         private readonly List<string> _depositOrder = new();
 
+        /// <summary>Key under which a task deposits its <see cref="EngineLayer.CommonParameters"/> next to its result.</summary>
+        public static string CommonParametersKey(string taskId) => taskId + "/CommonParameters";
+
         /// <summary>Store <paramref name="result"/> under <paramref name="taskId"/>, overwriting any prior value.</summary>
         public void Deposit<T>(string taskId, T result)
         {

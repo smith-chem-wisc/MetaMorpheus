@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
@@ -40,8 +41,10 @@ namespace EngineLayer.Truncation
         /// Chopping is monotonic in mass, so the loop stops early once the truncated form drops below the
         /// lowest mass the acceptor could accept — no point building the remaining forms.
         /// </summary>
+        /// <param name="fixedModifications">The search's fixed mods, used to keep the truncated form's fixed/variable
+        /// mod split right. When null, the split is inferred from the parent's own counts.</param>
         public static ChopResult ChopUntilMassMatches(PeptideWithSetModifications parent, FragmentationTerminus terminusToChop,
-            double targetMass, MassDiffAcceptor massDiffAcceptor)
+            double targetMass, MassDiffAcceptor massDiffAcceptor, IReadOnlyCollection<Modification> fixedModifications = null)
         {
             int length = parent.BaseSequence.Length;
             double lowestAcceptableMass = LowestAcceptableMass(targetMass, massDiffAcceptor);
@@ -51,7 +54,7 @@ namespace EngineLayer.Truncation
                 int chopFromN = terminusToChop == FragmentationTerminus.N ? chopped : 0;
                 int chopFromC = terminusToChop == FragmentationTerminus.C ? chopped : 0;
 
-                PeptideWithSetModifications truncated = BuildTruncated(parent, chopFromN, chopFromC);
+                PeptideWithSetModifications truncated = BuildTruncated(parent, chopFromN, chopFromC, fixedModifications);
                 double mass = truncated.MonoisotopicMass;
 
                 int notch = massDiffAcceptor.Accepts(targetMass, mass);
@@ -100,7 +103,8 @@ namespace EngineLayer.Truncation
         /// no residue was chopped from its terminus (so chopping a terminal residue removes its terminal
         /// mod too, #9/#10). Coordinates are reported within the parent protein (#13).
         /// </summary>
-        private static PeptideWithSetModifications BuildTruncated(PeptideWithSetModifications parent, int chopFromN, int chopFromC)
+        private static PeptideWithSetModifications BuildTruncated(PeptideWithSetModifications parent, int chopFromN, int chopFromC,
+            IReadOnlyCollection<Modification> fixedModifications)
         {
             int parentLength = parent.BaseSequence.Length;
             int newLength = parentLength - chopFromN - chopFromC;
@@ -135,21 +139,44 @@ namespace EngineLayer.Truncation
             // The peptide Description is emitted verbatim in the standard psmtsv "Description" column
             // (decision #13), mirroring existing proteolysis-product descriptors like "chain(2-121)".
             // A clean initiator-Met excision is labeled as such, not as a 1-residue N-terminal truncation.
-            string truncationDescription = ClassifyChop(parent, chopFromN, chopFromC, newMods) + $"({newStart}-{newEnd})";
+            string truncationDescription = ClassifyChop(parent, chopFromN, chopFromC) + $"({newStart}-{newEnd})";
 
             return new PeptideWithSetModifications(parent.Protein, parent.DigestionParams, newStart, newEnd,
-                CleavageSpecificity.Full, truncationDescription, 0, newMods, newMods.Count);
+                CleavageSpecificity.Full, truncationDescription, 0, newMods, CountFixedMods(parent, newMods, fixedModifications));
+        }
+
+        /// <summary>
+        /// How many of the surviving mods are fixed, so NumVariableMods (= NumMods - NumFixedMods) stays right on the
+        /// truncated form. With the search's fixed mods, count the survivors among them; without, a parent with no
+        /// fixed mods (usual in top-down) or only fixed mods is exact, and anything else is capped by the parent's count.
+        /// </summary>
+        private static int CountFixedMods(PeptideWithSetModifications parent, Dictionary<int, Modification> newMods,
+            IReadOnlyCollection<Modification> fixedModifications)
+        {
+            if (fixedModifications != null)
+            {
+                return newMods.Values.Count(fixedModifications.Contains);
+            }
+
+            if (parent.NumFixedMods == 0)
+            {
+                return 0;
+            }
+
+            return parent.NumFixedMods == parent.AllModsOneIsNterminus.Count
+                ? newMods.Count
+                : System.Math.Min(parent.NumFixedMods, newMods.Count);
         }
 
         /// <summary>
         /// Classifies a chop into a Description label (#13). A C-terminal chop is a C-terminal truncation.
         /// An N-terminal chop is a true N-terminal truncation UNLESS it is a clean removal of exactly the
         /// initiator methionine (one residue, from a parent that starts at protein position 1 with Met),
-        /// which is the canonical NME form — reported as "N-terminal Met excision" (or "... + acetylation"
-        /// when the new N-terminus carries an acetyl), so NME is not miscounted as a truncation.
+        /// which is the canonical NME form — reported as "N-terminal Met excision", so NME is not miscounted as
+        /// a truncation. There is no "NME + acetylation" label: chopping drops the N-terminal mod (key 1), and
+        /// the chopper adds no mass, so an acetyl on the new N-terminus can never be produced here.
         /// </summary>
-        private static string ClassifyChop(PeptideWithSetModifications parent, int chopFromN, int chopFromC,
-            Dictionary<int, Modification> newMods)
+        private static string ClassifyChop(PeptideWithSetModifications parent, int chopFromN, int chopFromC)
         {
             if (chopFromN == 0)
             {
@@ -159,29 +186,7 @@ namespace EngineLayer.Truncation
             bool isInitiatorMetExcision = chopFromN == 1 && chopFromC == 0
                 && parent.OneBasedStartResidueInProtein == 1
                 && parent.BaseSequence.Length > 0 && parent.BaseSequence[0] == 'M';
-            if (isInitiatorMetExcision)
-            {
-                return HasNTerminalAcetyl(newMods)
-                    ? TruncationPass3.NTerminalMetExcisionPlusAcetyl
-                    : TruncationPass3.NTerminalMetExcision;
-            }
-
-            return TruncationPass3.NTerminalTruncation;
-        }
-
-        /// <summary>True if the truncated form carries an acetyl at its N-terminus (mod key 1) or first
-        /// residue (mod key 2) — used to label NME + acetylation (#13).</summary>
-        private static bool HasNTerminalAcetyl(Dictionary<int, Modification> newMods)
-        {
-            foreach (KeyValuePair<int, Modification> kv in newMods)
-            {
-                if (kv.Key <= 2 && kv.Value != null
-                    && (kv.Value.OriginalId ?? string.Empty).IndexOf("acetyl", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    return true;
-                }
-            }
-            return false;
+            return isInitiatorMetExcision ? TruncationPass3.NTerminalMetExcision : TruncationPass3.NTerminalTruncation;
         }
     }
 }
