@@ -21,6 +21,7 @@ namespace Test
     /// the PEP engine writes onto the matches it is given.
     /// </summary>
     [TestFixture]
+    [NonParallelizable] // sets FdrAnalysisEngine.QvalueThresholdOverride, a process-wide static
     public static class PepIterativeTrainingTests
     {
         private const string DataFileName = "TaGe_SA_HeLa_04_subset_longestSeq.mzML";
@@ -60,8 +61,44 @@ namespace Test
 
         private static double[] Peps(List<SpectralMatch> psms) => psms.Select(p => p.PsmFdrInfo.PEP).ToArray();
 
+        /// <summary>
+        /// The round count in the results block. A train-once run carries no round lines at all, so that is 1.
+        /// </summary>
         private static int RoundsRun(string metrics)
-            => int.Parse(Regex.Match(metrics, @"Training Rounds Run:\s+(\d+)").Groups[1].Value);
+        {
+            Match match = Regex.Match(metrics, @"Training Rounds Run:\s+(\d+)");
+            return match.Success ? int.Parse(match.Groups[1].Value) : 1;
+        }
+
+        private static string ProgressFile => Path.Combine(OutputFolder, "pep_training_rounds.txt");
+
+        /// <summary>
+        /// Scripts the stopping count, one value per round, so a test can decide which rounds are kept.
+        /// </summary>
+        private static Func<List<SpectralMatch>, int> ScriptedCounts(params int[] counts)
+        {
+            int round = 0;
+            return _ => counts[round++];
+        }
+
+        /// <summary>
+        /// Every target as a positive: a label set unlike round 0's search-score cut, so a round trained on it
+        /// assigns different PEPs.
+        /// </summary>
+        private static HashSet<SpectralMatch> AllTargets(List<SpectralMatch> matches, double[] pep)
+            => matches.Where(m => !m.IsDecoy).ToHashSet();
+
+        private static PepAnalysisEngine ScriptedEngine(List<SpectralMatch> psms, CommonParameters commonParameters, int maxTrainingRounds,
+            bool prune, params int[] counts)
+        {
+            Directory.CreateDirectory(OutputFolder);
+            return new PepAnalysisEngine(psms, "standard", FileSpecificParameters(commonParameters), OutputFolder, pruneAmbiguousHypotheses: prune)
+            {
+                MaxTrainingRounds = maxTrainingRounds,
+                SelectNextRoundPositives = AllTargets,
+                CountAcceptedTargets = ScriptedCounts(counts)
+            };
+        }
 
         [TearDown]
         public static void TearDown()
@@ -82,7 +119,10 @@ namespace Test
         {
             var psms = SearchHelaSubset(out var commonParameters);
             string metrics = NewEngine(psms, commonParameters, 1).ComputePEPValuesForAllPSMs();
-            Assert.That(RoundsRun(metrics), Is.EqualTo(1));
+            // Its output is the train-once engine's too: no round lines in the results block, and no progress file.
+            Assert.That(metrics, Does.Not.Contain("Training Rounds Run"));
+            Assert.That(metrics, Does.Not.Contain("Accepted After Training"));
+            Assert.That(File.Exists(ProgressFile), Is.False);
 
             var referencePsms = SearchHelaSubset(out commonParameters);
             var reference = NewEngine(referencePsms, commonParameters, 1);
@@ -124,10 +164,12 @@ namespace Test
             int kept = RoundsRun(metrics);
             string progress = File.ReadAllText(Path.Combine(OutputFolder, "pep_training_rounds.txt"));
             TestContext.WriteLine(progress);
-            // The last line for a round is either the rejected round after the kept ones, or the kept round that stopped.
+            // The last line for a round is the rejected round after the kept ones, the kept round that stopped, or a round
+            // whose relabelling starved a fold (on this small file no target reaches the training cutoff after round 0).
             bool reverted = progress.Contains($"round {kept}: accepted") && progress.Contains(nameof(PepAnalysisEngine.RoundVerdict.RevertAndStop));
             bool stopped = progress.Contains($"round {kept - 1}: accepted") && progress.Contains(nameof(PepAnalysisEngine.RoundVerdict.KeepAndStop));
-            Assert.That(reverted || stopped, progress);
+            bool starved = progress.Contains($"keeping round {kept - 1}");
+            Assert.That(reverted || stopped || starved, progress);
 
             var cappedPsms = SearchHelaSubset(out commonParameters);
             string cappedMetrics = NewEngine(cappedPsms, commonParameters, kept).ComputePEPValuesForAllPSMs();
@@ -135,6 +177,74 @@ namespace Test
             Assert.That(RoundsRun(cappedMetrics), Is.EqualTo(kept));
             Assert.That(Peps(psms), Is.EqualTo(Peps(cappedPsms)));
             Assert.That(Peps(psms).All(p => p >= 0 && p <= 1));
+        }
+
+        /// <summary>
+        /// The paths the small fixture cannot reach on its own, where a round after round 0 is KEPT. With the
+        /// stopping count scripted to 10, 20, 15: round 1 is kept, round 2 is rejected, and the PEPs left must be
+        /// round 1's. Those are pinned by a run capped at 2 rounds, which keeps round 1 and stops at the cap, and
+        /// they must differ from round 0's, or the comparison would say nothing.
+        /// </summary>
+        [Test]
+        public static void LaterKeptRound_IsWhatARejectedRoundRestores()
+        {
+            var roundZeroPsms = SearchHelaSubset(out var commonParameters);
+            NewEngine(roundZeroPsms, commonParameters, 1).ComputePEPValuesForAllPSMs();
+
+            var psms = SearchHelaSubset(out commonParameters);
+            string metrics = ScriptedEngine(psms, commonParameters, PepAnalysisEngine.IterativeTrainingRoundCap, false, 10, 20, 15)
+                .ComputePEPValuesForAllPSMs();
+            string progress = File.ReadAllText(ProgressFile);
+            Assert.That(RoundsRun(metrics), Is.EqualTo(2), progress);
+            Assert.That(progress, Does.Contain($"round 2: accepted 15  {PepAnalysisEngine.RoundVerdict.RevertAndStop}"));
+
+            var cappedPsms = SearchHelaSubset(out commonParameters);
+            string cappedMetrics = ScriptedEngine(cappedPsms, commonParameters, 2, false, 10, 20).ComputePEPValuesForAllPSMs();
+            Assert.That(RoundsRun(cappedMetrics), Is.EqualTo(2));
+
+            Assert.That(Peps(psms), Is.EqualTo(Peps(cappedPsms)));
+            Assert.That(Peps(psms), Is.Not.EqualTo(Peps(roundZeroPsms)), "round 1 must have changed the PEPs");
+        }
+
+        /// <summary>
+        /// Iteration and pruning are independent. Pruning waits until the loop has chosen a round, so the PEPs of a
+        /// pruning run equal a non-pruning run's round for round, and what it prunes is judged on the kept round.
+        /// </summary>
+        [Test]
+        public static void Pruning_DoesNotLimitIteration_AndPrunesFromTheKeptRound()
+        {
+            var plainPsms = SearchHelaSubset(out var commonParameters);
+            ScriptedEngine(plainPsms, commonParameters, PepAnalysisEngine.IterativeTrainingRoundCap, false, 10, 20, 15)
+                .ComputePEPValuesForAllPSMs();
+            int hypothesesBefore = plainPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count());
+
+            var prunedPsms = SearchHelaSubset(out commonParameters);
+            string prunedMetrics = ScriptedEngine(prunedPsms, commonParameters, PepAnalysisEngine.IterativeTrainingRoundCap, true, 10, 20, 15)
+                .ComputePEPValuesForAllPSMs();
+            int removed = int.Parse(Regex.Match(prunedMetrics, @"Removed:\s+(\d+)").Groups[1].Value);
+
+            Assert.That(RoundsRun(prunedMetrics), Is.EqualTo(2));
+            Assert.That(Peps(prunedPsms), Is.EqualTo(Peps(plainPsms)));
+            Assert.That(prunedPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count()), Is.EqualTo(hypothesesBefore - removed));
+        }
+
+        /// <summary>
+        /// The setting reaches the engine: FdrAnalysisEngine.Compute_PEPValue iterates only when asked to, which
+        /// shows as the progress file (written only when iterating).
+        /// </summary>
+        [Test]
+        [TestCase(false)]
+        [TestCase(true)]
+        public static void ComputePepValue_IteratesOnlyWhenAsked(bool iterativePepTraining)
+        {
+            var psms = SearchHelaSubset(out var commonParameters);
+            var fsp = FileSpecificParameters(commonParameters);
+            Directory.CreateDirectory(OutputFolder);
+            var results = new FdrAnalysisResults(new FdrAnalysisEngine(psms, 1, commonParameters, fsp, new List<string>()), "PSM");
+
+            FdrAnalysisEngine.Compute_PEPValue(results, psms, fsp, OutputFolder, iterativePepTraining: iterativePepTraining);
+
+            Assert.That(File.Exists(ProgressFile), Is.EqualTo(iterativePepTraining));
         }
 
         /// <summary>
@@ -259,27 +369,33 @@ namespace Test
 
         /// <summary>
         /// The next round's positives are cut by RANK. Every match below is tied at the same PEP, so a
-        /// threshold rule (PEP &lt;= t) would admit every target. The rank cut admits only the targets the sweep
-        /// ordered ahead of the first decoy, which is where q first exceeds a cutoff of 0.
+        /// threshold rule (PEP &lt;= t) would admit every target. With N targets, one decoy, then M &lt; N targets,
+        /// q is (decoys + 1) / targets: 1/N at the last target before the decoy, and at least 2/(N+M) at every
+        /// target after it. A cutoff between the two admits exactly the targets the sweep ordered ahead of the decoy.
         /// </summary>
         [Test]
         public static void SelectPositives_CutsTiesByRank()
         {
-            var ordered = SearchHelaSubset(out _).OrderByDescending(p => p).ToList();
+            // No match mixing target and decoy hypotheses, so each counts as exactly one target or one decoy.
+            var ordered = SearchHelaSubset(out _).Where(p => p.BestMatchingBioPolymersWithSetMods.All(h => h.IsDecoy) || p.BestMatchingBioPolymersWithSetMods.All(h => !h.IsDecoy))
+                .OrderByDescending(p => p).ToList();
             int decoyIndex = Enumerable.Range(0, ordered.Count).First(i => ordered[i].IsDecoy
-                && ordered.Take(i).Count(p => !p.IsDecoy) >= 3 && ordered.Skip(i + 1).Any(p => !p.IsDecoy));
-            var matches = ordered.Take(decoyIndex).Where(p => !p.IsDecoy).TakeLast(3)
+                && ordered.Take(i).Count(p => !p.IsDecoy) >= 2 && ordered.Skip(i + 1).Any(p => !p.IsDecoy));
+            var before = ordered.Take(decoyIndex).Where(p => !p.IsDecoy).TakeLast(10).ToList();
+            var after = ordered.Skip(decoyIndex + 1).Where(p => !p.IsDecoy).Take(Math.Min(3, before.Count - 1)).ToList();
+            var matches = before
                 .Append(ordered[decoyIndex])
-                .Concat(ordered.Skip(decoyIndex + 1).Where(p => !p.IsDecoy).Take(3))
+                .Concat(after)
                 .Reverse() // input order must not matter
                 .ToList();
             var tiedPep = new double[matches.Count];
+            double cutoff = (1.0 / before.Count + 2.0 / (before.Count + after.Count)) / 2;
 
-            var positives = PepAnalysisEngine.SelectPositives(matches, tiedPep, 0.0);
+            var positives = PepAnalysisEngine.SelectPositives(matches, tiedPep, cutoff);
 
             var expected = matches.OrderByDescending(m => m).TakeWhile(m => !m.IsDecoy).ToList();
-            Assert.That(expected.Count, Is.EqualTo(3));
-            Assert.That(matches.Count(m => !m.IsDecoy), Is.GreaterThan(3), "a PEP <= t rule would have admitted these too");
+            Assert.That(expected, Is.EquivalentTo(before));
+            Assert.That(matches.Count(m => !m.IsDecoy), Is.GreaterThan(before.Count), "a PEP <= t rule would have admitted these too");
             Assert.That(positives, Is.EquivalentTo(expected));
         }
 

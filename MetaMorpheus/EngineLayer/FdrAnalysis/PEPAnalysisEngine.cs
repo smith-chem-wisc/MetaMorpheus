@@ -71,8 +71,10 @@ namespace EngineLayer
 
         /// <summary>
         /// The PEP q-value below which a target peptide counts as "accepted" when judging whether a round
-        /// helped. The count is computed the way <see cref="FdrAnalysisEngine"/> computes the reported
-        /// peptide PEP q-value (see <see cref="CountAcceptedPeptides"/>), so the criterion tracks what users see.
+        /// helped. The q-value is computed the way <see cref="FdrAnalysisEngine"/> computes the peptide PEP q-value
+        /// (see <see cref="CountAcceptedPeptides"/>). The count is not the one written to the results files, which
+        /// FilteredPsms takes after DisambiguationEngine, at q &lt;= the threshold, without contaminants or ambiguous
+        /// sequences. It moves with that count, which is all a stopping rule needs.
         /// </summary>
         public double AcceptanceQValueCutoff { get; set; } = 0.01;
 
@@ -84,6 +86,13 @@ namespace EngineLayer
         internal Func<List<SpectralMatch>, double[], HashSet<SpectralMatch>> SelectNextRoundPositives { get; set; }
 
         /// <summary>
+        /// Counts the target peptides a round accepts, for the stopping rule. <see cref="CountAcceptedPeptides"/>
+        /// at <see cref="AcceptanceQValueCutoff"/>. Settable only so tests can reach the paths where a round after
+        /// round 0 is kept, which the small test files cannot reach on their own.
+        /// </summary>
+        internal Func<List<SpectralMatch>, int> CountAcceptedTargets { get; set; }
+
+        /// <summary>
         /// Feature vectors, computed once and reused for every training round.
         /// <remarks>
         /// EVERY field of <see cref="PsmData"/> except Label is round-invariant: each one derives from
@@ -93,12 +102,12 @@ namespace EngineLayer
         /// So recomputing them per round re-derives bit-identical values -- and RT prediction is the
         /// single most expensive thing this engine does (~67% of an entire search before #2841).
         ///
-        /// This is only CORRECT because no caller that prunes runs more than one round. `Ambiguity` reads
+        /// This is only CORRECT because nothing is pruned until every round has run. `Ambiguity` reads
         /// BestMatchingBioPolymersWithSetMods.Count(), which pruning (<see cref="PruneAmbiguousHypotheses"/>:
         /// glyco, crosslink, nonspecific) reduces in place. A pruned match's surviving hypotheses keep their cache
-        /// keys, so a second round would reuse vectors whose `Ambiguity` still counts the removed hypotheses.
-        /// Pruning callers train once (see maxRounds), so the stale value is never read. Lifting that limit
-        /// needs the cache invalidated for pruned matches first.
+        /// keys, so a round after a prune would reuse vectors whose `Ambiguity` still counts the removed hypotheses.
+        /// Pruning is therefore applied once, after the loop, from the kept round's predictions
+        /// (<see cref="PruneFromKeptRound"/>), and no feature vector is read after it.
         ///
         /// The cached instances are never handed out: callers get a copy via <see cref="PsmData.WithLabel"/>.
         /// Memory: one PsmData (~200 B) per hypothesis for the engine's lifetime. That is tens of MB for a
@@ -163,6 +172,12 @@ namespace EngineLayer
         private int _ambiguousHypothesesRemoved;
 
         /// <summary>
+        /// When pruning, each hypothesis's prediction from the round being scored, so the prune can wait until the
+        /// loop has decided which round to keep. Null when not pruning.
+        /// </summary>
+        private ConcurrentDictionary<SpectralMatch, (List<SpectralMatchHypothesis> Hypotheses, List<double> Predictions)> _roundPredictions;
+
+        /// <summary>
         /// This method is used to compute the PEP values for all PSMs in a dataset. 
         /// </summary>
         /// <param name="psms"></param>
@@ -202,6 +217,7 @@ namespace EngineLayer
             // If we have more than 100 peptides, we will train on the peptide level. Otherwise, we will train on the PSM level
             UsePeptideLevelQValueForTraining = psms.Select(psm => psm.FullSequence).Distinct().Count(seq => seq.IsNotNullOrEmpty()) >= 100;
             SelectNextRoundPositives = (matches, pep) => SelectPositives(matches, pep, QValueCutoff);
+            CountAcceptedTargets = matches => CountAcceptedPeptides(matches, AcceptanceQValueCutoff);
         }
 
         /// <summary>
@@ -266,13 +282,21 @@ namespace EngineLayer
             int numGroups = 4;
             List<int>[] peptideGroupIndices = GetPeptideGroupIndices(peptideGroups, numGroups);
             int maxThreads = FileSpecificParametersDictionary.Values.FirstOrDefault().MaxThreadsToUsePerFile;
-            // Pruning deletes hypotheses irreversibly, so a later, better round could not bring them back. It also
-            // leaves _featureCache holding a stale Ambiguity for the pruned matches. Callers that prune (glyco,
-            // crosslink, nonspecific) therefore train once, exactly as before iteration existed.
-            int maxRounds = PruneAmbiguousHypotheses ? 1 : Math.Max(1, MaxTrainingRounds);
+            // Independent of pruning: pruning waits until the loop has chosen a round (see PruneFromKeptRound).
+            int maxRounds = Math.Max(1, MaxTrainingRounds);
+            // With iteration off, neither the progress file nor the round lines in the results block exist, so the
+            // output is the train-once engine's.
+            bool iterating = maxRounds > 1;
+            void Progress(string line)
+            {
+                if (iterating)
+                {
+                    WriteRoundProgress(line);
+                }
+            }
 
             // Timings go to pep_training_rounds.txt, never to the results block (see below).
-            WriteRoundProgress($"=== PEP {DateTime.Now:yyyy-MM-dd HH:mm:ss}  search type {SearchType}, " +
+            Progress($"=== PEP {DateTime.Now:yyyy-MM-dd HH:mm:ss}  search type {SearchType}, " +
                 $"digestion {string.Join("+", AllPsms.Select(p => p.DigestionParams?.DigestionAgent?.Name).Distinct())}, " +
                 $"{AllPsms.Count} matches, {peptideGroups.Count} training groups " +
                 $"({(UsePeptideLevelQValueForTraining ? "peptide" : "PSM")} level), max rounds {maxRounds} ===");
@@ -299,7 +323,7 @@ namespace EngineLayer
             {
                 return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.";
             }
-            WriteRoundProgress($"round 0 features built  ({roundClock.Elapsed.TotalSeconds:F1} s)");
+            Progress($"round 0 features built  ({roundClock.Elapsed.TotalSeconds:F1} s)");
             roundClock.Restart();
 
             MLContext mlContext = new MLContext(seed: _randomSeed);
@@ -329,9 +353,17 @@ namespace EngineLayer
             int previousAccepted = 0;
             // Snapshot so a round that makes things worse can be undone. One double per PSM.
             double[] bestPepSnapshot = null;
+            // When pruning, the predictions of the round whose PEPs are kept; the prune is applied from them after the loop.
+            ConcurrentDictionary<SpectralMatch, (List<SpectralMatchHypothesis> Hypotheses, List<double> Predictions)> keptRoundPredictions = null;
 
             for (int round = 0; round < maxRounds; round++)
             {
+                // A cancelled run starts no further round, as Compute_PSM_PEP stops scoring.
+                if (round > 0 && GlobalVariables.StopLoops)
+                {
+                    break;
+                }
+
                 if (round > 0)
                 {
                     // FOLD-LOCAL, MODEL-LOCAL LABELS. Each fold's next positives come from ITS OWN previous
@@ -356,13 +388,17 @@ namespace EngineLayer
                     if (foldStarved)
                     {
                         // Nothing has been refitted or rescored this round, so the previous round's PEPs stand.
-                        WriteRoundProgress($"round {round}: a fold has no positive or no negative examples; keeping round {round - 1}");
+                        Progress($"round {round}: a fold has no positive or no negative examples; keeping round {round - 1}");
                         break;
                     }
 
                     trainingData = nextTrainingData;
                 }
 
+                if (PruneAmbiguousHypotheses)
+                {
+                    _roundPredictions = new();
+                }
                 var roundMetrics = new List<CalibratedBinaryClassificationMetrics>();
                 for (int fold = 0; fold < numGroups; fold++)
                 {
@@ -378,10 +414,10 @@ namespace EngineLayer
                 }
 
                 // Only after every fold of this round has scored. REPORTING and the stopping decision only --
-                // never labels.
-                int accepted = CountAcceptedPeptides(AllPsms, AcceptanceQValueCutoff);
+                // never labels. With iteration off the verdict after round 0 is KeepAndStop whatever the count.
+                int accepted = iterating ? CountAcceptedTargets(AllPsms) : 0;
                 var verdict = JudgeRound(round, accepted, previousAccepted, TrainingImprovementTolerance, maxRounds);
-                WriteRoundProgress($"round {round}: accepted {accepted}  {verdict}  ({roundClock.Elapsed.TotalSeconds:F1} s)");
+                Progress($"round {round}: accepted {accepted}  {verdict}  ({roundClock.Elapsed.TotalSeconds:F1} s)");
                 roundClock.Restart();
 
                 if (verdict == RoundVerdict.RevertAndStop)
@@ -397,6 +433,7 @@ namespace EngineLayer
                     bestPepSnapshot = SnapshotPepValues();
                 }
                 allMetrics = roundMetrics;
+                keptRoundPredictions = _roundPredictions;
                 if (round > 0)
                 {
                     // Averaged over the folds: each peptide appears in the training set of 3 of the 4 models.
@@ -416,10 +453,18 @@ namespace EngineLayer
                 }
             }
 
-            WriteRoundProgress($"done: {roundsRun} round(s) kept; feature cache holds {_featureCache.Count} vectors");
+            Progress($"done: {roundsRun} round(s) kept; feature cache holds {_featureCache.Count} vectors");
 
-            string output = AggregateMetricsForOutput(allMetrics, positiveTrainingCount, negativeTrainingcount, QValueCutoff,
-                PruneAmbiguousHypotheses ? _ambiguousHypothesesRemoved : null, roundsRun, previousAccepted, roundLog.ToString());
+            if (PruneAmbiguousHypotheses)
+            {
+                _ambiguousHypothesesRemoved = PruneFromKeptRound(keptRoundPredictions);
+            }
+
+            string output = iterating
+                ? AggregateMetricsForOutput(allMetrics, positiveTrainingCount, negativeTrainingcount, QValueCutoff,
+                    PruneAmbiguousHypotheses ? _ambiguousHypothesesRemoved : null, roundsRun, previousAccepted, roundLog.ToString())
+                : AggregateMetricsForOutput(allMetrics, positiveTrainingCount, negativeTrainingcount, QValueCutoff,
+                    PruneAmbiguousHypotheses ? _ambiguousHypothesesRemoved : null);
 
             // Surface how many distinct peptidoforms the retention-time model was actually asked about.
             // Without it the batching is invisible in the log and a regression -- someone reintroducing a
@@ -560,6 +605,34 @@ namespace EngineLayer
         }
 
         /// <summary>
+        /// The prune for callers that set <see cref="PruneAmbiguousHypotheses"/>, applied once after the training
+        /// loop from the predictions of the round whose PEPs were kept. Deferring it is what lets pruning and
+        /// iteration be independent: nothing is removed from a round that is later rejected, and no feature
+        /// vector is read after a hypothesis is removed. With one round it removes exactly what pruning inside
+        /// <see cref="Compute_PSM_PEP"/> removed, because a match's predictions depend only on its own fold's model.
+        /// </summary>
+        /// <returns>The number of hypotheses removed.</returns>
+        private static int PruneFromKeptRound(
+            ConcurrentDictionary<SpectralMatch, (List<SpectralMatchHypothesis> Hypotheses, List<double> Predictions)> keptRoundPredictions)
+        {
+            int removed = 0;
+            if (keptRoundPredictions == null)
+            {
+                return removed;
+            }
+
+            var indicesOfPeptidesToRemove = new List<int>();
+            foreach (var (psm, (hypotheses, predictions)) in keptRoundPredictions)
+            {
+                indicesOfPeptidesToRemove.Clear();
+                GetIndicesOfPeptidesToRemove(indicesOfPeptidesToRemove, predictions);
+                RemoveBestMatchingPeptidesWithLowPEP(psm, indicesOfPeptidesToRemove, hypotheses, ref removed);
+            }
+
+            return removed;
+        }
+
+        /// <summary>
         /// Round 0's rule for a positive training example: the SEARCH-SCORE q-value, which is all this
         /// engine used before iteration existed. Later rounds use <see cref="SelectPositives"/> instead.
         /// </summary>
@@ -588,6 +661,9 @@ namespace EngineLayer
                     new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
                     range =>
                     {
+                        // Stop loop if canceled
+                        if (GlobalVariables.StopLoops) { return; }
+
                         var threadPredictionEngine = predictionEnginePerThread.Value;
                         for (int i = range.Item1; i < range.Item2; i++)
                         {
@@ -634,23 +710,21 @@ namespace EngineLayer
                 .ThenByDescending(i => matches[i])
                 .ToArray();
 
-            // q must be monotone in rank, so the running ratio is swept once forward and then minimised
-            // from the bottom up -- the same shape as FdrAnalysisEngine.QValueInverted.
+            // The q-value FdrAnalysisEngine.QValueInverted gives round 0's labels, so every round labels on the
+            // same FDR definition: fractional target and decoy counts per hypothesis, (decoys + 1) / targets,
+            // swept forward and then minimised from the bottom up so that q is monotone in rank.
             var q = new double[order.Length];
             double cumulativeTarget = 0;
             double cumulativeDecoy = 0;
             for (int r = 0; r < order.Length; r++)
             {
-                if (matches[order[r]].IsDecoy)
-                {
-                    cumulativeDecoy++;
-                }
-                else
-                {
-                    cumulativeTarget++;
-                }
+                var hypotheses = matches[order[r]].BestMatchingBioPolymersWithSetMods;
+                double totalHits = hypotheses.Count();
+                double targetHits = hypotheses.Count(h => !h.IsDecoy);
+                cumulativeTarget += targetHits / totalHits;
+                cumulativeDecoy += (totalHits - targetHits) / totalHits;
 
-                q[r] = cumulativeDecoy / Math.Max(cumulativeTarget, 1);
+                q[r] = (cumulativeDecoy + 1) / Math.Max(cumulativeTarget, 1);
             }
 
             double best = double.PositiveInfinity;
@@ -821,12 +895,12 @@ namespace EngineLayer
                         if (csm.IsDecoy || csm.BetaPeptide.IsDecoy)
                         {
                             label = false;
-                            newPsmData = CreateOnePsmDataEntry(searchType, csm, csm.BestMatchingBioPolymersWithSetMods.First(), label);
+                            newPsmData = CreateCachedPsmDataEntry(searchType, csm, csm.BestMatchingBioPolymersWithSetMods.First(), label);
                         }
                         else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && isPositive(csm))
                         {
                             label = true;
-                            newPsmData = CreateOnePsmDataEntry(searchType, csm, csm.BestMatchingBioPolymersWithSetMods.First(), label);
+                            newPsmData = CreateCachedPsmDataEntry(searchType, csm, csm.BestMatchingBioPolymersWithSetMods.First(), label);
                         }
                         else
                         {
@@ -844,13 +918,13 @@ namespace EngineLayer
                             if (bestMatch.SpecificBioPolymer.Parent.IsDecoy)
                             {
                                 label = false;
-                                newPsmData = CreateOnePsmDataEntry(searchType, psm, bestMatch, label);
+                                newPsmData = CreateCachedPsmDataEntry(searchType, psm, bestMatch, label);
                             }
                             else if (!bestMatch.SpecificBioPolymer.Parent.IsDecoy
                                 && isPositive(psm))
                             {
                                 label = true;
-                                newPsmData = CreateOnePsmDataEntry(searchType, psm, bestMatch, label);
+                                newPsmData = CreateCachedPsmDataEntry(searchType, psm, bestMatch, label);
                             }
                             else
                             {
@@ -925,22 +999,24 @@ namespace EngineLayer
             s.AppendLine("*       Q-Value Cutoff for Training Targets:  " + qValueCutoff);
             s.AppendLine("*       Targets Used for Training:  " + positiveTrainingCount);
             s.AppendLine("*       Decoys Used for Training:  " + negativeTrainingCount);
-            s.AppendLine("*       Training Rounds Run:  " + trainingRounds);
+            // Only when iterating, so that a train-once run's block is the one it had before iteration existed.
             if (!string.IsNullOrEmpty(roundLog))
             {
+                s.AppendLine("*       Training Rounds Run:  " + trainingRounds);
                 s.Append(roundLog);
             }
             if (acceptedTargets > 0)
             {
-                s.AppendLine($"*       Target {GlobalVariables.AnalyteType.GetUniqueFormLabel()}s Accepted After Training:  " + acceptedTargets);
+                s.AppendLine($"*       Target {GlobalVariables.AnalyteType.GetUniqueFormLabel()}s Accepted After Training (stopping count, before disambiguation):  " + acceptedTargets);
             }
             s.AppendLine("************************************************************");
             return s.ToString();
         }
 
         /// <summary>
-        /// Assigns a PEP to every spectral match in the given groups. Unless <see cref="PruneAmbiguousHypotheses"/>
-        /// is set, this method scores; it does not prune. The DisambiguationEngine that runs after a SearchTask resolves
+        /// Assigns a PEP to every spectral match in the given groups. This method scores; it does not prune. When
+        /// <see cref="PruneAmbiguousHypotheses"/> is set, it records each hypothesis's prediction so that
+        /// <see cref="PruneFromKeptRound"/> can prune after the training loop. The DisambiguationEngine that runs after a SearchTask resolves
         /// only hypotheses at different notches; hypotheses at the same notch stay ambiguous.
         /// </summary>
         public void Compute_PSM_PEP(List<SpectralMatchGroup> peptideGroups,
@@ -966,7 +1042,6 @@ namespace EngineLayer
                         // one prediction engine per thread, because the prediction engine is not thread-safe
                         var threadPredictionEngine = predictionEnginePerThread.Value;
 
-                        int ambiguousRemovedInThread = 0;
                         List<double> pepValuePredictions = new List<double>();
                         for (int i = range.Item1; i < range.Item2; i++)
                         {
@@ -983,18 +1058,20 @@ namespace EngineLayer
                                     var hypotheses = psm.BestMatchingBioPolymersWithSetMods.ToList();
                                     foreach (SpectralMatchHypothesis bestMatch in hypotheses)
                                     {
-                                        PsmData pd = CreateOnePsmDataEntry(searchType, psm, bestMatch, !bestMatch.IsDecoy);
+                                        PsmData pd = CreateCachedPsmDataEntry(searchType, psm, bestMatch, !bestMatch.IsDecoy);
                                         var pepValuePrediction = threadPredictionEngine.Predict(pd);
                                         pepValuePredictions.Add(pepValuePrediction.Probability);
                                         //A score is available using the variable pepvaluePrediction.Score
                                     }
 
-                                    ambiguousRemovedInThread += AssignPep(psm, hypotheses, pepValuePredictions, PruneAmbiguousHypotheses);
+                                    // Never prunes here: a later round may be kept instead, and pruning cannot be undone.
+                                    // The predictions are kept, and PruneFromKeptRound prunes from the kept round's.
+                                    AssignPep(psm, hypotheses, pepValuePredictions, false);
+                                    _roundPredictions?.TryAdd(psm, (hypotheses, pepValuePredictions.ToList()));
                                 }
 
                             }
                         }
-                        Interlocked.Add(ref _ambiguousHypothesesRemoved, ambiguousRemovedInThread);
                     });
             }
             finally
@@ -1029,7 +1106,22 @@ namespace EngineLayer
             return removed;
         }
 
+        /// <summary>
+        /// The feature vector of one hypothesis, computed afresh on every call, so a caller that changes the match
+        /// between calls sees the change. The engine's own training loop uses the cached
+        /// <see cref="CreateCachedPsmDataEntry"/> instead.
+        /// </summary>
         public PsmData CreateOnePsmDataEntry(string searchType, SpectralMatch psm, SpectralMatchHypothesis tentativeSpectralMatch, bool label)
+        {
+            psm.PsmData_forPEPandPercolator = ComputeFeatures(searchType, psm, tentativeSpectralMatch).WithLabel(label);
+            return psm.PsmData_forPEPandPercolator;
+        }
+
+        /// <summary>
+        /// <see cref="CreateOnePsmDataEntry"/> from <see cref="_featureCache"/>. Only for the training loop, whose
+        /// inputs do not change while it runs (see the cache's remarks).
+        /// </summary>
+        private PsmData CreateCachedPsmDataEntry(string searchType, SpectralMatch psm, SpectralMatchHypothesis tentativeSpectralMatch, bool label)
         {
             // A COPY, never the cached instance. Training and prediction both come through here,
             // ML.NET enumerates its training set lazily, and handing out one shared object would
