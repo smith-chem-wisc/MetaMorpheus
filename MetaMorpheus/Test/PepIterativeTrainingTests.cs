@@ -246,7 +246,7 @@ namespace Test
         public static void MaxTrainingRounds_IsClampedToTheCap()
         {
             var psms = SearchHelaSubset(out var commonParameters);
-            ScriptedEngine(psms, commonParameters, 1000, false, 10, 20, 15).ComputePEPValuesForAllPSMs();
+            ScriptedEngine(psms, commonParameters, 1000, 10, 20, 15).ComputePEPValuesForAllPSMs();
             Assert.That(File.ReadAllText(ProgressFile), Does.Contain($"max rounds {PepAnalysisEngine.IterativeTrainingRoundCap} ==="));
         }
 
@@ -264,7 +264,7 @@ namespace Test
             string trainOnceMetrics = trainOnce.ComputePEPValuesForAllPSMs();
 
             var psms = SearchHelaSubset(out commonParameters);
-            var engine = ScriptedEngine(psms, commonParameters, PepAnalysisEngine.IterativeTrainingRoundCap, false, 10, 20, 15);
+            var engine = ScriptedEngine(psms, commonParameters, PepAnalysisEngine.IterativeTrainingRoundCap, 10, 20, 15);
             engine.UsePeptideLevelQValueForTraining = false;
             string metrics = engine.ComputePEPValuesForAllPSMs();
 
