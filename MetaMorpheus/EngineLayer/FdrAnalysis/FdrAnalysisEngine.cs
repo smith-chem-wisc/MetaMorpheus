@@ -418,7 +418,7 @@ namespace EngineLayer.FdrAnalysis
             };
 
             var rtPredictor = GetRTPredictor(searchType, fileSpecificParameters);
-            // Iteration is opt-in (SearchParameters.IterativePepTraining), read only by PostSearchAnalysisTask's main
+            // Iteration is on by default (SearchParameters.IterativePepTraining), read only by PostSearchAnalysisTask's main
             // FDR pass. Every other caller trains once, as before iteration existed: glyco, crosslink and nonspecific
             // searches, and the variant-peptide passes.
             var pepEngine = new PepAnalysisEngine(psms, searchType, fileSpecificParameters, outputFolder, rtPredictor)
