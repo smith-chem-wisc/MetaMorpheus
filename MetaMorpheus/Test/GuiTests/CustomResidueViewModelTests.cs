@@ -21,7 +21,7 @@ namespace Test.GuiTests
 
             try
             {
-                using var viewModel = new CustomResidueViewModel();
+                var viewModel = new CustomResidueViewModel();
 
                 Assert.That(viewModel.CanSave, Is.False);
                 Assert.That(viewModel.ValidationMessage, Is.EqualTo("A residue name is required."));
@@ -41,7 +41,7 @@ namespace Test.GuiTests
 
             try
             {
-                using var viewModel = new CustomResidueViewModel
+                var viewModel = new CustomResidueViewModel
                 {
                     Name = "Test amino acid",
                     OneLetterCode = "q",
@@ -73,7 +73,7 @@ namespace Test.GuiTests
             try
             {
                 char unusedLetter = GetUnusedNucleotideLetter();
-                using var viewModel = new CustomResidueViewModel
+                var viewModel = new CustomResidueViewModel
                 {
                     Name = $"Test nucleotide {unusedLetter}",
                     OneLetterCode = unusedLetter.ToString(),
@@ -98,20 +98,20 @@ namespace Test.GuiTests
         }
 
         [Test]
-        public void ModeChangesUpdateSymbolVisibility()
+        public void ModeIsCapturedWhenDialogOpens()
         {
             bool originalMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
             GuiGlobalParamsViewModel.Instance.IsRnaMode = false;
 
             try
             {
-                using var viewModel = new CustomResidueViewModel();
+                var viewModel = new CustomResidueViewModel();
                 Assert.That(viewModel.IsSymbolVisible, Is.False);
 
                 GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
 
-                Assert.That(viewModel.IsRnaMode, Is.True);
-                Assert.That(viewModel.IsSymbolVisible, Is.True);
+                Assert.That(viewModel.IsRnaMode, Is.False);
+                Assert.That(viewModel.IsSymbolVisible, Is.False);
             }
             finally
             {
@@ -127,7 +127,7 @@ namespace Test.GuiTests
 
             try
             {
-                using var viewModel = new CustomResidueViewModel();
+                var viewModel = new CustomResidueViewModel();
                 CustomResidueDialogResultEventArgs result = null;
                 viewModel.RequestClose += (_, args) => result = args;
 
@@ -153,7 +153,7 @@ namespace Test.GuiTests
 
             try
             {
-                using var viewModel = new CustomResidueViewModel
+                var viewModel = new CustomResidueViewModel
                 {
                     Name = "Test saved amino acid",
                     OneLetterCode = GetUnusedAminoAcidLetter().ToString(),
@@ -168,6 +168,7 @@ namespace Test.GuiTests
                 char letter = viewModel.OneLetterCode[0];
                 Assert.That(Residue.TryGetResidue(letter, out Residue residue), Is.True);
                 Assert.That(residue.ThisChemicalFormula.Formula, Is.EqualTo("C2H3NO"));
+                Assert.That(residue.Symbol, Is.EqualTo(letter.ToString()));
                 Assert.That(File.ReadAllLines(path).Any(line => line.StartsWith($"Test saved amino acid\t{letter}\t")), Is.True);
             }
             finally
@@ -191,7 +192,7 @@ namespace Test.GuiTests
 
             try
             {
-                using var viewModel = new CustomResidueViewModel
+                var viewModel = new CustomResidueViewModel
                 {
                     Name = "Test saved nucleotide",
                     OneLetterCode = GetUnusedNucleotideLetter().ToString(),
@@ -233,7 +234,7 @@ namespace Test.GuiTests
                 if (File.Exists(path))
                     File.Delete(path);
 
-                using var viewModel = new CustomResidueViewModel
+                var viewModel = new CustomResidueViewModel
                 {
                     Name = "Test missing amino-acid file",
                     OneLetterCode = GetUnusedAminoAcidLetter().ToString(),
@@ -272,7 +273,7 @@ namespace Test.GuiTests
                 if (File.Exists(path))
                     File.Delete(path);
 
-                using var viewModel = new CustomResidueViewModel
+                var viewModel = new CustomResidueViewModel
                 {
                     Name = "Test missing nucleotide file",
                     OneLetterCode = GetUnusedNucleotideLetter().ToString(),
@@ -308,7 +309,7 @@ namespace Test.GuiTests
 
             try
             {
-                using var viewModel = new CustomResidueViewModel { Name = "Same" };
+                var viewModel = new CustomResidueViewModel { Name = "Same" };
                 int eventCount = 0;
                 viewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(viewModel.Name)) eventCount++; };
 
@@ -330,7 +331,7 @@ namespace Test.GuiTests
 
             try
             {
-                using var viewModel = new CustomResidueViewModel { OneLetterCode = "q" };
+                var viewModel = new CustomResidueViewModel { OneLetterCode = "q" };
                 int eventCount = 0;
                 viewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(viewModel.OneLetterCode)) eventCount++; };
 
@@ -352,7 +353,7 @@ namespace Test.GuiTests
 
             try
             {
-                using var viewModel = new CustomResidueViewModel { Symbol = "Xyz" };
+                var viewModel = new CustomResidueViewModel { Symbol = "Xyz" };
                 int eventCount = 0;
                 viewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(viewModel.Symbol)) eventCount++; };
 
@@ -374,7 +375,7 @@ namespace Test.GuiTests
 
             try
             {
-                using var viewModel = new CustomResidueViewModel { ChemicalFormula = "C2H3NO" };
+                var viewModel = new CustomResidueViewModel { ChemicalFormula = "C2H3NO" };
                 int eventCount = 0;
                 viewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(viewModel.ChemicalFormula)) eventCount++; };
 
@@ -398,7 +399,7 @@ namespace Test.GuiTests
 
             try
             {
-                using var viewModel = new CustomResidueViewModel
+                var viewModel = new CustomResidueViewModel
                 {
                     Name = "Test residue",
                     OneLetterCode = "ab"
@@ -423,7 +424,7 @@ namespace Test.GuiTests
             try
             {
                 char reserved = GlobalVariables.InvalidAminoAcids.First();
-                using var viewModel = new CustomResidueViewModel
+                var viewModel = new CustomResidueViewModel
                 {
                     Name = "Reserved test",
                     OneLetterCode = reserved.ToString(),
@@ -454,7 +455,7 @@ namespace Test.GuiTests
                     "Precondition: 'A' must be a known nucleotide letter.");
 
                 string unusedSymbol = $"X{GetUnusedNucleotideLetter()}x";
-                using var viewModel = new CustomResidueViewModel
+                var viewModel = new CustomResidueViewModel
                 {
                     Name = "Duplicate letter nucleotide",
                     OneLetterCode = existingLetter.ToString(),
@@ -487,7 +488,7 @@ namespace Test.GuiTests
 
                 char unusedLetter = GetUnusedNucleotideLetter();
                 string unusedSymbol = $"X{unusedLetter}x";
-                using var viewModel = new CustomResidueViewModel
+                var viewModel = new CustomResidueViewModel
                 {
                     Name = existingName,
                     OneLetterCode = unusedLetter.ToString(),
@@ -501,6 +502,73 @@ namespace Test.GuiTests
             }
             finally
             {
+                GuiGlobalParamsViewModel.Instance.IsRnaMode = originalMode;
+            }
+        }
+
+        [Test]
+        public void RnaModeRejectsUnsafeAndCollidingIdentifiers()
+        {
+            bool originalMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
+
+            try
+            {
+                char unusedLetter = GetUnusedNucleotideLetter();
+                var viewModel = new CustomResidueViewModel
+                {
+                    Name = "Safe name",
+                    OneLetterCode = "~",
+                    Symbol = "SafeSymbol",
+                    ChemicalFormula = "C5H5N2O2"
+                };
+
+                Assert.That(viewModel.ValidationMessage, Does.Contain("reserved"));
+
+                viewModel.OneLetterCode = unusedLetter.ToString();
+                viewModel.Name = unusedLetter.ToString();
+                Assert.That(viewModel.ValidationMessage, Is.EqualTo("The nucleotide name, letter, and symbol must be distinct."));
+
+                viewModel.Name = "Unsafe\tName";
+                Assert.That(viewModel.ValidationMessage, Does.Contain("tab or newline"));
+            }
+            finally
+            {
+                GuiGlobalParamsViewModel.Instance.IsRnaMode = originalMode;
+            }
+        }
+
+        [Test]
+        public void InvalidNucleotideSaveDoesNotPersistRow()
+        {
+            bool originalMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
+            GuiGlobalParamsViewModel.Instance.IsRnaMode = true;
+            string path = Path.Combine(GlobalVariables.DataDir, "CustomNucleotides", "CustomNucleotides.txt");
+            bool hadFile = File.Exists(path);
+            string[] originalLines = hadFile ? File.ReadAllLines(path) : Array.Empty<string>();
+
+            try
+            {
+                var viewModel = new CustomResidueViewModel
+                {
+                    Name = "Invalid save nucleotide",
+                    OneLetterCode = "~",
+                    Symbol = "Isn",
+                    ChemicalFormula = "C5H5N2O2"
+                };
+
+                viewModel.SaveCommand.Execute(null);
+
+                Assert.That(File.Exists(path), Is.EqualTo(hadFile));
+                if (hadFile)
+                    Assert.That(File.ReadAllLines(path), Is.EqualTo(originalLines));
+            }
+            finally
+            {
+                if (hadFile)
+                    File.WriteAllLines(path, originalLines);
+                else if (File.Exists(path))
+                    File.Delete(path);
                 GuiGlobalParamsViewModel.Instance.IsRnaMode = originalMode;
             }
         }

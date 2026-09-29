@@ -10,7 +10,7 @@ using Transcriptomics;
 
 namespace GuiFunctions
 {
-    public class CustomResidueViewModel : BaseViewModel, IDisposable
+    public class CustomResidueViewModel : BaseViewModel
     {
         private string _name = "";
         private string _oneLetterCode = "";
@@ -25,8 +25,6 @@ namespace GuiFunctions
             CancelCommand = new RelayCommand(Cancel);
 
             _isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
-            GuiGlobalParamsViewModel.Instance.PropertyChanged += GlobalParametersChanged;
-            RefreshModeProperties();
             Validate();
         }
 
@@ -91,20 +89,7 @@ namespace GuiFunctions
             }
         }
 
-        public bool IsRnaMode
-        {
-            get => _isRnaMode;
-            private set
-            {
-                if (_isRnaMode == value)
-                    return;
-
-                _isRnaMode = value;
-                OnPropertyChanged(nameof(IsRnaMode));
-                OnPropertyChanged(nameof(IsSymbolVisible));
-                Validate();
-            }
-        }
+        public bool IsRnaMode => _isRnaMode;
 
         public bool IsSymbolVisible => IsRnaMode;
 
@@ -122,18 +107,6 @@ namespace GuiFunctions
                 OnPropertyChanged(nameof(ValidationMessage));
                 OnPropertyChanged(nameof(CanSave));
             }
-        }
-
-        private void GlobalParametersChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(GuiGlobalParamsViewModel.IsRnaMode))
-                IsRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;
-        }
-
-        private void RefreshModeProperties()
-        {
-            OnPropertyChanged(nameof(IsRnaMode));
-            OnPropertyChanged(nameof(IsSymbolVisible));
         }
 
         private void Validate()
@@ -165,6 +138,12 @@ namespace GuiFunctions
             char letter = OneLetterCode[0];
             if (IsRnaMode)
             {
+                if (!GlobalVariables.TryValidateCustomNucleotide(Name, letter, Symbol, out string validationMessage))
+                {
+                    ValidationMessage = validationMessage;
+                    return;
+                }
+
                 if (Nucleotide.TryGetResidue(letter, out _))
                 {
                     ValidationMessage = $"The nucleotide letter '{letter}' already exists.";
@@ -185,6 +164,12 @@ namespace GuiFunctions
             }
             else
             {
+                if (GlobalVariables.ContainsTabOrNewline(Name))
+                {
+                    ValidationMessage = "The amino acid name cannot contain tab or newline characters.";
+                    return;
+                }
+
                 if (GlobalVariables.InvalidAminoAcids.Contains(letter))
                 {
                     ValidationMessage = $"The amino acid character '{letter}' is reserved and cannot be assigned.";
@@ -243,14 +228,14 @@ namespace GuiFunctions
             if (!File.Exists(path))
                 GlobalVariables.WriteAminoAcidsFile();
 
+            Residue.AddNewResiduesToDictionary(new List<Residue>
+            {
+                new Residue(Name, OneLetterCode[0], OneLetterCode, formula, ModificationSites.Any)
+            });
+
             List<string> lines = File.ReadAllLines(path).ToList();
             lines.Add($"{Name}\t{OneLetterCode[0]}\t{formula.MonoisotopicMass}\t{formula.Formula}");
             File.WriteAllLines(path, lines);
-
-            Residue.AddNewResiduesToDictionary(new List<Residue>
-            {
-                new Residue(Name, OneLetterCode[0], Name, formula, ModificationSites.Any)
-            });
         }
 
         private void SaveNucleotide(ChemicalFormula formula)
@@ -260,11 +245,11 @@ namespace GuiFunctions
             if (!File.Exists(path))
                 GlobalVariables.WriteNucleotidesFile();
 
+            Nucleotide.AddResidue(Name, OneLetterCode[0], Symbol, formula);
+
             List<string> lines = File.ReadAllLines(path).ToList();
             lines.Add($"{Name}\t{OneLetterCode[0]}\t{Symbol}\t{formula.Formula}");
             File.WriteAllLines(path, lines);
-
-            Nucleotide.AddResidue(Name, OneLetterCode[0], Symbol, formula);
         }
 
         private void Cancel()
@@ -272,10 +257,6 @@ namespace GuiFunctions
             RequestClose?.Invoke(this, new CustomResidueDialogResultEventArgs(false));
         }
 
-        public void Dispose()
-        {
-            GuiGlobalParamsViewModel.Instance.PropertyChanged -= GlobalParametersChanged;
-        }
     }
 
     public sealed class CustomResidueDialogResultEventArgs : EventArgs
