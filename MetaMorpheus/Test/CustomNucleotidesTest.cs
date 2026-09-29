@@ -42,8 +42,9 @@ namespace Test
 
                 Assert.That(File.Exists(nucleotidePath), Is.True);
                 string[] lines = File.ReadAllLines(nucleotidePath);
-                Assert.That(lines.Length, Is.EqualTo(1));
+                Assert.That(lines.Length, Is.EqualTo(7));
                 Assert.That(lines[0], Is.EqualTo("Name\tOneLetterAbbr.\tSymbol\tBaseChemicalFormula"));
+                Assert.That(lines, Does.Contain($"Adenine\tA\tAde\t{Nucleotide.AdenineBase.BaseChemicalFormula.Formula}"));
             });
         }
 
@@ -67,7 +68,7 @@ namespace Test
         }
 
         [Test]
-        public static void LoadCustomNucleotidesThrowsForConflictingDuplicateAssignment()
+        public static void LoadCustomNucleotidesSkipsConflictingDuplicateAssignment()
         {
             RunWithTemporaryNucleotideFile(nucleotidePath =>
             {
@@ -82,14 +83,13 @@ namespace Test
                 };
                 File.WriteAllLines(nucleotidePath, lines);
 
-                MetaMorpheusException exception = Assert.Throws<MetaMorpheusException>(GlobalVariables.LoadCustomNucleotides);
-                Assert.That(exception.Message, Does.Contain("The nucleotide name, letter, or symbol is already assigned to a different nucleotide."));
-                Assert.That(exception.Message, Does.Contain("Line 2"));
+                Assert.DoesNotThrow(GlobalVariables.LoadCustomNucleotides);
+                Assert.That(Nucleotide.TryGetResidue(unusedLetter, out _), Is.False);
             });
         }
 
         [Test]
-        public static void LoadCustomNucleotidesThrowsForInvalidFormula()
+        public static void LoadCustomNucleotidesSkipsInvalidFormula()
         {
             RunWithTemporaryNucleotideFile(nucleotidePath =>
             {
@@ -100,8 +100,8 @@ namespace Test
                 };
                 File.WriteAllLines(nucleotidePath, lines);
 
-                MetaMorpheusException exception = Assert.Throws<MetaMorpheusException>(GlobalVariables.LoadCustomNucleotides);
-                Assert.That(exception.Message, Does.StartWith("Error while reading 'CustomNucleotides.txt'. Line 2 was not in the correct format:"));
+                Assert.DoesNotThrow(GlobalVariables.LoadCustomNucleotides);
+                Assert.That(Nucleotide.TryGetResidue('q', out _), Is.False);
             });
         }
 
@@ -127,6 +127,35 @@ namespace Test
                 Assert.That(Nucleotide.TryGetResidue(unusedLetter, out Nucleotide loaded), Is.True);
                 Assert.That(loaded.Name, Is.EqualTo(customName));
                 Assert.That(loaded.Symbol, Is.EqualTo(customSymbol));
+            });
+        }
+
+        [Test]
+        public static void LoadCustomNucleotidesSkipsRowsWithMissingOrUnsafeFields()
+        {
+            RunWithTemporaryNucleotideFile(nucleotidePath =>
+            {
+                char unusedLetter = GetUnusedNucleotideLetter();
+                char nextUnusedLetter = Enumerable.Range(unusedLetter + 1, 'z' - unusedLetter)
+                    .Select(value => (char)value)
+                    .First(letter => !Nucleotide.TryGetResidue(letter, out _));
+                string validName = "ValidNucleotide_" + Guid.NewGuid().ToString("N")[..8];
+
+                string[] lines =
+                {
+                    "Name\tOneLetterAbbr.\tSymbol\tBaseChemicalFormula",
+                    "MissingLetter\t\tMsl\tC5H5N2O2",
+                    "TooLongLetter\tab\tTll\tC5H5N2O2",
+                    "UnsafeLetter\t~\tUsl\tC5H5N2O2",
+                    "MatchingKeys\t" + nextUnusedLetter + "\t" + nextUnusedLetter + "\tC5H5N2O2",
+                    $"{validName}\t{unusedLetter}\tS{unusedLetter}v\tC5H5N2O2"
+                };
+                File.WriteAllLines(nucleotidePath, lines);
+
+                Assert.DoesNotThrow(GlobalVariables.LoadCustomNucleotides);
+                Assert.That(Nucleotide.TryGetResidue(unusedLetter, out Nucleotide loaded), Is.True);
+                Assert.That(loaded.Name, Is.EqualTo(validName));
+                Assert.That(Nucleotide.TryGetResidue(nextUnusedLetter, out _), Is.False);
             });
         }
 

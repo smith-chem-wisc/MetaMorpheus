@@ -245,8 +245,14 @@ namespace EngineLayer
                     string[] line = aminoAcidLines[i].Split('\t').ToArray(); //tsv Name, one letter, monoisotopic, chemical formula
                     if (line.Length >= 4) //check something is there (not a blank line)
                     {
+                        if (string.IsNullOrWhiteSpace(line[0]) || string.IsNullOrWhiteSpace(line[1]) ||
+                            ContainsTabOrNewline(line[0]) || ContainsTabOrNewline(line[1]))
+                        {
+                            continue;
+                        }
+
                         char letter = line[1][0];
-                        if (InvalidAminoAcids.Contains(letter))
+                        if (!IsValidResidueLetter(letter) || InvalidAminoAcids.Contains(letter))
                         {
                             throw new MetaMorpheusException("Error while reading 'CustomAminoAcids.txt'. Line " + (i + 1).ToString() + " contains an invalid amino acid. (Ex: " + string.Join(", ", InvalidAminoAcids.Select(x => x.ToString())) + ")");
                         }
@@ -307,12 +313,16 @@ namespace EngineLayer
             for (int i = 1; i < nucleotideLines.Length; i++)
             {
                 string[] line = nucleotideLines[i].Split('\t');
-                if (line.Length < 4 || string.IsNullOrWhiteSpace(nucleotideLines[i]))
+                if (line.Length != 4 || string.IsNullOrWhiteSpace(nucleotideLines[i]) ||
+                    line[1].Length != 1)
                     continue;
 
                 try
                 {
                     char letter = line[1][0];
+                    if (!TryValidateCustomNucleotide(line[0], letter, line[2], out _))
+                        continue;
+
                     ChemicalFormula formula = ChemicalFormula.ParseFormula(line[3]);
 
                     bool letterExists = Nucleotide.TryGetResidue(letter, out Nucleotide existingByLetter);
@@ -321,30 +331,15 @@ namespace EngineLayer
 
                     if (letterExists || symbolExists || nameExists)
                     {
-                        bool isSameResidue = existingByLetter != null
-                            && existingBySymbol != null
-                            && existingByName != null
-                            && existingByLetter.Equals(existingBySymbol)
-                            && existingByLetter.Equals(existingByName)
-                            && existingByLetter.Name.Equals(line[0])
-                            && existingByLetter.Letter == letter
-                            && existingByLetter.Symbol.Equals(line[2])
-                            && existingByLetter.BaseChemicalFormula.Equals(formula);
-
-                        if (!isSameResidue)
-                        {
-                            throw new MetaMorpheusException("The nucleotide name, letter, or symbol is already assigned to a different nucleotide.");
-                        }
-
                         continue;
                     }
 
                     Nucleotide.AddResidue(line[0], letter, line[2], formula);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    throw new MetaMorpheusException("Error while reading 'CustomNucleotides.txt'. Line " +
-                        (i + 1).ToString() + " was not in the correct format: " + e.Message);
+                    // Keep a malformed persisted row from preventing the application from starting.
+                    continue;
                 }
             }
         }
@@ -361,7 +356,72 @@ namespace EngineLayer
                 "Name\tOneLetterAbbr.\tSymbol\tBaseChemicalFormula"
             };
 
+            foreach (Nucleotide nucleotide in GetDefaultRnaNucleotides())
+            {
+                linesToWrite.Add($"{nucleotide.Name}\t{nucleotide.Letter}\t{nucleotide.Symbol}\t{nucleotide.BaseChemicalFormula.Formula}");
+            }
+
             File.WriteAllLines(nucleotidePath, linesToWrite);
+        }
+
+        public static bool TryValidateCustomNucleotide(string name, char letter, string symbol, out string validationMessage)
+        {
+            if (string.IsNullOrWhiteSpace(name) || ContainsTabOrNewline(name))
+            {
+                validationMessage = "A nucleotide name without tab or newline characters is required.";
+                return false;
+            }
+
+            if (!IsValidResidueLetter(letter) || IsReservedNucleotideCharacter(letter))
+            {
+                validationMessage = $"The nucleotide character '{letter}' is reserved and cannot be assigned.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(symbol) || ContainsTabOrNewline(symbol))
+            {
+                validationMessage = "A nucleotide symbol without tab or newline characters is required.";
+                return false;
+            }
+
+            string letterText = letter.ToString();
+            if (name.Equals(symbol, StringComparison.Ordinal) || name.Equals(letterText, StringComparison.Ordinal) ||
+                symbol.Equals(letterText, StringComparison.Ordinal))
+            {
+                validationMessage = "The nucleotide name, letter, and symbol must be distinct.";
+                return false;
+            }
+
+            validationMessage = string.Empty;
+            return true;
+        }
+
+        public static bool ContainsTabOrNewline(string value)
+        {
+            return value.IndexOfAny(new[] { '\t', '\r', '\n' }) >= 0;
+        }
+
+        private static bool IsValidResidueLetter(char letter)
+        {
+            return letter <= 'z' && !char.IsControl(letter) && !char.IsWhiteSpace(letter);
+        }
+
+        private static bool IsReservedNucleotideCharacter(char letter)
+        {
+            return new[] { ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' }.Contains(letter);
+        }
+
+        private static IEnumerable<Nucleotide> GetDefaultRnaNucleotides()
+        {
+            return new[]
+            {
+                Nucleotide.AdenineBase,
+                Nucleotide.CytosineBase,
+                Nucleotide.GuanineBase,
+                Nucleotide.UracilBase,
+                Nucleotide.InosineBase,
+                Nucleotide.PseudoUracilBase
+            };
         }
 
         // Does the same thing as Process.Start() except it works on .NET Core
