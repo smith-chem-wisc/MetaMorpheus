@@ -2,6 +2,7 @@ using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using Microsoft.ML;
+using Nett;
 using NUnit.Framework;
 using Omics.Modifications;
 using Proteomics;
@@ -18,7 +19,9 @@ namespace Test
 {
     /// <summary>
     /// Iterative (semi-supervised) PEP training. Every test searches the same small HeLa subset afresh, because
-    /// the PEP engine writes onto the matches it is given.
+    /// the PEP engine writes onto the matches it is given. The subset has fewer than 100 peptides, so on its own
+    /// the engine would train at PSM level, where iteration is not run; the engines built here are set to train
+    /// at peptide level, the path every real search takes.
     /// </summary>
     [TestFixture]
     [NonParallelizable] // sets FdrAnalysisEngine.QvalueThresholdOverride, a process-wide static
@@ -55,7 +58,8 @@ namespace Test
             Directory.CreateDirectory(OutputFolder);
             return new PepAnalysisEngine(psms, "standard", FileSpecificParameters(commonParameters), OutputFolder)
             {
-                MaxTrainingRounds = maxTrainingRounds
+                MaxTrainingRounds = maxTrainingRounds,
+                UsePeptideLevelQValueForTraining = true
             };
         }
 
@@ -95,6 +99,7 @@ namespace Test
             return new PepAnalysisEngine(psms, "standard", FileSpecificParameters(commonParameters), OutputFolder, pruneAmbiguousHypotheses: prune)
             {
                 MaxTrainingRounds = maxTrainingRounds,
+                UsePeptideLevelQValueForTraining = true,
                 SelectNextRoundPositives = AllTargets,
                 CountAcceptedTargets = ScriptedCounts(counts)
             };
@@ -229,8 +234,45 @@ namespace Test
         }
 
         /// <summary>
-        /// The setting reaches the engine: FdrAnalysisEngine.Compute_PEPValue iterates only when asked to, which
-        /// shows as the progress file (written only when iterating).
+        /// The cap is the engine's, not the caller's: any MaxTrainingRounds above it runs at most
+        /// IterativeTrainingRoundCap rounds, as the progress header records.
+        /// </summary>
+        [Test]
+        public static void MaxTrainingRounds_IsClampedToTheCap()
+        {
+            var psms = SearchHelaSubset(out var commonParameters);
+            ScriptedEngine(psms, commonParameters, 1000, false, 10, 20, 15).ComputePEPValuesForAllPSMs();
+            Assert.That(File.ReadAllText(ProgressFile), Does.Contain($"max rounds {PepAnalysisEngine.IterativeTrainingRoundCap} ==="));
+        }
+
+        /// <summary>
+        /// At PSM level the folds split matches, not sequences, so one sequence can sit in both a fold's training
+        /// data and its held-out data. Iteration would relabel from those models, so it is not run there: the engine
+        /// trains once, says so, and its PEPs are the train-once PEPs.
+        /// </summary>
+        [Test]
+        public static void PsmLevelTraining_TrainsOnce_EvenWhenIterationIsAskedFor()
+        {
+            var trainOncePsms = SearchHelaSubset(out var commonParameters);
+            var trainOnce = NewEngine(trainOncePsms, commonParameters, 1);
+            trainOnce.UsePeptideLevelQValueForTraining = false;
+            string trainOnceMetrics = trainOnce.ComputePEPValuesForAllPSMs();
+
+            var psms = SearchHelaSubset(out commonParameters);
+            var engine = ScriptedEngine(psms, commonParameters, PepAnalysisEngine.IterativeTrainingRoundCap, false, 10, 20, 15);
+            engine.UsePeptideLevelQValueForTraining = false;
+            string metrics = engine.ComputePEPValuesForAllPSMs();
+
+            Assert.That(RoundsRun(metrics), Is.EqualTo(1));
+            Assert.That(metrics, Does.Contain("Iterative PEP training was not run"));
+            Assert.That(trainOnceMetrics, Does.Not.Contain("Iterative PEP training was not run"));
+            Assert.That(File.Exists(ProgressFile), Is.False);
+            Assert.That(Peps(psms), Is.EqualTo(Peps(trainOncePsms)));
+        }
+
+        /// <summary>
+        /// The setting reaches the engine: FdrAnalysisEngine.Compute_PEPValue asks for iteration only when told to.
+        /// The subset trains at PSM level, where iteration is not run, so what shows it is the results line saying so.
         /// </summary>
         [Test]
         [TestCase(false)]
@@ -244,7 +286,8 @@ namespace Test
 
             FdrAnalysisEngine.Compute_PEPValue(results, psms, fsp, OutputFolder, iterativePepTraining: iterativePepTraining);
 
-            Assert.That(File.Exists(ProgressFile), Is.EqualTo(iterativePepTraining));
+            Assert.That(results.BinarySearchTreeMetrics.Contains("Iterative PEP training was not run"), Is.EqualTo(iterativePepTraining));
+            Assert.That(File.Exists(ProgressFile), Is.False);
         }
 
         /// <summary>
@@ -417,6 +460,10 @@ namespace Test
         public static void IterativePepTraining_IsOnByDefault_ForASearchTask()
         {
             Assert.That(new SearchParameters().IterativePepTraining, Is.True);
+            // A task file written before the setting existed has no such key, and must load with iteration on.
+            string oldToml = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\customBY.toml");
+            Assert.That(File.ReadAllText(oldToml), Does.Not.Contain(nameof(SearchParameters.IterativePepTraining)));
+            Assert.That(Toml.ReadFile<SearchTask>(oldToml, MetaMorpheusTask.tomlConfig).SearchParameters.IterativePepTraining, Is.True);
             // The engine on its own trains once; only a search task's setting turns iteration on.
             Assert.That(new PepAnalysisEngine(SearchHelaSubset(out var commonParameters), "standard", FileSpecificParameters(commonParameters), null).MaxTrainingRounds, Is.EqualTo(1));
         }
