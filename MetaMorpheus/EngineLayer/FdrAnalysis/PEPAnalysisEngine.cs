@@ -49,7 +49,8 @@ namespace EngineLayer
             };
 
         /// <summary>
-        /// The cap on training rounds used when iterative training is switched on
+        /// The most training rounds any caller gets. <see cref="MaxTrainingRounds"/> is clamped to it, and it is
+        /// what <see cref="FdrAnalysisEngine"/> asks for when iterative training is switched on
         /// (<c>SearchParameters.IterativePepTraining</c>). A safety stop, not the number of rounds that
         /// will run: <see cref="TrainingImprovementTolerance"/> decides that.
         /// </summary>
@@ -59,6 +60,8 @@ namespace EngineLayer
         /// Upper bound on training rounds. The default of 1 trains once, on labels from the search-score
         /// q-value, which is the algorithm this engine had before iteration existed. Values above 1 turn on
         /// semi-supervised iteration, and the stopping criterion then decides how many rounds actually run.
+        /// Clamped to [1, <see cref="IterativeTrainingRoundCap"/>]. Ignored (one round) when training falls back
+        /// to PSM level; see <see cref="ComputePEPValuesForAllPSMs"/>.
         /// </summary>
         public int MaxTrainingRounds { get; set; } = 1;
 
@@ -270,7 +273,17 @@ namespace EngineLayer
             int numGroups = 4;
             List<int>[] peptideGroupIndices = GetPeptideGroupIndices(peptideGroups, numGroups);
             int maxThreads = FileSpecificParametersDictionary.Values.FirstOrDefault().MaxThreadsToUsePerFile;
-            int maxRounds = Math.Max(1, MaxTrainingRounds);
+            // Clamped here rather than trusted from the caller, so no caller can exceed the cap.
+            int maxRounds = Math.Clamp(MaxTrainingRounds, 1, IterativeTrainingRoundCap);
+            // Iteration relabels each fold from its own model's scores, which keeps held-out data out of the labels
+            // only if every match to a sequence sits in one fold. At PSM level (fewer than 100 peptides, or too few
+            // target or decoy peptides) the folds split matches, not sequences, so one sequence can sit on both sides.
+            // Train once there, as before iteration existed, and say so in the results.
+            bool iterationSkippedAtPsmLevel = maxRounds > 1 && !UsePeptideLevelQValueForTraining;
+            if (iterationSkippedAtPsmLevel)
+            {
+                maxRounds = 1;
+            }
             // With iteration off, neither the progress file nor the round lines in the results block exist, so the
             // output is the train-once engine's.
             bool iterating = maxRounds > 1;
@@ -445,6 +458,13 @@ namespace EngineLayer
                 ? AggregateMetricsForOutput(allMetrics, positiveTrainingCount, negativeTrainingcount, QValueCutoff,
                     roundsRun, previousAccepted, roundLog.ToString())
                 : AggregateMetricsForOutput(allMetrics, positiveTrainingCount, negativeTrainingcount, QValueCutoff);
+
+            if (iterationSkippedAtPsmLevel)
+            {
+                output += Environment.NewLine
+                          + "Iterative PEP training was not run: too few peptides to train at peptide level, and PSM-level "
+                          + "folds can split one sequence between training and held-out data. PEP was trained once.";
+            }
 
             // Surface how many distinct peptidoforms the retention-time model was actually asked about.
             // Without it the batching is invisible in the log and a regression -- someone reintroducing a
