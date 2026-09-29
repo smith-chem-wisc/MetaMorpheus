@@ -420,7 +420,7 @@ namespace EngineLayer.FdrAnalysis
             };
 
             var rtPredictor = GetRTPredictor(searchType, fileSpecificParameters);
-            // Iteration is opt-in (SearchParameters.IterativePepTraining), read only by PostSearchAnalysisTask's main
+            // Iteration is on by default (SearchParameters.IterativePepTraining), read only by PostSearchAnalysisTask's main
             // FDR pass. Every other caller trains once, as before iteration existed: glyco, crosslink and nonspecific
             // searches, and the variant-peptide passes. Iteration and pruning are independent in the engine (pruning
             // is applied after the last round); these callers simply do not ask for iteration.

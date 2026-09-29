@@ -414,9 +414,10 @@ namespace Test
         }
 
         [Test]
-        public static void IterativePepTraining_IsOffByDefault()
+        public static void IterativePepTraining_IsOnByDefault_ForASearchTask()
         {
-            Assert.That(new SearchParameters().IterativePepTraining, Is.False);
+            Assert.That(new SearchParameters().IterativePepTraining, Is.True);
+            // The engine on its own trains once; only a search task's setting turns iteration on.
             Assert.That(new PepAnalysisEngine(SearchHelaSubset(out var commonParameters), "standard", FileSpecificParameters(commonParameters), null).MaxTrainingRounds, Is.EqualTo(1));
         }
     }

@@ -39,7 +39,7 @@ namespace TaskLayer
             IncludeModMotifInMzid = false;
             WriteDigestionProductCountFile = false;
             WriteTargetDecoyFasta = false;
-            IterativePepTraining = false;
+            IterativePepTraining = true;
 
             ModsToWriteSelection = DefaultModsToWriteSelection();
 
@@ -119,8 +119,8 @@ namespace TaskLayer
 
         /// <summary>
         /// Retrain the PEP model on its own output until the count of accepted target peptides stops growing
-        /// (semi-supervised, as in Percolator and mokapot). Off by default: PEP then trains once, on labels
-        /// from the search-score q-value.
+        /// (semi-supervised, as in Percolator and mokapot). On by default, after entrapment checks on two datasets.
+        /// Off, PEP trains once, on labels from the search-score q-value.
         /// </summary>
         public bool IterativePepTraining { get; set; }
     }
