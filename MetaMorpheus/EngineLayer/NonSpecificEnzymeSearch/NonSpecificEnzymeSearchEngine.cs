@@ -1,6 +1,7 @@
 ﻿using Chemistry;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.ModernSearch;
+using EngineLayer.SpectrumMatch;
 using Proteomics;
 using Omics;
 using Omics.Fragmentation;
@@ -466,8 +467,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                        .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
 
                     // Nonspecific searches skip PostSearchAnalysisTask's FDR pass and its DisambiguationEngine, so this PEP is
-                    // final and nothing downstream resolves ambiguity: keep PEP's pruning, as glyco and crosslink do.
-                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }, pruneAmbiguousHypotheses: true).Run();
+                    // final: disambiguate here, before the q-values below rank the categories.
+                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }).Run();
+                    new DisambiguationEngine(cleanedPsmsArray, commonParameters, fileSpecificParameters, new List<string> { taskId }, AbsolutePepGapRule.PepEngineRule).Run();
 
                     for (int i = 0; i < psmsArray.Count; i++)
                     {
@@ -596,7 +598,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                        .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.GetObservedMonoisotopicMass(b.BioPolymerWithSetModsMonoisotopicMass.Value, commonParameters) - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
                        .ToList();
 
-                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }, pruneAmbiguousHypotheses: true).Run();
+                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }).Run();
+                    new DisambiguationEngine(cleanedPsmsArray, commonParameters, fileSpecificParameters, new List<string> { taskId }, AbsolutePepGapRule.PepEngineRule).Run();
                 }
             }
 
