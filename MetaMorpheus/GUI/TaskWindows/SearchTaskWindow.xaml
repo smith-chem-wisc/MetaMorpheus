@@ -101,7 +101,6 @@
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
-                                    <RowDefinition Height="1*"/>
                                 </Grid.RowDefinitions>
 
                                 <!-- Precursor Mass Tolerance -->
@@ -330,20 +329,6 @@
                                             </TextBlock>
                                         </TextBox.ToolTip>
                                     </local:IntegerTexBoxControl>
-                                </StackPanel>
-
-                                <!-- Iterative PEP training -->
-                                <StackPanel Grid.Column="1" Grid.Row="7" Margin="5 5 5 0" Orientation="Horizontal">
-                                    <CheckBox x:Name="IterativePepTrainingCheckBox" Content="Iterative PEP training" Margin="5,5,2,0"
-                                              ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                        <CheckBox.ToolTip>
-                                            <TextBlock>
-                                                    Retrain the PEP model on its own output until the number of accepted target peptides stops growing (semi-supervised, as in Percolator and mokapot).
-                                                    <LineBreak />
-                                                    Unchecked, PEP trains once, on labels from the search-score q-value.
-                                            </TextBlock>
-                                        </CheckBox.ToolTip>
-                                    </CheckBox>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
@@ -1096,6 +1081,21 @@
                                                              GroupName="RTPredictorType" Content="Prosit 2020 (network)"
                                                              ToolTip="Deep-learning retention time predictor served via Koina (network required). Same as Prosit2019iRT but trained for TMT-labeled peptides." />
                                             </Grid>
+                                        </StackPanel>
+                                    </GroupBox>
+                                    <GroupBox Header="Posterior Error Probability">
+                                        <StackPanel Margin="2">
+                                            <CheckBox Margin="3 0 0 0" x:Name="IterativePepTrainingCheckBox" Content="Iterative PEP training">
+                                                <ToolTipService.ToolTip>
+                                                    <ToolTip ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                        <TextBlock>
+                                                            Retrain the PEP model on its own output until the number of accepted target peptides stops growing (semi-supervised, as in Percolator and mokapot).
+                                                            <LineBreak />
+                                                            Unchecked, PEP trains once, on labels from the search-score q-value.
+                                                        </TextBlock>
+                                                    </ToolTip>
+                                                </ToolTipService.ToolTip>
+                                            </CheckBox>
                                         </StackPanel>
                                     </GroupBox>
                                     <GroupBox Header="Mass Difference Histogram Analysis">
