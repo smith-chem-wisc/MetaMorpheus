@@ -496,7 +496,7 @@
                     </GroupBox>
 
                     <!-- Quantification options -->
-                    <GroupBox Header="Quantification" DockPanel.Dock="Top" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
+                    <GroupBox Header="Quantification" DockPanel.Dock="Top">
                         <!-- Radio Buttons for Quant Method -->
                         <StackPanel Margin="5">
                             <RadioButton x:Name="CheckBoxNoQuant" Content="No quantification" GroupName="QuantType">
