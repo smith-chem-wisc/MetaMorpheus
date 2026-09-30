@@ -418,9 +418,9 @@ namespace TaskLayer
 
         public static List<Ms2ScanWithSpecificMass>[] _GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
-            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
-            var ms2Scans = msNScans.Where(x => x.MsnOrder == 2).ToArray();
-            var ms3Scans = msNScans.Where(x => x.MsnOrder == 3).ToArray();
+            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1 && commonParameters.RetentionTimeRange.Contains(x.RetentionTime)).ToArray();
+            var ms2Scans = msNScans.Where(p => p.MsnOrder == 2).ToArray();
+            var ms3Scans = msNScans.Where(p => p.MsnOrder == 3).ToArray();
             List<Ms2ScanWithSpecificMass>[] scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[ms2Scans.Length];
 
             if (!ms2Scans.Any())
@@ -605,9 +605,7 @@ namespace TaskLayer
                     }
                 });
 
-            return scansWithPrecursors
-                .Select(scans => scans?.Where(scan => commonParameters.RetentionTimeRange.Contains(scan.RetentionTime)).ToList())
-                .ToArray();
+            return scansWithPrecursors;
         }
 
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
@@ -629,6 +627,7 @@ namespace TaskLayer
                         throw new NotImplementedException("DIA analysis type not implemented.");
                 }
 
+                // TODO: Move the retention time filtering to the inside of the engines. Currently, we do all the work then throw away the scans outside of the retention time range. This is inefficient, but it is a quick fix to get the retention time filtering working for DIA and ISD by someone who knows what is going on there. 
                 return pseudoMs2Scans.Where(scan => commonParameters.RetentionTimeRange.Contains(scan.RetentionTime));
             }
             var scansWithPrecursors = _GetMs2Scans(myMSDataFile, fullFilePath, commonParameters);
