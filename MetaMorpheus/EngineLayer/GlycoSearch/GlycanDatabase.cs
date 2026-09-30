@@ -399,7 +399,7 @@ namespace EngineLayer
         /// <para>
         /// Return contract, and it differs deliberately from <see cref="PersistCustomMonosaccharide"/>:
         /// this method throws <see cref="MetaMorpheusException"/> for every failure and returns normally
-        /// only once the glycan is on disk. There is no registered-but-not-saved middle state to report,
+        /// only once the glycan is on disk, or once the caller's <c>confirm</c> has declined it. There is no registered-but-not-saved middle state to report,
         /// because a glycan database is not held in memory the way a monosaccharide is -- the search reads
         /// the file when the engine is built. Which is also why an entry added now is picked up by a search
         /// run in this same session; only MetaDraw's glycan list waits for a restart.
@@ -416,7 +416,14 @@ namespace EngineLayer
         /// Whether this is an O-glycan database, so the entry is validated the same way the search will
         /// read it and a glycan that parses here cannot fail to parse there.
         /// </param>
-        public static string PersistCustomGlycan(string glycanText, string databasePath, bool isOGlycan)
+        /// <param name="confirm">
+        /// Optional. Called with the <see cref="CoreWarning"/> when the glycan passes every check but does not
+        /// start from its core, after the checks and before anything is written. Returning false leaves the
+        /// file untouched and returns null: the one normal return with nothing on disk, which the caller
+        /// knows about because it gave the answer. Not called for a glycan that starts from its core. Without
+        /// it the glycan is written, as before -- the warning never refuses.
+        /// </param>
+        public static string PersistCustomGlycan(string glycanText, string databasePath, bool isOGlycan, Func<string, bool> confirm = null)
         {
             string entry = (glycanText ?? string.Empty).Trim();
             string fileName = Path.GetFileName(databasePath);
@@ -454,6 +461,15 @@ namespace EngineLayer
             {
                 string sameGlycan = duplicate == entry ? "" : $", which is the same glycan as \"{entry}\"";
                 throw new MetaMorpheusException($"Could not add the glycan: '{fileName}' already contains \"{duplicate}\"{sameGlycan}.");
+            }
+
+            // Asked only now, after every check that can refuse the entry, so the user is never asked to
+            // confirm a glycan and then told it cannot be added; and before the write, because nothing in
+            // the GUI can take a glycan out of the database again.
+            string coreWarning = CoreWarning(entry, isOGlycan);
+            if (coreWarning != null && confirm != null && !confirm(coreWarning))
+            {
+                return null;
             }
 
             try
@@ -780,6 +796,118 @@ namespace EngineLayer
             {
                 throw new MetaMorpheusException(TooLarge(entry, total));
             }
+        }
+
+        /// <summary>
+        /// A warning when a glycan does not start from its core, or null when it does -- or when it is not a
+        /// glycan at all, which is the validator's and the loader's business, not this.
+        /// </summary>
+        /// <remarks>
+        /// Nearly every O-glycan starts from a GalNAc on the serine or threonine, so an O-glycan needs one
+        /// HexNAc: a structure's root, or any HexNAc in a composition. Every N-glycan starts from the
+        /// chitobiose core, two GlcNAc on the asparagine, so an N-glycan needs two: a structure whose HexNAc
+        /// root carries a HexNAc branch, or a composition with at least two HexNAc. A custom glycan that does
+        /// not is usually a typo or a glycan entered backwards. Usually, not always: O-mannose, O-fucose,
+        /// O-glucose and O-xylose glycans are real -- every proteoglycan attaches through O-xylose -- and
+        /// "Olgycan Database 36 glycans with Mann.txt" ships four O-mannose ones; and an endoglycosidase such
+        /// as Endo H leaves a single GlcNAc on the asparagine. So this warns and never refuses.
+        /// <para>
+        /// Asked about when a glycan is added -- <see cref="PersistCustomGlycan"/> hands it to its confirm
+        /// callback -- and nowhere else. A database is not scanned at startup: a glycan the user has kept on
+        /// purpose would be reported at every launch with no way to acknowledge it.
+        /// </para>
+        /// <para>
+        /// Only the built-in HexNAc code counts as HexNAc. A custom monosaccharide is never HexNAc, whatever its
+        /// mass, so a user who registers HexNAc-mass codes to tell GalNAc and GlcNAc apart is warned about
+        /// every structure rooted on one. That is rare enough to leave as it is.
+        /// </para>
+        /// </remarks>
+        public static string CoreWarning(string glycan, bool isOGlycan)
+        {
+            string text = (glycan ?? string.Empty).Trim();
+            if (!LacksCore(text, isOGlycan))
+            {
+                return null;
+            }
+
+            bool isStructure = text.StartsWith("(", StringComparison.Ordinal);
+            if (isOGlycan)
+            {
+                string lacks = isStructure ? "does not begin with HexNAc" : "contains no HexNAc";
+                return $"\"{text}\" {lacks}. Nearly every O-glycan starts from a GalNAc (HexNAc) on the serine or threonine; " +
+                    $"{OGlycanExceptions} are the exceptions. If this is not one of those, check the entry.";
+            }
+
+            string lacksCore = isStructure
+                ? "does not begin with two HexNAc (a HexNAc root carrying a HexNAc)"
+                : "contains fewer than two HexNAc";
+            return $"\"{text}\" {lacksCore}. Every N-glycan starts from the chitobiose core, two GlcNAc (HexNAc) on the " +
+                "asparagine; only a glycan trimmed by an endoglycosidase such as Endo H keeps just one. If this is not " +
+                "one of those, check the entry.";
+        }
+
+        /// <summary>The O-glycans that really do not start from HexNAc, named in the O-glycan message.</summary>
+        private const string OGlycanExceptions = "O-mannose, O-fucose, O-glucose and O-xylose glycans";
+
+        /// <summary>
+        /// Whether a glycan that can be read lacks its core: for an O-glycan, a structure whose root is not
+        /// HexNAc or a composition with no HexNAc; for an N-glycan, a structure whose root is not HexNAc or
+        /// carries no HexNAc branch, or a composition with fewer than two HexNAc. False for anything that
+        /// cannot be read as either format.
+        /// </summary>
+        private static bool LacksCore(string glycan, bool isOGlycan)
+        {
+            if (string.IsNullOrEmpty(glycan) || IsCommentOrBlank(glycan))
+            {
+                return false;
+            }
+
+            var hexNAc = Glycan.NameCharDic["HexNAc"];
+            if (glycan.StartsWith("(", StringComparison.Ordinal))
+            {
+                if (StructureProblem(glycan) != null)
+                {
+                    return false;
+                }
+                // StructureProblem has checked that every '(' is followed by exactly one monosaccharide, so the
+                // root is the character at 1 and each branch on it opens at depth 1.
+                if (glycan[1] != hexNAc.Item1)
+                {
+                    return true;
+                }
+                return !isOGlycan && !RootCarriesBranch(glycan, hexNAc.Item1);
+            }
+
+            try
+            {
+                return ParseComposition(glycan)[hexNAc.Item2] < (isOGlycan ? 1 : 2);
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>Whether a branch directly on the root of a well-formed structure is the given monosaccharide.</summary>
+        private static bool RootCarriesBranch(string structure, char monosaccharide)
+        {
+            int depth = 0;
+            for (int i = 0; i < structure.Length; i++)
+            {
+                if (structure[i] == '(')
+                {
+                    if (depth == 1 && i + 1 < structure.Length && structure[i + 1] == monosaccharide)
+                    {
+                        return true;
+                    }
+                    depth++;
+                }
+                else if (structure[i] == ')')
+                {
+                    depth--;
+                }
+            }
+            return false;
         }
 
         private static string TooLarge(string entry, int residues) =>
