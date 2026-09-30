@@ -373,6 +373,7 @@ namespace MetaMorpheusGUI
             WriteDigestCountCheckBox.IsChecked = task.SearchParameters.WriteDigestionProductCountFile;
             WriteHighQPsmsCheckBox.IsChecked = task.SearchParameters.WriteHighQValuePsms;
             WriteDecoyCheckBox.IsChecked = task.SearchParameters.WriteDecoys;
+            IterativePepTrainingCheckBox.IsChecked = task.SearchParameters.IterativePepTraining;
             WriteContaminantCheckBox.IsChecked = task.SearchParameters.WriteContaminants;
             WriteIndividualResultsCheckBox.IsChecked = task.SearchParameters.WriteIndividualFiles;
             WriteSpectralLibraryCheckBox.IsChecked = task.SearchParameters.WriteSpectralLibrary;
@@ -720,6 +721,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.WriteMzId = CkbMzId.IsChecked.Value;
             TheTask.SearchParameters.WriteHighQValuePsms = WriteHighQPsmsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteDecoys = WriteDecoyCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.IterativePepTraining = IterativePepTrainingCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteSpectralLibrary = WriteSpectralLibraryCheckBox.IsChecked.Value;

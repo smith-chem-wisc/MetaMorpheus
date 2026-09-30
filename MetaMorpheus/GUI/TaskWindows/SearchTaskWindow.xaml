@@ -1124,6 +1124,21 @@
                                             </Grid>
                                         </StackPanel>
                                     </GroupBox>
+                                    <GroupBox Header="Posterior Error Probability">
+                                        <StackPanel Margin="2">
+                                            <CheckBox Margin="3 0 0 0" x:Name="IterativePepTrainingCheckBox" Content="Iterative PEP training">
+                                                <ToolTipService.ToolTip>
+                                                    <ToolTip ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                        <TextBlock>
+                                                            Retrain the PEP model on its own output until the number of accepted target peptides stops growing (semi-supervised, as in Percolator and mokapot).
+                                                            <LineBreak />
+                                                            Unchecked, PEP trains once, on labels from the search-score q-value.
+                                                        </TextBlock>
+                                                    </ToolTip>
+                                                </ToolTipService.ToolTip>
+                                            </CheckBox>
+                                        </StackPanel>
+                                    </GroupBox>
                                     <GroupBox Header="Mass Difference Histogram Analysis">
                                         <StackPanel Margin="2">
                                             <CheckBox Margin="3 0 0 0"  x:Name="CheckBoxHistogramAnalysis" Content="Construct mass-difference histogram">
