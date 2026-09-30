@@ -182,8 +182,8 @@ namespace EngineLayer.GlycoSearch
         /// but the box builders skip every box heavier than the maximum box mass -- so a database whose
         /// glycans are all heavier than the cap yields no boxes at all. Left alone that is the same
         /// <c>Sequence contains no elements</c> the empty-database guard closes, arriving one step later,
-        /// from <c>GlycanBoxes.First().Mass</c> inside the parallel search loop. The N-glycan branch needs
-        /// no equivalent: its own mass filter's result is length-checked where it is read.
+        /// from <c>GlycanBoxes.First().Mass</c> inside the parallel search loop. The N-glycan branch builds
+        /// no boxes, so it cannot come through here; it makes the same refusal itself, right after its mass filter.
         /// </remarks>
         private static GlycanBox[] CheckedGlycanBoxes(GlycanBox[] boxes, string databaseDescription, double maxGlycanBoxMass)
         {
