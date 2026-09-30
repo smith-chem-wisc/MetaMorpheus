@@ -1143,5 +1143,45 @@ namespace Test
                 Assert.That(File.ReadAllLines(path), Has.Length.EqualTo(2));
             }
         }
+
+        /// <summary>
+        /// The duplicate check reads every structure already in the file as a tree, and that reader assumes
+        /// each '(' opens exactly one monosaccharide. A hand-edited line breaking that rule used to reach it:
+        /// "()" and "(N()(H))" ran it off the end of the string (a raw IndexOutOfRangeException on Add),
+        /// and "(NH)" read as "(N)", so a real "(N)" was refused as its duplicate. Such a line is the
+        /// loader's to report; adding a good glycan beside it must still work.
+        /// </summary>
+        [TestCase("()")]
+        [TestCase("(N()(H))")]
+        [TestCase("(NH)")]
+        [TestCase("((N))")]
+        public static void AMalformedStructureAlreadyInTheFileDoesNotBreakTheDuplicateCheck(string handEdited)
+        {
+            string path = Path_("hand_edited.gdb");
+            File.WriteAllLines(path, new[] { handEdited });
+
+            Assert.DoesNotThrow(() => GlycanDatabase.PersistCustomGlycan("(N)", path, true));
+
+            Assert.That(File.ReadAllLines(path), Is.EqualTo(new[] { handEdited, "(N)" }));
+        }
+
+        /// <summary>
+        /// Juxtaposed residues are refused as malformed where they are typed, not reported as a duplicate
+        /// of the single residue the tree reader would have kept.
+        /// </summary>
+        [TestCase("(NH)")]
+        [TestCase("(N(HA))")]
+        public static void JuxtaposedResiduesAreRefusedOnEntryRatherThanCalledADuplicate(string entry)
+        {
+            string path = Path_("juxtaposed.gdb");
+            GlycanDatabase.PersistCustomGlycan("(N)", path, true);
+            GlycanDatabase.PersistCustomGlycan("(N(H))", path, true);
+
+            var ex = Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.PersistCustomGlycan(entry, path, true));
+
+            Assert.That(ex.Message, Does.Contain("exactly one monosaccharide"));
+            Assert.That(ex.Message, Does.Not.Contain("already contains"));
+            Assert.That(File.ReadAllLines(path), Has.Length.EqualTo(2));
+        }
     }
 }
