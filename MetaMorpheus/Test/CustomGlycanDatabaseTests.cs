@@ -928,6 +928,29 @@ namespace Test
         }
 
         /// <summary>
+        /// Struct2Node takes the character after each '(' as a node and climbs a level at each ')'. An empty
+        /// branch climbs without having descended, so it walked off the root the same way a fourth branch
+        /// did; a residue with no '(' of its own, or a '(' opening nothing, left the tree misbuilt.
+        /// </summary>
+        [TestCase("(N()(H))")]
+        [TestCase("(N(H)())")]
+        [TestCase("(NH)")]
+        [TestCase("(N(H)A)")]
+        [TestCase("((N))")]
+        public static void ABranchThatIsNotOneMonosaccharideIsRefusedOnEntryAndOnLoad(string structure)
+        {
+            var entry = Assert.Throws<MetaMorpheusException>(
+                () => GlycanDatabase.PersistCustomGlycan(structure, Path_("typed.gdb"), true));
+            Assert.That(entry.Message, Does.Contain("exactly one monosaccharide"));
+            Assert.That(entry.Message, Does.Not.Contain("Object reference"));
+
+            string path = Path_("bad_branch.gdb");
+            File.WriteAllLines(path, new[] { "(N(H))", structure });
+            var load = Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.LoadGlycan(path, false, true).ToList());
+            Assert.That(load.Message, Does.Contain("'bad_branch.gdb' at line 2").And.Contain("exactly one monosaccharide"));
+        }
+
+        /// <summary>
         /// A composition line is cut at '#' and read as name(count), so a monosaccharide named Sia#2 or
         /// Sia(2) registered, and HexNAc(1)Sia#2(1) was accepted on entry and loaded back as HexNAc(1).
         /// Such a name is refused where it is typed.

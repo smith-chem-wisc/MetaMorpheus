@@ -573,6 +573,24 @@ namespace EngineLayer
                 }
             }
 
+            // Struct2Node takes the character after each '(' as a node and climbs at each ')', so every branch
+            // must be '(' plus one monosaccharide. "(N()(H))" climbs off the root; "(NH)" and "((N))" misbuild it.
+            if (structure.All(c => c == '(' || c == ')'))
+            {
+                return "It contains no monosaccharides.";
+            }
+            for (int i = 0; i < structure.Length; i++)
+            {
+                bool opens = structure[i] == '(';
+                bool residue = structure[i] != '(' && structure[i] != ')';
+                if (opens && (i + 1 >= structure.Length || structure[i + 1] == '(' || structure[i + 1] == ')')
+                    || residue && (i == 0 || structure[i - 1] != '('))
+                {
+                    return "Each branch must be '(' followed by exactly one monosaccharide, as in (N(H)(A)), and one " +
+                        $"here is not: see position {i + 1}.";
+                }
+            }
+
             int depth = 0;
             int firstTreeEnds = -1;
             // The branches opened so far under each open node, innermost last. Struct2Node has three child
