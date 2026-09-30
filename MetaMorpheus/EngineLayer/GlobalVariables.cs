@@ -608,8 +608,7 @@ namespace EngineLayer
             // Read through LoadGlycansOrWarn rather than LoadGlycan directly: this runs inside
             // SetUpGlobalVariables, so a typo in a user's own database would otherwise stop MetaMorpheus
             // opening -- and with it the only window that could fix the file.
-            var unreadable = new HashSet<string>();
-            foreach (var glycan in GlycanDatabase.LoadGlycansOrWarn(OGlycanDatabasePaths, true, Warn, unreadable))
+            foreach (var glycan in GlycanDatabase.LoadGlycansOrWarn(OGlycanDatabasePaths, true, Warn))
             {
                 if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
                 {
@@ -617,7 +616,7 @@ namespace EngineLayer
                 }
                 _AllModsKnown.Add(glycan);
             }
-            foreach (var glycan in GlycanDatabase.LoadGlycansOrWarn(NGlycanDatabasePaths, false, Warn, unreadable))
+            foreach (var glycan in GlycanDatabase.LoadGlycansOrWarn(NGlycanDatabasePaths, false, Warn))
             {
                 if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
                 {
@@ -625,13 +624,6 @@ namespace EngineLayer
                 }
                 _AllModsKnown.Add(glycan);
             }
-
-            // Only the user's own databases: a shipped O-glycan database legitimately holds O-mannose glycans,
-            // and warning about it at every launch would teach the user to ignore the warning. Nor one the load
-            // above could not read: it has just been reported as unavailable, and this would call it loaded.
-            WarnAboutGlycansWithoutHexNAcCore(CustomOGlycanDatabasePath, true, unreadable);
-            WarnAboutGlycansWithoutHexNAcCore(CustomNGlycanDatabasePath, false, unreadable);
-
             LoadTxtGlycan();
         }
 
@@ -772,29 +764,6 @@ namespace EngineLayer
                 + $"name was already taken: {string.Join(", ", skipped.Select(p => "'" + p + "'"))}. The "
                 + $"definition already loaded is kept and the custom one discarded. Rename them in {path} "
                 + $"if you meant to define your own.");
-        }
-
-        private static void WarnAboutGlycansWithoutHexNAcCore(string customDatabasePath, bool isOGlycan, ISet<string> unreadable)
-        {
-            if (unreadable.Contains(customDatabasePath))
-            {
-                return;
-            }
-
-            try
-            {
-                string warning = GlycanDatabase.CoreWarningsFor(customDatabasePath, isOGlycan);
-                if (warning != null)
-                {
-                    Warn(warning);
-                }
-            }
-            catch (Exception ex)
-            {
-                // Advice, not a check: the load above read this file a moment ago, so this is a file removed or
-                // locked since, and it must not be what stops MetaMorpheus opening.
-                Warn($"Could not check '{Path.GetFileName(customDatabasePath)}' for glycans that do not start with HexNAc: {ex.Message}");
-            }
         }
 
         private static void Warn(string v)

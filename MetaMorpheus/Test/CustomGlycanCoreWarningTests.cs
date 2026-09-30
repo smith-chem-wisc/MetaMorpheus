@@ -1,17 +1,16 @@
 using EngineLayer;
-using EngineLayer.GlycoSearch;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace Test
 {
     /// <summary>
-    /// A custom glycan that does not start from HexNAc is warned about, not refused: nearly every O-glycan
-    /// starts from GalNAc and every N-glycan from GlcNAc, but O-mannose, O-fucose and O-glucose glycans are
-    /// real, and one of the shipped O-glycan databases holds four of them.
+    /// A custom glycan that does not start from its core is warned about when it is added, not refused:
+    /// nearly every O-glycan starts from GalNAc and every N-glycan from the GlcNAc-GlcNAc chitobiose core,
+    /// but O-mannose, O-fucose, O-glucose and O-xylose glycans are real, one of the shipped O-glycan
+    /// databases holds four of them, and an endoglycosidase leaves a single GlcNAc on the asparagine.
     /// </summary>
     [TestFixture]
     [NonParallelizable] // registers custom monosaccharides, which is process-wide state
@@ -40,23 +39,33 @@ namespace Test
 
         /// <summary>
         /// A structure is judged by its root, the monosaccharide on the amino acid. A composition has no
-        /// order, so it is judged by whether it holds a HexNAc at all -- "Hex(1)HexNAc(1)" starts from
-        /// HexNAc as far as anyone can tell from the counts.
+        /// order, so it is judged by its HexNAc count. An O-glycan needs one HexNAc to start from; an
+        /// N-glycan needs the two of the chitobiose core -- in a structure, a HexNAc root with a HexNAc
+        /// branch on it.
         /// </summary>
-        [TestCase("(H)", true)]
-        [TestCase("(H(N))", true)]
-        [TestCase("(F(H))", true)]
-        [TestCase("Hex(1)", true)]
-        [TestCase("Hex(2)Fuc(1)", true)]
-        [TestCase("(X(H(H)))", true)]
-        [TestCase("Xylose(1)Hex(2)", true)]
-        [TestCase("(N)", false)]
-        [TestCase("(N(H(A)))", false)]
-        [TestCase("HexNAc(1)", false)]
-        [TestCase("Hex(1)HexNAc(1)", false)]
-        public static void AGlycanThatDoesNotStartWithHexNAcIsWarnedAbout(string glycan, bool warned)
+        [TestCase("(H)", true, true)]
+        [TestCase("(H(N))", true, true)]
+        [TestCase("(F(H))", true, true)]
+        [TestCase("Hex(1)", true, true)]
+        [TestCase("Hex(2)Fuc(1)", true, true)]
+        [TestCase("(X(H(H)))", true, true)]
+        [TestCase("Xylose(1)Hex(2)", true, true)]
+        [TestCase("(H(N(N)))", true, true)]
+        [TestCase("(N)", false, true)]
+        [TestCase("(N(H(A)))", false, true)]
+        [TestCase("(N(F))", false, true)]
+        [TestCase("(N(H(N)))", false, true)]
+        [TestCase("HexNAc(1)", false, true)]
+        [TestCase("Hex(1)HexNAc(1)", false, true)]
+        [TestCase("HexNAc(1)Fuc(1)", false, true)]
+        [TestCase("(N(N))", false, false)]
+        [TestCase("(N(N(H(H)(H))))", false, false)]
+        [TestCase("(N(F)(N(H)))", false, false)]
+        [TestCase("HexNAc(2)", false, false)]
+        [TestCase("HexNAc(2)Hex(5)", false, false)]
+        public static void AGlycanThatDoesNotStartFromItsCoreIsWarnedAbout(string glycan, bool warnedAsOGlycan, bool warnedAsNGlycan)
         {
-            foreach (bool isOGlycan in new[] { true, false })
+            foreach (var (isOGlycan, warned) in new[] { (true, warnedAsOGlycan), (false, warnedAsNGlycan) })
             {
                 string warning = GlycanDatabase.CoreWarning(glycan, isOGlycan);
 
@@ -76,7 +85,20 @@ namespace Test
         public static void TheWarningNamesTheCoreForTheGlycanClass()
         {
             Assert.That(GlycanDatabase.CoreWarning("(H)", true), Does.Contain("GalNAc").And.Contain("O-mannose"));
-            Assert.That(GlycanDatabase.CoreWarning("(H)", false), Does.Contain("GlcNAc"));
+            Assert.That(GlycanDatabase.CoreWarning("(H)", false), Does.Contain("GlcNAc").And.Contain("chitobiose"));
+        }
+
+        /// <summary>
+        /// A single-HexNAc N-glycan is warned about for the second HexNAc it lacks, and the message says why
+        /// the user might still mean it: an endoglycosidase leaves just one GlcNAc on the asparagine.
+        /// </summary>
+        [TestCase("(N(H(H)))", "does not begin with two HexNAc")]
+        [TestCase("HexNAc(1)Hex(3)", "fewer than two HexNAc")]
+        public static void AnNGlycanWithOneHexNAcIsWarnedAboutTheSecond(string glycan, string says)
+        {
+            string warning = GlycanDatabase.CoreWarning(glycan, false);
+
+            Assert.That(warning, Does.Contain(says).And.Contain("endoglycosidase"));
         }
 
         /// <summary>
@@ -87,19 +109,16 @@ namespace Test
         [Test]
         public static void TheOGlycanWarningListsOXyloseAmongTheExceptions()
         {
-            string path = Path_("OGlycan_Custom.gdb");
-            File.WriteAllLines(path, new[] { "Xylose(1)Hex(2)" });
-
             Assert.That(GlycanDatabase.CoreWarning("(X(H(H)))", true), Does.Contain("O-xylose"));
-            Assert.That(GlycanDatabase.CoreWarningsFor(path, true), Does.Contain("O-xylose"));
         }
 
         /// <summary>
-        /// A warning, not a refusal: the glycan is written, and the warning is there for the window to show.
+        /// A warning, not a refusal: with no one to ask, the glycan is written.
         /// </summary>
         [TestCase("(H(H))", true)]
         [TestCase("Hex(2)", false)]
-        public static void AGlycanThatDoesNotStartWithHexNAcIsStillAdded(string glycan, bool isOGlycan)
+        [TestCase("HexNAc(1)Hex(3)", false)]
+        public static void AGlycanThatDoesNotStartFromItsCoreIsStillAdded(string glycan, bool isOGlycan)
         {
             string path = Path_("custom.gdb");
 
@@ -119,51 +138,7 @@ namespace Test
         public static void SomethingThatIsNotAGlycanIsNotWarnedAbout(string text)
         {
             Assert.That(GlycanDatabase.CoreWarning(text, true), Is.Null);
-        }
-
-        /// <summary>
-        /// The same check over a whole database, for startup: every offending line named with its line
-        /// number, in one message; comments, annotations and tab columns handled as the loader handles them.
-        /// </summary>
-        [Test]
-        public static void EveryGlycanInADatabaseThatDoesNotStartWithHexNAcIsNamedWithItsLine()
-        {
-            string path = Path_("OGlycan_Custom.gdb");
-            File.WriteAllLines(path, new[]
-            {
-                "# Hex(1) in a comment is not a glycan",
-                "HexNAc(1)Hex(1)",
-                "Hex(1) # O-mannose",
-                "",
-                "Hex(1)Fuc(1)\t308.11",
-            });
-
-            string warning = GlycanDatabase.CoreWarningsFor(path, true);
-
-            Assert.That(warning, Does.Contain("'OGlycan_Custom.gdb'"));
-            Assert.That(warning, Does.Contain("line 3: Hex(1)").And.Contain("line 5: Hex(1)Fuc(1)"));
-            Assert.That(warning, Does.Not.Contain("line 1").And.Not.Contain("line 2"));
-        }
-
-        [Test]
-        public static void ADatabaseThatAllStartsWithHexNAcOrIsMissingGivesNoWarning()
-        {
-            string path = Path_("NGlycan_Custom.gdb");
-            File.WriteAllLines(path, new[] { "(N(N(H(H)(H))))", "(N(N(H)))" });
-
-            Assert.That(GlycanDatabase.CoreWarningsFor(path, false), Is.Null);
-            Assert.That(GlycanDatabase.CoreWarningsFor(Path_("missing.gdb"), false), Is.Null);
-        }
-
-        /// <summary>The seeded templates are all banner, and say nothing.</summary>
-        [TestCase("EngineLayer.Glycan_Mods.OGlycan_Custom.gdb", true)]
-        [TestCase("EngineLayer.Glycan_Mods.NGlycan_Custom.gdb", false)]
-        public static void TheSeededTemplatesGiveNoWarning(string resource, bool isOGlycan)
-        {
-            string path = Path_("template.gdb");
-            File.WriteAllText(path, CustomDataFile.EmbeddedText(typeof(GlobalVariables).Assembly, resource));
-
-            Assert.That(GlycanDatabase.CoreWarningsFor(path, isOGlycan), Is.Null);
+            Assert.That(GlycanDatabase.CoreWarning(text, false), Is.Null);
         }
 
         /// <summary>
@@ -179,76 +154,80 @@ namespace Test
         }
 
         // ---------------------------------------------------------------------------------------------
-        // Startup: what SetUpGlobalVariables actually raises through WarnHandler
+        // Asking before the write: PersistCustomGlycan's confirm
         // ---------------------------------------------------------------------------------------------
 
-        private const string CoreMessage = "do not start with HexNAc";
-
         /// <summary>
-        /// Runs the startup with the user's own O-glycan database holding <paramref name="lines"/>, and
-        /// returns what it raised through <see cref="GlobalVariables.WarnHandler"/>, the route both front ends
-        /// listen on. The real file is put back afterwards.
+        /// An entry that is going to be refused anyway is refused without being asked about first: the
+        /// question comes after every check that can refuse it, so the user is never asked to confirm a
+        /// glycan and then told it cannot be added.
         /// </summary>
-        private static List<string> WarningsFromStartupWithCustomOGlycans(params string[] lines)
+        [TestCase("Hex(1)", "Hex(1)", false, "already contains")]           // duplicate
+        [TestCase("(H)", "Hex(1)", true, "format")]                         // structure into a composition file
+        [TestCase("Hex(1)", "(N(H))", true, "format")]                      // composition into a structure file
+        [TestCase("Hex(0)", null, false, "no monosaccharides")]
+        [TestCase("()", null, true, "no monosaccharides")]
+        [TestCase("Hex(41)", null, false, "at most")]
+        public static void AnEntryThatIsRefusedIsNotAskedAbout(string entry, string alreadyInFile, bool isOGlycan, string refusal)
         {
-            string path = GlobalVariables.CustomOGlycanDatabasePath;
-            bool existedBefore = File.Exists(path);
-            string originalContent = existedBefore ? File.ReadAllText(path) : null;
+            string path = Path_("custom.gdb");
+            if (alreadyInFile != null)
+            {
+                File.WriteAllLines(path, new[] { alreadyInFile });
+            }
+            var asked = new List<string>();
 
-            var warnings = new List<string>();
-            EventHandler<StringEventArgs> listener = (sender, e) => warnings.Add(e.S);
-            GlobalVariables.WarnHandler += listener;
-            try
-            {
-                File.WriteAllLines(path, lines);
-                GlobalVariables.SetUpGlobalVariables();
-            }
-            finally
-            {
-                GlobalVariables.WarnHandler -= listener;
-                if (existedBefore)
-                {
-                    File.WriteAllText(path, originalContent);
-                }
-                else if (File.Exists(path))
-                {
-                    File.Delete(path);
-                }
-            }
-            return warnings;
+            var ex = Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.PersistCustomGlycan(entry, path, isOGlycan,
+                question => { asked.Add(question); return true; }));
+
+            Assert.That(ex.Message, Does.Contain(refusal));
+            Assert.That(asked, Is.Empty);
         }
 
         /// <summary>
-        /// One message, for the user's own database only. The shipped "Olgycan Database 36 glycans with
-        /// Mann.txt" holds four O-mannose glycans and must stay silent.
+        /// A glycan that will be accepted and does not start from its core is asked about, with the warning
+        /// text; yes writes it.
         /// </summary>
         [Test]
-        public static void StartupWarnsOnceAboutTheCustomDatabaseAndNotTheShippedOnes()
+        public static void AGlycanWithoutItsCoreIsAskedAboutAndWrittenOnYes()
         {
-            var warnings = WarningsFromStartupWithCustomOGlycans("HexNAc(1)Hex(1)", "Hex(1)");
+            string path = Path_("custom.gdb");
+            var asked = new List<string>();
 
-            var core = warnings.Where(w => w.Contains(CoreMessage)).ToList();
-            Assert.That(core, Has.Count.EqualTo(1), string.Join(Environment.NewLine, warnings));
-            Assert.That(core[0], Does.Contain("'OGlycan_Custom.gdb'").And.Contain("line 2: Hex(1)"));
+            GlycanDatabase.PersistCustomGlycan("Hex(2)", path, true, question => { asked.Add(question); return true; });
+
+            Assert.That(asked, Is.EqualTo(new[] { GlycanDatabase.CoreWarning("Hex(2)", true) }));
+            Assert.That(File.ReadAllLines(path), Is.EqualTo(new[] { "Hex(2)" }));
         }
 
-        /// <summary>
-        /// A database the startup load could not read has already been reported as unavailable. Checking it
-        /// for HexNAc as well used to add a second message saying its glycans "are loaded as written", which
-        /// contradicts the first. That includes a file mixing the two formats: the loader picks one format
-        /// for the whole file from its first glycan, so a mixed file never loads.
-        /// </summary>
-        [TestCase("Hex(1)", "HexNAc(1)Foo(1)")]
-        [TestCase("Hex(1)", "(H)")]
-        [TestCase("(H)", "Hex(1)")]
-        public static void StartupDoesNotCoreCheckACustomDatabaseItCouldNotRead(string first, string second)
+        /// <summary>No writes nothing: not into a new file, and not onto an existing one.</summary>
+        [Test]
+        public static void AGlycanWithoutItsCoreIsNotWrittenOnNo()
         {
-            var warnings = WarningsFromStartupWithCustomOGlycans(first, second);
+            string newPath = Path_("new.gdb");
+            string existingPath = Path_("existing.gdb");
+            File.WriteAllLines(existingPath, new[] { "# mine", "HexNAc(1)Hex(1)" });
+            string before = File.ReadAllText(existingPath);
 
-            var aboutTheFile = warnings.Where(w => w.Contains("OGlycan_Custom.gdb")).ToList();
-            Assert.That(aboutTheFile, Has.Count.EqualTo(1), string.Join(Environment.NewLine, warnings));
-            Assert.That(aboutTheFile[0], Does.Contain("could not be read"));
-            Assert.That(warnings.Any(w => w.Contains(CoreMessage)), Is.False);
+            Assert.That(GlycanDatabase.PersistCustomGlycan("Hex(2)", newPath, true, _ => false), Is.Null);
+            Assert.That(GlycanDatabase.PersistCustomGlycan("Hex(2)", existingPath, true, _ => false), Is.Null);
+
+            Assert.That(File.Exists(newPath), Is.False);
+            Assert.That(File.ReadAllText(existingPath), Is.EqualTo(before));
+        }
+
+        /// <summary>A glycan that starts from its core has nothing to ask about.</summary>
+        [TestCase("(N(H(A)))", true)]
+        [TestCase("HexNAc(2)Hex(5)", false)]
+        public static void AGlycanThatStartsFromItsCoreIsNotAskedAbout(string glycan, bool isOGlycan)
+        {
+            string path = Path_("custom.gdb");
+            bool asked = false;
+
+            GlycanDatabase.PersistCustomGlycan(glycan, path, isOGlycan, _ => asked = true);
+
+            Assert.That(asked, Is.False);
+            Assert.That(File.ReadAllLines(path), Is.EqualTo(new[] { glycan }));
         }
     }
 }
