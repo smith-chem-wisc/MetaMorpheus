@@ -503,7 +503,8 @@ namespace MetaMorpheusGUI
             bool TrimMs1Peaks = TrimMs1.IsChecked.Value;
             bool TrimMsMsPeaks = TrimMsMs.IsChecked.Value;
 
-            if (!TryParseRetentionTimeRange(out double minRetentionTime, out double maxRetentionTime))
+            if (!TaskValidator.CheckRetentionTimeRange(MinRetentionTimeTextBox.Text, MaxRetentionTimeTextBox.Text,
+                out double minRetentionTime, out double maxRetentionTime))
             {
                 return;
             }
@@ -610,36 +611,6 @@ namespace MetaMorpheusGUI
             TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;
-        }
-
-        private bool TryParseRetentionTimeRange(out double minimum, out double maximum)
-        {
-            minimum = 0;
-            maximum = double.MaxValue;
-
-            if (!string.IsNullOrWhiteSpace(MinRetentionTimeTextBox.Text)
-                && (!double.TryParse(MinRetentionTimeTextBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out minimum)
-                    || minimum < 0))
-            {
-                MessageBox.Show("Minimum retention time must be a non-negative number of minutes.", "Invalid retention time", MessageBoxButton.OK, MessageBoxImage.Error);
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(MaxRetentionTimeTextBox.Text)
-                && (!double.TryParse(MaxRetentionTimeTextBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out maximum)
-                    || maximum < 0))
-            {
-                MessageBox.Show("Maximum retention time must be a non-negative number of minutes or blank.", "Invalid retention time", MessageBoxButton.OK, MessageBoxImage.Error);
-                return false;
-            }
-
-            if (maximum < minimum)
-            {
-                MessageBox.Show("Maximum retention time must be greater than or equal to minimum retention time.", "Invalid retention time", MessageBoxButton.OK, MessageBoxImage.Error);
-                return false;
-            }
-
-            return true;
         }
 
         private void KeyPressed(object sender, KeyEventArgs e)
