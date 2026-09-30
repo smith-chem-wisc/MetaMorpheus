@@ -71,9 +71,11 @@ public class SyntheticDiaRunTests
 
         var otherWindow = run.Scans.First(s => !s.IsolationRange.Contains(entry.PrecursorMz)
             && Math.Abs(s.RetentionTime - apexScan.RetentionTime) < 1e-9);
-        int j = otherWindow.MassSpectrum.GetClosestPeakIndex(entry.MatchedFragmentIons[0].Mz);
-        Assert.That(tolerance.Within(otherWindow.MassSpectrum.XArray[j], entry.MatchedFragmentIons[0].Mz)
-            && otherWindow.MassSpectrum.YArray[j] > 1000, Is.False, "the fragment must not appear in a window that does not isolate its precursor");
+        // With noise off, a window isolating nothing planted is empty (GetClosestPeakIndex does not guard that)
+        var other = otherWindow.MassSpectrum;
+        bool fragmentThere = other.Size > 0
+            && tolerance.Within(other.XArray[other.GetClosestPeakIndex(entry.MatchedFragmentIons[0].Mz)], entry.MatchedFragmentIons[0].Mz);
+        Assert.That(fragmentThere, Is.False, "the fragment must not appear in a window that does not isolate its precursor");
     }
 
     [Test]
