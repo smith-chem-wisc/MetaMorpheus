@@ -177,11 +177,11 @@ namespace TaskLayer
                 scansPerFile[0] = LoadMs2Scans(0, combinedParamsPerFile[0]);
                 long scanBytes = Math.Max(0, GC.GetTotalMemory(forceFullCollection: true) - heapBeforeFirstFile);
 
-                // A file being searched also holds its results; doubling the scans covers them. The scoring tables belong to the threads,
-                // and the threads are one budget across every file, so they are charged once rather than per file. At least a byte a file,
-                // since Decide reads 0 as "unknown" and would drop the memory limit.
+                // A file being searched also holds its results, which doubling the scans covers, and its engine's own copies of the peptide
+                // index. The scoring tables belong to the threads, and the threads are one budget across every file, so they are charged
+                // once rather than per file.
                 int threadBudget = CommonParameters.MaxThreadsToUsePerFile;
-                long bytesPerFile = Math.Max(1, 2 * scanBytes);
+                long bytesPerFile = FileParallelism.BytesPerFile(scanBytes, peptideIndex.Count);
                 long tableBytes = FileParallelism.ScoringTableBytes(threadBudget, peptideIndex.Count);
                 long freeBytes = IndexPartitioning.AvailableBytes();
                 FileParallelismPlan plan = FileParallelism.Decide(fileCount, threadBudget, freeBytes, bytesPerFile, _glycoSearchParameters.MaximumSpectraFilesInParallel, tableBytes);

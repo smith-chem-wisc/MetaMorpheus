@@ -41,6 +41,23 @@ namespace EngineLayer.Util
             return 2L * Math.Max(1, threadBudget) * peptideCount;
         }
 
+        /// <summary>
+        /// Upper bound on the memory one search engine holds per peptide for its own copies of the index. ModernSearchEngine
+        /// copies a <c>List&lt;PeptideWithSetModifications&gt;</c> into a <c>List&lt;IBioPolymerWithSetMods&gt;</c> by growing a
+        /// list (up to 16 bytes a peptide), and GlycoSearchEngine copies it again at its exact size (8 bytes a peptide).
+        /// </summary>
+        public const int IndexCopyBytesPerPeptide = 24;
+
+        /// <summary>
+        /// Estimated memory one more file adds while it is searched: its scans, doubled to cover the results it accumulates, and its
+        /// engine's copies of the peptide index. At least a byte, since <see cref="Decide"/> reads 0 as "unknown" and would drop the
+        /// memory limit. The scoring tables are not in it; see <see cref="ScoringTableBytes"/>.
+        /// </summary>
+        public static long BytesPerFile(long scanBytes, int peptideCount)
+        {
+            return Math.Max(1, 2 * Math.Max(0, scanBytes) + (long)IndexCopyBytesPerPeptide * Math.Max(0, peptideCount));
+        }
+
         /// <param name="fileCount"> Spectra files the task will search. </param>
         /// <param name="threadBudget"> The task's MaxThreadsToUsePerFile, treated as the budget for all files together. </param>
         /// <param name="availableBytes"> Free physical memory, measured with the index and one file already in memory. </param>

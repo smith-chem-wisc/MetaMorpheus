@@ -95,6 +95,60 @@ namespace Test
             Assert.That(plan.LimitedBy, Is.EqualTo("free memory"));
         }
 
+        /// <summary>
+        /// Each file searched at once has its own search engine, and each engine holds two copies of the peptide index, so one more
+        /// file costs its engine's copies of the index as well as its scans.
+        /// </summary>
+        [Test]
+        public static void BytesPerFileChargesTheEnginesCopiesOfThePeptideIndex()
+        {
+            // 1 GB of scans is doubled for the results; 50M peptides add 24 bytes each for the two copies.
+            Assert.That(FileParallelism.BytesPerFile(scanBytes: GB, peptideCount: 50_000_000), Is.EqualTo(2 * GB + 1_200_000_000L));
+
+            // Scans too small to measure still charge the index copies, and nothing at all still charges a byte, since Decide reads 0 as "unknown".
+            Assert.That(FileParallelism.BytesPerFile(scanBytes: 0, peptideCount: 1000), Is.EqualTo(24_000));
+            Assert.That(FileParallelism.BytesPerFile(scanBytes: 0, peptideCount: 0), Is.EqualTo(1));
+
+            // 10 GB free at 80% is 8 GB, less 3.2 GB of tables leaves 4.8 GB. At 3.2 GB a file, that is room for one more file beside
+            // the first; charging the scans alone (2 GB a file) would have run three at once.
+            long tables = FileParallelism.ScoringTableBytes(threadBudget: 32, peptideCount: 50_000_000);
+            long perFile = FileParallelism.BytesPerFile(scanBytes: GB, peptideCount: 50_000_000);
+            var plan = FileParallelism.Decide(fileCount: 8, threadBudget: 32, availableBytes: 10 * GB, bytesPerFile: perFile, fixedBytes: tables);
+            Assert.That(plan.FilesInParallel, Is.EqualTo(2));
+            Assert.That(plan.LimitedBy, Is.EqualTo("free memory"));
+        }
+
+        /// <summary>
+        /// The per-file charge for the index copies must cover what a glyco engine really allocates for them. If the engine stops
+        /// copying the index, this fails on the lower bound, and the charge in <see cref="FileParallelism.BytesPerFile"/> should come down.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // measures the managed heap, and the glyco engine writes process-wide glycan state (GlycanBox statics)
+        public static void BytesPerFileCoversTheIndexCopiesAGlycoEngineMakes()
+        {
+            const int peptideCount = 2_000_000;
+            var peptide = new PeptideWithSetModifications("PEPTIDE", new Dictionary<string, Omics.Modifications.Modification>());
+            var peptideIndex = new List<PeptideWithSetModifications>(peptideCount);
+            for (int i = 0; i < peptideCount; i++)
+            {
+                peptideIndex.Add(peptide);
+            }
+            var commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, maxThreadsToUsePerFile: 1);
+            GlycanSearchSpace searchSpace = GlycanSearchSpace.Build("OGlycan.gdb", null, GlycoSearchType.OGlycanSearch, 3, GlycanBox.DefaultMaximumGlycanBoxMass);
+
+            long before = GC.GetTotalMemory(forceFullCollection: true);
+            var engine = new GlycoSearchEngine(new List<GlycoSpectralMatch>[0], new Ms2ScanWithSpecificMass[0], peptideIndex, null, null, 0,
+                commonParameters, null, searchSpace, "OGlycan.gdb", null, 30, 3, false, new List<string>());
+            long engineBytes = GC.GetTotalMemory(forceFullCollection: true) - before;
+            GC.KeepAlive(engine);
+            GC.KeepAlive(peptideIndex); // the task holds its index for the whole search; collected here, it would hide one copy
+            TestContext.WriteLine("bytes a glyco engine holds for its copies of a " + peptideCount + "-peptide index: " + engineBytes);
+
+            long charged = FileParallelism.BytesPerFile(scanBytes: 0, peptideCount: peptideCount);
+            Assert.That(engineBytes, Is.LessThanOrEqualTo(charged), "an engine holds more for its copies of the index than one more file is charged");
+            Assert.That(engineBytes, Is.GreaterThanOrEqualTo(16L * peptideCount), "the engine no longer copies the index twice; lower the charge to match");
+        }
+
         [Test]
         public static void DecideHonorsAUserCapAndACappedBudget()
         {
