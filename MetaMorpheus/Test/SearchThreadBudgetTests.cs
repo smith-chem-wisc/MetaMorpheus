@@ -282,10 +282,15 @@ namespace Test
                 Interlocked.Increment(ref earlierWorkers);
                 try
                 {
-                    // Keeps working until the later run has finished, so every thread the later run had came from this one.
-                    for (int i = nextItem(); i >= 0 && !laterRunDone.IsSet; i = nextItem())
+                    // Keeps working until the later run has finished, so every thread the later run had came from this one. After that
+                    // it drains its remaining items without sleeping. Leaving the loop instead would make the dispatcher start a new
+                    // worker for every item left, one thread start each, which took minutes on some machines.
+                    for (int i = nextItem(); i >= 0; i = nextItem())
                     {
-                        Thread.Sleep(1);
+                        if (!laterRunDone.IsSet)
+                        {
+                            Thread.Sleep(1);
+                        }
                     }
                 }
                 finally
