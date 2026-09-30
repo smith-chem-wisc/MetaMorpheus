@@ -819,7 +819,7 @@ namespace EngineLayer
         /// </summary>
         /// <param name="structure"> ex.(N(H(A))(N(H(A))(F))) </param>
         /// <returns> The glycan Mass </returns>
-        private static int GetMass(string structure)
+        internal static int GetMass(string structure)
         {
             int y = 0;
             foreach (var entry in _kindEntries)

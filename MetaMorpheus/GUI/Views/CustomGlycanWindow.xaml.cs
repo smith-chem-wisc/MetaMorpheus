@@ -6,7 +6,8 @@ using System.Windows;
 namespace MetaMorpheusGUI
 {
     /// <summary>
-    /// Interaction logic for CustomGlycanWindow.xaml -- adds one glycan to the user's own O-glycan database.
+    /// Interaction logic for CustomGlycanWindow.xaml -- adds one glycan to the user's own O-glycan or
+    /// N-glycan database.
     /// </summary>
     /// <remarks>
     /// The window collects and sanity-checks; <see cref="GlycanDatabase.PersistCustomGlycan"/> is what
@@ -20,6 +21,13 @@ namespace MetaMorpheusGUI
             InitializeComponent();
         }
 
+        /// <summary>Whether the O-glycan database is the one selected. Index 0 is O, index 1 is N.</summary>
+        private bool IsOGlycanSelected => databaseComboBox.SelectedIndex == 0;
+
+        private string SelectedDatabasePath => IsOGlycanSelected
+            ? GlobalVariables.CustomOGlycanDatabasePath
+            : GlobalVariables.CustomNGlycanDatabasePath;
+
         private void SaveCustomGlycan_Click(object sender, RoutedEventArgs e)
         {
             string glycanText = glycanTextBox.Text.Trim();
@@ -29,10 +37,22 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            string databasePath = GlobalVariables.CustomOGlycanDatabasePath;
+            string databasePath = SelectedDatabasePath;
+            string warning;
+            bool declined = false;
             try
             {
-                GlycanDatabase.PersistCustomGlycan(glycanText, databasePath, true);
+                // A glycan that does not start from its core is asked about by the engine, after every check
+                // that could refuse it and before anything is written: nothing in the GUI can take a glycan out
+                // of the database again, so No leaves the entry in the box to be corrected. A warning, never a
+                // refusal: such a glycan can be real.
+                warning = GlycanDatabase.PersistCustomGlycan(glycanText, databasePath, IsOGlycanSelected, coreWarning =>
+                {
+                    var answer = MessageBox.Show(coreWarning + Environment.NewLine + Environment.NewLine + "Add it anyway?",
+                        "Glycan does not start from its core", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    declined = answer != MessageBoxResult.Yes;
+                    return !declined;
+                });
             }
             catch (Exception ex)
             {
@@ -40,10 +60,23 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            MessageBox.Show(
-                $"The glycan \"{glycanText}\" was added to {Path.GetFileName(databasePath)}. Select that database in a "
-                + "GlycoSearch task to search for it.",
-                "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            // Nothing was written, so no success message, and the window stays open with the entry in it.
+            if (declined)
+            {
+                return;
+            }
+
+            if (warning != null)
+            {
+                MessageBox.Show(warning, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            else
+            {
+                MessageBox.Show(
+                    $"The glycan \"{glycanText}\" was added to {Path.GetFileName(databasePath)}. Select that database in a "
+                    + "GlycoSearch task to search for it.",
+                    "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
 
             DialogResult = true;
         }
@@ -60,6 +93,14 @@ namespace MetaMorpheusGUI
         /// </summary>
         private bool ErrorsDetected(string glycanText)
         {
+            // No default: a composition has no O/N-specific check, so an N-glycan saved under a pre-selected
+            // O would be written to the O database, and nothing in the GUI can take it out again.
+            if (databaseComboBox.SelectedIndex < 0)
+            {
+                MessageBox.Show("Please choose whether this is an O-glycan or an N-glycan.", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
+                return true;
+            }
+
             if (string.IsNullOrWhiteSpace(glycanText))
             {
                 MessageBox.Show("Please enter a glycan.", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
