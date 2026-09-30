@@ -404,6 +404,11 @@ namespace EngineLayer
         /// the file when the engine is built. Which is also why an entry added now is picked up by a search
         /// run in this same session; only MetaDraw's glycan list waits for a restart.
         /// </para>
+        /// <para>
+        /// On success it returns null, or a warning when the glycan was saved but a search at the default
+        /// settings will not use it: one heavier than <see cref="GlycanBox.DefaultMaximumGlycanBoxMass"/>
+        /// fits in no glycan box, and the search leaves it out.
+        /// </para>
         /// </summary>
         /// <param name="glycanText">The glycan, as typed: a structure or a composition.</param>
         /// <param name="databasePath">The custom database to append to. Created if it is not there.</param>
@@ -411,7 +416,7 @@ namespace EngineLayer
         /// Whether this is an O-glycan database, so the entry is validated the same way the search will
         /// read it and a glycan that parses here cannot fail to parse there.
         /// </param>
-        public static void PersistCustomGlycan(string glycanText, string databasePath, bool isOGlycan)
+        public static string PersistCustomGlycan(string glycanText, string databasePath, bool isOGlycan)
         {
             string entry = (glycanText ?? string.Empty).Trim();
             string fileName = Path.GetFileName(databasePath);
@@ -480,6 +485,17 @@ namespace EngineLayer
             {
                 throw new MetaMorpheusException($"Could not save the glycan to '{databasePath}': {ex.Message}", ex);
             }
+
+            double massDa = (format == GlycanLineFormat.Composition
+                ? Glycan.GetMass(ParseComposition(entry))
+                : Glycan.GetMass(entry)) / 1E5;
+            if (massDa > GlycanBox.DefaultMaximumGlycanBoxMass)
+            {
+                return $"The glycan \"{entry}\" was added to {fileName}, but at {massDa.ToString("F2", CultureInfo.InvariantCulture)} Da it is " +
+                    $"heavier than the default maximum glycan box mass of {GlycanBox.DefaultMaximumGlycanBoxMass} Da, so a GlycoSearch " +
+                    "leaves it out. Raise \"Maximum Glycan Mass (Da)\" in the GlycoSearch task to search for it.";
+            }
+            return null;
         }
 
         /// <summary>

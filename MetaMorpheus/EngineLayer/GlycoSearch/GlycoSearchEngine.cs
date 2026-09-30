@@ -95,6 +95,15 @@ namespace EngineLayer.GlycoSearch
                 // The single N-glycan is the whole box here, so the box mass cap applies to each glycan on its own.
                 NGlycans = LoadGlycanDatabase(GlobalVariables.NGlycanDatabasePaths, _nglycanDatabase, "N-glycan", false)
                     .Where(p => (double)p.Mass / 1E5 <= maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray();
+                // LoadGlycanDatabase refused an empty file, but the cap can still empty it here, and the search
+                // would then skip every scan and report nothing. The O and N+O paths refuse this in
+                // CheckedGlycanBoxes; this is the same refusal for the path that builds no boxes.
+                if (NGlycans.Length == 0)
+                {
+                    throw new MetaMorpheusException(
+                        $"No glycan in the N-glycan database '{_nglycanDatabase}' is within the maximum glycan box mass of {maxGlycanBoxMass} Da, " +
+                        "so there is nothing to search for. Raise that maximum, or choose a database of lighter glycans.");
+                }
                 //TO THINK: Glycan Decoy database.
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
@@ -173,8 +182,8 @@ namespace EngineLayer.GlycoSearch
         /// but the box builders skip every box heavier than the maximum box mass -- so a database whose
         /// glycans are all heavier than the cap yields no boxes at all. Left alone that is the same
         /// <c>Sequence contains no elements</c> the empty-database guard closes, arriving one step later,
-        /// from <c>GlycanBoxes.First().Mass</c> inside the parallel search loop. The N-glycan branch needs
-        /// no equivalent: its own mass filter's result is length-checked where it is read.
+        /// from <c>GlycanBoxes.First().Mass</c> inside the parallel search loop. The N-glycan branch builds
+        /// no boxes, so it cannot come through here; it makes the same refusal itself, right after its mass filter.
         /// </remarks>
         private static GlycanBox[] CheckedGlycanBoxes(GlycanBox[] boxes, string databaseDescription, double maxGlycanBoxMass)
         {

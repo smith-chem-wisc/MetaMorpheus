@@ -1381,7 +1381,7 @@ namespace MetaMorpheusGUI
             dialog.ShowDialog();
         }
 
-        private void AddCustomOGlycan_Click(object sender, RoutedEventArgs e)
+        private void AddCustomGlycan_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new CustomGlycanWindow();
             dialog.ShowDialog();
