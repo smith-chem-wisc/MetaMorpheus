@@ -108,6 +108,70 @@ namespace EngineLayer.GlycoSearch
             NGlycanMasses = glycanSearchSpace.NGlycanMasses;
         }
 
+        /// <summary>
+        /// Resolves a glycan database by file name and loads it, failing with something the user can act on.
+        /// </summary>
+        /// <remarks>
+        /// Both failures this replaces used to surface as <c>InvalidOperationException: Sequence contains no
+        /// elements</c>, which names neither the database nor the problem:
+        /// <list type="bullet">
+        ///   <item><description>
+        ///     a selected file that is no longer in the folder threw from the <c>.First()</c> on the path
+        ///     lookup, while the search was being set up;
+        ///   </description></item>
+        ///   <item><description>
+        ///     a database holding no glycans built an EMPTY box array without complaint, and then threw much
+        ///     later from <c>GlycanBoxes.First().Mass</c> inside the parallel search loop -- or, if no scan
+        ///     reached that branch, returned zero results and looked like a search that simply found nothing.
+        ///   </description></item>
+        /// </list>
+        /// An empty database is now rejected up front, which matters more since a user can be handed one: a
+        /// freshly seeded custom database is all banner and no glycans until they add some.
+        /// </remarks>
+        internal static Glycan[] LoadGlycanDatabase(List<string> databasePaths, string databaseFileName, string kind, bool isOGlycan)
+        {
+            string path = databasePaths.FirstOrDefault(p => System.IO.Path.GetFileName(p) == databaseFileName);
+            if (path == null)
+            {
+                throw new MetaMorpheusException(
+                    $"The {kind} database '{databaseFileName}' was not found. Available: {string.Join(", ", databasePaths.Select(System.IO.Path.GetFileName))}.");
+            }
+
+            Glycan[] glycans = GlycanDatabase.LoadGlycan(path, true, isOGlycan, WarnStatic).ToArray();
+            if (glycans.Length == 0)
+            {
+                throw new MetaMorpheusException(
+                    $"The {kind} database '{databaseFileName}' contains no glycans, so there is nothing to search for. " +
+                    $"Add at least one glycan to it, or choose a different {kind} database.");
+            }
+
+            return glycans;
+        }
+
+        /// <summary>
+        /// The glycan boxes the search will compare precursors against, having refused an empty set with
+        /// something the user can act on.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="LoadGlycanDatabase"/> has already guaranteed the database holds at least one glycan,
+        /// but the box builders skip every box heavier than the maximum box mass -- so a database whose
+        /// glycans are all heavier than the cap yields no boxes at all. Left alone that is the same
+        /// <c>Sequence contains no elements</c> the empty-database guard closes, arriving one step later,
+        /// from <c>GlycanBoxes.First().Mass</c> inside the parallel search loop. The N-glycan branch builds
+        /// no boxes, so it cannot come through here; it makes the same refusal itself, right after its mass filter.
+        /// </remarks>
+        internal static GlycanBox[] CheckedGlycanBoxes(GlycanBox[] boxes, string databaseDescription, double maxGlycanBoxMass)
+        {
+            if (boxes.Length == 0)
+            {
+                throw new MetaMorpheusException(
+                    $"No combination of glycans from {databaseDescription} is within the maximum glycan box mass of {maxGlycanBoxMass} Da, " +
+                    "so there is nothing to search for. Raise that maximum, or choose a database of lighter glycans.");
+            }
+
+            return boxes;
+        }
+
         private Glycan[] NGlycans { get; }
         private double[] NGlycanMasses { get; } // NGlycans[i].Mass in Da, built once so each candidate peptide does not copy it.
         //private Glycan[] DecoyGlycans { get; }

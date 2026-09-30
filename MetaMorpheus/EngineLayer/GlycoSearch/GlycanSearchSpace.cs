@@ -42,27 +42,37 @@ namespace EngineLayer.GlycoSearch
         {
             if (glycoSearchType == GlycoSearchType.OGlycanSearch) //if we do the O-glycan search, we need to load the O-glycan database and generate the glycoBox.
             {
-                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == oglycanDatabase).First(), true, true).ToArray();
-                GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(maxOGlycanNum, false, maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray(); //generate glycan box for O-glycan search
+                GlycanBox.GlobalOGlycans = GlycoSearchEngine.LoadGlycanDatabase(GlobalVariables.OGlycanDatabasePaths, oglycanDatabase, "O-glycan", true);
+                GlycanBox.OGlycanBoxes = GlycoSearchEngine.CheckedGlycanBoxes( //generate glycan box for O-glycan search
+                    GlycanBox.BuildOGlycanBoxes(maxOGlycanNum, false, maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray(),
+                    $"the O-glycan database '{oglycanDatabase}'", maxGlycanBoxMass);
                 GlycoSpectralMatch.GlycanBoxes = GlycanBox.OGlycanBoxes;
                 return new GlycanSearchSpace(glycoSearchType, GlycanBox.OGlycanBoxes, null);
             }
             if (glycoSearchType == GlycoSearchType.NGlycanSearch) //because the there is only one glycan in N-glycanpeptide, so we don't need to build the n-glycanBox here.
             {
                 // The single N-glycan is the whole box here, so the box mass cap applies to each glycan on its own.
-                var nGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == nglycanDatabase).First(), true, false)
+                var nGlycans = GlycoSearchEngine.LoadGlycanDatabase(GlobalVariables.NGlycanDatabasePaths, nglycanDatabase, "N-glycan", false)
                     .Where(p => (double)p.Mass / 1E5 <= maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray();
+                // LoadGlycanDatabase refused an empty file, but the cap can still empty it here, and the search
+                // would then skip every scan and report nothing. The O and N+O paths refuse this in
+                // CheckedGlycanBoxes; this is the same refusal for the path that builds no boxes.
+                if (nGlycans.Length == 0)
+                {
+                    throw new MetaMorpheusException(
+                        $"No glycan in the N-glycan database '{nglycanDatabase}' is within the maximum glycan box mass of {maxGlycanBoxMass} Da, " +
+                        "so there is nothing to search for. Raise that maximum, or choose a database of lighter glycans.");
+                }
                 //TO THINK: Glycan Decoy database.
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
                 return new GlycanSearchSpace(glycoSearchType, null, nGlycans);
             }
             if (glycoSearchType == GlycoSearchType.N_O_GlycanSearch) //search both N-glycan and O-glycan is still not tested and build completely yet.
             {
-                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => System.IO.Path.GetFileName(p) == oglycanDatabase).First(), true, true).ToArray();
+                GlycanBox.GlobalOGlycans = GlycoSearchEngine.LoadGlycanDatabase(GlobalVariables.OGlycanDatabasePaths, oglycanDatabase, "O-glycan", true);
                 GlycanBox.GlobalNGlycans = new Dictionary<int, Glycan>();
                 // For N-glycan, we use negative index to distinguish with O-glycan.
-                var nGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanDatabasePaths.First(p => System.IO.Path.GetFileName(p) == nglycanDatabase),
-                        true, false).OrderBy(p => p.Mass);
+                var nGlycans = GlycoSearchEngine.LoadGlycanDatabase(GlobalVariables.NGlycanDatabasePaths, nglycanDatabase, "N-glycan", false).OrderBy(p => p.Mass);
                 int indexForNGlycan = -1;
                 foreach (var nGlycan in nGlycans)
                 {
@@ -70,7 +80,9 @@ namespace EngineLayer.GlycoSearch
                     indexForNGlycan--;
                 }
 
-                GlycanBox.NOGlycanBoxes = GlycanBox.BuildNOGlycanBoxes(maxOGlycanNum, false, maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray();
+                GlycanBox.NOGlycanBoxes = GlycoSearchEngine.CheckedGlycanBoxes(
+                    GlycanBox.BuildNOGlycanBoxes(maxOGlycanNum, false, maxGlycanBoxMass).OrderBy(p => p.Mass).ToArray(),
+                    $"the O-glycan database '{oglycanDatabase}' and the N-glycan database '{nglycanDatabase}'", maxGlycanBoxMass);
                 GlycoSpectralMatch.GlycanBoxes = GlycanBox.NOGlycanBoxes;
                 //TO THINK: Glycan Decoy database.
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
