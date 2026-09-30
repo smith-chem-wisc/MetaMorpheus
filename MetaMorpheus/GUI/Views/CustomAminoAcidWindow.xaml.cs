@@ -29,7 +29,6 @@ namespace MetaMorpheusGUI
         private void CustomAminoAcidWindow_Closing(object sender, CancelEventArgs e)
         {
             _viewModel.RequestClose -= ViewModel_RequestClose;
-            _viewModel.Dispose();
         }
     }
 }
