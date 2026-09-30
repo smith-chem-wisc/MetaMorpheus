@@ -15,6 +15,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
 using GuiFunctions;
+using GuiFunctions.Util;
 using Transcriptomics.Digestion;
 using Omics.Modifications;
 using Omics.Digestion;
@@ -91,7 +92,11 @@ namespace MetaMorpheusGUI
             UseMostAbundantMassCheckBox.IsChecked = task.CommonParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant;
             if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
             {
-                ProteaseComboBox.SelectedItem = digestionParams.Protease; //protease needs to come first or recommended settings can overwrite the actual settings}
+                ProteaseComboBox.SelectedItem = TaskWindowSearchMode.ProteaseToShow(digestionParams); //protease needs to come first or recommended settings can overwrite the actual settings}
+                // a loaded task that asks for seed peptides cannot be shown here as it is, so say what happens to it
+                string searchModeWarning = TaskWindowSearchMode.PreserveWarning(digestionParams);
+                SearchModeWarningTextBlock.Text = searchModeWarning;
+                SearchModeWarningTextBlock.Visibility = searchModeWarning == null ? Visibility.Collapsed : Visibility.Visible;
                 InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
             }
             else
@@ -547,6 +552,8 @@ namespace MetaMorpheusGUI
             }
             else
             {
+                // this window has no semi-specific control, so keep the loaded task's search mode rather than resetting it to Full
+                var (searchModeType, fragmentationTerminus) = TaskWindowSearchMode.Preserve(TheTask.CommonParameters.DigestionParams);
                 digestionParamsToSave = new DigestionParams(
                     protease: protease.Name,
                     maxMissedCleavages: maxMissedCleavages,
@@ -554,7 +561,9 @@ namespace MetaMorpheusGUI
                     maxPeptideLength: maxPeptideLength,
                     maxModificationIsoforms: maxModificationIsoforms,
                     maxModsForPeptides: maxModsPerPeptide,
-                    initiatorMethionineBehavior: initiatorMethionineBehavior);
+                    initiatorMethionineBehavior: initiatorMethionineBehavior,
+                    searchModeType: searchModeType,
+                    fragmentationTerminus: fragmentationTerminus);
             }
 
             CommonParameters commonParamsToSave = new CommonParameters(

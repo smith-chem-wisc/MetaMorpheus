@@ -198,7 +198,7 @@ namespace EngineLayer
         {
             get
             {
-                return this._BestMatchingBioPolymersWithSetMods.Select(p => Math.Round(this.ScanPrecursorMass - p.SpecificBioPolymer.MonoisotopicMass, 5))
+                return this.BestMatchingBioPolymersWithSetMods.Select(p => Math.Round(this.ScanPrecursorMass - p.SpecificBioPolymer.MonoisotopicMass, 5))
                     .ToList();
             }
         }
@@ -207,7 +207,7 @@ namespace EngineLayer
         {
             get
             {
-                return this._BestMatchingBioPolymersWithSetMods.Select(p => Math.Round((this.ScanPrecursorMass - p.SpecificBioPolymer.MonoisotopicMass) / p.SpecificBioPolymer.MonoisotopicMass * 1e6, 2)).ToList();
+                return this.BestMatchingBioPolymersWithSetMods.Select(p => Math.Round((this.ScanPrecursorMass - p.SpecificBioPolymer.MonoisotopicMass) / p.SpecificBioPolymer.MonoisotopicMass * 1e6, 2)).ToList();
             }
         }
 
@@ -226,7 +226,7 @@ namespace EngineLayer
             {
                 if (!IsMostAbundantMode || PrecursorAveragine == null || ScanPrecursorMostAbundantMass <= 0)
                     return null;
-                return this._BestMatchingBioPolymersWithSetMods.Select(p =>
+                return this.BestMatchingBioPolymersWithSetMods.Select(p =>
                 {
                     double theoreticalMostAbundant = p.SpecificBioPolymer.MonoisotopicMass
                         + PrecursorAveragine.ApexOffset(p.SpecificBioPolymer.MonoisotopicMass);
