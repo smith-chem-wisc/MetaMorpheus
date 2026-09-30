@@ -513,7 +513,8 @@ namespace EngineLayer
             // Omics.dll while preserving the property #2752 established when it made these an
             // embedded resource here: they are carried in an assembly, so no installer, repair or
             // upgrade can leave them missing. A file in Mods\ could.
-            AddMods(Omics.Modifications.Mods.MetaMorpheusRnaModifications, false, true);
+            AddMods(Mods.MetaMorpheusRnaModifications, false, true);
+            AddMods(Mods.ModomicsRnaModifications, false, true);
 
             var customModsPath = Path.Combine(DataDir, @"Mods", "RnaCustomModifications.txt");
             CustomDataFile.EnsureExists(customModsPath,
