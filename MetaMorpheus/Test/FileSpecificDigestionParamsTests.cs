@@ -1,4 +1,5 @@
 using EngineLayer;
+using GuiFunctions.Util;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
@@ -137,6 +138,48 @@ namespace Test
                 if (File.Exists(path))
                     File.Delete(path);
             }
+        }
+
+        [Test]
+        public static void RetentionTimeRangeParser_UsesBlankDefaults()
+        {
+            bool parsed = RetentionTimeRangeParser.TryParse(string.Empty, string.Empty,
+                out double minimum, out double maximum, out string errorMessage);
+
+            Assert.That(parsed, Is.True);
+            Assert.That(minimum, Is.EqualTo(0));
+            Assert.That(maximum, Is.EqualTo(double.MaxValue));
+            Assert.That(errorMessage, Is.Null);
+        }
+
+        [TestCase("NaN", "10")]
+        [TestCase("0", "NaN")]
+        [TestCase("Infinity", "10")]
+        [TestCase("10", "9")]
+        public static void RetentionTimeRangeParser_RejectsInvalidBounds(string minimumText, string maximumText)
+        {
+            bool parsed = RetentionTimeRangeParser.TryParse(minimumText, maximumText,
+                out _, out _, out string errorMessage);
+
+            Assert.That(parsed, Is.False);
+            Assert.That(errorMessage, Is.Not.Null.And.Not.Empty);
+        }
+
+        [TestCase("12.5;9")]
+        [TestCase("NaN;10")]
+        [TestCase("12.5;not-a-number")]
+        public static void RetentionTimeRange_TomlRejectsInvalidValues(string invalidRange)
+        {
+            var task = new SearchTask
+            {
+                CommonParameters = new CommonParameters(retentionTimeRange: new DoubleRange(12.5, 48.75))
+            };
+            string toml = Nett.Toml.WriteString(task, MetaMorpheusTask.tomlConfig);
+            Assert.That(toml, Does.Contain("12.5;48.75"));
+            toml = toml.Replace("12.5;48.75", invalidRange, StringComparison.Ordinal);
+
+            var exception = Assert.Throws<InvalidOperationException>(() => Nett.Toml.ReadString<SearchTask>(toml, MetaMorpheusTask.tomlConfig));
+            Assert.That(exception.InnerException?.InnerException, Is.TypeOf<MetaMorpheusException>());
         }
     }
 }

@@ -201,10 +201,22 @@ namespace TaskLayer
             if (bounds.Length != 2)
                 throw new MetaMorpheusException($"Invalid retention time range '{value}'. Expected 'minimum;maximum'.");
 
-            double minimum = double.Parse(bounds[0], CultureInfo.InvariantCulture);
-            double maximum = bounds[1].Equals("MaxValue", StringComparison.OrdinalIgnoreCase)
-                ? double.MaxValue
-                : double.Parse(bounds[1], CultureInfo.InvariantCulture);
+            bool minimumParsed = double.TryParse(bounds[0].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double minimum);
+            bool maximumIsMaxValue = bounds[1].Trim().Equals("MaxValue", StringComparison.OrdinalIgnoreCase);
+            double maximum = 0;
+            bool maximumParsed = maximumIsMaxValue
+                || double.TryParse(bounds[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out maximum);
+            if (maximumIsMaxValue)
+            {
+                maximum = double.MaxValue;
+            }
+
+            if (!minimumParsed || !maximumParsed || !double.IsFinite(minimum) || !double.IsFinite(maximum)
+                || minimum < 0 || maximum < 0 || maximum < minimum)
+            {
+                throw new MetaMorpheusException($"Invalid retention time range '{value}'. Expected 'minimum;maximum'.");
+            }
+
             return new DoubleRange(minimum, maximum);
         }
 
@@ -406,7 +418,7 @@ namespace TaskLayer
 
         public static List<Ms2ScanWithSpecificMass>[] _GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
-            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1 && commonParameters.RetentionTimeRange.Contains(x.RetentionTime)).ToArray();
+            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
             var ms2Scans = msNScans.Where(x => x.MsnOrder == 2).ToArray();
             var ms3Scans = msNScans.Where(x => x.MsnOrder == 3).ToArray();
             List<Ms2ScanWithSpecificMass>[] scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[ms2Scans.Length];
@@ -593,26 +605,31 @@ namespace TaskLayer
                     }
                 });
 
-            return scansWithPrecursors;
+            return scansWithPrecursors
+                .Select(scans => scans?.Where(scan => commonParameters.RetentionTimeRange.Contains(scan.RetentionTime)).ToList())
+                .ToArray();
         }
 
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
             if (commonParameters.DIAparameters != null)
             {
+                IEnumerable<Ms2ScanWithSpecificMass> pseudoMs2Scans;
                 switch (commonParameters.DIAparameters.AanalysisType)
                 {
                     case DIAanalysisType.DIA:
                         var diaEngine = new DIAEngine(myMSDataFile, commonParameters);
-                        return diaEngine.GetPseudoMs2Scans()
-                            .Where(scan => commonParameters.RetentionTimeRange.Contains(scan.RetentionTime));
+                        pseudoMs2Scans = diaEngine.GetPseudoMs2Scans();
+                        break;
                     case DIAanalysisType.ISD:
                         var isdEngine = new ISDEngine(myMSDataFile, commonParameters);
-                        return isdEngine.GetPseudoMs2Scans()
-                            .Where(scan => commonParameters.RetentionTimeRange.Contains(scan.RetentionTime));
+                        pseudoMs2Scans = isdEngine.GetPseudoMs2Scans();
+                        break;
                     default:
                         throw new NotImplementedException("DIA analysis type not implemented.");
                 }
+
+                return pseudoMs2Scans.Where(scan => commonParameters.RetentionTimeRange.Contains(scan.RetentionTime));
             }
             var scansWithPrecursors = _GetMs2Scans(myMSDataFile, fullFilePath, commonParameters);
 
