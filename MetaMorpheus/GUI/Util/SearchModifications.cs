@@ -29,17 +29,8 @@ namespace MetaMorpheusGUI
         }
 
         // filters and expands tree according to user mod search
+        // The glycan tree does not come through here: GlycanSelectionViewModel.Filter owns its filtering.
         public static void FilterTree(TextBox textbox, TreeView tree, ObservableCollection<ModTypeForTreeViewModel> collection)
-        {
-            FilterTree(textbox, tree, collection, null);
-        }
-
-        /// <summary>
-        /// As above, but matching text of the caller's choosing instead of only
-        /// <see cref="ModForTreeViewModel.ModName"/> -- see <see cref="ModTreeFilter.Filter"/>.
-        /// </summary>
-        public static void FilterTree(TextBox textbox, TreeView tree, ObservableCollection<ModTypeForTreeViewModel> collection,
-            Func<ModForTreeViewModel, string> searchText)
         {
             string key = textbox.Text.ToLower();
             if (string.IsNullOrEmpty(key))
@@ -48,7 +39,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            tree.DataContext = ModTreeFilter.Filter(collection, key, searchText);
+            tree.DataContext = ModTreeFilter.Filter(collection, key);
         }
     }
 }

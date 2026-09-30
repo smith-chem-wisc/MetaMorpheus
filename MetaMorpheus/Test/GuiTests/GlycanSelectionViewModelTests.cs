@@ -171,6 +171,171 @@ namespace Test.GuiTests
         }
 
         [Test]
+        public void ToSelectedGlycans_AFullyCheckedDatabaseIsSavedAsTheWholeDatabase()
+        {
+            // Checking a group has to mean "this database", not "the entries it holds today": a list
+            // saved here would silently leave out anything added to the file afterwards.
+            var viewModel = new GlycanSelectionViewModel(TwoDatabases());
+            viewModel.Databases.First(d => d.DisplayName == "OGlycan.gdb").Use = true;
+
+            Assert.That(viewModel.ToSelectedGlycans().Where(s => s.Item1 == "OGlycan.gdb"), Is.Empty);
+        }
+
+        [Test]
+        public void ToSelectedGlycans_AFullyCheckedDatabaseWithOneUnchecked_ListsTheRest()
+        {
+            var viewModel = new GlycanSelectionViewModel(TwoDatabases());
+            var database = viewModel.Databases.First(d => d.DisplayName == "OGlycan.gdb");
+            database.Use = true;
+            database.Children[0].Use = false;
+
+            var selected = viewModel.ToSelectedGlycans();
+
+            Assert.That(selected, Is.EquivalentTo(database.Children.Skip(1).Select(c => ("OGlycan.gdb", c.ModName))));
+        }
+
+        [Test]
+        public void ToSelectedGlycans_AFullyCheckedDatabaseLeavesAPartlyCheckedOneListed()
+        {
+            var viewModel = new GlycanSelectionViewModel(TwoDatabases());
+            viewModel.Databases.First(d => d.DisplayName == "OGlycan.gdb").Use = true;
+            var nGlycan = viewModel.Databases.First(d => d.DisplayName == "NGlycan.gdb").Children[1];
+            nGlycan.Use = true;
+
+            Assert.That(viewModel.ToSelectedGlycans(), Is.EqualTo(new[] { ("NGlycan.gdb", nGlycan.ModName) }));
+        }
+
+        [Test]
+        public void SetActiveDatabases_ShowsOnlyTheDatabasesTheSearchWillUse()
+        {
+            var viewModel = new GlycanSelectionViewModel(TwoDatabases());
+
+            viewModel.SetActiveDatabases(new[] { "NGlycan.gdb" });
+
+            Assert.That(viewModel.Displayed.Select(d => d.DisplayName), Is.EqualTo(new[] { "NGlycan.gdb" }));
+            Assert.That(viewModel.Databases.Count, Is.EqualTo(2), "the master collection keeps every database");
+        }
+
+        [Test]
+        public void Displayed_ShowsEveryDatabaseUntilTheActiveOnesAreSet()
+        {
+            var viewModel = new GlycanSelectionViewModel(TwoDatabases());
+
+            Assert.That(viewModel.Displayed.Select(d => d.DisplayName), Is.EqualTo(new[] { "OGlycan.gdb", "NGlycan.gdb" }));
+        }
+
+        [Test]
+        public void ToSelectedGlycans_LeavesOutTicksInADatabaseTheSearchWillNotUse()
+        {
+            // The engine searches only the database each combo box names, so a tick anywhere else
+            // would be saved, reported as a selection, and then ignored.
+            var viewModel = new GlycanSelectionViewModel(TwoDatabases());
+            viewModel.Databases.First(d => d.DisplayName == "NGlycan.gdb").Children[0].Use = true;
+            var oGlycan = viewModel.Databases.First(d => d.DisplayName == "OGlycan.gdb").Children[0];
+            oGlycan.Use = true;
+
+            viewModel.SetActiveDatabases(new[] { "OGlycan.gdb" });
+
+            Assert.That(viewModel.ToSelectedGlycans(), Is.EqualTo(new[] { ("OGlycan.gdb", oGlycan.ModName) }));
+        }
+
+        [Test]
+        public void Summary_CountsOnlyTheDatabasesTheSearchWillUse()
+        {
+            var viewModel = new GlycanSelectionViewModel(TwoDatabases());
+            viewModel.Databases.First(d => d.DisplayName == "NGlycan.gdb").Children[0].Use = true;
+
+            viewModel.SetActiveDatabases(new[] { "OGlycan.gdb" });
+
+            Assert.That(viewModel.Summary, Does.Contain("none checked"));
+            Assert.That(viewModel.Summary, Does.Contain("3 entries available"));
+        }
+
+        [Test]
+        public void SetActiveDatabases_KeepsTicksInAHiddenDatabaseForWhenItIsChosenAgain()
+        {
+            var viewModel = new GlycanSelectionViewModel(TwoDatabases());
+            var nGlycan = viewModel.Databases.First(d => d.DisplayName == "NGlycan.gdb").Children[0];
+            nGlycan.Use = true;
+
+            viewModel.SetActiveDatabases(new[] { "OGlycan.gdb" });
+            viewModel.SetActiveDatabases(new[] { "OGlycan.gdb", "NGlycan.gdb" });
+
+            Assert.That(viewModel.ToSelectedGlycans(), Is.EqualTo(new[] { ("NGlycan.gdb", nGlycan.ModName) }));
+        }
+
+        [Test]
+        public void Filter_ShowsOnlyMatchingRowsOfTheActiveDatabases()
+        {
+            var viewModel = new GlycanSelectionViewModel(TwoDatabases());
+            viewModel.SetActiveDatabases(new[] { "OGlycan.gdb" });
+
+            viewModel.Filter("NeuAc");
+
+            Assert.That(viewModel.Displayed.Single().DisplayName, Is.EqualTo("OGlycan.gdb"));
+            Assert.That(viewModel.Displayed.Single().Children.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Filter_AnEmptyKeyShowsTheMasterGroups()
+        {
+            var viewModel = new GlycanSelectionViewModel(TwoDatabases());
+            viewModel.Filter("NeuAc");
+
+            viewModel.Filter("");
+
+            Assert.That(viewModel.Displayed, Is.EqualTo(viewModel.Databases));
+        }
+
+        [Test]
+        public void Filter_UncheckingAVisibleRowMakesTheFilteredGroupIndeterminate()
+        {
+            // The filtered group is a copy. Settling only the master group would leave the box on
+            // screen reading checked after one of the rows under it was unchecked.
+            var viewModel = new GlycanSelectionViewModel(TwoDatabases());
+            viewModel.Filter("Hex(1)HexNAc(1)");
+            var filtered = viewModel.Displayed.Single();
+            Assert.That(filtered.Children.Count, Is.EqualTo(2));
+
+            filtered.Use = true;
+            filtered.Children[0].Use = false;
+
+            Assert.That(filtered.Use, Is.Null);
+
+            filtered.Children[1].Use = false;
+
+            Assert.That(filtered.Use, Is.False);
+        }
+
+        [Test]
+        public void Filter_CheckingEveryVisibleRowChecksTheFilteredGroupButNotTheMaster()
+        {
+            var viewModel = new GlycanSelectionViewModel(TwoDatabases());
+            viewModel.Filter("NeuAc");
+            var filtered = viewModel.Displayed.Single();
+
+            filtered.Children.Single().Use = true;
+
+            Assert.That(filtered.Use, Is.True);
+            Assert.That(viewModel.Databases.First(d => d.DisplayName == "OGlycan.gdb").Use, Is.Null);
+        }
+
+        [Test]
+        public void Filter_AFilteredGroupReflectsItsVisibleRowsNotTheMaster()
+        {
+            // The master is partly checked, but every row the filter shows is checked, so the box on
+            // screen -- which acts only on those rows -- reads checked.
+            var viewModel = new GlycanSelectionViewModel(TwoDatabases());
+            var master = viewModel.Databases.First(d => d.DisplayName == "OGlycan.gdb");
+            master.Children[2].Use = true;
+
+            viewModel.Filter("NeuAc");
+
+            Assert.That(viewModel.Displayed.Single().Use, Is.True);
+            Assert.That(master.Use, Is.Null);
+        }
+
+        [Test]
         public void Constructor_RestoresASavedSelection()
         {
             var databases = TwoDatabases();
@@ -273,6 +438,27 @@ namespace Test.GuiTests
             Assert.That(label, Does.Contain(glycan.IdWithMotif));
             Assert.That(label, Does.Contain("HexNAc(1)"));
             Assert.That(label, Does.Contain("Da"));
+        }
+
+        [Test]
+        public void GlycanLabel_IsExactlyIdentifierCompositionAndMassSeparatedByEmDashes()
+        {
+            // Exact, not Does.Contain: the separators were once mojibake (an em dash's UTF-8 bytes
+            // read back as Windows-1252), which a fragment match never sees.
+            var glycan = MakeGlycan("HexNAc(1)", "S");
+            var mass = (glycan.Mass / 1E5).ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+
+            Assert.That(GlycanSelectionViewModel.GlycanLabel(glycan),
+                Is.EqualTo(glycan.IdWithMotif + "   \u2014   HexNAc(1)   \u2014   " + mass + " Da"));
+        }
+
+        [Test]
+        public void Summary_NoneCheckedUsesARealEmDash()
+        {
+            var viewModel = new GlycanSelectionViewModel(TwoDatabases());
+
+            Assert.That(viewModel.Summary,
+                Is.EqualTo("   none checked \u2014 the whole selected database will be searched (5 entries available)"));
         }
 
         [Test]

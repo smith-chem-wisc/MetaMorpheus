@@ -165,9 +165,11 @@
                 <GroupBox Header="Individual Glycans" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                     <GroupBox.ToolTip>
                         <TextBlock>
-                            Pick individual glycans instead of a whole database. Each database above appears here as a group;
-                            checking a group is the same as searching that entire database, which is the default.
-                            Leaving every box unchecked also searches the whole selected database.
+                            Pick individual glycans instead of a whole database. The database each list above selects
+                            appears here as a group (both of them for an N-O-glycan search).
+                            Checking a group is the same as searching that entire database, which is the default,
+                            including any glycan added to the file later. Leaving every box unchecked also searches
+                            the whole selected database.
                             A glycan is listed once per attachment site, so the same composition appears more
                             than once -- on S and on T, for instance.
                         </TextBlock>

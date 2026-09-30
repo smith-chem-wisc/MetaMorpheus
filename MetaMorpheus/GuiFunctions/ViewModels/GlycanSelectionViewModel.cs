@@ -26,12 +26,35 @@ public class GlycanSelectionViewModel : BaseViewModel
 {
     private bool _syncingCheckState;
     private string _summary;
+    private HashSet<string> _activeDatabases; // null until the window says, which means every database
+    private string _filterKey = string.Empty;
 
     /// <summary>
-    /// One node per glycan database, in the order given. This is the tree's ItemsSource, and the
-    /// master collection the read-back reads -- never a filtered view of it.
+    /// Master group -> the copy of it <see cref="ModTreeFilter.Filter"/> made for the tree while the
+    /// search box is filtering. The copies share their rows with the master groups, but not their
+    /// check state, so both have to be settled when a row changes.
+    /// </summary>
+    private readonly Dictionary<ModTypeForTreeViewModel, ModTypeForTreeViewModel> _filteredCopies =
+        new Dictionary<ModTypeForTreeViewModel, ModTypeForTreeViewModel>();
+
+    /// <summary>
+    /// One node per glycan database, in the order given: the master collection the read-back reads,
+    /// never a filtered view of it. Holds every database, including those the search will not use.
     /// </summary>
     public ObservableCollection<ModTypeForTreeViewModel> Databases { get; } = new ObservableCollection<ModTypeForTreeViewModel>();
+
+    /// <summary>
+    /// What the tree shows, and so its ItemsSource: the groups for the databases the search will use
+    /// (see <see cref="SetActiveDatabases"/>), narrowed by <see cref="Filter"/> when the search box
+    /// holds text. The same instance throughout, so the tree is bound once.
+    /// </summary>
+    public ObservableCollection<ModTypeForTreeViewModel> Displayed { get; } = new ObservableCollection<ModTypeForTreeViewModel>();
+
+    /// <summary>
+    /// The master groups for the databases the search will use.
+    /// </summary>
+    private IEnumerable<ModTypeForTreeViewModel> ActiveDatabases =>
+        _activeDatabases == null ? Databases : Databases.Where(db => _activeDatabases.Contains(db.DisplayName));
 
     /// <summary>
     /// What is checked, in words, for the line beside the search box.
@@ -75,7 +98,76 @@ public class GlycanSelectionViewModel : BaseViewModel
         }
 
         Restore(selectedGlycans);
+        RefreshDisplayed();
         UpdateSummary();
+    }
+
+    /// <summary>
+    /// Limits the tree, the summary and the saved selection to the databases the search will use: the
+    /// one each glycan-database combo box names, for the search type chosen.
+    /// </summary>
+    /// <remarks>
+    /// The engine narrows only the databases it searches, so a tick in any other group would be saved,
+    /// counted in the summary, and then ignored. Ticks in a hidden group are kept, not cleared, so
+    /// choosing that database again brings them back.
+    /// </remarks>
+    public void SetActiveDatabases(IEnumerable<string> databaseFileNames)
+    {
+        _activeDatabases = new HashSet<string>((databaseFileNames ?? Enumerable.Empty<string>()).Where(name => name != null));
+        RefreshDisplayed();
+        UpdateSummary();
+    }
+
+    /// <summary>
+    /// Narrows <see cref="Displayed"/> to the rows whose label contains <paramref name="key"/>,
+    /// case-insensitively. Empty shows every row again.
+    /// </summary>
+    /// <remarks>
+    /// Matches the row label rather than the identifier, so "HexNAc", "2222" and "H5N4A2" all work.
+    /// Owned here rather than by the window so the filtered copies can be kept in step with their rows
+    /// -- see <see cref="OnGlycanUseChanged"/>.
+    /// </remarks>
+    public void Filter(string key)
+    {
+        _filterKey = key ?? string.Empty;
+        RefreshDisplayed();
+    }
+
+    private void RefreshDisplayed()
+    {
+        _filteredCopies.Clear();
+        Displayed.Clear();
+
+        if (string.IsNullOrEmpty(_filterKey))
+        {
+            foreach (var database in ActiveDatabases)
+            {
+                Displayed.Add(database);
+            }
+            return;
+        }
+
+        foreach (var copy in ModTreeFilter.Filter(ActiveDatabases, _filterKey, row => row.DisplayName))
+        {
+            // Filter only returns a group holding at least one match, and its rows are the master's own.
+            _filteredCopies[copy.Children[0].Parent] = copy;
+            Displayed.Add(copy);
+        }
+
+        // Filter copies the master group's check state, but the copy's checkbox acts only on the rows it
+        // shows, so it has to read from those. Guarded because settling a group cascades down to its rows.
+        _syncingCheckState = true;
+        try
+        {
+            foreach (var copy in _filteredCopies.Values)
+            {
+                SettleCheckState(copy);
+            }
+        }
+        finally
+        {
+            _syncingCheckState = false;
+        }
     }
 
     /// <summary>
@@ -144,6 +236,12 @@ public class GlycanSelectionViewModel : BaseViewModel
             if (sender is ModForTreeViewModel glycan)
             {
                 SettleCheckState(glycan.Parent);
+
+                // While filtering, the checkbox on screen is the copy, not the master group.
+                if (glycan.Parent != null && _filteredCopies.TryGetValue(glycan.Parent, out var copy))
+                {
+                    SettleCheckState(copy);
+                }
             }
 
             UpdateSummary();
@@ -182,35 +280,42 @@ public class GlycanSelectionViewModel : BaseViewModel
 
     private void UpdateSummary()
     {
-        int selected = Databases.Sum(db => db.Children.Count(c => c.Use));
-        int total = Databases.Sum(db => db.Children.Count);
-        int databases = Databases.Count(db => db.Children.Any(c => c.Use));
+        var active = ActiveDatabases.ToList();
+        int selected = active.Sum(db => db.Children.Count(c => c.Use));
+        int total = active.Sum(db => db.Children.Count);
+        int databases = active.Count(db => db.Children.Any(c => c.Use));
 
         // "entries", not "glycans": a glycan is listed once per attachment site, so the 12 lines of
         // OGlycan.gdb are 24 rows here. Calling them glycans invites the reader to compare the number
         // with the file and find it wrong.
         Summary = selected == 0
             ? string.Format(CultureInfo.InvariantCulture,
-                "   none checked â€” the whole selected database will be searched ({0} entries available)", total)
+                "   none checked " + EmDash + " the whole selected database will be searched ({0} entries available)", total)
             : string.Format(CultureInfo.InvariantCulture,
                 "   {0} of {1} entries checked, across {2} database{3}", selected, total, databases, databases == 1 ? "" : "s");
     }
 
     /// <summary>
     /// The checked glycans as (database file name, glycan IdWithMotif) pairs, for
-    /// <c>GlycoSearchParameters.SelectedGlycans</c>. Empty means the whole database.
+    /// <c>GlycoSearchParameters.SelectedGlycans</c>. No pairs for a database means the whole database.
     /// </summary>
     /// <remarks>
     /// Only leaves are read, and always from <see cref="Databases"/> rather than from whatever the
     /// tree is currently displaying -- so a selection made while the search box is filtered is still
     /// returned in full.
     ///
+    /// Two kinds of group write nothing. A fully checked group is saved as the whole database, not as
+    /// the entries it holds today: a list would silently leave out anything added to the file later,
+    /// and the custom databases exist to be added to. A group for a database the search will not use
+    /// is left out, because the engine would ignore it.
+    ///
     /// Keyed by composition string rather than by Glycan.GlyId, which is a positional index into the
     /// loaded array: a saved index would quietly point at a different glycan if the .gdb were edited.
     /// </remarks>
     public List<(string, string)> ToSelectedGlycans()
     {
-        return Databases
+        return ActiveDatabases
+            .Where(database => database.Use != true)
             .SelectMany(database => database.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)))
             .ToList();
     }
@@ -230,9 +335,15 @@ public class GlycanSelectionViewModel : BaseViewModel
         var mass = glycan.Mass / 1E5; // Glycan.Mass is the monoisotopic mass scaled by 1e5
 
         return string.IsNullOrEmpty(expanded)
-            ? string.Format(CultureInfo.InvariantCulture, "{0}   â€”   {1:F2} Da", glycan.IdWithMotif, mass)
-            : string.Format(CultureInfo.InvariantCulture, "{0}   â€”   {1}   â€”   {2:F2} Da", glycan.IdWithMotif, expanded, mass);
+            ? string.Format(CultureInfo.InvariantCulture, "{0}   {1}   {2:F2} Da", glycan.IdWithMotif, EmDash, mass)
+            : string.Format(CultureInfo.InvariantCulture, "{0}   {1}   {2}   {1}   {3:F2} Da", glycan.IdWithMotif, EmDash, expanded, mass);
     }
+
+    /// <summary>
+    /// Written as an escape rather than the character itself: the literal was once saved through a
+    /// Windows-1252 round trip and came out as the three characters U+00E2 U+20AC U+201D.
+    /// </summary>
+    private const string EmDash = "\u2014";
 
     public static string GlycanToolTip(Glycan glycan)
     {

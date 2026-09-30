@@ -281,11 +281,46 @@ namespace MetaMorpheusGUI
             GlycanSelectionViewModel = new GlycanSelectionViewModel(
                 GlobalVariables.OGlycansByDatabase.Concat(GlobalVariables.NGlycansByDatabase),
                 task._glycoSearchParameters.SelectedGlycans);
-            glycanTreeView.DataContext = GlycanSelectionViewModel.Databases;
+            UpdateActiveGlycanDatabases();
+            glycanTreeView.DataContext = GlycanSelectionViewModel.Displayed;
             GlycanSelectionSummary.DataContext = GlycanSelectionViewModel;
+
+            // Registered only now, so setting the fields above does not rebuild a tree that is not there yet.
+            CmbOGlycanDatabase.SelectionChanged += (_, _) => UpdateActiveGlycanDatabases();
+            CmbNGlycanDatabase.SelectionChanged += (_, _) => UpdateActiveGlycanDatabases();
+            RbtOGlycoSearch.Checked += (_, _) => UpdateActiveGlycanDatabases();
+            RbtNGlycoSearch.Checked += (_, _) => UpdateActiveGlycanDatabases();
+            Rbt_N_O_GlycoSearch.Checked += (_, _) => UpdateActiveGlycanDatabases();
 
             WritePrunedDBCheckBox.IsChecked = task._glycoSearchParameters.WritePrunedDataBase;
             UpdateModSelectionGrid();
+        }
+
+        /// <summary>
+        /// Shows only the glycan groups the search will use: the O-glycan database for an O search, the
+        /// N-glycan database for an N search, both for N-O. The engine narrows only those, so a tick in
+        /// any other group would be saved and then ignored.
+        /// </summary>
+        private void UpdateActiveGlycanDatabases()
+        {
+            if (GlycanSelectionViewModel == null)
+            {
+                return;
+            }
+
+            var active = new List<string>();
+            bool nSearch = RbtNGlycoSearch.IsChecked == true;
+            bool noSearch = Rbt_N_O_GlycoSearch.IsChecked == true;
+            if (!nSearch)
+            {
+                active.Add(CmbOGlycanDatabase.SelectedItem?.ToString());
+            }
+            if (nSearch || noSearch)
+            {
+                active.Add(CmbNGlycanDatabase.SelectedItem?.ToString());
+            }
+
+            GlycanSelectionViewModel.SetActiveDatabases(active);
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -573,8 +608,8 @@ namespace MetaMorpheusGUI
 
             if (SearchModifications.GlycanSearch)
             {
-                // Searches the row label, not just the identifier, so "HexNAc", "2222" and "H5N4A2" all work.
-                SearchModifications.FilterTree(SearchGlycan, glycanTreeView, GlycanSelectionViewModel.Databases, m => m.DisplayName);
+                // The view model filters, so it can keep the filtered group checkboxes in step with their rows.
+                GlycanSelectionViewModel.Filter(SearchGlycan.Text);
                 SearchModifications.GlycanSearch = false;
             }
         }
