@@ -119,14 +119,18 @@ namespace Test.GuiTests
         {
             // The clone's Use is written while its Children is still empty, because the Use setter
             // cascades. Writing it after the children were added would set every visible row to true.
+            // The group has to disagree with a visible child for this to be able to fail: if every
+            // child already matched the group, a late cascade would write values that are already there.
             var master = TwoGroups();
             master[0].Use = true;
+            var acetylation = master[0].Children.Single(c => c.ModName == "Acetylation on K");
+            acetylation.Use = false;
 
             var filtered = ModTreeFilter.Filter(master, "acetyl");
 
-            Assert.That(filtered.Single().Use, Is.True);
-            Assert.That(master[0].Children.Single(c => c.ModName == "ADP-ribosylation on S").Use, Is.True,
-                "cascade from the master group, not from the filtered clone");
+            Assert.That(filtered.Single().Use, Is.True, "the group's own check state is copied");
+            Assert.That(filtered.Single().Children.Single(), Is.SameAs(acetylation));
+            Assert.That(acetylation.Use, Is.False, "copying the group's state must not cascade onto the rows it shows");
         }
 
         [Test]
