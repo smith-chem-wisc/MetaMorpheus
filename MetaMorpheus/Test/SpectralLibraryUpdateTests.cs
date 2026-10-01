@@ -2,6 +2,8 @@ using Chemistry;
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using MassSpectrometry;
+using MetaMorpheusCommandLine;
+using Nett;
 using NUnit.Framework;
 using Omics.Digestion;
 using Omics.Fragmentation;
@@ -70,6 +72,9 @@ namespace Test
                 Is.True, "and has to say what to do about it");
             Assert.That(enginesStarted, Is.Empty,
                 "nothing may run before the refusal, but these did: " + string.Join(", ", enginesStarted));
+            Assert.That(runner.RefusedToProceed, Is.True,
+                "a caller that cannot see WarnHandler -- the CMD -- has no other way to tell this from a "
+                + "finished run");
         }
 
         /// <summary>
@@ -217,6 +222,69 @@ namespace Test
                     "TestRefusalPrecedesSpectraLoad"),
                 Throws.TypeOf<MetaMorpheusException>().With.Message.Contains("no spectral library was given"),
                 "the refusal has to precede the spectra file load, not merely the engines");
+        }
+
+        /// <summary>
+        /// The runner refuses by warning rather than throwing so the GUI gets a notification instead of a
+        /// crash report -- but EverythingRunnerEngine has its own WarnHandler and only the GUI subscribed to
+        /// it, so on the command line the same refusal printed nothing and returned 0. A pipeline step that
+        /// reports success and wrote no files is worse than the crash this PR set out to remove, and it
+        /// applied to every one of the runner's refusal gates, not just this one.
+        ///
+        /// Driven through Program.Main, because the gap was in the wiring rather than in the gate. The .mzML
+        /// and .fasta can be empty: that nothing opens them is the point.
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        public static void TheCommandLineReportsTheRefusalAndExitsNonZero()
+        {
+            string folder = MakeOutputFolder("CmdNoLibrary");
+
+            string spectra = Path.Combine(folder, "file.mzML");
+            File.WriteAllText(spectra, string.Empty);
+            string database = Path.Combine(folder, "db.fasta");
+            File.WriteAllText(database, string.Empty);
+
+            var task = new SearchTask();
+            task.SearchParameters.UpdateSpectralLibrary = true;
+            string taskPath = Path.Combine(folder, "SearchTask.toml");
+            Toml.WriteFile(task, taskPath, MetaMorpheusTask.tomlConfig);
+
+            string output = Path.Combine(folder, "output");
+
+            // Console.SetOut alone does not reliably capture the warning: Program.MyWriter is a static field
+            // initialised from Console.Out when the type loads, WarnHandler writes through it, and
+            // ResolveExperimentalDesignTests also drives Main. Measured both orders -- first touch of
+            // Program inside this method captures, a Main earlier in the process does not, and in the
+            // second case the captured text is byte-identical to what deleting the subscription produces.
+            // So the console half would have failed indistinguishably from the regression it is here to
+            // catch. Rebind the field instead; a rename fails this loudly rather than vacuously.
+            var writerField = typeof(Program).GetField("MyWriter", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.That(writerField, Is.Not.Null,
+                "Program.MyWriter was renamed, so this test can no longer see what the CMD printed");
+
+            TextWriter originalOut = Console.Out;
+            object originalWriter = writerField.GetValue(null);
+            var captured = new StringWriter();
+            int exitCode;
+            try
+            {
+                Console.SetOut(captured);
+                writerField.SetValue(null, Activator.CreateInstance(writerField.FieldType, captured, "\t"));
+                exitCode = Program.Main(new[] { "-s", spectra, "-d", database, "-t", taskPath, "-o", output });
+                ((TextWriter)writerField.GetValue(null)).Flush();
+            }
+            finally
+            {
+                writerField.SetValue(null, originalWriter);
+                Console.SetOut(originalOut);
+            }
+
+            Assert.That(captured.ToString(), Does.Contain("no spectral library was given"),
+                "the refusal printed nothing at all here before EverythingRunnerEngine.WarnHandler was wired up");
+            Assert.That(exitCode, Is.Not.Zero,
+                "a run that was refused and wrote nothing must not report success to the calling script");
+            Assert.That(Directory.Exists(output), Is.False, "the search ran anyway");
         }
 
         /// <summary>
