@@ -26,8 +26,6 @@ namespace Test
         /// Issue #2291, as the user meets it. Every entry point runs tasks through EverythingRunnerEngine,
         /// which refuses the combination alongside its other database checks: a warning and a clean stop,
         /// not an exception, so the GUI shows a notification rather than a crash report.
-        ///
-        /// Checked per task, so a search that writes a library followed by one that updates it stays legal.
         /// </summary>
         [Test]
         public static void TheRunnerRefusesAnUpdateWithNoLibraryAndRunsNothing()
@@ -72,6 +70,64 @@ namespace Test
                 Is.True, "and has to say what to do about it");
             Assert.That(enginesStarted, Is.Empty,
                 "nothing may run before the refusal, but these did: " + string.Join(", ", enginesStarted));
+        }
+
+        /// <summary>
+        /// Writing a library in one task and updating it in the next looks like it ought to work, and the
+        /// earlier version of this PR refused per task on the assumption that it did. It does not:
+        /// SpectralLibraryGeneration writes the .msp but never adds it to NewDatabases, so the running
+        /// database list never gains a library it did not start with.
+        ///
+        /// Which is why the refusal is hoisted ahead of the whole task list. Refusing per task would reach
+        /// the same verdict having first run the writing search in full -- and for Calibrate -> GPTMD ->
+        /// Search(update), minutes of it. Task1 starting at all is the failure this pins.
+        /// </summary>
+        [Test]
+        public static void TheRunnerRefusesTheUpdateWithoutRunningTheTaskAheadOfIt()
+        {
+            string outputFolder = MakeOutputFolder("RunnerWriteThenUpdate");
+
+            var writeLibrary = new SearchTask();
+            writeLibrary.SearchParameters.WriteSpectralLibrary = true;
+            var updateLibrary = new SearchTask();
+            updateLibrary.SearchParameters.UpdateSpectralLibrary = true;
+
+            string database = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                "TestData", "hela_snip_for_unitTest.fasta");
+            string spectra = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                "TestData", "TaGe_SA_A549_3_snip.mzML");
+
+            var runner = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)>
+                {
+                    ("Task1Search", writeLibrary),
+                    ("Task2Search", updateLibrary),
+                },
+                new List<string> { spectra },
+                new List<DbForTask> { new DbForTask(database, false) },
+                outputFolder);
+
+            var enginesStarted = new List<string>();
+            void OnEngineStarting(object sender, SingleEngineEventArgs e)
+                => enginesStarted.Add(e.MyEngine.GetType().Name);
+
+            MetaMorpheusEngine.StartingSingleEngineHander += OnEngineStarting;
+            try
+            {
+                Assert.That(() => runner.Run(), Throws.Nothing);
+            }
+            finally
+            {
+                MetaMorpheusEngine.StartingSingleEngineHander -= OnEngineStarting;
+            }
+
+            Assert.That(runner.Warnings.Any(w => w.Contains("no spectral library was given", StringComparison.OrdinalIgnoreCase)),
+                Is.True, "the refusal still has to be reported: " + string.Join(" | ", runner.Warnings));
+            Assert.That(enginesStarted, Is.Empty,
+                "the search that writes the library must not run before a refusal that was already "
+                + "knowable, but these ran: " + string.Join(", ", enginesStarted));
+            Assert.That(Directory.Exists(Path.Combine(outputFolder, "Task1Search")), Is.False,
+                "Task1 was started");
         }
 
         /// <summary>
@@ -132,6 +188,35 @@ namespace Test
 
             // No delete here: RunTask writes its toml one level above this folder, and a failing assertion
             // would skip it anyway. OneTimeTearDown removes the whole root.
+        }
+
+        /// <summary>
+        /// The engine-start assertion above cannot see the first spectra file load, because MyFileManager is
+        /// not an engine -- and that load is the first statement of RunSpecific, a bare Task with no
+        /// cancellation, so a guard below it starts a raw file read that nobody waits for or observes.
+        ///
+        /// An empty spectra list is the discriminator rather than a scenario: the guard reads neither list,
+        /// so it refuses regardless, while anything placed below the load reaches currentRawFileList[0]
+        /// first and comes out as ArgumentOutOfRangeException instead.
+        /// </summary>
+        [Test]
+        public static void TheBackstopRefusesBeforeTheFirstSpectraFileLoadIsSetUp()
+        {
+            string outputFolder = MakeOutputFolder("NoLibraryNoSpectra");
+
+            var task = new SearchTask();
+            task.SearchParameters.UpdateSpectralLibrary = true;
+
+            string database = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                "TestData", "hela_snip_for_unitTest.fasta");
+
+            Assert.That(() => task.RunTask(
+                    outputFolder,
+                    new List<DbForTask> { new DbForTask(database, false) },
+                    new List<string>(),
+                    "TestRefusalPrecedesSpectraLoad"),
+                Throws.TypeOf<MetaMorpheusException>().With.Message.Contains("no spectral library was given"),
+                "the refusal has to precede the spectra file load, not merely the engines");
         }
 
         /// <summary>

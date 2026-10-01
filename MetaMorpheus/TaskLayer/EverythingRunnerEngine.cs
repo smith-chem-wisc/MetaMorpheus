@@ -63,6 +63,22 @@ namespace TaskLayer
 
             StringBuilder allResultsText = new StringBuilder();
 
+            // Refused before any task runs, not when the offending one comes up: whether a library is
+            // present cannot change during a run. The only writers of NewDatabases are GPTMD passing an
+            // existing library along and the update path itself, both of which need one already in the
+            // list -- SpectralLibraryGeneration writes the .msp but never registers it, so writing a
+            // library and updating it in a later task does not work. A per-task check would refuse the
+            // same runs, having first run every task ahead of the search in full.
+            if (TaskList.Any(t => t.Item2 is SearchTask searchTask && searchTask.SearchParameters.UpdateSpectralLibrary)
+                && !CurrentXmlDbFilenameList.AnySpectralLibrary())
+            {
+                Warn("Cannot proceed. Updating a spectral library was requested, but no spectral library "
+                    + "was given. Add one to the list of databases, or select writing a new spectral "
+                    + "library instead of updating one.");
+                FinishedAllTasks(OutputFolder);
+                return;
+            }
+
             for (int i = 0; i < TaskList.Count; i++)
             {
                 if (!CurrentRawDataFilenameList.Any())
@@ -77,29 +93,16 @@ namespace TaskLayer
                     FinishedAllTasks(OutputFolder);
                     return;
                 }
-                else if (CurrentXmlDbFilenameList.Where(p => p.IsSpectralLibrary).ToList().Count == CurrentXmlDbFilenameList.Count
+                else if (CurrentXmlDbFilenameList.SpectralLibraries().Count() == CurrentXmlDbFilenameList.Count
                              && !(TaskList.Count == 1 && TaskList.First().Item2 is SpectralAveragingTask))
                 {
                     Warn("Cannot proceed. No protein database files selected.");
                     FinishedAllTasks(OutputFolder);
                     return;
                 }
-               
+
                 var ok = TaskList[i];
 
-                // Checked per task rather than up front: an earlier task can add a library to the running
-                // database list, so a search that writes one followed by a search that updates it is legal.
-                if (ok.Item2 is SearchTask searchTask
-                    && searchTask.SearchParameters.UpdateSpectralLibrary
-                    && !CurrentXmlDbFilenameList.Any(p => p.IsSpectralLibrary))
-                {
-                    Warn("Cannot proceed. Updating a spectral library was requested, but no spectral library "
-                        + "was given. Add one to the list of databases, or select writing a new spectral "
-                        + "library instead of updating one.");
-                    FinishedAllTasks(OutputFolder);
-                    return;
-                }
-              
                 // Non-specific search is built around proteases -- terminal mod placement, the "single"
                 // agents, the FDR categories -- none of which have a nucleic acid counterpart yet.
                 // Refused here rather than only in SearchTask because a MetaMorpheusException out of

@@ -914,21 +914,11 @@ namespace TaskLayer
 
         #region Database Loading
 
-        /// <summary>
-        /// The precondition <see cref="LoadSpectralLibraries"/> reads before it opens anything, so a caller
-        /// can test for a library without paying for the byte-offset index the SpectralLibrary constructor
-        /// builds. Kept beside it so the two cannot drift apart.
-        /// </summary>
-        protected static bool AnySpectralLibrary(List<DbForTask> dbFilenameList)
-        {
-            return dbFilenameList.Any(p => p.IsSpectralLibrary);
-        }
-
         protected SpectralLibrary LoadSpectralLibraries(string taskId, List<DbForTask> dbFilenameList)
         {
             Status("Loading spectral libraries...", new List<string> { taskId });
 
-            var paths = dbFilenameList.Where(p => p.IsSpectralLibrary).Select(p => p.FilePath).ToList();
+            var paths = dbFilenameList.SpectralLibraries().Select(p => p.FilePath).ToList();
 
             if (!paths.Any())
             {
