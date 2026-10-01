@@ -5,6 +5,7 @@ using Proteomics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Xml.Linq;
 using UsefulProteomicsDatabases;
 
 namespace Test
@@ -53,6 +54,29 @@ namespace Test
             {
                 Assert.That(sequence, Is.EqualTo(full[accession]), accession);
             }
+        }
+
+        [Test]
+        public static void EverySubsetEntryIsIdenticalToItsFullPanelEntry()
+        {
+            // Sequences alone would let an edit to a modification, variant or feature in the full panel slip past the subsets
+            var full = Entries(Path.Combine(ContaminantsDir, "MetaMorpheusContaminants.xml"));
+            var subsets = Entries(Path.Combine(ContaminantsDir, "Subsets", "MetaMorpheusContaminants_NoUPS.xml"))
+                .Concat(Entries(Path.Combine(ContaminantsDir, "Subsets", "MetaMorpheusContaminants_UPS.xml")))
+                .ToList();
+
+            Assert.That(subsets.Select(e => e.Key), Is.EquivalentTo(full.Keys));
+            foreach (var (accession, entry) in subsets)
+            {
+                Assert.That(XNode.DeepEquals(entry, full[accession]), Is.True, accession);
+            }
+        }
+
+        private static Dictionary<string, XElement> Entries(string path)
+        {
+            // keyed on the primary (first) accession, as the loader keys proteins
+            return XDocument.Load(path).Root!.Elements().Where(e => e.Name.LocalName == "entry")
+                .ToDictionary(e => e.Elements().First(a => a.Name.LocalName == "accession").Value);
         }
 
         [Test]
