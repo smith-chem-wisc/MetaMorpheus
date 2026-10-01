@@ -134,7 +134,8 @@ public class DatabaseLoadingEngine(
     /// dropped with no indication to the user (mzLib #417).
     /// </summary>
     /// <param name="db">The database the annotations came from; only its file name is reported.</param>
-    /// <param name="unknownModifications">Unmatched modifications keyed by the identifier the database used. Null for FASTA.</param>
+    /// <param name="unknownModifications">Unmatched modifications keyed by the identifier the database used, so the
+    /// count is of distinct identifiers rather than of annotations. Null for FASTA.</param>
     /// <param name="errors">Warning list surfaced to the user by the caller.</param>
     private static void AddUnknownModificationWarning(DbForTask db, Dictionary<string, Modification> unknownModifications, List<string> errors)
     {
@@ -150,8 +151,8 @@ public class DatabaseLoadingEngine(
         if (ids.Count > maxToName)
             named += $", and {ids.Count - maxToName} more";
 
-        errors.Add($"Warning: {ids.Count} annotated modification(s) in {Path.GetFileName(db.FilePath)} could not be "
-                   + $"matched to a known modification and were ignored: {named}");
+        errors.Add($"Warning: {ids.Count} distinct annotated modification type(s) in {Path.GetFileName(db.FilePath)} could "
+                   + $"not be matched to a known modification; every annotation using them was ignored: {named}");
     }
 
     public static IEnumerable<RNA> LoadOligoDb(string fileName, bool generateTargets, DecoyType decoyType,
