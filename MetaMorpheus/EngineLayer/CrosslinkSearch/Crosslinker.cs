@@ -99,9 +99,10 @@ namespace EngineLayer
         {
             var split = line.Split('\t');
             // Crosslinkers.tsv writes T/F but ToString(true) writes the bool's own True/False, so a
-            // custom crosslinker saved as uncleavable reloaded as cleavable
+            // custom crosslinker saved as uncleavable reloaded as cleavable. Anything unrecognised is
+            // uncleavable: a wrong "cleavable" adds signature ions the user never asked for.
             string cleavableField = split[3].Trim().ToUpperInvariant();
-            bool cleavable = cleavableField != "F" && cleavableField != "FALSE";
+            bool cleavable = cleavableField == "T" || cleavableField == "TRUE";
 
             Crosslinker crosslinker = new Crosslinker(
                 crosslinkerName: split[0],
