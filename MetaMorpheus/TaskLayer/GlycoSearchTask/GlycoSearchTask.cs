@@ -278,6 +278,9 @@ namespace TaskLayer
             // Localization is done, so let go of what the search built on the glycan boxes before FDR and PEP (see ReleaseSearchCaches).
             GlycanBox.ReleaseSearchCaches(GlycanBox.OGlycanBoxes);
             GlycanBox.ReleaseSearchCaches(GlycanBox.NOGlycanBoxes);
+            // A partitioned search's earlier partitions built their own boxes, which only their matches still hold.
+            GlycanBox.ReleaseSearchCachesHeldBy(ListOfGsmsPerMS2Scan.SelectMany(p => p)
+                .Where(g => g?.LocalizationGraphs != null).SelectMany(g => g.LocalizationGraphs));
 
             PostGlycoSearchAnalysisParameters pgsap = new()
             {
