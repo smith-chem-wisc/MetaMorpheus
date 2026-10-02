@@ -996,6 +996,65 @@ namespace Test
         }
 
         /// <summary>
+        /// TmtExperimentalDesign.Read checks sample names only within a plex, so a two-plex design can
+        /// name each plex's channels S1, S2, ... for different material (pcruzparri, #2817 review). Source
+        /// name is the sample key, so such a name is scoped to its plex; a bridge, named the same in both
+        /// plexes with the same condition and replicate, is one sample and keeps its one name.
+        /// </summary>
+        [Test]
+        public static void ASampleNameReusedInAnotherPlexForADifferentSampleIsScopedToItsPlex()
+        {
+            var plex1 = new TmtFileInfo(@"C:\data\p1.raw", "Plex1", 1, 1, new List<TmtPlexAnnotation>
+            {
+                new() { Tag = "126", SampleName = "S1", Condition = "Ctrl", BiologicalReplicate = 1 },
+                new() { Tag = "127N", SampleName = "Bridge", Condition = "Pool", BiologicalReplicate = 1 }
+            });
+            var plex2 = new TmtFileInfo(@"C:\data\p2.raw", "Plex2", 1, 1, new List<TmtPlexAnnotation>
+            {
+                new() { Tag = "126", SampleName = "S1", Condition = "Drug", BiologicalReplicate = 2 },
+                new() { Tag = "127N", SampleName = "Bridge", Condition = "Pool", BiologicalReplicate = 1 }
+            });
+
+            var reused = InvokeSampleNamesReusedForDifferentSamples(plex1, plex2);
+            Assert.That(reused, Is.EquivalentTo(new[] { "S1" }), "Only the name that names two samples.");
+
+            string SourceName(TmtFileInfo file, string label) => InvokeChannelRows(file, IsobaricMassTagType.TMT11, reused)
+                .Single(r => r.Sample.Label?.Name == label).Sample.SourceName;
+
+            Assert.That(SourceName(plex1, "TMT126"), Is.EqualTo("Plex1 S1"));
+            Assert.That(SourceName(plex2, "TMT126"), Is.EqualTo("Plex2 S1"),
+                "Two samples, two source names.");
+            Assert.That(SourceName(plex1, "TMT127N"), Is.EqualTo("Bridge"));
+            Assert.That(SourceName(plex2, "TMT127N"), Is.EqualTo("Bridge"),
+                "A bridge is one sample measured in both plexes, so it keeps one source name.");
+
+            Assert.That(InvokeSampleNamesReusedForDifferentSamples(plex1), Is.Empty,
+                "Within one plex, Read already guarantees each name is one sample.");
+        }
+
+        /// <summary>The same reuse is named before the search, when it is still cheap to rename.</summary>
+        [Test]
+        public static void ASampleNameReusedInAnotherPlexIsWarnedBeforeTheSearch()
+        {
+            var warnings = WarningsBeforeAnIsobaricSearch(nameof(ASampleNameReusedInAnotherPlexIsWarnedBeforeTheSearch),
+                "TMT11-plex on K", spectra =>
+                {
+                    string second = Path.Combine(Path.GetDirectoryName(spectra)!, "plex2.mzML");
+                    return new[]
+                    {
+                        $"{spectra}	Plex1	S1	126	Ctrl	1	1	1	study sample",
+                        $"{spectra}	Plex1	Bridge	127N	Pool	1	1	1	reference",
+                        $"{second}	Plex2	S1	126	Drug	2	1	1	study sample",
+                        $"{second}	Plex2	Bridge	127N	Pool	1	1	1	reference"
+                    };
+                }, "plex2.mzML");
+
+            Assert.That(warnings, Has.Count.EqualTo(1), string.Join(" | ", warnings));
+            Assert.That(warnings.Single(), Does.Contain("'S1'").And.Not.Contain("'Bridge'")
+                .And.Contain("<plex> <sample name>"));
+        }
+
+        /// <summary>
         /// End to end: a TmtDesign.txt whose only row for the file is the channel-less placeholder
         /// (the GUI's normal state while a design is half-filled). The file used to vanish from the
         /// SDRF, and with every file in that state no SDRF was written at all.
@@ -1024,9 +1083,11 @@ namespace Test
         /// TmtDesign.txt of <paramref name="designRows"/> (given the spectra path) beside the spectra.
         /// </summary>
         private static List<string> WarningsBeforeAnIsobaricSearch(string testName, string multiplexModId,
-            Func<string, string[]> designRows)
+            Func<string, string[]> designRows, params string[] otherSpectraFileNames)
         {
             string folder = SetUpIsolatedRun(testName, out string spectraPath, out _);
+            var spectraPaths = new List<string> { spectraPath }
+                .Concat(otherSpectraFileNames.Select(n => Path.Combine(folder, n))).ToList();
             File.WriteAllLines(Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName),
                 new[] { TmtExperimentalDesign.Header }.Concat(designRows(spectraPath)));
 
@@ -1047,7 +1108,7 @@ namespace Test
             {
                 typeof(SearchTask)
                     .GetMethod("WarnAboutSdrfGaps", BindingFlags.NonPublic | BindingFlags.Instance)!
-                    .Invoke(task, new object[] { new List<string> { spectraPath } });
+                    .Invoke(task, new object[] { spectraPaths });
             }
             finally
             {
@@ -1184,11 +1245,18 @@ namespace Test
                 .GetMethod("ChannelRowsUnusableReason", BindingFlags.NonPublic | BindingFlags.Static)!
                 .Invoke(null, new object[] { file, tagType });
 
-        private static List<SdrfRowInput> InvokeChannelRows(TmtFileInfo file, IsobaricMassTagType tagType) =>
+        private static List<SdrfRowInput> InvokeChannelRows(TmtFileInfo file, IsobaricMassTagType tagType,
+            ISet<string> reusedSampleNames = null) =>
             ((IEnumerable<SdrfRowInput>)typeof(PostSearchAnalysisTask)
                 .GetMethod("BuildChannelRows", BindingFlags.NonPublic | BindingFlags.Static)!
-                .Invoke(null, new object[] { file, tagType, null, new SdrfAssay { DataFileName = "run1.raw", AssayName = "run run1" } }))
+                .Invoke(null, new object[] { file, tagType, null, new SdrfAssay { DataFileName = "run1.raw", AssayName = "run run1" },
+                    reusedSampleNames ?? new HashSet<string>() }))
             .ToList();
+
+        private static HashSet<string> InvokeSampleNamesReusedForDifferentSamples(params TmtFileInfo[] files) =>
+            (HashSet<string>)typeof(PostSearchAnalysisTask)
+                .GetMethod("SampleNamesReusedForDifferentSamples", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { files });
 
         /// <summary>
         /// A search whose parameters are cheap but not degenerate. Notch/parsimony settings match

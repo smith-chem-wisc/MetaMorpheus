@@ -95,6 +95,15 @@ namespace TaskLayer
                 : new Dictionary<string, SpectraFileInfo>(StringComparer.OrdinalIgnoreCase);
             var describedOnce = new List<string>();
 
+            // A sample name reused across plexes for different material (#2817 review): only those names
+            // are scoped to their plex. A bridge, which agrees on condition and replicate, keeps its name.
+            var reusedSampleNames = isobaric is null
+                ? new HashSet<string>()
+                : SampleNamesReusedForDifferentSamples(isobaric.Values
+                    .Where(f => ChannelRowsUnusableReason(f, tagType!.Value) is null));
+            if (reusedSampleNames.Any())
+                Warn(ReusedSampleNamesWarning(reusedSampleNames));
+
             var organism = ResolveOrganismFromSearchDatabase();
 
             foreach (var rawFilePath in Parameters.CurrentRawFileList)
@@ -125,7 +134,8 @@ namespace TaskLayer
                     else
                     {
                         foreach (var row in BuildChannelRows(tmtFile, tagType.Value, organism,
-                                     BuildAssay(rawFilePath, common, tmtFile.TechnicalReplicate, tmtFile.Fraction)))
+                                     BuildAssay(rawFilePath, common, tmtFile.TechnicalReplicate, tmtFile.Fraction),
+                                     reusedSampleNames))
                             yield return row;
                         continue;
                     }
@@ -206,6 +216,33 @@ namespace TaskLayer
         }
 
         /// <summary>
+        /// The channel sample names that name more than one sample: a name written in more than one plex
+        /// with a different (condition, biological replicate) in each. <see cref="TmtExperimentalDesign.Read"/>
+        /// checks names only within a plex, on purpose -- a bridge channel carries one name across plexes --
+        /// so a design that names each plex's channels S1, S2, ... for different material loads cleanly.
+        /// Written as is, one source name would claim two conditions, and anything keyed on source name
+        /// (REQ-2, MAP-01) would merge two samples. A name that agrees everywhere is a bridge and is not
+        /// returned. Blank names are not returned: they are already scoped to their plex.
+        ///
+        /// Shared with SearchTask's pre-run warning, so a search is told before it runs.
+        /// </summary>
+        internal static HashSet<string> SampleNamesReusedForDifferentSamples(IEnumerable<TmtFileInfo> files) =>
+            files
+                .SelectMany(f => f.Annotations)
+                .Where(a => !string.IsNullOrWhiteSpace(a.SampleName))
+                .GroupBy(a => a.SampleName, StringComparer.Ordinal)
+                .Where(g => g.Select(a => ((a.Condition ?? "").Trim(), a.BiologicalReplicate)).Distinct().Count() > 1)
+                .Select(g => g.Key)
+                .ToHashSet(StringComparer.Ordinal);
+
+        internal static string ReusedSampleNamesWarning(IEnumerable<string> names) =>
+            "The design uses these sample names in more than one plex with a different condition or biological " +
+            "replicate, so they name different samples: " +
+            string.Join(", ", names.OrderBy(n => n, StringComparer.Ordinal).Select(n => "'" + n + "'")) +
+            ". The SDRF writes each as '<plex> <sample name>' so that one source name stays one sample. " +
+            "Give them distinct names in " + GlobalVariables.TmtExperimentalDesignFileName + " to choose the names yourself.";
+
+        /// <summary>
         /// The assay half of a row: everything the search itself knows about one data file. Shared by
         /// every channel row of an isobaric file, which is what makes those rows one assay.
         /// </summary>
@@ -264,7 +301,7 @@ namespace TaskLayer
         /// in the file asserting a replicate nobody stated.
         /// </summary>
         private static IEnumerable<SdrfRowInput> BuildChannelRows(TmtFileInfo tmtFile, IsobaricMassTagType tagType,
-            CvParam organism, SdrfAssay assay)
+            CvParam organism, SdrfAssay assay, ISet<string> reusedSampleNames)
         {
             var channelOrder = IsobaricMassTag.GetReporterIonLabels(tagType) ?? new List<string>();
             int OrderOf(string tag)
@@ -274,6 +311,7 @@ namespace TaskLayer
             }
 
             string stem = Path.GetFileNameWithoutExtension(tmtFile.FullFilePathWithExtension);
+            string plexScope = string.IsNullOrWhiteSpace(tmtFile.Plex) ? stem : tmtFile.Plex.Trim();
 
             foreach (var annotation in tmtFile.Annotations.OrderBy(a => OrderOf(a.Tag)))
             {
@@ -294,9 +332,14 @@ namespace TaskLayer
                     // deliberately does not spell "empty": that belongs in characteristics[sample type]
                     // when M4 lands, and encoding it here would mean rewriting source names -- and
                     // breaking joins -- on the day it does.
+                    //
+                    // A name the design reuses in another plex for a different sample is scoped the same way
+                    // (SampleNamesReusedForDifferentSamples); a bridge keeps its shared name.
                     SourceName = string.IsNullOrWhiteSpace(annotation.SampleName)
-                        ? (string.IsNullOrWhiteSpace(tmtFile.Plex) ? stem : tmtFile.Plex.Trim()) + " " + annotation.Tag.Trim()
-                        : annotation.SampleName,
+                        ? plexScope + " " + annotation.Tag.Trim()
+                        : reusedSampleNames?.Contains(annotation.SampleName) == true
+                            ? plexScope + " " + annotation.SampleName
+                            : annotation.SampleName,
                     Organism = organism,
                     BiologicalReplicate = annotation.BiologicalReplicate,
                     Label = ResolveChannelLabel(tagType, annotation.Tag),

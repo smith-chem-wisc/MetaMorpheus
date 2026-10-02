@@ -747,6 +747,11 @@ namespace TaskLayer
             if (reasons.Any())
                 Warn("SDRF output is on, but the SDRF will describe these files once, without their channels or " +
                      "samples: " + string.Join("; ", reasons) + ".");
+
+            var reusedSampleNames = PostSearchAnalysisTask.SampleNamesReusedForDifferentSamples(
+                files.Where(f => PostSearchAnalysisTask.ChannelRowsUnusableReason(f, tagType.Value) is null));
+            if (reusedSampleNames.Any())
+                Warn("SDRF output is on. " + PostSearchAnalysisTask.ReusedSampleNamesWarning(reusedSampleNames));
         }
 
 
