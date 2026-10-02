@@ -44,6 +44,13 @@ namespace TaskLayer
 
         public List<string> Warnings { get { return _warnings; } private set { } }
 
+        /// <summary>
+        /// True when Run stopped at one of the "Cannot proceed" gates instead of running the task list.
+        /// WarnHandler is the only other signal, and the CMD does not subscribe to it, so without this a
+        /// refusal is indistinguishable from a completed run to anything but the GUI.
+        /// </summary>
+        public bool RefusedToProceed { get; private set; }
+
         public void Run()
         {
             StartingAllTasks();
@@ -52,8 +59,7 @@ namespace TaskLayer
 
             if (!CurrentRawDataFilenameList.Any())
             {
-                Warn("No spectra files selected");
-                FinishedAllTasks(null);
+                RefuseToProceed("No spectra files selected", null);
                 return;
             }
 
@@ -63,28 +69,40 @@ namespace TaskLayer
 
             StringBuilder allResultsText = new StringBuilder();
 
+            // Refused before any task runs, not when the offending one comes up: whether a library is
+            // present cannot change during a run. The only writers of NewDatabases are GPTMD passing an
+            // existing library along and the update path itself, both of which need one already in the
+            // list -- SpectralLibraryGeneration writes the .msp but never registers it, so writing a
+            // library and updating it in a later task does not work. A per-task check would refuse the
+            // same runs, having first run every task ahead of the search in full.
+            if (TaskList.Any(t => t.Item2 is SearchTask searchTask && searchTask.SearchParameters.UpdateSpectralLibrary)
+                && !CurrentXmlDbFilenameList.AnySpectralLibrary())
+            {
+                RefuseToProceed("Cannot proceed. Updating a spectral library was requested, but no spectral "
+                    + "library was given. Add one to the list of databases, or select writing a new spectral "
+                    + "library instead of updating one.", OutputFolder);
+                return;
+            }
+
             for (int i = 0; i < TaskList.Count; i++)
             {
                 if (!CurrentRawDataFilenameList.Any())
                 {
-                    Warn("Cannot proceed. No spectra files selected.");
-                    FinishedAllTasks(OutputFolder);
+                    RefuseToProceed("Cannot proceed. No spectra files selected.", OutputFolder);
                     return;
                 }
                 if (!CurrentXmlDbFilenameList.Any() && !(TaskList.Count == 1 && TaskList.First().Item2 is SpectralAveragingTask))
                 {
-                    Warn("Cannot proceed. No protein database files selected.");
-                    FinishedAllTasks(OutputFolder);
+                    RefuseToProceed("Cannot proceed. No protein database files selected.", OutputFolder);
                     return;
                 }
-                else if (CurrentXmlDbFilenameList.Where(p => p.IsSpectralLibrary).ToList().Count == CurrentXmlDbFilenameList.Count
+                else if (CurrentXmlDbFilenameList.SpectralLibraries().Count() == CurrentXmlDbFilenameList.Count
                              && !(TaskList.Count == 1 && TaskList.First().Item2 is SpectralAveragingTask))
                 {
-                    Warn("Cannot proceed. No protein database files selected.");
-                    FinishedAllTasks(OutputFolder);
+                    RefuseToProceed("Cannot proceed. No protein database files selected.", OutputFolder);
                     return;
                 }
-               
+
                 var ok = TaskList[i];
 
                 // Non-specific search is built around proteases -- terminal mod placement, the "single"
@@ -99,9 +117,8 @@ namespace TaskLayer
                     && nonSpecificCandidate.SearchParameters.SearchType == SearchType.NonSpecific
                     && GlobalVariables.AnalyteType == AnalyteType.Oligo)
                 {
-                    Warn("Cannot proceed. Non-specific search is only implemented for proteins. " +
-                         "Use Classic or Modern search for nucleic acid databases.");
-                    FinishedAllTasks(OutputFolder);
+                    RefuseToProceed("Cannot proceed. Non-specific search is only implemented for proteins. " +
+                        "Use Classic or Modern search for nucleic acid databases.", OutputFolder);
                     return;
                 }
 
@@ -158,6 +175,18 @@ namespace TaskLayer
             }
             FinishedWritingAllResultsFileHandler?.Invoke(this, new StringEventArgs(resultsFileName, null));
             FinishedAllTasks(OutputFolder);
+        }
+
+        /// <summary>
+        /// Warn and stop cleanly, rather than throwing: a MetaMorpheusException out of here reaches the GUI
+        /// as a crash report. <see cref="RefusedToProceed"/> is what lets a caller tell this apart from a
+        /// run that finished.
+        /// </summary>
+        private void RefuseToProceed(string reason, string outputFolder)
+        {
+            RefusedToProceed = true;
+            Warn(reason);
+            FinishedAllTasks(outputFolder);
         }
 
         private void Warn(string v)
