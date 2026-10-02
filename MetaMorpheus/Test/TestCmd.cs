@@ -1210,5 +1210,215 @@ namespace Test
         }
 
         #endregion
+
+        #region --sdrfDesign
+
+        /// <summary>
+        /// Writes a label-free SDRF and an empty spectra file for each row into a "data" folder, and
+        /// returns (sdrf path, data folder). Rows are (file, genotype, treatment, biorep, fraction).
+        /// </summary>
+        private static (string Sdrf, string Data) WriteLabelFreeSdrf(params (string File, string Genotype, string Treatment, int Biorep, int Fraction)[] rows)
+        {
+            string data = Path.Combine(ScratchDataDirectory, "data");
+            Directory.CreateDirectory(data);
+
+            var lines = new List<string>
+            {
+                string.Join("\t", "source name", "characteristics[biological replicate]", "assay name", "comment[label]",
+                    "comment[fraction identifier]", "comment[technical replicate]", "comment[data file]",
+                    "factor value[genotype]", "factor value[treatment]")
+            };
+            foreach (var r in rows)
+            {
+                lines.Add(string.Join("\t", r.Genotype + " " + r.Treatment + " " + r.Biorep, r.Biorep, "run " + r.File,
+                    "label free sample", r.Fraction, 1, r.File, r.Genotype, r.Treatment));
+                File.WriteAllText(Path.Combine(data, r.File), string.Empty);
+            }
+
+            string sdrf = Path.Combine(ScratchDataDirectory, "design.sdrf.tsv");
+            File.WriteAllLines(sdrf, lines);
+            return (sdrf, data);
+        }
+
+        private static CommandLineSettings SdrfDesignSettings(string sdrf, string data, params string[] conditionColumns)
+        {
+            var settings = new CommandLineSettings
+            {
+                SdrfDesign = sdrf,
+                _spectra = new[] { data },
+                SdrfConditionColumns = conditionColumns
+            };
+            settings.ValidateCommandLineSettings();
+            return settings;
+        }
+
+        /// <summary>
+        /// The read-back test that closes "two writers of one format": the file mzLib writes is read by
+        /// MetaMorpheus's own reader, against the files a run given the same -s would search, with no
+        /// error -- and the pre-flight a run makes (ResolveExperimentalDesign, with normalization on so
+        /// that an unreadable design would stop it) passes.
+        /// </summary>
+        [Test]
+        public static void TestSdrfDesignIsReadBackByMetaMorpheusWithoutError()
+        {
+            var (sdrf, data) = WriteLabelFreeSdrf(
+                ("wt_dmso_1.raw", "WT", "DMSO", 1, 1), ("wt_dmso_2.raw", "WT", "DMSO", 2, 1),
+                ("ko_dmso_1a.raw", "KO", "DMSO", 1, 1), ("ko_dmso_1b.raw", "KO", "DMSO", 1, 2),
+                ("ko_dmso_2a.raw", "KO", "DMSO", 2, 1));
+            var settings = SdrfDesignSettings(sdrf, data, "genotype", "treatment");
+
+            var written = new StringWriter();
+            int exitCode = Program.WriteDesignFromSdrf(settings, written);
+
+            Assert.That(exitCode, Is.EqualTo(0), written.ToString());
+            string designPath = Path.Combine(data, GlobalVariables.ExperimentalDesignFileName);
+            Assert.That(File.Exists(designPath));
+
+            var searched = settings.Spectra.Select(Path.GetFullPath).ToList();
+            var readBack = ExperimentalDesign.ReadExperimentalDesign(designPath, searched, out var errors);
+
+            Assert.That(errors, Is.Empty);
+            Assert.That(readBack, Has.Count.EqualTo(5));
+            var ko1b = readBack.Single(f => f.FilenameWithoutExtension == "ko_dmso_1b");
+            Assert.That(ko1b.Condition, Is.EqualTo("KO_DMSO"), "bare column names expand to factor value[...], joined with '_'");
+            Assert.That((ko1b.BiologicalReplicate, ko1b.Fraction, ko1b.TechnicalReplicate), Is.EqualTo((0, 1, 0)),
+                "MetaMorpheus reads the 1-based file back to the 0-based model");
+
+            Assert.That(Program.ResolveExperimentalDesign(data, searched, normalizationRequested: true, reportToConsole: false),
+                Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// Study-wide replicate numbering (control 1-2, treated 3-4) is rejected by MetaMorpheus as
+        /// "biorep 1 is missing". It is ranked within each condition, and the renumbering is printed.
+        /// </summary>
+        [Test]
+        public static void TestSdrfDesignRenumbersStudyWideReplicatesAndSaysSo()
+        {
+            var (sdrf, data) = WriteLabelFreeSdrf(
+                ("c1.raw", "WT", "DMSO", 1, 1), ("c2.raw", "WT", "DMSO", 2, 1),
+                ("t3.raw", "WT", "FA", 3, 1), ("t4.raw", "WT", "FA", 4, 1));
+            var settings = SdrfDesignSettings(sdrf, data, "treatment");
+
+            var written = new StringWriter();
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(0), written.ToString());
+            Assert.That(written.ToString(), Does.Contain("biological replicates renumbered 3 -> 1, 4 -> 2"));
+
+            var readBack = ExperimentalDesign.ReadExperimentalDesign(
+                Path.Combine(data, GlobalVariables.ExperimentalDesignFileName), settings.Spectra.Select(Path.GetFullPath).ToList(), out var errors);
+            Assert.That(errors, Is.Empty);
+            Assert.That(readBack.Where(f => f.Condition == "FA").Select(f => f.BiologicalReplicate), Is.EquivalentTo(new[] { 0, 1 }));
+        }
+
+        /// <summary>
+        /// A design MetaMorpheus would reject is never written, because a run finding it would skip
+        /// quantification with only a warning. Exit 5, every reason printed.
+        /// </summary>
+        [Test]
+        public static void TestSdrfDesignRefusesAFractionGapAndWritesNothing()
+        {
+            var (sdrf, data) = WriteLabelFreeSdrf(
+                ("a1.raw", "WT", "DMSO", 1, 1), ("a3.raw", "WT", "DMSO", 1, 3));
+            var settings = SdrfDesignSettings(sdrf, data, "genotype");
+
+            var written = new StringWriter();
+            int exitCode = Program.WriteDesignFromSdrf(settings, written);
+
+            Assert.That(exitCode, Is.EqualTo(5));
+            Assert.That(written.ToString(), Does.Contain("fraction 2 is missing").And.Contain("No design file was written"));
+            Assert.That(File.Exists(Path.Combine(data, GlobalVariables.ExperimentalDesignFileName)), Is.False);
+        }
+
+        [Test]
+        public static void TestSdrfDesignRefusesASpectraFileWithNoRow()
+        {
+            var (sdrf, data) = WriteLabelFreeSdrf(("a1.raw", "WT", "DMSO", 1, 1));
+            File.WriteAllText(Path.Combine(data, "stray.raw"), string.Empty);
+            var settings = SdrfDesignSettings(sdrf, data, "genotype");
+
+            var written = new StringWriter();
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(5));
+            Assert.That(written.ToString(), Does.Contain("Searched file 'stray.raw' has no SDRF row"));
+        }
+
+        [Test]
+        public static void TestSdrfDesignNeverOverwritesADesignFile()
+        {
+            var (sdrf, data) = WriteLabelFreeSdrf(("a1.raw", "WT", "DMSO", 1, 1));
+            string designPath = Path.Combine(data, GlobalVariables.ExperimentalDesignFileName);
+            File.WriteAllText(designPath, "the user's own");
+            var settings = SdrfDesignSettings(sdrf, data, "genotype");
+
+            var written = new StringWriter();
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(5));
+            Assert.That(written.ToString(), Does.Contain("not overwritten"));
+            Assert.That(File.ReadAllText(designPath), Is.EqualTo("the user's own"));
+        }
+
+        [Test]
+        public static void TestSdrfDesignReportsAnSdrfItCannotRead()
+        {
+            string data = Path.Combine(ScratchDataDirectory, "data");
+            Directory.CreateDirectory(data);
+            File.WriteAllText(Path.Combine(data, "a1.raw"), string.Empty);
+            string empty = Path.Combine(ScratchDataDirectory, "empty.sdrf.tsv");
+            File.WriteAllText(empty, string.Empty);
+            var settings = SdrfDesignSettings(empty, data);
+
+            var written = new StringWriter();
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(4));
+            Assert.That(written.ToString(), Does.Contain("could not be read"));
+        }
+
+        [Test]
+        public static void TestSdrfDesignIsRefusedAlongsideARun()
+        {
+            var (sdrf, data) = WriteLabelFreeSdrf(("a1.raw", "WT", "DMSO", 1, 1));
+            var settings = new CommandLineSettings
+            {
+                SdrfDesign = sdrf,
+                _spectra = new[] { data },
+                _tasks = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml") },
+                _databases = new[] { Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fasta") },
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("--sdrfDesign writes a design file and runs nothing else, so it cannot be given with -t, -d."),
+                "-s is not listed: it names the files the design is for, not a run");
+        }
+
+        [Test]
+        public static void TestSdrfDesignNeedsSpectra()
+        {
+            var (sdrf, _) = WriteLabelFreeSdrf(("a1.raw", "WT", "DMSO", 1, 1));
+            var settings = new CommandLineSettings { SdrfDesign = sdrf };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("--sdrfDesign needs -s"));
+        }
+
+        [Test]
+        public static void TestSdrfDesignAndAuditSdrfAreRefusedTogether()
+        {
+            var (sdrf, _) = WriteLabelFreeSdrf(("a1.raw", "WT", "DMSO", 1, 1));
+            var settings = new CommandLineSettings { SdrfDesign = sdrf, AuditSdrf = sdrf };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.Contain("--sdrfDesign"));
+        }
+
+        [Test]
+        public static void TestSdrfConditionWithoutSdrfDesignIsRefused()
+        {
+            var settings = new CommandLineSettings { SdrfConditionColumns = new[] { "genotype" }, GenerateDefaultTomls = true, OutputFolder = ScratchDataDirectory };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Is.EqualTo("--sdrfCondition is only meaningful with --sdrfDesign."));
+        }
+
+        #endregion
     }
 }
