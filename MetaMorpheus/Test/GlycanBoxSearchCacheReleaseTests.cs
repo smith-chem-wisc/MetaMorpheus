@@ -85,6 +85,33 @@ namespace Test
         }
 
         /// <summary>
+        /// A partitioned search builds a box array per partition and reassigns the static field, so an earlier partition's boxes
+        /// are reachable only through its matches' localization graphs. Releasing the static field must not be the only release.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // writes the static glycan lists
+        public static void ReleasingReachesTheBoxesAnEarlierPartitionsGraphsHold()
+        {
+            GlycanBox[] firstPartition = BuildNOBoxes();
+            GlycanBox[] lastPartition = BuildNOBoxes();
+            GlycanBox held = firstPartition.Last(b => b.NumberOfMods == MaxOGlycans + 1);
+            Assert.That(held.GetMotifCount(), Is.Not.Null);
+            Assert.That(held.GetLocalizationCache(), Is.Not.Null);
+            var graph = new LocalizationGraph(new SortedDictionary<int, string>(), held, held.ChildGlycanBoxes, Array.IndexOf(firstPartition, held));
+
+            GlycanBox.NOGlycanBoxes = lastPartition;
+            GlycanBox.ReleaseSearchCaches(GlycanBox.NOGlycanBoxes);
+            Assert.That((held.HasBuiltChildGlycanBoxes, held.HasBuiltMotifCount, held.HasBuiltLocalizationCache), Is.EqualTo((true, true, true)),
+                "the static field holds the last partition's boxes only, so the earlier partition's box keeps its caches");
+
+            GlycanBox.ReleaseSearchCachesHeldBy(new[] { graph, null, graph });
+            Assert.That((held.HasBuiltChildGlycanBoxes, held.HasBuiltMotifCount, held.HasBuiltLocalizationCache), Is.EqualTo((false, false, false)),
+                "releasing through the graphs reaches it");
+
+            Assert.DoesNotThrow(() => GlycanBox.ReleaseSearchCachesHeldBy(null));
+        }
+
+        /// <summary>
         /// After a real N+O glyco search, no glycan box still holds anything the search built on it.
         /// </summary>
         [Test]

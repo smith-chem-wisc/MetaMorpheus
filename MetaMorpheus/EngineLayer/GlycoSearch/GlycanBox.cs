@@ -470,6 +470,23 @@ namespace EngineLayer
                 }
             }
         }
+
+        /// <summary>
+        /// <see cref="ReleaseSearchCaches"/> for every glycan box these localization graphs hold.
+        /// </summary>
+        /// <remarks>
+        /// A partitioned search builds a new box array for each partition and reassigns the static fields, so releasing those fields
+        /// reaches only the last partition's boxes. The matches of the earlier partitions keep theirs through their localization
+        /// graphs, caches and all. Boxes are compared by reference, since each partition's array holds its own copy of every box.
+        /// </remarks>
+        public static void ReleaseSearchCachesHeldBy(IEnumerable<LocalizationGraph> graphs)
+        {
+            if (graphs == null)
+            {
+                return;
+            }
+            ReleaseSearchCaches(graphs.Where(g => g != null).Select(g => g.ModBox).OfType<GlycanBox>().Distinct().ToArray());
+        }
         /// <summary>
         /// How many glycans in this box need each motif. Built on first use; a box is shared by all search threads.
         /// </summary>
