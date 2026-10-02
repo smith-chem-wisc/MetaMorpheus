@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using GuiFunctions;
@@ -13,7 +12,8 @@ namespace MetaMorpheusGUI
         public static bool FixedSearch;
         public static bool VariableSearch;
         public static bool GptmdSearch;
-        
+        public static bool GlycanSearch;
+
         public static void SetUpModSearchBoxes()
         {
             Timer = new DispatcherTimer();
@@ -29,6 +29,7 @@ namespace MetaMorpheusGUI
         }
 
         // filters and expands tree according to user mod search
+        // The glycan tree does not come through here: GlycanSelectionViewModel.Filter owns its filtering.
         public static void FilterTree(TextBox textbox, TreeView tree, ObservableCollection<ModTypeForTreeViewModel> collection)
         {
             string key = textbox.Text.ToLower();
@@ -38,25 +39,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            var modTypesWithMatchingMods = collection.Where(p => p.Children.Any(c => c.ModName.ToLower().Contains(key))); // parent of child mods that match key
-
-            var modsThatMatchSearchString = new ObservableCollection<ModTypeForTreeViewModel>(); // new collection containing expanded mod types that match key 
-
-            foreach (ModTypeForTreeViewModel modType in modTypesWithMatchingMods)
-            {
-                var textFilteredModType = new ModTypeForTreeViewModel(modType.DisplayName, false);
-                modsThatMatchSearchString.Add(textFilteredModType);
-                textFilteredModType.Expanded = true;
-                textFilteredModType.Use = modType.Use;
-
-                var matchingChildren = modType.Children.Where(p => p.ModName.ToLower().Contains(key));
-                foreach (ModForTreeViewModel mod in matchingChildren)
-                {
-                    textFilteredModType.Children.Add(mod);
-                }
-            }
-
-            tree.DataContext = modsThatMatchSearchString;
+            tree.DataContext = ModTreeFilter.Filter(collection, key);
         }
     }
 }
