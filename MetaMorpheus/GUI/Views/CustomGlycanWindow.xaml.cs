@@ -39,13 +39,30 @@ namespace MetaMorpheusGUI
 
             string databasePath = SelectedDatabasePath;
             string warning;
+            bool declined = false;
             try
             {
-                warning = GlycanDatabase.PersistCustomGlycan(glycanText, databasePath, IsOGlycanSelected);
+                // A glycan that does not start from its core is asked about by the engine, after every check
+                // that could refuse it and before anything is written: nothing in the GUI can take a glycan out
+                // of the database again, so No leaves the entry in the box to be corrected. A warning, never a
+                // refusal: such a glycan can be real.
+                warning = GlycanDatabase.PersistCustomGlycan(glycanText, databasePath, IsOGlycanSelected, coreWarning =>
+                {
+                    var answer = MessageBox.Show(coreWarning + Environment.NewLine + Environment.NewLine + "Add it anyway?",
+                        "Glycan does not start from its core", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    declined = answer != MessageBoxResult.Yes;
+                    return !declined;
+                });
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Error saving glycan: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
+                return;
+            }
+
+            // Nothing was written, so no success message, and the window stays open with the entry in it.
+            if (declined)
+            {
                 return;
             }
 
