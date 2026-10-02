@@ -227,7 +227,10 @@ namespace Test
             Assert.That(capped, Is.EqualTo(uncapped.Where(p => (double)p.Mass / 1E5 <= cap).ToArray()));
             Assert.That(capped.Length, Is.LessThan(uncapped.Length));
 
-            Assert.That(MakeEngineNGlycans(0), Is.Empty);
+            // A cap that leaves nothing is refused by name, as CheckedGlycanBoxes refuses it for O and N+O,
+            // rather than searching nothing and reporting nothing.
+            var ex = Assert.Throws<MetaMorpheusException>(() => MakeEngineNGlycans(0));
+            Assert.That(ex.Message, Does.Contain("NGlycan.gdb").And.Contain("maximum glycan box mass of 0 Da"));
         }
 
         private static Ms2ScanWithSpecificMass InvokeGetLocalizationScan(GlycoSearchEngine engine, Ms2ScanWithSpecificMass parentScan)
