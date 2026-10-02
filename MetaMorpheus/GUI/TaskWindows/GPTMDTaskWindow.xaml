@@ -161,6 +161,8 @@
                                             </ToolTipService.ToolTip>
                                         </ComboBox>
                                     </StackPanel>
+                                    <!-- shown only for a loaded task this window cannot show as it is (see TaskWindowSearchMode) -->
+                                    <TextBlock x:Name="SearchModeWarningTextBlock" Visibility="Collapsed" TextWrapping="Wrap" MaxWidth="450" HorizontalAlignment="Left" Margin="10,0,5,5" Foreground="DarkRed" FontWeight="DemiBold" />
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="lblMinPeptideLength" Width="150" >
                                             <Label.Content>

@@ -16,7 +16,6 @@ namespace Test
         [Test]
         public static void ProteaseModTest()
         {
-            Loaders.LoadElements();
             string subFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"DigestionTest");
             Directory.CreateDirectory(subFolder);
 

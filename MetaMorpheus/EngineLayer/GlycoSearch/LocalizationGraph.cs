@@ -66,6 +66,100 @@ namespace EngineLayer.GlycoSearch
         /// <param name="products"></param>
         public static void LocalizeOGlycan(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products)
         {
+            LocalizeOGlycan(localizationGraph, theScan, productTolerance, products, null);
+        }
+
+        /// <param name="siteFragments"> From <see cref="GlycoPeptides.GetSiteFragmentMasses"/> for this graph's sites and products, so a
+        /// caller localizing many boxes against one peptide can build it once. Built here when null. </param>
+        internal static void LocalizeOGlycan(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products, GlycoPeptides.SiteFragmentMasses[] siteFragments)
+        {
+            // The per-box cache describes the box's own child boxes. A graph built over some other child-box array (only possible
+            // when a caller constructs the graph by hand) takes the uncached path, which reads both arrays as it always has.
+            if (localizationGraph.ModBox is GlycanBox glycanBox && ReferenceEquals(glycanBox.ChildGlycanBoxes, localizationGraph.ChildModBoxes))
+            {
+                LocalizeOGlycanCached(localizationGraph, glycanBox, theScan, productTolerance, products,
+                    siteFragments ?? GlycoPeptides.GetSiteFragmentMasses(products, localizationGraph.ModPos.Keys.ToArray()));
+            }
+            else
+            {
+                LocalizeOGlycanUncached(localizationGraph, theScan, productTolerance, products);
+            }
+        }
+
+        /// <summary>
+        /// Same graph, costs and sources as <see cref="LocalizeOGlycanUncached"/>, visited in the same order, with everything that depends
+        /// only on the box read from its cache and the site fragments computed once rather than per node.
+        /// </summary>
+        private static void LocalizeOGlycanCached(LocalizationGraph localizationGraph, GlycanBox glycanBox, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products, GlycoPeptides.SiteFragmentMasses[] siteFragments)
+        {
+            var cache = glycanBox.GetLocalizationCache();
+            var modPos = localizationGraph.ModPos;
+            var modPos_index = modPos.Keys.ToArray();
+            var modPos_motif = modPos.Values.ToArray();
+            int totalMods = glycanBox.ModIds.Length;
+            for (int x = 0; x < modPos.Count; x++)
+            {
+                for (int y = 0; y < localizationGraph.ChildModBoxes.Length; y++)
+                {
+                    var childBox = localizationGraph.ChildModBoxes[y];
+
+                    // NodeCheck: the number of mods placed so far must be reachable, and the sites so far must carry their motifs.
+                    int minModNum = totalMods - (modPos_motif.Length - 1 - x);
+                    if (childBox.NumberOfMods < minModNum || childBox.NumberOfMods > x + 1 || !cache.ChildMotifCounts[y].CoveredBy(modPos_motif, x))
+                    {
+                        continue;
+                    }
+
+                    AdjNode adjNode = new AdjNode(x, y, modPos_index[x], childBox);
+
+                    double cost = 0;
+                    if (x != modPos.Count - 1)
+                    {
+                        cost = CalculateCost(theScan, productTolerance, siteFragments[x], localizationGraph.ModBox.Mass, childBox.Mass);
+                    }
+
+                    adjNode.CurrentCost = cost;
+                    if (x == 0)
+                    {
+                        adjNode.maxCost = cost;
+                    }
+                    else
+                    {
+                        double maxCost = 0;
+                        var motifInThisPos = modPos_motif[x];
+                        var isValidRow = cache.ValidChart[y];
+                        var addedMotifInThisRow = cache.AddedMotif[y];
+                        for (int preY = 0; preY <= y; preY++)
+                        {
+                            if (isValidRow[preY] && localizationGraph.array[x - 1][preY] != null && (addedMotifInThisRow[preY] == null || addedMotifInThisRow[preY] == motifInThisPos))
+                            {
+                                adjNode.AllSources.Add(preY);
+
+                                var tempCost = cost + localizationGraph.array[x - 1][preY].maxCost;
+                                if (tempCost > maxCost)
+                                {
+                                    adjNode.CumulativeSources.Clear();
+                                    adjNode.CumulativeSources.Add(preY);
+                                    maxCost = tempCost;
+                                }
+                                else if (tempCost == maxCost)
+                                {
+                                    adjNode.CumulativeSources.Add(preY);
+                                }
+                            }
+                        }
+                        adjNode.maxCost = maxCost;
+                    }
+
+                    localizationGraph.array[x][y] = adjNode;
+                }
+            }
+
+            FinishGraph(localizationGraph, theScan, productTolerance, products, modPos_index);
+        }
+
+        private static void LocalizeOGlycanUncached(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products)
+        {
             var validChart = BuildValidChart(localizationGraph.ChildModBoxes);
             var modPos = localizationGraph.ModPos;
             var modPos_index = modPos.Keys.ToArray(); // Just extract the keys from the modPos dictionary, which is the glycosite index. That will be used several times.
@@ -134,6 +228,15 @@ namespace EngineLayer.GlycoSearch
 
             }
 
+            FinishGraph(localizationGraph, theScan, productTolerance, products, modPos_index);
+        }
+
+        /// <summary>
+        /// Scores the fragments that carry no localization information and sets the graph's total score.
+        /// </summary>
+        private static void FinishGraph(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products, int[] modPos_index)
+        {
+            var modPos = localizationGraph.ModPos;
             var unlocalFragments = GlycoPeptides.GetUnlocalFragment(products, modPos_index, localizationGraph.ModBox);
             var noLocalScore = CalculateCost(theScan, productTolerance, unlocalFragments);
             localizationGraph.NoLocalCost = noLocalScore;
@@ -178,6 +281,35 @@ namespace EngineLayer.GlycoSearch
                 }
             }
             return score;
+        }
+
+        /// <summary>
+        /// The same score as <see cref="CalculateCost(Ms2ScanWithSpecificMass, Tolerance, List{double})"/> over the list
+        /// <see cref="GlycoPeptides.GetLocalFragment"/> returns for this site and child box: c ions shifted by the child box mass, then z ions
+        /// shifted by the rest of the box, summed in that order.
+        /// </summary>
+        internal static double CalculateCost(Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, GlycoPeptides.SiteFragmentMasses site, double boxMass, double childBoxMass)
+        {
+            double score = 0;
+            foreach (var c in site.C)
+            {
+                score += FragmentCost(theScan, productTolerance, c + childBoxMass);
+            }
+            foreach (var z in site.Z)
+            {
+                score += FragmentCost(theScan, productTolerance, z + (boxMass - childBoxMass));
+            }
+            return score;
+        }
+
+        private static double FragmentCost(Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, double f)
+        {
+            var closestExperimentalMass = theScan.GetClosestExperimentalIsotopicEnvelope(f);
+            if (productTolerance.Within(closestExperimentalMass.MonoisotopicMass, f) && closestExperimentalMass.Charge <= theScan.PrecursorCharge)
+            {
+                return 1 + closestExperimentalMass.Peaks.Sum(p => p.intensity) / theScan.TotalIonCurrent;
+            }
+            return 0;
         }
 
         /// <summary>

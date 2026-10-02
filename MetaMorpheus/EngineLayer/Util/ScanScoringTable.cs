@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 namespace EngineLayer.Util
 {
@@ -13,10 +14,7 @@ namespace EngineLayer.Util
     ///
     /// Stamping is not always the better trade. A stamped cell is two bytes wide, so a scan that
     /// touches most of the index pays double the memory traffic on the hot path to avoid a memset it
-    /// was already amortizing. Measured on a synthetic version of the scoring loop, stamping runs
-    /// ~8-13x faster than clearing when a scan touches ~0.1% of the index (a normal ppm-tolerance
-    /// search) and ~0.6-0.8x as fast when it touches most of it (an open search). So the caller
-    /// picks, and open searches keep clearing.
+    /// was already amortizing. So the caller picks; see <see cref="IsWorthStamping"/>.
     ///
     /// Either way scores are bytes and increments wrap at 255, matching the byte[] this replaced.
     ///
@@ -39,6 +37,27 @@ namespace EngineLayer.Util
             {
                 _scores = new byte[peptideCount];
             }
+        }
+
+        /// <summary>An unstamped table reading and writing <paramref name="scores"/> directly.</summary>
+        internal ScanScoringTable(byte[] scores)
+        {
+            _scores = scores;
+        }
+
+        /// <summary>
+        /// Whether a search with this acceptor should stamp rather than clear. Stamping pays off when a scan touches a
+        /// small slice of the index, which is the case when the acceptor bounds the precursor mass on both sides: the
+        /// coarse scoring then increments only the peptides inside that window. An acceptor unbounded on either side
+        /// (OpenSearchMode, or ModOpen's [-187, +inf) interval) leaves the window open, so every bin is scored from
+        /// its first peptide and a scan touches the index wholesale.
+        /// </summary>
+        public static bool IsWorthStamping(MassDiffAcceptor massDiffAcceptor)
+        {
+            // Whether a bound is infinite does not depend on the mass asked about, so any representative mass will do.
+            const double representativePrecursorMass = 1000;
+            return massDiffAcceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(representativePrecursorMass)
+                .All(interval => !double.IsInfinity(interval.Minimum) && !double.IsInfinity(interval.Maximum));
         }
 
         private bool Stamped => _stampedCells != null;
