@@ -55,6 +55,10 @@ namespace EngineLayer
     ///     letting a user adjust the mass of a residue that already exists.
     ///   </description></item>
     ///   <item><description>
+    ///     <c>CustomNucleotides.txt</c> is seeded by <c>GlobalVariables.WriteNucleotidesFile</c> with the
+    ///     built-in RNA nucleotides, so users can use the existing definitions as formatting examples.
+    ///   </description></item>
+    ///   <item><description>
     ///     <c>MonosaccharidesCustom.tsv</c> is seeded by
     ///     <c>GlycanDatabase.EnsureCustomMonosaccharideFileExists</c>, which also carries over a legacy
     ///     copy, from its own embedded, documented template.
