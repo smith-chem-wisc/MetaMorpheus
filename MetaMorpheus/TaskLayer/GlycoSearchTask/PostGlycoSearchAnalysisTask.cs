@@ -300,8 +300,8 @@ namespace TaskLayer
         {
             // calculate single PSM FDR
             List<SpectralMatch> psms = items.Select(p => p as SpectralMatch).ToList();
-            // No DisambiguationEngine runs after glyco FDR, so PEP keeps its ambiguous-hypothesis pruning here.
-            new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds, pruneAmbiguousHypotheses: true).Run();
+            new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds).Run();
+            new DisambiguationEngine(psms, commonParameters, this.FileSpecificParameters, taskIds, AbsolutePepGapRule.PepEngineRule).Run();
 
         }
         private void GlycoProteinAnalysis(List<GlycoSpectralMatch> gsms, string outputFolder, string individualFileFolder = null, MyTaskResults myTaskResults = null )
