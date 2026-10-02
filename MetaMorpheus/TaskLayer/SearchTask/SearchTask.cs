@@ -13,6 +13,7 @@ using Omics;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
+using IsobaricMassTag = EngineLayer.IsobaricMassTag;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Readers;
