@@ -16,6 +16,8 @@ using ClassExtensions = Chemistry.ClassExtensions;
 using Nett;
 using TaskLayer;
 using Omics.Modifications;
+using IsobaricMassTag = EngineLayer.IsobaricMassTag;
+using IsobaricMassTagType = EngineLayer.IsobaricMassTagType;
 using Readers;
 using Mzml = IO.MzML.Mzml;
 
