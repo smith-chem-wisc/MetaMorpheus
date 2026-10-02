@@ -410,6 +410,20 @@ namespace Test
             metrics = pepEngine.ComputePEPValuesForAllPSMs();
             Assert.That(32 >= trueCount);
 
+            // CZE: HasHydrophobicity means what it means for LC. It is 1 only when the mobility z-score was actually
+            // computed, and 0 when this file and retention-time bin have no reference distribution, so that the
+            // z-score is just the saturated maximum standing in for a missing value.
+            var czeReference = pepEngine.GetType().GetProperty("FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE");
+            czeReference.SetValue(pepEngine, new Dictionary<string, Dictionary<int, Tuple<double, double>>>
+            {
+                { Path.GetFileName(maxScorePsm.FullFilePath), new Dictionary<int, Tuple<double, double>> { { (int)(2 * Math.Round(maxScorePsm.ScanRetentionTime / 2d, 0)), at } } }
+            });
+            Assert.That(pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy).HasHydrophobicity, Is.EqualTo(1));
+            czeReference.SetValue(pepEngine, new Dictionary<string, Dictionary<int, Tuple<double, double>>>());
+            PsmData czeWithoutReference = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
+            Assert.That(czeWithoutReference.HasHydrophobicity, Is.EqualTo(0));
+            Assert.That(czeWithoutReference.HydrophobicityZScore, Is.EqualTo(100));
+
             //TEST PEP calculation failure
             psmCopyForPEPFailure.RemoveAll(x => x.IsDecoy);
             pepEngine = new PepAnalysisEngine(psmCopyForPEPFailure, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
