@@ -176,6 +176,8 @@ namespace Test
                 ["custom proteases"] = GlobalVariables.CustomProteasePath,
                 ["custom rnases"] = GlobalVariables.CustomRnasePath,
                 ["custom monosaccharides"] = GlobalVariables.CustomMonosaccharidePath,
+                ["custom O-glycan database"] = GlobalVariables.CustomOGlycanDatabasePath,
+                ["custom N-glycan database"] = GlobalVariables.CustomNGlycanDatabasePath,
                 ["custom crosslinkers"] = Path.Combine(d, "Data", "CustomCrosslinkers.tsv"),
                 ["custom modifications"] = Path.Combine(d, "Mods", "CustomModifications.txt"),
                 ["custom RNA modifications"] = Path.Combine(d, "Mods", "RnaCustomModifications.txt"),
