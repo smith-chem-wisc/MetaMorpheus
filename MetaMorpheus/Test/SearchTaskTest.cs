@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework; 
@@ -697,8 +697,14 @@ namespace Test
         {
             Protein protein = new Protein("PEPTIDE", "", databaseFilePath: "temp");
 
+            // The mod has to have a RESID reference and NO Unimod one, because GetUnimodCvParam prefers
+            // Unimod and returns before it reaches the RESID branch this test exists to cover.
+            // "FMN phosphoryl threonine on T" used to qualify. It stopped when the modification data moved
+            // to the mzLib package, whose ptmlist.txt is a newer UniProt release that added
+            // "DR Unimod; 442." to that entry -- so it now writes UNIMOD:442 and the RESID branch went
+            // untested. This one still has RESID and PSI-MOD only, and targets the same residue.
             Modification uniProtMod = GlobalVariables.AllModsKnown.First(p =>
-                p.IdWithMotif == "FMN phosphoryl threonine on T"
+                p.IdWithMotif == "(E)-2,3-didehydrobutyrine on T"
                 && p.ModificationType == "UniProt"
                 && p.Target.ToString() == "T"
                 && p.DatabaseReference.ContainsKey("RESID")
@@ -725,7 +731,7 @@ namespace Test
             bool found = false;
             foreach (var line in file)
             {
-                if (line.Contains("FMN phosphoryl threonine on T") && line.Contains("RESID:" + resIdAccession))
+                if (line.Contains("(E)-2,3-didehydrobutyrine on T") && line.Contains("RESID:" + resIdAccession))
                 {
                     found = true;
                 }

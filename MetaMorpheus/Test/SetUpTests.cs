@@ -15,13 +15,10 @@ namespace Test
     {
         public static string outputFolder = "";
 
-        private const string elementsLocation = @"elements.dat";
-
         [OneTimeSetUp]
         public static void GlobalSetup()
         {
             Environment.CurrentDirectory = TestContext.CurrentContext.TestDirectory;
-            Loaders.LoadElements();
             GlobalVariables.SetUpGlobalVariables();
 
             MetaMorpheusEngine.WarnHandler += WarnStatusHandler;

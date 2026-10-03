@@ -83,6 +83,53 @@ namespace Test
             Directory.Delete(unitTestFolder, true);
         }
 
+        /// <summary>
+        /// Issue #2256. After calibration the GUI leaves the uncalibrated files in the spectra file list,
+        /// deselected, and appends the calibrated ones. The design file to consult is the one belonging to
+        /// the selected (calibrated) files; a list still carrying the deselected uncalibrated files resolves
+        /// to the uncalibrated folder's design instead and fails validation.
+        /// </summary>
+        [Test]
+        public static void ExperimentalDesignIsReadFromTheSelectedSpectraFilesFolder()
+        {
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ExperimentalDesignReRunTest");
+            string outputFolder = Path.Combine(unitTestFolder, @"Task1-CalibrateTask");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(outputFolder);
+
+            string nonCalibratedFilePath = Path.Combine(unitTestFolder, "sample1.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+
+            SpectraFileInfo fileInfo = new(nonCalibratedFilePath, "condition", 0, 0, 0);
+            string uncalibratedDesignPath = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
+
+            CalibrationTask calibrationTask = new();
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
+
+            string calibratedFilePath = Path.Combine(outputFolder, "sample1-calib.mzML");
+            string calibratedDesignPath = Path.Combine(outputFolder, GlobalVariables.ExperimentalDesignFileName);
+            Assert.That(File.Exists(calibratedFilePath));
+            Assert.That(File.Exists(calibratedDesignPath));
+
+            // selected files only: the design written by calibration describes them
+            var reRunDesign = ExperimentalDesign.ReadExperimentalDesign(calibratedDesignPath,
+                new List<string> { calibratedFilePath }, out var reRunErrors);
+            Assert.That(reRunErrors, Is.Empty);
+            Assert.That(reRunDesign.Count, Is.EqualTo(1));
+
+            // deselected uncalibrated file included: the first file's folder holds the old design, which
+            // cannot describe the calibrated file
+            var mixedDesign = ExperimentalDesign.ReadExperimentalDesign(uncalibratedDesignPath,
+                new List<string> { nonCalibratedFilePath, calibratedFilePath }, out var mixedErrors);
+            Assert.That(mixedErrors.Count, Is.EqualTo(1));
+            Assert.That(mixedErrors[0], Does.Contain("The experimental design did not contain the file(s)"));
+            Assert.That(mixedErrors[0], Does.Contain(calibratedFilePath));
+            Assert.That(mixedDesign.Count, Is.EqualTo(1));
+
+            Directory.Delete(unitTestFolder, true);
+        }
+
         [Test]
         [TestCase(SearchType.Classic)]
         [TestCase(SearchType.Modern)]

@@ -25,6 +25,7 @@ using MzLibUtil;
 using Omics.Digestion;
 using Omics.BioPolymer;
 using Omics.Modifications;
+using IsobaricMassTag = EngineLayer.IsobaricMassTag;
 using Omics.SpectrumMatch;
 using EngineLayer.SpectrumMatch;
 using ProteinGroup = FlashLFQ.ProteinGroup;
@@ -34,6 +35,15 @@ namespace TaskLayer
 {
     public class PostSearchAnalysisTask : MetaMorpheusTask
     {
+        /// <summary>
+        /// The value of mzIdentML's Enzyme/@semiSpecific for a search: true when SearchModeType is Semi or the protease is
+        /// itself semi-specific. mzIdentML defines semiSpecific as exactly one terminus following the enzyme rules, so a
+        /// fully specific and a non-specific (SearchModeType None) search are both false.
+        /// </summary>
+        public static bool IsSemiSpecificForMzIdentMl(IDigestionParams digestionParams) =>
+            digestionParams.SearchModeType == CleavageSpecificity.Semi
+            || (digestionParams.SearchModeType == CleavageSpecificity.Full && digestionParams.DigestionAgent.CleavageSpecificity == CleavageSpecificity.Semi);
+
         public PostSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
 
@@ -153,7 +163,8 @@ namespace TaskLayer
 
             Status($"Estimating {GlobalVariables.AnalyteType.GetSpectralMatchLabel()} FDR...", Parameters.SearchTaskId);
             new FdrAnalysisEngine(psms, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters,
-                    new List<string> { Parameters.SearchTaskId }, analysisType: analysisType, doPEP: doPep, outputFolder: Parameters.OutputFolder).Run();
+                    new List<string> { Parameters.SearchTaskId }, analysisType: analysisType, doPEP: doPep, outputFolder: Parameters.OutputFolder,
+                    iterativePepTraining: Parameters.SearchParameters.IterativePepTraining).Run();
 
             Status($"Done estimating {GlobalVariables.AnalyteType.GetSpectralMatchLabel()} FDR!", Parameters.SearchTaskId);
         }
@@ -292,24 +303,30 @@ namespace TaskLayer
 
             Status("Quantifying multiplex channels...", Parameters.SearchTaskId);
 
+            var tmtFiles = TmtExperimentalDesign.Read(tmtDesignPath, Parameters.CurrentRawFileList, out var designErrors);
+            if (designErrors.Any())
+            {
+                Warn("Error reading TMT design file: " + designErrors.First() + ". Skipping multiplex quantification");
+                return;
+            }
+
             // Copy the design into the output folder, as the label-free path does for ExperimentalDesign,
-            // so a result folder records the design it was quantified under.
+            // so a result folder records the design it was quantified under. AFTER the read, not before:
+            // a design that could not be parsed was not quantified under anything, and archiving it
+            // anyway left it in the results folder and announced it through FinishedWritingFile while
+            // this method was on its way out.
             try
             {
                 string copiedDesign = Path.Combine(Parameters.OutputFolder, Path.GetFileName(tmtDesignPath));
                 File.Copy(tmtDesignPath, copiedDesign, overwrite: true);
                 FinishedWritingFile(copiedDesign, new List<string> { Parameters.SearchTaskId });
             }
-            catch
+            catch (Exception e)
             {
-                Warn("Could not copy the TMT design file to the search task output. That's ok, the search will continue");
-            }
-
-            var tmtFiles = TmtExperimentalDesign.Read(tmtDesignPath, Parameters.CurrentRawFileList, out var designErrors);
-            if (designErrors.Any())
-            {
-                Warn("Error reading TMT design file: " + designErrors.First() + ". Skipping multiplex quantification");
-                return;
+                // Named, not swallowed: a user whose archive failed can act on "access is denied" and
+                // can do nothing with "could not copy".
+                Warn("Could not copy the TMT design file to the search task output: " + e.Message +
+                     ". That's ok, the search will continue");
             }
 
             var tag = IsobaricMassTag.GetIsobaricMassTag(Parameters.SearchParameters.MultiplexModId);
@@ -324,21 +341,41 @@ namespace TaskLayer
             // includeAmbiguous: false is the unambiguous filter the design calls for. A PSM that could be
             // more than one peptide would otherwise have its channel intensities credited to whichever
             // candidate happened to sort first.
-            var filteredPsms = FilteredPsms.Filter(Parameters.AllSpectralMatches,
+            //
+            // includeContaminants follows WriteContaminants, the same switch ProteinGroupIsWritten reads
+            // below. Passing true unconditionally made the quantified set wider than the written set at
+            // the PSM and peptide levels but not the protein level: with the box unticked, contaminant
+            // peptides appeared in RawQuantification.tsv and PeptideQuantification.tsv while their
+            // groups were absent from ProteinGroupQuantification.tsv.
+            FilteredPsms FilterMatches(bool includeContaminants) => FilteredPsms.Filter(
+                Parameters.AllSpectralMatches,
                 CommonParameters,
                 includeDecoys: false,
-                includeContaminants: true,
+                includeContaminants: includeContaminants,
                 includeAmbiguous: false,
                 includeAmbiguousMods: false,
                 includeHighQValuePsms: false);
 
-            var quantifiablePsms = filteredPsms
-                .Where(psm => psm.IsobaricMassTagReporterIonIntensities is { Length: > 0 })
-                .ToList();
+            static bool CarriesReporterIons(SpectralMatch psm) =>
+                psm.IsobaricMassTagReporterIonIntensities is { Length: > 0 };
+
+            var filteredPsms = FilterMatches(Parameters.SearchParameters.WriteContaminants);
+
+            var quantifiablePsms = filteredPsms.Where(CarriesReporterIons).ToList();
 
             if (quantifiablePsms.Count == 0)
             {
-                Warn("No spectral matches carried reporter ion intensities. Skipping multiplex quantification");
+                // Name the filter that emptied the set. With the contaminant box unticked, every
+                // reporter-bearing match in a run can be a contaminant, and the plain wording then
+                // blames the data for what the filter above removed. Asked only on the way out, so a
+                // run that quantifies never pays for the second filter.
+                bool contaminantsCarriedThemAll = !Parameters.SearchParameters.WriteContaminants
+                    && FilterMatches(includeContaminants: true).Any(CarriesReporterIons);
+
+                Warn(contaminantsCarriedThemAll
+                    ? "Every spectral match that carried reporter ion intensities was a contaminant, and " +
+                      "contaminants are not being written. Skipping multiplex quantification"
+                    : "No spectral matches carried reporter ion intensities. Skipping multiplex quantification");
                 return;
             }
 
@@ -792,6 +829,8 @@ namespace TaskLayer
 
                     foreach (var psm in spectraFile)
                     {
+
+
                         flashLFQIdentifications.Add(
                             new Identification(
                                 fileInfo: rawfileinfo,
@@ -801,6 +840,7 @@ namespace TaskLayer
                                 psm.ScanRetentionTime,
                                 psm.ScanPrecursorCharge,
                                 psmToProteinGroups[psm],
+                                optionalChemicalFormula: GlobalVariables.AnalyteType == AnalyteType.Oligo ? psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.ThisChemicalFormula : null,
                                 psmScore: psm.Score,
                                 qValue: psmsForQuantification.FilterType == FilterType.QValue ? psm.FdrInfo.QValue : psm.FdrInfo.PEP_QValue,
                                 decoy: psm.IsDecoy,
@@ -816,6 +856,7 @@ namespace TaskLayer
                     normalize: Parameters.SearchParameters.Normalize,
                     ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
                     matchBetweenRunsPpmTolerance: Parameters.SearchParameters.QuantifyPpmTol,  // If these tolerances are not equivalent, then MBR will falsely classify peptides found in the initial search as MBR peaks
+                    rnaMode: GlobalVariables.AnalyteType == AnalyteType.Oligo,
                     matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
                     matchBetweenRunsFdrThreshold: Parameters.SearchParameters.MbrFdrThreshold,
                     useSharedPeptidesForProteinQuant: Parameters.SearchParameters.UseSharedPeptidesForLFQ,
@@ -1436,10 +1477,17 @@ namespace TaskLayer
 
                 // Per-file quant/occupancy columns on the subset groups, so the individual-file report
                 // carries the same schema as the combined one, computed from this file's own PSMs.
+                // Unconditional. The guard this replaced read FilesForQuantification, which is a
+                // SpectraFileInfo-only view: on a multiplex run every group carries isobaric samples
+                // and no spectra file, so ConstructSubsetProteinGroup finds nothing to match and leaves
+                // the subset's sample list unset -- and the guard then skipped the one call that would
+                // have given it columns. A subset with no samples is not a subset with nothing to say:
+                // mzLib groups its PSMs by source file and reports the counts, which is exactly what an
+                // individual-file table wants. Groups that DO carry files are unaffected, so the
+                // label-free path behaves as before.
                 foreach (var subsetProteinGroup in subsetProteinGroupsForThisFile)
                 {
-                    if (subsetProteinGroup.FilesForQuantification != null)
-                        subsetProteinGroup.PopulateSampleGroupResults();
+                    subsetProteinGroup.PopulateSampleGroupResults();
                 }
 
                 if (Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
@@ -1476,7 +1524,8 @@ namespace TaskLayer
                         CommonParameters.PrecursorMassTolerance,
                         CommonParameters.DigestionParams.MaxMissedCleavages,
                         mzidFilePath,
-                        Parameters.SearchParameters.IncludeModMotifInMzid);
+                        Parameters.SearchParameters.IncludeModMotifInMzid,
+                        IsSemiSpecificForMzIdentMl(CommonParameters.DigestionParams));
 
                     FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                 }

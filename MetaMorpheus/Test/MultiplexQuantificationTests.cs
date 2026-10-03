@@ -6,6 +6,7 @@ using NUnit.Framework;
 using Omics;
 using Omics.Fragmentation;
 using Omics.Modifications;
+using IsobaricMassTag = EngineLayer.IsobaricMassTag;
 using Omics.SpectralMatch;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
@@ -259,6 +260,100 @@ namespace Test
         }
 
         /// <summary>
+        /// The individual-file protein tables must keep their count columns on a multi-file TMT run.
+        /// </summary>
+        /// <remarks>
+        /// Every other end-to-end test here searches ONE spectra file, so the individual-file branch is
+        /// never entered. It needs more than one raw file and WriteIndividualFiles on -- the ordinary
+        /// shape of a multi-plex or fractionated TMT experiment -- and without it the tables came out
+        /// with no SpectralCount_ or CountOccupancy_ columns at all, well-formed and two columns short.
+        ///
+        /// The columns here are per SPECTRA FILE, not per channel, and that is deliberate: a subset
+        /// group describes exactly one file, and a reporter channel has no spectral count of its own.
+        /// The combined table's per-channel columns are asserted separately by
+        /// <see cref="AssertProteinTableKeepsItsColumnsAndGainsChannelIntensities"/>.
+        /// </remarks>
+        [Test]
+        public static void TwoFileTmtSearch_IndividualFileProteinTablesKeepTheirCountColumns()
+        {
+            string root = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtMultiplexQuantTwoFile");
+            string dataFolder = Path.Combine(root, "data");
+            string outputFolder = Path.Combine(root, "out");
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+            Directory.CreateDirectory(dataFolder);
+
+            try
+            {
+                string source = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\VA084TQ_6.mzML");
+                var stagedNames = new[] { "TmtFileA", "TmtFileB" };
+                var stagedPaths = stagedNames.Select(name =>
+                {
+                    string staged = Path.Combine(dataFolder, name + ".mzML");
+                    File.Copy(source, staged);
+                    return staged;
+                }).ToList();
+
+                // One plex per file: each file is its own labelling experiment, so its channels carry
+                // their own samples. Sample names are unique across the design, which Read enforces.
+                var rows = stagedPaths.SelectMany((path, file) => Tmt11Channels.Select((tag, i) =>
+                    $"{path}\tPlex{file + 1}\tSample{stagedNames[file]}{i + 1}\t{tag}\tCond{(i % 2 == 0 ? "A" : "B")}\t{i / 2 + 1}\t1\t1\tstudy sample"));
+                File.WriteAllLines(
+                    Path.Combine(dataFolder, GlobalVariables.TmtExperimentalDesignFileName),
+                    new[] { TmtExperimentalDesign.Header }.Concat(rows));
+
+                var searchTask = Toml.ReadFile<SearchTask>(
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                    MetaMorpheusTask.tomlConfig);
+                searchTask.SearchParameters.DoParsimony = true;
+                searchTask.SearchParameters.WriteIndividualFiles = true;
+
+                new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("search", searchTask) },
+                    stagedPaths,
+                    new List<DbForTask>
+                    {
+                        new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\mouseTmt.fasta"), false)
+                    },
+                    outputFolder).Run();
+
+                string individualFolder = Path.Combine(outputFolder, "search", "Individual File Results");
+                foreach (string name in stagedNames)
+                {
+                    string table = Path.Combine(individualFolder, name + "_ProteinGroups.tsv");
+                    Assert.That(File.Exists(table), Is.True, $"{name} must get its own protein table");
+
+                    var lines = File.ReadAllLines(table);
+                    var header = lines[0].Split('\t');
+
+                    // By identity, not by count: a table carrying the OTHER file's column would also
+                    // have one of each, and would be describing a file these rows are not about.
+                    Assert.That(header.Where(h => h.StartsWith("SpectralCount_")),
+                        Is.EqualTo(new[] { $"SpectralCount_{name}" }),
+                        "the individual-file table must carry this file's spectral count column");
+                    Assert.That(header.Where(h => h.StartsWith("CountOccupancy_")),
+                        Is.EqualTo(new[] { $"CountOccupancy_{name}" }),
+                        "the individual-file table must carry this file's count occupancy column");
+
+                    // A subset group holds one file's PSMs and no channel, so there is no per-file
+                    // intensity for it to report -- an Intensity_ column here would be empty by
+                    // construction.
+                    Assert.That(header.Any(h => h.StartsWith("Intensity_")), Is.False,
+                        "an individual-file table has no per-file intensity to report");
+
+                    foreach (var line in lines.Skip(1))
+                    {
+                        Assert.That(line.Split('\t'), Has.Length.EqualTo(header.Length),
+                            "every row must carry the columns the header advertises");
+                    }
+                }
+            }
+            finally
+            {
+                if (Directory.Exists(root)) Directory.Delete(root, true);
+            }
+        }
+
+        /// <summary>
         /// Quantification is additive, not a replacement: the reporter ion columns that were the only
         /// TMT output before must still be in the .psmtsv, and the protein table's channel columns must
         /// agree with them in number.
@@ -342,6 +437,7 @@ namespace Test
             List<ProteinGroup> proteinGroups = null,
             string multiplexModId = "TMT11",
             bool writeDecoys = true,
+            bool writeContaminants = true,
             bool writeHighQValuePsms = true)
         {
             var task = new PostSearchAnalysisTask { CommonParameters = new CommonParameters() };
@@ -351,6 +447,7 @@ namespace Test
                 {
                     MultiplexModId = multiplexModId,
                     WriteDecoys = writeDecoys,
+                    WriteContaminants = writeContaminants,
                     WriteHighQValuePsms = writeHighQValuePsms
                 },
                 CurrentRawFileList = currentRawFileList,
@@ -470,11 +567,17 @@ namespace Test
                     new List<string> { RawPathIn(folder) }, StageOutput(folder));
 
                 Assert.That(warnings, Has.Count.EqualTo(1),
-                    "the design itself archived cleanly, so declining is the only thing to report");
+                    "the read fails before anything is copied, so declining is the only thing to report");
                 Assert.That(warnings, Has.Exactly(1).Contains("Error reading TMT design file"));
                 Assert.That(warnings, Has.Exactly(1).Contains("name a file in this run"),
                     "the user has to be told the design is pointed at the wrong place");
                 Assert.That(parameters.MultiplexQuantificationResults, Is.Null);
+
+                // This reports through designErrors like an unparseable design does, so the copy is
+                // skipped here too. Said out loud because the reason above stopped being that the
+                // design archived cleanly the moment the copy moved below the read.
+                Assert.That(File.Exists(Path.Combine(StageOutput(folder), GlobalVariables.TmtExperimentalDesignFileName)),
+                    Is.False, "a design that names no file in this run is not archived either");
             }
             finally
             {
@@ -504,6 +607,13 @@ namespace Test
                 Assert.That(warnings, Has.Exactly(1).Contains("Error reading TMT design file"));
                 Assert.That(warnings, Has.Exactly(1).Contains("Biological Replicate"));
                 Assert.That(parameters.MultiplexQuantificationResults, Is.Null);
+
+                // The mirror of NoPsmCarriesReporterIons_WarnsAndSkips, which asserts the positive: a
+                // design the search could READ is archived even when it then declines to quantify. One
+                // it could not read is not, because the results folder would then advertise a design
+                // nothing was quantified under.
+                Assert.That(File.Exists(Path.Combine(StageOutput(folder), GlobalVariables.TmtExperimentalDesignFileName)),
+                    Is.False, "a design that could not be read must not be archived beside the results");
             }
             finally
             {
@@ -795,6 +905,105 @@ namespace Test
                         Has.Length.EqualTo(group.GetTabSeparatedHeader().Split('\t').Length),
                         "every row must carry the columns its own header advertises");
                 }
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// The contaminant switch has to reach the PSM filter and the protein-group filter together. It
+        /// governs what AllProteinGroups.tsv shows, and quantifying a wider set than that wrote
+        /// contaminant peptides into RawQuantification.tsv and PeptideQuantification.tsv while their
+        /// groups were missing from ProteinGroupQuantification.tsv -- three tables disagreeing about
+        /// whether contaminants are part of this search.
+        /// </summary>
+        /// <remarks>
+        /// Both directions are asserted because the default is on: with the box ticked a contaminant is
+        /// quantified like anything else, and only the unticked run may drop it. Neither TMT fixture can
+        /// reach either case -- no contaminant is in the fixture databases -- so this is the only place
+        /// the behaviour is pinned.
+        /// </remarks>
+        [TestCase(true)]
+        [TestCase(false)]
+        public static void ContaminantMatches_AreQuantifiedOnlyWhenTheirGroupsAreWritten(bool writeContaminants)
+        {
+            string folder = StageFolder("TmtGuardContaminants" + writeContaminants);
+            try
+            {
+                string rawPath = RawPathIn(folder);
+                WriteDesign(folder, ValidDesignRows(rawPath));
+
+                var target = new Protein("PEPTIDEK", "PROTEINA", "ORGANISM");
+                var targetPeptide = FirstPeptideOf(target);
+                var targetPsm = ReporterIonPsm(rawPath, targetPeptide);
+                var targetGroup = GroupOf(target, new[] { targetPeptide }, new[] { targetPsm });
+
+                var contaminant = new Protein("PEPTIDERPEPTIDEK", "CONTAMINANTA", "ORGANISM", isContaminant: true);
+                var contaminantPeptide = FirstPeptideOf(contaminant);
+                var contaminantPsm = ReporterIonPsm(rawPath, contaminantPeptide, scanNumber: 2);
+                var contaminantGroup = GroupOf(contaminant, new[] { contaminantPeptide }, new[] { contaminantPsm });
+
+                Assert.That(contaminantPsm.IsContaminant, Is.True, "the fixture only means anything if the match is flagged");
+                Assert.That(contaminantGroup.IsContaminant, Is.True, "and so is the group the writer filters on");
+
+                var (_, parameters) = RunMultiplexAnalysis(
+                    new List<string> { rawPath }, StageOutput(folder),
+                    allSpectralMatches: new List<SpectralMatch> { targetPsm, contaminantPsm },
+                    proteinGroups: new List<ProteinGroup> { targetGroup, contaminantGroup },
+                    writeContaminants: writeContaminants);
+
+                var results = parameters.MultiplexQuantificationResults;
+                Assert.That(results, Is.Not.Null, "the target group is quantifiable either way, so the run must succeed");
+
+                Assert.That(results.ProteinIntensities.Keys, Is.EquivalentTo(writeContaminants
+                        ? new[] { targetGroup, contaminantGroup }
+                        : new[] { targetGroup }),
+                    "the groups quantified must be exactly the groups AllProteinGroups.tsv will show");
+                Assert.That(results.PeptideIntensities.Keys.Contains(contaminantPeptide), Is.EqualTo(writeContaminants),
+                    "the peptide table has to agree with the protein table about contaminants");
+
+                Assert.That(results.ProteinIntensities.Keys, Does.Contain(targetGroup),
+                    "the contaminant switch must not touch the target half of the search");
+                Assert.That(results.PeptideIntensities.Keys, Does.Contain(targetPeptide));
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// The guard that reports an empty quantifiable set has to name the filter that emptied it. With
+        /// contaminants excluded and every reporter-bearing match a contaminant, "no spectral matches
+        /// carried reporter ion intensities" blames the data for what a setting one line above removed --
+        /// and the user's fix is a checkbox, not another search.
+        /// </summary>
+        [Test]
+        public static void EveryReporterIonMatchIsAContaminant_NamesTheFilterRatherThanTheData()
+        {
+            string folder = StageFolder("TmtGuardAllContaminant");
+            try
+            {
+                string rawPath = RawPathIn(folder);
+                WriteDesign(folder, ValidDesignRows(rawPath));
+
+                var contaminant = new Protein("PEPTIDEK", "CONTAMINANTA", "ORGANISM", isContaminant: true);
+                var peptide = FirstPeptideOf(contaminant);
+                var psm = ReporterIonPsm(rawPath, peptide);
+                var group = GroupOf(contaminant, new[] { peptide }, new[] { psm });
+
+                var (warnings, parameters) = RunMultiplexAnalysis(
+                    new List<string> { rawPath }, StageOutput(folder),
+                    allSpectralMatches: new List<SpectralMatch> { psm },
+                    proteinGroups: new List<ProteinGroup> { group },
+                    writeContaminants: false);
+
+                Assert.That(warnings, Has.Exactly(1).Contains("was a contaminant"));
+                Assert.That(warnings, Has.None.Contains("No spectral matches carried reporter ion intensities"),
+                    "the matches did carry them; the contaminant filter is what removed them");
+                Assert.That(parameters.MultiplexQuantificationResults, Is.Null);
             }
             finally
             {
