@@ -1,5 +1,4 @@
-﻿using EngineLayer;
-using EngineLayer.GlycoSearch;
+using EngineLayer;
 using OxyPlot;
 using Omics.Fragmentation;
 using System;
@@ -8,8 +7,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows.Media;
+using Easy.Common.Extensions;
 using Readers;
 using GuiFunctions.MetaDraw;
+using OxyPlot.Wpf;
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 
 namespace GuiFunctions
 {
@@ -36,6 +38,7 @@ namespace GuiFunctions
         // graphic settings
         public static Dictionary<string, bool> SpectrumDescription { get; set; }
         public static bool DisplayIonAnnotations { get; set; } = true;
+        public static bool UseShortIonAnnotationsWhenPossible { get; set; } = false;
         public static bool AnnotateMzValues { get; set; } = false;
         public static bool AnnotateCharges { get; set; } = true;
         public static bool AnnotationBold { get; set; } = false;
@@ -57,12 +60,21 @@ namespace GuiFunctions
         public static double StrokeThicknessUnannotated { get; set; } = 0.7;
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
         public static double SpectrumDescriptionFontSize { get; set; } = 10;
+        public static bool AnnotateIsotopicEnvelopes { get; set; } = true;
+        public static double MinMzToPlot { get; set; } = 0;
+        public static double MaxMzToPlot { get; set; } = 4000;
 
+        // Chimera Settings
         public static bool DisplayChimeraLegend { get; set; } = true;
         public static double ChimeraLegendMaxWidth { get; set; } = 420;
         public static bool ChimeraLegendTakeFirstIfAmbiguous { get; set; } = false;
         public static LegendDisplayProperty ChimeraLegendMainTextType { get; set; } = LegendDisplayProperty.ProteinName;
         public static LegendDisplayProperty ChimeraLegendSubTextType { get; set; } = LegendDisplayProperty.Modifications;
+
+        // Data Visualization Settings
+        public static bool DisplayFilteredOnly { get; set; } = true;
+        public static bool NormalizeHistogramToFile { get; set; } = false;
+        public static List<OxyColor> DataVisualizationColorOrder { get; set; }
 
         // filter settings
         public static bool ShowDecoys { get; set; } = false;
@@ -71,7 +83,12 @@ namespace GuiFunctions
         public static string AmbiguityFilter { get; set; } = "No Filter";
         public static LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
         public static LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
-        public static string ExportType { get; set; } = "Pdf"; 
+        public static string ExportType { get; set; } = "Pdf";
+
+        // biopolymer coverage settings
+        public static int BioPolymerCoverageFontSize { get; set; } = 16;
+        public static Dictionary<BioPolymerCoverageType, SolidColorBrush> BioPolymerCoverageColors { get; set; }
+        public static ColorGradientType BioPolymerCoverageGradientType { get; set; } = ColorGradientType.Viridis;
 
         #endregion
 
@@ -104,6 +121,7 @@ namespace GuiFunctions
         public static string[] CoverageTypes { get; set; } = { "N-Terminal Color", "C-Terminal Color", "Internal Color" };
         public static string[] ExportTypes { get; set; } = { "Pdf", "Png", "Jpeg", "Tiff", "Wmf", "Bmp" };
         public static string[] AmbiguityTypes { get; set; } = { "No Filter", "1", "2A", "2B", "2C", "2D", "3", "4", "5" };
+        public static string[] GroupingProperties { get; set; } = { "None", "Notch", "Precursor Charge", "File Name", "Ambiguity Level", "Missed Cleavages", "Collision Energy", "OrganismName", "DecoyContamTarget" };
 
         #endregion
 
@@ -131,7 +149,8 @@ namespace GuiFunctions
             if (sm.QValue <= QValueFilter
                  && (sm.QValueNotch == null || sm.QValueNotch <= QValueFilter)
                  && (sm.DecoyContamTarget == "T" || (sm.DecoyContamTarget == "D" && ShowDecoys) || (sm.DecoyContamTarget == "C" && ShowContaminants))
-                 && (!sm.IsCrossLinkedPeptide() || (sm is PsmFromTsv { BetaPeptideBaseSequence: not null } psm && (!psm.GlycanLocalizationLevel.HasValue || psm.GlycanLocalizationLevel.Value >= LocalizationLevelStart && psm.GlycanLocalizationLevel.Value <= LocalizationLevelEnd))))
+                 // Glyco localization level filtering - only applies to glyco psms that have localization levels
+                 && (sm is not GlycoPsmFromTsv { GlycanLocalizationLevel: not null } gly || (gly.GlycanLocalizationLevel.Value >= LocalizationLevelStart && gly.GlycanLocalizationLevel.Value <= LocalizationLevelEnd)))
             {
                 // Ambiguity filtering conditionals, should only be hit if Ambiguity Filtering is selected
                 if (AmbiguityFilter == "No Filter" || sm.AmbiguityLevel == AmbiguityFilter)
@@ -153,8 +172,11 @@ namespace GuiFunctions
             ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
             BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
             ModificationTypeToColor = GlobalVariables.AllModsKnownDictionary.Values.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange);
+            foreach (var rnaMod in GlobalVariables.AllRnaModsKnown)
+                ModificationTypeToColor.TryAdd(rnaMod.IdWithMotif, OxyColors.Orange);
             SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
             CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => OxyColors.Blue);
+            BioPolymerCoverageColors = Enum.GetValues<BioPolymerCoverageType>().ToDictionary(p => p, _ => Brushes.LightGray);
 
             // If no default settings are saved, load in defaults
             string settingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
@@ -256,6 +278,8 @@ namespace GuiFunctions
             SubAndSuperScriptIons = true;
             DrawStationarySequence = true;
             DrawNumbersUnderStationary = true;
+            NormalizeHistogramToFile = false;
+            DisplayFilteredOnly = true;
             ShowLegend = true;
             ShowDecoys = false;
             ShowContaminants = true;
@@ -276,6 +300,11 @@ namespace GuiFunctions
             AxisLabelTextSize = 12;
             StrokeThicknessUnannotated = 0.7;
             StrokeThicknessAnnotated = 1.0;
+            AnnotateIsotopicEnvelopes = true;
+            
+            // Reset the new ViewModel structure
+            PlotModelStatParametersViewModel.Instance.LoadFromSnapshot(new PlotModelStatParameters());
+            
             SetDefaultColors();
         }
 
@@ -289,6 +318,8 @@ namespace GuiFunctions
             SetDefaultCoverageTypeColors();
             SetDefaultModificationColors();
             SetDefaultSpectrumDescriptors();
+            SetDefaultDataVisualizationColors();
+            SetDefaultBioPolymerCoverageColors();
 
             UnannotatedPeakColor = OxyColors.LightGray;
             InternalIonColor = OxyColors.Purple;
@@ -399,6 +430,56 @@ namespace GuiFunctions
             ModificationTypeToColor["Carbamidomethyl on C"] = OxyColors.Green;
             ModificationTypeToColor["Carbamidomethyl on U"] = OxyColors.Green;
             ModificationTypeToColor["Oxidation on M"] = OxyColors.HotPink;
+
+            GlobalVariables.AllRnaModsKnownDictionary.Values.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange)
+                .ForEach(p => ModificationTypeToColor.TryAdd(p.Key, p.Value));
+            foreach (var mod in GlobalVariables.AllRnaModsKnownDictionary.Values
+                         .Where(p => p.ModificationType == "Biological").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.Plum;
+            }
+
+            foreach (var mod in GlobalVariables.AllRnaModsKnownDictionary.Values
+                         .Where(p => p.ModificationType == "Metal").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.Maroon;
+            }
+
+            foreach (var mod in GlobalVariables.AllRnaModsKnownDictionary.Values
+                         .Where(p => p.ModificationType == "Digestion Termini").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.Teal;
+            }
+
+            foreach (var mod in GlobalVariables.AllRnaModsKnownDictionary.Values
+                         .Where(p => p.ModificationType == "Standard").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.PowderBlue;
+            }
+
+        }
+
+        private static void SetDefaultDataVisualizationColors()
+        {
+            DataVisualizationColorOrder = new List<OxyColor>
+            {
+                OxyColors.Blue, OxyColors.Red, OxyColors.Green, OxyColors.DarkGoldenrod, OxyColors.DarkViolet,
+                OxyColors.DeepPink, OxyColors.SkyBlue, OxyColors.LawnGreen, OxyColors.Sienna, OxyColors.DarkBlue,
+                OxyColors.PeachPuff, OxyColors.DarkSlateGray, OxyColors.SpringGreen, OxyColors.Peru, OxyColors.OrangeRed
+            };
+        }
+
+        private static void SetDefaultBioPolymerCoverageColors()
+        {
+            BioPolymerCoverageColors = new()
+            {
+                { BioPolymerCoverageType.Unique, Brushes.LightGreen },
+                { BioPolymerCoverageType.UniqueMissedCleavage, Brushes.YellowGreen },
+                { BioPolymerCoverageType.TandemRepeat, Brushes.LightBlue },
+                { BioPolymerCoverageType.TandemRepeatMissedCleavage, Brushes.SkyBlue },
+                { BioPolymerCoverageType.Shared, Brushes.Orange },
+                { BioPolymerCoverageType.SharedMissedCleavage, Brushes.OrangeRed }
+            };
         }
 
         /// <summary>
@@ -439,6 +520,7 @@ namespace GuiFunctions
             return new MetaDrawSettingsSnapshot()
             {
                 DisplayIonAnnotations = DisplayIonAnnotations,
+                UseShortIonAnnotationsWhenPossible = UseShortIonAnnotationsWhenPossible,
                 AnnotateMzValues = AnnotateMzValues,
                 AnnotateCharges = AnnotateCharges,
                 AnnotationBold = AnnotationBold,
@@ -470,10 +552,26 @@ namespace GuiFunctions
                 AxisLabelTextSize = AxisLabelTextSize,
                 StrokeThicknessUnannotated = StrokeThicknessUnannotated,
                 StrokeThicknessAnnotated = StrokeThicknessAnnotated,
+                AnnotateIsotopicEnvelopes = AnnotateIsotopicEnvelopes,
                 SpectrumDescriptionFontSize = SpectrumDescriptionFontSize,
                 SuppressMessageBoxes = SuppressMessageBoxes,
+                MinMzToPlot = MinMzToPlot,
+                MaxMzToPlot = MaxMzToPlot,
                 ChimeraLegendTakeFirstIfAmbiguous = ChimeraLegendTakeFirstIfAmbiguous,
-                ChimeraLegendMaxWidth = ChimeraLegendMaxWidth   
+                ChimeraLegendMaxWidth = ChimeraLegendMaxWidth,
+                NormalizeHistogramToFile = NormalizeHistogramToFile,
+                DisplayFilteredOnly = DisplayFilteredOnly,
+                DataVisualizationColorOrder = DataVisualizationColorOrder?.Select(c => c.GetColorName()).ToList(),
+                BioPolymerCoverageFontSize = BioPolymerCoverageFontSize,
+                BioPolymerCoverageColors = BioPolymerCoverageColors.Select(p => $"{p.Key},{p.Value.ToOxyColor().GetColorName()}").ToList(),
+                BioPolymerCoverageGradientType = BioPolymerCoverageGradientType,
+                
+                // Save from the new ViewModel structure
+                UseLogScaleYAxis = PlotModelStatParametersViewModel.Instance.UseLogScaleYAxis,
+                GroupingProperty = PlotModelStatParametersViewModel.Instance.GroupingProperty,
+                MinRelativeCutoff = PlotModelStatParametersViewModel.Instance.MinRelativeCutoff,
+                MaxRelativeCutoff = PlotModelStatParametersViewModel.Instance.MaxRelativeCutoff,
+                AllowAmbiguousGroups = PlotModelStatParametersViewModel.Instance.AllowAmbiguousGroups
             };
         }
 
@@ -484,6 +582,7 @@ namespace GuiFunctions
         {
             flaggedErrorOnRead = false;
             DisplayIonAnnotations = settings.DisplayIonAnnotations;
+            UseShortIonAnnotationsWhenPossible = settings.UseShortIonAnnotationsWhenPossible;
             AnnotateMzValues = settings.AnnotateMzValues;
             AnnotateCharges = settings.AnnotateCharges;
             AnnotationBold = settings.AnnotationBold;
@@ -508,12 +607,32 @@ namespace GuiFunctions
             AxisLabelTextSize = settings.AxisLabelTextSize == 0 ? 12 : settings.AxisLabelTextSize;
             StrokeThicknessUnannotated = settings.StrokeThicknessUnannotated == 0 ? 0.7 : settings.StrokeThicknessUnannotated;
             StrokeThicknessAnnotated = settings.StrokeThicknessAnnotated == 0 ? 1 : settings.StrokeThicknessAnnotated;
+            AnnotateIsotopicEnvelopes = settings.AnnotateIsotopicEnvelopes;
             SpectrumDescriptionFontSize = settings.SpectrumDescriptionFontSize;
             UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
             InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
             SuppressMessageBoxes = settings.SuppressMessageBoxes;
+            MinMzToPlot = settings.MinMzToPlot;
+            MaxMzToPlot = settings.MaxMzToPlot;
             ChimeraLegendTakeFirstIfAmbiguous = settings.ChimeraLegendTakeFirstIfAmbiguous;
             ChimeraLegendMaxWidth = settings.ChimeraLegendMaxWidth;
+            NormalizeHistogramToFile = settings.NormalizeHistogramToFile;
+            DisplayFilteredOnly = settings.DisplayFilteredOnly;
+            BioPolymerCoverageFontSize = settings.BioPolymerCoverageFontSize;
+            BioPolymerCoverageGradientType = settings.BioPolymerCoverageGradientType;
+
+            // Load into the new ViewModel structure
+            var plotParams = new PlotModelStatParameters
+            {
+                UseLogScaleYAxis = settings.UseLogScaleYAxis,
+                GroupingProperty = settings.GroupingProperty ?? "None",
+                MinRelativeCutoff = settings.MinRelativeCutoff,
+                MaxRelativeCutoff = settings.MaxRelativeCutoff,
+                NormalizeHistogramToFile = settings.NormalizeHistogramToFile,
+                DisplayFilteredOnly = settings.DisplayFilteredOnly,
+                AllowAmbiguousGroups = settings.AllowAmbiguousGroups
+            };
+            PlotModelStatParametersViewModel.Instance.LoadFromSnapshot(plotParams);
 
             try // Product Type Colors
             {
@@ -696,6 +815,50 @@ namespace GuiFunctions
             {
                 Debugger.Break();
                 SetDefaultProductTypeColors();
+                flaggedErrorOnRead = true;
+            }
+
+            // Data visualization colors
+            try
+            {
+                if (settings.DataVisualizationColorOrder is { Count: > 0 })
+                {
+                    DataVisualizationColorOrder = settings.DataVisualizationColorOrder
+                        .Select(DrawnSequence.ParseOxyColorFromName)
+                        .ToList();
+                }
+                else
+                {
+                    throw new Exception();
+                }
+            }
+            catch (Exception)
+            {
+                SetDefaultDataVisualizationColors();
+                flaggedErrorOnRead = true;
+            }
+
+            // BioPolymer Coverage visualization colors
+            try
+            {
+                if (settings.BioPolymerCoverageColors is { Count: > 0 })
+                {
+                    foreach (var savedProductType in settings.BioPolymerCoverageColors)
+                    {
+                        var key = savedProductType.Split(',')[0];
+                        var color = savedProductType.Split(',')[1];
+                        var enumVal = Enum.Parse<BioPolymerCoverageType>(key);
+                        BioPolymerCoverageColors[enumVal] = DrawnSequence.ParseColorBrushFromName(color);
+                    }
+                }
+                else
+                {
+                    throw new Exception();
+                }
+            }
+            catch (Exception)
+            {
+                SetDefaultBioPolymerCoverageColors();
                 flaggedErrorOnRead = true;
             }
         }

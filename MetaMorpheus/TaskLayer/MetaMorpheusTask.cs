@@ -1,11 +1,21 @@
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.Indexing;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
+using Omics;
+using Omics.BioPolymer;
+using Omics.Digestion;
+using Omics.Modifications;
+using Omics.SpectrumMatch;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
+using Readers.SpectralLibrary;
+using SpectralAveraging;
 using System;
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -13,20 +23,15 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SpectralAveraging;
-using Omics;
-using Omics.Digestion;
-using Omics.Fragmentation.Peptide;
-using Omics.Modifications;
-using Omics.SpectrumMatch;
+using EngineLayer.DatabaseLoading;
+using EngineLayer.SpectrumMatch;
 using UsefulProteomicsDatabases;
-using UsefulProteomicsDatabases.Transcriptomics;
-using Proteomics;
-using Proteomics.ProteolyticDigestion;
 using Transcriptomics;
 using Transcriptomics.Digestion;
-using Easy.Common.Extensions;
-using Readers.SpectralLibrary;
+using EngineLayer.Util;
+using EngineLayer.DIA;
+using EngineLayer.SpectrumMatch;
+using Omics.Fragmentation;
 
 namespace TaskLayer
 {
@@ -42,6 +47,181 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask
     {
+        #region Digestion settings that ask for seed peptides
+
+        /// <summary>
+        /// Whether these settings make digestion return seeds rather than peptides: SearchModeType None with any terminus, or
+        /// Semi with FragmentationTerminus N or C.
+        /// </summary>
+        /// <remarks>
+        /// In mzLib, <c>SearchModeType</c> Full gives fully specific peptides, and Semi with <c>FragmentationTerminus</c> Both
+        /// gives semi-specific peptides (since mzLib #1303). The other combinations give seeds: long stretches fixed at one
+        /// terminus whose other end the search engine decides afterwards, from the precursor mass. See
+        /// <c>DigestionParams.SearchModeType</c> in mzLib for the full table.
+        /// </remarks>
+        public static bool AsksForSeeds(DigestionParams digestionParams) =>
+            digestionParams.SearchModeType == CleavageSpecificity.None
+            || (digestionParams.SearchModeType == CleavageSpecificity.Semi && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C);
+
+        /// <summary>
+        /// Why this task cannot run with its digestion settings, or null when it can. The GUI's Run button and the command
+        /// line check it for every task before a run starts; the task itself assumes its settings are valid.
+        /// </summary>
+        /// <remarks>
+        /// Only the non-specific search engine, which a Search task runs for <see cref="SearchType.NonSpecific"/>, can use seeds
+        /// (it makes its own N and C passes). Classic and Modern search, Glyco, crosslink, GPTMD and calibration score digestion
+        /// products as they are, so given seeds they finish normally and report far fewer, wrong identifications. A spectral
+        /// averaging task digests nothing, so its digestion settings are never used and are not checked, as it is already
+        /// exempt from needing a protein database.
+        /// </remarks>
+        /// <param name="taskName">The name the user knows the task by, included in the message when given.</param>
+        public string GetSeedDigestionRefusal(string taskName = null)
+        {
+            if (CommonParameters?.DigestionParams is not DigestionParams digestionParams // RNA digestion has no protein seed request
+                || TaskType == MyTask.Average // averaging does not digest, so its digestion settings are never used
+                || this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific } // the non-specific search engine trims seeds
+                || !AsksForSeeds(digestionParams))
+            {
+                return null;
+            }
+
+            string which = taskName == null ? "This task" : $"Task \"{taskName}\"";
+            return digestionParams.SearchModeType == CleavageSpecificity.None
+                ? $"Cannot proceed. {which} has SearchModeType None (non-specific), which gives seed peptides that only the non-specific search can use. " +
+                  "Use a Search task with the non-specific search type, or choose fully or semi-specific digestion."
+                : $"Cannot proceed. {which} has SearchModeType Semi with FragmentationTerminus {digestionParams.FragmentationTerminus}, which gives seed peptides that only the non-specific search can use. " +
+                  "For semi-specific peptides, set FragmentationTerminus Both.";
+        }
+
+        #endregion
+
+        #region Settings files that name a protease mzLib no longer ships
+
+        /// <summary>
+        /// Semi-specific proteases mzLib used to ship, with the cleavage motifs each had. mzLib #1005 (February 2026) removed
+        /// "semi-trypsin", the only one, because a semi-specific search is asked for with <c>SearchModeType = Semi</c> on
+        /// the fully specific protease. Settings files written before that still name it, including the O-Pair Search
+        /// paper's glyco settings.
+        /// </summary>
+        private static readonly (string Name, string Motifs)[] RemovedSemiSpecificProteases =
+        {
+            ("semi-trypsin", "K|,R|"),
+        };
+
+        /// <summary>
+        /// Reads protein digestion parameters from a settings file with the normal reader. A file that names a removed
+        /// semi-specific protease (see <see cref="RemovedSemiSpecificProteases"/>) first has that name replaced, in the parsed
+        /// table, by the shipped fully specific protease with the same cleavage motifs, and its search mode made
+        /// semi-specific; the user is warned. Every other file is read exactly as before.
+        /// </summary>
+        /// <remarks>
+        /// <para><b>Why a translation is still needed.</b> mzLib 1.0.591 has no "semi-trypsin", so the Protease converter
+        /// throws for these files. What mzLib #1303 changed is that trypsin with <c>SearchModeType = Semi</c> and
+        /// FragmentationTerminus Both now digests into the semi-specific peptides "semi-trypsin" meant, so the translation
+        /// below is exact. A name change alone is not enough: the file says <c>SearchModeType = Full</c>, because its
+        /// semi-specificity came from the protease.</para>
+        /// <para><b>Search mode.</b> Full (or missing) becomes Semi. The FragmentationTerminus is kept; in glyco, crosslink and
+        /// classic settings it is Both. A file that already said Semi or None is a non-specific search asking for seeds,
+        /// with the removed name in SpecificProtease only, so its search mode and terminus are kept as they are.</para>
+        /// <para><b>Replacement.</b> Found by motif, not by name, because the name of the no-proline-rule trypsin is itself
+        /// changing (mzLib #1186). A protease the user has defined under the old name is in the dictionary and is used as
+        /// defined; nothing is translated.</para>
+        /// </remarks>
+        private static DigestionParams ReadProteinDigestionParams(TomlTable table)
+        {
+            string ReadString(string key) => table.ContainsKey(key) ? table.Get<string>(key) : null;
+            void SetString(string key, string value)
+            {
+                if (table.ContainsKey(key))
+                    table.Update(key, value);
+                else
+                    table.Add(key, value);
+            }
+
+            string protease = ReadString(nameof(DigestionParams.Protease));
+            string specificProtease = ReadString(nameof(DigestionParams.SpecificProtease));
+
+            // For a non-specific search the file's Protease is singleN or singleC and the removed name is in SpecificProtease.
+            var removed = RemovedSemiSpecificProteases.FirstOrDefault(r =>
+                (r.Name == protease || r.Name == specificProtease) && !ProteaseDictionary.Dictionary.ContainsKey(r.Name));
+            Protease replacement = removed.Name == null ? null : FindShippedFullySpecificProtease(removed.Motifs);
+            if (replacement == null)
+            {
+                return table.Get<DigestionParams>(); // unchanged behaviour, including the exception for an unknown protease
+            }
+
+            if (protease == removed.Name)
+            {
+                SetString(nameof(DigestionParams.Protease), replacement.Name);
+                SetString(nameof(DigestionParams.SpecificProtease), replacement.Name);
+                string searchModeType = ReadString(nameof(DigestionParams.SearchModeType));
+                if (searchModeType == null || searchModeType == nameof(CleavageSpecificity.Full))
+                {
+                    SetString(nameof(DigestionParams.SearchModeType), nameof(CleavageSpecificity.Semi));
+                }
+            }
+            else
+            {
+                SetString(nameof(DigestionParams.SpecificProtease), replacement.Name);
+            }
+
+            var digestionParams = table.Get<DigestionParams>();
+            Warn($"These settings name the protease \"{removed.Name}\", which is no longer available. They were read as \"{replacement.Name}\" " +
+                 $"with SearchModeType {digestionParams.SearchModeType} and FragmentationTerminus {digestionParams.FragmentationTerminus}, which digests the same peptides. " +
+                 "Save the task to update its settings.");
+            return digestionParams;
+        }
+
+        /// <summary>
+        /// The shipped fully specific protease that cleaves exactly like the removed one, or null if there is none.
+        /// </summary>
+        /// <remarks>
+        /// A candidate matches on its cleavage motifs and on its cleavage modification. The removed proteases modified
+        /// nothing when they cleaved, so a protease that carries a modification is a different digestion even with the same
+        /// motifs: it would add that modification at every terminus it cuts. The modification has to be part of the
+        /// comparison because the candidates are every protease in the dictionary, including the user's own custom ones, and
+        /// the tie-break is ordinal by name, which puts every capitalised name ahead of "trypsin".
+        /// </remarks>
+        private static Protease FindShippedFullySpecificProtease(string motifs)
+        {
+            static string Signature(IEnumerable<DigestionMotif> m, Modification cleavageMod) => string.Join(";", m
+                .Select(x => $"{x.InducingCleavage}|{x.PreventingCleavage}|{x.CutIndex}|{x.ExcludeFromWildcard}")
+                .OrderBy(s => s, StringComparer.Ordinal)) + "#" + cleavageMod?.IdWithMotif;
+
+            string wanted = Signature(DigestionMotif.ParseDigestionMotifsFromString(motifs), null);
+            return ProteaseDictionary.Dictionary.Values
+                .Where(p => p.CleavageSpecificity == CleavageSpecificity.Full && Signature(p.DigestionMotifs, p.CleavageMod) == wanted)
+                .OrderBy(p => p.Name, StringComparer.Ordinal)
+                .FirstOrDefault();
+        }
+
+        private static DoubleRange ParseRetentionTimeRange(string value)
+        {
+            string[] bounds = value.Trim().Trim('[', ']').Split(';');
+            if (bounds.Length != 2)
+                throw new MetaMorpheusException($"Invalid retention time range '{value}'. Expected 'minimum;maximum'.");
+
+            bool minimumParsed = double.TryParse(bounds[0].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double minimum);
+            bool maximumIsMaxValue = bounds[1].Trim().Equals("MaxValue", StringComparison.OrdinalIgnoreCase);
+            double maximum = 0;
+            bool maximumParsed = maximumIsMaxValue
+                || double.TryParse(bounds[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out maximum);
+            if (maximumIsMaxValue)
+            {
+                maximum = double.MaxValue;
+            }
+
+            if (!minimumParsed || !maximumParsed || !double.IsFinite(minimum) || !double.IsFinite(maximum)
+                || minimum < 0 || maximum < 0 || maximum < minimum)
+            {
+                throw new MetaMorpheusException($"Invalid retention time range '{value}'. Expected 'minimum;maximum'.");
+            }
+
+            return new DoubleRange(minimum, maximum);
+        }
+
+        #endregion
+
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
             .ConfigureType<Tolerance>(type => type
                 .WithConversionFor<TomlString>(convert => convert
@@ -52,6 +232,12 @@ namespace TaskLayer
             .ConfigureType<AbsoluteTolerance>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.ToString())))
+            .ConfigureType<DoubleRange>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(range => range.Maximum == double.MaxValue
+                        ? $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};MaxValue"
+                        : $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};{range.Maximum.ToString("R", CultureInfo.InvariantCulture)}")
+                    .FromToml(tomlString => ParseRetentionTimeRange(tomlString.Value))))
             .ConfigureType<Protease>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.ToString())
@@ -75,15 +261,17 @@ namespace TaskLayer
                 .WithConversionFor<TomlTable>(c => c
                     .FromToml(tmlTable =>
                         tmlTable.ContainsKey("Protease")
-                            ? tmlTable.Get<DigestionParams>()
+                            ? ReadProteinDigestionParams(tmlTable)
                             : tmlTable.Get<RnaDigestionParams>())))
             .ConfigureType<DigestionParams>(type => type
                 .IgnoreProperty(p => p.DigestionAgent)
+                .IgnoreProperty(p => p.SpecificDigestionAgent)
                 .IgnoreProperty(p => p.MaxMods)
                 .IgnoreProperty(p => p.MaxLength)
                 .IgnoreProperty(p => p.MinLength))
             .ConfigureType<RnaDigestionParams>(type => type
-                .IgnoreProperty(p => p.DigestionAgent))
+                .IgnoreProperty(p => p.DigestionAgent)
+                .IgnoreProperty(p => p.SpecificDigestionAgent))
             .ConfigureType<Rnase>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.Name)
@@ -95,13 +283,12 @@ namespace TaskLayer
                     {
                         "ClassicDeconvolution" => tmlTable.Get<ClassicDeconvolutionParameters>(),
                         "IsoDecDeconvolution" => tmlTable.Get<IsoDecDeconvolutionParameters>(),
+                        "Multiple" => tmlTable.Get<MultipleDeconParameters>(),
                         _ => throw new MetaMorpheusException($"Toml Parsing Failure - Unknown Deconvolution Type: {tmlTable.Get<string>("DeconvolutionType")}")
                     })))
             // Ignore all properties that are not user settable, instantiate with defaults. If the toml differs, defaults will be overridden. 
             .ConfigureType<ClassicDeconvolutionParameters>(type => type
-                .CreateInstance(() => new ClassicDeconvolutionParameters(1, 20, 4, 3))
-                .IgnoreProperty(p => p.IntensityRatioLimit)
-                .IgnoreProperty(p => p.DeconvolutionTolerancePpm))
+                .CreateInstance(() => new ClassicDeconvolutionParameters(1, 20, 4, 3)))
             .ConfigureType<IsoDecDeconvolutionParameters>(type => type
                 .CreateInstance(() => new IsoDecDeconvolutionParameters())
                 .IgnoreProperty(p => p.Verbose)
@@ -115,6 +302,14 @@ namespace TaskLayer
                 .IgnoreProperty(p => p.MinusOneAreasZero)
                 .IgnoreProperty(p => p.IsotopeThreshold)
                 .IgnoreProperty(p => p.ZScoreThreshold))
+            .ConfigureType<MultipleDeconParameters>(type => type
+                .CreateInstance(() => new MultipleDeconParameters(
+                    [new ClassicDeconvolutionParameters(1, 20, 4, 3)],
+                    1,
+                    20,
+                    Polarity.Positive,
+                    new Averagine(),
+                    1.0033548381)))
 
             // Convert average residue models to simple strings instead of tables, Nett makes all objects tables by default
             // The base class AverageResidue is used for Toml Reading. The derived classes are used for toml writing. 
@@ -134,13 +329,52 @@ namespace TaskLayer
             .ConfigureType<OxyriboAveragine>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.GetType().Name)))
+            .ConfigureType<List<IGptmdFilter>>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(filters => string.Join("\t", filters.Select(f => f.GetType().Name)))
+                    .FromToml(tmlString => tmlString.Value
+                        .Split('\t', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(typeName =>
+                            // Find the type in the current AppDomain by name
+                            AppDomain.CurrentDomain.GetAssemblies()
+                                .SelectMany(a => a.GetTypes())
+                                .FirstOrDefault(t => t.Name == typeName && typeof(IGptmdFilter).IsAssignableFrom(t))
+                        )
+                        .Where(t => t != null)
+                        .Select(t => Activator.CreateInstance(t) as IGptmdFilter)
+                        .Where(f => f != null)
+                        .ToList()
+                    )
+                )
+            )
+            .ConfigureType<List<MIonLoss>>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => string.Join("\t", custom.Select(f => f.Annotation)))
+                    .FromToml(tmlString => tmlString.Value
+                        .Split('\t', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(typeName => MIonLoss.AllMIonLosses.GetValueOrDefault(typeName, null))
+                        .Where(t => t != null)
+                        .ToList()
+                    )
+                )
+            )
+            .ConfigureType<IFragmentationParams>(type => type
+                .WithConversionFor<TomlTable>(c => c
+                    .FromToml(tmlTable =>
+                        tmlTable.ContainsKey("ModificationsCanSuppressBaseLossIons")
+                            ? tmlTable.Get<RnaFragmentationParams>()
+                            : tmlTable.Get<FragmentationParams>())))
+            .ConfigureType<RnaFragmentationParams>(type => type
+                .CreateInstance(() => RnaFragmentationParams.Default))
+            .ConfigureType<FragmentationParams>(type => type
+                .CreateInstance(() => new()))
         );
        
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
 
         [TomlIgnore]
-        public string OutputFolder { get; private set; }
+        public virtual string OutputFolder { get; private set; }
 
         protected MyTaskResults MyTaskResults;
 
@@ -177,14 +411,14 @@ namespace TaskLayer
         public const string IndexFolderName = "DatabaseIndex";
         public const string IndexEngineParamsFileName = "indexEngine.params";
         public const string PeptideIndexFileName = "peptideIndex.ind";
-        public const string FragmentIndexFileName = "fragmentIndex.ind";
+        public const string FragmentIndexFileName = "fragmentIndex.bin";
         public const string SecondIndexEngineParamsFileName = "secondIndexEngine.params";
-        public const string SecondFragmentIndexFileName = "secondFragmentIndex.ind";
-        public const string PrecursorIndexFileName = "precursorIndex.ind";
+        public const string SecondFragmentIndexFileName = "secondFragmentIndex.bin";
+        public const string PrecursorIndexFileName = "precursorIndex.bin";
 
         public static List<Ms2ScanWithSpecificMass>[] _GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
-            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
+            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1 && commonParameters.RetentionTimeRange.Contains(x.RetentionTime)).ToArray();
             var ms2Scans = msNScans.Where(p => p.MsnOrder == 2).ToArray();
             var ms3Scans = msNScans.Where(p => p.MsnOrder == 3).ToArray();
             List<Ms2ScanWithSpecificMass>[] scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[ms2Scans.Length];
@@ -197,13 +431,13 @@ namespace TaskLayer
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (partitionRange, loopState) =>
                 {
-                    var precursors = new List<(double MonoPeakMz, int Charge, double Intensity, int PeakCount, double? FractionalIntensity)>();
+                    var precursorSet = new PrecursorSet(commonParameters.DeconvolutionMassTolerance);
 
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
                         if (GlobalVariables.StopLoops) { break; }
 
-                        precursors.Clear();
+                        precursorSet.Clear();
                         MsDataScan ms2scan = ms2Scans[i];
 
                         if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
@@ -233,61 +467,41 @@ namespace TaskLayer
                                 foreach (IsotopicEnvelope envelope in ms2scan.GetIsolatedMassesAndCharges(
                                     precursorSpectrum.MassSpectrum, commonParameters.PrecursorDeconvolutionParameters))
                                 {
-                                    double monoPeakMz = envelope.MonoisotopicMass.ToMz(envelope.Charge);
-                                    int peakCount = envelope.Peaks.Count();
-                                    double intensity = 1;
-                                    if (commonParameters.UseMostAbundantPrecursorIntensity) 
-                                    { 
-                                        intensity = envelope.Peaks.Max(p => p.intensity); 
-                                    }
-                                    else
-                                    {
-                                        intensity = envelope.Peaks.Sum(p => p.intensity);
-                                    }
+                                    double? intensity = null;
+                                    if (commonParameters.UseMostAbundantPrecursorIntensity)
+                                        intensity = envelope.Peaks.Max(p => p.intensity);
 
                                     var fractionalIntensity = envelope.TotalIntensity /
-                                          (double)precursorSpectrum.MassSpectrum.YArray
+                                          precursorSpectrum.MassSpectrum.YArray
                                           [
                                               precursorSpectrum.MassSpectrum.GetClosestPeakIndex(ms2scan.IsolationRange.Minimum)
                                               ..
                                               precursorSpectrum.MassSpectrum.GetClosestPeakIndex(ms2scan.IsolationRange.Maximum)
                                           ].Sum();
-                                    precursors.Add((monoPeakMz, envelope.Charge, intensity, peakCount,
-                                        fractionalIntensity));
+
+                                    // Method-agnostic envelope-quality score from mzLib (idempotent: caches on the
+                                    // envelope, so re-asking the same envelope is cheap).
+                                    double genericScore = envelope.GetOrComputeGenericScore(
+                                        commonParameters.PrecursorDeconvolutionParameters);
+
+                                    precursorSet.Add(new Precursor(envelope, intensity, fractionalIntensity)
+                                    {
+                                        DeconvolutionScore = genericScore
+                                    });
                                 }
                             }
                         }
 
-                        //if use precursor info from scan header and scan header has charge state
+                         // If using precursor info from scan header and scan header has charge state.
+                         // MsAlign uses this conditional to construct its precursors. 
                         PrecursorFromScanHeader:
                         if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue && ms2scan.SelectedIonChargeStateGuess != 0) 
                         {
                             int precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
+                            double precursorIntensity = ms2scan.SelectedIonMonoisotopicGuessIntensity ?? ms2scan.SelectedIonIntensity ?? 1.0;
+                            double precursorMz = ms2scan.SelectedIonMonoisotopicGuessMz ?? ms2scan.SelectedIonMZ.Value;
 
-                            // Still from scan header - MsAlign uses this conditional to construct its precursors. 
-                            if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
-                            {
-                                double precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
-                                double precursorIntensity = ms2scan.SelectedIonMonoisotopicGuessIntensity ?? 1;
-
-                                if (!precursors.Any(b =>
-                                    commonParameters.DeconvolutionMassTolerance.Within(
-                                        precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                                {
-                                    precursors.Add((precursorMZ, precursorCharge, precursorIntensity, 1, null));
-                                }
-                            }
-                            else
-                            {
-                                double precursorMZ = ms2scan.SelectedIonMZ.Value;
-                                double precursorIntensity = ms2scan.SelectedIonIntensity ?? 1;
-                                if (!precursors.Any(b =>
-                                    commonParameters.DeconvolutionMassTolerance.Within(
-                                        precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                                {
-                                    precursors.Add((precursorMZ, precursorCharge, precursorIntensity, 1, null));
-                                }
-                            }
+                            precursorSet.Add(new Precursor(precursorMz, precursorCharge, precursorIntensity, 1, null));
                         }
 
                         scansWithPrecursors[i] = new List<Ms2ScanWithSpecificMass>();
@@ -301,7 +515,8 @@ namespace TaskLayer
                         // get child scans
                         List<MsDataScan> ms2ChildScans = null;
                         List<MsDataScan> ms3ChildScans = null;
-                        if (commonParameters.MS2ChildScanDissociationType != DissociationType.Unknown || commonParameters.MS3ChildScanDissociationType != DissociationType.Unknown)
+                        if (commonParameters.MS2ChildScanDissociationType != DissociationType.Unknown 
+                            || commonParameters.MS3ChildScanDissociationType != DissociationType.Unknown)
                         {
                             ms3ChildScans = ms3Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber).ToList();
 
@@ -311,12 +526,25 @@ namespace TaskLayer
                                 && Math.Abs(p.IsolationMz.Value - ms2scan.IsolationMz.Value) < 0.01)).ToList();
                         }
 
-                        foreach (var precursor in precursors)
+                        foreach (var precursor in precursorSet)
                         {
+                            // The most-abundant (tallest) isotopologue mass of the deconvoluted envelope. Recorded
+                            // for every search, alongside the monoisotopic mass, because it is an observation and
+                            // not a search decision — the MassDiffAcceptor decides which of the two a search
+                            // matches on. Null when there is no envelope, or when the envelope reports no
+                            // most-abundant peak (the -1 sentinel, e.g. a neutral mass read from a pre-deconvoluted
+                            // file). (Isotopically unresolved high-mass species, which would instead be matched on
+                            // the average/centroid mass, are future work.)
+                            double? precursorMostAbundantMass = precursor.Envelope?.MostAbundantObservedNeutralMass > 0
+                                ? precursor.Envelope.MostAbundantObservedNeutralMass
+                                : null;
+
                             // assign precursor for this MS2 scan
-                            var scan = new Ms2ScanWithSpecificMass(ms2scan, precursor.MonoPeakMz,
+                            var scan = new Ms2ScanWithSpecificMass(ms2scan, precursor.MonoisotopicPeakMz,
                                 precursor.Charge, fullFilePath, commonParameters, neutralExperimentalFragments,
-                                precursor.Intensity, precursor.PeakCount, precursor.FractionalIntensity);
+                                precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity,
+                                precursorMostAbundantMass: precursorMostAbundantMass,
+                                precursorDeconvolutionScore: precursor.DeconvolutionScore);
 
                             // assign precursors for MS2 child scans
                             if (ms2ChildScans != null)
@@ -329,9 +557,10 @@ namespace TaskLayer
                                     {
                                         childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2ChildScan, commonParameters);
                                     }
-                                    var theChildScan = new Ms2ScanWithSpecificMass(ms2ChildScan, precursor.MonoPeakMz,
+                                    var theChildScan = new Ms2ScanWithSpecificMass(ms2ChildScan, precursor.MonoisotopicPeakMz,
                                         precursor.Charge, fullFilePath, commonParameters, childNeutralExperimentalFragments,
-                                        precursor.Intensity, precursor.PeakCount, precursor.FractionalIntensity);
+                                        precursor.Intensity, precursor.EnvelopePeakCount, precursor.FractionalIntensity,
+                                        precursorMostAbundantMass: precursorMostAbundantMass);
                                     scan.ChildScans.Add(theChildScan);
                                 }
                             }
@@ -343,15 +572,6 @@ namespace TaskLayer
                                 {
                                     int precursorCharge = 1;
                                     double precursorMz = 0;
-                                    var precursorSpectrum = ms2scan;
-
-                                    //In current situation, do we need to perform the following function. 
-                                    //In some weird data, the MS3 scan has mis-leading precursor mass. 
-                                    //MS3 scan is low res in most of the situation, and the matched ions are not scored in a good way.
-                                    //{
-                                    //    ms3ChildScan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
-                                    //    ms3ChildScan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
-                                    //}
 
                                     if (ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
                                     {
@@ -390,6 +610,26 @@ namespace TaskLayer
 
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
+            if (commonParameters.DIAparameters != null)
+            {
+                IEnumerable<Ms2ScanWithSpecificMass> pseudoMs2Scans;
+                switch (commonParameters.DIAparameters.AanalysisType)
+                {
+                    case DIAanalysisType.DIA:
+                        var diaEngine = new DIAEngine(myMSDataFile, commonParameters);
+                        pseudoMs2Scans = diaEngine.GetPseudoMs2Scans();
+                        break;
+                    case DIAanalysisType.ISD:
+                        var isdEngine = new ISDEngine(myMSDataFile, commonParameters);
+                        pseudoMs2Scans = isdEngine.GetPseudoMs2Scans();
+                        break;
+                    default:
+                        throw new NotImplementedException("DIA analysis type not implemented.");
+                }
+
+                // TODO: Move the retention time filtering to the inside of the engines. Currently, we do all the work then throw away the scans outside of the retention time range. This is inefficient, but it is a quick fix to get the retention time filtering working for DIA and ISD by someone who knows what is going on there. 
+                return pseudoMs2Scans.Where(scan => commonParameters.RetentionTimeRange.Contains(scan.RetentionTime));
+            }
             var scansWithPrecursors = _GetMs2Scans(myMSDataFile, fullFilePath, commonParameters);
 
             if (scansWithPrecursors.Length == 0)
@@ -416,7 +656,7 @@ namespace TaskLayer
 
                             var parentScan = parentScans[i];
 
-                            if (commonParameters.DissociationType == DissociationType.LowCID && !parentScan.TheScan.MassSpectrum.XcorrProcessed)
+                            if (commonParameters.DissociationType == DissociationType.LowCID)
                             {
                                 lock (parentScan.TheScan)
                                 {
@@ -424,21 +664,28 @@ namespace TaskLayer
                                     {
                                         parentScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, parentScan.TheScan.IsolationMz.Value);
                                     }
+
+                                    // Chimeric precursors share one spectrum but each carries its own
+                                    // metadata, so every wrapper has to re-read the count, not just the
+                                    // one that happened to do the pre-processing. Inside the lock so the
+                                    // count never comes from a half-rewritten spectrum.
+                                    parentScan.RefreshPeakCount();
                                 }
                             }
 
                             foreach (var childScan in parentScan.ChildScans)
                             {
-                                if (((childScan.TheScan.MsnOrder == 2 && commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID) ||
-                                (childScan.TheScan.MsnOrder == 3 && commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID))
-                                && !childScan.TheScan.MassSpectrum.XcorrProcessed)
-                                {
+                                if ((childScan.TheScan.MsnOrder == 2 && commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID)
+                                    || (childScan.TheScan.MsnOrder == 3 && commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID))
+                                { 
                                     lock (childScan.TheScan)
                                     {
                                         if (!childScan.TheScan.MassSpectrum.XcorrProcessed)
                                         {
                                             childScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, childScan.TheScan.IsolationMz.Value);
                                         }
+
+                                        childScan.RefreshPeakCount();
                                     }
                                 }
                             }
@@ -462,8 +709,6 @@ namespace TaskLayer
             }
 
             var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
-            //var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber)).Select(p=>p.First()).ToArray();
-
             
             for (int i = 0; i < scansWithPrecursors.Length; i++)
             {
@@ -495,6 +740,9 @@ namespace TaskLayer
             switch (commonParams.DigestionParams)
             {
                 case DigestionParams digestionParams:
+                    // Every digestion setting a file does not override must be carried from the task. A field left out of
+                    // this list silently falls back to its constructor default for every file with file-specific settings;
+                    // the glycopeptide and SILAC flags used to be (see FileSpecificDigestionParamsTests).
                     fileSpecificDigestionParams = new DigestionParams(
                         protease: (fileSpecificParams.DigestionAgent ?? digestionParams.SpecificProtease).Name,
                         maxMissedCleavages: maxMissedCleavages, minPeptideLength: minPeptideLength,
@@ -502,7 +750,10 @@ namespace TaskLayer
                         maxModificationIsoforms: digestionParams.MaxModificationIsoforms,
                         initiatorMethionineBehavior: digestionParams.InitiatorMethionineBehavior,
                         fragmentationTerminus: digestionParams.FragmentationTerminus,
-                        searchModeType: digestionParams.SearchModeType);
+                        searchModeType: digestionParams.SearchModeType,
+                        generateUnlabeledProteinsForSilac: digestionParams.GeneratehUnlabeledProteinsForSilac,
+                        keepNGlycopeptide: digestionParams.KeepNGlycopeptide,
+                        keepOGlycopeptide: digestionParams.KeepOGlycopeptide);
                     break;
                 case RnaDigestionParams:
                     fileSpecificDigestionParams = new RnaDigestionParams(
@@ -524,13 +775,21 @@ namespace TaskLayer
             // set the rest of the file-specific parameters
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
             Tolerance productMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+            Tolerance productMassTolerance_LowRes = fileSpecificParams.ProductMassTolerance_LowRes ?? commonParams.ProductMassTolerance_LowRes;
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
             string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
 
+            DeconvolutionParameters precursorDeconParams = fileSpecificParams.PrecursorDeconvolutionParameters ?? commonParams.PrecursorDeconvolutionParameters;
+            DeconvolutionParameters productDeconParams = fileSpecificParams.ProductDeconvolutionParameters ?? commonParams.ProductDeconvolutionParameters;
+
+            // DoPrecursorDeconvolution and DoProductDeconvolution flow from CommonParameters only;
+            // file-specific PrecursorDeconvolutionParameters / ProductDeconvolutionParameters are stored
+            // independently and take effect when the corresponding Do* flag is true.
             CommonParameters returnParams = new CommonParameters(
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
                 productMassTolerance: productMassTolerance,
+                productMassTolerance_LowRes: productMassTolerance_LowRes,
                 digestionParams: fileSpecificDigestionParams,
                 separationType: separationType,
 
@@ -562,9 +821,13 @@ namespace TaskLayer
                 maxHeterozygousVariants: commonParams.MaxHeterozygousVariants,
                 minVariantDepth: commonParams.MinVariantDepth,
                 addTruncations: commonParams.AddTruncations,
-                precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
-                productDeconParams: commonParams.ProductDeconvolutionParameters,
-                useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity);
+                precursorDeconParams: precursorDeconParams,
+                productDeconParams: productDeconParams,
+                useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
+                fragmentationParams: commonParams.FragmentationParameters,
+                precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
+                rtPredictorName: commonParams.RTPredictorName,
+                retentionTimeRange: commonParams.RetentionTimeRange);
 
             return returnParams;
         }
@@ -580,6 +843,10 @@ namespace TaskLayer
             FinishedWritingFile(tomlFileName, new List<string> { displayName });
 
             FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)>();
+
+            // The GUI re-runs the same task objects, so this survives between runs and would otherwise
+            // append a second copy of every sentence to AutoGeneratedManuscriptProse.txt.
+            ProseCreatedWhileRunning.Clear();
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
             try
@@ -685,75 +952,6 @@ namespace TaskLayer
 
         #region Database Loading
 
-        protected List<IBioPolymer> LoadBioPolymers(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes, CommonParameters commonParameters)
-        {
-            Status($"Loading {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s...", new List<string> { taskId });
-            int emptyEntries = 0;
-            List<IBioPolymer> bioPolymerList = new();
-            foreach (var db in dbFilenameList.Where(p => !p.IsSpectralLibrary))
-            {
-                if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
-                {
-                    var dbOligoList = LoadOligoDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyOligoEntriesForThisDb, commonParameters);
-                    bioPolymerList = bioPolymerList.Concat(dbOligoList).ToList();
-                    emptyEntries += emptyOligoEntriesForThisDb;
-                }
-                else
-                {
-                    var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyProteinEntriesForThisDb, commonParameters);
-                    bioPolymerList = bioPolymerList.Concat(dbProteinList).ToList();
-                    emptyEntries += emptyProteinEntriesForThisDb;
-                }
-            }
-            if (!bioPolymerList.Any())
-            {
-                Warn($"Warning: No {GlobalVariables.AnalyteType.GetBioPolymerLabel()} entries were found in the database");
-            }
-            else if (emptyEntries > 0)
-            {
-                Warn("Warning: " + emptyEntries + $" empty {GlobalVariables.AnalyteType.GetBioPolymerLabel()} entries ignored");
-            }
-
-            // We are not generating decoys, so just return the read in database
-            if (!bioPolymerList.Any(p => p.IsDecoy))
-            {
-                Status($"Done loading {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s", new List<string> { taskId });
-                return bioPolymerList;
-            }
-
-            // Sanitize the decoys
-            // TODO: Fix this so that it accounts for multi-protease searches. Currently, we only consider the first protease
-            // when looking for target/decoy collisions
-            HashSet<string> targetPeptideSequences = new();
-            foreach(var bioPolymer in bioPolymerList.Where(p => !p.IsDecoy))
-            {
-                // When thinking about decoy collisions, we can ignore modifications
-                foreach(var peptide in bioPolymer.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()))
-                {
-                    targetPeptideSequences.Add(peptide.BaseSequence);
-                }
-            }
-            // Now, we iterate through the decoys and scramble the sequences that correspond to target peptides
-            for(int i = 0; i < bioPolymerList.Count; i++)
-            {
-                if(bioPolymerList[i].IsDecoy)
-                {
-                    var peptidesToReplace = bioPolymerList[i]
-                        .Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>())
-                        .Select(p => p.BaseSequence)
-                        .Where(targetPeptideSequences.Contains)
-                        .ToList();
-                    if(peptidesToReplace.Any())
-                    {
-                        bioPolymerList[i] = DecoySequenceValidator.ScrambleDecoyBioPolymer(bioPolymerList[i], commonParameters.DigestionParams, forbiddenSequences: targetPeptideSequences, peptidesToReplace);
-                    }
-                }
-            }
-
-            Status($"Done loading {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s", new List<string> { taskId });
-            return bioPolymerList;
-        }
-
         protected SpectralLibrary LoadSpectralLibraries(string taskId, List<DbForTask> dbFilenameList)
         {
             Status("Loading spectral libraries...", new List<string> { taskId });
@@ -769,33 +967,6 @@ namespace TaskLayer
 
             Status("Done loading spectral libraries", new List<string> { taskId });
             return lib;
-        }
-
-        protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um,
-            out int emptyEntriesCount, CommonParameters commonParameters)
-        {
-            List<string> dbErrors = new List<string>();
-            List<Protein> proteinList = new List<Protein>();
-
-            string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
-            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
-            theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
-
-            if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
-            {
-                um = null;
-                proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, out dbErrors,
-                    ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
-                    ProteinDbLoader.UniprotOrganismRegex, commonParameters.MaxThreadsToUsePerFile, addTruncations: commonParameters.AddTruncations);
-            }
-            else
-            {
-                List<string> modTypesToExclude = GlobalVariables.AllModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile, commonParameters.MaxHeterozygousVariants, commonParameters.MinVariantDepth, addTruncations: commonParameters.AddTruncations);
-            }
-
-            emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);
-            return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
 
         protected void LoadModifications(string taskId, out List<Modification> variableModifications, out List<Modification> fixedModifications, out List<string> localizableModificationTypes)
@@ -837,31 +1008,301 @@ namespace TaskLayer
             }
         }
 
-        protected List<RNA> LoadOligoDb(string fileName, bool generateTargets, DecoyType decoyType,
-            List<string> localizeableModificationTypes, bool isContaminant,
-            out Dictionary<string, Modification> unknownMods, out int emptyEntriesCount,
-            CommonParameters commonParameters)
+        protected void WritePrunedDatabase(List<SpectralMatch> allSpectralMatches, List<IBioPolymer> bioPolymersToWrite, Dictionary<string, int> modificationsToWrite, List<DbForTask> inputDatabases, string outputDirectory, string taskId)
         {
-            List<string> dbErrors = new List<string>();
-            List<RNA> rnaList = new List<RNA>();
+            Status("Writing Pruned Database...", new List<string> { taskId });
+            HashSet<Modification> modificationsToWriteIfBoth = new HashSet<Modification>();
+            HashSet<Modification> modificationsToWriteIfInDatabase = new HashSet<Modification>();
+            HashSet<Modification> modificationsToWriteIfObserved = new HashSet<Modification>();
 
-            string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
-            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
-            theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
+            var filteredPsms = FilteredPsms.Filter(allSpectralMatches,
+                CommonParameters,
+                includeDecoys: false,
+                includeContaminants: true,
+                includeAmbiguous: false,
+                includeHighQValuePsms: false);
 
-            if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
+            var proteinToConfidentBaseSequences = new Dictionary<IBioPolymer, List<IBioPolymerWithSetMods>>();
+
+            // associate all confident PSMs with all possible proteins they could be digest products of (before or after parsimony)
+            foreach (SpectralMatch psm in filteredPsms)
             {
-                unknownMods = null;
-                rnaList = RnaDbLoader.LoadRnaFasta(fileName, generateTargets, decoyType, isContaminant, out dbErrors);
-            }
-            else
-            {
-                List<string> modTypesToExclude = GlobalVariables.AllRnaModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-                rnaList = RnaDbLoader.LoadRnaXML(fileName, generateTargets, decoyType, isContaminant, GlobalVariables.AllRnaModsKnown, modTypesToExclude, out unknownMods, commonParameters.MaxThreadsToUsePerFile);
+                var myPepsWithSetMods = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer);
+
+                foreach (IBioPolymerWithSetMods peptide in myPepsWithSetMods)
+                {
+                    if (proteinToConfidentBaseSequences.TryGetValue(peptide.Parent.ConsensusVariant, out var myPepList))
+                    {
+                        myPepList.Add(peptide);
+                    }
+                    else
+                    {
+                        proteinToConfidentBaseSequences.Add(peptide.Parent.ConsensusVariant, new List<IBioPolymerWithSetMods> { peptide });
+                    }
+                }
             }
 
-            emptyEntriesCount = rnaList.Count(p => p.BaseSequence.Length == 0);
-            return rnaList.Where(p => p.BaseSequence.Length > 0).ToList();
+            // Add user mod selection behavours to Pruned DB
+            foreach (var modType in modificationsToWrite)
+            {
+                foreach (Modification mod in GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)))
+                {
+                    if (modType.Value == 1) // Write if observed and in database
+                    {
+                        modificationsToWriteIfBoth.Add(mod);
+                    }
+                    if (modType.Value == 2) // Write if in database
+                    {
+                        modificationsToWriteIfInDatabase.Add(mod);
+                    }
+                    if (modType.Value == 3) // Write if observed
+                    {
+                        modificationsToWriteIfObserved.Add(mod);
+                    }
+                }
+            }
+
+            //generates dictionary of proteins with only localized modifications
+            var originalModPsms = FilteredPsms.Filter(filteredPsms,
+                CommonParameters,
+                includeDecoys: false,
+                includeContaminants: true,
+                includeAmbiguous: false,
+                includeAmbiguousMods: false,
+                includeHighQValuePsms: false);
+
+
+            var proteinToConfidentModifiedSequences = new Dictionary<IBioPolymer, List<IBioPolymerWithSetMods>>();
+
+            HashSet<string> modPsmsFullSeq = originalModPsms.Select(p => p.FullSequence).ToHashSet();
+            HashSet<string> originalModPsmsFullSeq = originalModPsms.Select(p => p.FullSequence).ToHashSet();
+            modPsmsFullSeq.ExceptWith(originalModPsmsFullSeq);
+
+            foreach (SpectralMatch psm in originalModPsms)
+            {
+                var myPepsWithSetMods = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer);
+
+                foreach (IBioPolymerWithSetMods peptide in myPepsWithSetMods)
+                {
+                    if (proteinToConfidentModifiedSequences.TryGetValue(peptide.Parent.ConsensusVariant, out var myPepList))
+                    {
+                        myPepList.Add(peptide);
+                    }
+                    else
+                    {
+                        proteinToConfidentModifiedSequences.Add(peptide.Parent.ConsensusVariant, new List<IBioPolymerWithSetMods> { peptide });
+                    }
+                }
+            }
+
+            Dictionary<IBioPolymer, Dictionary<int, List<Modification>>> proteinsOriginalModifications = new Dictionary<IBioPolymer, Dictionary<int, List<Modification>>>();
+            Dictionary<SequenceVariation, Dictionary<int, List<Modification>>> originalSequenceVariantModifications = new Dictionary<SequenceVariation, Dictionary<int, List<Modification>>>();
+
+            // mods included in pruned database will only be confidently localized mods (peptide's FullSequence != null)
+            foreach (var nonVariantProtein in bioPolymersToWrite.Select(p => p.ConsensusVariant).Distinct())
+            {
+                if (!nonVariantProtein.IsDecoy)
+                {
+                    proteinToConfidentModifiedSequences.TryGetValue(nonVariantProtein, out var psms);
+                    HashSet<(int, Modification, SequenceVariation)> modsObservedOnThisProtein = new HashSet<(int, Modification, SequenceVariation)>(); // sequence variant is null if mod is not on a variant
+                    foreach (IBioPolymerWithSetMods psm in psms ?? new List<IBioPolymerWithSetMods>())
+                    {
+                        foreach (var idxModKV in psm.AllModsOneIsNterminus)
+                        {
+                            int proteinIdx = GetOneBasedIndexInProtein(idxModKV.Key, psm);
+                            SequenceVariation relevantVariant = psm.Parent.AppliedSequenceVariations.FirstOrDefault(sv => VariantApplication.IsSequenceVariantModification(sv, proteinIdx));
+                            SequenceVariation unappliedVariant =
+                                relevantVariant == null ? null : // it's not a sequence variant mod
+                                    psm.Parent.SequenceVariations.FirstOrDefault(sv => sv.Description != null && sv.Description.Equals(relevantVariant.Description));
+                            modsObservedOnThisProtein.Add((VariantApplication.RestoreModificationIndex(psm.Parent, proteinIdx), idxModKV.Value, unappliedVariant));
+                        }
+                    }
+
+                    IDictionary<(SequenceVariation, int), List<Modification>> modsToWrite = new Dictionary<(SequenceVariation, int), List<Modification>>();
+
+                    //Add if observed (regardless if in database)
+                    foreach (var observedMod in modsObservedOnThisProtein)
+                    {
+                        var tempMod = observedMod.Item2;
+
+                        if (modificationsToWriteIfObserved.Contains(tempMod))
+                        {
+                            var svIdxKey = (observedMod.Item3, observedMod.Item1);
+                            if (!modsToWrite.ContainsKey(svIdxKey))
+                            {
+                                modsToWrite.Add(svIdxKey, new List<Modification> { observedMod.Item2 });
+                            }
+                            else
+                            {
+                                modsToWrite[svIdxKey].Add(observedMod.Item2);
+                            }
+                        }
+                    }
+
+                    // Add modification if in database (two cases: always or if observed)
+                    foreach (var modkv in nonVariantProtein.OneBasedPossibleLocalizedModifications)
+                    {
+                        foreach (var mod in modkv.Value)
+                        {
+                            //Add if always In Database or if was observed and in database and not set to not include
+                            if (modificationsToWriteIfInDatabase.Contains(mod) ||
+                                (modificationsToWriteIfBoth.Contains(mod) && modsObservedOnThisProtein.Contains((modkv.Key, mod, null))))
+                            {
+                                if (!modsToWrite.ContainsKey((null, modkv.Key)))
+                                {
+                                    modsToWrite.Add((null, modkv.Key), new List<Modification> { mod });
+                                }
+                                else
+                                {
+                                    modsToWrite[(null, modkv.Key)].Add(mod);
+                                }
+                            }
+                        }
+                    }
+
+                    //TODO add unit test here
+                    // Add variant modification if in database (two cases: always or if observed)
+                    foreach (SequenceVariation sv in nonVariantProtein.SequenceVariations)
+                    {
+                        foreach (var modkv in sv.OneBasedModifications)
+                        {
+                            foreach (var mod in modkv.Value)
+                            {
+                                //Add if always In Database or if was observed and in database and not set to not include
+                                if (modificationsToWriteIfInDatabase.Contains(mod) ||
+                                    (modificationsToWriteIfBoth.Contains(mod) && modsObservedOnThisProtein.Contains((modkv.Key, mod, sv))))
+                                {
+                                    if (!modsToWrite.ContainsKey((sv, modkv.Key)))
+                                    {
+                                        modsToWrite.Add((sv, modkv.Key), new List<Modification> { mod });
+                                    }
+                                    else
+                                    {
+                                        modsToWrite[(sv, modkv.Key)].Add(mod);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    var oldMods = nonVariantProtein.OneBasedPossibleLocalizedModifications.ToDictionary(p => p.Key, v => v.Value);
+                    if (proteinsOriginalModifications.ContainsKey(nonVariantProtein.ConsensusVariant))
+                    {
+                        foreach (var entry in oldMods)
+                        {
+                            if (proteinsOriginalModifications[nonVariantProtein.ConsensusVariant].ContainsKey(entry.Key))
+                            {
+                                proteinsOriginalModifications[nonVariantProtein.ConsensusVariant][entry.Key].AddRange(entry.Value);
+                            }
+                            else
+                            {
+                                proteinsOriginalModifications[nonVariantProtein.ConsensusVariant].Add(entry.Key, entry.Value);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        proteinsOriginalModifications.Add(nonVariantProtein.ConsensusVariant, oldMods);
+                    }
+
+                    // adds confidently localized and identified mods
+                    nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
+                    foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 == null))
+                    {
+                        nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(kvp.Key.Item2, kvp.Value);
+                    }
+                    foreach (var sv in nonVariantProtein.SequenceVariations)
+                    {
+                        var oldVariantModifications = sv.OneBasedModifications.ToDictionary(p => p.Key, v => v.Value);
+                        if (originalSequenceVariantModifications.ContainsKey(sv))
+                        {
+                            foreach (var entry in oldVariantModifications)
+                            {
+                                if (originalSequenceVariantModifications[sv].ContainsKey(entry.Key))
+                                {
+                                    originalSequenceVariantModifications[sv][entry.Key].AddRange(entry.Value);
+                                }
+                                else
+                                {
+                                    originalSequenceVariantModifications[sv].Add(entry.Key, entry.Value);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            originalSequenceVariantModifications.Add(sv, oldVariantModifications);
+                        }
+
+                        sv.OneBasedModifications.Clear();
+                        foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 != null && kv.Key.Item1.Equals(sv)))
+                        {
+                            sv.OneBasedModifications.Add(kvp.Key.Item2, kvp.Value);
+                        }
+                    }
+                }
+            }
+
+            //writes all proteins
+            if (inputDatabases.Any(b => !b.IsContaminant))
+            {
+                string outputXMLdbFullName = Path.Combine(outputDirectory, string.Join("-", inputDatabases.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
+                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), bioPolymersToWrite.Select(p => p.ConsensusVariant).Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+                FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
+            }
+            if (inputDatabases.Any(b => b.IsContaminant))
+            {
+                string outputXMLdbFullNameContaminants = Path.Combine(outputDirectory, string.Join("-", inputDatabases.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
+                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), bioPolymersToWrite.Select(p => p.ConsensusVariant).Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+                FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
+            }
+
+            //writes only detected proteins
+            if (inputDatabases.Any(b => !b.IsContaminant))
+            {
+                string outputXMLdbFullName = Path.Combine(outputDirectory, string.Join("-", inputDatabases.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
+                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+                FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
+            }
+            if (inputDatabases.Any(b => b.IsContaminant))
+            {
+                string outputXMLdbFullNameContaminants = Path.Combine(outputDirectory, string.Join("-", inputDatabases.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
+                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+                FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
+            }
+
+            foreach (var nonVariantProtein in bioPolymersToWrite.Select(p => p.ConsensusVariant).Distinct())
+            {
+                if (!nonVariantProtein.IsDecoy)
+                {
+                    nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
+                    foreach (var originalMod in proteinsOriginalModifications[nonVariantProtein.ConsensusVariant])
+                    {
+                        nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(originalMod.Key, originalMod.Value);
+                    }
+                    foreach (var sv in nonVariantProtein.SequenceVariations)
+                    {
+                        sv.OneBasedModifications.Clear();
+                        foreach (var originalVariantMods in originalSequenceVariantModifications[sv])
+                        {
+                            sv.OneBasedModifications.Add(originalVariantMods.Key, originalVariantMods.Value);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Pruned Database Helper
+        private static int GetOneBasedIndexInProtein(int oneIsNterminus, IBioPolymerWithSetMods peptideWithSetModifications)
+        {
+            if (oneIsNterminus == 1)
+            {
+                return peptideWithSetModifications.OneBasedStartResidue;
+            }
+            if (oneIsNterminus == peptideWithSetModifications.Length + 2)
+            {
+                return peptideWithSetModifications.OneBasedEndResidue;
+            }
+            return peptideWithSetModifications.OneBasedStartResidue + oneIsNterminus - 2;
         }
 
         #endregion
@@ -872,10 +1313,14 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 bool includeOneOverK0Column = psms.Any(p => p.ScanOneOverK0.HasValue);
-                output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column));
+                bool includeCollisionalEnergyColumn = psms.Any(p => p.CollisionalEnergy.HasValue);
+                // Only emit the most-abundant mass-error column when a run actually used most-abundant
+                // selection (its property is null otherwise), mirroring the data-driven gating above.
+                bool includeMostAbundantColumn = psms.Any(p => p.MostAbundantMassErrorPpm != null);
+                output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn));
                 foreach (var psm in psms)
                 {
-                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column));
+                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn));
                 }
             }
         }
@@ -942,6 +1387,51 @@ namespace TaskLayer
             OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
+        /// <summary>
+        /// Returns <paramref name="parameters"/>, or a copy with a raised TotalPartitions when one index
+        /// build would not fit in available memory. Only ever raises, so a user who deliberately asked for
+        /// more partitions keeps them. Returning a copy rather than mutating matters:
+        /// SetAllFileSpecificCommonParams hands back the task's own CommonParameters when a file has no
+        /// file-specific settings, so mutating would rewrite the settings the task reports.
+        ///
+        /// Callers must use the returned instance for *every* read of TotalPartitions in the partition
+        /// loop — the loop bound and the protein-range slicing included — or the two will disagree and the
+        /// search will silently cover only part of the database.
+        /// </summary>
+        protected CommonParameters RaisePartitionsToFitMemory(IReadOnlyList<IBioPolymer> proteinList, CommonParameters parameters,
+            List<Modification> fixedModifications, List<Modification> variableModifications,
+            List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, double maxFragmentSize,
+            ref int? decidedPartitions)
+        {
+            // Decide once per task, not once per spectra file. Available memory shrinks as PSMs accumulate
+            // and each file's spectra are loaded, so re-deriving per file could index file 1 in one partition
+            // and file 5 in four. That would invalidate the disk cache for every partition (the count is part
+            // of IndexingEngine.ToString(), which is the cache key) and leave files within one run searched
+            // under different partitionings, whose PSM-level statistics are then not comparable.
+            if (decidedPartitions == null)
+            {
+                int suggested = IndexPartitioning.SuggestTotalPartitions(proteinList, parameters, fixedModifications,
+                    variableModifications, silacLabels, startLabel, endLabel, maxFragmentSize, parameters.TotalPartitions,
+                    out long estimatedBytes, out long budgetBytes, out bool cappedByMemory, out long estimatedFragmentEntries);
+
+                decidedPartitions = suggested;
+
+                if (suggested > parameters.TotalPartitions)
+                {
+                    foreach (string warning in IndexPartitioning.PartitionWarnings(parameters.TotalPartitions,
+                                 suggested, estimatedBytes, budgetBytes, cappedByMemory, estimatedFragmentEntries,
+                                 proteinList.Count))
+                    {
+                        Warn(warning);
+                    }
+                }
+            }
+
+            return decidedPartitions.Value <= parameters.TotalPartitions
+                ? parameters
+                : parameters.CloneWithNewTotalPartitions(decidedPartitions.Value);
+        }
+
         protected static void Warn(string v)
         {
             WarnHandler?.Invoke(null, new StringEventArgs(v, null));
@@ -999,16 +1489,46 @@ namespace TaskLayer
             return false;
         }
 
+        protected void EngineCrashed(string engineName, Exception e)
+        {
+            var outPath = Path.Combine(OutputFolder, $"{engineName}_crash.txt");
+            e.Data.Add("folder", OutputFolder);
+            using (StreamWriter file = new StreamWriter(outPath))
+            {
+                file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
+                file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
+                file.Write("e: " + e);
+                file.Write("e.Message: " + e.Message);
+                file.Write("e.InnerException: " + e.InnerException);
+                file.Write("e.Source: " + e.Source);
+                file.Write("e.StackTrace: " + e.StackTrace);
+                file.Write("e.TargetSite: " + e.TargetSite);
+            }
+
+            Warn($"{engineName} engine Crashed! Error written to {outPath}");
+        }
+
+        private static void WritePeptideIndex(List<IBioPolymerWithSetMods> peptideIndex, string peptideIndexFileName)
+            => WritePeptideIndex(peptideIndex.Cast<PeptideWithSetModifications>().ToList(), peptideIndexFileName);
+
         private static void WritePeptideIndex(List<PeptideWithSetModifications> peptideIndex, string peptideIndexFileName)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
             var ser = new NetSerializer.Serializer(messageTypes);
 
-            using (var file = File.Create(peptideIndexFileName))
-            {
-                ser.Serialize(file, peptideIndex);
-            }
+            WriteThroughTemporaryFile(peptideIndexFileName, file => ser.Serialize(file, peptideIndex));
         }
+
+        /// <summary>
+        /// Cast rather than OfType, to match the write side one method up. Both respond to the same
+        /// violated precondition -- a cached index is only reachable when indexIsCacheable, which is
+        /// AnalyteType != Oligo -- and they must fail the same way. OfType here would drop the oligos
+        /// and carry on with whatever proteins remained, returning a plausible index silently built
+        /// from a subset of the database; the write side already throws on the first oligo.
+        /// </summary>
+        private static List<IBioPolymerWithSetMods> ReadPeptideIndex(string peptideIndexFileName, IEnumerable<IBioPolymer> allKnownBioPolymers)
+            => ReadPeptideIndex(peptideIndexFileName, allKnownBioPolymers.Cast<Protein>().ToList())
+                .Cast<IBioPolymerWithSetMods>().ToList();
 
         private static List<PeptideWithSetModifications> ReadPeptideIndex(string peptideIndexFileName, List<Protein> allKnownProteins)
         {
@@ -1053,25 +1573,188 @@ namespace TaskLayer
             return digestionParams;
         }
 
-        private static void WriteFragmentIndex(List<int>[] fragmentIndex, string fragmentIndexFileName)
-        {
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
+        // "MMFI" — guards against reading a file written by a different layout. The file name also changed
+        // when this replaced NetSerializer, so an index cached by an older version is simply not found and
+        // gets rebuilt rather than misread.
+        private const int FragmentIndexMagic = 0x4946_4D4D;
+        // "MMPI"
+        private const int PrecursorIndexMagic = 0x4950_4D4D;
+        // 2: the fragment index went from bin counts + concatenated ids to the compressed sparse row pair
+        private const int FragmentIndexFormatVersion = 2;
 
-            using (var file = File.Create(fragmentIndexFileName))
+        /// <summary>
+        /// The two arrays behind a <see cref="FragmentIndex"/>, written as raw little-endian int32 in bulk.
+        /// NetSerializer walked every list and every element individually; a fragment index has millions of
+        /// bins and hundreds of millions of entries, so the per-object cost dominated. Now that the in-memory
+        /// form is already flat, reading it back is a pair of array fills rather than a rebuild.
+        /// </summary>
+        private static void WriteFragmentIndex(FragmentIndex fragmentIndex, string fragmentIndexFileName)
+        {
+            WriteThroughTemporaryFile(fragmentIndexFileName, file =>
             {
-                ser.Serialize(file, fragmentIndex);
+                Span<int> header = stackalloc int[4];
+                header[0] = FragmentIndexMagic;
+                header[1] = FragmentIndexFormatVersion;
+                header[2] = fragmentIndex.BinStart.Length;
+                header[3] = fragmentIndex.PeptideIds.Length;
+                file.Write(MemoryMarshal.AsBytes(header));
+
+                WriteInt32Bulk(file, fragmentIndex.BinStart);
+                WriteInt32Bulk(file, fragmentIndex.PeptideIds);
+            });
+        }
+
+        /// <summary>
+        /// Writes under a temporary name and moves the file into place only once the write has finished, so a
+        /// cached index under its real name is always complete. Written straight to the real name, a write cut
+        /// short -- a killed process, a full disk -- left a valid header over a short payload, which the header
+        /// check in CheckFiles accepted: GenerateIndexes then rebuilt on every run, and GenerateSecondIndexes,
+        /// which has no recovery, crashed.
+        ///
+        /// A failed write deletes its partial file before the exception goes on. The partial file is as large as the
+        /// index, and a full disk is the likeliest reason for the failure.
+        /// </summary>
+        private static void WriteThroughTemporaryFile(string fileName, Action<FileStream> write)
+        {
+            string partialFileName = fileName + ".partial";
+            try
+            {
+                using (var file = new FileStream(partialFileName, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20))
+                {
+                    write(file);
+                }
+            }
+            catch
+            {
+                File.Delete(partialFileName);
+                throw;
+            }
+            File.Move(partialFileName, fileName, overwrite: true);
+        }
+
+        private static FragmentIndex ReadFragmentIndex(string fragmentIndexFileName)
+        {
+            using var file = new FileStream(fragmentIndexFileName, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20);
+
+            Span<int> header = stackalloc int[4];
+            file.ReadExactly(MemoryMarshal.AsBytes(header));
+            if (header[0] != FragmentIndexMagic || header[1] != FragmentIndexFormatVersion)
+            {
+                throw new MetaMorpheusException($"{fragmentIndexFileName} is not a fragment index this version can read.");
+            }
+
+            var binStart = new int[header[2]];
+            var peptideIds = new int[header[3]];
+            ReadInt32Bulk(file, binStart);
+            ReadInt32Bulk(file, peptideIds);
+
+            return new FragmentIndex(binStart, peptideIds);
+        }
+
+        /// <summary>
+        /// The precursor index is still a <see cref="List{T}"/> array: it is appended to after construction by
+        /// AddInteriorTerminalModsToPrecursorIndex, so it cannot be built with the count-then-fill pass a
+        /// compressed layout needs. Kept in the same flat format as before.
+        /// </summary>
+        private static void WritePrecursorIndex(List<int>[] precursorIndex, string precursorIndexFileName)
+            => WriteThroughTemporaryFile(precursorIndexFileName, file => WritePrecursorIndexPayload(precursorIndex, file));
+
+        private static void WritePrecursorIndexPayload(List<int>[] precursorIndex, FileStream file)
+        {
+            var counts = new int[precursorIndex.Length];
+            for (int i = 0; i < precursorIndex.Length; i++)
+            {
+                counts[i] = precursorIndex[i]?.Count ?? 0;
+            }
+
+            Span<int> header = stackalloc int[3];
+            header[0] = PrecursorIndexMagic;
+            header[1] = FragmentIndexFormatVersion;
+            header[2] = precursorIndex.Length;
+            file.Write(MemoryMarshal.AsBytes(header));
+            WriteInt32Bulk(file, counts);
+
+            var buffer = new int[1 << 20];
+            int staged = 0;
+            foreach (List<int> bin in precursorIndex)
+            {
+                if (bin == null || bin.Count == 0)
+                {
+                    continue;
+                }
+
+                ReadOnlySpan<int> ids = CollectionsMarshal.AsSpan(bin);
+                while (!ids.IsEmpty)
+                {
+                    if (staged == buffer.Length)
+                    {
+                        file.Write(MemoryMarshal.AsBytes(buffer.AsSpan(0, staged)));
+                        staged = 0;
+                    }
+
+                    int take = Math.Min(buffer.Length - staged, ids.Length);
+                    ids.Slice(0, take).CopyTo(buffer.AsSpan(staged));
+                    staged += take;
+                    ids = ids.Slice(take);
+                }
+            }
+
+            if (staged > 0)
+            {
+                file.Write(MemoryMarshal.AsBytes(buffer.AsSpan(0, staged)));
             }
         }
 
-        private static List<int>[] ReadFragmentIndex(string fragmentIndexFileName)
+        private static List<int>[] ReadPrecursorIndex(string precursorIndexFileName)
         {
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
+            using var file = new FileStream(precursorIndexFileName, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20);
 
-            using (var file = File.OpenRead(fragmentIndexFileName))
+            Span<int> header = stackalloc int[3];
+            file.ReadExactly(MemoryMarshal.AsBytes(header));
+            if (header[0] != PrecursorIndexMagic || header[1] != FragmentIndexFormatVersion)
             {
-                return (List<int>[])ser.Deserialize(file);
+                throw new MetaMorpheusException($"{precursorIndexFileName} is not a precursor index this version can read.");
+            }
+
+            var counts = new int[header[2]];
+            ReadInt32Bulk(file, counts);
+
+            var precursorIndex = new List<int>[counts.Length];
+            for (int i = 0; i < counts.Length; i++)
+            {
+                if (counts[i] == 0)
+                {
+                    continue;
+                }
+
+                var bin = new List<int>(counts[i]);
+                CollectionsMarshal.SetCount(bin, counts[i]);
+                ReadInt32Bulk(file, CollectionsMarshal.AsSpan(bin));
+                precursorIndex[i] = bin;
+            }
+
+            return precursorIndex;
+        }
+
+        private static void WriteInt32Bulk(Stream stream, int[] values)
+        {
+            // Span byte length is an int, so a >512 M-element array has to go out in chunks
+            const int chunk = 1 << 24;
+            for (int offset = 0; offset < values.Length; offset += chunk)
+            {
+                int count = Math.Min(chunk, values.Length - offset);
+                stream.Write(MemoryMarshal.AsBytes(values.AsSpan(offset, count)));
+            }
+        }
+
+        private static void ReadInt32Bulk(Stream stream, Span<int> destination)
+        {
+            const int chunk = 1 << 24;
+            while (!destination.IsEmpty)
+            {
+                int count = Math.Min(chunk, destination.Length);
+                stream.ReadExactly(MemoryMarshal.AsBytes(destination.Slice(0, count)));
+                destination = destination.Slice(count);
             }
         }
 
@@ -1105,17 +1788,72 @@ namespace TaskLayer
             return null;
         }
 
+        /// <summary>
+        /// A folder is a cache hit only if its binary indexes carry a header this build can read. On existence
+        /// alone a stale folder fails in the reader instead, which GenerateSecondIndexes does not recover from.
+        /// </summary>
         private static string CheckFiles(IndexingEngine indexEngine, DirectoryInfo folder)
         {
-            if (File.Exists(Path.Combine(folder.FullName, IndexEngineParamsFileName)) &&
+            string paramsFile = Path.Combine(folder.FullName, IndexEngineParamsFileName);
+            string fragmentIndexFile = Path.Combine(folder.FullName, FragmentIndexFileName);
+            string precursorIndexFile = Path.Combine(folder.FullName, PrecursorIndexFileName);
+            string secondFragmentIndexFile = Path.Combine(folder.FullName, SecondFragmentIndexFileName);
+
+            if (File.Exists(paramsFile) &&
                 File.Exists(Path.Combine(folder.FullName, PeptideIndexFileName)) &&
-                File.Exists(Path.Combine(folder.FullName, FragmentIndexFileName)) &&
-                (File.Exists(Path.Combine(folder.FullName, PrecursorIndexFileName)) || !indexEngine.GeneratePrecursorIndex) &&
-                SameSettings(Path.Combine(folder.FullName, IndexEngineParamsFileName), indexEngine))
+                File.Exists(fragmentIndexFile) &&
+                (File.Exists(precursorIndexFile) || !indexEngine.GeneratePrecursorIndex) &&
+                SameSettings(paramsFile, indexEngine) &&
+                HasReadableIndexHeader(fragmentIndexFile, FragmentIndexMagic) &&
+                (!indexEngine.GeneratePrecursorIndex || HasReadableIndexHeader(precursorIndexFile, PrecursorIndexMagic)) &&
+                // written on demand by GenerateSecondIndexes, so absent is fine and stale is not
+                (!File.Exists(secondFragmentIndexFile) || HasReadableIndexHeader(secondFragmentIndexFile, FragmentIndexMagic)))
             {
                 return folder.FullName;
             }
             return null;
+        }
+
+        /// <summary>
+        /// The magic and format version the readers check, read at folder-selection time, and a file at least as
+        /// long as the header says its payload is. Any failure to get at them is a miss, since the reader would
+        /// fail on the same file.
+        ///
+        /// The length is what catches a truncated file: a write cut short keeps a valid header. The fragment index
+        /// is exactly its header plus two arrays whose lengths the header gives. The precursor index's bins are
+        /// variable, so only its counts array is known from the header, which still catches a file cut off
+        /// before the bins; reading every count to size the rest would cost a full read at selection time.
+        /// </summary>
+        private static bool HasReadableIndexHeader(string indexFileName, int expectedMagic)
+        {
+            bool isFragmentIndex = expectedMagic == FragmentIndexMagic;
+            Span<int> header = stackalloc int[isFragmentIndex ? 4 : 3];
+            long fileLength;
+            try
+            {
+                using var file = new FileStream(indexFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+                fileLength = file.Length;
+                file.ReadExactly(MemoryMarshal.AsBytes(header));
+            }
+            catch
+            {
+                return false;
+            }
+
+            if (header[0] != expectedMagic || header[1] != FragmentIndexFormatVersion)
+            {
+                return false;
+            }
+
+            long headerBytes = header.Length * sizeof(int);
+            if (isFragmentIndex)
+            {
+                // FragmentIndex needs at least one bin offset
+                return header[2] >= 1 && header[3] >= 0 &&
+                       fileLength == headerBytes + sizeof(int) * ((long)header[2] + header[3]);
+            }
+
+            return header[2] >= 0 && fileLength >= headerBytes + sizeof(int) * (long)header[2];
         }
 
         private static void WriteIndexEngineParams(IndexingEngine indexEngine, string fileName)
@@ -1135,15 +1873,45 @@ namespace TaskLayer
             {
                 Directory.CreateDirectory(pathToIndexes);
             }
-            var folder = Path.Combine(pathToIndexes, DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
+            // The folder name is a timestamp with one-second resolution, so two partitions indexed within
+            // the same second used to land in the same folder and overwrite each other's indexEngine.params
+            // and peptideIndex.ind. That leaves the earlier partition's index unfindable, which is fatal for
+            // XL search: its second round re-reads each partition's peptide index and gets null instead.
+            // Only reachable when indexing is fast enough for two partitions to finish inside one second.
+            string stamp = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
+            var folder = Path.Combine(pathToIndexes, stamp);
+            for (int disambiguator = 1; Directory.Exists(folder); disambiguator++)
+            {
+                folder = Path.Combine(pathToIndexes, $"{stamp}-{disambiguator}");
+            }
             Directory.CreateDirectory(folder);
             return folder;
         }
 
-        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
+        /// <summary>
+        /// Convenience overload for the protein-only tasks (cross-link, glyco, calibration, non-specific),
+        /// which index peptides and want them back typed as peptides. Distinguished by the ref parameter,
+        /// so it cannot be ambiguous with the general one.
+        /// </summary>
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex,
+            ref FragmentIndex fragmentIndex, ref List<int>[] precursorIndex, IEnumerable<IBioPolymer> allKnownProteins, string taskId)
+        {
+            List<IBioPolymerWithSetMods> bioPolymerIndex = null;
+            GenerateIndexes(indexEngine, dbFilenameList, ref bioPolymerIndex, ref fragmentIndex, ref precursorIndex, allKnownProteins, taskId);
+            peptideIndex = bioPolymerIndex?.Cast<PeptideWithSetModifications>().ToList();
+        }
+
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<IBioPolymerWithSetMods> peptideIndex, ref FragmentIndex fragmentIndex, ref List<int>[] precursorIndex, IEnumerable<IBioPolymer> allKnownProteins, string taskId)
         {
             bool successfullyReadIndices = false;
-            string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+
+            // The on-disk peptide index only round-trips peptides: OligoWithSetMods is neither
+            // [Serializable] nor able to restore its parent the way SetNonSerializedPeptideInfo does for
+            // PeptideWithSetModifications. Nucleic acid databases are small, so build in memory each
+            // time rather than block oligo searches on an mzLib serialization change.
+            bool indexIsCacheable = GlobalVariables.AnalyteType != AnalyteType.Oligo;
+
+            string pathToFolderWithIndices = indexIsCacheable ? GetExistingFolderWithIndices(indexEngine, dbFilenameList) : null;
 
             if (pathToFolderWithIndices != null) //if indexes exist
             {
@@ -1158,24 +1926,31 @@ namespace TaskLayer
                     if (indexEngine.GeneratePrecursorIndex)
                     {
                         Status("Reading precursor index...", new List<string> { taskId });
-                        precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
+                        precursorIndex = ReadPrecursorIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
                     }
 
                     successfullyReadIndices = true;
                 }
-                catch
+                catch (Exception e)
                 {
-                    // could put something here... this basically is just to prevent a crash if the index was unable to be read.
-
-                    // if the old index couldn't be read, a new one will be generated.
-
-                    // an old index may not be able to be read because of information required by new versions of MetaMorpheus
-                    // that wasn't written by old versions.
+                    // a new one is generated below; CheckFiles cannot anticipate every way a cached index
+                    // goes bad, so report why rather than losing the reason
+                    Warn("Could not read the existing index, so it is being rebuilt. Reason: " + e.Message);
                 }
             }
 
             if (!successfullyReadIndices) //if we didn't find indexes with the same params
             {
+                if (!indexIsCacheable)
+                {
+                    Status("Running Index Engine...", new List<string> { taskId });
+                    var inMemoryResults = (IndexingResults)indexEngine.Run();
+                    peptideIndex = inMemoryResults.PeptideIndex;
+                    fragmentIndex = inMemoryResults.FragmentIndex;
+                    precursorIndex = inMemoryResults.PrecursorIndex;
+                    return;
+                }
+
                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                 Status("Writing params...", new List<string> { taskId });
                 var paramsFile = Path.Combine(output_folderForIndices, IndexEngineParamsFileName);
@@ -1203,7 +1978,7 @@ namespace TaskLayer
                 {
                     Status("Writing precursor index...", new List<string> { taskId });
                     var precursorIndexFile = Path.Combine(output_folderForIndices, PrecursorIndexFileName);
-                    WriteFragmentIndex(precursorIndex, precursorIndexFile);
+                    WritePrecursorIndex(precursorIndex, precursorIndexFile);
                     FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
                 }
             }
@@ -1224,7 +1999,7 @@ namespace TaskLayer
                     if (indexEngine.GeneratePrecursorIndex)
                     {
                         Status("Reading precursor index...", new List<string> { taskId });
-                        precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
+                        precursorIndex = ReadPrecursorIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
                     }
 
                     successfullyReadIndices = true;
@@ -1246,7 +2021,7 @@ namespace TaskLayer
             }
         }
 
-        public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref List<int>[] secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
+        public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref FragmentIndex secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
             if (!File.Exists(Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName))) //if no indexes exist
@@ -1285,6 +2060,7 @@ namespace TaskLayer
             where TBioPolymer : IBioPolymer
         {
             List<TBioPolymer> toRemove = new();
+            bioPolymers.RemoveAll(p => p == null);
             foreach (var accessionGroup in bioPolymers.GroupBy(p => p.Accession)
                          .Where(group => group.Count() > 1) // only keep the ones with multiple entries sharing an accession
                          .Select(group => group.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count) // order by mods then truncation products (this is what was here before)
@@ -1363,5 +2139,31 @@ namespace TaskLayer
                 }
             }
         }
+
+        /// <summary>
+        /// Legacy TOML compatibility when ProductMassTolerance_LowRes is omitted, the helper falls back to ProductMassTolerance to keep constant result.
+        /// </summary>
+        /// <typeparam name="TTask"></typeparam>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        public static TTask ReadTaskTomlWithLowResFallback<TTask>(string filePath) where TTask : MetaMorpheusTask
+        {
+            TomlTable raw = Toml.ReadFile(filePath, tomlConfig);
+            TTask task = raw.Get<TTask>();
+
+            if (raw.ContainsKey(nameof(CommonParameters)))
+            {
+                TomlTable common = raw.Get<TomlTable>(nameof(CommonParameters));
+                if (!common.ContainsKey(nameof(CommonParameters.ProductMassTolerance_LowRes)))
+                {
+                    // Legacy TOML behavior: omitted low-res follows product tolerance
+                    task.CommonParameters.ProductMassTolerance_LowRes = task.CommonParameters.ProductMassTolerance;
+                }
+            }
+
+            return task;
+        }
     }
 }
+
+

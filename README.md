@@ -1,7 +1,8 @@
-# <img src="https://user-images.githubusercontent.com/16883585/75211541-da01c680-5749-11ea-9f6c-096dc2ec4dbc.png" width="30"/> MetaMorpheus: Free, Open-Source PTM Discovery [![Follow us on Twitter](https://img.shields.io/twitter/follow/smith_chem_wisc?label=Twitter&style=social)](https://twitter.com/smith_chem_wisc)
+# <img src="https://user-images.githubusercontent.com/16883585/75211541-da01c680-5749-11ea-9f6c-096dc2ec4dbc.png" width="30"/> MetaMorpheus: Free, Open-Source PTM Discovery
 
 [![Release](https://img.shields.io/github/v/release/smith-chem-wisc/MetaMorpheus)](https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest)
-[![Build status](https://ci.appveyor.com/api/projects/status/0jt31252xny5aoxt/branch/master?svg=true)](https://ci.appveyor.com/project/smith-chem-wisc/metamorpheus/branch/master)
+[![Build status](https://github.com/smith-chem-wisc/MetaMorpheus/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/smith-chem-wisc/MetaMorpheus/actions/workflows/build.yml)
+[![Tests](https://github.com/smith-chem-wisc/MetaMorpheus/actions/workflows/Test.yml/badge.svg?branch=master)](https://github.com/smith-chem-wisc/MetaMorpheus/actions/workflows/Test.yml)
 [![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus)
 [![Github All Releases](https://img.shields.io/github/downloads/smith-chem-wisc/MetaMorpheus/total.svg)](https://github.com/smith-chem-wisc/MetaMorpheus/releases)
 [![Github All Releases](https://img.shields.io/docker/pulls/smithchemwisc/metamorpheus)](https://hub.docker.com/r/smithchemwisc/metamorpheus/tags?page=1&ordering=last_updated)
@@ -29,22 +30,38 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 
 * Environment:
   * 64-bit operating system
-  * .NET Core 8.0:
-     * Windows: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-8.0.401-windows-x64-installer
-     * macOS, x64 Intel processor: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-8.0.401-macos-x64-installer
-     * macOS, ARM Apple Silicon processor: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-8.0.401-macos-arm64-installer
-     * Linux: https://learn.microsoft.com/dotnet/core/install/linux?WT.mc_id=dotnet-35129-website
-* Note that the installer (MetaMorpheusInstaller.msi) only works on Windows. The command-line version of MetaMorpheus supports any operating system that supports .NET Core (Windows, MacOS, Linux)
+  * .NET 10.0, from https://dotnet.microsoft.com/en-us/download/dotnet/10.0 — that page offers
+    installers for Windows, macOS (both Intel and Apple Silicon) and Linux
+     * Running the GUI needs the **Desktop** Runtime (the plain Runtime is not enough for WPF); the CLI needs only the Runtime, and building from source needs the SDK
+* Note that the installer (MetaMorpheusInstaller.msi) only works on Windows. The command-line version of MetaMorpheus supports any operating system that supports .NET (Windows, macOS, Linux)
 * 8 GB RAM recommended
 
 ## Spectra Requirements
 
 * One of the following formats:
-   * Thermo .raw (Windows and Linux only)
+   * Thermo .raw (Windows, macOS and Linux)
    * .mzML file in centroid mode. Please watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[How to convert files to .mzML](https://www.youtube.com/watch?v=hOJ6ibCA5Pk) video on YouTube.
    * .mgf
 * MS1 and MS2 scans
 * If you would like to know more about the types of files that can be searched with MetaMorpheus, please watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[Mass Spectra Files Video](https://www.youtube.com/watch?v=SN6_T2JyxhA&list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb&index=3) on YouTube.
+
+### Agreeing to the Thermo licence
+
+Reading Thermo `.raw` files requires agreeing to Thermo's RawFileReader licence. The GUI asks the first time a `.raw` file is added; the command line asks the first time a run includes one.
+
+Where there is no console to answer that prompt — a container, a scheduled cluster job, a CI runner, anything with stdin redirected or closed — pass `--acceptThermoLicence`. It prints the licence, records the agreement, and does not prompt:
+
+```
+dotnet CMD.dll --acceptThermoLicence
+```
+
+It may also be given alongside a run, which then proceeds without prompting:
+
+```
+dotnet CMD.dll --acceptThermoLicence -t SearchTask.toml -d database.fasta -s spectra.raw -o output
+```
+
+The agreement is stored as `UserHasAgreedToThermoRawFileReaderLicence` in `settings.toml` in the MetaMorpheus data directory. For a Windows installation that is `%LOCALAPPDATA%\MetaMorpheus`, so it is recorded once per user and survives upgrades. Otherwise it is the folder MetaMorpheus was extracted into, so a new download, conda environment or container layer will need the agreement again.
 
 ## Database Requirements
 
@@ -60,6 +77,61 @@ Installation and typical usage is described for the on the [Getting Started](htt
 * [Test Installation (Windows Command Line Executable)](https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Getting-Started#test-installation-windows-command-line-executable)
 * [Test Installation (via .NET Core .dll - Linux, macOS, Windows)](https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Getting-Started#test-installation-via-net-core-dll---linux-macos-windows)
 * [Test Conda Installation (Linux, macOS, Windows)](https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Getting-Started#test-conda-installation-linux-macos-windows)
+
+
+## Auditing an SDRF file
+
+An SDRF file describes the samples an experiment was built from, and what it says about labelling
+decides how many samples a quantitative search can see. That is easy to get wrong invisibly: a file
+whose `comment[label]` names the reagent kit — `TMT10plex` on every row — rather than the channel
+parses cleanly and validates cleanly, and then yields one channel for a ten-channel experiment. So
+does a file with two rows per (data file, channel), or one that declares no isobaric modification at
+all. None of that is a structural defect, so the SDRF validator is right not to report it, and the
+usual way a user finds out is a wrong number downstream.
+
+`--auditSdrf` prints what one SDRF says about quantification and runs nothing else:
+
+```
+dotnet CMD.dll --auditSdrf experiment.sdrf.tsv
+```
+
+```
+SDRF quantification audit: experiment.sdrf.tsv
+  design            : ChannelLevel
+  channels          : 4 (TMT126, TMT127N, TMT127C, TMT128N)
+  plex              : Column -- characteristics[biological replicate batch] -> 1
+  isobaric mod      : NOT DECLARED
+  label form        : 4 bare, 0 accessioned
+  facts:
+     1. data file               ok
+     2. channel                 ok
+     3. reporter m/z           ABSENT  SDRF has no column for it; it is derived from the channel
+     ...
+```
+
+and the case it exists for:
+
+```
+  design            : KitOnly
+  kit               : TMT6PLEX -- channels are never enumerated
+```
+
+Add `--auditData` to check the file's `comment[data file]` entries against a folder of downloaded
+files, which are then reported as found or missing:
+
+```
+dotnet CMD.dll --auditSdrf experiment.sdrf.tsv --auditData ./downloaded
+```
+
+which adds a line to the report:
+
+```
+  data files        : 3 found, 1 missing
+```
+
+The audit is read-only and runs on its own, so it is refused alongside anything that asks for work —
+`-t`/`-d`/`-s`, `-g`, `--test` or `--acceptThermoLicence` — rather than honouring one of the two
+silently. It exits 0 with a report, 2 for a settings error, and 4 for a document it could not read.
 
 
 ## References & Citation Guide for MetaMorpheus

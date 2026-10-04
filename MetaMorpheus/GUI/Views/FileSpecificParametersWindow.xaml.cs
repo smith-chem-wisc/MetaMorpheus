@@ -1,18 +1,20 @@
 ﻿using EngineLayer;
+using GuiFunctions;
+using MassSpectrometry;
 using MzLibUtil;
 using Nett;
+using Omics.Digestion;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
-using TaskLayer;
-using Proteomics.ProteolyticDigestion;
-using System.Globalization;
 using System.Windows.Media;
-using MassSpectrometry;
-using Omics.Digestion;
+using TaskLayer;
+using Transcriptomics.Digestion;
 
 namespace MetaMorpheusGUI
 {
@@ -43,7 +45,7 @@ namespace MetaMorpheusGUI
             if (fileSpecificPrecursorMassTolEnabled.IsChecked.Value)
             {
                 fileSpecificParameterExists = true;
-                if (GlobalGuiSettings.CheckPrecursorMassTolerance(precursorMassToleranceTextBox.Text))
+                if (TaskValidator.CheckPrecursorMassTolerance(precursorMassToleranceTextBox.Text))
                 {
                     double value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
                     if (precursorMassToleranceComboBox.SelectedIndex == 0)
@@ -63,7 +65,7 @@ namespace MetaMorpheusGUI
             if (fileSpecificProductMassTolEnabled.IsChecked.Value)
             {
                 fileSpecificParameterExists = true;
-                if (GlobalGuiSettings.CheckProductMassTolerance(productMassToleranceTextBox.Text))
+                if (TaskValidator.CheckProductMassTolerance(productMassToleranceTextBox.Text))
                 {
                     double value = double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
                     if (productMassToleranceComboBox.SelectedIndex == 0)
@@ -83,7 +85,7 @@ namespace MetaMorpheusGUI
             if (fileSpecificProteaseEnabled.IsChecked.Value)
             {
                 fileSpecificParameterExists = true;
-                parametersToWrite.DigestionAgent = (Protease)fileSpecificProtease.SelectedItem;
+                parametersToWrite.DigestionAgent = (DigestionAgent)fileSpecificProtease.SelectedItem;
             }
             if (fileSpecificDissociationTypesEnabled.IsChecked.Value)
             {
@@ -111,8 +113,8 @@ namespace MetaMorpheusGUI
             if (fileSpecificMaxPeptideLengthEnabled.IsChecked.Value)
             {
                 fileSpecificParameterExists = true;
-                string lengthMaxPeptide = GlobalGuiSettings.MaxValueConversion(MaxPeptideLengthTextBox.Text);
-                if (GlobalGuiSettings.CheckPeptideLength(MinPeptideLengthTextBox.Text, lengthMaxPeptide))
+                string lengthMaxPeptide = TaskValidator.MaxValueConversion(MaxPeptideLengthTextBox.Text);
+                if (TaskValidator.CheckPeptideLength(MinPeptideLengthTextBox.Text, lengthMaxPeptide))
                 {
                     parametersToWrite.MaxPeptideLength = int.Parse(lengthMaxPeptide);
                 }
@@ -124,8 +126,8 @@ namespace MetaMorpheusGUI
             if (fileSpecificMissedCleavagesEnabled.IsChecked.Value)
             {
                 fileSpecificParameterExists = true;
-                string lengthCleavage = GlobalGuiSettings.MaxValueConversion(missedCleavagesTextBox.Text);
-                if (GlobalGuiSettings.CheckMaxMissedCleavages(lengthCleavage))
+                string lengthCleavage = TaskValidator.MaxValueConversion(missedCleavagesTextBox.Text);
+                if (TaskValidator.CheckMaxMissedCleavages(lengthCleavage))
                 {
                     parametersToWrite.MaxMissedCleavages = int.Parse(lengthCleavage);
                 }
@@ -137,7 +139,7 @@ namespace MetaMorpheusGUI
             if (fileSpecificMaxModNumEnabled.IsChecked.Value)
             {
                 fileSpecificParameterExists = true;
-                if (GlobalGuiSettings.CheckMaxModsPerPeptide(MaxModNumTextBox.Text))
+                if (TaskValidator.CheckMaxModsPerPeptide(MaxModNumTextBox.Text))
                 {
                     parametersToWrite.MaxModsForPeptide = int.Parse(MaxModNumTextBox.Text);
                 }
@@ -208,11 +210,15 @@ namespace MetaMorpheusGUI
         {
             // use default settings to populate
             var defaultParams = new CommonParameters();
-            DigestionAgent tempProtease = defaultParams.DigestionParams.DigestionAgent;
-            int tempMinPeptideLength = defaultParams.DigestionParams.MinLength;
-            int tempMaxPeptideLength = defaultParams.DigestionParams.MaxLength;
-            int tempMaxMissedCleavages = defaultParams.DigestionParams.MaxMissedCleavages;
-            int tempMaxModsForPeptide = defaultParams.DigestionParams.MaxMods;
+            IDigestionParams digestionParams = GuiGlobalParamsViewModel.Instance.IsRnaMode
+                ? new RnaDigestionParams("RNase T1")
+                : new DigestionParams("trypsin");
+
+            DigestionAgent tempProtease = digestionParams.DigestionAgent;
+            int tempMinPeptideLength = digestionParams.MinLength;
+            int tempMaxPeptideLength = digestionParams.MaxLength;
+            int tempMaxMissedCleavages = digestionParams.MaxMissedCleavages;
+            int tempMaxModsForPeptide = digestionParams.MaxMods;
             var tempPrecursorMassTolerance = defaultParams.PrecursorMassTolerance;
             var tempProductMassTolerance = defaultParams.ProductMassTolerance;
             DissociationType tempDissociationType = defaultParams.DissociationType; 
@@ -277,20 +283,23 @@ namespace MetaMorpheusGUI
                 }
             }
 
-            DigestionParams digestParams = new DigestionParams(
-                protease: tempProtease.Name,
-                maxMissedCleavages: tempMaxMissedCleavages,
-                minPeptideLength: tempMinPeptideLength,
-                maxPeptideLength: tempMaxPeptideLength,
-                maxModsForPeptides: tempMaxModsForPeptide);
-
             // populate the GUI
-            foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
             {
-                fileSpecificProtease.Items.Add(protease);
+                foreach (Rnase rnase in RnaseDictionary.Dictionary.Values)
+                {
+                    fileSpecificProtease.Items.Add(rnase);
+                }
+            }
+            else
+            {
+                foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
+                {
+                    fileSpecificProtease.Items.Add(protease);
+                }
             }
 
-            fileSpecificProtease.SelectedItem = digestParams.Protease;
+            fileSpecificProtease.SelectedItem = tempProtease;
 
             foreach (DissociationType dissociationType in Enum.GetValues(typeof(DissociationType)))
             {
@@ -313,17 +322,17 @@ namespace MetaMorpheusGUI
 
             precursorMassToleranceTextBox.Text = tempPrecursorMassTolerance.Value.ToString();
             productMassToleranceTextBox.Text = tempProductMassTolerance.Value.ToString();
-            MinPeptideLengthTextBox.Text = digestParams.MinPeptideLength.ToString();
+            MinPeptideLengthTextBox.Text = tempMinPeptideLength.ToString();
 
-            if (int.MaxValue != digestParams.MaxPeptideLength)
+            if (int.MaxValue != tempMaxPeptideLength)
             {
-                MaxPeptideLengthTextBox.Text = digestParams.MaxPeptideLength.ToString();
+                MaxPeptideLengthTextBox.Text = tempMaxPeptideLength.ToString();
             }
 
-            MaxModNumTextBox.Text = digestParams.MaxModsForPeptide.ToString();
-            if (int.MaxValue != digestParams.MaxMissedCleavages)
+            MaxModNumTextBox.Text = tempMaxModsForPeptide.ToString();
+            if (int.MaxValue != tempMaxMissedCleavages)
             {
-                missedCleavagesTextBox.Text = digestParams.MaxMissedCleavages.ToString();
+                missedCleavagesTextBox.Text = tempMaxMissedCleavages.ToString();
             }
         }
 

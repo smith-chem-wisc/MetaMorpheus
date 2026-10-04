@@ -1,7 +1,9 @@
 ﻿using EngineLayer;
 using FlashLFQ;
+using Quantification;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
+using EngineLayer.DatabaseLoading;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics;
@@ -21,6 +23,14 @@ namespace TaskLayer
         public HashSet<IDigestionParams> ListOfDigestionParams { get; set; }
         public List<SpectralMatch> AllSpectralMatches { get; set; }
         public FlashLfqResults FlashLfqResults { get; set; }
+
+        /// <summary>
+        /// Results of the isobaric (TMT/iTRAQ) quantification run, or null when multiplex
+        /// quantification was not requested, no TMT design file was found, or the run failed.
+        /// The per-channel protein values are additionally written onto each
+        /// <see cref="EngineLayer.ProteinGroup"/> itself.
+        /// </summary>
+        public QuantificationResults MultiplexQuantificationResults { get; set; }
         public int NumNotches { get; set; }
         public string OutputFolder { get; set; }
         public string IndividualResultsOutputFolder { get; set; }

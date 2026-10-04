@@ -1,16 +1,21 @@
-﻿using NUnit.Framework;
-using System.IO;
-using System;
-using System.Linq;
-using EngineLayer;
-using TaskLayer;
-using System.Collections.Generic;
-using Omics.Fragmentation;
-using Proteomics;
-using MassSpectrometry;
+﻿using EngineLayer;
 using EngineLayer.ClassicSearch;
+using EngineLayer.DatabaseLoading;
+using MassSpectrometry;
+using MzLibUtil;
+using Nett;
+using NUnit.Framework;
+using Omics.Fragmentation;
 using Omics.Modifications;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
+using Readers;
 using Readers.SpectralLibrary;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using TaskLayer;
 
 namespace Test
 {
@@ -52,7 +57,42 @@ namespace Test
 
             Directory.Delete(outputDir, true);
         }
+        [Test]
+        public static void DaltonToleranceSpectralLibrarySearchTest()
+        {
+            var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
+            var outputDir = Path.Combine(testDir, @"DaltonToleranceSpectralLibrarySearchTest");
 
+            string library1 = Path.Combine(testDir, @"P16858_target.msp");
+            string library2 = Path.Combine(testDir, @"P16858_decoy.msp");
+            string fastaDb = Path.Combine(testDir, @"P16858.fasta");
+            string spectraFile = Path.Combine(testDir, @"slicedMouse.raw");
+
+            Directory.CreateDirectory(outputDir);
+            Tolerance t1 = Tolerance.ParseToleranceString("0.5 Absolute");     // AbsoluteTolerance(0.5)
+            CommonParameters cp = new CommonParameters(productMassTolerance: t1);
+            var searchTask = new SearchTask();
+            searchTask.CommonParameters = cp;
+            searchTask.RunTask(outputDir,
+                new List<DbForTask>
+                {
+                    new DbForTask(library1, false),
+                    new DbForTask(library2, false),
+                    new DbForTask(fastaDb, false)
+                },
+                new List<string> { spectraFile },
+                "");
+
+            var results = File.ReadAllLines(Path.Combine(outputDir, @"AllPSMs.psmtsv"));
+            var split = results[0].Split('\t');
+            int ind = Array.IndexOf(split, "Normalized Spectral Angle");
+            Assert.That(ind >= 0);
+
+            var spectralAngle = double.Parse(results[1].Split('\t')[ind]);
+            Assert.That(Math.Round(spectralAngle, 3) == 0.812);
+
+            Directory.Delete(outputDir, true);
+        }
         /// <summary>
         /// Test ensures peptide FDR is calculated and that it doesn't output PSM FDR results
         /// </summary>
@@ -135,10 +175,100 @@ namespace Test
             Assert.That(allPsmsArray[5].IsDecoy);
 
             SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
+            Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.82).Within(0.01));
+
+        }
+        /// <summary>
+        /// Test ensures spectral angle calculation works correctly for decoys when no decoy library spectrum is available (fallback to generated decoy spectrum)
+        /// </summary>
+        [Test]
+        public static void AnotherSpectralLibrarySearchTestDecoyNoLibrarySpectrum()
+        {
+            var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
+            string myFile = Path.Combine(testDir, @"slicedMouse.raw");
+            MyFileManager myFileManager = new MyFileManager(true);
+            CommonParameters commonParameters = new CommonParameters(maxThreadsToUsePerFile: 1, scoreCutoff: 1);
+            MsDataFile myMsDataFile = myFileManager.LoadFile(myFile, commonParameters);
+
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var proteinList = new List<Protein> { new Protein("QTATIAHVTTMLGEVIGFNDHIVK", "P16858") };
+
+            string targetSpectralLibrary = Path.Combine(testDir, @"P16858_decoy.msp"); // Using P16858_decoy.msp file which actually contains the target spectrum for this test case
+
+            List<string> specLibs = new List<string> { targetSpectralLibrary };
+
+            SpectralLibrary sl = new SpectralLibrary(specLibs);
+
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            bool writeSpectralLibrary = false;
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+                proteinList, searchModes, commonParameters, null, sl, new List<string>(), writeSpectralLibrary).Run();
+
+            // Single search mode
+            Assert.That(allPsmsArray.Length, Is.EqualTo(7));
+            Assert.That(allPsmsArray[5].Score > 38);
+            Assert.That(allPsmsArray[5].BaseSequence, Is.EqualTo("VIHDNFGIVEGLMTTVHAITATQK")); //this is the decoy sequence
+            Assert.That(allPsmsArray[5].IsDecoy);
+
+            SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
             Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.69).Within(0.01));
 
         }
 
+        /// <summary>
+        /// Tests that spectral angles are calculated correctly when using a spectral library with non-specific enzyme search.
+        /// This is critical because non-specific search stores PSMs in a different data structure (fileSpecificPsmsSeparatedByFdrCategory)
+        /// rather than the standard fileSpecificPsms array used by Classic and Modern search.
+        /// Spectral angles must be calculated before FDR analysis since they are used in PEP (posterior error probability) calculation.
+        /// This test verifies:
+        /// 1. The output TSV file is properly formatted (no warnings when reading)
+        /// 2. The expected number of PSMs are found
+        /// 3. The "Normalized Spectral Angle" column exists in the output
+        /// 4. At least one PSM has a valid spectral angle calculated (value >= 0, not -1 which indicates no calculation)
+        /// </summary>
+        [Test]
+        public static void SpectralLibrarySearchWithNonSpecificSearchTest()
+        {
+            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\NonSpecificSearchToml.toml");
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"SpectralLibraryNonSpecificSearchTest");
+            Directory.CreateDirectory(outputFolder);
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\bosTaurusEnamPruned.xml");
+            string mySpectralLibrary = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\bosTaurusSpectralLibrary.msp");
+
+            var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false), new DbForTask(mySpectralLibrary, false) }, outputFolder);
+            engineToml.Run();
+
+            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
+
+            // Verify the output file can be read without warnings
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+            Assert.That(warnings, Is.Empty, "TSV file should be readable without warnings");
+
+            // Verify PSMs were found
+            Assert.That(parsedPsms.Count, Is.GreaterThan(30), "Expected 38 total PSMs");
+
+            // Verify the Normalized Spectral Angle column exists in the output file
+            var headerLine = File.ReadLines(psmFile).First();
+            var headers = headerLine.Split('\t');
+            int spectralAngleIndex = Array.IndexOf(headers, "Normalized Spectral Angle");
+            Assert.That(spectralAngleIndex, Is.GreaterThanOrEqualTo(0), 
+                "Normalized Spectral Angle column should exist in the output TSV");
+
+            // Verify at least one PSM has a spectral angle calculated (not -1 which indicates no spectral angle)
+            // This confirms the fix for non-specific search spectral angle calculation is working
+            bool hasValidSpectralAngle = parsedPsms.Any(psm => psm.SpectralAngle.HasValue && psm.SpectralAngle.Value >= 0);
+            Assert.That(hasValidSpectralAngle, Is.True, 
+                "At least one PSM should have a valid spectral angle calculated for non-specific search with spectral library");
+
+            Directory.Delete(outputFolder, true);
+        }
 
     }
     

@@ -1,18 +1,18 @@
 ﻿using EngineLayer;
 using EngineLayer.GlycoSearch;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 using Proteomics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.DatabaseLoading;
 using FlashLFQ;
-using Omics.Digestion;
+using MassSpectrometry;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
-using pepXML.Generated;
 using Proteomics.ProteolyticDigestion;
 using Readers;
-using ThermoFisher.CommonCore.Data;
 using ProteinGroup = EngineLayer.ProteinGroup;
 using Omics;
 
@@ -72,6 +72,15 @@ namespace TaskLayer
                     if (Parameters.GlycoSearchParameters.DoParsimony)
                     {
                         GlycoProteinAnalysis(fspList, individualFileFolderPath, individualFileFolder); //Creat the proteinGroups file 
+
+                        // These reports are written long before QuantificationAnalysis runs, so without
+                        // this they carry no spectral count or occupancy at all. One file per report.
+                        PopulateCountBasedOccupancy(new List<SpectraFileInfo>
+                        {
+                            new SpectraFileInfo(fullFilePathWithExtension: fileSpecificPSMs.Key, condition: "", biorep: 0, fraction: 0, techrep: 0)
+                        });
+
+                        WriteProteinResults(individualFileFolderPath, individualFileFolder);
                     }
                     
                     foreach (GlycoSpectralMatch gsm in fspList) //maybe this needs to be the filterd list???
@@ -93,13 +102,13 @@ namespace TaskLayer
                     if (OglyInAllPsms.Any()) // Is there any gsms in the allPsms?
                     {
                         SingleFDRAnalysis(OglyInAllPsms, commonParameters, new List<string> { taskId });
-                        var writtenFileOGlyco = Path.Combine(OutputFolder + "\\oglyco" + ".psmtsv");
+                        var writtenFileOGlyco = Path.Combine(OutputFolder, "oglyco.psmtsv");
 
                         var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(OglyInAllPsms.Where(p => p.Accession != null && p.OneBasedStartResidue.HasValue).ToList());
-                        var seen_oglyco_localization_file = Path.Combine(OutputFolder + "\\seen_oglyco_localization" + ".tsv"); //generate the localization file
+                        var seen_oglyco_localization_file = Path.Combine(OutputFolder, "seen_oglyco_localization.tsv"); //generate the localization file
                         WriteGlycoFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_oglyco_localization_file);
 
-                        var protein_oglyco_localization_file = Path.Combine(OutputFolder + "\\protein_oglyco_localization" + ".tsv");
+                        var protein_oglyco_localization_file = Path.Combine(OutputFolder, "protein_oglyco_localization.tsv");
                         WriteGlycoFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_oglyco_localization_file);
                         // Writing the oglyco results to a file and summary text
                         WriteGlycoFile.WritePsmGlycoToTsv(OglyInAllPsms, writtenFileOGlyco, true); //we write this last so localization can be attempted 
@@ -113,31 +122,31 @@ namespace TaskLayer
                     {
                         SingleFDRAnalysis(NglyInAllPsms, commonParameters, new List<string> { taskId });
 
-                        var writtenFileNGlyco = Path.Combine(OutputFolder + "\\nglyco" + ".psmtsv");
+                        var writtenFileNGlyco = Path.Combine(OutputFolder, "nglyco.psmtsv");
 
                         var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(NglyInAllPsms.Where(p => p.Accession != null && p.OneBasedStartResidue.HasValue).ToList());
-                        var seen_nglyco_localization_file = Path.Combine(OutputFolder + "\\seen_nglyco_localization" + ".tsv");
+                        var seen_nglyco_localization_file = Path.Combine(OutputFolder, "seen_nglyco_localization.tsv");
                         WriteGlycoFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_nglyco_localization_file);
 
-                        var protein_nglyco_localization_file = Path.Combine(OutputFolder + "\\protein_nglyco_localization" + ".tsv");
+                        var protein_nglyco_localization_file = Path.Combine(OutputFolder, "protein_nglyco_localization.tsv");
                         WriteGlycoFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_nglyco_localization_file);
                         WriteGlycoFile.WritePsmGlycoToTsv(NglyInAllPsms, writtenFileNGlyco, true); //we write this last so localization can be attempted                        
                     }
                     break;
                 case GlycoSearchType.N_O_GlycanSearch:
                 default:
-                    var allPsmsgly = filteredPsms.Where(p => p.GlycanScore > 0).ToList();
+                    var allPsmsgly = filteredPsms.Where(p => p.Routes != null).ToList();
                     if (allPsmsgly.Any())
                     {
                         SingleFDRAnalysis(allPsmsgly, commonParameters, new List<string> { taskId });
 
-                        var writtenFileNOGlyco = Path.Combine(OutputFolder + "\\no_glyco" + ".psmtsv");
+                        var writtenFileNOGlyco = Path.Combine(OutputFolder, "no_glyco.psmtsv");
 
                         var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsgly.Where(p => p.Accession != null && p.OneBasedStartResidue.HasValue).ToList());
-                        var seen_no_glyco_localization_file = Path.Combine(OutputFolder + "\\seen_no_glyco_localization" + ".tsv");
+                        var seen_no_glyco_localization_file = Path.Combine(OutputFolder, "seen_no_glyco_localization.tsv");
                         WriteGlycoFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_no_glyco_localization_file);
 
-                        var protein_no_glyco_localization_file = Path.Combine(OutputFolder + "\\protein_no_glyco_localization" + ".tsv");
+                        var protein_no_glyco_localization_file = Path.Combine(OutputFolder, "protein_no_glyco_localization.tsv");
                         WriteGlycoFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_no_glyco_localization_file);
                         WriteGlycoFile.WritePsmGlycoToTsv(allPsmsgly, writtenFileNOGlyco, true); //we write this last so localization can be attempted
                     
@@ -156,6 +165,16 @@ namespace TaskLayer
             
             QuantificationAnalysis();
             WriteQuantificationResults();
+
+            if (glycoSearchParameters.DoParsimony)
+            {
+                WriteProteinResults(OutputFolder, null, MyTaskResults);
+            }
+
+            if (Parameters.GlycoSearchParameters.WritePrunedDataBase)
+            {
+                WritePrunedDatabase(Parameters.AllPsms.Cast<SpectralMatch>().ToList(), Parameters.BioPolymerList.Cast<IBioPolymer>().ToList(), Parameters.GlycoSearchParameters.ModsToWriteSelection, Parameters.DatabaseFilenameList, Parameters.OutputFolder, Parameters.SearchTaskId);
+            }
 
             var writtenFileSingle = Path.Combine(OutputFolder, "AllPSMs.psmtsv");
             WriteGlycoFile.WritePsmGlycoToTsv(filteredPsms, writtenFileSingle, true);
@@ -281,27 +300,33 @@ namespace TaskLayer
         {
             // calculate single PSM FDR
             List<SpectralMatch> psms = items.Select(p => p as SpectralMatch).ToList();
-            new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds).Run();
+            // No DisambiguationEngine runs after glyco FDR, so PEP keeps its ambiguous-hypothesis pruning here.
+            new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds, pruneAmbiguousHypotheses: true).Run();
 
         }
         private void GlycoProteinAnalysis(List<GlycoSpectralMatch> gsms, string outputFolder, string individualFileFolder = null, MyTaskResults myTaskResults = null )
         {
-            // convert gsms to psms
-            List<SpectralMatch> psmsForProteinParsimony = gsms.Select(p => p as SpectralMatch).ToList();
-
+            // convert gsms to psms and filter
+            var psms = gsms.Select(p => p as SpectralMatch).ToList();
             Status("Constructing protein groups...", Parameters.SearchTaskId);
 
             // run parsimony
-            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(psmsForProteinParsimony, Parameters.GlycoSearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
+            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(psms, Parameters.GlycoSearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
 
             // score protein groups and calculate FDR
-            ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmsForProteinParsimony,
-                Parameters.GlycoSearchParameters.NoOneHitWonders, Parameters.GlycoSearchParameters.ModPeptidesAreDifferent, true, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run();
+            ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
+                proteinAnalysisResults.ProteinGroups,
+                psms,
+                Parameters.GlycoSearchParameters.NoOneHitWonders,
+                Parameters.GlycoSearchParameters.ModPeptidesAreDifferent,
+                true,
+                CommonParameters,
+                this.FileSpecificParameters,
+                new List<string> { Parameters.SearchTaskId }).Run();
 
             ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
             Status("Done constructing protein groups!", Parameters.SearchTaskId);
-            WriteProteinResults(outputFolder, individualFileFolder, myTaskResults);
          
         }
         private void GlycoAccessionAnalysis(List<GlycoSpectralMatch> gsms, string individualFileFolderPath, string individualFileFolder = null)
@@ -368,8 +393,54 @@ namespace TaskLayer
                 }
             }
         }
+
+        /// <summary>
+        /// Populates spectral counts and count-based occupancy from the PSMs alone, so those columns
+        /// survive glyco searches with quantification switched off and reach the individual-file
+        /// reports, which are written before quantification runs.
+        /// </summary>
+        /// <param name="spectraFiles">The files the current protein groups were built from. Every group
+        /// has to be given the same list: left unset, each derives its columns from the files its own
+        /// PSMs came from, and the rows stop matching the single header the writer emits.</param>
+        private void PopulateCountBasedOccupancy(List<SpectraFileInfo> spectraFiles)
+        {
+            if (ProteinGroups == null)
+            {
+                return;
+            }
+
+            foreach (var proteinGroup in ProteinGroups)
+            {
+                proteinGroup.FilesForQuantification = spectraFiles;
+                proteinGroup.PopulateSampleGroupResults();
+            }
+        }
+
+        /// <summary>
+        /// One <see cref="SpectraFileInfo"/> per raw file with no experimental design applied: no
+        /// condition, its own biological replicate, unfractionated.
+        /// </summary>
+        private List<SpectraFileInfo> BuildUndefinedExperimentalDesign()
+        {
+            var spectraFileInfo = new List<SpectraFileInfo>();
+
+            for (int i = 0; i < Parameters.CurrentRawFileList.Count; i++)
+            {
+                var file = Parameters.CurrentRawFileList[i];
+
+                // experimental design info passed in here for each spectra file
+                spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: i, fraction: 0, techrep: 0));
+            }
+
+            return spectraFileInfo;
+        }
+
         private void QuantificationAnalysis()
         {
+            // Spectral counts and count-based occupancy need no quantification, so fill them in before
+            // the return below. The quantified path repopulates them with intensities further down.
+            PopulateCountBasedOccupancy(BuildUndefinedExperimentalDesign());
+
             if (!Parameters.GlycoSearchParameters.DoQuantification)
             {
                 return;
@@ -409,15 +480,7 @@ namespace TaskLayer
             }
             else
             {
-                spectraFileInfo = new List<SpectraFileInfo>();
-
-                for (int i = 0; i < Parameters.CurrentRawFileList.Count; i++)
-                {
-                    var file = Parameters.CurrentRawFileList[i];
-
-                    // experimental design info passed in here for each spectra file
-                    spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: i, fraction: 0, techrep: 0));
-                }
+                spectraFileInfo = BuildUndefinedExperimentalDesign();
             }
 
             // get PSMs to pass to FlashLFQ
@@ -439,7 +502,8 @@ namespace TaskLayer
                         string.Join("|", proteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault())),
                         string.Join("|", proteinsOrderedByAccession.Select(p => p.Organism).Distinct()));
 
-                    foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Where(v => v.FullSequence != null))
+                    foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>()
+                        .Where(v => v.FullSequence != null))
                     {
                         if (psmToProteinGroups.TryGetValue(psm, out var flashLfqProteinGroups))
                         {
@@ -477,37 +541,30 @@ namespace TaskLayer
             // some PSMs may not have protein groups (if 2 peptides are required to construct a protein group, some PSMs will be left over)
             // the peptides should still be quantified but not considered for protein quantification
             var undefinedPg = new FlashLFQ.ProteinGroup("UNDEFINED", "", "");
-            //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
-            Dictionary<DigestionAgent, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<DigestionAgent, List<SpectralMatch>>();
-            Dictionary<DigestionAgent, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<DigestionAgent, FlashLfqResults>();
-
-            foreach (DigestionParams dp in Parameters.ListOfDigestionParams)
-            {
-                if (!proteaseSortedPsms.ContainsKey(dp.Protease))
-                {
-                    proteaseSortedPsms.Add(dp.Protease, new List<SpectralMatch>());
-                }
-            }
             foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
             {
                 if (!psmToProteinGroups.ContainsKey(psm))
                 {
                     psmToProteinGroups.Add(psm, new List<FlashLFQ.ProteinGroup> { undefinedPg });
                 }
-
-                proteaseSortedPsms[psm.DigestionParams.DigestionAgent].Add(psm);
             }
 
             // pass PSM info to FlashLFQ
             var flashLFQIdentifications = new List<Identification>();
             foreach (var spectraFile in psmsGroupedByFile)
             {
-                var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
+                var rawfileinfo = spectraFileInfo.FirstOrDefault(p => p.FullFilePathWithExtension.Equals(spectraFile.Key));
+                if (rawfileinfo == null)
+                {
+                    Warn($"No spectra file entry matched {spectraFile.Key}. Identifications from that file were left out of quantification.");
+                    continue;
+                }
 
                 foreach (var psm in spectraFile)
                 {
                     flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-                        psm.BioPolymerWithSetModsMonoisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+                        psm.BioPolymerWithSetModsMonoisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm],
+                        digestionAgentName: psm.DigestionParams.DigestionAgentName()));
                 }
             }
 
@@ -526,27 +583,79 @@ namespace TaskLayer
                 Parameters.FlashLfqResults = FlashLfqEngine.Run();
             }
 
-            // get protein intensity back from FlashLFQ
-            if (ProteinGroups != null && Parameters.FlashLfqResults != null)
+            // Intensity-based occupancy is weighted by FlashLFQ peak areas, one per quantified
+            // peptidoform, matching the search path.
+            bool quantifiedPeptidesAvailable = DistributeQuantifiedIntensities(unambiguousPsmsBelowOnePercentFdr);
+
+            if (ProteinGroups != null)
             {
                 foreach (var proteinGroup in ProteinGroups)
                 {
                     proteinGroup.FilesForQuantification = spectraFileInfo;
-                    proteinGroup.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
 
-                    foreach (var spectraFile in proteinGroup.FilesForQuantification)
+                    // Always assign IntensitiesByFile (zeros when FlashLFQ produced no results) so the
+                    // intensity/occupancy columns are written consistently with PostSearchAnalysisTask,
+                    // even when quantification ran but produced no quantifiable identifications.
+                    var intensities = new Dictionary<SpectraFileInfo, double>();
+                    foreach (var spectraFile in spectraFileInfo)
                     {
-                        if (Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
-                        {
-                            proteinGroup.IntensitiesByFile.Add(spectraFile, flashLfqProteinGroup.GetIntensity(spectraFile));
-                        }
-                        else
-                        {
-                            proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
-                        }
+                        intensities.Add(spectraFile,
+                            Parameters.FlashLfqResults?.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup) == true
+                                ? flashLfqProteinGroup.GetIntensity(spectraFile)
+                                : 0);
                     }
+                    proteinGroup.IntensitiesByFile = intensities;
+                    proteinGroup.HasPeptideLevelQuantification = quantifiedPeptidesAvailable;
+
+                    // Populate SampleGroupResults from the shared spectraFileInfo so
+                    // every PG carries the same dynamic-column schema. Without this, the writer
+                    // would have no way to produce uniform headers/rows.
+                    proteinGroup.PopulateSampleGroupResults();
                 }
             }
+        }
+
+        /// <summary>
+        /// Credits each quantified peptidoform's FlashLFQ peak area to the spectra that identified it
+        /// in that file, split evenly between them, so occupancy weights each feature once rather than
+        /// once per spectrum. Mirrors the search task; returns false when quantification produced no
+        /// results, which leaves occupancy count-based.
+        /// </summary>
+        private bool DistributeQuantifiedIntensities(List<GlycoSpectralMatch> psmsForQuantification)
+        {
+            if (Parameters.FlashLfqResults == null)
+            {
+                return false;
+            }
+
+            var filesByPath = new Dictionary<string, SpectraFileInfo>();
+            foreach (var file in Parameters.FlashLfqResults.SpectraFiles)
+            {
+                filesByPath[file.FullFilePathWithExtension] = file;
+            }
+
+            foreach (var form in psmsForQuantification
+                .Where(p => p.FullSequence != null)
+                .GroupBy(p => (p.FullFilePath, p.FullSequence)))
+            {
+                if (!filesByPath.TryGetValue(form.Key.FullFilePath, out var spectraFile)
+                    || !Parameters.FlashLfqResults.PeptideModifiedSequences.TryGetValue(form.Key.FullSequence, out var peptide))
+                {
+                    continue;
+                }
+
+                var detectionType = peptide.GetDetectionType(spectraFile);
+                if (detectionType == DetectionType.NotDetected
+                    || detectionType == DetectionType.MSMSIdentifiedButNotQuantified)
+                {
+                    continue;
+                }
+
+                double area = peptide.GetIntensity(spectraFile);
+                PostSearchAnalysisTask.SplitAreaAcrossPsms(form.ToList(), area);
+            }
+
+            return true;
         }
 
         private void WriteQuantificationResults()
@@ -554,16 +663,10 @@ namespace TaskLayer
             if (Parameters.GlycoSearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
             {
                 // write peaks
-                // once SpectralRecoveryResults is implemented, this will need to be updated with an if statement
-
                 WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
 
                 // write peptide quant results
                 string filename = "AllQuantified" + GlobalVariables.AnalyteType + "s";
-
-                // write peptides
-                // once SpectralRecoveryResults is implemented, this will need to be updated with an if statement
-
                 WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, filename, new List<string> { Parameters.SearchTaskId });
 
                 WriteProteinQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder,
@@ -578,11 +681,8 @@ namespace TaskLayer
                             file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
                         WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Path.Combine(Parameters.IndividualResultsOutputFolder, file.Key.FilenameWithoutExtension),
                             file.Key.FilenameWithoutExtension + "_QuantifiedPeptides", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
-                        if (true)
-                        {
-                            WriteProteinQuantificationResultsToTsv(Parameters.FlashLfqResults, Path.Combine(Parameters.IndividualResultsOutputFolder, file.Key.FilenameWithoutExtension),
-                                file.Key.FilenameWithoutExtension + "_QuantifiedProteins", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
-                        }
+                        WriteProteinQuantificationResultsToTsv(Parameters.FlashLfqResults, Path.Combine(Parameters.IndividualResultsOutputFolder, file.Key.FilenameWithoutExtension),
+                            file.Key.FilenameWithoutExtension + "_QuantifiedProteins", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
                     }
                 }
             }

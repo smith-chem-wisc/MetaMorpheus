@@ -1,8 +1,6 @@
-using EngineLayer;
-using System.Linq;
-using UsefulProteomicsDatabases;
 using EngineLayer.GlycoSearch;
-using System.IO.IsolatedStorage;
+using System.Collections.Generic;
+using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
@@ -17,6 +15,7 @@ namespace TaskLayer
             DecoyType = DecoyType.Reverse;
             GlycoSearchTopNum = 50;
             MaximumOGlycanAllowed = 4;
+            MaximumGlycanBoxMass = EngineLayer.GlycanBox.DefaultMaximumGlycanBoxMass;
             DoParsimony = true;
             NoOneHitWonders = false;
             ModPeptidesAreDifferent = false;
@@ -33,6 +32,9 @@ namespace TaskLayer
             WriteContaminants = true;
             WriteSpectrumLibrary = false;
             DisposeOfFileWhenDone = true;
+            WritePrunedDataBase = false;
+
+            ModsToWriteSelection = SearchParameters.DefaultModsToWriteSelection();
         }
         public string OGlycanDatabasefile { get; set; }
         public string NGlycanDatabasefile { get; set; }
@@ -41,6 +43,12 @@ namespace TaskLayer
         public DecoyType DecoyType { get; set; }
         public int GlycoSearchTopNum { get; set; }
         public int MaximumOGlycanAllowed { get; set; }
+
+        /// <summary>
+        /// Glycan boxes (the summed glycans placed on one peptide) heavier than this, in Da, are never built or searched.
+        /// Applies to O-, N- and N+O searches; in an N-glycan search the box is the single N-glycan.
+        /// </summary>
+        public double MaximumGlycanBoxMass { get; set; }
 
         public bool DoParsimony { get; set; }
         public bool NoOneHitWonders { get; set; }
@@ -57,6 +65,9 @@ namespace TaskLayer
         public bool WriteDecoys { get; set; }
         public bool WriteContaminants { get; set; }
         public bool WriteSpectrumLibrary { get; set; }
+        public bool WritePrunedDataBase { get; set; }
         public bool DisposeOfFileWhenDone { get; set; }
+
+        public Dictionary<string, int> ModsToWriteSelection { get; set; }
     }
 }

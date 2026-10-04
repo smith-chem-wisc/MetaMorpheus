@@ -1,103 +1,30 @@
-﻿using GuiFunctions;
-using OxyPlot;
+﻿using OxyPlot;
 using Omics.Fragmentation;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Shapes;
 
 namespace GuiFunctions
 {
-    public class IonForTreeViewModel : BaseViewModel
+    public class IonForTreeViewModel : ColorForTreeViewModel
     {
-        #region Private Properties
-
-        protected string _selectedColor;
-        protected SolidColorBrush _colorBrush;
-
-        #endregion
-
-        #region Public Properties
-
         public ProductType IonType { get; set; }    
-        public string IonName { get; set; }
-        public string SelectedColor
-        {
-            get { return _selectedColor; }
-            set 
-            { 
-                _selectedColor = value;
-                ColorBrush = DrawnSequence.ParseColorBrushFromName(_selectedColor);
-                OnPropertyChanged(nameof(SelectedColor));
-            }
-        }
-        public SolidColorBrush ColorBrush
-        {
-            get { return _colorBrush; }
-            set
-            {
-                _colorBrush = value;
-                OnPropertyChanged(nameof(ColorBrush));
-            }
-        }
-
         public bool IsBeta { get; set; }
-        public bool HasChanged { get; set; } = false;
 
-        #endregion
-
-        #region Constructors
-
-        public IonForTreeViewModel(ProductType type, bool beta)
+        public IonForTreeViewModel(ProductType type, bool beta) : base(type + " - Ion", beta ? MetaDrawSettings.BetaProductTypeToColor[type] : MetaDrawSettings.ProductTypeToColor[type])
         {
             IonType = type;
-            IonName = IonType.ToString() + " - Ion";
             IsBeta = beta;
-            OxyColor color;
-            if (IsBeta)
-                color = MetaDrawSettings.BetaProductTypeToColor[IonType];
-            else
-                color = MetaDrawSettings.ProductTypeToColor[IonType];
-            SelectedColor = AddSpaces(MetaDrawSettings.PossibleColors[color]);
-            ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
         }
 
         // should only be used for unannotated peak or internal ion color as it is not an actual product type
         public IonForTreeViewModel(string type, bool beta)
+            : base(
+                type,
+                type.Equals("Unannotated Peak") ? MetaDrawSettings.UnannotatedPeakColor :
+                type.Equals("Internal Ion") ? MetaDrawSettings.InternalIonColor :
+                OxyColors.Transparent // fallback color if type is not recognized
+            )
         {
-            if (type.Equals("Unannotated Peak"))
-            {
-                IonName = type;
-                IsBeta = beta;
-                OxyColor color = MetaDrawSettings.UnannotatedPeakColor;
-                SelectedColor = AddSpaces(color.GetColorName());
-                ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
-            }
-            else if (type.Equals("Internal Ion"))
-            {
-                IonName = type;
-                IsBeta = beta;
-                OxyColor color = MetaDrawSettings.InternalIonColor;
-                SelectedColor = AddSpaces(color.GetColorName());
-                ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
-            }
+            IsBeta = beta;
+            IonType = default; // Not an actual ProductType
         }
-
-        #endregion
-
-        public void SelectionChanged(string newColor)
-        {
-            SelectedColor = newColor;
-            HasChanged = true;
-        }
-
     }
 }

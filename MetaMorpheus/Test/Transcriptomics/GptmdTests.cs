@@ -13,6 +13,7 @@ using Transcriptomics.Digestion;
 using Transcriptomics;
 using System.IO;
 using System.Xml.Linq;
+using EngineLayer.DatabaseLoading;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using UsefulProteomicsDatabases.Transcriptomics;
@@ -30,7 +31,7 @@ public class GptmdTests
         IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>()
                     { new Tuple<double, double>(14.015650, 14.015650) };
         Tolerance precursorMassTolerance = new PpmTolerance(10);
-        var gptmdMods = GlobalVariables.AllRnaModsKnown.Where(p => p.IdWithMotif.Contains("Methyl"))
+        var gptmdMods = GlobalVariables.AllRnaModsKnown.Where(p => p.IdWithMotif.Contains("Methylation"))
             .ToList();
 
         List<Modification> variableModifications = new List<Modification>();
@@ -136,7 +137,6 @@ public class GptmdTests
         else
             Assert.That(gptmdResults.Mods["accession"].Count, Is.EqualTo(expectedGptmdMods));
     }
-
 
     [Test]
     [TestCase("GUACUGAUGAUAUAYAU", 14.015650, 1)]
@@ -246,7 +246,7 @@ public class GptmdTests
         var rna = RnaDbLoader.LoadRnaXML(gptmdXml, true, DecoyType.None, false, GlobalVariables.AllRnaModsKnown, [], out _);
 
         // check that the expected modifications are present
-        int expectedModIndex = 8;
+        int expectedModIndex = 9;
         string expectedMod = "Methylation on A";
 
         var modifications = rna.First().OneBasedPossibleLocalizedModifications;
@@ -256,7 +256,7 @@ public class GptmdTests
         Assert.That(modList, Is.Not.Null.And.Not.Empty, "Modifications list should not be null or empty.");
         Assert.That(modList.Select(p => p.IdWithMotif), Does.Contain(expectedMod), $"Modifications should contain expected modification: {expectedMod}.");
 
-        //if (Directory.Exists(outputDir))
-        //    Directory.Delete(outputDir, true); 
+        if (Directory.Exists(outputDir))
+            Directory.Delete(outputDir, true);
     }
 }

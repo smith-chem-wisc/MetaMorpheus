@@ -1,5 +1,4 @@
 ﻿global using PsmFromTsv = Readers.PsmFromTsv; // Temporary until a follow-up PR changes these to SpectrumMatchFromTsv
-using EngineLayer;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using MassSpectrometry;
@@ -22,9 +21,10 @@ using Readers;
 using System.Threading;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using Readers.SpectralLibrary;
+using GuiFunctions.MetaDraw;
+using GuiFunctions.Util;
 
 [assembly: InternalsVisibleTo("Test")]
 namespace GuiFunctions
@@ -43,11 +43,20 @@ namespace GuiFunctions
         public object ThreadLocker;
         public ICollectionView PeptideSpectralMatchesView;
 
-        private List<SpectrumMatchFromTsv> AllSpectralMatches; // all loaded PSMs
+        public List<SpectrumMatchFromTsv> AllSpectralMatches; // all loaded PSMs
+
+        /// <summary>
+        /// Whether the MetaDraw PSM grid should show its ProForma column. ProForma is written only for
+        /// top-down (AnalyteType.Proteoform) searches, so the answer is taken from the loaded results
+        /// themselves rather than from GlobalVariables.AnalyteType, which defaults to Peptide and is
+        /// never set by standalone MetaDraw.
+        /// </summary>
+        public static bool ShouldShowProFormaColumn(IEnumerable<SpectrumMatchFromTsv> spectralMatches) =>
+            spectralMatches?.Any(p => !string.IsNullOrWhiteSpace(p.ProForma)) == true;
         public Dictionary<string, MsDataFile> MsDataFiles { get; } // key is file name without extension
         private List<SpectrumMatchPlot> CurrentlyDisplayedPlots;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
-        private SpectralLibrary SpectralLibrary;
+        public SpectralLibrary SpectralLibrary { get; set; }
 
         public MetaDrawLogic()
         {
@@ -61,40 +70,15 @@ namespace GuiFunctions
             PeptideSpectralMatchesView = CollectionViewSource.GetDefaultView(FilteredListOfPsms);
             ThreadLocker = new object();
             CurrentlyDisplayedPlots = new List<SpectrumMatchPlot>();
+
+            // Enable cross-thread synchronization 
+            BindingOperations.EnableCollectionSynchronization(SpectralMatchResultFilePaths, ThreadLocker);
+            BindingOperations.EnableCollectionSynchronization(SpectraFilePaths, ThreadLocker);
+            BindingOperations.EnableCollectionSynchronization(FilteredListOfPsms, ThreadLocker);
+            BindingOperations.EnableCollectionSynchronization(SpectralMatchesGroupedByFile, ThreadLocker);
         }
 
-        public List<string> LoadFiles(bool loadSpectra, bool loadPsms)
-        {
-            List<string> errors = new List<string>();
-
-            lock (ThreadLocker)
-            {
-                FilteredListOfPsms.Clear();
-                SpectralMatchesGroupedByFile.Clear();
-                AllSpectralMatches.Clear();
-                MsDataFiles.Clear();
-            }
-
-            // load MS data files
-            if (loadSpectra)
-            {
-                LoadSpectraFiles(out var errors1);
-                errors.AddRange(errors1);
-            }
-
-            // load PSMs
-            if (loadPsms)
-            {
-                LoadPsms(out var errors2, loadSpectra);
-                errors.AddRange(errors2);
-            }
-
-            // load spectral libraries
-            LoadSpectralLibraries(out var errors3);
-            errors.AddRange(errors3);
-
-            return errors;
-        }
+        #region Plot Generation 
 
         public void DisplaySpectrumMatch(PlotView plotView, SpectrumMatchFromTsv sm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors)
         {
@@ -112,7 +96,6 @@ namespace GuiFunctions
                 return;
             }
 
-            spectraFile.InitiateDynamicConnection();
             MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(sm.Ms2ScanNumber);
 
             LibrarySpectrum librarySpectrum = null;
@@ -225,7 +208,6 @@ namespace GuiFunctions
 
                     CurrentlyDisplayedPlots.Add(childPlot);
                 }
-                spectraFile.CloseDynamicConnection();
             }
         }
 
@@ -480,6 +462,17 @@ namespace GuiFunctions
             Canvas.SetZIndex(line, 1); //on top of any other things in canvas
         }
 
+        #endregion
+
+        public MsDataScan GetMs2ScanFromPsm(SpectrumMatchFromTsv spectralMatch)
+        {
+            return !MsDataFiles.TryGetValue(spectralMatch.FileNameWithoutExtension, out MsDataFile spectraFile) 
+                ? null 
+                : spectraFile.GetOneBasedScanFromDynamicConnection(spectralMatch.Ms2ScanNumber);
+        }
+
+        #region Plot Export
+
         public void ExportPlot(PlotView plotView, Canvas stationaryCanvas, List<SpectrumMatchFromTsv> spectrumMatches,
             ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors,
             Canvas legendCanvas = null, Vector ptmLegendLocationVector = new(), FragmentationReanalysisViewModel? reFragment = null)
@@ -490,43 +483,53 @@ namespace GuiFunctions
             {
                 Directory.CreateDirectory(directory);
             }
-            
+
+            // No need to recalculate the plot if we are only exporting the plot that is currently displayed. 
+            bool skipPlotRegeneration = spectrumMatches.Count == 1
+                && CurrentlyDisplayedPlots.Count == 1
+                && reFragment == null
+                && SpectralMatchComparer.Instance.Equals(CurrentlyDisplayedPlots[0].SpectrumMatch, spectrumMatches[0]);
+            bool displayAttempted = false;
+
             foreach (var psm in spectrumMatches)
             {
-                // get the scan
-                if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out MsDataFile spectraFile))
-                {
-                    errors.Add("The spectra file could not be found for this PSM: " + psm.FileNameWithoutExtension);
-                    return;
-                }
-
-                // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
                 List<MatchedFragmentIon> oldMatchedIons = null;
-                if (reFragment is not null)
+
+                if (!skipPlotRegeneration)
                 {
-                    oldMatchedIons = psm.MatchedIons;
-                    var scan = GetMs2ScanFromPsm(psm);
-                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm);
-                    psm.MatchedIons = newIons;
+                    // get the scan
+                    if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out MsDataFile spectraFile))
+                    {
+                        errors.Add("The spectra file could not be found for this PSM: " + psm.FileNameWithoutExtension);
+                        return;
+                    }
+
+                    // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
+                    if (reFragment is not null)
+                    {
+                        oldMatchedIons = psm.MatchedIons;
+                        var scan = GetMs2ScanFromPsm(psm);
+                        var newIons = reFragment.MatchIonsWithNewTypes(scan, psm, false);
+                        psm.MatchedIons = newIons;
+                    }
+
+                    if (plotView.Name == "plotView")
+                    {
+                        displayAttempted = true;
+                        DisplaySequences(stationaryCanvas, null, null, psm);
+                        DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
+                        if (displayErrors?.Any() == true)
+                            errors.AddRange(displayErrors);
+                    }
+
                 }
 
-                if (plotView.Name == "plotView")
-                {
-                    DisplaySequences(stationaryCanvas, null, null, psm);
-                    DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
-                }
-                
-
-                if (errors != null)
-                {
-                    errors.AddRange(errors); 
-                }
-
-                string sequence = psm.IsPeptide()
-                    ? !(psm as PsmFromTsv).UniqueSequence.IsNullOrEmptyOrWhiteSpace()
-                        ? illegalInFileName.Replace((psm as PsmFromTsv).UniqueSequence, string.Empty)
-                        : illegalInFileName.Replace(psm.FullSequence, string.Empty)
+                var rawSequence = psm.IsPeptide()
+                    ? (!(psm as PsmFromTsv).UniqueSequence.IsNullOrEmptyOrWhiteSpace()
+                        ? (psm as PsmFromTsv).UniqueSequence
+                        : psm.FullSequence)
                     : psm.FullSequence;
+                string sequence = illegalInFileName.Replace(rawSequence, string.Empty);
 
                 if (sequence.Length > 30)
                 {
@@ -535,12 +538,12 @@ namespace GuiFunctions
 
                 foreach (var plot in CurrentlyDisplayedPlots)
                 {
-                    string filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "." + MetaDrawSettings.ExportType);
+                    string filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "." + MetaDrawSettings.ExportType.ToLower());
 
                     int i = 2;
                     while (File.Exists(filePath))
                     {
-                        filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "_" + i + "." + MetaDrawSettings.ExportType);
+                        filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "_" + i + "." + MetaDrawSettings.ExportType.ToLower());
                         i++;
                     }
 
@@ -551,12 +554,12 @@ namespace GuiFunctions
                         case "PeptideSpectrumMatchPlot":
                             if (!plot.SpectrumMatch.FullSequence.Contains('['))
                                 legendCanvas = null;
-                            ((PeptideSpectrumMatchPlot)plot).ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas,
+                            ((PeptideSpectrumMatchPlot)plot).ExportPlot(filePath, stationaryCanvas,
                                 legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
                             break;
 
                         case "CrosslinkSpectrumMatchPlot":
-                            ((CrosslinkSpectrumMatchPlot)plot).ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas,
+                            ((CrosslinkSpectrumMatchPlot)plot).ExportPlot(filePath, stationaryCanvas,
                                 legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
                             break;
                     }
@@ -566,8 +569,9 @@ namespace GuiFunctions
                     psm.MatchedIons = oldMatchedIons;
             }
 
-            if (plotView.Name == "plotView")
+            if (!skipPlotRegeneration && plotView.Name == "plotView")
             {
+                displayAttempted = true;
                 var psm = spectrumMatches.First();
 
                 // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
@@ -576,23 +580,21 @@ namespace GuiFunctions
                 {
                     oldMatchedIons = psm.MatchedIons;
                     var scan = GetMs2ScanFromPsm(psm);
-                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm);
+                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm, false);
                     psm.MatchedIons = newIons;
                 }
                 DisplaySequences(stationaryCanvas, null, null, psm);
-                DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
+                DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
+                if (displayErrors?.Any() == true)
+                    errors.AddRange(displayErrors);
 
                 // put the original ions back in place if they were altered
                 if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
                     psm.MatchedIons = oldMatchedIons;
             }
-        }
 
-        public MsDataScan GetMs2ScanFromPsm(SpectrumMatchFromTsv spectralMatch)
-        {
-            return !MsDataFiles.TryGetValue(spectralMatch.FileNameWithoutExtension, out MsDataFile spectraFile) 
-                ? null 
-                : spectraFile.GetOneBasedScanFromDynamicConnection(spectralMatch.Ms2ScanNumber);
+            if (displayAttempted && errors.Count == 0)
+                errors = null;
         }
 
         /// <summary>
@@ -616,7 +618,7 @@ namespace GuiFunctions
             {
                 sequence = sequence.Substring(0, 30);
             }
-            string path = System.IO.Path.Combine(directory, sm.Ms2ScanNumber + "_" + sequence + "_SequenceCoverage." + MetaDrawSettings.ExportType);
+            string path = System.IO.Path.Combine(directory, sm.Ms2ScanNumber + "_" + sequence + "_SequenceCoverage." + MetaDrawSettings.ExportType.ToLower());
 
             // convert to format for export
             System.Drawing.Bitmap textBitmap = ConvertCanvasToBitmap(textCanvas, directory);
@@ -652,21 +654,27 @@ namespace GuiFunctions
             {
                 sequence = sequence.Substring(0, 30);
             }
-            string path = System.IO.Path.Combine(directory, psm.Ms2ScanNumber + "_" + sequence + "_SequenceAnnotation." + MetaDrawSettings.ExportType);
+            string path = System.IO.Path.Combine(directory, psm.Ms2ScanNumber + "_" + sequence + "_SequenceAnnotation." + MetaDrawSettings.ExportType.ToLower());
             int rows = (int)Math.Ceiling((double)psm.BaseSeq.Length / (MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment * MetaDrawSettings.SequenceAnnotationSegmentPerRow)); ;
 
             // convert to format for export
             sequenceAnnotaitonCanvas.Width = width;
             System.Drawing.Bitmap annotationBitmap = ConvertCanvasToBitmap(sequenceAnnotaitonCanvas, directory);
             Point annotationPoint = new(-100, 0);
-            
-            System.Drawing.Bitmap ptmLegendBitmap = ConvertUIElementToBitmap(ptmLegend, directory);
-            Point ptmLegendPoint = new((annotationBitmap.Width / 2) - (ptmLegend.RenderSize.Width / 2) - 50, sequenceAnnotaitonCanvas.Height);
 
-            List<System.Drawing.Bitmap> toCombine = new List<System.Drawing.Bitmap>() { annotationBitmap, ptmLegendBitmap };
-            List<Point> points = new List<Point>() { annotationPoint, ptmLegendPoint };
+            List<System.Drawing.Bitmap> toCombine = new() { annotationBitmap };
+            List<Point> points = new() { annotationPoint };
+            System.Drawing.Bitmap ptmLegendBitmap = ConvertUIElementToBitmap(ptmLegend, directory);
+            if (ptmLegendBitmap != null)
+            {
+                Point ptmLegendPoint = new((annotationBitmap.Width / 2) - (ptmLegend.RenderSize.Width / 2) - 50, sequenceAnnotaitonCanvas.Height);
+                toCombine.Add(ptmLegendBitmap);
+                points.Add(ptmLegendPoint);
+            }
+
             System.Drawing.Bitmap combinedBitmap = CombineBitmap(toCombine, points, false);
-            System.Drawing.Bitmap finalBitmap = combinedBitmap.Clone(new System.Drawing.Rectangle(0, 0, combinedBitmap.Width - 140, combinedBitmap.Height), combinedBitmap.PixelFormat);
+            int finalWidth = Math.Max(1, combinedBitmap.Width - 140);
+            System.Drawing.Bitmap finalBitmap = combinedBitmap.Clone(new System.Drawing.Rectangle(0, 0, finalWidth, combinedBitmap.Height), combinedBitmap.PixelFormat);
             ExportBitmap(finalBitmap, path);
             combinedBitmap.Dispose();
             finalBitmap.Dispose();
@@ -678,8 +686,12 @@ namespace GuiFunctions
         /// <param name="images">list of objects to combine</param>
         /// <param name="points">the position to begin drawing each</param>
         /// <param name="overlap">true of they should overlap, false if they should stack ontop of one another vertically</param>
+        /// <param name="backgroundColor">background color painted over the combined canvas before drawing the source images.
+        /// When null (default), the background is chosen from <see cref="MetaDrawSettings.ExportType"/>: JPEG and BMP exports
+        /// use opaque white so uncovered regions render correctly in formats without alpha; PNG, TIFF, PDF, and WMF keep
+        /// a transparent background so uncovered regions stay see-through. Pass an explicit color to override the default.</param>
         /// <returns></returns>
-        public static System.Drawing.Bitmap CombineBitmap(List<System.Drawing.Bitmap> images, List<Point> points, bool overlap = true)
+        public static System.Drawing.Bitmap CombineBitmap(List<System.Drawing.Bitmap> images, List<Point> points, bool overlap = true, System.Drawing.Color? backgroundColor = null)
         {
             System.Drawing.Bitmap finalImage = null;
 
@@ -703,14 +715,17 @@ namespace GuiFunctions
                     }
                 }
 
-                //create a bitmap to hold the combined image
-                finalImage = new System.Drawing.Bitmap(width, height);
+                // Create a transparent bitmap to hold the combined image without changing source alpha.
+                finalImage = new System.Drawing.Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
                 //get a graphics object from the image so we can draw on it
                 using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(finalImage))
                 {
-                    //set background color
-                    g.Clear(System.Drawing.Color.White);
+                    // Choose a format-appropriate background when the caller did not override it.
+                    // JPEG and BMP do not support alpha; opaque white keeps uncovered regions visible.
+                    System.Drawing.Color resolvedBackground = backgroundColor
+                        ?? GetDefaultCombineBackgroundColor();
+                    g.Clear(resolvedBackground);
 
                     //go through each image and draw it on the final image
                     for (int i = 0; i < images.Count; i++)
@@ -737,13 +752,15 @@ namespace GuiFunctions
             }
         }
 
+        #endregion
+
         public void FilterPsms()
         {
             lock (ThreadLocker)
             {
                 FilteredListOfPsms.Clear();
 
-                foreach (var psm in AllSpectralMatches.Where(p => MetaDrawSettings.FilterAcceptsPsm(p)))
+                foreach (var psm in AllSpectralMatches.Where(MetaDrawSettings.FilterAcceptsPsm))
                 {
                     FilteredListOfPsms.Add(psm);
                 }
@@ -765,6 +782,21 @@ namespace GuiFunctions
                     || psm.Name.Contains(searchString) || psm.OrganismName.Contains(searchString));
                 };
             }
+        }
+
+        #region Resource Management
+
+        public List<string> LoadFiles(bool loadSpectra, bool loadPsms)
+        {
+            lock (ThreadLocker)
+            {
+                FilteredListOfPsms.Clear();
+                SpectralMatchesGroupedByFile.Clear();
+                AllSpectralMatches.Clear();
+                MsDataFiles.Clear();
+            }
+
+            return new MetaDrawDataLoader(this).LoadAllAsync(loadSpectra, loadPsms, true).Result;
         }
 
         public void CleanUpResources()
@@ -819,6 +851,8 @@ namespace GuiFunctions
                 CurrentlyDisplayedPlots.Clear();
         }
 
+        #endregion
+
         #region Private Helpers
 
         /// <summary>
@@ -830,9 +864,8 @@ namespace GuiFunctions
         private static System.Drawing.Bitmap ConvertCanvasToBitmap(Canvas canvas, string directory)
         {
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
-            string tempBitmapPath = System.IO.Path.Combine(directory, "temp.bmp");
-            int height = (int)canvas.Height == -2147483648 ? (int)canvas.ActualHeight : (int)canvas.Height;
-            int width = (int)canvas.Width == -2147483648 ? (int)canvas.ActualWidth : (int)canvas.Width;
+            int height = GetCanvasDimension(canvas.Height, canvas.ActualHeight);
+            int width = GetCanvasDimension(canvas.Width, canvas.ActualWidth);
             Size canvasSize = new Size(width, height);
             canvas.Measure(canvasSize);
             canvas.Arrange(new Rect(canvasSize));
@@ -840,18 +873,40 @@ namespace GuiFunctions
                 MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
             renderCanvasBitmap.Render(canvas);
 
-            BmpBitmapEncoder encoder = new BmpBitmapEncoder();
+            PngBitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(renderCanvasBitmap));
-            using (FileStream file = File.Create(tempBitmapPath))
+            using MemoryStream stream = new();
+            encoder.Save(stream);
+            stream.Seek(0, SeekOrigin.Begin);
+            using System.Drawing.Bitmap sourceBitmap = new(stream);
+            return new System.Drawing.Bitmap(sourceBitmap, new System.Drawing.Size(width, height));
+        }
+
+        internal static int GetCanvasDimension(double requestedDimension, double actualDimension)
+        {
+            double dimension = double.IsNaN(requestedDimension) || requestedDimension <= 0
+                ? actualDimension
+                : requestedDimension;
+
+            return Math.Max(1, (int)dimension);
+        }
+
+        /// <summary>
+        /// Chooses the default background color for <see cref="CombineBitmap"/> based on the current
+        /// <see cref="MetaDrawSettings.ExportType"/>. JPEG and BMP have no alpha channel, so uncovered
+        /// regions must be painted opaque white to remain visible. PNG, TIFF, PDF (rendered through a
+        /// PNG temp), and WMF preserve transparency.
+        /// </summary>
+        internal static System.Drawing.Color GetDefaultCombineBackgroundColor()
+        {
+            string exportType = MetaDrawSettings.ExportType;
+            if (string.Equals(exportType, "Jpeg", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(exportType, "Bmp", StringComparison.OrdinalIgnoreCase))
             {
-                encoder.Save(file);
+                return System.Drawing.Color.White;
             }
 
-            System.Drawing.Bitmap unformattedBitmap = new(tempBitmapPath);
-            System.Drawing.Bitmap bitmap = new(unformattedBitmap, new System.Drawing.Size(width, height));
-            unformattedBitmap.Dispose();
-            File.Delete(tempBitmapPath);
-            return bitmap;
+            return System.Drawing.Color.Transparent;
         }
 
         /// <summary>
@@ -864,7 +919,6 @@ namespace GuiFunctions
         {
             // initialize values
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
-            string tempBitmapPath = System.IO.Path.Combine(directory, "temp.bmp");
 
             if (visual == null)
             {
@@ -881,30 +935,16 @@ namespace GuiFunctions
 
             RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap((int)(width * dpiScale), (int)(height * dpiScale),
                 MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
-            VisualBrush visualBrush = new(visual);
-
-            // draw UIElement on a bitmap
-            DrawingVisual drawingVisual = new();
-            DrawingContext drawingContext = drawingVisual.RenderOpen();
-            using (drawingContext)
-            {
-                drawingContext.DrawRectangle(visualBrush, null, new Rect(new Point(0, 0), new Point(width, height)));
-            }
-            renderTargetBitmap.Render(drawingVisual);
+            renderTargetBitmap.Render(visual);
 
             // export and reload bitmap in correct formatting
-            BitmapEncoder encoder = new BmpBitmapEncoder();
+            BitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(renderTargetBitmap));
-            using (FileStream file = File.Create(tempBitmapPath))
-            {
-                encoder.Save(file);
-            }
-
-            System.Drawing.Bitmap unformattedBitmap = new System.Drawing.Bitmap(tempBitmapPath);
-            System.Drawing.Bitmap bitmap = new(unformattedBitmap, new System.Drawing.Size(width, height));
-            unformattedBitmap.Dispose();
-            File.Delete(tempBitmapPath);
-            return bitmap;
+            using MemoryStream stream = new();
+            encoder.Save(stream);
+            stream.Seek(0, SeekOrigin.Begin);
+            using System.Drawing.Bitmap sourceBitmap = new(stream);
+            return new System.Drawing.Bitmap(sourceBitmap, new System.Drawing.Size(width, height));
         }
 
         /// <summary>
@@ -917,7 +957,7 @@ namespace GuiFunctions
             switch (MetaDrawSettings.ExportType)
             {
                 case "Pdf":
-                    string tempImagePath = path.Replace(".Pdf", ".png");
+                    string tempImagePath = System.IO.Path.ChangeExtension(path, ".png");
                     bitmap.Save(tempImagePath, System.Drawing.Imaging.ImageFormat.Png);
                     ImageData imageData = ImageDataFactory.Create(tempImagePath);
                     File.Delete(tempImagePath);
@@ -949,104 +989,6 @@ namespace GuiFunctions
                 case "Bmp":
                     bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Bmp);
                     break;
-            }
-        }
-
-        private void LoadPsms(out List<string> errors, bool haveLoadedSpectra)
-        {
-            errors = new List<string>();
-
-            HashSet<string> fileNamesWithoutExtension = new HashSet<string>(
-                SpectraFilePaths.Select(p => System.IO.Path.GetFileName(p.Replace(GlobalVariables.GetFileExtension(p), string.Empty))));
-            List<SpectrumMatchFromTsv> psmsThatDontHaveMatchingSpectraFile = new List<SpectrumMatchFromTsv>();
-
-            try
-            {
-                foreach (var resultsFile in SpectralMatchResultFilePaths)
-                {
-                    lock (ThreadLocker)
-                    {
-                        var psms = SpectrumMatchTsvReader.ReadTsv(resultsFile, out List<string> warnings);
-                        foreach (SpectrumMatchFromTsv psm in psms)
-                        {
-                            if (fileNamesWithoutExtension.Contains(psm.FileNameWithoutExtension) || !haveLoadedSpectra)
-                            {
-                                AllSpectralMatches.Add(psm);
-                            }
-                            else
-                            {
-                                psmsThatDontHaveMatchingSpectraFile.Add(psm);
-                            }
-
-                            if (SpectralMatchesGroupedByFile.TryGetValue(psm.FileNameWithoutExtension, out var psmsForThisFile))
-                            {
-                                psmsForThisFile.Add(psm);
-                            }
-                            else
-                            {
-                                SpectralMatchesGroupedByFile.Add(psm.FileNameWithoutExtension, new ObservableCollection<SpectrumMatchFromTsv> { psm });
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                errors.Add("Error reading PSM file:\n" + e.Message);
-            }
-
-            if (psmsThatDontHaveMatchingSpectraFile.Any())
-            {
-                foreach (var file in psmsThatDontHaveMatchingSpectraFile.GroupBy(p => p.FileNameWithoutExtension))
-                {
-                    errors.Add(file.Count() + " PSMs from " + file.Key + " were not loaded because this spectra file was not found");
-                }
-            }
-
-            FilterPsms();
-        }
-
-        private void LoadSpectraFiles(out List<string> errors)
-        {
-            errors = new List<string>();
-
-            foreach (var filepath in SpectraFilePaths)
-            {
-                lock (ThreadLocker)
-                {
-                    var fileNameWithoutExtension = System.IO.Path.GetFileName(filepath.Replace(GlobalVariables.GetFileExtension(filepath), string.Empty));
-                    var spectraFile = MsDataFileReader.GetDataFile(filepath);
-                    if (spectraFile is TimsTofFileReader timsTofDataFile)
-                    {
-                        timsTofDataFile.LoadAllStaticData(maxThreads: Environment.ProcessorCount - 1); // timsTof files need to load all static data before they can be used, as dynamic access is not available for them
-                    }
-                    else
-                    {
-                        spectraFile.InitiateDynamicConnection();
-                    }
-
-                    if (!MsDataFiles.TryAdd(fileNameWithoutExtension, spectraFile))
-                    {
-                        spectraFile.CloseDynamicConnection();
-                        // print warning? but probably unnecessary. this means the data file was loaded twice. 
-                        // which is an error but not an important one because the data is loaded
-                    }
-                }
-            }
-        }
-
-        private void LoadSpectralLibraries(out List<string> errors)
-        {
-            errors = new List<string>();
-
-            try
-            {
-                SpectralLibrary = new SpectralLibrary(SpectralLibraryPaths.ToList());
-            }
-            catch (Exception e)
-            {
-                SpectralLibrary = null;
-                errors.Add("Problem loading spectral library: " + e.Message);
             }
         }
     }

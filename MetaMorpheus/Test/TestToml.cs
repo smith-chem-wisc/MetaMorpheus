@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -14,12 +14,33 @@ using TaskLayer;
 using Transcriptomics.Digestion;
 using System.Reflection;
 using System;
+using EngineLayer.DatabaseLoading;
 
 namespace Test
 {
     [TestFixture]
     public static class TestToml
     {
+        /// <summary>
+        /// The glyco task window writes MaximumGlycanBoxMass into the task, so it must survive a save and reload,
+        /// and a task file saved before the setting existed must load with the default.
+        /// </summary>
+        [Test]
+        public static void GlycoSearchTaskMaximumGlycanBoxMassRoundTrips()
+        {
+            string tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoMaxBoxMassTask.toml");
+            var glycoTask = new GlycoSearchTask();
+            glycoTask._glycoSearchParameters.MaximumGlycanBoxMass = 2500.5;
+
+            Toml.WriteFile(glycoTask, tomlPath, MetaMorpheusTask.tomlConfig);
+            var glycoTaskLoaded = Toml.ReadFile<GlycoSearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
+            File.Delete(tomlPath);
+            Assert.That(glycoTaskLoaded._glycoSearchParameters.MaximumGlycanBoxMass, Is.EqualTo(2500.5));
+
+            var legacyTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            Assert.That(legacyTask._glycoSearchParameters.MaximumGlycanBoxMass, Is.EqualTo(GlycanBox.DefaultMaximumGlycanBoxMass));
+        }
+
         [Test]
         public static void TestTomlFunction()
         {
@@ -293,6 +314,163 @@ namespace Test
         }
 
         [Test]
+        public static void TestFileSpecificDeconvolutionParams()
+        {
+            string sourceMzml = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string sourceDb = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+
+            string tempDirClassicToml = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TempDeconClassic_Toml");
+            string tempDirClassicDirect = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TempDeconClassic_Direct");
+            string tempDirIsoDecToml = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TempDeconIsoDec_Toml");
+            string tempDirIsoDecDirect = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TempDeconIsoDec_Direct");
+            string outputDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestDeconvOutput");
+
+            try
+            {
+                Directory.CreateDirectory(tempDirClassicToml);
+                Directory.CreateDirectory(tempDirClassicDirect);
+                Directory.CreateDirectory(tempDirIsoDecToml);
+                Directory.CreateDirectory(tempDirIsoDecDirect);
+
+                string mzmlClassicToml = Path.Combine(tempDirClassicToml, "PrunedDbSpectra.mzml");
+                string mzmlClassicDirect = Path.Combine(tempDirClassicDirect, "PrunedDbSpectra.mzml");
+                string mzmlIsoDecToml = Path.Combine(tempDirIsoDecToml, "PrunedDbSpectra.mzml");
+                string mzmlIsoDecDirect = Path.Combine(tempDirIsoDecDirect, "PrunedDbSpectra.mzml");
+
+                File.Copy(sourceMzml, mzmlClassicToml, true);
+                File.Copy(sourceMzml, mzmlClassicDirect, true);
+                File.Copy(sourceMzml, mzmlIsoDecToml, true);
+                File.Copy(sourceMzml, mzmlIsoDecDirect, true);
+
+                // Write Classic file-specific TOML
+                FileSpecificParameters fspClassic = new FileSpecificParameters
+                {
+                    PrecursorDeconvolutionParameters = new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                    ProductDeconvolutionParameters = new ClassicDeconvolutionParameters(1, 10, 4, 3)
+                };
+                Toml.WriteFile(fspClassic, Path.Combine(tempDirClassicToml, "PrunedDbSpectra.toml"), MetaMorpheusTask.tomlConfig);
+
+                // Write IsoDec file-specific TOML
+                FileSpecificParameters fspIsoDec = new FileSpecificParameters
+                {
+                    PrecursorDeconvolutionParameters = new IsoDecDeconvolutionParameters(),
+                    ProductDeconvolutionParameters = new IsoDecDeconvolutionParameters()
+                };
+                Toml.WriteFile(fspIsoDec, Path.Combine(tempDirIsoDecToml, "PrunedDbSpectra.toml"), MetaMorpheusTask.tomlConfig);
+
+                // ===== Classic deconv params =====
+
+                // Direct: task has Classic params, no toml
+                SearchTask classicDirect = new SearchTask
+                {
+                    CommonParameters = new CommonParameters(
+                        precursorDeconParams: new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                        productDeconParams: new ClassicDeconvolutionParameters(1, 10, 4, 3))
+                };
+                var engineClassicDirect = new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("ClassicDirect", classicDirect) },
+                    new List<string> { mzmlClassicDirect },
+                    new List<DbForTask> { new DbForTask(sourceDb, false) },
+                    outputDir);
+                engineClassicDirect.Run();
+
+                // Via TOML: task has IsoDec params, but toml overrides to Classic
+                SearchTask classicFromToml = new SearchTask
+                {
+                    CommonParameters = new CommonParameters(
+                        precursorDeconParams: new IsoDecDeconvolutionParameters(),
+                        productDeconParams: new IsoDecDeconvolutionParameters())
+                };
+                var engineClassicFromToml = new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("ClassicFromToml", classicFromToml) },
+                    new List<string> { mzmlClassicToml },
+                    new List<DbForTask> { new DbForTask(sourceDb, false) },
+                    outputDir);
+                engineClassicFromToml.Run();
+
+                var resultsClassicD = File.ReadAllLines(Path.Combine(outputDir, @"ClassicDirect\AllPSMs.psmtsv"));
+                var resultsClassicT = File.ReadAllLines(Path.Combine(outputDir, @"ClassicFromToml\AllPSMs.psmtsv"));
+                Assert.That(resultsClassicT.SequenceEqual(resultsClassicD),
+                    "Classic deconv results: file-specific TOML approach should match direct approach");
+
+                // ===== IsoDec deconv params =====
+
+                // Direct: task has IsoDec params, no toml
+                SearchTask isoDecDirect = new SearchTask
+                {
+                    CommonParameters = new CommonParameters(
+                        precursorDeconParams: new IsoDecDeconvolutionParameters(),
+                        productDeconParams: new IsoDecDeconvolutionParameters())
+                };
+                var engineIsoDecDirect = new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("IsoDecDirect", isoDecDirect) },
+                    new List<string> { mzmlIsoDecDirect },
+                    new List<DbForTask> { new DbForTask(sourceDb, false) },
+                    outputDir);
+                engineIsoDecDirect.Run();
+
+                // Via TOML: task has Classic params, but toml overrides to IsoDec
+                SearchTask isoDecFromToml = new SearchTask
+                {
+                    CommonParameters = new CommonParameters(
+                        precursorDeconParams: new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                        productDeconParams: new ClassicDeconvolutionParameters(1, 10, 4, 3))
+                };
+                var engineIsoDecFromToml = new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("IsoDecFromToml", isoDecFromToml) },
+                    new List<string> { mzmlIsoDecToml },
+                    new List<DbForTask> { new DbForTask(sourceDb, false) },
+                    outputDir);
+                engineIsoDecFromToml.Run();
+
+                var resultsIsoDecD = File.ReadAllLines(Path.Combine(outputDir, @"IsoDecDirect\AllPSMs.psmtsv"));
+                var resultsIsoDecT = File.ReadAllLines(Path.Combine(outputDir, @"IsoDecFromToml\AllPSMs.psmtsv"));
+                Assert.That(resultsIsoDecT.SequenceEqual(resultsIsoDecD),
+                    "IsoDec deconv results: file-specific TOML approach should match direct approach");
+            }
+            finally
+            {
+                if (Directory.Exists(tempDirClassicToml)) Directory.Delete(tempDirClassicToml, true);
+                if (Directory.Exists(tempDirClassicDirect)) Directory.Delete(tempDirClassicDirect, true);
+                if (Directory.Exists(tempDirIsoDecToml)) Directory.Delete(tempDirIsoDecToml, true);
+                if (Directory.Exists(tempDirIsoDecDirect)) Directory.Delete(tempDirIsoDecDirect, true);
+                if (Directory.Exists(outputDir)) Directory.Delete(outputDir, true);
+            }
+        }
+
+        [Test]
+        public static void TestFileSpecificDeconvolutionParams_ParsesBothTypesFromToml()
+        {
+            // Classic round-trip
+            var fspClassic = new FileSpecificParameters
+            {
+                PrecursorDeconvolutionParameters = new ClassicDeconvolutionParameters(2, 15, 5, 3),
+                ProductDeconvolutionParameters = new ClassicDeconvolutionParameters(1, 8, 4, 2)
+            };
+
+            string tomlClassic = Toml.WriteString(fspClassic, MetaMorpheusTask.tomlConfig);
+            var parsedClassic = new FileSpecificParameters(Toml.ReadString(tomlClassic, MetaMorpheusTask.tomlConfig));
+
+            Assert.That(parsedClassic.PrecursorDeconvolutionParameters, Is.TypeOf<ClassicDeconvolutionParameters>());
+            Assert.That(parsedClassic.PrecursorDeconvolutionParameters.MaxAssumedChargeState, Is.EqualTo(15));
+            Assert.That(parsedClassic.ProductDeconvolutionParameters, Is.TypeOf<ClassicDeconvolutionParameters>());
+            Assert.That(parsedClassic.ProductDeconvolutionParameters.MaxAssumedChargeState, Is.EqualTo(8));
+
+            // IsoDec round-trip
+            var fspIsoDec = new FileSpecificParameters
+            {
+                PrecursorDeconvolutionParameters = new IsoDecDeconvolutionParameters(),
+                ProductDeconvolutionParameters = new IsoDecDeconvolutionParameters()
+            };
+
+            string tomlIsoDec = Toml.WriteString(fspIsoDec, MetaMorpheusTask.tomlConfig);
+            var parsedIsoDec = new FileSpecificParameters(Toml.ReadString(tomlIsoDec, MetaMorpheusTask.tomlConfig));
+
+            Assert.That(parsedIsoDec.PrecursorDeconvolutionParameters, Is.TypeOf<IsoDecDeconvolutionParameters>());
+            Assert.That(parsedIsoDec.ProductDeconvolutionParameters, Is.TypeOf<IsoDecDeconvolutionParameters>());
+        }
+
+        [Test]
         public static void TestDigestionParamsTomlReadingWriting()
         {
             var digestionParams = new DigestionParams("top-down", 4, 5, 12345, 2012,
@@ -442,6 +620,75 @@ namespace Test
             Assert.That(isoDecParams.PhaseRes, Is.EqualTo(4));
 
             File.Delete(tomlPath);
+        }
+
+        [Test]
+        public static void TestToml_MultipleDeconvolutionType_ParsesFromToml()
+        {
+            var previousAnalyteType = GlobalVariables.AnalyteType;
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+
+            try
+            {
+                var tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "RnaSearchTask_MultipleDecon.toml");
+                var searchTaskLoaded = Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
+
+                Assert.That(searchTaskLoaded.CommonParameters.PrecursorDeconvolutionParameters, Is.TypeOf<MultipleDeconParameters>());
+                var multipleParams = (MultipleDeconParameters)searchTaskLoaded.CommonParameters.PrecursorDeconvolutionParameters;
+
+                Assert.That(multipleParams.Parameters.Count(), Is.EqualTo(2));
+                Assert.That(multipleParams.MinAssumedChargeState, Is.EqualTo(-40));
+                Assert.That(multipleParams.MaxAssumedChargeState, Is.EqualTo(-1));
+                Assert.That(multipleParams.Polarity, Is.EqualTo(Polarity.Negative));
+                Assert.That(multipleParams.AverageResidueModel, Is.TypeOf<OxyriboAveragine>());
+                Assert.That(multipleParams.ExpectedIsotopeSpacing, Is.EqualTo(1.0033548381).Within(1e-10));
+                Assert.That(multipleParams.UseGenericScore, Is.False);
+
+                Assert.That(multipleParams.Parameters.First(), Is.TypeOf<ClassicDeconvolutionParameters>());
+                var firstClassic = (ClassicDeconvolutionParameters)multipleParams.Parameters.First();
+                Assert.That(firstClassic.DeconvolutionTolerancePpm, Is.EqualTo(10.0));
+                Assert.That(firstClassic.IntensityRatioLimit, Is.EqualTo(6.0));
+                Assert.That(firstClassic.MinAssumedChargeState, Is.EqualTo(-40));
+                Assert.That(firstClassic.MaxAssumedChargeState, Is.EqualTo(-1));
+                Assert.That(firstClassic.Polarity, Is.EqualTo(Polarity.Negative));
+                Assert.That(firstClassic.AverageResidueModel, Is.TypeOf<OxyriboAveragine>());
+                Assert.That(firstClassic.ExpectedIsotopeSpacing, Is.EqualTo(1.0033548381).Within(1e-10));
+                Assert.That(firstClassic.UseGenericScore, Is.False);
+
+                Assert.That(multipleParams.Parameters.Last(), Is.TypeOf<IsoDecDeconvolutionParameters>());
+                var lastIsoDec = (IsoDecDeconvolutionParameters)multipleParams.Parameters.Last();
+                Assert.That(lastIsoDec.PhaseRes, Is.EqualTo(8));
+                Assert.That(lastIsoDec.CssThreshold, Is.EqualTo(0.699999988079071f).Within(1e-6));
+                Assert.That(lastIsoDec.MatchTolerance, Is.EqualTo(5.0f));
+                Assert.That(lastIsoDec.MaxShift, Is.EqualTo(3));
+                Assert.That(lastIsoDec.MzWindow[0], Is.EqualTo(-1.04999995231628f).Within(1e-6));
+                Assert.That(lastIsoDec.MzWindow[1], Is.EqualTo(2.04999995231628f).Within(1e-6));
+                Assert.That(lastIsoDec.KnockdownRounds, Is.EqualTo(5));
+                Assert.That(lastIsoDec.MinAreaCovered, Is.EqualTo(0.200000002980232f).Within(1e-6));
+                Assert.That(lastIsoDec.DataThreshold, Is.EqualTo(0.0500000007450581f).Within(1e-6));
+                Assert.That(lastIsoDec.ReportMulitpleMonoisos, Is.False);
+                Assert.That(lastIsoDec.MinAssumedChargeState, Is.EqualTo(-40));
+                Assert.That(lastIsoDec.MaxAssumedChargeState, Is.EqualTo(-1));
+                Assert.That(lastIsoDec.Polarity, Is.EqualTo(Polarity.Negative));
+                Assert.That(lastIsoDec.AverageResidueModel, Is.TypeOf<Averagine>());
+                Assert.That(lastIsoDec.ExpectedIsotopeSpacing, Is.EqualTo(1.0033548381).Within(1e-10));
+                Assert.That(lastIsoDec.UseGenericScore, Is.False);
+
+                Assert.That(searchTaskLoaded.CommonParameters.ProductDeconvolutionParameters, Is.TypeOf<ClassicDeconvolutionParameters>());
+                var productClassic = (ClassicDeconvolutionParameters)searchTaskLoaded.CommonParameters.ProductDeconvolutionParameters;
+                Assert.That(productClassic.DeconvolutionTolerancePpm, Is.EqualTo(4.0));
+                Assert.That(productClassic.IntensityRatioLimit, Is.EqualTo(3.0));
+                Assert.That(productClassic.MinAssumedChargeState, Is.EqualTo(-30));
+                Assert.That(productClassic.MaxAssumedChargeState, Is.EqualTo(-1));
+                Assert.That(productClassic.Polarity, Is.EqualTo(Polarity.Negative));
+                Assert.That(productClassic.AverageResidueModel, Is.TypeOf<OxyriboAveragine>());
+                Assert.That(productClassic.ExpectedIsotopeSpacing, Is.EqualTo(1.0033548381).Within(1e-10));
+                Assert.That(productClassic.UseGenericScore, Is.False);
+            }
+            finally
+            {
+                GlobalVariables.AnalyteType = previousAnalyteType;
+            }
         }
 
         [Test]

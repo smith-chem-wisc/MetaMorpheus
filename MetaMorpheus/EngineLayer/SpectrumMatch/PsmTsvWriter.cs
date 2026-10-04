@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,8 @@ using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Readers;
+using Readers.ProForma;
+using Transcriptomics.Digestion;
 
 namespace EngineLayer
 {
@@ -98,15 +101,23 @@ namespace EngineLayer
         internal static (string ResolvedString, double? ResolvedValue) Resolve(IEnumerable<double> enumerable)
         {
             var list = enumerable.ToList();
-            if (list.Max() - list.Min() < ToleranceForDoubleResolutionF5)
+            double min = list.Min();
+            double max = list.Max();
+            double avg = list.Average();
+
+            // If all values are within tolerance, check if all are integers
+            if (max - min < ToleranceForDoubleResolutionF5)
             {
-                return (list.Average().ToString("F5", CultureInfo.InvariantCulture), list.Average());
+                bool allInts = list.All(x => Math.Abs(x - Math.Round(x)) < ToleranceForDoubleResolutionF2);
+                if (!allInts)
+                    return (avg.ToString("F5", CultureInfo.InvariantCulture), avg);
+
+                int intVal = (int)Math.Round(avg);
+                return (intVal.ToString(CultureInfo.InvariantCulture), intVal);
             }
-            else
-            {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))));
-                return (returnString, null);
-            }
+
+            var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))));
+            return (returnString, null);
         }
 
         internal static (string ResolvedString, int? ResolvedValue) Resolve(IEnumerable<int> enumerable)
@@ -162,7 +173,7 @@ namespace EngineLayer
             }
         }
 
-        internal static void AddBasicMatchData(Dictionary<string, string> s, SpectralMatch psm, bool includeOneOverK0Column = false)
+        internal static void AddBasicMatchData(Dictionary<string, string> s, SpectralMatch psm, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false)
         {
             s[SpectrumMatchFromTsvHeader.FileName] = psm == null ? " " : Path.GetFileNameWithoutExtension(psm.FullFilePath);
             s[SpectrumMatchFromTsvHeader.Ms2ScanNumber] = psm == null ? " " : psm.ScanNumber.ToString(CultureInfo.InvariantCulture);
@@ -176,12 +187,14 @@ namespace EngineLayer
             s[SpectrumMatchFromTsvHeader.PrecursorMass] = psm == null ? " " : psm.ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture);
             if ( includeOneOverK0Column) // This information is only written if one or more spectra have a K0 value, otherwise it is not included in the output
                 s[SpectrumMatchFromTsvHeader.OneOverK0] = psm == null ? " " : psm.ScanOneOverK0.HasValue ? psm.ScanOneOverK0.Value.ToString("F5", CultureInfo.InvariantCulture) : "N/A";
+            if (includeCollisionalEnergyColumn) // This information is only written if one or more spectra have collisional energy, otherwise it is not included in the output
+                s[SpectrumMatchFromTsvHeader.CollisionEnergy] = psm == null ? " " : psm.CollisionalEnergy.HasValue ? psm.CollisionalEnergy.Value.ToString("F2", CultureInfo.InvariantCulture) : "N/A";
             s[SpectrumMatchFromTsvHeader.Score] = psm == null ? " " : psm.Score.ToString("F3", CultureInfo.InvariantCulture);
             s[SpectrumMatchFromTsvHeader.DeltaScore] = psm == null ? " " : psm.DeltaScore.ToString("F3", CultureInfo.InvariantCulture);
-            s[SpectrumMatchFromTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Notch)).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Notch / MassDiffAcceptor.NotchScalar)).ResolvedString;
         }
 
-        internal static void AddPeptideSequenceData(Dictionary<string, string> s, SpectralMatch sm, IReadOnlyDictionary<string, int> ModsToWritePruned)
+        internal static void AddPeptideSequenceData(Dictionary<string, string> s, SpectralMatch sm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool includeMostAbundantColumn = false)
         {
             bool pepWithModsIsNull = sm == null || sm.BestMatchingBioPolymersWithSetMods == null || !sm.BestMatchingBioPolymersWithSetMods.Any();
 
@@ -189,7 +202,19 @@ namespace EngineLayer
 
             s[SpectrumMatchFromTsvHeader.BaseSequence] = pepWithModsIsNull ? " " : sm.BaseSequence ?? Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString;
             s[SpectrumMatchFromTsvHeader.FullSequence] = pepWithModsIsNull ? " " : sm.FullSequence != null ? sm.FullSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.FullSequence)).ResolvedString;
+            // ProForma 2.0 string, top-down only, immediately after Full Sequence. Gated on the run's
+            // analyte type so the header (sm == null) and the data rows include/exclude the column together.
+            if (GlobalVariables.AnalyteType == AnalyteType.Proteoform)
+                s[SpectrumMatchFromTsvHeader.ProForma] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.ToProFormaString())).ResolvedString;
             s[SpectrumMatchFromTsvHeader.EssentialSequence] = pepWithModsIsNull ? " " : sm.EssentialSequence != null ? sm.EssentialSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString;
+            // 5'- and 3'-termini are oligo-only columns
+            if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
+            {
+                s[SpectrumMatchFromTsvHeader.FivePrimeTerminus] = pepWithModsIsNull ? " " :
+                    Resolve(pepsWithMods.Select(b => (b as OligoWithSetMods)?.FivePrimeTerminus?.ThisChemicalFormula?.Formula)).ResolvedString;
+                s[SpectrumMatchFromTsvHeader.ThreePrimeTerminus] = pepWithModsIsNull ? " " :
+                    Resolve(pepsWithMods.Select(b => (b as OligoWithSetMods)?.ThreePrimeTerminus?.ThisChemicalFormula?.Formula)).ResolvedString;
+            }
             string geneString = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Parent.GeneNames.Select(d => $"{d.Item1}:{d.Item2}"))), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.AmbiguityLevel] = ProteoformLevelClassifier.ClassifyPrSM(s[SpectrumMatchFromTsvHeader.FullSequence], geneString);
             s[SpectrumMatchFromTsvHeader.SpectrumMatchCount] = pepWithModsIsNull ? " " : sm.PsmCount.ToString();
@@ -202,6 +227,14 @@ namespace EngineLayer
             s[SpectrumMatchFromTsvHeader.MonoisotopicMass] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).ResolvedString;
             s[SpectrumMatchFromTsvHeader.MassDiffDa] = pepWithModsIsNull ? " " : Resolve(sm.PrecursorMassErrorDa).ResolvedString;
             s[SpectrumMatchFromTsvHeader.MassDiffPpm] = pepWithModsIsNull ? " " : Resolve(sm.PrecursorMassErrorPpm).ResolvedString;
+            if (includeMostAbundantColumn)
+            {
+                // The observed apex mass itself (0 when no envelope was resolved), a precursor observation that
+                // does not depend on the peptide hypothesis — reported alongside the error so the reader sees both
+                // the value the search matched on and its ppm deviation from the candidate's theoretical apex.
+                s[SpectrumMatchFromTsvHeader.PrecursorMostAbundantMass] = sm == null ? " " : sm.ScanPrecursorMostAbundantMass.ToString("F5", CultureInfo.InvariantCulture);
+                s[SpectrumMatchFromTsvHeader.MostAbundantMassDiffPpm] = pepWithModsIsNull || sm.MostAbundantMassErrorPpm == null ? " " : Resolve(sm.MostAbundantMassErrorPpm).ResolvedString;
+            }
             s[SpectrumMatchFromTsvHeader.Accession] = pepWithModsIsNull ? " " : sm.Accession != null ? sm.Accession : Resolve(pepsWithMods.Select(b => b.Parent.Accession), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.Name] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.FullName), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.GeneName] = geneString;
@@ -341,16 +374,34 @@ namespace EngineLayer
             string PEP = " ";
             string PEP_Qvalue = " ";
 
-            if (peptide != null && peptide.GetFdrInfo(writePeptideLevelFdr) != null)
+            var fdrInfo = peptide?.GetFdrInfo(writePeptideLevelFdr) ?? null;
+            if (peptide != null && fdrInfo != null)
             {
-                cumulativeTarget = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeTarget.ToString(CultureInfo.InvariantCulture);
-                cumulativeDecoy = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeDecoy.ToString(CultureInfo.InvariantCulture);
-                qValue = peptide.GetFdrInfo(writePeptideLevelFdr).QValue.ToString("F6", CultureInfo.InvariantCulture);
-                cumulativeTargetNotch = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeTargetNotch.ToString(CultureInfo.InvariantCulture);
-                cumulativeDecoyNotch = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture);
-                qValueNotch = peptide.GetFdrInfo(writePeptideLevelFdr).QValueNotch.ToString("F6", CultureInfo.InvariantCulture);
-                PEP = peptide.GetFdrInfo(writePeptideLevelFdr).PEP.ToString();
-                PEP_Qvalue = peptide.GetFdrInfo(writePeptideLevelFdr).PEP_QValue.ToString();
+                cumulativeTarget = fdrInfo.CumulativeTarget.ToString(CultureInfo.InvariantCulture);
+                cumulativeDecoy = fdrInfo.CumulativeDecoy.ToString(CultureInfo.InvariantCulture);
+                qValue = fdrInfo.QValue.ToString("F6", CultureInfo.InvariantCulture);
+                PEP = fdrInfo.PEP.ToString();
+                PEP_Qvalue = fdrInfo.PEP_QValue.ToString();
+
+                // ambiguous notch, has never been resolved by our disambiguation, so take the best of the notches for the fdr columns. 
+                if (peptide.Notch == null && fdrInfo.QValueNotch > 1)
+                {
+                    var min = peptide.BestMatchingBioPolymersWithSetMods.MinBy(b => writePeptideLevelFdr ? b.PeptideQValueNotch : b.QValueNotch);
+
+                    if (min != null && (writePeptideLevelFdr ? min.PeptideQValueNotch : min.QValueNotch).HasValue)
+                    {
+                        cumulativeTargetNotch = (writePeptideLevelFdr ? min.PeptideCumulativeTargetNotch : min.CumulativeTargetNotch)!.Value.ToString("F6", CultureInfo.InvariantCulture);
+                        cumulativeDecoyNotch = (writePeptideLevelFdr ? min.PeptideCumulativeDecoyNotch : min.CumulativeDecoyNotch)!.Value.ToString("F6", CultureInfo.InvariantCulture);
+                        qValueNotch = (writePeptideLevelFdr ? min.PeptideQValueNotch : min.QValueNotch)!.Value.ToString("F6", CultureInfo.InvariantCulture);
+                    }
+                    // else: leave values as " " (already initialized at line 336-338)
+                }
+                else
+                {
+                    cumulativeTargetNotch = fdrInfo.CumulativeTargetNotch.ToString("F6", CultureInfo.InvariantCulture);
+                    cumulativeDecoyNotch = fdrInfo.CumulativeDecoyNotch.ToString("F6", CultureInfo.InvariantCulture);
+                    qValueNotch = fdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture);
+                }
             }
 
             s[SpectrumMatchFromTsvHeader.CumulativeTarget] = cumulativeTarget;

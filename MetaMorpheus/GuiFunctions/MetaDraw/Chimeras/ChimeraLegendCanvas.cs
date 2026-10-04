@@ -174,7 +174,7 @@ public class ChimeraLegendCanvas : Canvas
         double leftMargin = 10;
         double ellipseAndSpacing = 18;
         double rightMargin = 10;
-        Width = leftMargin + ellipseAndSpacing + maxTextWidth + rightMargin;
+        Width = Math.Min(leftMargin + ellipseAndSpacing + maxTextWidth + rightMargin, MetaDrawSettings.ChimeraLegendMaxWidth);
         Height = y + 10;
     }
 

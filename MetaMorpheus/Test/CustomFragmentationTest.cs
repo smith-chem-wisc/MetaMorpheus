@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using EngineLayer.DatabaseLoading;
 using MassSpectrometry;
 using NUnit.Framework.Legacy;
 using Omics.Fragmentation.Peptide;

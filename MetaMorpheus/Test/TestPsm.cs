@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.Localization;
@@ -18,6 +18,7 @@ using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
 using Easy.Common.Extensions;
+using EngineLayer.DatabaseLoading;
 using Omics.BioPolymer;
 using Readers;
 
@@ -26,6 +27,13 @@ namespace Test
     [TestFixture]
     public static class TestPsm
     {
+        public static Protein DummyProtein;
+
+        static TestPsm()
+        {
+            DummyProtein = new Protein("PEPTIDE", "ACCESSION", "ORGANISM");
+        }
+
 
         [Test]
         public static void TestPsmHeader()
@@ -384,9 +392,7 @@ namespace Test
 
             List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", new CommonParameters()) };
 
-            var fdrEngine = new FdrAnalysisEngine(allPsms, 0, new CommonParameters(), fsp, new List<string>());
-
-            fdrEngine.CountPsm(allPsms);
+            FdrAnalysisEngine.CountPsm(allPsms);
             var psmGroups = allPsms.Where(psm => psm.FullSequence != null && psm.PsmCount > 0).GroupBy(p => p.FullSequence).ToList();
             Assert.That(psmGroups.First().Count() == 2);
             Assert.That(psmGroups.First().First().PsmCount == 1);
@@ -394,7 +400,7 @@ namespace Test
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm3.ResolveAllAmbiguities();
 
-            fdrEngine.CountPsm(allPsms);
+            FdrAnalysisEngine.CountPsm(allPsms);
             psmGroups = allPsms.Where(psm => psm.FullSequence != null && psm.PsmCount > 0).GroupBy(p => p.FullSequence).ToList();
             Assert.That(psmGroups.First().Count() == 3);
         }
@@ -488,9 +494,9 @@ namespace Test
                     2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
                 100, 1, null, new CommonParameters(), null);
 
-            SpectralMatch psm1 = new PeptideSpectralMatch(new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0), 0, 10, 1, scanB, new CommonParameters(), new List<MatchedFragmentIon>());
+            SpectralMatch psm1 = new PeptideSpectralMatch(new PeptideWithSetModifications(DummyProtein, new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0), 0, 10, 1, scanB, new CommonParameters(), new List<MatchedFragmentIon>());
 
-            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(DummyProtein, new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
 
             psm1.AddOrReplace(pwsm, 11, 1, true, new List<MatchedFragmentIon>());
 
@@ -503,7 +509,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestComplementaryIons()
+        public static void TestComplementaryIons_Defaults()
         {
             Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(
                 new MsDataScan(
@@ -511,9 +517,9 @@ namespace Test
                     2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
                 100, 1, null, new CommonParameters(), null);
 
-            SpectralMatch psm1 = new PeptideSpectralMatch(new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0), 0, 10, 1, scanB, new CommonParameters(), new List<MatchedFragmentIon>());
+            SpectralMatch psm1 = new PeptideSpectralMatch(new PeptideWithSetModifications(DummyProtein, new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0), 0, 10, 1, scanB, new CommonParameters(), new List<MatchedFragmentIon>());
 
-            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(DummyProtein, new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
 
             int count = SpectralMatch.GetCountComplementaryIons([], pwsm);
 
@@ -540,6 +546,39 @@ namespace Test
         }
 
         [Test]
+        [TestCase(2, 1)]
+        [TestCase(3, 2)]
+        [TestCase(4, 3)]
+        [TestCase(5, 4)]
+        [TestCase(6, 5)]
+        public static void TestComplementaryIons_AllMatchedIons(int endResidue, int expectedCount)
+        {
+            Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(
+                new MsDataScan(
+                    new MzSpectrum(new double[] { }, new double[] { }, false),
+                    2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
+                100, 1, null, new CommonParameters(), null);
+
+            SpectralMatch psm1 = new PeptideSpectralMatch(new PeptideWithSetModifications(DummyProtein, new DigestionParams(), 1, endResidue, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0), 0, 10, 1, scanB, new CommonParameters(), new List<MatchedFragmentIon>());
+
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(DummyProtein, new DigestionParams(), 1, endResidue, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            List<Product> myProducts = new List<Product>();
+            pwsm.Fragment(DissociationType.HCD, FragmentationTerminus.Both, myProducts);
+            List<MatchedFragmentIon> mfiList = new List<MatchedFragmentIon>();
+            //foreach (Product prod in myProducts)
+            for (int i = 0; i < myProducts.Count; i++)
+            {
+                var prod = myProducts[i];
+                mfiList.Add(new MatchedFragmentIon(prod, 1, 1, 1));
+            }
+
+            var count = SpectralMatch.GetCountComplementaryIons(mfiList, pwsm);
+            //BioPolymersWithSetModsToMatchingFragments Contains one N and one C ion so intersection Returns 1
+            Assert.That(count, Is.EqualTo(expectedCount));
+        }
+
+        [Test]
         public static void Test_PSM_GetLongestIonSeries_NullChecks()
         {
             Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(
@@ -550,7 +589,7 @@ namespace Test
 
             int longestSeries = 0;
 
-            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(DummyProtein, new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
 
             //BioPolymersWithSetModsToMatchingFragments == null returns 1
             longestSeries = SpectralMatch.GetLongestIonSeriesBidirectional(null, pwsm);
@@ -703,8 +742,95 @@ namespace Test
                     psms.Add(psm);
                 }
             }
-            SpectralMatch psmScan23 = psms.ToArray()[33];
+SpectralMatch psmScan23 = psms.ToArray()[33];
             Assert.That(psmScan23.PrecursorScanEnvelopePeakCount, Is.EqualTo(4));
         }
+
+        [Test]
+        public static void TestTrimProteinMatchesRemovesNonParsimoniousParents()
+        {
+            // Create two proteins with the same peptide sequence via digestion
+            var protein1 = new Protein("PEPTIDEKPEPTIDER", "PROTEIN1", "ORGANISM");
+            var protein2 = new Protein("PEPTIDEKPEPTIDER", "PROTEIN2", "ORGANISM");
+
+            DigestionParams digestionParams = new DigestionParams();
+            var peptides1 = protein1.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList();
+            var peptides2 = protein2.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList();
+
+            // Get the shared peptide
+            var sharedPeptide = peptides1.First();
+            var sharedPeptide2 = peptides2.First();
+
+            // Create scan
+            MsDataFile myMsDataFile = new TestDataFile(sharedPeptide, "quadratic");
+            MsDataScan scann = myMsDataFile.GetOneBasedScan(2);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, sharedPeptide.MonoisotopicMass, 1, null, new CommonParameters());
+
+            // Create matched fragment ions
+            var theoreticalIons = new List<Product>();
+            sharedPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, theoreticalIons);
+            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, theoreticalIons, new CommonParameters());
+
+            // Create PSM with first hypothesis
+            SpectralMatch psm = new PeptideSpectralMatch(sharedPeptide, 0, 1, 1, scan, new CommonParameters(), matchedIons);
+
+            // Add second hypothesis with second protein using AddOrReplace (same score so ambiguity is kept)
+            psm.AddOrReplace(sharedPeptide2, 1, 0, true, matchedIons);
+
+            psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+            psm.ResolveAllAmbiguities();
+
+            int countBefore = psm.BestMatchingBioPolymersWithSetMods.Count();
+            Assert.That(countBefore, Is.EqualTo(2));
+
+            // Create parsimonious set containing only protein1
+            var parsimoniousProteins = new HashSet<IBioPolymer> { protein1 };
+
+            int removed = psm.TrimProteinMatches(parsimoniousProteins);
+
+            Assert.That(removed, Is.GreaterThanOrEqualTo(1));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.LessThan(countBefore));
         }
+
+        [Test]
+        public static void TestAddProteinMatchAddsNewAndRejectsDuplicate()
+        {
+            // Create two proteins with same peptide sequence
+            var protein1 = new Protein("PEPTIDEKPEPTIDER", "PROTEIN1", "ORGANISM");
+            var protein2 = new Protein("PEPTIDEKPEPTIDER", "PROTEIN2", "ORGANISM");
+
+            DigestionParams digestionParams = new DigestionParams();
+            var peptides1 = protein1.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList();
+            var peptides2 = protein2.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList();
+
+            var peptide1 = peptides1.First();
+            var peptide2 = peptides2.First();
+
+            // Create scan
+            MsDataFile myMsDataFile = new TestDataFile(peptide1, "quadratic");
+            MsDataScan scann = myMsDataFile.GetOneBasedScan(2);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, peptide1.MonoisotopicMass, 1, null, new CommonParameters());
+
+            // Create matched fragment ions
+            var theoreticalIons = new List<Product>();
+            peptide1.Fragment(DissociationType.HCD, FragmentationTerminus.Both, theoreticalIons);
+            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, theoreticalIons, new CommonParameters());
+
+            // Create PSM with first hypothesis
+            SpectralMatch psm = new PeptideSpectralMatch(peptide1, 0, 1, 1, scan, new CommonParameters(), matchedIons);
+            psm.ResolveAllAmbiguities();
+
+            // Create second hypothesis manually (different parent protein)
+            var secondHypothesis = new EngineLayer.SpectrumMatch.SpectralMatchHypothesis(0, peptide2, matchedIons, 1.0);
+
+            bool firstAdd = psm.AddProteinMatch(secondHypothesis);
+            Assert.That(firstAdd, Is.True);
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
+
+            // Try adding the same hypothesis again - should be rejected
+            bool secondAdd = psm.AddProteinMatch(secondHypothesis);
+Assert.That(secondAdd, Is.False);
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
+        }
+    }
 }

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
+using EngineLayer.DatabaseLoading;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
 

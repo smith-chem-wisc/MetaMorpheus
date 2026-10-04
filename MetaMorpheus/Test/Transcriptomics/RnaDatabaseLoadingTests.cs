@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using NUnit.Framework;
 using Omics;
 using Omics.BioPolymer;
@@ -30,30 +31,17 @@ public class RnaDatabaseLoadingTests
     public static void TestDbReadingDifferentExtensions(string databaseFileName)
     {
         GlobalVariables.AnalyteType = AnalyteType.Oligo;
-        List<IBioPolymer> bioPolymers = new List<IBioPolymer>();
         var dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", databaseFileName);
-
-        // Use reflection to access the protected LoadBioPolymers method
-        var loadBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("LoadBioPolymers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (loadBioPolymersMethod == null)
-        {
-            Assert.Fail("Failed to find the LoadBioPolymers method via reflection.");
-        }
-
-        var task = new SearchTask();
         var dbForTask = new List<DbForTask> { new DbForTask(dbPath, false) };
-        var commonParameters = new CommonParameters();
+        var commonParameters = new CommonParameters(digestionParams: new RnaDigestionParams());
 
-        // Invoke the method
-        bioPolymers = (List<IBioPolymer>)loadBioPolymersMethod.Invoke(task, new object[]
-        {
-            "TestTaskId",
-            dbForTask,
-            true, // searchTarget
-            DecoyType.None,
-            new List<string>(), // localizeableModificationTypes
-            commonParameters
-        });
+        var loader = new DatabaseLoadingEngine(commonParameters, [], [], dbForTask, "TestTaskId", DecoyType.None);
+        var results = (DatabaseLoadingEngineResults)loader.Run()!;
+        var bioPolymers = results.BioPolymers;
+
+        Assert.That(dbForTask[0].BioPolymerCount, Is.EqualTo(1));   
+        Assert.That(dbForTask[0].TargetCount, Is.EqualTo(1));
+        Assert.That(dbForTask[0].DecoyCount, Is.EqualTo(0));
 
         Assert.That(bioPolymers![0], Is.TypeOf<RNA>());
         Assert.That(bioPolymers.Count, Is.EqualTo(1));
@@ -68,30 +56,15 @@ public class RnaDatabaseLoadingTests
     {
         GlobalVariables.AnalyteType = AnalyteType.Oligo;
         var task = new SearchTask();
-        var commonParameters = new CommonParameters();
+        var commonParameters = new CommonParameters(digestionParams: new RnaDigestionParams());
         string baseSequence = "GUACUGCCUCUAGUGAAGCA";
 
         // Create two instances of the same database, one as a contaminant, one as a target. 
         var dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", "20mer1.fasta");
         var dbsForTask = new List<DbForTask> { new DbForTask(dbPath, false), new DbForTask(dbPath, true) };
-
-        // Use reflection to access the protected LoadBioPolymers method
-        var loadBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("LoadBioPolymers", BindingFlags.NonPublic | BindingFlags.Instance);
-        var bioPolymers = (List<IBioPolymer>)loadBioPolymersMethod.Invoke(task, new object[]
-        {
-            "TestTaskId",
-            dbsForTask,
-            true, // searchTarget
-            DecoyType.None,
-            new List<string>(), // localizeableModificationTypes
-            commonParameters
-        });
-
-        // Use reflection to access protected SanitizeBiopolymers method
-        var sanitizeBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("SanitizeBioPolymerDatabase",
-            BindingFlags.NonPublic | BindingFlags.Static);
-        var genericMethod = sanitizeBioPolymersMethod.MakeGenericMethod(typeof(IBioPolymer));
-        genericMethod.Invoke(null, new object[] { bioPolymers, type });
+        var loader = new DatabaseLoadingEngine(commonParameters, [], [], dbsForTask, "TestTaskId", DecoyType.None, tcAmbiguity: type);
+        var results = (DatabaseLoadingEngineResults)loader.Run()!;
+        var bioPolymers = results.BioPolymers;
 
         Assert.That(bioPolymers.Count, Is.EqualTo(expectedAccessions.Length));
         Assert.That(bioPolymers[0].Accession, Is.EqualTo(expectedAccessions[0]));
@@ -115,20 +88,13 @@ public class RnaDatabaseLoadingTests
             new TestBioPolymer() {Accession= "TestingA"},
         };
 
-        // Use reflection to access protected SanitizeBiopolymers method
-        var sanitizeBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("SanitizeBioPolymerDatabase",
-            BindingFlags.NonPublic | BindingFlags.Static);
-        var genericMethod = sanitizeBioPolymersMethod.MakeGenericMethod(typeof(IBioPolymer));
-
-        var exception = Assert.Throws<TargetInvocationException>(() =>
+        var exception = Assert.Throws<ArgumentException>(() =>
         {
-            genericMethod.Invoke(null, new object[] { notImplementedBioPolymers, TargetContaminantAmbiguity.RenameProtein });
+            DatabaseLoadingEngine.SanitizeBioPolymerDatabase(notImplementedBioPolymers, TargetContaminantAmbiguity.RenameProtein, out _);
         });
 
         Assert.That(exception, Is.Not.Null);
-        Assert.That(exception.InnerException, Is.Not.Null);
-        Assert.That(exception.InnerException, Is.TypeOf<ArgumentException>());
-        Assert.That(exception.InnerException.Message, Does.Contain("Database sanitization assumed BioPolymer was a protein when it was Test.Transcriptomics.TestBioPolymer"));
+        Assert.That(exception.Message, Does.Contain("Database sanitization assumed BioPolymer was a protein when it was Test.Transcriptomics.TestBioPolymer"));
     }
 
     [Test]
@@ -152,17 +118,9 @@ public class RnaDatabaseLoadingTests
         loadModificationsMethod.Invoke(task, modArgs);
         var localizableModificationTypes = (List<string>)modArgs[3];
 
-        // Use reflection to access the protected LoadBioPolymers method
-        var loadBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("LoadBioPolymers", BindingFlags.NonPublic | BindingFlags.Instance);
-        var rna = (List<IBioPolymer>)loadBioPolymersMethod.Invoke(task, new object[]
-        {
-            "TestTaskId",
-            dbsForTask,
-            true, // searchTarget
-            DecoyType.Reverse,
-            localizableModificationTypes, // pass the loaded localizable mods
-            commonParameters
-        });
+        var loader = new DatabaseLoadingEngine(commonParameters, [], [], dbsForTask, "TestTaskId", DecoyType.Reverse, true, localizableModificationTypes);
+        var results = (DatabaseLoadingEngineResults)loader.Run()!;
+        var rna = results.BioPolymers;
 
         Assert.That(rna.All(p => p.SequenceVariations.Count == 1));
         Assert.That(rna.All(p => p.OriginalNonVariantModifications.Count == 2));
@@ -194,7 +152,7 @@ class TestBioPolymer : IBioPolymer
 
     public TBioPolymerType CreateVariant<TBioPolymerType>(string variantBaseSequence, TBioPolymerType original,
         IEnumerable<SequenceVariation> appliedSequenceVariants, IEnumerable<TruncationProduct> applicableProteolysisProducts, IDictionary<int, List<Modification>> oneBasedModifications,
-        string sampleNameForVariants) where TBioPolymerType : IHasSequenceVariants
+        IDictionary<int, Modification> oneBasedFixedModifications, string sampleNameForVariants) where TBioPolymerType : IHasSequenceVariants
     {
         throw new NotImplementedException();
     }
@@ -238,11 +196,14 @@ class TestBioPolymer : IBioPolymer
     public string DatabaseFilePath { get; }
     public bool IsDecoy { get; }
     public bool IsContaminant { get; }
+    public bool IsEntrapment { get; } = false;
     public string Organism { get; }
     public string Accession { get; set; }
     public List<Tuple<string, string>> GeneNames { get; }
 
     IDictionary<int, List<Modification>> IBioPolymer.OneBasedPossibleLocalizedModifications => _oneBasedPossibleLocalizedModifications1;
+
+    public IDictionary<int, Modification> OneBasedFixedModifications { get; } = new Dictionary<int, Modification>();
 
     public IEnumerable<IBioPolymerWithSetMods> Digest(IDigestionParams digestionParams, List<Modification> allKnownFixedModifications, List<Modification> variableModifications,
         List<SilacLabel> silacLabels = null, (SilacLabel startLabel, SilacLabel endLabel)? turnoverLabels = null,

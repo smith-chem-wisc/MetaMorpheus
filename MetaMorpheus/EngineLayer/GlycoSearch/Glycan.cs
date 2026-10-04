@@ -45,7 +45,7 @@ namespace EngineLayer
             // Generate the neural loss and diagnostic ions for O_glycan.
             if (type == GlycanType.O_glycan)
             {
-                ModificationType = "O-Glycosylation"; // Set the modification type.
+                ModificationType = "O-linked glycosylation"; // Set the modification type.
                 if (Ions != null)
                 {
                     List<double> lossMasses = Ions.Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
@@ -58,7 +58,7 @@ namespace EngineLayer
             // Generate the neural loss and diagnostic ions for N_glycan.
             else if (type == GlycanType.N_glycan)
             {
-                ModificationType = "N-Glycosylation"; // Set the modification type.
+                ModificationType = "N-linked glycosylation"; // Set the modification type.
                 if (Ions != null)
                 {
                     List<double> lossMasses = Ions.Where(p=>p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
@@ -136,6 +136,13 @@ namespace EngineLayer
         /// List of glycan fragment ions.
         /// </summary>
         public List<GlycanIon> Ions { get; set; }
+
+        /// <summary>
+        /// True when this glycan's Y-ion fragments have been generated. Glycans loaded for the
+        /// fixed/variable-mod list (GlobalVariables.LoadGlycans, ToGenerateIons: false) have none.
+        /// </summary>
+        public bool HasIons => Ions != null && Ions.Count > 0;
+
         /// <summary>
         /// Indicates whether the glycan is a decoy.
         /// </summary>
@@ -178,6 +185,26 @@ namespace EngineLayer
                     diagnosticIons.Add(29008759 - hydrogenAtomMonoisotopicMass);
                     diagnosticIons.Add(30809816 - hydrogenAtomMonoisotopicMass);
                 }
+                // Custom-monosaccharide diagnostic ions. The user supplies an observed singly-charged
+                // m/z in column 4 of MonosaccharidesCustom.tsv -- the same convention as the built-in
+                // literals above -- and, like them, it has to be converted to neutral mass here. This
+                // set becomes Modification.DiagnosticIons, and mzLib assigns the value straight to
+                // Product.NeutralMass ("the diagnostic ion is assumed to be annotated in the mod info
+                // as the neutral mass", PeptideWithSetModifications). Added raw, a custom ion was
+                // searched one proton high -- at m/z 175 that is ~287x a 20 ppm window -- so it never
+                // matched and contributed nothing to the diagnostic-ion score. Only this scoring role
+                // was affected: the filter path reads the same column as m/z and does its own charge
+                // conversion (GlycoPeptides.ScanOxoniumIonFilter).
+                foreach (var kv in _customDiagnosticIonsByIndex)
+                {
+                    if (kv.Key < Kind.Length && Kind[kv.Key] >= 1)
+                    {
+                        foreach (int ion in kv.Value)
+                        {
+                            diagnosticIons.Add(ion - hydrogenAtomMonoisotopicMass);
+                        }
+                    }
+                }
                 return diagnosticIons;
             }
         }
@@ -187,44 +214,238 @@ namespace EngineLayer
         private static readonly int hydrogenAtomMonoisotopicMass =  Convert.ToInt32(PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 1E5);
 
 
-        //Glycan mass dictionary
+        // Master ordered list of monosaccharide slots. Position in this list IS the Kind[] index.
+        // The 11 built-in entries are seeded here; LoadCustomMonosaccharides appends additional
+        // entries at indices 11+. Built-in indices (0..10) are referenced by name in places like
+        // GlycanDiagnosticIons and OGlycanCompositionCombinationChildIons filter rules, so existing
+        // built-in semantics are unchanged by adding customs.
+        //
+        // H: C6O5H10 Hexose, N: C8O5NH13 HexNAc, A: C11O8NH17 Neu5Ac, G: C11H17NO9 Neu5Gc,
+        // F: C6O4H10 Fucose, P: PO3H Phosphate, S: SO3H Sulfo, Y: Na Sodium, C: Acetyl for Neu5Ac,
+        // X: C5H10O5 Xylose, K: Kdn
+        private static readonly List<(string CanonicalName, char Code, int MassScaled)> _builtInKindEntries =
+            new List<(string, char, int)>
+        {
+            ("Hex",     'H', 16205282),
+            ("HexNAc",  'N', 20307937),
+            ("NeuAc",   'A', 29109542),
+            ("NeuGc",   'G', 30709033),
+            ("Fuc",     'F', 14605791),
+            ("Phospho", 'P',  7996633),
+            ("Sulfo",   'S',  7995681),
+            ("Na",      'Y',  2298977),
+            ("Ac",      'C',  4201056),
+            ("Xylose",  'X', 15005282),
+            ("Kdn",     'K', 25006897),
+        };
+
+        // Active list (built-ins + any loaded customs). Length defines Kind[] capacity.
+        private static List<(string CanonicalName, char Code, int MassScaled)> _kindEntries =
+            new List<(string, char, int)>(_builtInKindEntries);
+
+        // Custom monosaccharides' diagnostic ions (int, scaled by 1e5), keyed by Kind[] index.
+        // Emitted by GlycanDiagnosticIons whenever the glycan has count >= 1 at the custom index.
+        private static Dictionary<int, int[]> _customDiagnosticIonsByIndex = new Dictionary<int, int[]>();
+
+        // Cached projections of _customDiagnosticIonsByIndex. Both are read on the hot path --
+        // CustomOxoniumIons once per candidate inside the glycan-box loop of GlycoSearchEngine, and
+        // AllOxoniumIonsIncludingCustoms once per scan -- so they are built once at registration time
+        // instead of being recomputed (and re-sorted, and re-allocated) on every read. The contents
+        // only ever change in RegisterCustomMonosaccharide and ResetCustomMonosaccharides, which both
+        // call RebuildCustomOxoniumCaches.
+        private static IReadOnlyList<(int MzScaled, int KindIndex)> _customOxoniumIons =
+            new List<(int, int)>();
+        private static int[] _allOxoniumIonsIncludingCustoms;
+
+        /// <summary>
+        /// Number of monosaccharide slots in the Kind[] array (built-ins + any registered customs).
+        /// </summary>
+        public static int KindCapacity => _kindEntries.Count;
+
         /// <summary>
         /// Dictionary mapping monosaccharide character codes to their integer mass (scaled by 1e5).
+        /// Rebuilt whenever a custom monosaccharide is registered.
         /// </summary>
-        //H: C6O5H10 Hexose, N: C8O5NH13 HexNAc, A: C11O8NH17 Neu5Ac, G: C11H17NO9 Neu5Gc, F: C6O4H10 Fucose, 
-        //P: PO3H Phosphate, S: SO3H Sulfo, Y: Na Sodium, C:Acetyl for Neu5Ac
-        //X: C5H10O5 Xylose
-        private readonly static Dictionary<char, int> CharMassDic = new Dictionary<char, int> {
-            { 'H', 16205282 },
-            { 'N', 20307937 },
-            { 'A', 29109542 },
-            { 'G', 30709033 },
-            { 'F', 14605791 },
-            { 'P', 7996633 },
-            { 'S', 7995681 },
-            { 'Y', 2298977 },
-            { 'C',  4201056 },
-            { 'X', 15005282 },
-            { 'K', 25006897 },
-        };
+        public static Dictionary<char, int> CharMassDic { get; private set; } = BuildCharMassDic();
 
         /// <summary>
         /// Dictionary mapping monosaccharide names to their character code and index in the Kind array.
+        /// Rebuilt whenever a custom monosaccharide is registered. "dHex" is permanently aliased to "Fuc".
         /// </summary>
-        public readonly static Dictionary<string, Tuple<char, int>> NameCharDic = new Dictionary<string, Tuple<char, int>>
+        public static Dictionary<string, Tuple<char, int>> NameCharDic { get; private set; } = BuildNameCharDic();
+
+        private static Dictionary<char, int> BuildCharMassDic()
         {
-            {"Hex", new Tuple<char, int>('H', 0) },
-            {"HexNAc", new Tuple<char, int>('N', 1) },
-            {"NeuAc", new Tuple<char, int>('A', 2) },
-            {"NeuGc", new Tuple<char, int>('G', 3) },
-            {"Fuc",  new Tuple<char, int>('F', 4)},
-            {"Phospho", new Tuple<char, int>('P', 5)},
-            {"Sulfo", new Tuple<char, int>('S', 6) },
-            {"Na", new Tuple<char, int>('Y', 7) },
-            {"Ac", new Tuple<char, int>('C', 8) },
-            {"Xylose", new Tuple<char, int>('X', 9) },
-            {"Kdn", new Tuple<char,int>('K',10)}
-        };
+            var dic = new Dictionary<char, int>(_kindEntries.Count);
+            foreach (var e in _kindEntries)
+            {
+                dic[e.Code] = e.MassScaled;
+            }
+            return dic;
+        }
+
+        private static Dictionary<string, Tuple<char, int>> BuildNameCharDic()
+        {
+            var dic = new Dictionary<string, Tuple<char, int>>(_kindEntries.Count + 1);
+            for (int i = 0; i < _kindEntries.Count; i++)
+            {
+                var e = _kindEntries[i];
+                dic[e.CanonicalName] = Tuple.Create(e.Code, i);
+            }
+            // Preserved built-in alias: dHex -> Fuc (same slot, same code).
+            if (dic.ContainsKey("Fuc"))
+            {
+                dic["dHex"] = dic["Fuc"];
+            }
+            return dic;
+        }
+
+        /// <summary>
+        /// Characters a monosaccharide name may not contain, because a composition line gives them a meaning
+        /// of their own: '#' starts a note, and parentheses hold a count. A name with one registers, but a
+        /// composition using it loads as a different glycan -- HexNAc(1)Sia#2(1) is read as HexNAc(1).
+        /// </summary>
+        public static readonly char[] CharsNotAllowedInName = { '#', '(', ')' };
+
+        public static string NameHasReservedCharacter(string name) =>
+            $"Monosaccharide name '{name}' cannot contain '#', '(' or ')'. In a glycan database '#' starts a note and " +
+            "parentheses hold a count, so a composition using this name would be read as a different glycan.";
+
+        /// <summary>
+        /// Register a custom monosaccharide. Called by GlycanDatabase.LoadCustomMonosaccharides
+        /// at startup. Appends a new slot at the end of Kind[] (index = KindCapacity-after-add - 1).
+        /// </summary>
+        /// <param name="name">Unique name, must not collide with a built-in or already-registered name.</param>
+        /// <param name="code">Unique single ASCII letter, must not collide with a built-in or already-registered code.</param>
+        /// <param name="massScaled">Monoisotopic mass in Da multiplied by 1e5 (e.g. 176.03209 Da -> 17603209).</param>
+        /// <param name="diagnosticIonsScaled">Optional diagnostic ion m/z values (scaled by 1e5); null or empty for none.</param>
+        public static void RegisterCustomMonosaccharide(string name, char code, int massScaled, int[] diagnosticIonsScaled)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Monosaccharide name must be non-empty.", nameof(name));
+            if (name.IndexOfAny(CharsNotAllowedInName) >= 0)
+                throw new ArgumentException(NameHasReservedCharacter(name), nameof(name));
+            if (NameCharDic.ContainsKey(name))
+                throw new ArgumentException($"Monosaccharide name '{name}' already exists (built-in or previously-registered).", nameof(name));
+            if (CharMassDic.ContainsKey(code))
+                throw new ArgumentException($"Single-char code '{code}' already exists (built-in or previously-registered).", nameof(code));
+            if (!((code >= 'A' && code <= 'Z') || (code >= 'a' && code <= 'z')))
+                throw new ArgumentException($"Single-char code '{code}' must be an ASCII letter.", nameof(code));
+            if (diagnosticIonsScaled != null)
+            {
+                foreach (int ionScaled in diagnosticIonsScaled)
+                {
+                    RejectIfDiagnosticIonAlreadyClaimed(name, ionScaled);
+                }
+            }
+
+            int newIndex = _kindEntries.Count;
+            _kindEntries.Add((name, code, massScaled));
+            if (diagnosticIonsScaled != null && diagnosticIonsScaled.Length > 0)
+            {
+                _customDiagnosticIonsByIndex[newIndex] = diagnosticIonsScaled;
+            }
+            CharMassDic = BuildCharMassDic();
+            NameCharDic = BuildNameCharDic();
+            RebuildCustomOxoniumCaches();
+        }
+
+        /// <summary>
+        /// Floor half-width, in scaled (1e5) units, of the window inside which two oxonium m/z values
+        /// are considered the same ion: 0.01 Da. It catches a user who writes "204.087" for the
+        /// built-in 204.08720, and at the low end of <see cref="AllOxoniumIons"/> it is already wider
+        /// than any realistic product tolerance (20 ppm at m/z 204 is 0.004 Da).
+        /// </summary>
+        private const int DiagnosticIonCollisionFloorScaled = 1000;
+
+        /// <summary>
+        /// Product tolerance the collision window widens to where the floor stops being conservative.
+        /// A fixed 0.01 Da is too narrow at the top of <see cref="AllOxoniumIons"/>: 20 ppm at
+        /// 657.23544 is 0.0131 Da and at 673.23035 is 0.0135 Da, so an ion ~0.012 Da away would clear
+        /// a fixed window and still match the same peak as the built-in -- exactly the collision the
+        /// check exists to prevent, and wider still at low-resolution product tolerance.
+        /// </summary>
+        private const double DiagnosticIonCollisionPpm = 20;
+
+        /// <summary>
+        /// Half-width of the collision window for a pair of scaled m/z values: the wider of
+        /// <see cref="DiagnosticIonCollisionFloorScaled"/> and <see cref="DiagnosticIonCollisionPpm"/>
+        /// of the heavier of the two, so the window is never narrower than the tolerance at that mass.
+        /// </summary>
+        internal static int DiagnosticIonCollisionWindowScaled(int firstScaled, int secondScaled)
+        {
+            int ppmWindow = (int)Math.Ceiling(Math.Max(firstScaled, secondScaled) * DiagnosticIonCollisionPpm / 1E6);
+            return Math.Max(DiagnosticIonCollisionFloorScaled, ppmWindow);
+        }
+
+        /// <summary>
+        /// Describes the collision between <paramref name="ionScaled"/> and an oxonium ion that is
+        /// already spoken for -- a built-in, or a diagnostic ion of an already-registered custom
+        /// monosaccharide -- or returns null when the ion is free. Under the strict custom-oxonium
+        /// filter a shared ion would be "observed" on essentially every glycopeptide spectrum,
+        /// rejecting every candidate that lacks the custom monosaccharide: a silent, near-total loss
+        /// of results.
+        ///
+        /// The collision rule lives here, but the failure mode is the caller's to choose.
+        /// <see cref="RegisterCustomMonosaccharide"/> throws, because there the user is entering the
+        /// ion now and can correct it. GlycanDatabase.LoadCustomMonosaccharides skips the ion and
+        /// warns, because a file written before this check existed may already contain one, and
+        /// throwing at load is fatal: LoadGlycans runs from GlobalVariables.SetUpGlobalVariables
+        /// before the GUI's InitializeComponent, so the window never opens and the user cannot reach
+        /// the file to fix it.
+        /// </summary>
+        public static string DescribeDiagnosticIonCollision(int ionScaled)
+        {
+            foreach (int builtIn in AllOxoniumIons)
+            {
+                int window = DiagnosticIonCollisionWindowScaled(builtIn, ionScaled);
+                if (Math.Abs(builtIn - ionScaled) <= window)
+                {
+                    return $"duplicates the built-in oxonium ion {(double)builtIn / 1E5:F5} (within {(double)window / 1E5:F5} Da). " +
+                           "A custom diagnostic ion must be distinct from every built-in oxonium ion; a shared ion would be observed on nearly every glycopeptide spectrum and the strict filter would then reject every candidate lacking this monosaccharide.";
+                }
+            }
+            foreach (var kv in _customDiagnosticIonsByIndex)
+            {
+                foreach (int existing in kv.Value)
+                {
+                    int window = DiagnosticIonCollisionWindowScaled(existing, ionScaled);
+                    if (Math.Abs(existing - ionScaled) <= window)
+                    {
+                        return $"duplicates the diagnostic ion {(double)existing / 1E5:F5} already registered for '{_kindEntries[kv.Key].CanonicalName}' (within {(double)window / 1E5:F5} Da). " +
+                               "Each custom diagnostic ion must map to exactly one monosaccharide, otherwise the strict filter cannot be satisfied by any candidate.";
+                    }
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Registration-time form of <see cref="DescribeDiagnosticIonCollision"/>: a claimed ion is a
+        /// hard failure here, because the caller supplied it directly and can fix it.
+        /// </summary>
+        private static void RejectIfDiagnosticIonAlreadyClaimed(string name, int ionScaled)
+        {
+            string collision = DescribeDiagnosticIonCollision(ionScaled);
+            if (collision != null)
+            {
+                throw new ArgumentException(
+                    $"Diagnostic ion {(double)ionScaled / 1E5:F5} for monosaccharide '{name}' {collision}",
+                    nameof(name));
+            }
+        }
+
+        /// <summary>
+        /// Removes all registered custom monosaccharides, restoring the built-in 11. Intended for tests.
+        /// </summary>
+        public static void ResetCustomMonosaccharides()
+        {
+            _kindEntries = new List<(string, char, int)>(_builtInKindEntries);
+            _customDiagnosticIonsByIndex = new Dictionary<int, int[]>();
+            CharMassDic = BuildCharMassDic();
+            NameCharDic = BuildNameCharDic();
+            RebuildCustomOxoniumCaches();
+        }
 
         /// <summary>
         /// Set of common oxonium ion masses (int, scaled by 1e5) used for initial glycopeptide peak filtering.
@@ -237,6 +458,63 @@ namespace EngineLayer
         /// </summary>
         public readonly static int[] AllOxoniumIons = new int[]
         {10902895, 11503951, 12605550, 12703952, 13805550, 14406607, 16306064, 16806607, 18607663, 20408720, 27409268, 29008759, 29210324, 30809816, 36614002, 65723544, 67323035};
+
+        /// <summary>
+        /// True when one or more custom monosaccharides registered diagnostic ions (column 4 of
+        /// MonosaccharidesCustom.tsv). Cheap gate so the default no-customs path allocates nothing.
+        /// </summary>
+        public static bool HasCustomOxoniumIons => _customDiagnosticIonsByIndex.Count > 0;
+
+        /// <summary>
+        /// Custom-monosaccharide diagnostic ions exposed as (observed m/z scaled by 1e5, Kind[] index)
+        /// pairs in a deterministic order (by Kind index, then declaration order). Empty unless customs
+        /// were registered. Consumed by the strict custom-oxonium branch of GlycoPeptides.DiagonsticFilter
+        /// and used to size the oxonium intensity list. No hydrogen offset is applied: values are observed
+        /// m/z, matching the convention of AllOxoniumIons and the MonosaccharidesCustom.tsv documentation.
+        /// </summary>
+        public static IReadOnlyList<(int MzScaled, int KindIndex)> CustomOxoniumIons => _customOxoniumIons;
+
+        /// <summary>
+        /// AllOxoniumIons with any CustomOxoniumIons appended (built-ins keep indices 0..N-1, customs
+        /// follow in CustomOxoniumIons order). When no customs are registered this returns the built-in
+        /// AllOxoniumIons array reference unchanged, so default search behavior is byte-identical.
+        /// </summary>
+        public static int[] AllOxoniumIonsIncludingCustoms => _allOxoniumIonsIncludingCustoms ?? AllOxoniumIons;
+
+        /// <summary>
+        /// Rebuilds the cached CustomOxoniumIons list and combined oxonium array from
+        /// _customDiagnosticIonsByIndex. Called only from RegisterCustomMonosaccharide and
+        /// ResetCustomMonosaccharides -- the only two places the custom set can change.
+        /// </summary>
+        private static void RebuildCustomOxoniumCaches()
+        {
+            if (_customDiagnosticIonsByIndex.Count == 0)
+            {
+                _customOxoniumIons = new List<(int, int)>();
+                _allOxoniumIonsIncludingCustoms = null; // AllOxoniumIonsIncludingCustoms returns the built-in array itself
+                return;
+            }
+
+            var list = new List<(int MzScaled, int KindIndex)>();
+            var keys = new List<int>(_customDiagnosticIonsByIndex.Keys);
+            keys.Sort();
+            foreach (int kindIndex in keys)
+            {
+                foreach (int ionScaled in _customDiagnosticIonsByIndex[kindIndex])
+                {
+                    list.Add((ionScaled, kindIndex));
+                }
+            }
+            _customOxoniumIons = list;
+
+            int[] combined = new int[AllOxoniumIons.Length + list.Count];
+            Array.Copy(AllOxoniumIons, combined, AllOxoniumIons.Length);
+            for (int j = 0; j < list.Count; j++)
+            {
+                combined[AllOxoniumIons.Length + j] = list[j].MzScaled;
+            }
+            _allOxoniumIonsIncludingCustoms = combined;
+        }
 
         /// <summary>
         /// Dictionary mapping N-glycan core ion indices to their monoisotopic mass (double).
@@ -292,7 +570,7 @@ namespace EngineLayer
             }
             if (!isOglycan)
             {
-                glycanIons.Add(new GlycanIon(null, 8303819, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
+                glycanIons.Add(new GlycanIon(null, 8303819, new byte[KindCapacity], mass - 8303819)); //Cross-ring mass
             }
             glycanIons.Add(new GlycanIon(null, 0, kind, mass)); //That is Y0 ion. The whole glycan dropped from the glycopeptide. Like a netural loss.
 
@@ -541,43 +819,29 @@ namespace EngineLayer
         /// </summary>
         /// <param name="structure"> ex.(N(H(A))(N(H(A))(F))) </param>
         /// <returns> The glycan Mass </returns>
-        private static int GetMass(string structure) 
+        internal static int GetMass(string structure)
         {
-            int y = CharMassDic['H'] * structure.Count(p => p == 'H') +
-                CharMassDic['N'] * structure.Count(p => p == 'N') +
-                CharMassDic['A'] * structure.Count(p => p == 'A') +
-                CharMassDic['G'] * structure.Count(p => p == 'G') +
-                CharMassDic['F'] * structure.Count(p => p == 'F') +
-                CharMassDic['P'] * structure.Count(p => p == 'P') +
-                CharMassDic['S'] * structure.Count(p => p == 'S') +
-                CharMassDic['Y'] * structure.Count(p => p == 'Y') +
-                CharMassDic['C'] * structure.Count(p => p == 'C') +
-                CharMassDic['X'] * structure.Count(p => p == 'X') +
-                CharMassDic['K'] * structure.Count(p => p == 'K')
-                ;
+            int y = 0;
+            foreach (var entry in _kindEntries)
+            {
+                y += entry.MassScaled * structure.Count(p => p == entry.Code);
+            }
             return y;
         }
 
         /// <summary>
         /// Get glycan mass by glycan composition
         /// </summary>
-        /// <param name="kind"> [2, 2, 2, 0, 1, 0, 0, 0, 0, 0] </param>
+        /// <param name="kind"> [2, 2, 2, 0, 1, 0, 0, 0, 0, 0, 0, ...] </param>
         /// <returns> The glycan mass </returns>
-        public static int GetMass(byte[] kind) 
+        public static int GetMass(byte[] kind)
         {
-            int mass = CharMassDic['H'] * kind[0] +
-            CharMassDic['N'] * kind[1] +
-            CharMassDic['A'] * kind[2] +
-            CharMassDic['G'] * kind[3] +
-            CharMassDic['F'] * kind[4] +
-            CharMassDic['P'] * kind[5] +
-            CharMassDic['S'] * kind[6] +
-            CharMassDic['Y'] * kind[7] +
-            CharMassDic['C'] * kind[8] +
-            CharMassDic['X'] * kind[9] +
-            CharMassDic['K'] * kind[10]
-            ;
-
+            int mass = 0;
+            int upper = Math.Min(kind.Length, _kindEntries.Count);
+            for (int i = 0; i < upper; i++)
+            {
+                mass += _kindEntries[i].MassScaled * kind[i];
+            }
             return mass;
         }
 
@@ -586,46 +850,35 @@ namespace EngineLayer
         /// Get glycan composition by the structure string
         /// </summary>
         /// <param name="structure"> structure format : (N(H(A))(N(H(A))(F))) </param>
-        /// <returns> The kind List ex [2, 2, 2, 0, 1, 0, 0, 0, 0, 0].</returns>
-        public static byte[] GetKind(string structure) 
+        /// <returns> The kind array, length == KindCapacity. </returns>
+        public static byte[] GetKind(string structure)
         {
-            var kind = new byte[] 
-            { Convert.ToByte(structure.Count(p => p == 'H')),
-                Convert.ToByte(structure.Count(p => p == 'N')),
-                Convert.ToByte(structure.Count(p => p == 'A')),
-                Convert.ToByte(structure.Count(p => p == 'G')),
-                Convert.ToByte(structure.Count(p => p == 'F')),
-                Convert.ToByte(structure.Count(p => p == 'P')),
-                Convert.ToByte(structure.Count(p => p == 'S')),
-                Convert.ToByte(structure.Count(p => p == 'Y')),
-                Convert.ToByte(structure.Count(p => p == 'C')),
-                Convert.ToByte(structure.Count(p => p == 'X')),
-                Convert.ToByte(structure.Count(p => p == 'K'))
-            };
+            var kind = new byte[_kindEntries.Count];
+            for (int i = 0; i < _kindEntries.Count; i++)
+            {
+                kind[i] = Convert.ToByte(structure.Count(p => p == _kindEntries[i].Code));
+            }
             return kind;
         }
 
 
         /// <summary>
-        /// Get glycan composition text from the glycan kind[].
+        /// Get glycan composition text from the glycan kind[]. Slots with zero count are omitted.
         /// </summary>
-        /// <param name="Kind"> ex. [2, 2, 2, 0, 1, 0, 0, 0, 0, 0] </param>
+        /// <param name="Kind"> ex. [2, 2, 2, 0, 1, 0, 0, 0, 0, 0, 0, ...] </param>
         /// <returns> The composition text ex. H2N2A2F1 </returns>
         public static string GetKindString(byte[] Kind)
         {
-            string H = Kind[0]==0 ? "" : "H" + Kind[0].ToString();
-            string N = Kind[1] == 0 ? "" : "N" + Kind[1].ToString();
-            string A = Kind[2] == 0 ? "" : "A" + Kind[2].ToString();
-            string G = Kind[3] == 0 ? "" : "G" + Kind[3].ToString();
-            string F = Kind[4] == 0 ? "" : "F" + Kind[4].ToString();
-            string P = Kind[5] == 0 ? "" : "P" + Kind[5].ToString();
-            string S = Kind[6] == 0 ? "" : "S" + Kind[6].ToString();
-            string Y = Kind[7] == 0 ? "" : "Y" + Kind[7].ToString();
-            string C = Kind[8] == 0 ? "" : "C" + Kind[8].ToString();
-            string X = Kind[9] == 0 ? "" : "X" + Kind[9].ToString();
-            string K = Kind[10] == 0 ? "" : "K" + Kind[10].ToString();
-            string kindString = H + N + A + G + F + P + S + Y + C + X + K;
-            return kindString;
+            var sb = new System.Text.StringBuilder();
+            int upper = Math.Min(Kind.Length, _kindEntries.Count);
+            for (int i = 0; i < upper; i++)
+            {
+                if (Kind[i] != 0)
+                {
+                    sb.Append(_kindEntries[i].Code).Append(Kind[i]);
+                }
+            }
+            return sb.ToString();
         }
 
         #endregion

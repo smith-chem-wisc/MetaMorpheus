@@ -1,8 +1,8 @@
 ## Base image is the Alpine Linux distro with .NET Core runtime
-FROM mcr.microsoft.com/dotnet/runtime:8.0-alpine
+FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine
 
 ## Copies contents of the build folder into the Docker image
-ADD CMD/bin/Release/net8.0/ /MetaMorpheus/
+ADD CMD/bin/Release/net10.0/ /MetaMorpheus/
 
 ## Installs bash (seemingly necessary for NextFlow)
 RUN apk add --no-cache bash

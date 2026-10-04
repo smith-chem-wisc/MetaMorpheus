@@ -4,6 +4,7 @@ using System.IO;
 using TaskLayer;
 using EngineLayer;
 using System.Linq;
+using EngineLayer.DatabaseLoading;
 using NUnit.Framework.Legacy;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;

@@ -2,6 +2,7 @@
 using EngineLayer.FdrAnalysis;
 using EngineLayer.ModernSearch;
 using Proteomics;
+using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -28,11 +29,18 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         readonly List<Modification> VariableTerminalModifications;
         readonly List<int>[] CoisolationIndex;
 
+        /// <summary>
+        /// Non-specific search is proteomics-only, so it keeps a peptide-typed view of the index that
+        /// ModernSearchEngine now holds as IBioPolymerWithSetMods. Same objects, narrower type.
+        /// </summary>
+        protected new readonly List<PeptideWithSetModifications> PeptideIndex;
+
         public NonSpecificEnzymeSearchEngine(SpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<int>[] coisolationIndex,
-            List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition,
+            IEnumerable<IBioPolymerWithSetMods> peptideIndex, Indexing.FragmentIndex fragmentIndex, List<int>[] precursorIndex, int currentPartition,
             CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<Modification> variableModifications, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
+            PeptideIndex = peptideIndex.Cast<PeptideWithSetModifications>().ToList();
             CoisolationIndex = coisolationIndex;
             PrecursorIndex = precursorIndex;
             MinimumPeptideLength = commonParameters.DigestionParams.MinLength;
@@ -85,7 +93,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         scan = ListOfSortedMs2Scans[ms2ArrayIndex];
 
                         //populate ids of possibly observed with those containing allowed precursor masses
-                        List<AllowedIntervalWithNotch> validIntervals = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(scan.PrecursorMass).ToList(); //get all valid notches
+                        List<AllowedIntervalWithNotch> validIntervals = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(scan.GetPrecursorMassForSearch(CommonParameters)).ToList(); //get all valid notches
                         foreach (AllowedIntervalWithNotch interval in validIntervals)
                         {
                             int obsPrecursorFloorMz = (int)Math.Floor(interval.Minimum * FragmentBinsPerDalton);
@@ -98,9 +106,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 int highestBin = obsPrecursorCeilingMz - dissociationBinShift;
                                 for (int bin = lowestBin; bin <= highestBin; bin++)
                                 {
-                                    if (bin < FragmentIndex.Length && FragmentIndex[bin] != null)
+                                    if (bin < FragmentIndex.Length)
                                     {
-                                        FragmentIndex[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                                        foreach (int id in FragmentIndex[bin])
+                                        {
+                                            idsOfPeptidesPossiblyObserved.Add(id);
+                                        }
                                     }
                                 }
                             }
@@ -124,13 +135,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 foreach (int id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
                                 {
                                     PeptideWithSetModifications peptide = PeptideIndex[id];
-                                    peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
-                                    Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.PrecursorMass, peptide, CommonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor, semiSpecificSearch);
+                                    peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts, CommonParameters.FragmentationParameters);
+                                    Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.GetPrecursorMassForSearch(CommonParameters), peptide, CommonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor, semiSpecificSearch);
                                     int notch = notchAndUpdatedPeptide.Item1;
                                     if (notch >= 0)
                                     {
                                         peptide = notchAndUpdatedPeptide.Item2;
-                                        peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, peptideTheorProducts);
+                                        peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, peptideTheorProducts, CommonParameters.FragmentationParameters);
                                         List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, ModifiedParametersNoComp);
 
                                         double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons);
@@ -166,7 +177,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             return new MetaMorpheusEngineResults(this);
         }
 
-        private void SnesIndexedScoring(Ms2ScanWithSpecificMass scan, List<int>[] FragmentIndex, byte[] scoringTable, List<PeptideWithSetModifications> peptideIndex, DissociationType dissociationType)
+        private void SnesIndexedScoring(Ms2ScanWithSpecificMass scan, Indexing.FragmentIndex FragmentIndex, byte[] scoringTable, List<PeptideWithSetModifications> peptideIndex, DissociationType dissociationType)
         {
             int obsPreviousFragmentCeilingMz = 0;
 
@@ -179,12 +190,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 {
                     //convert to an int since we're in discrete 1.0005...
                     int fragmentBin = (int)(Math.Round(masses[i].ToMass(1) / 1.0005079) * 1.0005079 * FragmentBinsPerDalton);
-                    List<int> bin = FragmentIndex[fragmentBin];
+                    ReadOnlySpan<int> bin = FragmentIndex[fragmentBin];
 
                     //score
-                    if (bin != null)
+                    if (!bin.IsEmpty)
                     {
-                        for (int pep = 0; pep < bin.Count; pep++)
+                        for (int pep = 0; pep < bin.Length; pep++)
                         {
                             scoringTable[bin[pep]]++;
                         }
@@ -206,9 +217,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     bin = FragmentIndex[fragmentBin];
 
                                     //score
-                                    if (bin != null)
+                                    if (!bin.IsEmpty)
                                     {
-                                        for (int pep = 0; pep < bin.Count; pep++)
+                                        for (int pep = 0; pep < bin.Length; pep++)
                                         {
                                             scoringTable[bin[pep]]++;
                                         }
@@ -255,12 +266,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         // search mass bins within a tolerance
                         for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
                         {
-                            List<int> bin = FragmentIndex[fragmentBin];
+                            ReadOnlySpan<int> bin = FragmentIndex[fragmentBin];
 
                             //score
-                            if (bin != null)
+                            if (!bin.IsEmpty)
                             {
-                                for (int pep = 0; pep < bin.Count; pep++)
+                                for (int pep = 0; pep < bin.Length; pep++)
                                 {
                                     scoringTable[bin[pep]]++;
                                 }
@@ -296,12 +307,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                                     for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
                                     {
-                                        List<int> bin = FragmentIndex[fragmentBin];
+                                        ReadOnlySpan<int> bin = FragmentIndex[fragmentBin];
 
                                         //score
-                                        if (bin != null)
+                                        if (!bin.IsEmpty)
                                         {
-                                            for (int pep = 0; pep < bin.Count; pep++)
+                                            for (int pep = 0; pep < bin.Length; pep++)
                                             {
                                                 scoringTable[bin[pep]]++;
                                             }
@@ -421,7 +432,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 //add the terminal mod
                                 if (fragmentationTerminus == FragmentationTerminus.N)
                                 {
-                                    updatedMods[peptide.OneBasedEndResidue] = terminalMod;
+                                    updatedMods[peptide.OneBasedEndResidue + 1] = terminalMod;
                                 }
                                 else
                                 {
@@ -451,10 +462,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 if (psmsArray != null)
                 {
                     List<SpectralMatch> cleanedPsmsArray = psmsArray.Where(b => b != null).OrderByDescending(b => b.Score)
-                       .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
+                       .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.GetObservedMonoisotopicMass(b.BioPolymerWithSetModsMonoisotopicMass.Value, commonParameters) - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
                        .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
 
-                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }).Run();
+                    // Nonspecific searches skip PostSearchAnalysisTask's FDR pass and its DisambiguationEngine, so this PEP is
+                    // final and nothing downstream resolves ambiguity: keep PEP's pruning, as glyco and crosslink do.
+                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }, pruneAmbiguousHypotheses: true).Run();
 
                     for (int i = 0; i < psmsArray.Count; i++)
                     {
@@ -580,10 +593,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 if (psmsArray != null)
                 {
                     List<SpectralMatch> cleanedPsmsArray = psmsArray.Where(b => b != null).OrderByDescending(b => b.Score)
-                       .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
+                       .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.GetObservedMonoisotopicMass(b.BioPolymerWithSetModsMonoisotopicMass.Value, commonParameters) - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
                        .ToList();
 
-                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }).Run();
+                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }, pruneAmbiguousHypotheses: true).Run();
                 }
             }
 

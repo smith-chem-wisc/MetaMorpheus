@@ -234,3 +234,16 @@ _Pvt_Extensions
 
 # Macintosh files
 **/.DS_Store
+
+# Agents
+/.opencode/
+/AGENTS.md
+/.serena
+/Generated Files
+/.omo
+/MetaMorpheus/CMD/Properties/launchSettings.json
+/MetaMorpheus/GUI/Properties/launchSettings.json
+
+# WPF regenerates this on every GUI build and normally deletes it again; a tracked one was
+# committed by accident once.
+*_wpftmp.csproj

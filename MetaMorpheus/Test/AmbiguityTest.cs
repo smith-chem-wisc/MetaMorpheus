@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.DatabaseLoading;
 using Omics.BioPolymer;
 using Omics.Digestion;
 using Omics.Modifications;
@@ -81,7 +82,7 @@ namespace Test
             //create an ms file and a database for the peptide
             Protein targetProtein = new Protein("PEPTIDE", "target");
             string xmlName = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PEPTIDE.xml");
-            ProteinDbWriter.WriteXmlDatabase(null, new List<Protein> { targetProtein }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { targetProtein }, xmlName);
             PeptideWithSetModifications pepWithSetMods = targetProtein.Digest(new DigestionParams(), null, null).First();
             TestDataFile msFile = new TestDataFile(pepWithSetMods);
             string mzmlName = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PEPTIDE.mzML");

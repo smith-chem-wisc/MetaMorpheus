@@ -56,6 +56,99 @@ namespace Test
             Assert.That(0, Is.EqualTo(matchedIons.Count));
         }
 
+[Test]
+        public static void MatchFragmentIons_IncludeEnvelopeParameter()
+        {
+            TestDataFile t = new TestDataFile();
+            double precursorMass = 402.18629720155; // Use the actual precursor mass from TestDataFile
+            
+            // Create theoretical products that match the spectrum peaks
+            // TestDataFile scan2 has m/z peaks: { 50, 60, 70,147.0764, 257.1244, 258.127, 275.1350 }
+            // The spectrum has isotopic envelopes when not XCorr processed
+            List<Product> products = new List<Product>
+            {
+                // Monoisotopic neutral mass for m/z147.0764 at charge 1:147.0764 -1.007276 ≈ 146.069
+                new Product(ProductType.b, FragmentationTerminus.Both,147.0764 - Constants.ProtonMass, 1, 1, 0)
+            };
+
+            CommonParameters commonParameters = new CommonParameters { ProductMassTolerance = new AbsoluteTolerance(0.5) };
+            MsDataScan scan = t.GetOneBasedScan(2);
+            
+            // DO NOT call XCorrPrePreprocessing - we want to use the isotopic envelope path
+            // which is only available when XcorrProcessed is false
+            
+            var scanWithMass = new Ms2ScanWithSpecificMass(scan, precursorMass.ToMz(2), 2, "", new CommonParameters());
+
+            // Test default (no envelope)
+            var matchedIonsDefault = MetaMorpheusEngine.MatchFragmentIons(scanWithMass, products, commonParameters);
+            
+            // Test with envelope = false (explicit)
+            var matchedIonsNoEnvelope = MetaMorpheusEngine.MatchFragmentIons(scanWithMass, products, commonParameters, includeExperimentalEnvelope: false);
+            
+            // Test with envelope = true
+            var matchedIonsWithEnvelope = MetaMorpheusEngine.MatchFragmentIons(scanWithMass, products, commonParameters, includeExperimentalEnvelope: true);
+
+            // Verify all return results
+            Assert.That(matchedIonsDefault.Count, Is.GreaterThan(0), "Should match at least one ion");
+
+            // Verify counts are same for all variants
+            Assert.That(matchedIonsNoEnvelope.Count, Is.EqualTo(matchedIonsDefault.Count));
+            Assert.That(matchedIonsWithEnvelope.Count, Is.EqualTo(matchedIonsDefault.Count));
+
+            // Verify type when includeEnvelope = true
+            Assert.That(matchedIonsWithEnvelope[0], Is.InstanceOf<MatchedFragmentIonWithEnvelope>());
+            var ionWithEnvelope = (MatchedFragmentIonWithEnvelope)matchedIonsWithEnvelope[0];
+            Assert.That(ionWithEnvelope.Envelope, Is.Not.Null);
+            Assert.That(ionWithEnvelope.Envelope.Peaks, Is.Not.Empty);
+
+            // Verify type when includeEnvelope = false
+Assert.That(matchedIonsDefault[0], Is.InstanceOf<MatchedFragmentIon>());
+            Assert.That(matchedIonsDefault[0], Is.Not.InstanceOf<MatchedFragmentIonWithEnvelope>());
+        }
+
+        [Test]
+        public static void MatchFragmentIons_IncludeEnvelopeParameter_WithCompIons()
+        {
+            TestDataFile t = new TestDataFile();
+            double precursorMass = 402.18629720155;
+            
+            List<Product> products = new List<Product>
+            {
+                new Product(ProductType.b, FragmentationTerminus.Both, 147.0764 - Constants.ProtonMass, 1, 1, 0)
+            };
+
+            CommonParameters commonParametersWithComp = new CommonParameters
+            {
+                ProductMassTolerance = new AbsoluteTolerance(0.5),
+                AddCompIons = true
+            };
+            
+            MsDataScan scan = t.GetOneBasedScan(2);
+            var scanWithMass = new Ms2ScanWithSpecificMass(scan, precursorMass.ToMz(2), 2, "", new CommonParameters());
+
+            // Test with complementary ions enabled and envelope = false
+            var matchedIonsNoEnvelope = MetaMorpheusEngine.MatchFragmentIons(
+                scanWithMass, products, commonParametersWithComp, matchAllCharges: false, includeExperimentalEnvelope: false);
+
+            // Test with complementary ions enabled and envelope = true
+            var matchedIonsWithEnvelope = MetaMorpheusEngine.MatchFragmentIons(
+                scanWithMass, products, commonParametersWithComp, matchAllCharges: false, includeExperimentalEnvelope: true);
+
+            // Both should find ions (main + complementary)
+            Assert.That(matchedIonsNoEnvelope.Count, Is.GreaterThan(0), "Should match ions without envelope");
+            Assert.That(matchedIonsWithEnvelope.Count, Is.EqualTo(matchedIonsNoEnvelope.Count), "Counts should match");
+
+            // Verify envelope types - at least one should be a complementary ion if matched
+            foreach (var ion in matchedIonsWithEnvelope)
+            {
+                if (ion is MatchedFragmentIonWithEnvelope ionWithEnv)
+                {
+                    Assert.That(ionWithEnv.Envelope, Is.Not.Null, "Envelope property should be populated");
+                    Assert.That(ionWithEnv.Envelope.Peaks, Is.Not.Empty, "Envelope should have peaks");
+                }
+            }
+        }
+
         private class TestEngine : MetaMorpheusEngine
         {
 

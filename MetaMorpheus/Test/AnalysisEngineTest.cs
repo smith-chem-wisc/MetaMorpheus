@@ -1,19 +1,21 @@
 ﻿using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
-using Proteomics;
+using Omics;
+using Omics.Digestion;
 using Omics.Fragmentation;
+using Omics.Modifications;
+using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Omics.Digestion;
-using Omics.Modifications;
+using System.Reflection;
 using TaskLayer;
-using Omics;
 
 namespace Test
 {
@@ -78,9 +80,9 @@ namespace Test
             Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 3, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=2", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null), 2 + 132.040, 1, null, new CommonParameters());
             Ms2ScanWithSpecificMass scanC = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 4, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=3", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null), 3, 1, null, new CommonParameters());
 
-            SpectralMatch matchA = new PeptideSpectralMatch(compactPeptide1, 0, 0, 0, scanA, CommonParameters, new List<MatchedFragmentIon>());
-            SpectralMatch matchB = new PeptideSpectralMatch(compactPeptide2, 0, 0, 0, scanB, CommonParameters, new List<MatchedFragmentIon>());
-            SpectralMatch matchC = new PeptideSpectralMatch(compactPeptide3, 0, 0, 0, scanC, CommonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch matchA = new PeptideSpectralMatch(compactPeptide1, 0, 10, 0, scanA, CommonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch matchB = new PeptideSpectralMatch(compactPeptide2, 0, 10, 0, scanB, CommonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch matchC = new PeptideSpectralMatch(compactPeptide3, 0, 10, 0, scanC, CommonParameters, new List<MatchedFragmentIon>());
 
             var newPsms = new List<SpectralMatch> { matchA, matchB, matchC };
 
@@ -109,6 +111,36 @@ namespace Test
             //code coverage unit test for an unused abstract method in post search analysis
             var task = new PostSearchAnalysisTask();
             task.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask>(), new List<string>(), "");
+        }
+
+        /// <summary>
+        /// WarnStatic is the static counterpart to Warn(string), used where no engine instance (and therefore
+        /// no nested id) is available. It must deliver the message to subscribers with a null NestedIDs.
+        /// </summary>
+        [Test]
+        public static void WarnStatic_WithSubscriber_DeliversMessageAndNullNestedIds()
+        {
+            MethodInfo warnStatic = typeof(MetaMorpheusEngine).GetMethod("WarnStatic",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.That(warnStatic, Is.Not.Null, "Expected protected static WarnStatic method.");
+
+            StringEventArgs received = null;
+            object senderSeen = new object();
+            EventHandler<StringEventArgs> handler = (o, e) => { received = e; senderSeen = o; };
+            MetaMorpheusEngine.WarnHandler += handler;
+            try
+            {
+                warnStatic.Invoke(null, new object[] { "native library warning" });
+
+                Assert.That(received, Is.Not.Null);
+                Assert.That(received.S, Is.EqualTo("native library warning"));
+                Assert.That(received.NestedIDs, Is.Null, "Static warnings carry no nested id.");
+                Assert.That(senderSeen, Is.Null, "Static warnings have no engine instance as sender.");
+            }
+            finally
+            {
+                MetaMorpheusEngine.WarnHandler -= handler;
+            }
         }
     }
 }
