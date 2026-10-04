@@ -334,7 +334,9 @@ namespace Test
             {
                 PrecursorMassTolerance = new PpmTolerance(10),
                 ProductMassTolerance = new PpmTolerance(30),
-                DigestionAgent = RnaseDictionary.Dictionary["RNase PhyM"],
+                // any RNase other than the default does; RNase T1's name is stable, while "RNase PhyM" was renamed to
+                // "RNase PhyM (>= 7M urea)" by mzLib #1301 and no longer exists on mzLib master
+                DigestionAgent = RnaseDictionary.Dictionary["RNase T1"],
                 MinPeptideLength = 1,
                 MaxPeptideLength = 50,
                 MaxMissedCleavages = 2,
@@ -457,6 +459,7 @@ namespace Test
             public int MaxModificationIsoforms { get; set; }
             public int MaxMods { get; set; }
             public DigestionAgent DigestionAgent { get; }
+            public DigestionAgent SpecificDigestionAgent => DigestionAgent;
             public FragmentationTerminus FragmentationTerminus { get; }
             public CleavageSpecificity SearchModeType { get; }
             public IDigestionParams Clone(FragmentationTerminus? newTerminus = null) => this;
