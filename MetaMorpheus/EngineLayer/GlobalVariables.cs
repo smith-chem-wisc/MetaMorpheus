@@ -804,23 +804,7 @@ namespace EngineLayer
             var glycoMods = ModificationLoader.ReadModsFromFile(glycoFile, out var errorMods);
             foreach (var glycoMod in glycoMods)
             {
-                // An ID with no '(' -- Hex, dHex, Galactosyl on N-term -- names a single residue, not a
-                // composition, and is kept as an ordinary modification. One that has a '(' but is not a
-                // composition is kept the same way, but said: this runs at startup, outside any try, so it
-                // must not throw, and it must not quietly become a different glycan either.
-                byte[] kind = null;
-                if (glycoMod.OriginalId.IndexOf('(') >= 0)
-                {
-                    try
-                    {
-                        kind = GlycanDatabase.ParseComposition(glycoMod.OriginalId);
-                    }
-                    catch (FormatException ex)
-                    {
-                        Warn($"The glyco modification '{glycoMod.OriginalId}' in {glycoFile} is not a glycan composition, so it is " +
-                            $"kept as an ordinary modification. {ex.Message}");
-                    }
-                }
+                byte[] kind = GlycoModComposition(glycoMod.OriginalId, glycoFile);
 
                 if (kind == null || kind.Sum(p => p) == 0)
                 {
@@ -840,6 +824,32 @@ namespace EngineLayer
                     glycan.Ions = GlycanDatabase.OGlycanCompositionCombinationChildIons(kind);
                 }
                 _AllModsKnown.Add(glycan);
+            }
+        }
+
+        /// <summary>
+        /// The composition a glyco.txt modification ID names, or null when it names none. An ID with no '('
+        /// -- Hex, dHex, Galactosyl on N-term -- names a single residue, not a composition, and is kept as an
+        /// ordinary modification. One that has a '(' but is not a composition is kept the same way, but said:
+        /// this runs at startup, outside any try, so it must not throw, and it must not quietly become a
+        /// different glycan either.
+        /// </summary>
+        internal static byte[] GlycoModComposition(string originalId, string glycoFile)
+        {
+            if (originalId.IndexOf('(') < 0)
+            {
+                return null;
+            }
+
+            try
+            {
+                return GlycanDatabase.ParseComposition(originalId);
+            }
+            catch (FormatException ex)
+            {
+                Warn($"The glyco modification '{originalId}' in {glycoFile} is not a glycan composition, so it is " +
+                    $"kept as an ordinary modification. {ex.Message}");
+                return null;
             }
         }
 

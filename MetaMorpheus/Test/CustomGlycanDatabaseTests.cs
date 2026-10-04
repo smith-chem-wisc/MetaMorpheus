@@ -1084,6 +1084,53 @@ namespace Test
         }
 
         /// <summary>
+        /// A glyco.txt ID that is not a composition is kept as an ordinary modification: no '(' means a single
+        /// residue and is passed over in silence; a '(' that does not parse is said, naming the ID and the
+        /// file, because startup must neither throw nor quietly read it as a different glycan.
+        /// </summary>
+        [TestCase("Hex", null, false)]
+        [TestCase("Galactosyl on N-term", null, false)]
+        [TestCase("Hex(1)HexNAc(1)", "Hex(1)HexNAc(1)", false)]
+        [TestCase("Hex(1)HexNo(1)", null, true)]
+        [TestCase("Hex(1)HexNAc(1", null, true)]
+        public static void AGlycoTxtIdIsAGlycanOnlyWhenItParsesAsAComposition(string id, string composition, bool warns)
+        {
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> listener = (sender, e) => warnings.Add(e.S);
+            GlobalVariables.WarnHandler += listener;
+            byte[] kind;
+            try
+            {
+                kind = GlobalVariables.GlycoModComposition(id, "glyco.txt");
+            }
+            finally
+            {
+                GlobalVariables.WarnHandler -= listener;
+            }
+
+            Assert.That(kind, Is.EqualTo(composition == null ? null : GlycanDatabase.ParseComposition(composition)));
+            var ours = warnings.Where(w => w.Contains($"'{id}'")).ToList();
+            Assert.That(ours, warns ? Has.Count.EqualTo(1) : Is.Empty);
+            if (warns)
+            {
+                Assert.That(ours[0], Does.Contain("glyco.txt").And.Contain("ordinary modification"));
+            }
+        }
+
+        /// <summary>
+        /// String2Kind is kept for outside callers but is now the database parser, so a bad composition is
+        /// a FormatException naming the problem, not a KeyNotFoundException or a silently truncated glycan.
+        /// </summary>
+        [Test]
+        public static void ObsoleteString2KindIsTheCompositionParser()
+        {
+#pragma warning disable CS0618
+            Assert.That(GlycanDatabase.String2Kind("HexNAc(2)Hex(5)"), Is.EqualTo(GlycanDatabase.ParseComposition("HexNAc(2)Hex(5)")));
+            Assert.Throws<FormatException>(() => GlycanDatabase.String2Kind("HexNAc(2)HexNo(1)"));
+#pragma warning restore CS0618
+        }
+
+        /// <summary>
         /// The residue cap does not bound a structure's cost: Struct2Glycan enumerates every sub-tree, and a
         /// complete ternary tree of 40 residues has about 3.9e8 of them. It is refused, from the tree, before
         /// any is built.
