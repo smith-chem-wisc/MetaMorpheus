@@ -697,7 +697,10 @@ namespace TaskLayer
             // SILAC cannot express comment[label]: SDRF wants one row per sample per channel, and
             // MetaMorpheus has no channel-to-sample mapping for SILAC. Guessing would invent an
             // experimental design.
-            if (SearchParameters.SilacLabels?.Any() == true)
+            // Turnover labels are copied into SilacLabels only further down RunSpecific, after this check.
+            if (SearchParameters.SilacLabels?.Any() == true
+                || SearchParameters.StartTurnoverLabel is not null
+                || SearchParameters.EndTurnoverLabel is not null)
                 Warn("SDRF output on a SILAC search: comment[label] is not filled in, because " +
                      "MetaMorpheus has no map of which sample carries which label. Every other column " +
                      "will be written.");
