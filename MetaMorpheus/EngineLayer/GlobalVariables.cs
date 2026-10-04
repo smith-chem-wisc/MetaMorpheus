@@ -799,10 +799,9 @@ namespace EngineLayer
 
             try
             {
-                // mzLib reports a missing or unreadable catalogue by exception (it returned null before
-                // smith-chem-wisc/mzLib#1126); either way the result is the same empty dictionary here.
-                AvailableUniProtProteomes = ProteinDbRetriever.UniprotProteomesList(proteomeListPath)
-                                            ?? new Dictionary<string, string>();
+                // mzLib reports a missing or unreadable catalogue by exception and never returns null
+                // (smith-chem-wisc/mzLib#1126, shipped in 1.0.585).
+                AvailableUniProtProteomes = ProteinDbRetriever.UniprotProteomesList(proteomeListPath);
             }
             catch (Exception e)
             {
