@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
+using EngineLayer.FdrAnalysis;
 using EngineLayer.Truncation;
 using MassSpectrometry;
 using MzLibUtil;
@@ -65,6 +66,67 @@ namespace Test
             List<string> differences = TruncationSearchTask.DescribeParameterDifferences(search, looser);
             Assert.That(differences, Has.Count.EqualTo(1));
             Assert.That(differences[0], Does.StartWith("PrecursorMassTolerance"));
+        }
+
+        /// <summary>
+        /// A pipe-ambiguous match has a null FullSequence. Parents are deduped on its sorted hypotheses instead, so two
+        /// different ambiguous proteoforms stay separate (both seed parents, #2) while the same pair in either order
+        /// is still one proteoform.
+        /// </summary>
+        [Test]
+        public void ProteoformKey_KeepsDifferentPipeAmbiguousMatchesApart()
+        {
+            var cp = new CommonParameters();
+            var scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new[] { 100.0 }, new[] { 1.0 }, false), 1, 2, true,
+                Polarity.Positive, 1, new MzRange(0, 1000), "f", MZAnalyzerType.Orbitrap, 1, 1, null, "scan=1"), 500, 1, "f", cp);
+            PeptideWithSetModifications Form(string sequence) => new Protein(sequence, "P_" + sequence)
+                .Digest(new DigestionParams(protease: "top-down"), new List<Modification>(), new List<Modification>()).First();
+            SpectralMatch Match(params string[] sequences)
+            {
+                var psm = new PeptideSpectralMatch(Form(sequences[0]), 0, 10, 0, scan, cp, new List<Omics.Fragmentation.MatchedFragmentIon>());
+                foreach (string sequence in sequences.Skip(1))
+                {
+                    psm.AddOrReplace(Form(sequence), 10, 0, true, new List<Omics.Fragmentation.MatchedFragmentIon>());
+                }
+                psm.ResolveAllAmbiguities();
+                return psm;
+            }
+
+            SpectralMatch ab = Match("PEPTIDE", "PEPTIDEK");
+            SpectralMatch ba = Match("PEPTIDEK", "PEPTIDE");
+            SpectralMatch cd = Match("ACDEFGH", "ACDEFGHK");
+            SpectralMatch plain = Match("MNPQRST");
+
+            Assert.That(ab.FullSequence, Is.Null);
+            Assert.That(cd.FullSequence, Is.Null);
+            Assert.That(TruncationSearchTask.ProteoformKey(ab), Is.Not.EqualTo(TruncationSearchTask.ProteoformKey(cd)));
+            Assert.That(TruncationSearchTask.ProteoformKey(ab), Is.EqualTo(TruncationSearchTask.ProteoformKey(ba)));
+            Assert.That(TruncationSearchTask.ProteoformKey(plain), Is.EqualTo(plain.FullSequence));
+        }
+
+        /// <summary>
+        /// The parent filter (#3) reads proteoform-level FDR when FdrAnalysisEngine assigned it, and the PSM-level
+        /// values when the proteoform-level block is still the unassigned all-2 sentinel (any PSM that was not its
+        /// proteoform's representative, including every pipe-ambiguous match after the first).
+        /// </summary>
+        [Test]
+        public void ParentFilter_FallsBackToPsmLevelOnlyWhenProteoformLevelIsUnassigned()
+        {
+            var cp = new CommonParameters();
+            var scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new[] { 100.0 }, new[] { 1.0 }, false), 1, 2, true,
+                Polarity.Positive, 1, new MzRange(0, 1000), "f", MZAnalyzerType.Orbitrap, 1, 1, null, "scan=1"), 500, 1, "f", cp);
+            var form = new Protein("PEPTIDE", "U").Digest(new DigestionParams(protease: "top-down"),
+                new List<Modification>(), new List<Modification>()).First();
+            var psm = new PeptideSpectralMatch(form, 0, 10, 0, scan, cp, new List<Omics.Fragmentation.MatchedFragmentIon>());
+            psm.PsmFdrInfo = new FdrInfo { QValue = 0.01, QValueNotch = 0.01 };
+
+            psm.PeptideFdrInfo = new FdrInfo();
+            Assert.That(TruncationSearchTask.ParentFdrInfo(psm), Is.SameAs(psm.PsmFdrInfo));
+            Assert.That(TruncationSearchTask.PassesParentFilter(psm, 0.10), Is.True);
+
+            psm.PeptideFdrInfo = new FdrInfo { QValue = 0.5, QValueNotch = 0.5 };
+            Assert.That(TruncationSearchTask.ParentFdrInfo(psm), Is.SameAs(psm.PeptideFdrInfo));
+            Assert.That(TruncationSearchTask.PassesParentFilter(psm, 0.10), Is.False);
         }
 
         /// <summary>WriteDecoys / WriteContaminants decide which rows reach the output files (#17).</summary>

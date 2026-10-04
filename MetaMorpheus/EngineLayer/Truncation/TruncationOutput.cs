@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.SpectrumMatch;
 
 namespace EngineLayer.Truncation
 {
@@ -25,15 +26,18 @@ namespace EngineLayer.Truncation
             }
         }
 
-        /// <summary>AllTruncatedProteoforms.psmtsv — deduped by truncated FullSequence (best per group), peptide-level FDR columns.</summary>
+        /// <summary>
+        /// AllTruncatedProteoforms.psmtsv — one row per truncated FullSequence, peptide-level FDR columns. The row is
+        /// the PSM <see cref="FdrAnalysisEngine"/> chose as that proteoform's representative (lowest PEP, then score),
+        /// because only that PSM carries the proteoform-level q-values; any other member would be written with the
+        /// unassigned sentinel (2).
+        /// </summary>
         public static void WriteProteoforms(IEnumerable<SpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modsToWrite = null)
         {
             IReadOnlyDictionary<string, int> mods = modsToWrite ?? new Dictionary<string, int>();
             IEnumerable<SpectralMatch> deduped = psms
                 .Where(p => p != null)
-                .OrderByDescending(p => p)
-                .GroupBy(p => p.FullSequence)
-                .Select(g => g.First());
+                .CollapseToPeptides(filterAtPeptideLevel: true);
 
             using var output = new StreamWriter(filePath);
             output.WriteLine(SpectralMatch.GetTabSeparatedHeader());

@@ -39,7 +39,8 @@ every possible cut point.
   against the scan with standard both-series scoring and emitted as a `SpectralMatch`.
 
 Pass 1 intact matches are inherited as `full-length`, pooled with the Pass 3 truncations, and the
-whole pool gets one fresh per-class FDR/PEP analysis.
+whole pool gets one fresh FDR/PEP analysis: full-length forms and N- and C-terminal truncations
+share a single target-decoy ranking (#15, #18); there is no separate per-class FDR.
 
 ---
 
@@ -65,12 +66,18 @@ whole pool gets one fresh per-class FDR/PEP analysis.
   (`PEPTIDEK|PEPTIDER|PEPTIDEM`) contributes each alternative as its own parent.
 - All alternatives are tagged back to the originating Pass 1 row so downstream counting does not
   double-count.
+- On the in-memory path an ambiguous match has a null `FullSequence`, so parents are deduped on its
+  sorted alternatives instead; otherwise every ambiguous proteoform would fall into one group.
 
 ### #3 - Parent inclusion filter
 
 - Targets and decoys live in one combined list, filtered identically.
 - Filter: **PEP q-value <= `ParentQValueThreshold`** when PEP was computed, otherwise **notch
   q-value <= `ParentQValueThreshold`**.
+- The values are proteoform-level, read from the PSM `FdrAnalysisEngine` picked as the proteoform's
+  representative (lowest PEP, then score). Where no proteoform-level values were assigned, as for
+  pipe-ambiguous matches, whose null `FullSequence` MetaMorpheus groups together, the PSM-level
+  values are used.
 - The default threshold (0.10) is deliberately permissive: cast a wide net of parents and let the
   truncation search's own FDR police the final output.
 

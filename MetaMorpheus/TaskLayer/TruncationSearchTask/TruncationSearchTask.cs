@@ -57,6 +57,7 @@ namespace TaskLayer
             List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             MyTaskResults = new MyTaskResults(this);
+            _pepQWasUsedForParents = false; // the task object can be re-run (GUI), so do not carry the flag over
             var wallStopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             // The chop acceptor must map a precursor to a whole-residue chop at a notch (decisions #9, #15);
@@ -429,10 +430,15 @@ namespace TaskLayer
             double threshold = TruncationSearchParameters.ParentQValueThreshold;
             var parents = new List<TruncationParent>();
 
+            // One PSM per proteoform, chosen the way FdrAnalysisEngine chooses its proteoform-level representative
+            // (lowest PEP, then score), so the PSM kept is the one carrying the proteoform-level q-values. A
+            // pipe-ambiguous match has a null FullSequence; keying it on its hypotheses keeps each ambiguous
+            // proteoform separate rather than collapsing all of them into one null group (#2).
             IEnumerable<SpectralMatch> proteoforms = pass1Psms
                 .Where(p => p != null)
-                .OrderByDescending(p => p)
-                .GroupBy(p => p.FullSequence)
+                .OrderBy(p => p.FdrInfo?.PEP ?? double.MaxValue)
+                .ThenByDescending(p => p)
+                .GroupBy(ProteoformKey)
                 .Select(g => g.First());
 
             foreach (SpectralMatch psm in proteoforms)
@@ -445,7 +451,7 @@ namespace TaskLayer
                 // Record whether the PEP q-value (vs notch q-value) drove inclusion (perf logging).
                 // By design this reflects the in-memory parent path only; the disk/db-seeded paths leave the
                 // metric false because PsmFromTsv's PEP column is ambiguous there (#15, intentional).
-                FdrInfo fdr = psm.GetFdrInfo(peptideLevel: true) ?? psm.GetFdrInfo(peptideLevel: false);
+                FdrInfo fdr = ParentFdrInfo(psm);
                 if (fdr != null && fdr.PEP_QValue != 2)
                 {
                     _pepQWasUsedForParents = true;
@@ -463,14 +469,32 @@ namespace TaskLayer
             return parents;
         }
 
+        /// <summary>Dedup key for a Pass 1 match: its FullSequence, or for a pipe-ambiguous match (null FullSequence) its sorted hypotheses.</summary>
+        public static string ProteoformKey(SpectralMatch psm) =>
+            psm.FullSequence ?? string.Join("|", psm.BestMatchingBioPolymersWithSetMods
+                .Select(b => b.SpecificBioPolymer.FullSequence).Distinct().OrderBy(s => s, StringComparer.Ordinal));
+
+        /// <summary>
+        /// The FDR values the parent filter reads: proteoform-level (peptide) when FdrAnalysisEngine assigned them,
+        /// else PSM-level. Proteoform-level values exist only on the engine's one representative per FullSequence;
+        /// the other members, and every pipe-ambiguous match after the first (MetaMorpheus groups all null
+        /// FullSequences together), keep the unassigned <see cref="FdrInfo()"/> sentinel of 2 in every q column.
+        /// </summary>
+        public static FdrInfo ParentFdrInfo(SpectralMatch psm)
+        {
+            FdrInfo peptide = psm.GetFdrInfo(peptideLevel: true);
+            bool unassigned = peptide == null || (peptide.QValue == 2 && peptide.QValueNotch == 2 && peptide.PEP_QValue == 2);
+            return unassigned ? psm.GetFdrInfo(peptideLevel: false) : peptide;
+        }
+
         /// <summary>
         /// Permissive parent filter (#3): PEP q-value ≤ threshold when PEP was computed (sentinel 2 = not
         /// computed), otherwise notch q-value ≤ threshold. Uses proteoform-level (peptide) FDR, falling
-        /// back to PSM-level if peptide-level FDR was not assigned.
+        /// back to PSM-level where proteoform-level FDR was not assigned (see <see cref="ParentFdrInfo"/>).
         /// </summary>
-        private static bool PassesParentFilter(SpectralMatch psm, double threshold)
+        public static bool PassesParentFilter(SpectralMatch psm, double threshold)
         {
-            FdrInfo fdr = psm.GetFdrInfo(peptideLevel: true) ?? psm.GetFdrInfo(peptideLevel: false);
+            FdrInfo fdr = ParentFdrInfo(psm);
             if (fdr == null)
             {
                 return false;

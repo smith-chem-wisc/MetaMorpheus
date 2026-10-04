@@ -184,6 +184,42 @@ namespace Test
             }
         }
 
+        /// <summary>
+        /// The proteoform row is the PSM FdrAnalysisEngine made the proteoform's representative (lowest PEP, then
+        /// score), not simply the top scorer: only that PSM carries proteoform-level q-values, so writing the top
+        /// scorer would put the unassigned sentinel (2) in the QValue column.
+        /// </summary>
+        [Test]
+        public void WriteProteoforms_WritesTheFdrRepresentative_NotTheTopScorer()
+        {
+            var form = MakeProteoform("PEPTIDE", "A", "C-terminal truncation(1-7)");
+            var topScorer = new PeptideSpectralMatch(form, 0, 20.0, 0,
+                BuildMinimalScan(1, form.MonoisotopicMass, _cp), _cp, new List<MatchedFragmentIon>());
+            var lowestPep = new PeptideSpectralMatch(form, 0, 10.0, 1,
+                BuildMinimalScan(2, form.MonoisotopicMass, _cp), _cp, new List<MatchedFragmentIon>());
+            topScorer.ResolveAllAmbiguities();
+            lowestPep.ResolveAllAmbiguities();
+            topScorer.PsmFdrInfo = new EngineLayer.FdrAnalysis.FdrInfo { PEP = 0.5 };
+            topScorer.PeptideFdrInfo = new EngineLayer.FdrAnalysis.FdrInfo();                 // unassigned: q = 2
+            lowestPep.PsmFdrInfo = new EngineLayer.FdrAnalysis.FdrInfo { PEP = 0.01 };
+            lowestPep.PeptideFdrInfo = new EngineLayer.FdrAnalysis.FdrInfo { QValue = 0.01, QValueNotch = 0.01, PEP_QValue = 0.01 };
+
+            string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "AllTruncatedProteoforms_rep_test.psmtsv");
+            try
+            {
+                TruncationOutput.WriteProteoforms(new List<SpectralMatch> { topScorer, lowestPep }, path);
+                string[] lines = File.ReadAllLines(path);
+                string[] header = lines[0].Split('\t');
+                Assert.That(lines.Length - 1, Is.EqualTo(1));
+                Assert.That(lines[1].Split('\t')[Array.IndexOf(header, "Scan Number")], Is.EqualTo("2"));
+                Assert.That(double.Parse(lines[1].Split('\t')[Array.IndexOf(header, "QValue")]), Is.EqualTo(0.01).Within(1e-9));
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
         // ---------- helpers ----------
 
         private SpectralMatch MakeTargetPsm(string sequence, double score, int scanNumber)
