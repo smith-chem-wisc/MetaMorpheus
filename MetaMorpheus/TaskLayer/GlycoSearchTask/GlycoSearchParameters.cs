@@ -1,4 +1,4 @@
-﻿using EngineLayer.GlycoSearch;
+using EngineLayer.GlycoSearch;
 using System.Collections.Generic;
 using UsefulProteomicsDatabases;
 
@@ -51,6 +51,10 @@ namespace TaskLayer
         ///
         /// List&lt;(string, string)&gt; is deliberate -- MetaMorpheusTask.tomlConfig already registers a
         /// converter for exactly this type, so it round-trips with no new serialization code.
+        ///
+        /// The key is composition-based, so two structural isomers in one user-built structure database
+        /// (e.g. (N(H(N))) and (N(H)(N))) share it: ticking either searches both. No shipped database holds
+        /// isomers; separating them needs a structure-aware key, which is follow-up work.
         /// </remarks>
         public List<(string, string)> SelectedGlycans { get; set; }
         public GlycoSearchType GlycoSearchType { get; set; }

@@ -79,7 +79,6 @@ namespace MetaMorpheusGUI
             CmbOGlycanDatabase.ItemsSource = GlobalVariables.OGlycanDatabasePaths.Select(p=> Path.GetFileName(p));
             CmbNGlycanDatabase.ItemsSource = GlobalVariables.NGlycanDatabasePaths.Select(p => Path.GetFileName(p));
 
-
             foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
             {
                 proteaseComboBox.Items.Add(protease);
