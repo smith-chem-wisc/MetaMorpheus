@@ -6,6 +6,7 @@ using NUnit.Framework;
 using Omics;
 using Omics.Fragmentation;
 using Omics.Modifications;
+using IsobaricMassTag = EngineLayer.IsobaricMassTag;
 using Omics.SpectralMatch;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
