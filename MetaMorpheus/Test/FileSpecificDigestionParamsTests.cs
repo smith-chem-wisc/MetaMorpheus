@@ -1,9 +1,13 @@
 using EngineLayer;
+using GuiFunctions.Util;
+using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using System;
+using System.IO;
 using TaskLayer;
 
 namespace Test
@@ -74,6 +78,108 @@ namespace Test
             Assert.That(combined.PrecursorMassTolerance.Value, Is.EqualTo(7), "the file-specific override still applies");
             Assert.That(combined.DigestionParams, Is.EqualTo(original),
                 $"file-specific rebuild changed digestion settings it was not asked to change: {original} became {combined.DigestionParams}");
+        }
+
+        [Test]
+        public static void FileSpecificRebuild_PreservesRetentionTimeRange()
+        {
+            var task = new CommonParameters(
+                retentionTimeRange: new DoubleRange(12.5, 48.75));
+
+            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task,
+                new FileSpecificParameters { PrecursorMassTolerance = new PpmTolerance(7) });
+
+            Assert.That(combined.RetentionTimeRange.Minimum, Is.EqualTo(12.5));
+            Assert.That(combined.RetentionTimeRange.Maximum, Is.EqualTo(48.75));
+        }
+
+        [Test]
+        [TestCase(-1, 10)]
+        [TestCase(double.NaN, 10)]
+        public static void CommonParameters_RejectsInvalidRetentionTimeMinimum(double minimum, double maximum)
+        {
+            var exception = Assert.Throws<ArgumentOutOfRangeException>(() => new CommonParameters(
+                retentionTimeRange: new DoubleRange(minimum, maximum)));
+
+            Assert.That(exception.ParamName, Is.EqualTo("retentionTimeRange"));
+        }
+
+        [Test]
+        [TestCase(0, double.NaN)]
+        [TestCase(10, 9)]
+        public static void CommonParameters_RejectsInvalidRetentionTimeMaximum(double minimum, double maximum)
+        {
+            var exception = Assert.Throws<ArgumentOutOfRangeException>(() => new CommonParameters(
+                retentionTimeRange: new DoubleRange(minimum, maximum)));
+
+            Assert.That(exception.ParamName, Is.EqualTo("retentionTimeRange"));
+        }
+
+        [Test]
+        public static void RetentionTimeRange_RoundTripsThroughToml()
+        {
+            string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "RetentionTimeRangeRoundTrip.toml");
+            var task = new SearchTask
+            {
+                CommonParameters = new CommonParameters(
+                    retentionTimeRange: new DoubleRange(12.5, 48.75))
+            };
+
+            try
+            {
+                Nett.Toml.WriteFile(task, path, MetaMorpheusTask.tomlConfig);
+                SearchTask loaded = Nett.Toml.ReadFile<SearchTask>(path, MetaMorpheusTask.tomlConfig);
+
+                Assert.That(loaded.CommonParameters.RetentionTimeRange.Minimum, Is.EqualTo(12.5));
+                Assert.That(loaded.CommonParameters.RetentionTimeRange.Maximum, Is.EqualTo(48.75));
+            }
+            finally
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+        }
+
+        [Test]
+        public static void RetentionTimeRangeParser_UsesBlankDefaults()
+        {
+            bool parsed = RetentionTimeRangeParser.TryParse(string.Empty, string.Empty,
+                out double minimum, out double maximum, out string errorMessage);
+
+            Assert.That(parsed, Is.True);
+            Assert.That(minimum, Is.EqualTo(0));
+            Assert.That(maximum, Is.EqualTo(double.MaxValue));
+            Assert.That(errorMessage, Is.Null);
+        }
+
+        [TestCase("NaN", "10")]
+        [TestCase("0", "NaN")]
+        [TestCase("Infinity", "10")]
+        [TestCase("10", "9")]
+        public static void RetentionTimeRangeParser_RejectsInvalidBounds(string minimumText, string maximumText)
+        {
+            bool parsed = RetentionTimeRangeParser.TryParse(minimumText, maximumText,
+                out _, out _, out string errorMessage);
+
+            Assert.That(parsed, Is.False);
+            Assert.That(errorMessage, Is.Not.Null.And.Not.Empty);
+        }
+
+        [TestCase("12.5;9")]
+        [TestCase("NaN;10")]
+        [TestCase("12.5;not-a-number")]
+        public static void RetentionTimeRange_TomlRejectsInvalidValues(string invalidRange)
+        {
+            var task = new SearchTask
+            {
+                CommonParameters = new CommonParameters(retentionTimeRange: new DoubleRange(12.5, 48.75))
+            };
+            string toml = Nett.Toml.WriteString(task, MetaMorpheusTask.tomlConfig);
+            Assert.That(toml, Does.Contain("12.5;48.75"));
+            toml = toml.Replace("12.5;48.75", invalidRange, StringComparison.Ordinal);
+
+            var exception = Assert.Throws<InvalidOperationException>(() => Nett.Toml.ReadString<SearchTask>(toml, MetaMorpheusTask.tomlConfig));
+            Assert.That(exception.InnerException?.InnerException, Is.TypeOf<MetaMorpheusException>());
         }
     }
 }

@@ -10,6 +10,8 @@ using Omics.Modifications;
 using Proteomics;
 using Readers;
 using UsefulProteomicsDatabases;
+using IsobaricMassTag = EngineLayer.IsobaricMassTag;
+using IsobaricMassTagType = EngineLayer.IsobaricMassTagType;
 
 namespace TaskLayer
 {
@@ -156,8 +158,9 @@ namespace TaskLayer
                         ? condition + " " + (sampleInfo.BiologicalReplicate + 1)
                         : stem,
                     Organism = organism,
-                    // SDRF is 1-based; SpectraFileInfo stores these 0-based.
-                    BiologicalReplicate = (sampleInfo?.BiologicalReplicate ?? 0) + 1,
+                    // SDRF is 1-based; SpectraFileInfo stores these 0-based. With no design nobody established
+                    // the numbers, so null, which mzLib writes as `not available`, rather than a claimed 1.
+                    BiologicalReplicate = sampleInfo?.BiologicalReplicate + 1,
                     Label = ResolveLabel(Parameters.SearchParameters),
                     FactorValue = sampleInfo?.Condition,
                     FactorValueColumn = string.IsNullOrWhiteSpace(sampleInfo?.Condition)
@@ -166,8 +169,8 @@ namespace TaskLayer
                 };
 
                 var assay = BuildAssay(rawFilePath, common,
-                    technicalReplicate: tmtFile?.TechnicalReplicate ?? (sampleInfo?.TechnicalReplicate ?? 0) + 1,
-                    fraction: tmtFile?.Fraction ?? (sampleInfo?.Fraction ?? 0) + 1);
+                    technicalReplicate: tmtFile?.TechnicalReplicate ?? sampleInfo?.TechnicalReplicate + 1,
+                    fraction: tmtFile?.Fraction ?? sampleInfo?.Fraction + 1);
 
                 yield return new SdrfRowInput(sample, assay);
             }
@@ -246,7 +249,7 @@ namespace TaskLayer
         /// The assay half of a row: everything the search itself knows about one data file. Shared by
         /// every channel row of an isobaric file, which is what makes those rows one assay.
         /// </summary>
-        private SdrfAssay BuildAssay(string rawFilePath, CommonParameters common, int technicalReplicate, int fraction) =>
+        private SdrfAssay BuildAssay(string rawFilePath, CommonParameters common, int? technicalReplicate, int? fraction) =>
             new SdrfAssay
             {
                 // Two names (sdrf D46): the acquired file, and the derivative the search read when they differ.

@@ -17,6 +17,8 @@ using Proteomics;
 using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using IsobaricMassTag = EngineLayer.IsobaricMassTag;
+using IsobaricMassTagType = EngineLayer.IsobaricMassTagType;
 
 namespace Test
 {
@@ -114,6 +116,16 @@ namespace Test
                 "Every required column must be present even with no design file: " + string.Join(", ", missing));
             Assert.That(document.Results.Single()["characteristics[organism part]"], Is.EqualTo("not available"),
                 "Absent metadata is stated with the reserved word, not invented and not omitted.");
+
+            // With no design nobody established the replicate or fraction numbers, so the file must not
+            // claim 1 (mzLib #1378 made them nullable for exactly this).
+            foreach (string column in new[]
+                     {
+                         "characteristics[biological replicate]", "comment[technical replicate]",
+                         "comment[fraction identifier]"
+                     })
+                Assert.That(document.Results.Single()[column], Is.EqualTo("not available"),
+                    column + " is unknown without a design, and must say so.");
 
             Directory.Delete(folder, true);
         }
