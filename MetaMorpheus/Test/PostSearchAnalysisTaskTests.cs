@@ -1203,16 +1203,43 @@ namespace Test
                 "filtering at the writers must not move a target intensity");
         }
 
+        /// <summary>
+        /// A peak carrying a contaminant identification AND a target identification (co-elution) is
+        /// still a target row, so it must be written. Only peaks whose every identification is a
+        /// withheld sequence are dropped.
+        /// </summary>
+        [Test]
+        public static void PeakSharedWithATargetIdentificationIsKeptWhenContaminantsAreNotWritten()
+        {
+            var withheld = RunQuantificationAndWriteTables("ContamCoeluting", writeContaminants: false,
+                beforeWrite: results =>
+                {
+                    var peaks = results.Peaks.Values.Single();
+                    var contaminantPeak = peaks.Single(p => p.Identifications.Any(id => id.ModifiedSequence == ContaminantSequence));
+                    var targetIdentification = peaks.SelectMany(p => p.Identifications).First(id => id.ModifiedSequence == TargetSequence);
+                    contaminantPeak.Identifications.Add(targetIdentification);
+                });
+
+            string coelutingPeakRow = withheld.Peaks.Split('\n')
+                .SingleOrDefault(row => row.Contains(ContaminantSequence));
+            Assert.That(coelutingPeakRow, Is.Not.Null, "a peak that also carries a target identification must keep its row");
+            Assert.That(coelutingPeakRow, Does.Contain(TargetSequence));
+            Assert.That(withheld.Peptides, Does.Not.Contain(ContaminantSequence),
+                "the contaminant's own peptide row is still withheld");
+        }
+
         private const string TargetSequence = "PEPTIDEK";
         private const string ContaminantSequence = "ACDEFGHIK";
 
         /// <summary>
         /// Drives QuantificationAnalysis and then WriteFlashLFQResults over one target protein and one
         /// contaminant protein, and returns what the two FlashLFQ tables say plus the target's intensity
-        /// as the engine computed it.
+        /// as the engine computed it. beforeWrite, when given, sees the results between the engine and
+        /// the writers.
         /// </summary>
         private static (string Peptides, string Peaks, double TargetIntensity, double ContaminantIntensityInEngine)
-            RunQuantificationAndWriteTables(string folderName, bool writeContaminants)
+            RunQuantificationAndWriteTables(string folderName, bool writeContaminants,
+                Action<FlashLFQ.FlashLfqResults> beforeWrite = null)
         {
             CommonParameters commonParameters = new();
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, folderName);
@@ -1282,6 +1309,8 @@ namespace Test
                     parameters.FlashLfqResults.PeptideModifiedSequences.TryGetValue(ContaminantSequence, out var contaminantPeptide)
                         ? contaminantPeptide.GetIntensity(quantFile)
                         : 0;
+
+                beforeWrite?.Invoke(parameters.FlashLfqResults);
 
                 InvokePrivate(task, "WriteFlashLFQResults");
 
