@@ -25,6 +25,7 @@ using MzLibUtil;
 using Omics.Digestion;
 using Omics.BioPolymer;
 using Omics.Modifications;
+using IsobaricMassTag = EngineLayer.IsobaricMassTag;
 using Omics.SpectrumMatch;
 using EngineLayer.SpectrumMatch;
 using Omics.Fragmentation;
