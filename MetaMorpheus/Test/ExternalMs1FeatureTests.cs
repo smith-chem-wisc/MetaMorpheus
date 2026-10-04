@@ -115,5 +115,42 @@ namespace Test
             Assert.That(resolved.AdditionalPrecursorDeconvolutionParameters,
                 Is.TypeOf<FromFileDeconvolutionParameters>());
         }
+
+        // mzLib reads the feature file lazily, on the first MS2 scan that queries it, which is inside
+        // GetMs2Scans and outside every per-file guard. An unreadable feature file (e.g. a stale or
+        // truncated _ms1.feature auto-discovered next to the raw file) must instead disable the external
+        // source with a warning, exactly as a missing one does, and the search carry on without it.
+        [Test]
+        public static void SetAllFileSpecificCommonParams_UnreadableMs1FeatureFile_DisablesSourceInsteadOfAbortingSearch()
+        {
+            string mzml = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TDGPTMDSearchSingleSpectra.mzML");
+            string dir = Path.Combine(Path.GetTempPath(), "mm_ms1feature_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            string badFeatureFile = Path.Combine(dir, "myRun_ms1.feature");
+            File.WriteAllText(badFeatureFile, "this is not\ta feature file\n\u0001\u0002\n");
+
+            var warnings = new System.Collections.Generic.List<string>();
+            EventHandler<StringEventArgs> onWarn = (_, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += onWarn;
+            try
+            {
+                var common = new CommonParameters(deconvolutionMaxAssumedChargeState: 20);
+                var fsp = new FileSpecificParameters { Ms1FeatureFilePath = badFeatureFile };
+
+                CommonParameters resolved = null;
+                Assert.DoesNotThrow(() => resolved = MetaMorpheusTask.SetAllFileSpecificCommonParams(common, fsp));
+                Assert.That(resolved.AdditionalPrecursorDeconvolutionParameters, Is.Null);
+                Assert.That(warnings.Any(w => w.Contains(badFeatureFile)), Is.True,
+                    "the user should be told their feature file was not used");
+
+                var dataFile = Mzml.LoadAllStaticData(mzml);
+                Assert.DoesNotThrow(() => MetaMorpheusTask.GetMs2Scans(dataFile, mzml, resolved).ToList());
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= onWarn;
+                Directory.Delete(dir, true);
+            }
+        }
     }
 }

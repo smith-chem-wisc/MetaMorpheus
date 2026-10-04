@@ -856,10 +856,25 @@ namespace TaskLayer
                     // try/catch around this call rather than silently falling back to (1, 12), which
                     // would strip out envelopes above charge 12 on top-down configs that set 60.
                     var primary = precursorDeconParams;
-                    additionalPrecursorDeconParams = new Readers.FromFileDeconvolutionParameters(
+                    var fromFile = new Readers.FromFileDeconvolutionParameters(
                         fileSpecificParams.Ms1FeatureFilePath,
                         primary.MinAssumedChargeState,
                         primary.MaxAssumedChargeState);
+
+                    // mzLib reads the feature file lazily, on the first MS2 scan that queries it --
+                    // inside GetMs2Scans, where nothing catches per file, so an unreadable file would
+                    // abort the whole task mid-search. Read it now instead, and treat a file that
+                    // cannot be read like one that is missing: warn and search without it.
+                    try
+                    {
+                        _ = fromFile.Features;
+                        additionalPrecursorDeconParams = fromFile;
+                    }
+                    catch (Exception e)
+                    {
+                        Warn("Could not read Ms1FeatureFilePath '" + fileSpecificParams.Ms1FeatureFilePath +
+                             "'; external MS1 feature source disabled. " + e.Message);
+                    }
                 }
                 else
                 {
@@ -999,22 +1014,21 @@ namespace TaskLayer
                         if (string.IsNullOrWhiteSpace(fileSettingsList[i].Ms1FeatureFilePath))
                         {
                             fileSettingsList[i].Ms1FeatureFilePath = adjacentMs1FeaturePath;
-                            // Surface auto-discovery in the log: an externally-supplied feature file
-                            // can swing PSM counts substantially, and a user who left a stale _ms1.feature
-                            // next to their raw deserves to see in the log that it was picked up.
+                            // Surface auto-discovery as a warning, not just a log line: an externally-supplied
+                            // feature file can swing PSM counts substantially, and a user who left a stale
+                            // _ms1.feature next to their raw deserves to see that it was picked up -- Warn is
+                            // what reaches a GUI user who never opens results.txt.
                             // Explicit per-file-toml paths skip this branch (the user typed the path,
                             // they already know it's active).
-                            Log("Found adjacent MS1 feature file '" + adjacentMs1FeaturePath +
+                            Warn("Found adjacent MS1 feature file '" + adjacentMs1FeaturePath +
                                 "' for " + Path.GetFileName(rawFilePath) +
-                                "; enabling additive FromFile precursor source",
-                                new List<string> { displayName });
+                                "; enabling additive FromFile precursor source");
                         }
                     }
 
                     // Per-file resilience: SetAllFileSpecificCommonParams throws MetaMorpheusException
-                    // for unsupported digestion-param types, and the FromFile construction it now performs
-                    // can throw any IO / parse exception from mzLib's Ms1FeatureFile reader on a corrupt
-                    // feature file. Catch broadly so one bad file degrades to "skip and continue" rather
+                    // for unsupported digestion-param types. (An unreadable feature file does not reach
+                    // here: SetAllFileSpecificCommonParams warns and disables that source itself.) Catch broadly so one bad file degrades to "skip and continue" rather
                     // than aborting the whole task -- matches the resilience contract the pre-refactor
                     // master had when SetAllFileSpecificCommonParams was inside the toml-parse try/catch.
                     CommonParameters perFileParams;
