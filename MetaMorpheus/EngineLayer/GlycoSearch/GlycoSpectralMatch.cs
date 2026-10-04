@@ -52,23 +52,31 @@ namespace EngineLayer.GlycoSearch
         /// <param name="peptide"> full peptide sequence ex. "PTLFKNVSLYK" </param>
         /// <param name="motifs"> modificatino AA ex. "S","T"</param>
         /// <returns> int[], the Modpositon index list ex.[9,3] </returns>
+        /// <summary>
+        /// A position-free placeholder modification for each motif string, used only to test where the motif fits, or null when
+        /// the string is not a valid motif. Built once per motif rather than once per peptide.
+        /// </summary>
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Modification> MotifPlaceholders = new();
+
+        private static Modification MotifPlaceholder(string motif)
+        {
+            return MotifPlaceholders.GetOrAdd(motif, m =>
+                ModificationMotif.TryGetMotif(m, out ModificationMotif aMotif) //Check if the motif is valid, and creat the motif object from the string.
+                    ? new Modification(_target: aMotif, _locationRestriction: "Anywhere.")
+                    : null);
+        }
+
         public static SortedDictionary<int, string> GetPossibleModSites(PeptideWithSetModifications peptide, string[] motifs)
         {
             SortedDictionary<int, string> modMotif = new SortedDictionary<int, string>();
 
-            List<Modification> modifications = new List<Modification>();
-
-            foreach (var mtf in motifs)
+            foreach (var mtf in motifs) //iterate through all the modifications with motif.
             {
-                if (ModificationMotif.TryGetMotif(mtf, out ModificationMotif aMotif)) //Check if the motif is valid, and creat the motif object from the string.
+                var modWithMotif = MotifPlaceholder(mtf);
+                if (modWithMotif == null)
                 {
-                    Modification modWithMotif = new Modification(_target: aMotif, _locationRestriction: "Anywhere."); 
-                    modifications.Add(modWithMotif);
+                    continue;
                 }
-            }
-
-            foreach (var modWithMotif in modifications) //iterate through all the modifications with motif.
-            {
                 for (int r = 0; r < peptide.Length; r++)
                 {
                     if (peptide.AllModsOneIsNterminus.Keys.Contains(r+2))
@@ -91,19 +99,13 @@ namespace EngineLayer.GlycoSearch
 
         public static bool MotifExist(string baseSeq, string[] motifs)
         {
-            List<Modification> modifications = new List<Modification>();
-
             foreach (var mtf in motifs)
             {
-                if (ModificationMotif.TryGetMotif(mtf, out ModificationMotif aMotif))
+                var modWithMotif = MotifPlaceholder(mtf);
+                if (modWithMotif == null)
                 {
-                    Modification modWithMotif = new Modification(_target: aMotif, _locationRestriction: "Anywhere.");
-                    modifications.Add(modWithMotif);
+                    continue;
                 }
-            }
-
-            foreach (var modWithMotif in modifications)
-            {
                 for (int r = 0; r < baseSeq.Length; r++)
                 {
                     //Modification is not considered.                  

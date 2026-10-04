@@ -13,6 +13,7 @@ using Omics;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
+using IsobaricMassTag = EngineLayer.IsobaricMassTag;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Readers;
@@ -172,6 +173,7 @@ namespace TaskLayer
 
             // start loading first spectra file in the background
             string fileToLoad = currentRawFileList[0];
+            var instrumentModelsByFile = new Dictionary<string, CvParam>(StringComparer.OrdinalIgnoreCase);
             Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(fileToLoad, SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
             nextFileLoadingTask.Start();
 
@@ -274,6 +276,7 @@ namespace TaskLayer
             int completedFiles = 0;
             object indexLock = new object();
             object psmLock = new object();
+            int? decidedPartitions = null;
 
             Status("Searching files...", new List<string> { taskId });
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
@@ -312,6 +315,8 @@ namespace TaskLayer
                 // ensure that the next file has finished loading from the async method
                 nextFileLoadingTask.Wait();
                 var myMsDataFile = nextFileLoadingTask.Result;
+                // Kept for the SDRF, which would otherwise read every file again after the search.
+                instrumentModelsByFile[origDataFile] = myMsDataFile.SourceFile?.InstrumentModel;
 
                 // If the file is one which does not have precursor scans, but only precursor information, then we need to set the parameters accordingly
                 // We do this by adjusting the transient combined params so that this can be done on a file by file basis. 
@@ -384,17 +389,21 @@ namespace TaskLayer
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
                 {
-                    for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
+                    // scoped to indexing/searching only, so the settings the task reports stay as configured
+                    CommonParameters indexParams = RaisePartitionsToFitMemory(bioPolymerList, combinedParams, fixedModifications,
+                        variableModifications, SearchParameters.SilacLabels, SearchParameters.StartTurnoverLabel,
+                        SearchParameters.EndTurnoverLabel, SearchParameters.MaxFragmentSize, ref decidedPartitions);
+                    for (int currentPartition = 0; currentPartition < indexParams.TotalPartitions; currentPartition++)
                     {
                         List<IBioPolymerWithSetMods> peptideIndex = null;
-                        List<IBioPolymer> proteinListSubset = bioPolymerList.GetRange(currentPartition * bioPolymerList.Count / combinedParams.TotalPartitions,
-                            ((currentPartition + 1) * bioPolymerList.Count / combinedParams.TotalPartitions) - (currentPartition * bioPolymerList.Count / combinedParams.TotalPartitions));
+                        List<IBioPolymer> proteinListSubset = bioPolymerList.GetRange(currentPartition * bioPolymerList.Count / indexParams.TotalPartitions,
+                            ((currentPartition + 1) * bioPolymerList.Count / indexParams.TotalPartitions) - (currentPartition * bioPolymerList.Count / indexParams.TotalPartitions));
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                            SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, combinedParams, FileSpecificParameters,
+                            SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, indexParams, FileSpecificParameters,
                             SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), SearchParameters.TCAmbiguity, new List<string> { taskId });
-                        List<int>[] fragmentIndex = null;
+                        FragmentIndex fragmentIndex = null;
                         List<int>[] precursorIndex = null;
 
                         lock (indexLock)
@@ -405,9 +414,9 @@ namespace TaskLayer
                         Status("Searching files...", taskId);
 
                         new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition,
-                            combinedParams, this.FileSpecificParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
+                            indexParams, this.FileSpecificParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
-                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
+                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + indexParams.TotalPartitions + "!", thisId));
                         if (GlobalVariables.StopLoops) { break; }
                     }
                 }
@@ -467,22 +476,27 @@ namespace TaskLayer
                         }
 
                         var proteinList = bioPolymerList.Cast<Protein>().ToList();
+                        // scoped to indexing/searching only; paramToUse still carries the configured terminus
+                        // to the spectral-library step below
+                        CommonParameters indexParams = RaisePartitionsToFitMemory(proteinList, paramToUse, fixedModifications,
+                            variableModifications, SearchParameters.SilacLabels, SearchParameters.StartTurnoverLabel,
+                            SearchParameters.EndTurnoverLabel, SearchParameters.MaxFragmentSize, ref decidedPartitions);
 
                         //foreach database partition
-                        for (int currentPartition = 0; currentPartition < paramToUse.TotalPartitions; currentPartition++)
+                        for (int currentPartition = 0; currentPartition < indexParams.TotalPartitions; currentPartition++)
                         {
                             List<PeptideWithSetModifications> peptideIndex = null;
 
-                            List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / paramToUse.TotalPartitions,
-                                ((currentPartition + 1) * proteinList.Count / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count / paramToUse.TotalPartitions))
+                            List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / indexParams.TotalPartitions,
+                                ((currentPartition + 1) * proteinList.Count / indexParams.TotalPartitions) - (currentPartition * proteinList.Count / indexParams.TotalPartitions))
                                 .ToList(); // assume that only proteins are used in non-specific search
 
-                            List<int>[] fragmentIndex = null;
+                            FragmentIndex fragmentIndex = null;
                             List<int>[] precursorIndex = null;
 
                             Status("Getting fragment dictionary...", new List<string> { taskId });
                             var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                                SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, paramToUse, FileSpecificParameters,
+                                SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, indexParams, FileSpecificParameters,
                                 SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), SearchParameters.TCAmbiguity, new List<string> { taskId });
                             lock (indexLock)
                             {
@@ -492,10 +506,10 @@ namespace TaskLayer
                             Status("Searching files...", taskId);
 
                             new NonSpecificEnzymeSearchEngine(fileSpecificPsmsSeparatedByFdrCategory, arrayOfMs2ScansSortedByMass, coisolationIndex, peptideIndex, fragmentIndex,
-                                precursorIndex, currentPartition, paramToUse, this.FileSpecificParameters, variableModifications, massDiffAcceptor,
+                                precursorIndex, currentPartition, indexParams, this.FileSpecificParameters, variableModifications, massDiffAcceptor,
                                 SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
-                            ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + paramToUse.TotalPartitions + "!", thisId));
+                            ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + indexParams.TotalPartitions + "!", thisId));
                             if (GlobalVariables.StopLoops) { break; }
                         }
 
@@ -599,6 +613,8 @@ namespace TaskLayer
                 FixedModifications = fixedModifications,
                 ListOfDigestionParams = [.. fileSpecificCommonParams.Select(p => p.DigestionParams)],
                 CurrentRawFileList = currentRawFileList,
+                AcquiredSpectraFiles = AcquiredSpectraFiles,
+                InstrumentModelsByFile = instrumentModelsByFile,
                 MyFileManager = myFileManager,
                 NumNotches = numNotches,
                 OutputFolder = OutputFolder,
@@ -638,8 +654,10 @@ namespace TaskLayer
             if (!SearchParameters.WriteSdrf || currentRawFileList is null || currentRawFileList.Count == 0)
                 return;
 
+            // This check only warns, so it must never be what stops a search: a design another
+            // program holds open (Excel locks what it opens) is reported, not thrown.
             string designPath = Path.Combine(
-                Directory.GetParent(currentRawFileList.First()).ToString(),
+                Path.GetDirectoryName(currentRawFileList.First()) ?? string.Empty,
                 GlobalVariables.ExperimentalDesignFileName);
 
             if (!File.Exists(designPath))
@@ -651,11 +669,20 @@ namespace TaskLayer
             }
             else
             {
-                ExperimentalDesign.ReadExperimentalDesign(designPath, currentRawFileList, out var designErrors);
-                if (designErrors.Any())
+                try
+                {
+                    ExperimentalDesign.ReadExperimentalDesign(designPath, currentRawFileList, out var designErrors);
+                    if (designErrors.Any())
+                        Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
+                             " cannot be used as it stands, so the SDRF will describe the search only: " +
+                             string.Join("; ", designErrors));
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
                     Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
-                         " cannot be used as it stands, so the SDRF will describe the search only: " +
-                         string.Join("; ", designErrors));
+                         " could not be read before the search (" + e.Message + "). If it is still " +
+                         "unreadable when the SDRF is written, the SDRF will describe the search only.");
+                }
             }
 
             // Labelled runs do not yet express comment[label]: SDRF wants one row per sample per

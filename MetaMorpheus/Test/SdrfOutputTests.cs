@@ -115,6 +115,16 @@ namespace Test
             Assert.That(document.Results.Single()["characteristics[organism part]"], Is.EqualTo("not available"),
                 "Absent metadata is stated with the reserved word, not invented and not omitted.");
 
+            // With no design nobody established the replicate or fraction numbers, so the file must not
+            // claim 1 (mzLib #1378 made them nullable for exactly this).
+            foreach (string column in new[]
+                     {
+                         "characteristics[biological replicate]", "comment[technical replicate]",
+                         "comment[fraction identifier]"
+                     })
+                Assert.That(document.Results.Single()[column], Is.EqualTo("not available"),
+                    column + " is unknown without a design, and must say so.");
+
             Directory.Delete(folder, true);
         }
 
@@ -256,14 +266,77 @@ namespace Test
         }
 
         /// <summary>
-        /// comment[data file] names the ORIGINAL acquisition, never a calibrated or averaged
-        /// derivative this run happened to produce. An SDRF describes data as acquired; pointing it
-        /// at an intermediate makes the row unjoinable to the deposited dataset.
+        /// A per-file override reaches the row for THAT file, and only that file.
+        ///
+        /// MetaMorpheus lets a spectra file carry its own .toml overriding protease, tolerances and
+        /// dissociation type, and the adapter looks those up per file. When that lookup misses, the
+        /// failure is silent: every row reports the task-level values, the document still validates,
+        /// and the fill rate is unchanged. Only two files with DIFFERENT parameters can see it --
+        /// which is why every other end-to-end case here, all single-file, missed a lookup that
+        /// compared a bare file name against a stored full path and therefore never matched.
         /// </summary>
         [Test]
-        public static void TheWrittenSdrfNamesTheOriginalDataFile()
+        public static void APerFileParameterOverrideReachesThatFilesRow()
         {
-            string output = RunSearchWritingSdrf(nameof(TheWrittenSdrfNamesTheOriginalDataFile),
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                "SdrfOutput_" + nameof(APerFileParameterOverrideReachesThatFilesRow));
+            if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            Directory.CreateDirectory(folder);
+
+            string source = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string taskLevelFile = Path.Combine(folder, "tryptic.mzml");
+            string overriddenFile = Path.Combine(folder, "aspN.mzml");
+            File.Copy(source, taskLevelFile, true);
+            File.Copy(source, overriddenFile, true);
+
+            // A file-specific toml is named after its spectra file and sits beside it. Only the
+            // second file gets one, so the two rows must not come out the same.
+            File.WriteAllLines(Path.Combine(folder, "aspN.toml"), new[] { "Protease = \"Asp-N\"" });
+
+            var database = new DbForTask(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta"), false);
+
+            ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo>
+            {
+                new(taskLevelFile, "condition", 0, 0, 0),
+                new(overriddenFile, "condition", 1, 0, 0)
+            });
+
+            var task = BuildSearchTask(writeSdrf: true);
+            string output = Path.Combine(folder, "TaskOutput");
+            Directory.CreateDirectory(output);
+
+            task.RunTask(output, new List<DbForTask> { database },
+                new List<string> { taskLevelFile, overriddenFile }, "sdrf-file-specific");
+
+            var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
+            document.LoadResults();
+
+            Assert.That(document.Results.Count, Is.EqualTo(2), "One row per spectra file.");
+
+            SdrfRow RowFor(string path) => document.Results
+                .Single(r => r["comment[data file]"] == Path.GetFileName(path));
+
+            Assert.That(RowFor(taskLevelFile)["comment[cleavage agent details]"],
+                Does.Contain("Trypsin").IgnoreCase,
+                "The file with no toml of its own is digested with the task-level protease.");
+            Assert.That(RowFor(overriddenFile)["comment[cleavage agent details]"],
+                Does.Contain("Asp-N").IgnoreCase,
+                "This file was digested with Asp-N by its own toml, so its row has to say Asp-N -- " +
+                "reporting the task-level protease here is exactly the flattening this column exists " +
+                "to prevent.");
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// comment[data file] names the acquired file (sdrf D46). In a search-only run the search reads that
+        /// same file, so there is no comment[searched data file] column.
+        /// </summary>
+        [Test]
+        public static void ASearchOnlySdrfNamesTheAcquiredFileAndNoSearchedFile()
+        {
+            string output = RunSearchWritingSdrf(nameof(ASearchOnlySdrfNamesTheAcquiredFileAndNoSearchedFile),
                 out string folder, out string spectraPath);
 
             var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
@@ -271,8 +344,42 @@ namespace Test
             SdrfRow row = document.Results.Single();
 
             Assert.That(row["comment[data file]"], Is.EqualTo(Path.GetFileName(spectraPath)));
-            Assert.That(row["comment[data file]"], Does.Not.Contain("-calib"),
-                "A calibrated intermediate is not the acquisition the SDRF describes.");
+            Assert.That(document.Header, Does.Not.Contain("comment[searched data file]"),
+                "Nothing was calibrated, so the searched file is the acquired one.");
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// Calibrate -> Search: the search reads the -calib derivative. comment[data file] still names the
+        /// acquired file, extension and all, and comment[searched data file] names the derivative (sdrf D46,
+        /// pcruzparri's review of #2816). The instrument comes from the search's own load of the file.
+        /// </summary>
+        [Test]
+        public static void AfterCalibrationTheSdrfNamesTheAcquiredFileAndTheCalibratedFileItSearched()
+        {
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "SdrfOutput_Calib");
+            if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            Directory.CreateDirectory(folder);
+            string spectraPath = Path.Combine(folder, "sample1.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), spectraPath, true);
+            string database = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
+            ExperimentalDesign.WriteExperimentalDesignToFile(
+                new List<SpectraFileInfo> { new(spectraPath, "condition", 0, 0, 0) });
+
+            var engine = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("Task1-Calibrate", new CalibrationTask()), ("Task2-Search", BuildSearchTask(writeSdrf: true)) },
+                new List<string> { spectraPath }, new List<DbForTask> { new DbForTask(database, false) }, folder);
+            engine.Run();
+
+            var document = new SdrfDocument(Path.Combine(folder, "Task2-Search", SdrfFileName));
+            document.LoadResults();
+            SdrfRow row = document.Results.Single();
+
+            Assert.That(row["comment[data file]"], Is.EqualTo("sample1.mzML"), "the acquired file, as deposited");
+            Assert.That(row["comment[searched data file]"], Is.EqualTo("sample1-calib.mzML"), "the file the search read");
+            Assert.That(row["comment[instrument]"], Does.Contain("LTQ Orbitrap Velos"),
+                "read from the search's own load of the file, not a second read");
 
             Directory.Delete(folder, true);
         }
@@ -307,6 +414,13 @@ namespace Test
             Assert.That(validation.Errors, Is.Empty,
                 "mzLib's validator rejects the SDRF this search wrote: " + validation);
 
+            // mzLib demotes these to warnings because some curated files lack them, but the specification
+            // requires them: disease and cell type among them, written `not available` when unknown.
+            Assert.That(SdrfValidator.RecommendedColumns.Where(c => !document.Header.Contains(c)), Is.Empty);
+            Assert.That(document.Results[0]["characteristics[disease]"], Is.EqualTo("not available"));
+            Assert.That(document.Results[0]["comment[label]"], Does.Contain("MS:1002038"),
+                "label free sample, with its accession");
+
             Directory.Delete(folder, true);
         }
 
@@ -320,7 +434,7 @@ namespace Test
         /// parsing OX= moves other output. A decoy listed first must not decide the organism.
         /// </summary>
         [Test]
-        public static void TheOrganismIsTheFirstTargetProteinsTaxonomyId()
+        public static void TheOrganismIsTheTargetsOneTaxonNeverADecoysOrAContaminants()
         {
             var taxon = new List<DatabaseReference>
             {
@@ -338,6 +452,9 @@ namespace Test
                     BioPolymerList = new List<IBioPolymer>
                     {
                         new Protein("PEPTIDE", "DECOY_P1", organism: "Homo sapiens", isDecoy: true, databaseReferences: decoyTaxon),
+                        // MetaMorpheusContaminants.xml carries NCBI Taxonomy 9913 (Alexander-Sol's review of #2816).
+                        new Protein("PEPTIDER", "CONTAM_P02769", organism: "Bos taurus", isContaminant: true,
+                            databaseReferences: new List<DatabaseReference> { new(Protein.NcbiTaxonomyDatabaseReferenceType, "9913", new List<Tuple<string, string>>()) }),
                         new Protein("PEPTIDEK", "P38266", organism: "Saccharomyces cerevisiae", databaseReferences: taxon)
                     }
                 }
@@ -349,6 +466,12 @@ namespace Test
 
             Assert.That(organism?.Accession, Is.EqualTo("NCBITaxon:559292"));
             Assert.That(organism?.Name, Is.EqualTo("Saccharomyces cerevisiae"));
+
+            // Two target organisms: not one of them at random, but none.
+            task.Parameters.BioPolymerList.Add(new Protein("PEPTIDEKK", "P99999", organism: "Homo sapiens", databaseReferences: decoyTaxon));
+            Assert.That(typeof(PostSearchAnalysisTask)
+                .GetMethod("ResolveOrganismFromSearchDatabase", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(task, null), Is.Null);
         }
 
         #endregion
@@ -383,25 +506,90 @@ namespace Test
         }
 
         /// <summary>
-        /// Reading an instrument model from a data file's header must never be what fails a completed
-        /// search. A file no reader understands resolves to no instrument, which the builder then
-        /// writes as the reserved word.
+        /// The instrument comes from the search's own load of each file; the SDRF never opens a data file again
+        /// (Alexander-Sol's review of #2816: a RAW's SourceFile hashes the whole file). A file the search did
+        /// not record, even a readable one, resolves to no instrument.
         /// </summary>
         [Test]
-        public static void AnUnreadableDataFileResolvesToNoInstrument()
+        public static void TheInstrumentIsTheOneTheSearchReadAndNoFileIsOpenedAgain()
         {
-            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "SdrfOutput_UnreadableInstrument");
-            Directory.CreateDirectory(folder);
-            string unreadable = Path.Combine(folder, "not-a-spectra-file.xyz");
-            File.WriteAllText(unreadable, "not spectra");
+            string readable = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML");
+            var velos = new CvParam("MS", "MS:1001742", "LTQ Orbitrap Velos", "");
+            var task = new PostSearchAnalysisTask
+            {
+                Parameters = new PostSearchAnalysisParameters
+                {
+                    InstrumentModelsByFile = new Dictionary<string, CvParam>(StringComparer.OrdinalIgnoreCase) { ["a.raw"] = velos }
+                }
+            };
+            var resolve = typeof(PostSearchAnalysisTask).GetMethod("ResolveInstrument", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
-            var instrument = typeof(PostSearchAnalysisTask)
-                .GetMethod("ResolveInstrument", BindingFlags.NonPublic | BindingFlags.Instance)!
-                .Invoke(new PostSearchAnalysisTask(), new object[] { unreadable });
+            Assert.That(resolve.Invoke(task, new object[] { "a.raw" }), Is.EqualTo(velos));
+            Assert.That(resolve.Invoke(task, new object[] { readable }), Is.Null, "not read again, though it could be");
+        }
 
-            Assert.That(instrument, Is.Null);
+        /// <summary>
+        /// An ExperimentalDesign.tsv another program holds open (Excel) costs the SDRF its design, not the SDRF:
+        /// the read warns and describes the search only, as the pre-run warning promised.
+        /// </summary>
+        [Test]
+        public static void ALockedDesignFileLeavesTheSdrfDescribingTheSearchOnly()
+        {
+            string folder = SetUpIsolatedRun(nameof(ALockedDesignFileLeavesTheSdrfDescribingTheSearchOnly), out string spectraPath, out _);
+            ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { new(spectraPath, "condition", 0, 0, 0) });
+            string designPath = Path.Combine(folder, GlobalVariables.ExperimentalDesignFileName);
+            var task = new PostSearchAnalysisTask { Parameters = new PostSearchAnalysisParameters { CurrentRawFileList = new List<string> { spectraPath } } };
+            var read = typeof(PostSearchAnalysisTask).GetMethod("ReadExperimentalDesignIfPresent", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+            using (new FileStream(designPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                object byStem = null;
+                Assert.DoesNotThrow(() => byStem = read.Invoke(task, null));
+                Assert.That((System.Collections.IDictionary)byStem!, Is.Empty);
+            }
+            Assert.That(((System.Collections.IDictionary)read.Invoke(task, null)!).Count, Is.EqualTo(1), "read once released");
 
             Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// A search that describes no spectra file writes no SDRF and says so, rather than handing the
+        /// builder an empty table.
+        /// </summary>
+        [Test]
+        public static void ASearchWithNoSpectraFilesWritesNoSdrfAndSaysSo()
+        {
+            string output = Path.Combine(TestContext.CurrentContext.TestDirectory, nameof(ASearchWithNoSpectraFilesWritesNoSdrfAndSaysSo));
+            if (Directory.Exists(output)) Directory.Delete(output, true);
+            Directory.CreateDirectory(output);
+            var task = new PostSearchAnalysisTask
+            {
+                Parameters = new PostSearchAnalysisParameters
+                {
+                    OutputFolder = output,
+                    SearchTaskId = "no-files",
+                    SearchParameters = new SearchParameters(),
+                    CurrentRawFileList = new List<string>()
+                }
+            };
+
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                typeof(PostSearchAnalysisTask).GetMethod("WriteSdrf", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(task, null);
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+            }
+
+            Assert.That(warnings.Any(w => w.Contains("No spectra files to describe")), Is.True, string.Join(" | ", warnings));
+            Assert.That(File.Exists(Path.Combine(output, SdrfFileName)), Is.False);
+            Assert.That(File.Exists(Path.Combine(output, "SdrfWriter_crash.txt")), Is.False, "an empty search is not a crash");
+
+            Directory.Delete(output, true);
         }
 
         #endregion
@@ -442,6 +630,46 @@ namespace Test
             }
 
             Assert.That(warnings.Any(w => w.Contains("comment[label]")), Is.True, string.Join(" | ", warnings));
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// The pre-run SDRF check only warns, so it must never be what stops a search. An
+        /// ExperimentalDesign.tsv held open by another program (Excel locks what it opens) cannot be
+        /// read; the search should start anyway, told why the design could not be checked.
+        /// </summary>
+        [Test]
+        public static void AnUnreadableDesignIsAWarningNotAFailedSearch()
+        {
+            string folder = SetUpIsolatedRun(nameof(AnUnreadableDesignIsAWarningNotAFailedSearch),
+                out string spectraPath, out _);
+            string designPath = Path.Combine(Path.GetDirectoryName(spectraPath)!,
+                GlobalVariables.ExperimentalDesignFileName);
+            File.WriteAllText(designPath, "FileName\tCondition\tBiorep\tFraction\tTechrep\n");
+
+            var task = new SearchTask { SearchParameters = new SearchParameters { WriteSdrf = true } };
+
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                using (new FileStream(designPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                {
+                    Assert.DoesNotThrow(() => typeof(SearchTask)
+                        .GetMethod("WarnAboutSdrfGaps", BindingFlags.NonPublic | BindingFlags.Instance)!
+                        .Invoke(task, new object[] { new List<string> { spectraPath } }));
+                }
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+            }
+
+            Assert.That(warnings.Any(w => w.Contains(GlobalVariables.ExperimentalDesignFileName)
+                                          && w.Contains("could not be read")),
+                Is.True, string.Join(" | ", warnings));
 
             Directory.Delete(folder, true);
         }
@@ -574,6 +802,31 @@ namespace Test
             (CvParam)typeof(PostSearchAnalysisTask)
                 .GetMethod("ResolveAcquisitionMethod", BindingFlags.NonPublic | BindingFlags.Static)!
                 .Invoke(null, new object[] { common });
+
+        /// <summary>
+        /// A modification is identified by (ModificationType, IdWithMotif), and the lookup must key
+        /// on both. Keyed on the id alone, a search that fixes one mod gets every known mod sharing
+        /// its id -- a wrong mod, or the same column written twice.
+        /// </summary>
+        [Test]
+        public static void AModificationIsResolvedByItsTypeAsWellAsItsId()
+        {
+            var shared = GlobalVariables.AllModsKnown
+                .GroupBy(m => m.IdWithMotif)
+                .FirstOrDefault(g => g.Select(m => m.ModificationType).Distinct().Count() > 1);
+            Assert.That(shared, Is.Not.Null,
+                "The known mods no longer contain two types sharing an id; this test needs one.");
+
+            Modification wanted = shared!.First();
+            var resolved = (IReadOnlyList<Modification>)typeof(PostSearchAnalysisTask)
+                .GetMethod("ResolveModifications", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { new List<(string, string)> { (wanted.ModificationType, wanted.IdWithMotif) } });
+
+            Assert.That(resolved, Is.Not.Empty);
+            Assert.That(resolved.Select(m => m.ModificationType).Distinct().ToList(), Is.EqualTo(new[] { wanted.ModificationType }),
+                $"Asked for '{wanted.IdWithMotif}' of type '{wanted.ModificationType}' only, and " +
+                $"'{wanted.IdWithMotif}' is also known under another type.");
+        }
 
         private static CvParam InvokeLabel(SearchParameters searchParameters) =>
             (CvParam)typeof(PostSearchAnalysisTask)

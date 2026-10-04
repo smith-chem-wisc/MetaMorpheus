@@ -65,9 +65,17 @@ namespace EngineLayer
             DIAparameters diaParameters = null,
             IFragmentationParams fragmentationParams = null,
             PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic,
-            string rtPredictorName = RTPredictorNames.Chronologer)
+                string rtPredictorName = RTPredictorNames.Chronologer,
+            DoubleRange retentionTimeRange = null)
 
         {
+            retentionTimeRange ??= new DoubleRange(0, double.MaxValue);
+            if (double.IsNaN(retentionTimeRange.Minimum) || retentionTimeRange.Minimum < 0)
+                throw new ArgumentOutOfRangeException(nameof(retentionTimeRange), "Minimum retention time must be non-negative.");
+
+            if (double.IsNaN(retentionTimeRange.Maximum) || retentionTimeRange.Maximum < retentionTimeRange.Minimum)
+                throw new ArgumentOutOfRangeException(nameof(retentionTimeRange), "Maximum retention time must be greater than or equal to minimum retention time.");
+
             TaskDescriptor = taskDescriptor;
             DoPrecursorDeconvolution = doPrecursorDeconvolution;
             UseProvidedPrecursorInfo = useProvidedPrecursorInfo;
@@ -103,6 +111,7 @@ namespace EngineLayer
             MinVariantDepth = minVariantDepth;
             AddTruncations = addTruncations;
             DIAparameters = diaParameters;
+            RetentionTimeRange = retentionTimeRange;
 
             // product maximum charge state of 10 is a preexisting hard-coded value in MetaMorpheus
             if (deconvolutionMaxAssumedChargeState > 0) // positive mode
@@ -205,6 +214,7 @@ namespace EngineLayer
         public bool AddTruncations { get; private set; }
         public DissociationType DissociationType { get; private set; }
         public string SeparationType { get; private set; }
+        public DoubleRange RetentionTimeRange { get; private set; }
 
         public DissociationType MS2ChildScanDissociationType { get; set; }
         public DissociationType MS3ChildScanDissociationType { get; set; }
@@ -293,7 +303,68 @@ namespace EngineLayer
                                 DIAparameters,
                                 FragmentationParameters,
                                 PrecursorMassMatchMode,
-                                RTPredictorName);
+                                RTPredictorName,
+                                 RetentionTimeRange);
+        }
+
+        /// <summary>
+        /// Copy with a different TotalPartitions. Returns a new instance rather than mutating, because
+        /// SetAllFileSpecificCommonParams hands back the task's own CommonParameters when a file has no
+        /// file-specific settings — mutating that would rewrite the settings the task reports to the user.
+        /// DigestionParams is shared rather than cloned so the digestion identity peptides carry is unchanged.
+        /// </summary>
+        public CommonParameters CloneWithNewTotalPartitions(int totalPartitions)
+        {
+            CommonParameters clone = new CommonParameters(
+                                TaskDescriptor,
+                                DissociationType,
+                                MS2ChildScanDissociationType,
+                                MS3ChildScanDissociationType,
+                                SeparationType,
+                                DoPrecursorDeconvolution,
+                                UseProvidedPrecursorInfo,
+                                DeconvolutionIntensityRatio,
+                                DeconvolutionMaxAssumedChargeState,
+                                ReportAllAmbiguity,
+                                AddCompIons,
+                                totalPartitions, //changed
+                                QValueThreshold,
+                                PepQValueThreshold,
+                                QValueCutoffForPepCalculation,
+                                ScoreCutoff,
+                                NumberOfPeaksToKeepPerWindow,
+                                MinimumAllowedIntensityRatioToBasePeak,
+                                WindowWidthThomsons,
+                                NumberOfWindows,
+                                NormalizePeaksAccrossAllWindows,
+                                TrimMs1Peaks,
+                                TrimMsMsPeaks,
+                                ProductMassTolerance,
+                                PrecursorMassTolerance,
+                                ProductMassTolerance_LowRes,
+                                DeconvolutionMassTolerance,
+                                MaxThreadsToUsePerFile,
+                                DigestionParams,
+                                ListOfModsVariable,
+                                ListOfModsFixed,
+                                AssumeOrphanPeaksAreZ1Fragments,
+                                MaxHeterozygousVariants,
+                                MinVariantDepth,
+                                AddTruncations,
+                                PrecursorDeconvolutionParameters,
+                                ProductDeconvolutionParameters,
+                                UseMostAbundantPrecursorIntensity,
+                                DIAparameters,
+                                FragmentationParameters,
+                                PrecursorMassMatchMode,
+                                RTPredictorName,
+                                 RetentionTimeRange);
+
+            // CustomIons is not a constructor parameter — the constructor reads it from the global
+            // dissociation-type dictionary — so copy it across explicitly. GlycoSearchEngine branches on
+            // CommonParameters.CustomIons, and this clone is handed to it.
+            clone.CustomIons = CustomIons;
+            return clone;
         }
 
         public void SetCustomProductTypes()

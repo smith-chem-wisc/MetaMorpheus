@@ -76,38 +76,57 @@ namespace TaskLayer
         {
             // The sample half. ExperimentalDesign.tsv is the only place MetaMorpheus holds it, and
             // it is OPTIONAL: when absent, PostSearchAnalysisTask fabricates a degenerate design in
-            // which every file is its own biological replicate with an empty condition. Emitting
-            // that as though it were curated metadata is the worst thing this writer could do -- it
-            // looks like data. So read the file, and if it is not there say so and describe only
-            // what is actually known.
+            // which every file is its own biological replicate with an empty condition. That design is
+            // not read here. Without a design the replicate and fraction numbers are UNKNOWN, but
+            // SdrfSample / SdrfAssay in the mzLib this builds against take a plain int, so they are
+            // written as 1. mzLib #1378 makes them nullable ("not available"); pass null here once a
+            // release carries it. Until then a design-less SDRF states 1 for each, and the warning
+            // below says so.
             var design = ReadExperimentalDesignIfPresent();
 
             var organism = ResolveOrganismFromSearchDatabase();
 
             foreach (var rawFilePath in Parameters.CurrentRawFileList)
             {
-                // The ORIGINAL file, not a -calib or -averaged derivative: those are intermediates
-                // this run produced, and an SDRF describes the data as acquired.
-                string fileName = Path.GetFileName(rawFilePath);
+                // Two names (sdrf D46). comment[data file] is the ACQUIRED file, as deposited -- what the
+                // SDRF specification means by the column and what SdrfAssay.DataFileName documents. After a
+                // Calibrate or Average task the search reads a -calib / -averaged derivative instead, and that
+                // name goes to comment[searched data file]. The acquired name, extension included, comes from
+                // the files the run started from; a task run on its own was given the acquired files.
+                string searchedName = Path.GetFileName(rawFilePath);
+                string acquiredName = AcquiredFileNameOf(rawFilePath) ?? searchedName;
                 string stem = Path.GetFileNameWithoutExtension(rawFilePath);
 
                 // Per-file parameters, not task-level. MetaMorpheus supports per-file overrides of
                 // protease, tolerances and dissociation type, and using the task-level values would
                 // silently flatten real differences between rows.
+                //
+                // FileName here is the FULL PATH the task was given (MetaMorpheusTask stores
+                // currentRawDataFilepathList[i]), not a bare file name, and it comes from the same
+                // list being walked -- so match on rawFilePath. Matching on the bare name never
+                // hit, and every row quietly reported the task-level values instead.
                 var common = FileSpecificParameters
-                    ?.FirstOrDefault(f => string.Equals(f.FileName, fileName, StringComparison.OrdinalIgnoreCase))
+                    ?.FirstOrDefault(f => string.Equals(f.FileName, rawFilePath, StringComparison.OrdinalIgnoreCase))
                     .Parameters ?? CommonParameters;
 
                 design.TryGetValue(stem, out var sampleInfo);
 
                 var sample = new SdrfSample
                 {
+                    // Written, as `not available` when unknown: the specification requires both columns, and a
+                    // column that is present says "nobody filled this in" where an absent one says nothing.
+                    Characteristics = new Dictionary<string, CvParam>
+                    {
+                        ["characteristics[disease]"] = null,
+                        ["characteristics[cell type]"] = null
+                    },
                     SourceName = sampleInfo?.Condition is { Length: > 0 } condition
                         ? condition + " " + (sampleInfo.BiologicalReplicate + 1)
                         : stem,
                     Organism = organism,
-                    // SDRF is 1-based; SpectraFileInfo stores these 0-based.
-                    BiologicalReplicate = (sampleInfo?.BiologicalReplicate ?? 0) + 1,
+                    // SDRF is 1-based; SpectraFileInfo stores these 0-based. With no design nobody established
+                    // the numbers, so null, which mzLib writes as `not available`, rather than a claimed 1.
+                    BiologicalReplicate = sampleInfo?.BiologicalReplicate + 1,
                     Label = ResolveLabel(Parameters.SearchParameters),
                     FactorValue = sampleInfo?.Condition,
                     FactorValueColumn = string.IsNullOrWhiteSpace(sampleInfo?.Condition)
@@ -117,7 +136,10 @@ namespace TaskLayer
 
                 var assay = new SdrfAssay
                 {
-                    DataFileName = fileName,
+                    DataFileName = acquiredName,
+                    SearchedDataFileName = string.Equals(acquiredName, searchedName, StringComparison.OrdinalIgnoreCase)
+                        ? null
+                        : searchedName,
                     AssayName = "run " + stem,
                     Instrument = ResolveInstrument(rawFilePath),
                     PrecursorMassTolerance = common.PrecursorMassTolerance,
@@ -127,12 +149,34 @@ namespace TaskLayer
                     VariableModifications = ResolveModifications(common.ListOfModsVariable),
                     DissociationType = common.DissociationType,
                     AcquisitionMethod = ResolveAcquisitionMethod(common),
-                    TechnicalReplicate = (sampleInfo?.TechnicalReplicate ?? 0) + 1,
-                    Fraction = (sampleInfo?.Fraction ?? 0) + 1
+                    TechnicalReplicate = sampleInfo?.TechnicalReplicate + 1,
+                    Fraction = sampleInfo?.Fraction + 1
                 };
 
                 yield return new SdrfRowInput(sample, assay);
             }
+        }
+
+        /// <summary>
+        /// The acquired file a searched file came from: the run's starting file with the same stem once the
+        /// -calib / -averaged suffixes are removed, or null when there is no starting list (a task run on its own)
+        /// or no starting file matches.
+        /// </summary>
+        private string AcquiredFileNameOf(string searchedPath)
+        {
+            if (Parameters.AcquiredSpectraFiles is not { Count: > 0 } acquired) return null;
+            string stem = Path.GetFileNameWithoutExtension(searchedPath);
+            string previous;
+            do
+            {
+                previous = stem;
+                foreach (string suffix in new[] { CalibrationTask.CalibSuffix, SpectralAveragingTask.AveragingSuffix })
+                    if (stem.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                        stem = stem[..^suffix.Length];
+            } while (stem != previous);
+            string match = acquired.FirstOrDefault(f =>
+                string.Equals(Path.GetFileNameWithoutExtension(f), stem, StringComparison.OrdinalIgnoreCase));
+            return match is null ? null : Path.GetFileName(match);
         }
 
         /// <summary>
@@ -145,19 +189,32 @@ namespace TaskLayer
             if (Parameters.CurrentRawFileList.Count == 0) return byStem;
 
             string designPath = Path.Combine(
-                Directory.GetParent(Parameters.CurrentRawFileList.First())!.ToString(),
+                Path.GetDirectoryName(Parameters.CurrentRawFileList.First()) ?? "",
                 GlobalVariables.ExperimentalDesignFileName);
 
             if (!File.Exists(designPath))
             {
                 Warn($"No {GlobalVariables.ExperimentalDesignFileName} beside the spectra files, so the " +
                      "SDRF cannot describe conditions, replicates or fractions. It will record the " +
-                     "search parameters and what can be read from the files themselves.");
+                     "search parameters and what can be read from the files themselves, and it writes " +
+                     "replicate and fraction 1 for every file, which nothing established.");
                 return byStem;
             }
 
-            var infos = ExperimentalDesign.ReadExperimentalDesign(
-                designPath, Parameters.CurrentRawFileList, out var errors);
+            List<SpectraFileInfo> infos;
+            List<string> errors;
+            try
+            {
+                infos = ExperimentalDesign.ReadExperimentalDesign(designPath, Parameters.CurrentRawFileList, out errors);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // Open in Excel, say. The pre-run warning promised the SDRF would then describe the search
+                // only; failing here would lose the whole SDRF instead.
+                Warn($"{GlobalVariables.ExperimentalDesignFileName} could not be read ({e.Message}), so the SDRF " +
+                     "describes the search only: no conditions, replicates or fractions.");
+                return byStem;
+            }
             if (errors.Any())
             {
                 Warn($"{GlobalVariables.ExperimentalDesignFileName} has errors, so it is not being used " +
@@ -182,32 +239,29 @@ namespace TaskLayer
         /// </summary>
         private CvParam ResolveOrganismFromSearchDatabase()
         {
-            var withTaxon = Parameters.BioPolymerList?
+            // Never a contaminant's taxon: MetaMorpheusContaminants.xml carries NCBI Taxonomy 9913, and a FASTA
+            // target carries none, so the commonest search would otherwise say every sample is Bos taurus. And
+            // only when the targets name ONE organism: "first protein wins" would pick one of several at random.
+            var taxa = Parameters.BioPolymerList?
                 .OfType<Protein>()
-                .FirstOrDefault(p => !p.IsDecoy && !string.IsNullOrEmpty(p.NcbiTaxonomyId));
+                .Where(p => !p.IsDecoy && !p.IsContaminant && !string.IsNullOrEmpty(p.NcbiTaxonomyId))
+                .GroupBy(p => p.NcbiTaxonomyId)
+                .ToList();
 
-            if (withTaxon is null) return null;
+            if (taxa is null || taxa.Count != 1) return null;
 
-            return new CvParam("NCBITaxon", "NCBITaxon:" + withTaxon.NcbiTaxonomyId,
-                withTaxon.Organism ?? "", "");
+            var first = taxa[0].First();
+            return new CvParam("NCBITaxon", "NCBITaxon:" + first.NcbiTaxonomyId, first.Organism ?? "", "");
         }
 
         /// <summary>
-        /// The instrument, read from the data file itself. mzML carries an accessioned term; a
-        /// Thermo RAW carries only a name, which SdrfBuilder resolves against PSI-MS.
+        /// The instrument, as the search's own load of the file read it (SourceFile). mzML carries an accessioned
+        /// term; a Thermo RAW carries only a name, which SdrfBuilder resolves against PSI-MS. Opening every file
+        /// again here would re-read the whole dataset, and a RAW's SourceFile hashes the entire file first, so a
+        /// file the search did not record resolves to no instrument (written as `not available`).
         /// </summary>
-        private CvParam ResolveInstrument(string rawFilePath)
-        {
-            try
-            {
-                return MsDataFileReader.GetDataFile(rawFilePath).GetSourceFile()?.InstrumentModel;
-            }
-            catch (Exception)
-            {
-                // Reading a header must never be the thing that fails a completed search.
-                return null;
-            }
-        }
+        private CvParam ResolveInstrument(string rawFilePath) =>
+            Parameters.InstrumentModelsByFile is { } models && models.TryGetValue(rawFilePath, out var model) ? model : null;
 
         /// <summary>
         /// Only a genuinely label-free search is described as label free.
@@ -235,7 +289,7 @@ namespace TaskLayer
                 || searchParameters.EndTurnoverLabel is not null)
                 return null;
 
-            return new CvParam("", "", "label free sample", "");
+            return new CvParam("MS", "MS:1002038", "label free sample", "");
         }
 
         /// <summary>
@@ -262,16 +316,18 @@ namespace TaskLayer
             };
         }
 
-        private IReadOnlyList<Modification> ResolveModifications(IEnumerable<(string, string)> mods)
+        private static IReadOnlyList<Modification> ResolveModifications(IEnumerable<(string, string)> mods)
         {
             if (mods is null) return Array.Empty<Modification>();
 
             // The (ModificationType, IdWithMotif) tuples are resolved to real Modification objects
             // so the builder can read the UNIMOD accession off DatabaseReference rather than being
-            // handed a string to guess from.
-            var wanted = new HashSet<string>(mods.Select(m => m.Item2), StringComparer.Ordinal);
+            // handed a string to guess from. Both halves are the identity: the same IdWithMotif is
+            // known under more than one type (Hex on Y is one), and keying on
+            // the id alone would write every one of them.
+            var wanted = new HashSet<(string, string)>(mods);
             return GlobalVariables.AllModsKnown
-                .Where(m => wanted.Contains(m.IdWithMotif))
+                .Where(m => wanted.Contains((m.ModificationType, m.IdWithMotif)))
                 .ToList();
         }
 
@@ -292,8 +348,10 @@ namespace TaskLayer
 
             if (uninformative.Any())
                 Warn("The SDRF was written, but these columns say nothing and cannot be mined: " +
-                     string.Join(", ", uninformative) + ". Supply them in " +
-                     GlobalVariables.ExperimentalDesignFileName + " or an input SDRF.");
+                     string.Join(", ", uninformative) + ". " + GlobalVariables.ExperimentalDesignFileName +
+                     " can supply conditions, biological and technical replicates and fractions; everything " +
+                     "else (organism part, disease, cell type and the like) has to be curated by hand in the " +
+                     "written SDRF, since MetaMorpheus reads no input SDRF.");
         }
     }
 }
