@@ -426,8 +426,10 @@ namespace Test
             TruncationPsm withoutTimings = TruncationPass3.ScoreTruncation(WinnerChoppingCTerm(_p1, "P1", scan), _cp, _exactAcceptor);
 
             Assert.That(withTimings, Is.Not.Null);
-            Assert.That(timings.ChoppingSeconds, Is.GreaterThanOrEqualTo(0));
-            Assert.That(timings.ScoringSeconds, Is.GreaterThanOrEqualTo(0));
+            Assert.That(timings.ChoppingSeconds + timings.ScoringSeconds, Is.GreaterThan(0)); // the branch ran and accumulated
+            double afterOne = timings.ChoppingSeconds + timings.ScoringSeconds;
+            TruncationPass3.ScoreTruncation(WinnerChoppingCTerm(_p1, "P1", scan), _cp, _exactAcceptor, timings);
+            Assert.That(timings.ChoppingSeconds + timings.ScoringSeconds, Is.GreaterThan(afterOne)); // accumulates, not overwrites
             Assert.That(withTimings.Score, Is.EqualTo(withoutTimings.Score).Within(1e-9)); // timings are side-channel only
         }
 

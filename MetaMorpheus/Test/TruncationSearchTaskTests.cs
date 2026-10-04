@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using EngineLayer;
@@ -316,11 +317,13 @@ namespace Test
         }
 
         /// <summary>
-        /// The runner must not hand out — or hold on to — the task-chain context for run lists that have no
-        /// consumer, and must drop the deposited results once a consumer has run.
+        /// The two pieces the runner's context rule is built from: which tasks are consumers, and that
+        /// <see cref="TaskChainContext.Clear"/> drops every deposit. The runner itself is checked in
+        /// <see cref="EverythingRunner_SearchThenTruncation_WritesWellFormedOutputs"/> (context handed out, then
+        /// emptied) and <see cref="EverythingRunner_SearchOnly_HandsOutNoTaskChainContext"/> (never handed out).
         /// </summary>
         [Test]
-        public void TaskChainContext_OnlyWiredWhenARunListHasAConsumer()
+        public void TaskChainContext_ConsumerFlagAndClear()
         {
             Assert.That(new SearchTask().ConsumesTaskChainContext, Is.False);
             Assert.That(new TruncationSearchTask().ConsumesTaskChainContext, Is.True);
@@ -448,6 +451,11 @@ namespace Test
 
                 Assert.DoesNotThrow(() => engine.Run());
 
+                // The runner handed both tasks the one context, and emptied it once the consumer had run (#1).
+                Assert.That(searchTask.TaskChainContext, Is.Not.Null);
+                Assert.That(truncationTask.TaskChainContext, Is.SameAs(searchTask.TaskChainContext));
+                Assert.That(searchTask.TaskChainContext.TryGetMostRecent(out object _), Is.False);
+
                 string truncationOutput = Path.Combine(outDirectory, "Task2-TruncationSearchTask");
                 Assert.That(Directory.Exists(truncationOutput), Is.True, "TruncationSearchTask did not produce an output folder.");
 
@@ -474,12 +482,12 @@ namespace Test
                 // the same Essential Sequence as AllPSMs; none of those precursors is also reported as a truncation (#4a).
                 var pass1 = ReadTsv(Directory.GetFiles(Path.Combine(outDirectory, "Task1-SearchTask"), "AllPSMs.psmtsv", SearchOption.AllDirectories).Single());
                 var truncation = ReadTsv(psmsPath);
-                var confident = pass1.Where(r => r["Decoy/Contaminant/Target"] == "T" && double.Parse(r["QValue"]) <= 0.01).ToList();
+                var confident = pass1.Where(r => r["Decoy/Contaminant/Target"] == "T" && double.Parse(r["QValue"], CultureInfo.InvariantCulture) <= 0.01).ToList();
                 Assert.That(confident, Is.Not.Empty);
                 foreach (var row in confident)
                 {
                     var samePrecursor = truncation.Where(t => t["Scan Number"] == row["Scan Number"]
-                        && Math.Abs(double.Parse(t["Precursor Mass"]) - double.Parse(row["Precursor Mass"])) < 0.01).ToList();
+                        && Math.Abs(double.Parse(t["Precursor Mass"], CultureInfo.InvariantCulture) - double.Parse(row["Precursor Mass"], CultureInfo.InvariantCulture)) < 0.01).ToList();
                     Assert.That(samePrecursor.Count(t => t["Description"] == TruncationPass3.FullLength), Is.EqualTo(1),
                         $"scan {row["Scan Number"]} should be inherited once as full-length");
                     Assert.That(samePrecursor, Has.Count.EqualTo(1), $"scan {row["Scan Number"]} also carries a truncation");
@@ -613,6 +621,33 @@ namespace Test
             {
                 MetaMorpheusTask.WarnHandler -= onWarn;
                 if (Directory.Exists(outDir)) Directory.Delete(outDir, true);
+            }
+        }
+
+        /// <summary>
+        /// A run list with no consumer never gets a task-chain context, so the search's deposit is a no-op and its
+        /// PSM set is not pinned for the rest of the run (#1).
+        /// </summary>
+        [Test]
+        public void EverythingRunner_SearchOnly_HandsOutNoTaskChainContext()
+        {
+            string outDirectory = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TruncationSearchOnly");
+            if (Directory.Exists(outDirectory)) Directory.Delete(outDirectory, true);
+            try
+            {
+                var (data, db, toml) = TopDownFixture();
+                var searchTask = Toml.ReadFile<SearchTask>(toml, MetaMorpheusTask.tomlConfig);
+                var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task1-SearchTask", searchTask) },
+                    new List<string> { data }, new List<DbForTask> { new DbForTask(db, false) }, outDirectory);
+
+                engine.Run();
+
+                Assert.That(Directory.GetFiles(outDirectory, "AllPSMs.psmtsv", SearchOption.AllDirectories), Is.Not.Empty);
+                Assert.That(searchTask.TaskChainContext, Is.Null);
+            }
+            finally
+            {
+                if (Directory.Exists(outDirectory)) Directory.Delete(outDirectory, true);
             }
         }
 
