@@ -77,11 +77,8 @@ namespace TaskLayer
             // The sample half. ExperimentalDesign.tsv is the only place MetaMorpheus holds it, and
             // it is OPTIONAL: when absent, PostSearchAnalysisTask fabricates a degenerate design in
             // which every file is its own biological replicate with an empty condition. That design is
-            // not read here. Without a design the replicate and fraction numbers are UNKNOWN, but
-            // SdrfSample / SdrfAssay in the mzLib this builds against take a plain int, so they are
-            // written as 1. mzLib #1378 makes them nullable ("not available"); pass null here once a
-            // release carries it. Until then a design-less SDRF states 1 for each, and the warning
-            // below says so.
+            // not read here. Without a design the replicate and fraction numbers are UNKNOWN, so they
+            // are passed as null and written `not available` (mzLib #1378), never a claimed 1.
             var design = ReadExperimentalDesignIfPresent();
 
             var organism = ResolveOrganismFromSearchDatabase();
@@ -196,8 +193,8 @@ namespace TaskLayer
             {
                 Warn($"No {GlobalVariables.ExperimentalDesignFileName} beside the spectra files, so the " +
                      "SDRF cannot describe conditions, replicates or fractions. It will record the " +
-                     "search parameters and what can be read from the files themselves, and it writes " +
-                     "replicate and fraction 1 for every file, which nothing established.");
+                     "search parameters and what can be read from the files themselves; replicate and " +
+                     "fraction are written as 'not available'.");
                 return byStem;
             }
 

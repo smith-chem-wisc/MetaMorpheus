@@ -599,20 +599,23 @@ namespace Test
         /// <summary>
         /// A labelled search is told before it starts that comment[label] will not be filled in, so
         /// the gap is not first discovered in the written file.
+        ///
+        /// A turnover search that sets only StartTurnoverLabel / EndTurnoverLabel is warned too: those are
+        /// copied into SilacLabels only after this check runs.
         /// </summary>
-        [Test]
-        public static void ALabelledSearchIsWarnedThatItsLabelWillNotBeFilledIn()
+        [TestCase(false)]
+        [TestCase(true)]
+        public static void ALabelledSearchIsWarnedThatItsLabelWillNotBeFilledIn(bool turnoverOnly)
         {
-            string folder = SetUpIsolatedRun(nameof(ALabelledSearchIsWarnedThatItsLabelWillNotBeFilledIn),
+            string folder = SetUpIsolatedRun(nameof(ALabelledSearchIsWarnedThatItsLabelWillNotBeFilledIn) + turnoverOnly,
                 out string spectraPath, out _);
 
+            var label = new SilacLabel('K', 'a', "C{6}H{12}N{2}O{1}", 6.020129);
             var task = new SearchTask
             {
-                SearchParameters = new SearchParameters
-                {
-                    WriteSdrf = true,
-                    SilacLabels = new List<SilacLabel> { new('K', 'a', "C{6}H{12}N{2}O{1}", 6.020129) }
-                }
+                SearchParameters = turnoverOnly
+                    ? new SearchParameters { WriteSdrf = true, EndTurnoverLabel = label }
+                    : new SearchParameters { WriteSdrf = true, SilacLabels = new List<SilacLabel> { label } }
             };
 
             var warnings = new List<string>();
