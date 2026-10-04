@@ -11,6 +11,7 @@ using Omics.Digestion;
 using Proteomics;
 using System;
 using Chemistry;
+using Omics;
 
 namespace Test
 {
@@ -40,7 +41,7 @@ namespace Test
 
             var digested = p.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList();
 
-            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep });
+            TestDataFile t = new TestDataFile(new List<IBioPolymerWithSetMods> { pep });
 
             MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, pep.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
@@ -61,11 +62,20 @@ namespace Test
 
             // Act
 
-            float hyperScore = PepAnalysisEngine.GetFraggerHyperScore(psm1, psm1.BestMatchingBioPolymersWithSetMods.First().Peptide);
+            float hyperScore = PepAnalysisEngine.GetFraggerHyperScore(psm1, psm1.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer);
 
 
-            // Assert
+            // Assert. Kong et al. 2017 define hyperscore = log(Nb! * Ny! * sum(I_b) * sum(I_y)), the product of
+            // the per-terminus sums: log10(3!) + log10(3!) + log10(600 * 600). The single-sum form would give 4.635484.
             Assert.That(7.112605f, Is.EqualTo(hyperScore).Within(0.000001f));
+
+            // A one-sided match scores on the matched side only: log10(3!) + log10(600), with no arbitrary
+            // constant standing in for the missing y-ion intensity term.
+            var bOnly = peptideFragmentIons.Where(i => i.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N).ToList();
+            SpectralMatch bOnlyPsm = new PeptideSpectralMatch(pep, 0, 3, 0, scan1, commonParameters, bOnly);
+            bOnlyPsm.ResolveAllAmbiguities();
+            float bOnlyScore = PepAnalysisEngine.GetFraggerHyperScore(bOnlyPsm, bOnlyPsm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer);
+            Assert.That(bOnlyScore, Is.EqualTo((float)(Math.Log10(6) + Math.Log10(600))).Within(0.000001f));
         }
 
         [Test]
@@ -101,7 +111,7 @@ namespace Test
             {
                 expected += Math.Log10(i);
             }
-            Assert.That((float)expected, Is.EqualTo(result).Within(4)); // Allowing a small tolerance for floating-point comparison
+            Assert.That((float)expected, Is.EqualTo(result).Within(0.0001)); // Allowing a small tolerance for floating-point comparison
         }
 
         [Test]
@@ -119,10 +129,10 @@ namespace Test
 
             var psm = CreateSpectralMatch(xArray, yArray, [150, 250], [20, 40], fragments);
 
-            var selectedPeptide = psm.BestMatchingBioPolymersWithSetMods.First().Peptide;
+            var selectedPeptide = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
 
             // Act
-            float result = EngineLayer.PepAnalysisEngine.Xcorr(psm, selectedPeptide);
+            float result = EngineLayer.PepAnalysisEngine.Xcorr(psm, selectedPeptide, new MzSpectrum(xArray, yArray, true));
 
             // Assert
             Assert.That(58.8, Is.EqualTo(result).Within(1)); // Allowing a small tolerance for floating-point comparison
@@ -141,13 +151,31 @@ namespace Test
 
             var psm = CreateSpectralMatch(xArray, yArray, new double[0], new double[0], fragments);
 
-            var selectedPeptide = psm.BestMatchingBioPolymersWithSetMods.First().Peptide;
+            var selectedPeptide = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
 
             // Act
-            float result = EngineLayer.PepAnalysisEngine.Xcorr(psm, selectedPeptide);
+            float result = EngineLayer.PepAnalysisEngine.Xcorr(psm, selectedPeptide, new MzSpectrum(xArray, yArray, true));
 
             // Assert
             Assert.That(0, Is.EqualTo(result));
+        }
+
+        [Test]
+        public void Xcorr_IonOutsideTheSpectrumWindow_DoesNotThrow()
+        {
+            // No peak lies within +/-75 of this ion, so there is no background window to read.
+            var xArray = new double[] { 100, 150, 200 };
+            var yArray = new double[] { 10, 20, 30 };
+            var fragments = new List<MatchedFragmentIon>
+            {
+                new MatchedFragmentIon(new Product(ProductType.b, FragmentationTerminus.N, 500, 1, 1, 0), 500, 40, 1),
+            };
+            var psm = CreateSpectralMatch(xArray, yArray, [500], [40], fragments);
+            var selectedPeptide = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
+
+            float result = 0;
+            Assert.DoesNotThrow(() => result = PepAnalysisEngine.Xcorr(psm, selectedPeptide, new MzSpectrum(xArray, yArray, true)));
+            Assert.That(result, Is.EqualTo(40).Within(1e-6));
         }
 
         private SpectralMatch CreateSpectralMatch(double[] xArray, double[] yArray, double[] fragmentMz, double[] fragmentIntensity, List<MatchedFragmentIon> matchedFragmentIons)
