@@ -6,6 +6,7 @@ using MassSpectrometry;
 using Nett;
 using Omics.Modifications;
 using Proteomics.AminoAcidPolymer;
+using Transcriptomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -65,12 +66,67 @@ namespace EngineLayer
 
         public static List<string> ErrorsReadingMods;
 
+        /// <summary>
+        /// Non-fatal things the user should know about, such as a custom protease that collided with a
+        /// built-in. Each front end routes these to its own output, as it does for the engine and task
+        /// warnings; subscribe before <see cref="SetUpGlobalVariables"/> to hear the ones raised at startup.
+        /// </summary>
+        public static event EventHandler<StringEventArgs> WarnHandler;
+
+        // mzLib keeps these as private constants, so the names are repeated rather than referenced.
+        // They are the shipped files whose banner and header row seed the custom counterparts.
+        private const string EmbeddedProteasesResourceName = "Proteomics.ProteolyticDigestion.proteases.tsv";
+        private const string EmbeddedRnasesResourceName = "Transcriptomics.Digestion.rnases.tsv";
+
+        /// <summary>Template seeded into the user's OGlycan_Custom.gdb. Embedded in EngineLayer.</summary>
+        private const string EmbeddedCustomOGlycanResourceName = "EngineLayer.Glycan_Mods.OGlycan_Custom.gdb";
+
+        /// <summary>Template seeded into the user's NGlycan_Custom.gdb. Embedded in EngineLayer.</summary>
+        private const string EmbeddedCustomNGlycanResourceName = "EngineLayer.Glycan_Mods.NGlycan_Custom.gdb";
+
+        /// <summary>Template seeded into Mods\CustomModifications.txt and Mods\RnaCustomModifications.txt.</summary>
+        /// <remarks>
+        /// The first line is the title CustomModWindow writes when it creates the file itself, so the GUI's
+        /// append path and this template agree. The rest are '#' banner lines, which the modification format
+        /// treats as comments -- see the shipped Mods.txt, which opens the same way.
+        /// </remarks>
+        private static string CustomModificationsTemplate(string analyte) =>
+            "Custom Modifications" + Environment.NewLine +
+            "################################## " + analyte + " modifications you add are stored here." + Environment.NewLine +
+            "################################## Modifications added through the GUI are appended below this banner." + Environment.NewLine +
+            "################################## One entry per modification, terminated by a line containing only //" + Environment.NewLine +
+            "##################################   ID   <name>            the modification's name" + Environment.NewLine +
+            "##################################   TG   <residues>        target, e.g. S or T or Y" + Environment.NewLine +
+            "##################################   PP   <location>        Anywhere. / N-terminal. / C-terminal. / Peptide N-terminal. / Peptide C-terminal." + Environment.NewLine +
+            "##################################   CF   <formula>         chemical formula, e.g. H1 N1 O2" + Environment.NewLine +
+            "##################################   MM   <mass>            monoisotopic mass, if no formula is given" + Environment.NewLine +
+            "##################################   MT   <type>            the group it is listed under" + Environment.NewLine +
+            "################################## See Mods.txt in this folder for worked examples." + Environment.NewLine;
+
         // File locations
         public static string DataDir { get; private set; }
         public static string UserSpecifiedDataDir { get; set; }
         public static string CustomProteasePath => Path.Combine(DataDir, "proteases_custom.tsv");
         public static string CustomRnasePath => Path.Combine(DataDir, "rnase_custom.tsv");
         public static string CustomMonosaccharidePath => Path.Combine(DataDir, "MonosaccharidesCustom.tsv");
+
+        /// <summary>
+        /// The user's own O-glycan database, offered in the GlycoSearch task beside the shipped ones.
+        /// </summary>
+        /// <remarks>
+        /// At the DataDir root rather than under Glycan_Mods\OGlycan\, for the same reason
+        /// MonosaccharidesCustom.tsv is: Product.wxs gives Glycan_Mods and both of its subfolders a
+        /// &lt;RemoveFolder On="both"/&gt;, so the installer owns those folders and a user's file in one of
+        /// them is not somewhere we should be putting it. The cost is that it is not picked up by the
+        /// directory sweep in LoadGlycans and has to be added to OGlycanDatabasePaths by name.
+        /// </remarks>
+        public static string CustomOGlycanDatabasePath => Path.Combine(DataDir, "OGlycan_Custom.gdb");
+
+        /// <summary>
+        /// The user's own N-glycan database, offered in the GlycoSearch task beside the shipped ones.
+        /// At the DataDir root for the same reason as <see cref="CustomOGlycanDatabasePath"/>.
+        /// </summary>
+        public static string CustomNGlycanDatabasePath => Path.Combine(DataDir, "NGlycan_Custom.gdb");
 
         public static bool StopLoops { get; set; }
         public static string MetaMorpheusVersion { get; private set; }
@@ -114,6 +170,7 @@ namespace EngineLayer
             LoadRnaModifications();
             LoadGlycans();
             LoadCustomAminoAcids();
+            LoadCustomNucleotides();
             SetUpGlobalSettings();
             LoadDissociationTypes();
             LoadAvailableProteomes();
@@ -212,8 +269,14 @@ namespace EngineLayer
                     string[] line = aminoAcidLines[i].Split('\t').ToArray(); //tsv Name, one letter, monoisotopic, chemical formula
                     if (line.Length >= 4) //check something is there (not a blank line)
                     {
+                        if (string.IsNullOrWhiteSpace(line[0]) || string.IsNullOrWhiteSpace(line[1]) ||
+                            ContainsTabOrNewline(line[0]) || ContainsTabOrNewline(line[1]))
+                        {
+                            continue;
+                        }
+
                         char letter = line[1][0];
-                        if (InvalidAminoAcids.Contains(letter))
+                        if (!IsValidResidueLetter(letter) || InvalidAminoAcids.Contains(letter))
                         {
                             throw new MetaMorpheusException("Error while reading 'CustomAminoAcids.txt'. Line " + (i + 1).ToString() + " contains an invalid amino acid. (Ex: " + string.Join(", ", InvalidAminoAcids.Select(x => x.ToString())) + ")");
                         }
@@ -259,6 +322,130 @@ namespace EngineLayer
                 }
             }
             File.WriteAllLines(aminoAcidPath, linesToWrite.ToArray());
+        }
+
+        public static void LoadCustomNucleotides()
+        {
+            string nucleotidePath = Path.Combine(DataDir, "CustomNucleotides", "CustomNucleotides.txt");
+            if (!File.Exists(nucleotidePath))
+            {
+                WriteNucleotidesFile();
+                return;
+            }
+
+            string[] nucleotideLines = File.ReadAllLines(nucleotidePath);
+            for (int i = 1; i < nucleotideLines.Length; i++)
+            {
+                string[] line = nucleotideLines[i].Split('\t');
+                if (line.Length != 4 || string.IsNullOrWhiteSpace(nucleotideLines[i]) ||
+                    line[1].Length != 1)
+                    continue;
+
+                try
+                {
+                    char letter = line[1][0];
+                    if (!TryValidateCustomNucleotide(line[0], letter, line[2], out _))
+                        continue;
+
+                    ChemicalFormula formula = ChemicalFormula.ParseFormula(line[3]);
+
+                    bool letterExists = Nucleotide.TryGetResidue(letter, out Nucleotide existingByLetter);
+                    bool symbolExists = Nucleotide.TryGetResidue(line[2], out Nucleotide existingBySymbol);
+                    bool nameExists = Nucleotide.TryGetResidue(line[0], out Nucleotide existingByName);
+
+                    if (letterExists || symbolExists || nameExists)
+                    {
+                        continue;
+                    }
+
+                    Nucleotide.AddResidue(line[0], letter, line[2], formula);
+                }
+                catch (Exception)
+                {
+                    // Keep a malformed persisted row from preventing the application from starting.
+                    continue;
+                }
+            }
+        }
+
+        public static void WriteNucleotidesFile()
+        {
+            string directory = Path.Combine(DataDir, "CustomNucleotides");
+            if (!Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            string nucleotidePath = Path.Combine(directory, "CustomNucleotides.txt");
+            List<string> linesToWrite = new List<string>
+            {
+                "Name\tOneLetterAbbr.\tSymbol\tBaseChemicalFormula"
+            };
+
+            foreach (Nucleotide nucleotide in GetDefaultRnaNucleotides())
+            {
+                linesToWrite.Add($"{nucleotide.Name}\t{nucleotide.Letter}\t{nucleotide.Symbol}\t{nucleotide.BaseChemicalFormula.Formula}");
+            }
+
+            File.WriteAllLines(nucleotidePath, linesToWrite);
+        }
+
+        public static bool TryValidateCustomNucleotide(string name, char letter, string symbol, out string validationMessage)
+        {
+            if (string.IsNullOrWhiteSpace(name) || ContainsTabOrNewline(name))
+            {
+                validationMessage = "A nucleotide name without tab or newline characters is required.";
+                return false;
+            }
+
+            if (!IsValidResidueLetter(letter) || IsReservedNucleotideCharacter(letter))
+            {
+                validationMessage = $"The nucleotide character '{letter}' is reserved and cannot be assigned.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(symbol) || ContainsTabOrNewline(symbol))
+            {
+                validationMessage = "A nucleotide symbol without tab or newline characters is required.";
+                return false;
+            }
+
+            string letterText = letter.ToString();
+            if (name.Equals(symbol, StringComparison.Ordinal) || name.Equals(letterText, StringComparison.Ordinal) ||
+                symbol.Equals(letterText, StringComparison.Ordinal))
+            {
+                validationMessage = "The nucleotide name, letter, and symbol must be distinct.";
+                return false;
+            }
+
+            validationMessage = string.Empty;
+            return true;
+        }
+
+        public static bool ContainsTabOrNewline(string value)
+        {
+            return value.IndexOfAny(new[] { '\t', '\r', '\n' }) >= 0;
+        }
+
+        private static bool IsValidResidueLetter(char letter)
+        {
+            return letter <= 'z' && !char.IsControl(letter) && !char.IsWhiteSpace(letter);
+        }
+
+        private static bool IsReservedNucleotideCharacter(char letter)
+        {
+            return new[] { ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' }.Contains(letter);
+        }
+
+        private static IEnumerable<Nucleotide> GetDefaultRnaNucleotides()
+        {
+            return new[]
+            {
+                Nucleotide.AdenineBase,
+                Nucleotide.CytosineBase,
+                Nucleotide.GuanineBase,
+                Nucleotide.UracilBase,
+                Nucleotide.InosineBase,
+                Nucleotide.PseudoUracilBase
+            };
         }
 
         // Does the same thing as Process.Start() except it works on .NET Core
@@ -415,6 +602,12 @@ namespace EngineLayer
 
             // load custom crosslinkers
             string customCrosslinkerLocation = Path.Combine(DataDir, @"Data", @"CustomCrosslinkers.tsv");
+
+            // The shipped Crosslinkers.tsv has no banner, so this seeds its header row alone.
+            CustomDataFile.EnsureExists(customCrosslinkerLocation,
+                () => CustomDataFile.BannerAndHeaderFromFile(crosslinkerLocation, "Name\t"),
+                "custom crosslinker");
+
             if (File.Exists(customCrosslinkerLocation))
             {
                 AddCrosslinkers(Crosslinker.LoadCrosslinkers(customCrosslinkerLocation));
@@ -432,6 +625,11 @@ namespace EngineLayer
             PsiModDeserialized = Loaders.LoadPsiMod(Path.Combine(DataDir, @"Data", @"PSI-MOD.obo.xml"));
             var formalChargesDictionary = Loaders.GetFormalChargesDictionary(PsiModDeserialized);
             UniprotDeseralized = Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
+
+            // Seeded before the sweep below picks it up. The template is a title line plus a '#' banner,
+            // so it contributes no modifications until the user or the GUI adds one.
+            CustomDataFile.EnsureExists(Path.Combine(DataDir, @"Mods", "CustomModifications.txt"),
+                () => CustomModificationsTemplate("Protein"), "custom modification");
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
@@ -471,9 +669,12 @@ namespace EngineLayer
             // Omics.dll while preserving the property #2752 established when it made these an
             // embedded resource here: they are carried in an assembly, so no installer, repair or
             // upgrade can leave them missing. A file in Mods\ could.
-            AddMods(Omics.Modifications.Mods.MetaMorpheusRnaModifications, false, true);
+            AddMods(Mods.MetaMorpheusRnaModifications, false, true);
+            AddMods(Mods.ModomicsRnaModifications, false, true);
 
             var customModsPath = Path.Combine(DataDir, @"Mods", "RnaCustomModifications.txt");
+            CustomDataFile.EnsureExists(customModsPath,
+                () => CustomModificationsTemplate("RNA"), "custom RNA modification");
             if (File.Exists(customModsPath))
             {
                 AddMods(ModificationLoader.ReadModsFromFile(customModsPath, out var errorMods), false, true);
@@ -496,6 +697,17 @@ namespace EngineLayer
             GlycanDatabase.EnsureCustomMonosaccharideFileExists(CustomMonosaccharidePath);
             GlycanDatabase.LoadCustomMonosaccharides(CustomMonosaccharidePath);
 
+            // Seed the user's own database before anything reads it. It is header-less and its template is
+            // all comment lines, so a freshly seeded file contributes no glycans and the two steps below are
+            // independent of it. See CustomDataFile for the recipe every custom file follows.
+            CustomDataFile.EnsureExists(CustomOGlycanDatabasePath,
+                () => CustomDataFile.EmbeddedText(typeof(GlobalVariables).Assembly, EmbeddedCustomOGlycanResourceName),
+                "custom O-glycan database");
+
+            CustomDataFile.EnsureExists(CustomNGlycanDatabasePath,
+                () => CustomDataFile.EmbeddedText(typeof(GlobalVariables).Assembly, EmbeddedCustomNGlycanResourceName),
+                "custom N-glycan database");
+
             OGlycanDatabasePaths = new List<string>();
             NGlycanDatabasePaths = new List<string>();
 
@@ -504,36 +716,45 @@ namespace EngineLayer
                 OGlycanDatabasePaths.Add(glycanFile);
             }
 
+            // Added by name because it deliberately does not live in the swept folder -- see
+            // CustomOGlycanDatabasePath. A failed seeding does not get this far: EnsureExists throws and
+            // startup stops, as it does for every custom file. The guard is the same File.Exists check the
+            // other custom files make, and only matters if the file is gone again by the time we get here.
+            if (File.Exists(CustomOGlycanDatabasePath))
+            {
+                OGlycanDatabasePaths.Add(CustomOGlycanDatabasePath);
+            }
+
             foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"NGlycan")))
             {
                 NGlycanDatabasePaths.Add(glycanFile);
             }
 
+            if (File.Exists(CustomNGlycanDatabasePath))
+            {
+                NGlycanDatabasePaths.Add(CustomNGlycanDatabasePath);
+            }
+
             //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
             //The reason why not include Glycan into modification database is for users to apply their own database.
-            foreach (var path in OGlycanDatabasePaths)
+            // Read through LoadGlycansOrWarn rather than LoadGlycan directly: this runs inside
+            // SetUpGlobalVariables, so a typo in a user's own database would otherwise stop MetaMorpheus
+            // opening -- and with it the only window that could fix the file.
+            foreach (var glycan in GlycanDatabase.LoadGlycansOrWarn(OGlycanDatabasePaths, true, Warn))
             {
-                var oGlycans = GlycanDatabase.LoadGlycan(path, false, true);
-                foreach (var glycan in oGlycans)
+                if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
                 {
-                    if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
-                    {
-                        AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
-                    }
-                    _AllModsKnown.Add(glycan);
+                    AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
                 }
+                _AllModsKnown.Add(glycan);
             }
-            foreach (var path in NGlycanDatabasePaths)
+            foreach (var glycan in GlycanDatabase.LoadGlycansOrWarn(NGlycanDatabasePaths, false, Warn))
             {
-                var nGlycans = GlycanDatabase.LoadGlycan(path, false, false);
-                foreach (var glycan in nGlycans)
+                if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
                 {
-                    if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
-                    {
-                        AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
-                    }
-                    _AllModsKnown.Add(glycan);
+                    AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
                 }
+                _AllModsKnown.Add(glycan);
             }
             LoadTxtGlycan();
         }
@@ -644,53 +865,29 @@ namespace EngineLayer
 
         private static void LoadDigestionAgents()
         {
+            // Seed first, then load: the template is header-only, so a freshly seeded file contributes
+            // nothing and the two steps are independent. See CustomDataFile for the recipe every custom
+            // file follows.
+            CustomDataFile.EnsureExists(CustomProteasePath,
+                () => CustomDataFile.BannerAndHeaderFrom(typeof(ProteaseDictionary).Assembly,
+                    EmbeddedProteasesResourceName, "Name\t"),
+                "custom protease");
+
+            CustomDataFile.EnsureExists(CustomRnasePath,
+                () => CustomDataFile.BannerAndHeaderFrom(typeof(RnaseDictionary).Assembly,
+                    EmbeddedRnasesResourceName, "Name\t"),
+                "custom rnase");
+
             if (File.Exists(CustomProteasePath))
             {
                 try
                 {
-                    // Result deliberately kept rather than discarded, to match the rnase call below.
-                    // mzLib reports a custom entry that collides with an embedded one through
-                    // CustomDigestionAgentLoadResult.Skipped instead of throwing, precisely so a caller
-                    // can warn the user; neither call site consumes it yet. Doing so is the subject of a
-                    // separate PR covering every custom file, not this one.
                     var result = ProteaseDictionary.LoadAndMergeCustomProteases(CustomProteasePath, ProteaseMods);
+                    ReportSkippedCustomEntries(result.Skipped, "protease", CustomProteasePath);
                 }
                 catch (Exception e)
                 {
                     throw new MetaMorpheusException($"Error loading custom proteases with error message: {e.Message}", e);
-                }
-            }
-            else
-            {
-                try
-                {
-                    var assembly = typeof(ProteaseDictionary).Assembly;
-
-                    // private hard-coded string path in MzLib
-                    string EmbeddedProteaseResourceName = "Proteomics.ProteolyticDigestion.proteases.tsv"; 
-
-                    var stream = assembly.GetManifestResourceStream(EmbeddedProteaseResourceName);
-                    var reader = new StreamReader(stream);
-
-                    string fileContent = reader.ReadToEnd();
-                    string[] lines = fileContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-                    bool foundHeader = false;
-                    using var sw = new StreamWriter(File.Create(CustomProteasePath));
-                    foreach (string line in lines) 
-                    {
-                        if (!foundHeader && !line.StartsWith("#") && line.TrimStart().StartsWith("Name\t"))
-                        {
-                            sw.WriteLine(line);
-                            foundHeader = true;
-                            break;
-                        }
-                        sw.WriteLine(line);
-                    }
-                }
-                catch (Exception e)
-                {
-                    throw new MetaMorpheusException($"Error creating default custom protease file with error message: {e.Message}", e);
                 }
             }
 
@@ -699,45 +896,46 @@ namespace EngineLayer
                 try
                 {
                     var result = RnaseDictionary.LoadAndMergeCustomRnases(CustomRnasePath);
+                    ReportSkippedCustomEntries(result.Skipped, "rnase", CustomRnasePath);
                 }
                 catch (Exception e)
                 {
                     throw new MetaMorpheusException($"Error loading custom rnases with error message: {e.Message}", e);
                 }
             }
-            else
+        }
+
+        /// <summary>
+        /// mzLib refuses to let a custom digestion agent shadow one already loaded, and reports the
+        /// collision through <c>CustomDigestionAgentLoadResult.Skipped</c> rather than throwing, specifically
+        /// so the caller can tell the user. Nothing consumed that before, so a user who named a custom
+        /// protease "trypsin" got silence and a protease that was not theirs.
+        /// </summary>
+        /// <remarks>
+        /// The message deliberately does not say a BUILT-IN owns the name. mzLib documents <c>Skipped</c> as
+        /// three cases it "intentionally" does not distinguish: the name is in the embedded resource, it was
+        /// loaded by an earlier call, or an earlier file in the same batch added it. Production reaches only
+        /// the first -- <see cref="SetUpGlobalVariables"/> runs once per process and passes one file -- but a
+        /// second run in the same process merges into mzLib's static dictionary again, and every one of the
+        /// user's own entries comes back skipped. Naming the cause would then be wrong, and the test suite is
+        /// exactly where that happens.
+        /// </remarks>
+        private static void ReportSkippedCustomEntries(IReadOnlyList<string> skipped, string kind, string path)
+        {
+            if (skipped == null || skipped.Count == 0)
             {
-                try
-                {
-                    var assembly = typeof(RnaseDictionary).Assembly;
-
-                    // private hard-coded string path in MzLib
-                    string EmbeddedProteaseResourceName = "Transcriptomics.Digestion.rnases.tsv";
-
-                    var stream = assembly.GetManifestResourceStream(EmbeddedProteaseResourceName);
-                    var reader = new StreamReader(stream);
-
-                    string fileContent = reader.ReadToEnd();
-                    string[] lines = fileContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-                    bool foundHeader = false;
-                    using var sw = new StreamWriter(File.Create(CustomRnasePath));
-                    foreach (string line in lines)
-                    {
-                        if (!foundHeader && !line.StartsWith("#") && line.TrimStart().StartsWith("Name\t"))
-                        {
-                            sw.WriteLine(line);
-                            foundHeader = true;
-                            break;
-                        }
-                        sw.WriteLine(line);
-                    }
-                }
-                catch (Exception e)
-                {
-                    throw new MetaMorpheusException($"Error creating default custom rnase file with error message: {e.Message}", e);
-                }
+                return;
             }
+
+            Warn($"{skipped.Count} custom {kind}(s) in {Path.GetFileName(path)} were ignored because the "
+                + $"name was already taken: {string.Join(", ", skipped.Select(p => "'" + p + "'"))}. The "
+                + $"definition already loaded is kept and the custom one discarded. Rename them in {path} "
+                + $"if you meant to define your own.");
+        }
+
+        private static void Warn(string v)
+        {
+            WarnHandler?.Invoke(null, new StringEventArgs(v, null));
         }
     }
 }

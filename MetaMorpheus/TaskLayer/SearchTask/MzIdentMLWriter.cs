@@ -19,7 +19,7 @@ namespace TaskLayer
     {
         public static void WriteMzIdentMl(IEnumerable<SpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<Modification> variableMods, 
             List<Modification> fixedMods, List<SilacLabel> silacLabels, List<DigestionAgent> proteases, Tolerance productTolerance, 
-            Tolerance parentTolerance, int missedCleavages, string outputPath, bool appendMotifToModNames)
+            Tolerance parentTolerance, int missedCleavages, string outputPath, bool appendMotifToModNames, bool? semiSpecific = null)
         {
 
             //if SILAC, remove the silac labels, because the base/full sequences reported for output are not the same as the peptides in the best peptides list for the psm
@@ -572,11 +572,17 @@ namespace TaskLayer
             int protease_index = 0;
             foreach (DigestionAgent protease in proteases)
             {
+                // The search's own specificity when the caller gives it: trypsin is Full even in a semi-specific search,
+                // whose semi-specificity comes from SearchModeType. Otherwise what the protease itself says.
+                bool isSemiSpecific = semiSpecific ?? protease.CleavageSpecificity == CleavageSpecificity.Semi;
                 _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].Enzymes.Enzyme[protease_index] = new mzIdentML110.Generated.EnzymeType()
                 {
                     id = "E_" + protease_index,
                     name = protease.Name,
-                    semiSpecific = protease.CleavageSpecificity == CleavageSpecificity.Semi,
+                    semiSpecific = isSemiSpecific,
+                    // Written only for a semi-specific search. The attribute is optional, and every other search's file stays
+                    // as it always was, with no semiSpecific attribute at all.
+                    semiSpecificSpecified = isSemiSpecific,
                     missedCleavagesSpecified = true,
                     missedCleavages = missedCleavages,
                     EnzymeName = new mzIdentML110.Generated.ParamListType()
