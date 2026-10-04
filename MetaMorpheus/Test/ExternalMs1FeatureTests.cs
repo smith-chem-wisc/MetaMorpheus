@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using EngineLayer;
+using EngineLayer.DatabaseLoading;
 using NUnit.Framework;
 using Readers;
 using TaskLayer;
@@ -150,6 +151,49 @@ namespace Test
             {
                 MetaMorpheusTask.WarnHandler -= onWarn;
                 Directory.Delete(dir, true);
+            }
+        }
+
+        // End to end through RunTask: a <basename>_ms1.feature beside the raw file is picked up without
+        // any file-specific toml and announced as a warning; an unreadable one is announced, disabled,
+        // and the search still completes.
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public static void RunTask_AdjacentMs1FeatureFile_IsAutoDiscoveredAndAnnounced(bool readable)
+        {
+            string testDir = TestContext.CurrentContext.TestDirectory;
+            string outputFolder = Path.Combine(testDir, "TestAdjacentMs1Feature_" + readable);
+            string inputFolder = Path.Combine(outputFolder, "inputs");
+            Directory.CreateDirectory(inputFolder);
+            string mzml = Path.Combine(inputFolder, "TDGPTMDSearchSingleSpectra.mzML");
+            string feature = Path.Combine(inputFolder, "TDGPTMDSearchSingleSpectra_ms1.feature");
+            string fasta = Path.Combine(inputFolder, "ThreeHumanHistone.fasta");
+            File.Copy(Path.Combine(testDir, "TopDownTestData", "TDGPTMDSearchSingleSpectra.mzML"), mzml, true);
+            File.Copy(Path.Combine(testDir, "TopDownTestData", "ThreeHumanHistone.fasta"), fasta, true);
+            if (readable)
+                File.Copy(Path.Combine(testDir, "TopDownTestData", "TDGPTMDSearchSingleSpectra_ms1.feature"), feature, true);
+            else
+                File.WriteAllText(feature, "this is not\ta feature file\n");
+
+            var warnings = new System.Collections.Generic.List<string>();
+            EventHandler<StringEventArgs> onWarn = (_, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += onWarn;
+            try
+            {
+                var searchTask = new SearchTask();
+                Assert.DoesNotThrow(() => searchTask.RunTask(outputFolder,
+                    new System.Collections.Generic.List<DbForTask> { new DbForTask(fasta, false) },
+                    new System.Collections.Generic.List<string> { mzml }, "normal"));
+
+                Assert.That(warnings.Any(w => w.Contains("Found adjacent MS1 feature file") && w.Contains(feature)), Is.True);
+                Assert.That(warnings.Any(w => w.Contains("Could not read Ms1FeatureFilePath")), Is.EqualTo(!readable));
+                Assert.That(File.Exists(Path.Combine(outputFolder, "AllPSMs.psmtsv")), Is.True);
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= onWarn;
+                Directory.Delete(outputFolder, true);
             }
         }
     }

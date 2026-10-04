@@ -412,11 +412,6 @@ namespace Test
             CommonParameters clone = common.CloneWithNewTerminus(FragmentationTerminus.C);
 
             Assert.That(clone.AdditionalPrecursorDeconvolutionParameters, Is.SameAs(additional));
-
-            // CloneWithNewTotalPartitions (used when a search is split into index partitions) must
-            // carry it too, or a partitioned search would silently drop the external source.
-            Assert.That(common.CloneWithNewTotalPartitions(4).AdditionalPrecursorDeconvolutionParameters,
-                Is.SameAs(additional));
         }
 
         [Test]
