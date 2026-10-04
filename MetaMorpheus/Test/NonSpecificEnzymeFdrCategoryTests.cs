@@ -176,13 +176,16 @@ namespace Test
             var dataFile = new TestDataFile(peptides.Cast<IBioPolymerWithSetMods>().ToList());
 
             // Targets score above decoys, which is what gives FdrAnalysisEngine a q-value gradient to
-            // produce rather than a single value repeated.
+            // produce rather than a single value repeated. The targets share a q-value, and they go in
+            // OUT of score order: OrderBy is stable, so targets fed in already score-descending would
+            // come back in that order even with the ThenByDescending deleted.
+            double[] targetScores = { 18, 20, 17, 19 };
             var psms = new List<SpectralMatch>();
             int wanted = peptides.Count;
             for (int i = 0; i < wanted; i++)
             {
                 var peptide = peptides[i];
-                double score = peptide.Parent.IsDecoy ? 3 + i : 20 - i;
+                double score = peptide.Parent.IsDecoy ? 3 + i : targetScores[i];
                 var scan = new Ms2ScanWithSpecificMass(
                     dataFile.GetOneBasedScan(2), peptide.MonoisotopicMass.ToMz(1), 1, null, CommonParams);
                 var psm = new PeptideSpectralMatch(peptide, 0, score, 2, scan, CommonParams,
@@ -200,6 +203,8 @@ namespace Test
                 + "compares fewer pairs than this test claims");
             Assert.That(best.Select(b => b.PsmFdrInfo.QValue).Distinct().Count(), Is.GreaterThan(1),
                 "premise: without more than one q-value the ordering assertion cannot fail");
+            Assert.That(best.GroupBy(b => b.PsmFdrInfo.QValue).Any(g => g.Count() > 1), Is.True,
+                "premise: without a q-value tie the score half of the ordering cannot fail");
 
             for (int i = 1; i < best.Count; i++)
             {
