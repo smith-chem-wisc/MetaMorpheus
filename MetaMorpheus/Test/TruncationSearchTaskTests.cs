@@ -539,6 +539,7 @@ namespace Test
                 context.Deposit(TaskChainContext.CommonParametersKey("Task1-SearchTask"),
                     new CommonParameters(precursorMassTolerance: new PpmTolerance(10)));
                 var task = new TruncationSearchTask { CommonParameters = cp, TaskChainContext = context };
+                task.TruncationSearchParameters.InheritUpstreamCommonParameters = false;
 
                 task.RunTask(outDir, new List<DbForTask> { new DbForTask(db, false) }, new List<string> { data }, "Task2-TruncationSearchTask");
 
@@ -550,6 +551,51 @@ namespace Test
             {
                 MetaMorpheusTask.WarnHandler -= onWarn;
                 if (Directory.Exists(outDir)) Directory.Delete(outDir, true);
+            }
+        }
+
+        /// <summary>
+        /// Decision #20, default behaviour: with InheritUpstreamCommonParameters on, the task adopts the upstream
+        /// search's deposited CommonParameters before it runs, so there is no mismatch to warn about and the task
+        /// TOML written to Task Settings records the inherited tolerance, not the task's own.
+        /// </summary>
+        [Test]
+        public void ContextIngest_InheritsUpstreamCommonParameters_ByDefault()
+        {
+            var (data, db, _) = TopDownFixture();
+            string root = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TruncationInheritParams");
+            string outDir = Path.Combine(root, "Task2-TruncationSearchTask");
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+            Directory.CreateDirectory(outDir);
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> onWarn = (_, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += onWarn;
+            try
+            {
+                var context = new TaskChainContext();
+                context.Deposit("Task1-SearchTask", new List<SpectralMatch>());
+                context.Deposit(TaskChainContext.CommonParametersKey("Task1-SearchTask"),
+                    new CommonParameters(precursorMassTolerance: new PpmTolerance(10)));
+                var task = new TruncationSearchTask
+                {
+                    CommonParameters = new CommonParameters(precursorMassTolerance: new PpmTolerance(5)),
+                    TaskChainContext = context
+                };
+                Assert.That(task.TruncationSearchParameters.InheritUpstreamCommonParameters, Is.True);
+
+                task.RunTask(outDir, new List<DbForTask> { new DbForTask(db, false) }, new List<string> { data }, "Task2-TruncationSearchTask");
+
+                Assert.That(task.CommonParameters.PrecursorMassTolerance.Value, Is.EqualTo(10));
+                Assert.That(warnings, Has.None.Contains("differ from the upstream search"));
+                var written = Toml.ReadFile<TruncationSearchTask>(
+                    Path.Combine(root, "Task Settings", "Task2-TruncationSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+                Assert.That(written.CommonParameters.PrecursorMassTolerance.Value, Is.EqualTo(10));
+                Assert.That(written.TruncationSearchParameters.InheritUpstreamCommonParameters, Is.True);
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= onWarn;
+                if (Directory.Exists(root)) Directory.Delete(root, true);
             }
         }
 

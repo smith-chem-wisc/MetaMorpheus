@@ -211,6 +211,15 @@ namespace TaskLayer
         [TomlIgnore]
         public virtual bool ConsumesTaskChainContext => false;
 
+        /// <summary>
+        /// Called at the start of <see cref="RunTask"/>, before the task TOML is written and before file-specific
+        /// parameters are resolved, so a task can settle its <see cref="CommonParameters"/> (e.g. adopt an upstream
+        /// task's from the <see cref="TaskChainContext"/>) and have the written TOML record what actually ran.
+        /// </summary>
+        protected virtual void ResolveParametersBeforeRun()
+        {
+        }
+
         protected MyTaskResults MyTaskResults;
 
         protected MetaMorpheusTask(MyTask taskType)
@@ -657,6 +666,7 @@ namespace TaskLayer
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName)
         {
             this.OutputFolder = output_folder;
+            ResolveParametersBeforeRun();
             MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
             StartingSingleTask(displayName);
 

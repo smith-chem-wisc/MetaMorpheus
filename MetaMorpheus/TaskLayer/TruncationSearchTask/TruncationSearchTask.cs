@@ -315,22 +315,46 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// The task searches with its own CommonParameters, which default to bottom-up settings. Warns when the
-        /// settings that decide MS2 deconvolution, precursor matching and fragment matching differ from the upstream
-        /// search whose matches it consumes (a top-down run usually wants them identical).
+        /// Decision #20: when <see cref="TruncationSearchParameters.InheritUpstreamCommonParameters"/> is set and the
+        /// upstream search deposited its CommonParameters on the context, run with a copy of them. Runs before
+        /// <see cref="MetaMorpheusTask.RunTask"/> writes the task TOML, so the written settings are the ones used.
         /// </summary>
-        private void WarnOnUpstreamParameterMismatch()
+        protected override void ResolveParametersBeforeRun()
         {
+            if (TruncationSearchParameters.InheritUpstreamCommonParameters
+                && TryGetUpstreamCommonParameters(out CommonParameters upstream))
+            {
+                CommonParameters = upstream.Clone();
+            }
+        }
+
+        /// <summary>
+        /// The upstream search's CommonParameters, deposited beside its PSMs: the configured upstream id, else the
+        /// most recent deposit (the same upstream <see cref="TryIngestFromContext"/> reads).
+        /// </summary>
+        private bool TryGetUpstreamCommonParameters(out CommonParameters upstream)
+        {
+            upstream = null;
             if (TaskChainContext == null)
             {
-                return;
+                return false;
             }
 
             string upstreamId = TruncationSearchParameters.UpstreamSearchTaskId;
             bool found = upstreamId != null
-                ? TaskChainContext.TryGet(TaskChainContext.CommonParametersKey(upstreamId), out CommonParameters upstream)
+                ? TaskChainContext.TryGet(TaskChainContext.CommonParametersKey(upstreamId), out upstream)
                 : TaskChainContext.TryGetMostRecent(out upstream);
-            if (!found || upstream == null)
+            return found && upstream != null;
+        }
+
+        /// <summary>
+        /// With inheritance off, the task searches with its own CommonParameters, which default to bottom-up settings.
+        /// Warns when the settings that decide MS2 deconvolution, precursor matching and fragment matching differ from
+        /// the upstream search whose matches it consumes (a top-down run usually wants them identical).
+        /// </summary>
+        private void WarnOnUpstreamParameterMismatch()
+        {
+            if (!TryGetUpstreamCommonParameters(out CommonParameters upstream))
             {
                 return;
             }
@@ -339,7 +363,7 @@ namespace TaskLayer
             if (differences.Count > 0)
             {
                 Warn("TruncationSearchTask settings differ from the upstream search it consumes: " + string.Join("; ", differences)
-                    + ". Copy the search's CommonParameters into the truncation task unless this is intended.");
+                    + ". Set InheritUpstreamCommonParameters = true, or copy the search's CommonParameters into the truncation task, unless this is intended.");
             }
         }
 

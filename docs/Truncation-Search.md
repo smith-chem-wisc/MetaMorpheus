@@ -216,12 +216,14 @@ whole pool gets one fresh per-class FDR/PEP analysis.
 
 ### #20 - Task wiring
 
-- Own TOML schema, including its own `CommonParameters`. These are **not** inherited from the
-  upstream search and default to MetaMorpheus's general (bottom-up) defaults, so for top-down data
-  copy the search's `CommonParameters` into the truncation task. When the task consumes a search in
-  the same run list, it warns if the settings that drive MS2 deconvolution and matching (precursor
-  and product tolerances, precursor deconvolution, max charge states, dissociation type) differ
-  from that search's.
+- Own TOML schema, including its own `CommonParameters`. When the task consumes a search in the
+  same run list, `InheritUpstreamCommonParameters` (default `true`) replaces them with a copy of
+  that search's `CommonParameters` before the task starts, so the written task TOML records the
+  settings actually used. With it set to `false`, or on a standalone (disk-ingest) run, the task's
+  own block applies; it defaults to MetaMorpheus's general (bottom-up) defaults, so for top-down
+  data copy the search's `CommonParameters` in. With inheritance off, the task warns if the
+  settings that drive MS2 deconvolution and matching (precursor and product tolerances, precursor
+  deconvolution, max charge states, dissociation type) differ from the search's.
 - Plumbed into the existing runner, so `[Search, Truncation]` works end-to-end with in-memory
   result passing, and into `CMD/Program.cs` so the task dispatches from a TOML on the command line.
 

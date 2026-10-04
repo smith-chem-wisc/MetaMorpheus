@@ -18,6 +18,15 @@ namespace TaskLayer
         public string UpstreamSearchTaskId { get; set; } = null;
 
         /// <summary>
+        /// Run with the upstream search's <c>CommonParameters</c> (tolerances, deconvolution, dissociation type,
+        /// digestion, mods) when that search ran earlier in the same run list, instead of this task's own block
+        /// (decision #20). On by default, so a default truncation TOML does not silently search top-down data
+        /// with bottom-up settings. Set false to keep this task's own <c>CommonParameters</c>; the task then
+        /// warns about any setting that differs from the search's. No effect on standalone (disk-ingest) runs.
+        /// </summary>
+        public bool InheritUpstreamCommonParameters { get; set; } = true;
+
+        /// <summary>
         /// Disk fallback (decision #1): path to an AllProteoforms.psmtsv to ingest when no upstream
         /// task result is present in the <see cref="TaskChainContext"/>.
         /// </summary>
