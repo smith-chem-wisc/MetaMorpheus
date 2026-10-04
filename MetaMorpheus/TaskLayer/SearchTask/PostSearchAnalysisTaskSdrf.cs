@@ -88,10 +88,14 @@ namespace TaskLayer
             // one row per file with the label left unresolved, exactly as before. A file whose channel
             // rows could not say which channel is which (ChannelRowsUnusableReason) gets the same
             // fallback, keeping the fraction and technical replicate the design gives it.
+            //
+            // ExperimentalDesign.tsv is never read for an isobaric search, even when TmtDesign.txt is
+            // missing or unusable: SearchTask.WarnAboutSdrfGaps told the user before the run that it is
+            // not consulted, and a file-level condition would misdescribe a file holding many samples.
             var isobaric = ReadIsobaricDesignIfPresent(out var tagType);
-            var design = isobaric is null
-                ? ReadExperimentalDesignIfPresent()
-                : new Dictionary<string, SpectraFileInfo>(StringComparer.OrdinalIgnoreCase);
+            var design = Parameters.SearchParameters.DoMultiplexQuantification
+                ? new Dictionary<string, SpectraFileInfo>(StringComparer.OrdinalIgnoreCase)
+                : ReadExperimentalDesignIfPresent();
             var describedOnce = new List<string>();
 
             // A sample name reused across plexes for different material (#2817 review): only those names
@@ -373,7 +377,7 @@ namespace TaskLayer
                 return null;
 
             string designPath = Path.Combine(
-                Directory.GetParent(Parameters.CurrentRawFileList.First())!.ToString(),
+                Path.GetDirectoryName(Parameters.CurrentRawFileList.First()) ?? "",
                 GlobalVariables.TmtExperimentalDesignFileName);
             if (!File.Exists(designPath))
                 return null;

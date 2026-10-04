@@ -835,8 +835,10 @@ namespace Test
             Assert.That(warnings.Any(w => w.Contains(GlobalVariables.TmtExperimentalDesignFileName)
                                           && w.Contains("without its channels or samples")), Is.True,
                 "The fallback is announced, naming the file that would fix it: " + string.Join(" | ", warnings));
-            Assert.That(warnings.Any(w => w.Contains("no " + GlobalVariables.ExperimentalDesignFileName)), Is.False,
-                "An isobaric search does not read ExperimentalDesign.tsv, so its absence is not reported.");
+            // Matched on the file name, not on "no ...": the post-run warning starts "No ExperimentalDesign.tsv".
+            Assert.That(warnings.Where(w => w.Contains(GlobalVariables.ExperimentalDesignFileName)), Is.Empty,
+                "An isobaric search does not read ExperimentalDesign.tsv, before or after the run, so its " +
+                "absence is not reported.");
 
             Directory.Delete(root, true);
         }
@@ -860,6 +862,8 @@ namespace Test
             Assert.That(warnings.Any(w => w.Contains("cannot be used as it stands")
                                           && w.Contains("not a sample type")), Is.True,
                 "The warning names the design's own error: " + string.Join(" | ", warnings));
+            Assert.That(warnings.Where(w => w.Contains(GlobalVariables.ExperimentalDesignFileName)), Is.Empty,
+                "The fallback does not turn to ExperimentalDesign.tsv either.");
 
             Directory.Delete(root, true);
         }
