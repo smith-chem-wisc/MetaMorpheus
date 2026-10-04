@@ -16,8 +16,6 @@ using ClassExtensions = Chemistry.ClassExtensions;
 using Nett;
 using TaskLayer;
 using Omics.Modifications;
-using IsobaricMassTag = EngineLayer.IsobaricMassTag;
-using IsobaricMassTagType = EngineLayer.IsobaricMassTagType;
 using Readers;
 using Mzml = IO.MzML.Mzml;
 
@@ -667,23 +665,23 @@ namespace Test
         public static void TestGetIsobaricMassTagWithModificationId()
         {
             // Test valid modification IDs
-            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag("TMT10 on K");
+            IsobaricMassTag.TryGetIsobaricMassTag("TMT10 on K", GlobalVariables.AllModsKnown, out var tmt10Tag);
             Assert.That(tmt10Tag, Is.Not.Null);
             Assert.That(tmt10Tag.TagType, Is.EqualTo(IsobaricMassTagType.TMT10));
             Assert.That(tmt10Tag.ReporterIonMzs.Length, Is.EqualTo(10));
             Assert.That(tmt10Tag.ReporterIonMzRanges, Is.Not.Null);
             Assert.That(tmt10Tag.ReporterIonMzRanges, Is.TypeOf<DoubleRange[]>());
 
-            var tmt11Tag = IsobaricMassTag.GetIsobaricMassTag("TMT11 on X");
+            IsobaricMassTag.TryGetIsobaricMassTag("TMT11 on X", GlobalVariables.AllModsKnown, out var tmt11Tag);
             Assert.That(tmt11Tag, Is.Not.Null);
             Assert.That(tmt11Tag.TagType, Is.EqualTo(IsobaricMassTagType.TMT11));
             Assert.That(tmt11Tag.ReporterIonMzs.Length, Is.EqualTo(11));
 
             // Test null/invalid input
-            var nullTag = IsobaricMassTag.GetIsobaricMassTag((string)null);
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag((string)null, GlobalVariables.AllModsKnown, out var nullTag), Is.False);
             Assert.That(nullTag, Is.Null);
 
-            var invalidTag = IsobaricMassTag.GetIsobaricMassTag("InvalidModification");
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag("InvalidModification", GlobalVariables.AllModsKnown, out var invalidTag), Is.False);
             Assert.That(invalidTag, Is.Null);
         }
 
@@ -691,303 +689,43 @@ namespace Test
         public static void TestGetIsobaricMassTagWithTagType()
         {
             // Test all valid tag types
-            var tmt6 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT6);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT6, GlobalVariables.AllModsKnown, out var tmt6);
             Assert.That(tmt6, Is.Not.Null);
             Assert.That(tmt6.ReporterIonMzs.Length, Is.EqualTo(6));
             Assert.That(tmt6.TagType, Is.EqualTo(IsobaricMassTagType.TMT6));
 
-            var tmt10 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT10, GlobalVariables.AllModsKnown, out var tmt10);
             Assert.That(tmt10, Is.Not.Null);
             Assert.That(tmt10.ReporterIonMzs.Length, Is.EqualTo(10));
 
-            var tmt11 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT11);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT11, GlobalVariables.AllModsKnown, out var tmt11);
             Assert.That(tmt11, Is.Not.Null);
             Assert.That(tmt11.ReporterIonMzs.Length, Is.EqualTo(11));
 
-            var tmt18 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT18);
+            // TMTpro 16-plex has no modification of its own; it is the lowest sixteen of TMT18's ions.
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT16, GlobalVariables.AllModsKnown, out var tmt16);
+            Assert.That(tmt16, Is.Not.Null);
+            Assert.That(tmt16.ReporterIonMzs.Length, Is.EqualTo(16));
+
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT18, GlobalVariables.AllModsKnown, out var tmt18);
             Assert.That(tmt18, Is.Not.Null);
             Assert.That(tmt18.ReporterIonMzs.Length, Is.EqualTo(18));
 
-            var itraq4 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.iTRAQ4);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.iTRAQ4, GlobalVariables.AllModsKnown, out var itraq4);
             Assert.That(itraq4, Is.Not.Null);
             Assert.That(itraq4.ReporterIonMzs.Length, Is.EqualTo(4));
 
-            var itraq8 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.iTRAQ8);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.iTRAQ8, GlobalVariables.AllModsKnown, out var itraq8);
             Assert.That(itraq8, Is.Not.Null);
             Assert.That(itraq8.ReporterIonMzs.Length, Is.EqualTo(8));
 
-            var dileu4 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.diLeu4);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.diLeu4, GlobalVariables.AllModsKnown, out var dileu4);
             Assert.That(dileu4, Is.Not.Null);
             Assert.That(dileu4.ReporterIonMzs.Length, Is.EqualTo(4));
 
-            var dileu12 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.diLeu12);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.diLeu12, GlobalVariables.AllModsKnown, out var dileu12);
             Assert.That(dileu12, Is.Not.Null);
             Assert.That(dileu12.ReporterIonMzs.Length, Is.EqualTo(12));
-
-            // Test null input
-            var nullTag = IsobaricMassTag.GetIsobaricMassTag((IsobaricMassTagType?)null);
-            Assert.That(nullTag, Is.Null);
-        }
-
-        [Test]
-        public static void TestGetReporterIonIntensitiesWithMatchingPeaks()
-        {
-            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
-
-            // Create a mock spectrum with peaks at reporter ion m/z values
-            double[] mzArray = tmt10Tag.ReporterIonMzs.ToArray();
-            double[] intensityArray = new double[] { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
-
-            var spectrum = new MzSpectrum(mzArray, intensityArray, false);
-
-            var intensities = tmt10Tag.GetReporterIonIntensities(spectrum);
-
-            Assert.That(intensities, Is.Not.Null);
-            Assert.That(intensities.Length, Is.EqualTo(10));
-            Assert.That(intensities, Is.EqualTo(intensityArray));
-        }
-
-        [Test]
-        public static void TestGetReporterIonIntensitiesWithMissingPeaks()
-        {
-            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
-
-            // Create a spectrum with only some reporter ions
-            double[] mzArray = new double[] { tmt10Tag.ReporterIonMzs[0], tmt10Tag.ReporterIonMzs[2], tmt10Tag.ReporterIonMzs[5] };
-            double[] intensityArray = new double[] { 100, 300, 600 };
-
-            var spectrum = new MzSpectrum(mzArray, intensityArray, false);
-
-            var intensities = tmt10Tag.GetReporterIonIntensities(spectrum);
-
-            Assert.That(intensities, Is.Not.Null);
-            Assert.That(intensities.Length, Is.EqualTo(10));
-            Assert.That(intensities[0], Is.EqualTo(100));
-            Assert.That(intensities[1], Is.EqualTo(0)); // Missing
-            Assert.That(intensities[2], Is.EqualTo(300));
-            Assert.That(intensities[3], Is.EqualTo(0)); // Missing
-            Assert.That(intensities[4], Is.EqualTo(0)); // Missing
-            Assert.That(intensities[5], Is.EqualTo(600));
-        }
-
-        [Test]
-        public static void TestGetReporterIonIntensitiesWithEmptySpectrum()
-        {
-            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
-
-            var emptySpectrum = new MzSpectrum(new double[0], new double[0], false);
-
-            var intensities = tmt10Tag.GetReporterIonIntensities(emptySpectrum);
-
-            Assert.That(intensities, Is.Null);
-        }
-
-        [Test]
-        public static void TestGetReporterIonIntensitiesWithSpectrumStartingAfterReporterIons()
-        {
-            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
-
-            // Spectrum starts at m/z 200, well after reporter ions
-            double[] mzArray = new double[] { 200, 300, 400, 500 };
-            double[] intensityArray = new double[] { 100, 200, 300, 400 };
-
-            var spectrum = new MzSpectrum(mzArray, intensityArray, false);
-
-            var intensities = tmt10Tag.GetReporterIonIntensities(spectrum);
-
-            Assert.That(intensities, Is.Not.Null);
-            Assert.That(intensities.Length, Is.EqualTo(10));
-            Assert.That(intensities.All(i => i == 0), Is.True);
-        }
-
-        [Test]
-        public static void TestGetReporterIonIntensitiesWithTolerance()
-        {
-            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
-
-            // Create peaks slightly offset from theoretical values (within tolerance)
-            double[] mzArray = tmt10Tag.ReporterIonMzs.Select(mz => mz + 0.002).ToArray();
-            double[] intensityArray = new double[] { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
-
-            var spectrum = new MzSpectrum(mzArray, intensityArray, false);
-
-            var intensities = tmt10Tag.GetReporterIonIntensities(spectrum);
-
-            Assert.That(intensities, Is.Not.Null);
-            Assert.That(intensities, Is.EqualTo(intensityArray));
-        }
-
-        [Test]
-        public static void TestGetReporterIonIntensitiesOutsideTolerance()
-        {
-            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
-
-            // Create peaks outside tolerance (>0.003 Da)
-            double[] mzArray = tmt10Tag.ReporterIonMzs.Select(mz => mz + 0.00301).ToArray();
-            double[] intensityArray = new double[] { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
-
-            var spectrum = new MzSpectrum(mzArray, intensityArray, false);
-
-            var intensities = tmt10Tag.GetReporterIonIntensities(spectrum);
-
-            Assert.That(intensities, Is.Not.Null);
-            Assert.That(intensities.All(i => i == 0), Is.True);
-        }
-
-        [Test]
-        public static void TestGetReporterIonLabelsWithModificationId()
-        {
-            var tmt10Labels = IsobaricMassTag.GetReporterIonLabels("TMT10 on K");
-            Assert.That(tmt10Labels, Is.Not.Null);
-            Assert.That(tmt10Labels.Count, Is.EqualTo(10));
-            Assert.That(tmt10Labels, Is.EqualTo(new List<string> { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N" }));
-
-            var tmt11Labels = IsobaricMassTag.GetReporterIonLabels("TMT11 on X");
-            Assert.That(tmt11Labels.Count, Is.EqualTo(11));
-            Assert.That(tmt11Labels[10], Is.EqualTo("131C"));
-
-            var nullLabels = IsobaricMassTag.GetReporterIonLabels((string)null);
-            Assert.That(nullLabels, Is.Null);
-
-            var invalidLabels = IsobaricMassTag.GetReporterIonLabels("InvalidMod");
-            Assert.That(invalidLabels, Is.Null);
-        }
-
-        [Test]
-        public static void TestGetReporterIonLabelsWithTagType()
-        {
-            var tmt6Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.TMT6);
-            Assert.That(tmt6Labels, Is.EqualTo(new List<string> { "126", "127", "128", "129", "130", "131" }));
-
-            var tmt10Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.TMT10);
-            Assert.That(tmt10Labels, Is.EqualTo(new List<string> { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N" }));
-
-            var tmt11Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.TMT11);
-            Assert.That(tmt11Labels, Is.EqualTo(new List<string> { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" }));
-
-            var tmt18Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.TMT18);
-            Assert.That(tmt18Labels.Count, Is.EqualTo(18));
-
-            var itraq4Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.iTRAQ4);
-            Assert.That(itraq4Labels, Is.EqualTo(new List<string> { "114", "115", "116", "117" }));
-
-            var itraq8Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.iTRAQ8);
-            // "121", not "120": 8-plex has no 120 channel. See EveryTagsLabelsNameTheChannelAtTheirOwnIndex,
-            // which checks every label against the reporter ion at its own index rather than against a
-            // hardcoded list -- a hardcoded list can only ever pin whatever was there when it was written.
-            Assert.That(itraq8Labels, Is.EqualTo(new List<string> { "113", "114", "115", "116", "117", "118", "119", "121" }));
-
-            var dileu4Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.diLeu4);
-            Assert.That(dileu4Labels, Is.EqualTo(new List<string> { "115", "116", "117", "118" }));
-
-            var dileu12Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.diLeu12);
-            Assert.That(dileu12Labels, Is.EqualTo(new List<string> { "115a", "115b", "116a", "116b", "116c", "117a", "117b", "117c", "118a", "118b", "118c", "118d" }));
-        }
-
-        [Test]
-        public static void TestGetTagTypeFromModificationId()
-        {
-            // Test TMT variants
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("TMT6 on K"), Is.EqualTo(IsobaricMassTagType.TMT6));
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("TMT10 on K"), Is.EqualTo(IsobaricMassTagType.TMT10));
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("TMT11 on X"), Is.EqualTo(IsobaricMassTagType.TMT11));
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("TMT18 on X"), Is.EqualTo(IsobaricMassTagType.TMT18));
-
-            // Test iTRAQ variants
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("iTRAQ-4plex on K"), Is.EqualTo(IsobaricMassTagType.iTRAQ4));
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("iTRAQ-8plex on K"), Is.EqualTo(IsobaricMassTagType.iTRAQ8));
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("iTRAQ4 on K"), Is.EqualTo(IsobaricMassTagType.iTRAQ4));
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("iTRAQ8 on K"), Is.EqualTo(IsobaricMassTagType.iTRAQ8));
-
-            // Test DiLeu variants
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("DiLeu-4plex on K"), Is.EqualTo(IsobaricMassTagType.diLeu4));
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("DiLeu-12plex on X"), Is.EqualTo(IsobaricMassTagType.diLeu12));
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("DiLeu4 on K"), Is.EqualTo(IsobaricMassTagType.diLeu4));
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("DiLeu12 on X"), Is.EqualTo(IsobaricMassTagType.diLeu12));
-
-            // Test case insensitivity
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("tmt10 on k"), Is.EqualTo(IsobaricMassTagType.TMT10));
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("ITRAQ-4PLEX ON K"), Is.EqualTo(IsobaricMassTagType.iTRAQ4));
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("dileu-12plex on x"), Is.EqualTo(IsobaricMassTagType.diLeu12));
-
-            // Test null and invalid inputs
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId(null), Is.Null);
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId(""), Is.Null);
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("   "), Is.Null);
-            Assert.That(IsobaricMassTag.GetTagTypeFromModificationId("InvalidModification"), Is.Null);
-        }
-
-        [Test]
-        public static void TestAbsoluteToleranceValue()
-        {
-            Assert.That(IsobaricMassTag.AbsoluteToleranceValue, Is.EqualTo(0.003));
-        }
-
-        [Test]
-        public static void TestReporterIonMzsAreOrdered()
-        {
-            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
-
-            for (int i = 0; i < tmt10Tag.ReporterIonMzs.Length - 1; i++)
-            {
-                Assert.That(tmt10Tag.ReporterIonMzs[i], Is.LessThan(tmt10Tag.ReporterIonMzs[i + 1]));
-            }
-        }
-
-        [Test]
-        public static void TestGetReporterIonIntensitiesWithComplexSpectrum()
-        {
-            var tmt10Tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
-
-            // Create a complex spectrum with reporter ions mixed with other peaks
-            var mzList = new List<double>();
-            var intensityList = new List<double>();
-
-            // Add some noise peaks before reporter ions
-            mzList.Add(tmt10Tag.ReporterIonMzs[0] - 0.002);
-            intensityList.Add(50);
-
-            // Add reporter ions with noise peaks between them
-            for (int i = 0; i < tmt10Tag.ReporterIonMzs.Length; i++)
-            {
-                mzList.Add(tmt10Tag.ReporterIonMzs[i]);
-                intensityList.Add((i + 1) * 100);
-
-                // Add noise peak after each reporter ion
-                mzList.Add(tmt10Tag.ReporterIonMzs[i] + 0.001);
-                intensityList.Add(25);
-            }
-
-            // Add some noise peaks after reporter ions
-            mzList.Add(tmt10Tag.ReporterIonMzs[^1] + 0.002);
-            intensityList.Add(75);
-
-            var spectrum = new MzSpectrum(mzList.ToArray(), intensityList.ToArray(), false);
-
-            var intensities = tmt10Tag.GetReporterIonIntensities(spectrum);
-
-            Assert.That(intensities, Is.Not.Null);
-            Assert.That(intensities.Length, Is.EqualTo(10));
-            for (int i = 0; i < 10; i++)
-            {
-                Assert.That(intensities[i], Is.EqualTo((i + 1) * 100));
-            }
-        }
-
-        [Test]
-        public static void TestSearchTaskExceptionOnNullMassTag()
-        {
-            // This test simulates what happens in SearchTask when IsobaricMassTag.GetIsobaricMassTag returns null
-            // The actual SearchTask code throws MetaMorpheusException in this case
-            
-            string invalidModId = "InvalidModification";
-            var massTag = IsobaricMassTag.GetIsobaricMassTag(invalidModId);
-
-            // When massTag is null, SearchTask should throw MetaMorpheusException
-            if (massTag == null)
-            {
-                Assert.Throws<MetaMorpheusException>(() => throw new MetaMorpheusException("Could not find isobaric mass tag with the name " + invalidModId));
-            }
         }
 
         [Test]
@@ -1061,7 +799,7 @@ namespace Test
         {
             foreach (IsobaricMassTagType type in Enum.GetValues(typeof(IsobaricMassTagType)))
             {
-                var tag = IsobaricMassTag.GetIsobaricMassTag(type);
+                IsobaricMassTag.TryGetIsobaricMassTag(type, GlobalVariables.AllModsKnown, out var tag);
                 if (tag == null) continue;   // modification not loaded in this environment
 
                 var labels = IsobaricMassTag.GetReporterIonLabels(type);

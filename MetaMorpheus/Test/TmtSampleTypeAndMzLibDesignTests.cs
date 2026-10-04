@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using NUnit.Framework;
+using Omics.Modifications;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System;
 using System.Collections.Generic;
@@ -173,7 +174,11 @@ namespace Test
 
         #region Projection onto mzLib
 
-        private static IsobaricMassTag Tmt10() => IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
+        private static IsobaricMassTag Tmt10()
+        {
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT10, GlobalVariables.AllModsKnown, out var tag);
+            return tag;
+        }
 
         /// <summary>
         /// A rooted fixture path ending in <paramref name="name"/>, built for whatever platform the
@@ -385,12 +390,13 @@ namespace Test
         [Test]
         public static void MismatchedChannelAndReporterIonCountsAreRefused()
         {
-            var tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT11);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT11, GlobalVariables.AllModsKnown, out var tag);
             Assert.That(tag, Is.Not.Null, "TMT11 must load, or this test proves nothing");
 
             int realCount = tag.ReporterIonMzs.Length;
             typeof(IsobaricMassTag)
-                .GetProperty(nameof(IsobaricMassTag.ReporterIonMzs))!
+                .GetField($"<{nameof(IsobaricMassTag.ReporterIonMzs)}>k__BackingField",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                 .SetValue(tag, tag.ReporterIonMzs.Take(realCount - 1).ToArray());
 
             var design = TmtExperimentalDesign.ToMzLibDesign(new[] { OneFile("a.raw", "Plex1", "126") }, tag, out var errors);
@@ -416,7 +422,7 @@ namespace Test
         [Test]
         public static void TwoEntriesSharingAFileNameAreRefusedWithoutLosingTheRest()
         {
-            var tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT11);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT11, GlobalVariables.AllModsKnown, out var tag);
             Assert.That(tag, Is.Not.Null);
 
             var files = new[]
@@ -444,7 +450,7 @@ namespace Test
         [Test]
         public static void EntryWithNoFileNameIsReported()
         {
-            var tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT11);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT11, GlobalVariables.AllModsKnown, out var tag);
             Assert.That(tag, Is.Not.Null);
 
             var files = new[]

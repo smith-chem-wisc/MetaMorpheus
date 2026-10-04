@@ -6,7 +6,6 @@ using NUnit.Framework;
 using Omics;
 using Omics.Fragmentation;
 using Omics.Modifications;
-using IsobaricMassTag = EngineLayer.IsobaricMassTag;
 using Omics.SpectralMatch;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
@@ -1171,7 +1170,7 @@ namespace Test
         /// </remarks>
         private static Ms2ScanWithSpecificMass ReporterIonScan(string rawPath, int scanNumber = 1, bool withReporterIons = true)
         {
-            var tag = IsobaricMassTag.GetIsobaricMassTag("TMT11");
+            IsobaricMassTag.TryGetIsobaricMassTag("TMT11", GlobalVariables.AllModsKnown, out var tag);
             double[] reporterMzs = tag.ReporterIonMzs.ToArray();
             double[] reporterIntensities = Enumerable.Range(1, reporterMzs.Length).Select(i => 1000.0 * i).ToArray();
 

@@ -25,7 +25,6 @@ using MzLibUtil;
 using Omics.Digestion;
 using Omics.BioPolymer;
 using Omics.Modifications;
-using IsobaricMassTag = EngineLayer.IsobaricMassTag;
 using Omics.SpectrumMatch;
 using EngineLayer.SpectrumMatch;
 using ProteinGroup = FlashLFQ.ProteinGroup;
@@ -329,7 +328,7 @@ namespace TaskLayer
                      ". That's ok, the search will continue");
             }
 
-            var tag = IsobaricMassTag.GetIsobaricMassTag(Parameters.SearchParameters.MultiplexModId);
+            IsobaricMassTag.TryGetIsobaricMassTag(Parameters.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag);
             var experimentalDesign = TmtExperimentalDesign.ToMzLibDesign(tmtFiles, tag, out var projectionErrors);
             if (experimentalDesign == null || projectionErrors.Any())
             {
@@ -1581,7 +1580,9 @@ namespace TaskLayer
         {
             using (StreamWriter output = new StreamWriter(filePath))
             {
-                var reporterIonLabels = IsobaricMassTag.GetReporterIonLabels(Parameters.SearchParameters.MultiplexModId);
+                var reporterIonLabels = IsobaricMassTag.TryGetTagType(Parameters.SearchParameters.MultiplexModId, out var tagType)
+                    ? IsobaricMassTag.GetReporterIonLabels(tagType)
+                    : Array.Empty<string>();
                 string headerWithReporterIons = SpectralMatch.GetTabSeparatedHeader().Trim() + '\t' +
                                                 string.Join('\t', reporterIonLabels);
                 output.WriteLine(headerWithReporterIons);
