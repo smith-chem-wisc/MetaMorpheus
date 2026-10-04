@@ -121,8 +121,9 @@ namespace TaskLayer
                         ? condition + " " + (sampleInfo.BiologicalReplicate + 1)
                         : stem,
                     Organism = organism,
-                    // SDRF is 1-based; SpectraFileInfo stores these 0-based.
-                    BiologicalReplicate = (sampleInfo?.BiologicalReplicate ?? 0) + 1,
+                    // SDRF is 1-based; SpectraFileInfo stores these 0-based. With no design nobody established
+                    // the numbers, so null, which mzLib writes as `not available`, rather than a claimed 1.
+                    BiologicalReplicate = sampleInfo?.BiologicalReplicate + 1,
                     Label = ResolveLabel(Parameters.SearchParameters),
                     FactorValue = sampleInfo?.Condition,
                     FactorValueColumn = string.IsNullOrWhiteSpace(sampleInfo?.Condition)
@@ -145,8 +146,8 @@ namespace TaskLayer
                     VariableModifications = ResolveModifications(common.ListOfModsVariable),
                     DissociationType = common.DissociationType,
                     AcquisitionMethod = ResolveAcquisitionMethod(common),
-                    TechnicalReplicate = (sampleInfo?.TechnicalReplicate ?? 0) + 1,
-                    Fraction = (sampleInfo?.Fraction ?? 0) + 1
+                    TechnicalReplicate = sampleInfo?.TechnicalReplicate + 1,
+                    Fraction = sampleInfo?.Fraction + 1
                 };
 
                 yield return new SdrfRowInput(sample, assay);
