@@ -689,8 +689,11 @@ namespace TaskLayer
             // channel. SILAC has no channel-to-sample mapping at all; isobaric runs have one in
             // TmtDesign.txt, but the SDRF writer does not read it yet. Guessing would invent an
             // experimental design.
+            // Turnover labels are copied into SilacLabels only further down RunSpecific, after this check.
             if (SearchParameters.DoMultiplexQuantification
-                || SearchParameters.SilacLabels?.Any() == true)
+                || SearchParameters.SilacLabels?.Any() == true
+                || SearchParameters.StartTurnoverLabel is not null
+                || SearchParameters.EndTurnoverLabel is not null)
                 Warn("SDRF output on a labelled search: comment[label] is not filled in yet, because " +
                      "the SDRF is written one row per file, not one row per channel. Every other column " +
                      "will be written.");
