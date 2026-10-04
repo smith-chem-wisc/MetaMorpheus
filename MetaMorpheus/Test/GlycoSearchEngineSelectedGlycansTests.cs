@@ -41,11 +41,11 @@ namespace Test
         /// before the array is assigned and before any box is built, because a box identifies a
         /// glycan by its POSITION in that array.
         /// </summary>
-        private static void RunEngineConstructor(GlycoSearchType searchType, List<(string, string)> selectedGlycans, int maxOGlycanNum = 2)
+        private static GlycoSearchEngine RunEngineConstructor(GlycoSearchType searchType, List<(string, string)> selectedGlycans, int maxOGlycanNum = 2)
         {
             var commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, trimMsMsPeaks: false);
 
-            _ = new GlycoSearchEngine(
+            return new GlycoSearchEngine(
                 new List<GlycoSpectralMatch>[0],
                 new Ms2ScanWithSpecificMass[0],
                 new List<PeptideWithSetModifications>(),
@@ -99,7 +99,7 @@ namespace Test
             RunEngineConstructor(GlycoSearchType.OGlycanSearch, selection);
 
             Assert.That(GlycanBox.GlobalOGlycans.Length, Is.LessThan(WholeODatabase().Length));
-            Assert.That(GlycanBox.GlobalOGlycans.Select(g => g.IdWithMotif).Distinct(), Is.EquivalentTo(chosen));
+            Assert.That(GlycanBox.GlobalOGlycans.Select(g => g.IdWithMotif), Is.EquivalentTo(chosen));
         }
 
         [Test]
@@ -184,7 +184,21 @@ namespace Test
             RunEngineConstructor(GlycoSearchType.N_O_GlycanSearch, chosen.Select(id => (NGlycanDatabase, id)).ToList());
 
             var keys = GlycanBox.GlobalNGlycans.Keys.OrderByDescending(k => k).ToList();
-            Assert.That(keys, Is.EqualTo(Enumerable.Range(1, keys.Count).Select(i => -i).ToList()));
+            Assert.That(keys, Is.EqualTo(Enumerable.Range(1, chosen.Count).Select(i => -i).ToList()));
+        }
+
+        [Test]
+        public void NGlycanSearch_ASelection_NarrowsTheNGlycansTheEngineScores()
+        {
+            // An N-only search keeps its glycans on the engine, not in a GlycanBox static, so the N+O tests
+            // above cannot see whether this path applies the selection.
+            var wholeN = GlycanDatabase.LoadGlycan(PathOf(NGlycanDatabase), true, false).ToArray();
+            var chosen = wholeN.Select(g => g.IdWithMotif).Distinct().Take(2).ToList();
+
+            var engine = RunEngineConstructor(GlycoSearchType.NGlycanSearch, chosen.Select(id => (NGlycanDatabase, id)).ToList());
+
+            Assert.That(engine.NGlycans.Select(g => g.IdWithMotif), Is.EquivalentTo(chosen));
+            Assert.That(engine.NGlycans.Length, Is.LessThan(wholeN.Length));
         }
 
         /// <summary>

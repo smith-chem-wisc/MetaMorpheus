@@ -229,7 +229,7 @@ namespace EngineLayer.GlycoSearch
             return boxes;
         }
 
-        private Glycan[] NGlycans { get; }
+        internal Glycan[] NGlycans { get; } // internal so a test can see what an N-glycan search will score against
         private double[] NGlycanMasses { get; } // NGlycans[i].Mass in Da, built once so each candidate peptide does not copy it.
         //private Glycan[] DecoyGlycans { get; }
 
