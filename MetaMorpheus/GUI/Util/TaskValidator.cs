@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Windows;
 using TaskLayer;
+using GuiFunctions.Util;
 
 namespace MetaMorpheusGUI
 {
@@ -110,6 +111,16 @@ namespace MetaMorpheusGUI
                 text = int.MaxValue.ToString();
             }
             return text;
+        }
+
+        public static bool CheckRetentionTimeRange(string minimumText, string maximumText, out double minimum, out double maximum)
+        {
+            if (!RetentionTimeRangeParser.TryParse(minimumText, maximumText, out minimum, out maximum, out string errorMessage))
+            {
+                MessageBox.Show(errorMessage, "Invalid retention time", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+            return true;
         }
 
         public static bool CheckDeconvolutionMaxAssumedChargeState(string text)
