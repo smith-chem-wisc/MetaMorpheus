@@ -102,6 +102,65 @@ namespace Test
         }
 
         /// <summary>
+        /// The lowest q-value wins even when a competing candidate scores higher -- score only breaks a
+        /// q-value tie.
+        ///
+        /// Every other fixture here ties the q-values, so they all still pass when the winner is picked by
+        /// score alone. Here the contested spectrum (slot 0) has a score-10 candidate in category 0, which
+        /// holds only targets and so gives it q = 0, and a score-20 candidate in category 1, where a
+        /// higher-scoring decoy gives it q > 0. The lowest-q rule picks 10; score alone picks 20.
+        ///
+        /// Category 0 is also the major category (most identifications at 1% FDR), and the cross-category
+        /// adjustment only ever raises a minor category's q-values, so it cannot erase the gap.
+        /// </summary>
+        [Test]
+        public static void LowestQValueWinsOverAHigherScore()
+        {
+            var target = new Protein("MNKNNKNNNKNNNNKPEPTIDEKPEPTIDER", "target");
+            var decoy = new Protein("MAAGVLDTIQEWFYHKSAGVLDTIQEWFYHR", "DECOY_target", isDecoy: true);
+
+            List<PeptideWithSetModifications> Digest(Protein p) => p
+                .Digest(CommonParams.DigestionParams, new List<Modification>(), new List<Modification>())
+                .Cast<PeptideWithSetModifications>().ToList();
+
+            var targets = Digest(target);
+            var decoys = Digest(decoy);
+            Assert.That(targets, Has.Count.GreaterThanOrEqualTo(4), "premise: enough distinct target peptides");
+            Assert.That(decoys, Is.Not.Empty, "premise: the decoy contributes a candidate");
+
+            var dataFile = new TestDataFile(targets.Concat(decoys).Cast<IBioPolymerWithSetMods>().ToList());
+
+            SpectralMatch Psm(PeptideWithSetModifications peptide, double score)
+            {
+                var scan = new Ms2ScanWithSpecificMass(
+                    dataFile.GetOneBasedScan(2), peptide.MonoisotopicMass.ToMz(1), 1, null, CommonParams);
+                var psm = new PeptideSpectralMatch(peptide, 0, score, 2, scan, CommonParams,
+                    new List<MatchedFragmentIon>());
+                psm.ResolveAllAmbiguities();
+                return psm;
+            }
+
+            // Slots are spectra; slot 0 is the contested one. Each category holds distinct peptides, so
+            // the (file, scan, mass) dedup inside the method leaves every candidate in place.
+            SpectralMatch lowQLowScore = Psm(targets[0], 10);
+            SpectralMatch highQHighScore = Psm(targets[3], 20);
+            var allPsms = new[]
+            {
+                new List<SpectralMatch> { lowQLowScore, Psm(targets[1], 30), Psm(targets[2], 31) },
+                new List<SpectralMatch> { highQHighScore, Psm(decoys[0], 25), null },
+            };
+
+            var best = Resolve(allPsms);
+
+            Assert.That(lowQLowScore.PsmFdrInfo.QValue, Is.LessThan(highQHighScore.PsmFdrInfo.QValue),
+                "premise: the lower-scoring candidate must hold the lower q-value, or this cannot fail");
+            Assert.That(best, Does.Contain(lowQLowScore),
+                "the candidate with the lowest q-value must win, whatever its score");
+            Assert.That(best, Does.Not.Contain(highQHighScore),
+                "a higher score must not beat a lower q-value");
+        }
+
+        /// <summary>
         /// The losers are not merely unreported -- they are removed from the categories, because the FDR
         /// recalculation at the end of the method runs over what is left. A candidate that stays behind
         /// contributes to an FDR it was not chosen for.
