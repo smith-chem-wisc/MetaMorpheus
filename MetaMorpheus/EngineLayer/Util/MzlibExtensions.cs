@@ -19,16 +19,7 @@ public static class MzlibExtensions
     /// </summary>
     public static string DigestionAgentName(this IDigestionParams digestionParams)
     {
-        if (digestionParams is DigestionParams proteolytic)
-        {
-            // Unguarded on purpose: DigestionParams sets SpecificProtease unconditionally in its
-            // constructor, from a ProteaseDictionary lookup that throws rather than yielding null, and
-            // mzLib itself dereferences it bare in ToString and Equals. A null here is therefore not a
-            // state this can be reached in, and a fallback for it would be untestable by construction.
-            return proteolytic.SpecificProtease.Name;
-        }
-
-        return digestionParams?.DigestionAgent?.Name;
+        return digestionParams?.SpecificDigestionAgent?.Name ?? digestionParams?.DigestionAgent?.Name;
     }
 
     public static Dictionary<DissociationType, List<ProductType>> ProductsFromDissociationType(this IDigestionParams digestionParams)
