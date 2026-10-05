@@ -1,5 +1,6 @@
 ﻿using FlashLFQ;
 using MassSpectrometry;
+using Omics.BioPolymerGroup;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -447,9 +448,23 @@ namespace EngineLayer
         public static IExperimentalDesign ToMzLibDesign(
             IEnumerable<TmtFileInfo> files,
             IsobaricMassTag tag,
-            out List<string> errors)
+            out List<string> errors) =>
+            ToMzLibDesign(files, tag, out errors, out _);
+
+        /// <inheritdoc cref="ToMzLibDesign(IEnumerable{TmtFileInfo}, IsobaricMassTag, out List{string})"/>
+        /// <param name="warnings">
+        /// One entry per set of channels that would have shared a column label, naming them. Those
+        /// channels are labelled <c>{file}_{channel}</c> instead of by their sample; see
+        /// <see cref="DropCollidingSampleNames"/>.
+        /// </param>
+        public static IExperimentalDesign ToMzLibDesign(
+            IEnumerable<TmtFileInfo> files,
+            IsobaricMassTag tag,
+            out List<string> errors,
+            out List<string> warnings)
         {
             errors = new List<string>();
+            warnings = new List<string>();
 
             var fileList = files?.ToList();
             if (fileList == null || fileList.Count == 0)
@@ -533,14 +548,79 @@ namespace EngineLayer
                         plexId: plexIds[file.Plex ?? string.Empty],
                         channelLabel: label,
                         reporterIonMz: tag.ReporterIonMzs[i],
-                        isReferenceChannel: IsReferenceChannel(sampleType));
+                        isReferenceChannel: IsReferenceChannel(sampleType))
+                    {
+                        // Names the channel's output columns; an unannotated or unnamed channel keeps
+                        // mzLib's {file}_{channel} label.
+                        SampleName = annotation?.SampleName
+                    };
                 }
 
                 design[fileName] = samples;
             }
 
-            return errors.Count > 0 ? null : new TmtMzLibExperimentalDesign(design);
+            if (errors.Count > 0)
+                return null;
+
+            warnings.AddRange(DropCollidingSampleNames(design));
+            return new TmtMzLibExperimentalDesign(design);
         }
+
+        /// <summary>
+        /// Un-names every channel whose column label would be shared with another channel, so it is
+        /// labelled <c>{file}_{channel}</c> again, and returns one warning per collision.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="SampleGroupLabels.ForSample"/> joins sample, file stem and channel with <c>_</c>,
+        /// which either part may itself contain: sample <c>1</c> in <c>run.raw</c> and the unnamed 126
+        /// of <c>1_run.raw</c> both label <c>1_run_126</c>. The quantification tables then append
+        /// ordinals, but <c>AllProteinGroups.tsv</c> writes the label as-is and repeats the header, so
+        /// the two outputs cannot be matched up for that channel. Before sample names reached the label
+        /// those channels were <c>run_126</c> and <c>1_run_126</c>, which is what this restores.
+        ///
+        /// Repeats until nothing more can be un-named, because an un-named label can itself collide.
+        /// A collision between channels that are already unnamed (two files with one stem, such as
+        /// <c>a.raw</c> and <c>a.mzML</c>) predates sample names and is left to the writers.
+        /// </remarks>
+        private static List<string> DropCollidingSampleNames(Dictionary<string, ISampleInfo[]> design)
+        {
+            var warnings = new List<string>();
+
+            while (true)
+            {
+                var named = design
+                    .SelectMany(entry => entry.Value.Select((sample, index) => (file: entry.Key, index,
+                        sample: (IsobaricQuantSampleInfo)sample)))
+                    .GroupBy(slot => SampleGroupLabels.ForSample(slot.sample))
+                    .Where(sameLabel => sameLabel.Count() > 1
+                                        && sameLabel.Any(slot => !string.IsNullOrWhiteSpace(slot.sample.SampleName)))
+                    .ToList();
+
+                if (named.Count == 0)
+                    return warnings;
+
+                foreach (var sameLabel in named)
+                {
+                    warnings.Add($"Channels {string.Join(", ", sameLabel.Select(slot => $"{slot.sample.ChannelLabel} of '{slot.file}'"))} " +
+                                 $"would all be labelled '{sameLabel.Key}', so the named ones are labelled by file and channel instead.");
+
+                    foreach (var slot in sameLabel.Where(slot => !string.IsNullOrWhiteSpace(slot.sample.SampleName)))
+                        design[slot.file][slot.index] = WithoutSampleName(slot.sample);
+                }
+            }
+        }
+
+        private static IsobaricQuantSampleInfo WithoutSampleName(IsobaricQuantSampleInfo sample) =>
+            new IsobaricQuantSampleInfo(
+                fullFilePathWithExtension: sample.FullFilePathWithExtension,
+                condition: sample.Condition,
+                biologicalReplicate: sample.BiologicalReplicate,
+                technicalReplicate: sample.TechnicalReplicate,
+                fraction: sample.Fraction,
+                plexId: sample.PlexId,
+                channelLabel: sample.ChannelLabel,
+                reporterIonMz: sample.ReporterIonMz,
+                isReferenceChannel: sample.IsReferenceChannel);
 
         /// <summary>
         /// The <see cref="IExperimentalDesign"/> returned by <see cref="ToMzLibDesign"/>.
