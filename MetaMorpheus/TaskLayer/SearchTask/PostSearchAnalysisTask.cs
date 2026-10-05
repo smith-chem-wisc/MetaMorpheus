@@ -337,13 +337,15 @@ namespace TaskLayer
             }
 
             var tag = IsobaricMassTag.GetIsobaricMassTag(Parameters.SearchParameters.MultiplexModId);
-            var experimentalDesign = TmtExperimentalDesign.ToMzLibDesign(tmtFiles, tag, out var projectionErrors);
+            var experimentalDesign = TmtExperimentalDesign.ToMzLibDesign(tmtFiles, tag, out var projectionErrors, out var projectionWarnings);
             if (experimentalDesign == null || projectionErrors.Any())
             {
                 Warn("Could not build a quantification design from the TMT design file: " +
                      (projectionErrors.FirstOrDefault() ?? "unknown error") + ". Skipping multiplex quantification");
                 return;
             }
+            foreach (var warning in projectionWarnings)
+                Warn(warning);
 
             // includeAmbiguous: false is the unambiguous filter the design calls for. A PSM that could be
             // more than one peptide would otherwise have its channel intensities credited to whichever
