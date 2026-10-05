@@ -1,0 +1,12 @@
+Spec_ID	Fraction_ID	File_name	Scans	MS_one_ID	MS_one_scans	Precursor_mass	Precursor_intensity	Fraction_feature_ID	Fraction_feature_intensity	Fraction_feature_score	Fraction_feature_time_apex	Sample_feature_ID	Sample_feature_intensity
+2	0	C:/Users/Nic/source/repos/MetaMorpheus/MetaMorpheus/Test/TestData/PrunedDbSpectra.mzml	2	1	1	1342.64	1.24024e+06	1	1.24024e+06	-1000	2522.53	1	1.24024e+06
+3	0	C:/Users/Nic/source/repos/MetaMorpheus/MetaMorpheus/Test/TestData/PrunedDbSpectra.mzml	3	1	1	375.693	503027	2	503027	-1000	2522.83	2	503027
+4	0	C:/Users/Nic/source/repos/MetaMorpheus/MetaMorpheus/Test/TestData/PrunedDbSpectra.mzml	4	1	1	1431.6	847572	3	847572	-1000	2523.09	3	847572
+5	0	C:/Users/Nic/source/repos/MetaMorpheus/MetaMorpheus/Test/TestData/PrunedDbSpectra.mzml	5	1	1	1184.47	173582	4	173582	-1000	2523.47	4	173582
+6	0	C:/Users/Nic/source/repos/MetaMorpheus/MetaMorpheus/Test/TestData/PrunedDbSpectra.mzml	6	1	1	1307.61	593725	5	593725	-1000	2523.7	5	593725
+7	0	C:/Users/Nic/source/repos/MetaMorpheus/MetaMorpheus/Test/TestData/PrunedDbSpectra.mzml	7	1	1	946.49	387577	6	387577	-1000	2524.02	6	387577
+8	0	C:/Users/Nic/source/repos/MetaMorpheus/MetaMorpheus/Test/TestData/PrunedDbSpectra.mzml	8	1	1	1358.64	241262	7	241262	-1000	2524.33	7	241262
+9	0	C:/Users/Nic/source/repos/MetaMorpheus/MetaMorpheus/Test/TestData/PrunedDbSpectra.mzml	9	1	1	928.534	226960	8	226960	-1000	2524.7	8	226960
+10	0	C:/Users/Nic/source/repos/MetaMorpheus/MetaMorpheus/Test/TestData/PrunedDbSpectra.mzml	10	1	1	1203.59	217945	9	217945	-1000	2525.05	9	217945
+11	0	C:/Users/Nic/source/repos/MetaMorpheus/MetaMorpheus/Test/TestData/PrunedDbSpectra.mzml	11	1	1	2007.8	222440	10	222440	-1000	2525.38	10	222440
+13	0	C:/Users/Nic/source/repos/MetaMorpheus/MetaMorpheus/Test/TestData/PrunedDbSpectra.mzml	13	12	12	1187.58	802652	11	802652	-1000	2527.37	11	802652
