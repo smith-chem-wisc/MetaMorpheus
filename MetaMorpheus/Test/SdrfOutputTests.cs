@@ -531,6 +531,28 @@ namespace Test
         }
 
         /// <summary>
+        /// Not every data file names its instrument (nbollis's review of #2817). An MGF carries no instrument model,
+        /// so the search records none, and the row says `not available` rather than failing or guessing.
+        /// </summary>
+        [Test]
+        public static void AFileThatNamesNoInstrumentWritesNotAvailable()
+        {
+            string folder = SetUpIsolatedRun(nameof(AFileThatNamesNoInstrumentWritesNotAvailable), out _, out DbForTask database);
+            string mgfPath = Path.Combine(folder, "ok.mgf");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "ok.mgf"), mgfPath, true);
+            string output = Path.Combine(folder, "TaskOutput");
+            Directory.CreateDirectory(output);
+
+            BuildSearchTask(writeSdrf: true).RunTask(output, new List<DbForTask> { database }, new List<string> { mgfPath }, "sdrf");
+
+            var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
+            document.LoadResults();
+            Assert.That(document.Results.Single()["comment[instrument]"], Is.EqualTo("not available"));
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
         /// An ExperimentalDesign.tsv another program holds open (Excel) costs the SDRF its design, not the SDRF:
         /// the read warns and describes the search only, as the pre-run warning promised.
         /// </summary>
