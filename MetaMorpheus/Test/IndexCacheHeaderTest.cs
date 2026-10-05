@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using TaskLayer;
+using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 
 namespace Test
@@ -427,6 +428,29 @@ namespace Test
             AssertFingerprintDistinguishes(
                 new DigestionParams(maxMissedCleavages: 2),
                 new DigestionParams(maxMissedCleavages: 3));
+
+        /// <summary>
+        /// RNA digestion parameters add no <c>digestionParams:</c> line. <see cref="RnaDigestionParams"/> has no
+        /// <c>ToString</c> override, so appending it unguarded would add a constant type name that carries no
+        /// settings and only looks like coverage.
+        /// </summary>
+        [Test]
+        public static void IndexFingerprint_OmitsTheWholeParamsLine_ForRnaDigestion()
+        {
+            string folder = NewDatabaseFolder(out List<DbForTask> databases);
+
+            try
+            {
+                string fingerprint = MakeEngine(new CommonParameters(digestionParams: new RnaDigestionParams()), databases, generatePrecursorIndex: false).ToString();
+
+                Assert.That(fingerprint, Does.Not.Contain("digestionParams: "));
+                Assert.That(fingerprint, Does.Not.Contain(nameof(RnaDigestionParams)));
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
 
         /// <summary>
         /// Builds two indexing engines that differ only in their digestion parameters and asserts their
