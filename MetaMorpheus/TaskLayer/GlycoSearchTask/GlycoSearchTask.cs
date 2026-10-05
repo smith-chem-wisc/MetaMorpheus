@@ -46,6 +46,38 @@ namespace TaskLayer
 
         public GlycoSearchParameters _glycoSearchParameters { get; set; }
 
+        /// <summary>
+        /// The methods-prose line naming one glycan database, saying so when the search was narrowed to a
+        /// selection of it; and, when the selection names entries the file no longer holds, a warning.
+        /// </summary>
+        /// <remarks>
+        /// Reported here, once per run, rather than by <see cref="GlycanSearchSpace.Build"/>, which applies the same
+        /// rule (<see cref="GlycanSelection.Apply"/>) but also runs inside every GlycoSearchEngine built without a
+        /// prebuilt search space. The
+        /// database is read only when the selection names it, so a search without one is unchanged. A file
+        /// that cannot be read throws the same error the engine would throw a moment later.
+        /// </remarks>
+        private string GlycanDatabaseProse(string kind, List<string> databasePaths, string databaseFileName, bool isOGlycan)
+        {
+            string line = "The " + kind + " database: " + databaseFileName;
+
+            var selected = _glycoSearchParameters.SelectedGlycans;
+            if (selected != null && selected.Any(s => s.Item1 == databaseFileName))
+            {
+                var loaded = GlycoSearchEngine.LoadGlycanDatabase(databasePaths, databaseFileName, kind, isOGlycan);
+                var selection = GlycanSelection.Apply(loaded, databaseFileName, selected);
+
+                string warning = selection.Warning(kind);
+                if (warning != null)
+                {
+                    Warn(warning);
+                }
+                line += selection.ProseSuffix();
+            }
+
+            return line + "\n";
+        }
+
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             MyTaskResults = new MyTaskResults(this);
@@ -79,20 +111,15 @@ namespace TaskLayer
             ProseCreatedWhileRunning.Append("parent mass tolerance(s) = " + CommonParameters.PrecursorMassTolerance + "; \n");
             ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; \n");
             ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. \n");
-            if (_glycoSearchParameters.GlycoSearchType == GlycoSearchType.OGlycanSearch)
+            if (_glycoSearchParameters.GlycoSearchType != GlycoSearchType.NGlycanSearch)
             {
-                ProseCreatedWhileRunning.Append("The O-glycan database: " + _glycoSearchParameters.OGlycanDatabasefile + "\n");
+                ProseCreatedWhileRunning.Append(GlycanDatabaseProse("O-glycan", GlobalVariables.OGlycanDatabasePaths, _glycoSearchParameters.OGlycanDatabasefile, true));
             }
-            else if (_glycoSearchParameters.GlycoSearchType == GlycoSearchType.NGlycanSearch)
+            if (_glycoSearchParameters.GlycoSearchType != GlycoSearchType.OGlycanSearch)
             {
-                ProseCreatedWhileRunning.Append("The N-glycan database: " + _glycoSearchParameters.OGlycanDatabasefile + "\n");
+                ProseCreatedWhileRunning.Append(GlycanDatabaseProse("N-glycan", GlobalVariables.NGlycanDatabasePaths, _glycoSearchParameters.NGlycanDatabasefile, false));
             }
-            else
-            {
-                ProseCreatedWhileRunning.Append("The O-glycan database: " + _glycoSearchParameters.OGlycanDatabasefile + "\n");
-                ProseCreatedWhileRunning.Append("The N-glycan database: " + _glycoSearchParameters.NGlycanDatabasefile + "\n");
-            }                
-            
+
             ProseCreatedWhileRunning.Append("\n");
 
             FlashLfqResults flashLfqResults = null;
@@ -117,7 +144,7 @@ namespace TaskLayer
             // The glycans and glycan boxes depend on the glycan databases and settings alone, so they are built once for every file.
             Status("Building glycan boxes...", taskId);
             GlycanSearchSpace glycanSearchSpace = GlycanSearchSpace.Build(_glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile,
-                _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.MaximumGlycanBoxMass);
+                _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.MaximumGlycanBoxMass, _glycoSearchParameters.SelectedGlycans);
 
             var thisIds = currentRawFileList.Select(file => new List<string> { taskId, "Individual Spectra Files", file }).ToList();
             var databaseFileInfos = dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList();

@@ -72,9 +72,10 @@ namespace EngineLayer.GlycoSearch
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, IEnumerable<IBioPolymerWithSetMods> peptideIndex,
             Indexing.FragmentIndex fragmentIndex, Indexing.FragmentIndex secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
              string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds,
-             double maxGlycanBoxMass = GlycanBox.DefaultMaximumGlycanBoxMass, List<(int Partition, int PeptideId, byte Score)>[] candidates = null)
+             double maxGlycanBoxMass = GlycanBox.DefaultMaximumGlycanBoxMass, List<(int Partition, int PeptideId, byte Score)>[] candidates = null,
+             List<(string, string)> selectedGlycans = null)
             : this(globalCsms, listOfSortedms2Scans, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, commonParameters, fileSpecificParameters,
-                  GlycanSearchSpace.Build(oglycanDatabase, nglycanDatabase, glycoSearchType, maxOGlycanNum, maxGlycanBoxMass),
+                  GlycanSearchSpace.Build(oglycanDatabase, nglycanDatabase, glycoSearchType, maxOGlycanNum, maxGlycanBoxMass, selectedGlycans),
                   oglycanDatabase, nglycanDatabase, glycoSearchTopNum, maxOGlycanNum, oxoniumIonFilter, nestedIds, candidates)
         {
         }
@@ -108,6 +109,9 @@ namespace EngineLayer.GlycoSearch
             NGlycanMasses = glycanSearchSpace.NGlycanMasses;
         }
 
+        /// <summary> The engine's warning channel, for <see cref="GlycanSearchSpace.Build"/>, which loads the glycan databases outside any engine. </summary>
+        internal static void WarnGlycanDatabase(string message) => WarnStatic(message);
+
         /// <summary>
         /// Resolves a glycan database by file name and loads it, failing with something the user can act on.
         /// </summary>
@@ -128,7 +132,12 @@ namespace EngineLayer.GlycoSearch
         /// An empty database is now rejected up front, which matters more since a user can be handed one: a
         /// freshly seeded custom database is all banner and no glycans until they add some.
         /// </remarks>
-        internal static Glycan[] LoadGlycanDatabase(List<string> databasePaths, string databaseFileName, string kind, bool isOGlycan)
+        /// <param name="warn">
+        /// Where the loader's per-line warnings go. <see cref="GlycanSearchSpace.Build"/> passes
+        /// <see cref="WarnGlycanDatabase"/>, the engine's warning channel; a caller reading the database a second
+        /// time, as GlycoSearchTask does to report on a selection, passes null so the same warnings are not raised twice.
+        /// </param>
+        public static Glycan[] LoadGlycanDatabase(List<string> databasePaths, string databaseFileName, string kind, bool isOGlycan, System.Action<string> warn = null)
         {
             string path = databasePaths.FirstOrDefault(p => System.IO.Path.GetFileName(p) == databaseFileName);
             if (path == null)
@@ -137,7 +146,7 @@ namespace EngineLayer.GlycoSearch
                     $"The {kind} database '{databaseFileName}' was not found. Available: {string.Join(", ", databasePaths.Select(System.IO.Path.GetFileName))}.");
             }
 
-            Glycan[] glycans = GlycanDatabase.LoadGlycan(path, true, isOGlycan, WarnStatic).ToArray();
+            Glycan[] glycans = GlycanDatabase.LoadGlycan(path, true, isOGlycan, warn).ToArray();
             if (glycans.Length == 0)
             {
                 throw new MetaMorpheusException(
@@ -172,7 +181,7 @@ namespace EngineLayer.GlycoSearch
             return boxes;
         }
 
-        private Glycan[] NGlycans { get; }
+        internal Glycan[] NGlycans { get; } // internal so a test can see what an N-glycan search will score against
         private double[] NGlycanMasses { get; } // NGlycans[i].Mass in Da, built once so each candidate peptide does not copy it.
         //private Glycan[] DecoyGlycans { get; }
 

@@ -10,6 +10,7 @@ namespace TaskLayer
         {
             OGlycanDatabasefile = "OGlycan.gdb";
             NGlycanDatabasefile = "NGlycan.gdb";
+            SelectedGlycans = new List<(string, string)>();
             GlycoSearchType = GlycoSearchType.OGlycanSearch;
             OxoniumIonFilt = true;
             DecoyType = DecoyType.Reverse;
@@ -39,6 +40,24 @@ namespace TaskLayer
         }
         public string OGlycanDatabasefile { get; set; }
         public string NGlycanDatabasefile { get; set; }
+
+        /// <summary>
+        /// The individual glycans the user checked, as (database file name, glycan IdWithMotif) pairs.
+        /// EMPTY MEANS THE WHOLE DATABASE -- which is what every task written before this existed says, so
+        /// old TOMLs and users who never open the tree keep today's behaviour exactly.
+        /// </summary>
+        /// <remarks>
+        /// Stored by composition string, never by Glycan.GlyId: GlyId is a positional index into the loaded
+        /// array, so a saved index would quietly point at a different glycan if the .gdb were edited.
+        ///
+        /// List&lt;(string, string)&gt; is deliberate -- MetaMorpheusTask.tomlConfig already registers a
+        /// converter for exactly this type, so it round-trips with no new serialization code.
+        ///
+        /// The key is composition-based, so two structural isomers in one user-built structure database
+        /// (e.g. (N(H(N))) and (N(H)(N))) share it: ticking either searches both. No shipped database holds
+        /// isomers; separating them needs a structure-aware key, which is follow-up work.
+        /// </remarks>
+        public List<(string, string)> SelectedGlycans { get; set; }
         public GlycoSearchType GlycoSearchType { get; set; }
         public bool OxoniumIonFilt { get; set; }
         public DecoyType DecoyType { get; set; }
