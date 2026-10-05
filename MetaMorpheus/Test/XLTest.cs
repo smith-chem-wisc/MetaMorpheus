@@ -68,6 +68,97 @@ namespace Test
             Assert.That(crosslinkerString == "testCrosslinker\tK\tK\tTrue\tCID|HCD|\t100\t25\t60\t0\t0\t50");
         }
 
+        /// <summary>
+        /// A custom crosslinker has to survive the save-and-reload the GUI puts it through:
+        /// CustomCrosslinkerWindow writes ToString(true), which spells the bool "True"/"False", while the
+        /// shipped Crosslinkers.tsv spells it "T"/"F". The reader has to read both, or an uncleavable
+        /// custom crosslinker comes back cleavable on the next launch.
+        /// </summary>
+        [Test]
+        public static void CrosslinkerCleavabilitySurvivesAFileRoundTrip()
+        {
+            string testDirectory = Path.Combine(TestContext.CurrentContext.TestDirectory, "CrosslinkerRoundTrip");
+            Directory.CreateDirectory(testDirectory);
+
+            try
+            {
+                var uncleavableAsEntered = new Crosslinker("K", "K", "MyNonCleavable", false, "", 138.06808, 0, 0,
+                    138.06808, 156.0786, 155.0946, 259.142);
+                var cleavableAsEntered = new Crosslinker("K", "K", "MyCleavable", true, "CID|HCD", 158.0038,
+                    54.01056, 85.982635, 158.0038, 176.0143, 175.0303, 279.0777);
+
+                string customCrosslinkerFile = Path.Combine(testDirectory, "CustomCrosslinkers.tsv");
+                File.WriteAllLines(customCrosslinkerFile, new[]
+                {
+                    "Name\tCrosslinkAminoAcid\tCrosslinkerAminoAcid2\tCleavable\tDissociationType\tCrosslinkerTotalMass\tCrosslinkerShortMass\tCrosslinkerLongMass\tQuenchMassH2O\tQuenchMassNH2\tQuenchMassTris",
+                    uncleavableAsEntered.ToString(true),
+                    cleavableAsEntered.ToString(true)
+                });
+
+                var reloaded = Crosslinker.LoadCrosslinkers(customCrosslinkerFile).ToList();
+                Assert.That(reloaded.Count, Is.EqualTo(2));
+
+                // the bool alone gates signature-ion generation, so getting it wrong adds a theoretical M
+                // ion at the intact crosslinked precursor mass. K is residue 8 of PEPTIDEK and the only
+                // site a K/K crosslinker can take there.
+                var alphaPeptide = new Protein("PEPTIDEK", "").Digest(new DigestionParams(),
+                    new List<Modification>(), new List<Modification>()).First();
+                var fragments = CrosslinkedPeptide.XlGetTheoreticalFragments(DissociationType.HCD, reloaded[0],
+                    new List<int> { 8 }, 1000, alphaPeptide).Single().Item2;
+
+                // one block, so a wrong bool cannot hide the fragment it produces: a misparsing reader
+                // has to report the fragment consequence as well as the bool, not stop at the bool
+                Assert.Multiple(() =>
+                {
+                    // "False" used to fall through to the cleavable default
+                    Assert.That(reloaded[0].Cleavable, Is.False);
+                    Assert.That(reloaded[0].CleaveDissociationTypes, Is.Empty);
+
+                    // the other half of the same writer's spelling has to keep working
+                    Assert.That(reloaded[1].Cleavable, Is.True);
+                    Assert.That(reloaded[1].CleaveDissociationTypes,
+                        Is.EqualTo(new List<DissociationType> { DissociationType.CID, DissociationType.HCD }));
+
+                    // assert the populated list, not only the absence: 7 b plus 7 y and nothing else. Read
+                    // by the unfixed reader this crosslinker is cleavable and a 15th fragment appears,
+                    // ProductType.M at 927.455 + 138.068 + 1000.
+                    Assert.That(fragments.Count, Is.EqualTo(14));
+                    Assert.That(fragments.Where(v => v.ProductType == ProductType.b).Select(v => (int)v.NeutralMass),
+                        Is.EqualTo(new[] { 97, 226, 323, 424, 537, 652, 781 }));
+                    Assert.That(fragments.Where(v => v.ProductType == ProductType.y).Select(v => (int)v.NeutralMass),
+                        Is.EqualTo(new[] { 1284, 1413, 1528, 1641, 1742, 1839, 1968 }));
+                    Assert.That(fragments.Where(v => v.ProductType == ProductType.M), Is.Empty);
+                });
+            }
+            finally
+            {
+                Directory.Delete(testDirectory, true);
+            }
+        }
+
+        /// <summary>
+        /// Every Cleavable spelling the two writers produce, plus the padding a hand-edited file can carry.
+        /// Anything unrecognised reads as uncleavable: defaulting to cleavable is what produced the bug
+        /// above, and it is the dangerous direction, since a crosslinker wrongly marked cleavable generates
+        /// signature ions and localizes stub masses with nothing reporting it.
+        /// </summary>
+        [TestCase("T", true)]            // Crosslinkers.tsv
+        [TestCase("F", false)]
+        [TestCase("True", true)]         // Crosslinker.ToString(true), i.e. the custom-crosslinker GUI
+        [TestCase("False", false)]
+        [TestCase("true", true)]
+        [TestCase(" T ", true)]          // hand-edited padding
+        [TestCase(" False ", false)]
+        [TestCase("", false)]
+        [TestCase("Fasle", false)]
+        [TestCase("0", false)]
+        public static void CrosslinkerCleavableColumnReadsBothWritersSpellings(string cleavableField, bool expected)
+        {
+            var crosslinker = Crosslinker.ParseCrosslinkerFromString(
+                "spelling\tK\tK\t" + cleavableField + "\t\t138.06808\t0\t0\t156.0786\t155.0946\t259.142");
+            Assert.That(crosslinker.Cleavable, Is.EqualTo(expected));
+        }
+
         [Test]
         public static void XlTestXlPosCal()
         {
