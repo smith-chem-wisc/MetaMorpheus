@@ -1,6 +1,7 @@
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using EngineLayer.Deconvolution;
+using Nett;
 using NUnit.Framework;
 using Readers;
 using System;
@@ -59,21 +60,46 @@ public static class FromFileDeconvolutionSearchTests
         };
         string databasePath = Path.Combine(dataDirectory, "TaGe_SA_A549_3_snip.fasta");
         string temporaryRoot = Path.Combine(testDirectory, "FromFileDeconvolutionSearch_");
-        string outputDirectory = Path.Combine(temporaryRoot, "Output");
-        Directory.CreateDirectory(outputDirectory);
-        Directory.CreateDirectory(Path.Combine(temporaryRoot, "Task Settings"));
+        string firstRunRoot = Path.Combine(temporaryRoot, "Manual");
+        string secondRunRoot = Path.Combine(temporaryRoot, "TomlRoundTrip");
+        string firstOutputDirectory = CreateRunDirectories(firstRunRoot);
+        string secondOutputDirectory = CreateRunDirectories(secondRunRoot);
 
         try
         {
             searchTask.RunTask(
-                outputDirectory,
+                firstOutputDirectory,
                 new List<DbForTask> { new(databasePath, false) },
                 rawFiles,
                 "FromFileDeconvolutionSearch");
 
-            string psmsPath = Path.Combine(outputDirectory, "AllPSMs.psmtsv");
-            Assert.That(File.Exists(psmsPath), Is.True);
-            Assert.That(File.ReadAllLines(psmsPath).Length, Is.GreaterThan(1));
+            string taskTomlPath = Path.Combine(
+                firstRunRoot,
+                "Task Settings",
+                "FromFileDeconvolutionSearchconfig.toml");
+            Assert.That(File.Exists(taskTomlPath), Is.True, taskTomlPath);
+
+            var roundTrippedTask = Toml.ReadFile<SearchTask>(taskTomlPath, MetaMorpheusTask.tomlConfig);
+            var roundTrippedParameters = roundTrippedTask.CommonParameters.PrecursorDeconvolutionParameters
+                as FeatureMappedFromFileDeconvolutionParameters;
+            Assert.That(roundTrippedParameters, Is.Not.Null);
+            Assert.That(roundTrippedParameters.FeatureFileMap, Is.EqualTo(map));
+            Assert.That(roundTrippedParameters.UseGenericScore, Is.EqualTo(mappedParameters.UseGenericScore));
+
+            roundTrippedTask.RunTask(
+                secondOutputDirectory,
+                new List<DbForTask> { new(databasePath, false) },
+                rawFiles,
+                "FromFileDeconvolutionSearch");
+
+            string firstPsmsPath = Path.Combine(firstOutputDirectory, "AllPSMs.psmtsv");
+            string secondPsmsPath = Path.Combine(secondOutputDirectory, "AllPSMs.psmtsv");
+            Assert.That(File.Exists(firstPsmsPath), Is.True);
+            Assert.That(File.Exists(secondPsmsPath), Is.True);
+            byte[] firstPsms = File.ReadAllBytes(firstPsmsPath);
+            byte[] secondPsms = File.ReadAllBytes(secondPsmsPath);
+            Assert.That(firstPsms.Length, Is.GreaterThan(0));
+            Assert.That(firstPsms.SequenceEqual(secondPsms), Is.True, "TOML round-trip search changed the PSM file bytes.");
         }
         catch (Exception ex)
         {
@@ -84,5 +110,13 @@ public static class FromFileDeconvolutionSearchTests
             if (Directory.Exists(temporaryRoot))
                 Directory.Delete(temporaryRoot, true);
         }
+    }
+
+    private static string CreateRunDirectories(string runRoot)
+    {
+        string outputDirectory = Path.Combine(runRoot, "Output");
+        Directory.CreateDirectory(outputDirectory);
+        Directory.CreateDirectory(Path.Combine(runRoot, "Task Settings"));
+        return outputDirectory;
     }
 }
