@@ -317,10 +317,20 @@ namespace TaskLayer
             .ConfigureType<FromFileDeconvolutionParameters>(type => type
                 .CreateInstance(() => new FromFileDeconvolutionParameters(string.Empty, 1, 20))
                 .IgnoreProperty(p => p.Features))
-            .ConfigureType<SearchFeatureFileMap>(type => type
-                .IgnoreProperty(p => p.IsEmpty))
             .ConfigureType<FeatureMappedFromFileDeconvolutionParameters>(type => type
                 .CreateInstance(() => new FeatureMappedFromFileDeconvolutionParameters()))
+            .ConfigureType<SearchFeatureFileMap>(type => type
+                .IgnoreProperty(p => p.IsEmpty))
+            .ConfigureType<SearchFeatureFileMapEntry>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => $"{custom.MassSpecFilePath}\t{custom.FeatureFilePath}")
+                    .FromToml(tmlString =>
+                    {
+                        string[] parts = tmlString.Value.Split('\t', StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length != 2)
+                            throw new MetaMorpheusException($"Invalid SearchFeatureFileMapEntry '{tmlString.Value}'. Expected 'MassSpecFilePath\tFeatureFilePath'.");
+                        return new SearchFeatureFileMapEntry(parts[0], parts[1]);
+                    })))
 
             // Convert average residue models to simple strings instead of tables, Nett makes all objects tables by default
             // The base class AverageResidue is used for Toml Reading. The derived classes are used for toml writing. 

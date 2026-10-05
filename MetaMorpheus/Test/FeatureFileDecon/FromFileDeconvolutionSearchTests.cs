@@ -32,11 +32,9 @@ public static class FromFileDeconvolutionSearchTests
             .ToList();
         var map = new SearchFeatureFileMap
         {
-            Entries = inputBaseNames.Select((name, index) => new SearchFeatureFileMapEntry
-            {
-                MassSpecFilePath = rawFiles[index],
-                FeatureFilePath = Path.Combine(featureDirectory, name + "_ms1.feature")
-            }).ToList()
+            Entries = inputBaseNames.Select((name, index) => new SearchFeatureFileMapEntry(massSpecFilePath: rawFiles[index],
+                featureFilePath: Path.Combine(featureDirectory, name + "_ms1.feature")
+            )).ToList()
         };
         var mappedParameters = new FeatureMappedFromFileDeconvolutionParameters(map, minCharge: 1, maxCharge: 20)
         {
@@ -60,7 +58,7 @@ public static class FromFileDeconvolutionSearchTests
                 precursorDeconParams: mappedParameters)
         };
         string databasePath = Path.Combine(dataDirectory, "TaGe_SA_A549_3_snip.fasta");
-        string temporaryRoot = Path.Combine(testDirectory, "FromFileDeconvolutionSearch_" + Guid.NewGuid().ToString("N"));
+        string temporaryRoot = Path.Combine(testDirectory, "FromFileDeconvolutionSearch_");
         string outputDirectory = Path.Combine(temporaryRoot, "Output");
         Directory.CreateDirectory(outputDirectory);
         Directory.CreateDirectory(Path.Combine(temporaryRoot, "Task Settings"));

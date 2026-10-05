@@ -20,11 +20,7 @@ public static class FeatureFileMappingTests
         {
             Entries =
             [
-                new SearchFeatureFileMapEntry
-                {
-                    MassSpecFilePath = @"E:\data\sample.mzML",
-                    FeatureFilePath = @"E:\features\sample.feature.tsv"
-                }
+                new SearchFeatureFileMapEntry(massSpecFilePath: @"E:\data\sample.mzML", featureFilePath: @"E:\features\sample.feature.tsv")
             ]
         };
 
@@ -107,11 +103,7 @@ public static class FeatureFileMappingTests
             {
                 Entries = new List<SearchFeatureFileMapEntry>
                 {
-                    new()
-                    {
-                        MassSpecFilePath = @"E:\data\sample.mzML",
-                        FeatureFilePath = @"E:\features\sample.feature.tsv"
-                    }
+                    new(massSpecFilePath: @"E:\data\sample.mzML", featureFilePath: @"E:\features\sample.feature.tsv")
                 }
             },
             2,

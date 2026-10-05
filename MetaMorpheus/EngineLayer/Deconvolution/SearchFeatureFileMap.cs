@@ -81,19 +81,12 @@ public class SearchFeatureFileMap : IEquatable<SearchFeatureFileMap>
 /// <summary>
 /// Associates one mass spectrometry file with its corresponding MS1 feature file.
 /// </summary>
-public class SearchFeatureFileMapEntry : IEquatable<SearchFeatureFileMapEntry>
+public class SearchFeatureFileMapEntry(string massSpecFilePath, string featureFilePath) : IEquatable<SearchFeatureFileMapEntry>
 {
-    public string MassSpecFilePath { get; set; } = string.Empty;
-    public string FeatureFilePath { get; set; } = string.Empty;
+    public string MassSpecFilePath { get; set; } = massSpecFilePath;
+    public string FeatureFilePath { get; set; } = featureFilePath;
 
-    public SearchFeatureFileMapEntry Clone()
-    {
-        return new SearchFeatureFileMapEntry
-        {
-            MassSpecFilePath = MassSpecFilePath,
-            FeatureFilePath = FeatureFilePath,
-        };
-    }
+    public SearchFeatureFileMapEntry Clone() => new SearchFeatureFileMapEntry(massSpecFilePath: MassSpecFilePath, featureFilePath: FeatureFilePath);
 
     public bool Equals(SearchFeatureFileMapEntry other)
     {
