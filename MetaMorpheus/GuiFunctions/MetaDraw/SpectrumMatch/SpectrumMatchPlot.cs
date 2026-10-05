@@ -74,19 +74,17 @@ namespace GuiFunctions
                 PopulateEnvelopesForScanIfNeeded(Scan, matchedFragmentIons);
             }
 
-            List<MatchedFragmentIon> ionsToDisplay;
-            if (!MetaDrawSettings.DisplayInternalIons)
+            List<MatchedFragmentIon> ionsToDisplay = new();
+            foreach (var ion in matchedFragmentIons)
             {
-                ionsToDisplay = new List<MatchedFragmentIon>(matchedFragmentIons.Count);
-                foreach (var p in matchedFragmentIons)
-                {
-                    if (p.NeutralTheoreticalProduct.SecondaryProductType == null)
-                        ionsToDisplay.Add(p);
-                }
-            }
-            else
-            {
-                ionsToDisplay = matchedFragmentIons;
+                if (ion.Mz < MetaDrawSettings.MinMzToPlot)
+                    continue;
+                if (ion.Mz > MetaDrawSettings.MaxMzToPlot)
+                    continue;
+                if (ion.IsInternalFragment && !MetaDrawSettings.DisplayInternalIonAnnotations)
+                    continue;
+
+                ionsToDisplay.Add(ion);
             }
 
             foreach (MatchedFragmentIon matchedIon in ionsToDisplay)
@@ -407,7 +405,7 @@ namespace GuiFunctions
             double lowestAnnotatedMz = double.MaxValue;
             var yArray = Scan.MassSpectrum.YArray;
 
-            foreach (var ion in matchedFramgentIons)
+            foreach (var ion in matchedFramgentIons.Where(p => p.Mz >= MetaDrawSettings.MinMzToPlot && p.Mz <= MetaDrawSettings.MaxMzToPlot))
             {
                 double mz = ion.NeutralTheoreticalProduct.NeutralMass.ToMz(ion.Charge);
                 int i = Scan.MassSpectrum.GetClosestPeakIndex(mz);
@@ -428,6 +426,8 @@ namespace GuiFunctions
                     lowestAnnotatedMz = mz;
                 }
             }
+
+            
 
             if (highestAnnotatedIntensity > 0)
             {

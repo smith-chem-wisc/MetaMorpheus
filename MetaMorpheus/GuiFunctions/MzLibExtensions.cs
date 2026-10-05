@@ -10,7 +10,6 @@ using Readers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using Transcriptomics;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;

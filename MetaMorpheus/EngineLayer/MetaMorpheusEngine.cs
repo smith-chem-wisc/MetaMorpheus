@@ -359,7 +359,11 @@ namespace EngineLayer
             WarnHandler?.Invoke(this, new StringEventArgs(v, NestedIds));
         }
 
-        protected static void Warn(string v, MetaMorpheusEngine engine)
+        /// <summary>
+        /// Static counterpart to <see cref="Warn(string)"/>, for warnings raised from static contexts,
+        /// where no engine instance (and therefore no nested id) is available
+        /// </summary>
+        protected static void WarnStatic(string v, MetaMorpheusEngine engine)
         {
             WarnHandler?.Invoke(engine, new StringEventArgs(v, engine?.NestedIds));
         }

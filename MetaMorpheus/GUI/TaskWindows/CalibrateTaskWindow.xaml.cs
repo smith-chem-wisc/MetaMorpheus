@@ -1,5 +1,6 @@
 using EngineLayer;
 using GuiFunctions;
+using GuiFunctions.Util;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -74,9 +75,15 @@ namespace MetaMorpheusGUI
             DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
                 TheTask.CommonParameters.ProductDeconvolutionParameters,
                 TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution);
+            UseMostAbundantMassCheckBox.IsChecked = task.CommonParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant;
+
             if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
             {
-                ProteaseComboBox.SelectedItem = digestionParams.Protease; //protease needs to come first or recommended settings can overwrite the actual settings
+                ProteaseComboBox.SelectedItem = TaskWindowSearchMode.ProteaseToShow(digestionParams); //protease needs to come first or recommended settings can overwrite the actual settings
+                // a loaded task that asks for seed peptides cannot be shown here as it is, so say what happens to it
+                string searchModeWarning = TaskWindowSearchMode.PreserveWarning(digestionParams);
+                SearchModeWarningTextBlock.Text = searchModeWarning;
+                SearchModeWarningTextBlock.Visibility = searchModeWarning == null ? Visibility.Collapsed : Visibility.Visible;
                 InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
             }
             else
@@ -287,13 +294,17 @@ namespace MetaMorpheusGUI
             }
             else
             {
+                // this window has no semi-specific control, so keep the loaded task's search mode rather than resetting it to Full
+                var (searchModeType, fragmentationTerminus) = TaskWindowSearchMode.Preserve(TheTask.CommonParameters.DigestionParams);
                 digestionParamsToSave = new DigestionParams(
                     protease: protease.Name,
                     maxMissedCleavages: maxMissedCleavages,
                     minPeptideLength: minPeptideLength,
                     maxPeptideLength: maxPeptideLength,
                     maxModificationIsoforms: maxModificationIsoforms,
-                    maxModsForPeptides: maxModsPerPeptide);
+                    maxModsForPeptides: maxModsPerPeptide,
+                    searchModeType: searchModeType,
+                    fragmentationTerminus: fragmentationTerminus);
             }
 
             var listOfModsVariable = new List<(string, string)>();
@@ -359,6 +370,7 @@ namespace MetaMorpheusGUI
                     doPrecursorDeconvolution: doPrecursorDeconvolution,
                     precursorDeconParams: precursorDeconvolutionParameters,
                     productDeconParams: productDeconvolutionParameters,
+                    precursorMassMatchMode: UseMostAbundantMassCheckBox.IsChecked.Value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic,
                     useProvidedPrecursorInfo: useProvidedPrecursorInfo);
                 TheTask.CommonParameters = commonParamsToSave;
             }
@@ -381,7 +393,8 @@ namespace MetaMorpheusGUI
                     useProvidedPrecursorInfo: useProvidedPrecursorInfo,
                     doPrecursorDeconvolution: doPrecursorDeconvolution,
                     precursorDeconParams: precursorDeconvolutionParameters,
-                    productDeconParams: productDeconvolutionParameters);
+                    productDeconParams: productDeconvolutionParameters,
+                    precursorMassMatchMode: UseMostAbundantMassCheckBox.IsChecked.Value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic);
                 TheTask.CommonParameters = commonParamsToSave;
             }
 

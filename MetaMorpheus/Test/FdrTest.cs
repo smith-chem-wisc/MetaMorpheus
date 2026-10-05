@@ -1,25 +1,28 @@
 ﻿using Chemistry;
+using Chromatography.RetentionTimePrediction;
+using Chromatography.RetentionTimePrediction.Chronologer;
+using Chromatography.RetentionTimePrediction.SSRCalc;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
-using Proteomics;
+using Omics;
+using Omics.BioPolymer;
+using Omics.Digestion;
 using Omics.Fragmentation;
+using Omics.Modifications;
+using PredictionClients.Koina.SupportedModels.RetentionTimeModels;
+using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Omics.Digestion;
-using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using Omics;
-using Omics.BioPolymer;
-using EngineLayer.SpectrumMatch;
-using PredictionClients.Koina.SupportedModels.RetentionTimeModels;
 
 namespace Test
 {
@@ -174,9 +177,9 @@ namespace Test
                     ProteinDbLoader.UniprotOrganismRegex, -1);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
             SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), SearchParameters.WriteSpectralLibrary).Run();
-            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p => p != null).ToList(), 1, 
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p => p != null).ToList(), 1,
                 CommonParameters, fsp, new List<string>()).Run());
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
@@ -226,7 +229,7 @@ namespace Test
             var pepEngineProperties = pepEngine.GetType().GetProperties();
             foreach (var p in pepEngineProperties)
             {
-                switch(p.Name)
+                switch (p.Name)
                 {
                     case "FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified":
                         p.SetValue(pepEngine, fileSpecificRetTimeHI_behavior);
@@ -242,7 +245,7 @@ namespace Test
                         break;
                     default:
                         break;
-                }             
+                }
             }
 
             var maxPsmData = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
@@ -253,6 +256,37 @@ namespace Test
             float maxPsmIntensity = Math.Min(50, (float)Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0, 0));
             Assert.That(maxPsmIntensity, Is.EqualTo(maxPsmData.Intensity).Within(0.05));
             Assert.That(maxPsmData.HydrophobicityZScore, Is.EqualTo(52.0).Within(0.05));
+            // A retention time the predictor COULD produce must be marked available.
+            Assert.That(maxPsmData.HasHydrophobicity, Is.EqualTo(1));
+
+            // And a peptidoform the predictor cannot represent must be marked UNavailable, rather than being
+            // scored as though its predicted hydrophobicity were zero. Zero is a real and extreme value on this
+            // scale, so the old `?? 0` turned "could not predict" into the maximum z-score, which the model reads
+            // as strong evidence against the candidate. See PsmData.HasHydrophobicity.
+            var unpredictableEngine = new PepAnalysisEngine(nonNullPsms, "standard", fsp,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"), new NeverPredictsRetentionTime());
+            foreach (var p in unpredictableEngine.GetType().GetProperties())
+            {
+                switch (p.Name)
+                {
+                    case "FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified":
+                        p.SetValue(unpredictableEngine, fileSpecificRetTimeHI_behavior);
+                        break;
+                    case "FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified":
+                        p.SetValue(unpredictableEngine, fileSpecificRetTemHI_behaviorModifiedPeptides);
+                        break;
+                    case "ChargeStateMode":
+                        p.SetValue(unpredictableEngine, chargeStateMode);
+                        break;
+                    case "FileSpecificMedianFragmentMassErrors":
+                        p.SetValue(unpredictableEngine, massError);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            var unpredictableData = unpredictableEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
+            Assert.That(unpredictableData.HasHydrophobicity, Is.EqualTo(0));
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
@@ -263,7 +297,10 @@ namespace Test
             List<SpectralMatch> psmCopyForPEPFailure = nonNullPsms.ToList();
             List<SpectralMatch> psmCopyForNoOutputFolder = nonNullPsms.ToList();
 
+            int hypothesesBeforePep = nonNullPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count());
             pepEngine.ComputePEPValuesForAllPSMs();
+            // PEP scores; by default it does not prune ambiguous hypotheses
+            Assert.That(nonNullPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count()), Is.EqualTo(hypothesesBeforePep));
 
             int trueCount = 0;
 
@@ -347,7 +384,7 @@ namespace Test
 
             fsp.Add((origDataFile, cp));
 
-            
+
             trueCount = 0;
 
             foreach (var item in psmCopyForCZETest.Where(p => p != null))
@@ -386,6 +423,53 @@ namespace Test
             string nullOutputFolderResults = pepEngine.ComputePEPValuesForAllPSMs();
         }
 
+        /// <summary>
+        /// A full PEP run with pruning on, as glyco, crosslink and nonspecific searches do. Within one run, pruning must
+        /// not change any PEP (it never drops a match's best hypothesis), and the results block must report the count
+        /// of hypotheses it removed. With pruning off, the block must not carry that line.
+        /// </summary>
+        [Test]
+        public static void ComputePEPValues_Pruning_RemovesHypothesesButChangesNoPep()
+        {
+            List<SpectralMatch> Search(out List<(string fileName, CommonParameters fileSpecificParameters)> fsp)
+            {
+                var commonParameters = new CommonParameters(digestionParams: new DigestionParams());
+                fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("TaGe_SA_HeLa_04_subset_longestSeq.mzML", commonParameters) };
+                var dataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+                var msDataFile = new MyFileManager(true).LoadFile(dataFile, commonParameters);
+                List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, out _,
+                    ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex, ProteinDbLoader.UniprotOrganismRegex, -1);
+                var scans = MetaMorpheusTask.GetMs2Scans(msDataFile, dataFile, commonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+                SpectralMatch[] psmArray = new PeptideSpectralMatch[scans.Length];
+                new ClassicSearchEngine(psmArray, scans, new List<Modification>(), new List<Modification>(), null, null, null,
+                    proteins, new SinglePpmAroundZeroSearchMode(5), commonParameters, fsp, null, new List<string>(), false).Run();
+                var psms = psmArray.Where(p => p != null).ToList();
+                // Make some matches ambiguous: a decoy peptide as a second hypothesis at the same score.
+                var decoyPeptides = psms.Where(p => p.IsDecoy).Select(p => p.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer).ToList();
+                foreach (var (psm, decoy) in psms.Where(p => !p.IsDecoy).Zip(decoyPeptides).Take(30))
+                {
+                    psm.AddOrReplace(decoy, psm.Score, 0, true, psm.BestMatchingBioPolymersWithSetMods.First().MatchedIons);
+                    psm.ResolveAllAmbiguities();
+                }
+                new FdrAnalysisEngine(psms, 1, commonParameters, fsp, new List<string>()).Run();
+                return psms;
+            }
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\");
+
+            var keptPsms = Search(out var fsp);
+            string keptMetrics = new PepAnalysisEngine(keptPsms, "standard", fsp, outputFolder).ComputePEPValuesForAllPSMs();
+
+            var prunedPsms = Search(out fsp);
+            int hypothesesBefore = prunedPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count());
+            string prunedMetrics = new PepAnalysisEngine(prunedPsms, "standard", fsp, outputFolder, pruneAmbiguousHypotheses: true).ComputePEPValuesForAllPSMs();
+            int removed = hypothesesBefore - prunedPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count());
+
+            Assert.That(removed, Is.GreaterThan(0), "the fixture must have hypotheses to prune");
+            Assert.That(keptMetrics, Does.Not.Contain("Count of Ambiguous"));
+            Assert.That(prunedMetrics, Does.Contain($"Count of Ambiguous Peptides Removed:  {removed}"));
+            Assert.That(prunedPsms.Select(p => p.PsmFdrInfo.PEP), Is.EqualTo(keptPsms.Select(p => p.PsmFdrInfo.PEP)));
+        }
+
         [Test]
         public static void TestComputePEPValueTopDown()
         {
@@ -416,7 +500,7 @@ namespace Test
             SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             bool writeSpectralLibrary = false;
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             List<SpectralMatch> moreNonNullPSMs = new List<SpectralMatch>();
@@ -430,7 +514,7 @@ namespace Test
                 }
             }
 
-            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(moreNonNullPSMs.Where(p => p != null).OrderByDescending(f=>f.Score).ToList(), 1, CommonParameters, fsp, new List<string>(), analysisType: "PSM", outputFolder: Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\")).Run());
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(moreNonNullPSMs.Where(p => p != null).OrderByDescending(f => f.Score).ToList(), 1, CommonParameters, fsp, new List<string>(), analysisType: "PSM", outputFolder: Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\")).Run());
 
             var maxScore = nonNullPsms.Select(n => n.Score).Max();
             SpectralMatch maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
@@ -511,18 +595,48 @@ namespace Test
             psm.SetFdrValues(1, 0, 0, 1, 0, 0, 1, 0);
             psm.PeptideFdrInfo = new FdrInfo();
 
-            List<int> indiciesOfPeptidesToRemove = new List<int>();
+            List<int> indicesOfPeptidesToRemove = new List<int>();
             List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
             List<double> pepValuePredictions = new List<double> { 1.0d, 0.99d, 0.9d };
 
-            PepAnalysisEngine.GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
-            Assert.That(indiciesOfPeptidesToRemove.Count, Is.EqualTo(1));
-            Assert.That(indiciesOfPeptidesToRemove.FirstOrDefault(), Is.EqualTo(2));
+            PepAnalysisEngine.GetIndicesOfPeptidesToRemove(indicesOfPeptidesToRemove, pepValuePredictions);
+            Assert.That(indicesOfPeptidesToRemove.Count, Is.EqualTo(1));
+            Assert.That(indicesOfPeptidesToRemove.FirstOrDefault(), Is.EqualTo(2));
             Assert.That(pepValuePredictions.Count, Is.EqualTo(2));
 
-            PepAnalysisEngine.RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, psm.BestMatchingBioPolymersWithSetMods.ToList(), ref ambiguousPeptidesRemovedCount);
+            PepAnalysisEngine.RemoveBestMatchingPeptidesWithLowPEP(psm, indicesOfPeptidesToRemove, psm.BestMatchingBioPolymersWithSetMods.ToList(), ref ambiguousPeptidesRemovedCount);
             Assert.That(ambiguousPeptidesRemovedCount, Is.EqualTo(1));
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Select(b => b.Notch).ToList().Count, Is.EqualTo(2));
+        }
+
+        [Test]
+        [TestCase(false, 3, 0)]
+        [TestCase(true, 2, 1)]
+        public static void AssignPep_PrunesAmbiguousHypothesesOnlyWhenAsked(bool prune, int expectedHypotheses, int expectedRemoved)
+        {
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(
+                    new MzSpectrum(new double[] { }, new double[] { }, false),
+                    2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
+                100, 1, null, new CommonParameters(), null);
+
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            SpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.AddOrReplace(pwsm, 1, 1, true, new List<MatchedFragmentIon>());
+            psm.AddOrReplace(pwsm, 1, 2, true, new List<MatchedFragmentIon>());
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 1, 0);
+            psm.PeptideFdrInfo = new FdrInfo();
+
+            // the third hypothesis sits more than 0.05 below the best
+            List<double> pepValuePredictions = new List<double> { 1.0d, 0.99d, 0.9d };
+            int removed = PepAnalysisEngine.AssignPep(psm, psm.BestMatchingBioPolymersWithSetMods.ToList(), pepValuePredictions, prune);
+
+            Assert.That(removed, Is.EqualTo(expectedRemoved));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(expectedHypotheses));
+            // PEP comes from the best hypothesis, so pruning never changes it
+            Assert.That(psm.PsmFdrInfo.PEP, Is.EqualTo(0).Within(1e-12));
+            Assert.That(psm.PeptideFdrInfo.PEP, Is.EqualTo(0).Within(1e-12));
         }
 
         [Test]
@@ -590,7 +704,7 @@ namespace Test
 
             SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[extendedArray.Length];
             bool writeSpectralLibrary = false;
-            new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
 
             List<SpectralMatch> nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
@@ -619,7 +733,7 @@ namespace Test
 
             var myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, out var dbErrors, 
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, out var dbErrors,
                 ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
                     ProteinDbLoader.UniprotOrganismRegex, -1);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
@@ -710,7 +824,7 @@ namespace Test
                 "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch",
                 "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity",
                 "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide",
-                "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle",
+                "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle", "HasHydrophobicity",
                 "PrecursorDeconvolutionScore"
             };
             Assert.That(trainingInfoStandard, Is.EqualTo(expectedTrainingInfoStandard));
@@ -781,9 +895,10 @@ namespace Test
                 PrecursorFractionalIntensity = 26,
                 InternalIonCount = 27,
                 PrecursorDeconvolutionScore = 28,
+                HasHydrophobicity = 29,
             };
 
-            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t17\t18\t21\t22\t28";
+            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t17\t18\t21\t22\t29\t28";
             Assert.That(pd.ToString("standard"), Is.EqualTo(standardToString));
 
             string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9\t10\t21\t22\t23\t24\t25\t26\t27";
@@ -892,8 +1007,8 @@ namespace Test
         [Test]
         //[Explicit("Constructs Koina-backed Prosit predictors. Excluded from normal CI; run with: dotnet test --filter Category=Koina")]
         //[Category("Koina")]
-        [TestCase("Prosit2019iRT", typeof(Prosit2019iRT))]
-        [TestCase("Prosit2020iRTTMT", typeof(Prosit2020iRTTMT))]
+        [TestCase(RTPredictorNames.Prosit2019iRT, typeof(Prosit2019iRT))]
+        [TestCase(RTPredictorNames.Prosit2020iRTTMT, typeof(Prosit2020iRTTMT))]
         public static void FdrAnalysisEngine_GetRTPredictor_ReturnsExpectedPrositPredictor(
             string rtPredictorName, Type expectedType)
         {
@@ -912,6 +1027,169 @@ namespace Test
             var result = method.Invoke(null, new object[] { "standard", fsp });
             Assert.That(result, Is.Not.Null);
             Assert.That(result, Is.InstanceOf(expectedType));
+        }
+
+        [Test]
+        [TestCase(RTPredictorNames.Chronologer, typeof(ChronologerRetentionTimePredictor))]
+        [TestCase(RTPredictorNames.SSRCalc, typeof(SSRCalc3RetentionTimePredictor))]
+        public static void FdrAnalysisEngine_GetRTPredictor_ReturnsExpectedLocalPredictor(
+            string rtPredictorName, Type expectedType)
+        {
+            // Local (non-network) predictors only — kept separate from the Prosit/Koina test below
+            // so this coverage can never be excluded by that test's Explicit/Category("Koina") gate.
+            var method = typeof(FdrAnalysisEngine).GetMethod("GetRTPredictor",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, "GetRTPredictor not found via reflection — signature changed?");
+
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>
+              {
+                  ("dummy.mzML", new CommonParameters(rtPredictorName: rtPredictorName))
+              };
+
+            var result = method.Invoke(null, new object[] { "standard", fsp });
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result, Is.InstanceOf(expectedType));
+        }
+
+        private static IEnumerable<TestCaseData> GetChronologerFailureCases()
+        {
+            var dll = new DllNotFoundException("Unable to load DLL 'LibTorchSharp'");
+            // Explicit case names: NUnit's auto-generated names (from Exception.ToString()) collide and
+            // silently drop a case, so name each one. The argument is the exception the Chronologer factory throws.
+            yield return new TestCaseData(dll)
+                .SetName("GetChronologer_ReturnsNull_BareDllNotFoundException");
+            yield return new TestCaseData(new TypeInitializationException("TorchSharp.torch", dll))
+                .SetName("GetChronologer_ReturnsNull_WrappedInTypeInitializationException"); // the real TorchSharp shape
+            yield return new TestCaseData(new Exception("Other exception"))
+                .SetName("GetChronologer_ReturnsNull_OtherException");                       // any other construction failure
+        }
+
+        // GetChronologer's fallback hangs off two internal statics: the factory-override seam and an
+        // "already warned" latch. These helpers reach both via reflection so the tests can drive and reset them.
+        private static System.Reflection.FieldInfo ChronologerFactoryOverrideField() =>
+            typeof(FdrAnalysisEngine).GetField("_chronologerFactoryOverride",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+
+        private static System.Reflection.FieldInfo AlreadyWarnedAboutChronologerField() =>
+            typeof(FdrAnalysisEngine).GetField("_alreadyWarnedAboutChronologer",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+
+        [Test]
+        [NonParallelizable] // mutates the process-wide Chronologer statics
+        [TestCaseSource(nameof(GetChronologerFailureCases))]
+        public static void GetChronologer_NativeLibrariesMissing_ReturnsNull_DoesNotThrow(Exception thrownException)
+        {
+            // Inject a throwing factory via the internal _chronologerFactoryOverride seam so we can exercise
+            // the missing-native-library fallback without the TorchSharp natives present. Clear the
+            // "already warned" latch so each case actually takes the warning path, and restore both statics
+            // afterwards so the fault doesn't leak into other tests.
+            var overrideField = ChronologerFactoryOverrideField();
+            var warnedField = AlreadyWarnedAboutChronologerField();
+            Assert.That(overrideField, Is.Not.Null, "_chronologerFactoryOverride not found via reflection — signature changed?");
+            Assert.That(warnedField, Is.Not.Null, "_alreadyWarnedAboutChronologer not found via reflection — signature changed?");
+
+            var originalOverride = overrideField.GetValue(null);
+            var originalWarned = warnedField.GetValue(null);
+            try
+            {
+                warnedField.SetValue(null, false);
+                overrideField.SetValue(null,
+                    (Func<ChronologerRetentionTimePredictor>)(() => throw thrownException));
+
+                IRetentionTimePredictor result = null;
+                Assert.DoesNotThrow(() => result = FdrAnalysisEngine.GetChronologer());
+                Assert.That(result, Is.Null);
+            }
+            finally
+            {
+                overrideField.SetValue(null, originalOverride);   // don't leak the throwing factory into other tests
+                warnedField.SetValue(null, originalWarned);
+            }
+        }
+
+        [Test]
+        [NonParallelizable] // subscribes to the static WarnHandler and mutates the Chronologer statics
+        public static void GetChronologer_NativeLibrariesMissing_WarnsOnlyOncePerProcess()
+        {
+            // GetRTPredictor is called once per protease group, so without the _alreadyWarnedAboutChronologer
+            // latch a multi-protease search would emit the identical warning repeatedly. Verify the warning
+            // surfaces exactly once no matter how many times GetChronologer is invoked.
+            var overrideField = ChronologerFactoryOverrideField();
+            var warnedField = AlreadyWarnedAboutChronologerField();
+            Assert.That(overrideField, Is.Not.Null, "_chronologerFactoryOverride not found via reflection — signature changed?");
+            Assert.That(warnedField, Is.Not.Null, "_alreadyWarnedAboutChronologer not found via reflection — signature changed?");
+
+            var originalOverride = overrideField.GetValue(null);
+            var originalWarned = warnedField.GetValue(null);
+
+            int chronologerWarnings = 0;
+            EventHandler<StringEventArgs> handler = (sender, e) =>
+            {
+                if (e.S != null && e.S.Contains("Chronologer"))
+                    chronologerWarnings++;
+            };
+            MetaMorpheusEngine.WarnHandler += handler;
+            try
+            {
+                warnedField.SetValue(null, false);
+                overrideField.SetValue(null,
+                    (Func<ChronologerRetentionTimePredictor>)(
+                        () => throw new DllNotFoundException("Unable to load DLL 'LibTorchSharp'")));
+
+                for (int i = 0; i < 3; i++)
+                {
+                    Assert.That(FdrAnalysisEngine.GetChronologer(), Is.Null);
+                }
+
+                Assert.That(chronologerWarnings, Is.EqualTo(1),
+                    "The Chronologer fallback warning should be emitted only once per process.");
+            }
+            finally
+            {
+                MetaMorpheusEngine.WarnHandler -= handler;
+                overrideField.SetValue(null, originalOverride);
+                warnedField.SetValue(null, originalWarned);
+            }
+        }
+
+        [Test]
+        [TestCase("GlycoSearch")]
+        [TestCase("SearchTask")]
+        public static void SearchTask_DefaultRTPredictor_ResolvedToChronologer(string searchType)
+        {
+            //  This test ensures that the default RT model is still Chronologer.
+            var method = typeof(FdrAnalysisEngine).GetMethod("GetRTPredictor",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, "GetRTPredictor not found via reflection — signature changed?");
+            MetaMorpheusTask task;
+            switch(searchType) // The default setting both works for GlycoSearch and SearchTask
+            {
+                case "GlycoSearch":
+                    task = new GlycoSearchTask();
+                    break;
+                case "SearchTask":
+                    task = new SearchTask();
+                    break;
+                default: Assert.Fail($"Unrecognized searchType: {searchType}"); return;
+            }
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>
+            {
+                ("dummy.mzML", task.CommonParameters)
+            };
+            var result = method.Invoke(null, new object[] { "standard", fsp });
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result, Is.InstanceOf<ChronologerRetentionTimePredictor>());
+        }
+
+        [Test]
+        public static void SetAllFileSpecificCommonParams_PreservesRTPredictorName()
+        {
+            var commonParams = new CommonParameters(rtPredictorName: RTPredictorNames.SSRCalc);
+            var fileSpecificParams = new FileSpecificParameters(); // simulates a companion <basename>.toml existing
+
+            var result = MetaMorpheusTask.SetAllFileSpecificCommonParams(commonParams, fileSpecificParams);
+
+            Assert.That(result.RTPredictorName, Is.EqualTo(RTPredictorNames.SSRCalc));
         }
     }
 }

@@ -32,6 +32,27 @@ namespace Test
     [TestFixture]
     public static class SearchEngineTests
     {
+        /// <summary>
+        /// The fragment index as the List-of-bins shape the precursor index still uses. Only needed by the
+        /// tests below, which pass the fragment index where a precursor index is expected.
+        /// </summary>
+        private static List<int>[] AsBinLists(EngineLayer.Indexing.FragmentIndex fragmentIndex)
+        {
+            List<int>[] bins = new List<int>[fragmentIndex.Length];
+
+            for (int i = 0; i < bins.Length; i++)
+            {
+                ReadOnlySpan<int> bin = fragmentIndex[i];
+
+                if (!bin.IsEmpty)
+                {
+                    bins[i] = new List<int>(bin.ToArray());
+                }
+            }
+
+            return bins;
+        }
+
         public static Protease _customProtease;
 
         [OneTimeSetUp]
@@ -574,20 +595,20 @@ namespace Test
             precursorPeaks.AddRange(losm2.Select(pm => pm.PrecursorMass).ToList());
             precursorPeaks.Sort();
 
-            List<int> filledIndicies = new List<int>();
+            List<int> filledIndices = new List<int>();
             for (int i = 0; i < indexResults.FragmentIndex.Length; i++)
             {
-                if (indexResults.FragmentIndex[i] != null)
+                if (!indexResults.FragmentIndex[i].IsEmpty)
                 {
-                    filledIndicies.Add(i);
+                    filledIndices.Add(i);
                 }
             }
 
-            List<int> expectedIndicies = new List<int> { 157080, 174088, 196100, 224114, 242123, 257131, 258131, 275140, 325165, 353179, 370188, 371188, 382194, 388197, 410208, 428217, 469238, 470239, 479243, 487247, 507258, 525267,
+            List<int> expectedIndices = new List<int> { 157080, 174088, 196100, 224114, 242123, 257131, 258131, 275140, 325165, 353179, 370188, 371188, 382194, 388197, 410208, 428217, 469238, 470239, 479243, 487247, 507258, 525267,
                 570290, 571290, 576293, 588299, 604307, 622316, 671341, 672341, 675343, 689350, 703357, 721366, 770391, 771392, 776394, 788400, 804408, 822417, 867440, 868441, 877445, 885449, 905460, 923469, 964490, 965490, 976496,
                 982499, 1004510, 1021519, 1022519, 1039528, 1089553, 1117567, 1135576, 1150584, 1151585, 1168593, 1190604, 1218619, 1236628, 1279650, 1280650, 1297659};
 
-            Assert.That(filledIndicies, Is.EqualTo(expectedIndicies));
+            Assert.That(filledIndices, Is.EqualTo(expectedIndices));
 
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
@@ -900,7 +921,7 @@ namespace Test
                 coisolationIndex[i] = new List<int> { i };
             }
             //NonSpecific
-            new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, indexResults.PeptideIndex, indexResults.FragmentIndex, indexResults.FragmentIndex, 0, CommonParameters, null, new List<Modification>(), massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+            new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, indexResults.PeptideIndex, indexResults.FragmentIndex, AsBinLists(indexResults.FragmentIndex), 0, CommonParameters, null, new List<Modification>(), massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
         }
 
         [Test]
@@ -1005,7 +1026,7 @@ namespace Test
             {
                 coisolationIndex[i] = new List<int> { i };
             }
-            new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, peptideIndex, fragmentIndexDict, fragmentIndexDict, 0, CommonParameters, null, variableModifications, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+            new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, peptideIndex, fragmentIndexDict, AsBinLists(fragmentIndexDict), 0, CommonParameters, null, variableModifications, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
             Assert.That(allPsmsArray.Length, Is.EqualTo(1));
@@ -1104,7 +1125,7 @@ namespace Test
             {
                 coisolationIndex[i] = new List<int> { i };
             }
-            new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, peptideIndex, fragmentIndexDict, fragmentIndexDict, 0, CommonParameters, null, variableModifications, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+            new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, peptideIndex, fragmentIndexDict, AsBinLists(fragmentIndexDict), 0, CommonParameters, null, variableModifications, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
             Assert.That(allPsmsArray.Length, Is.EqualTo(1));
@@ -1433,7 +1454,7 @@ namespace Test
             {
                 coisolationIndex[i] = new List<int> { i };
             }
-            var engine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, peptideIndex, fragmentIndexDict, fragmentIndexDict, 0, CommonParameters, null, variableModifications, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>());
+            var engine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, peptideIndex, fragmentIndexDict, AsBinLists(fragmentIndexDict), 0, CommonParameters, null, variableModifications, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>());
             var searchResults = engine.Run();
 
             // Single search mode
@@ -1650,7 +1671,7 @@ namespace Test
             {
                 coisolationIndex[i] = new List<int> { i };
             }
-            var engine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, peptideIndex, fragmentIndexDict, fragmentIndexDict, 1, CommonParameters, null, variableModifications, searchModes, 0, new List<string>());
+            var engine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, peptideIndex, fragmentIndexDict, AsBinLists(fragmentIndexDict), 1, CommonParameters, null, variableModifications, searchModes, 0, new List<string>());
             var searchResults = engine.Run();
 
             // Single search mode

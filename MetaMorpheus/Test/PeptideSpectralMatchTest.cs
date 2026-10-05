@@ -99,5 +99,29 @@ namespace Test
                 psm.ToString();
             }
         }
+
+        // XCorr pre-processing rewrites the spectrum in place after the scan wrapper is built, so the
+        // recorded peak count has to be re-read; otherwise the psmtsv Num Experimental Peaks column
+        // reports the count from before pre-processing rather than the one the search scored against.
+        [Test]
+        public static void RefreshPeakCountTracksSpectrumAlteredInPlace()
+        {
+            var mz = new double[] { 100, 200, 300, 400, 500 };
+            var intensities = new double[] { 10, 1, 100, 1, 50 };
+            MsDataScan scan = new MsDataScan(new MzSpectrum(mz, intensities, false), 1, 2, true,
+                Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null,
+                "scan=1", 400, 1, 1000, double.NaN, null, DissociationType.LowCID, 0, 400);
+
+            var commonParams = new CommonParameters(dissociationType: DissociationType.LowCID);
+            var ms2 = new Ms2ScanWithSpecificMass(scan, 400, 1, "f.mzML", commonParams);
+
+            Assert.That(ms2.ScanMetadata.NumPeaks, Is.EqualTo(ms2.TheScan.MassSpectrum.Size));
+
+            ms2.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, 400);
+            ms2.RefreshPeakCount();
+
+            Assert.That(ms2.ScanMetadata.NumPeaks, Is.EqualTo(ms2.TheScan.MassSpectrum.Size));
+        }
+
     }
 }

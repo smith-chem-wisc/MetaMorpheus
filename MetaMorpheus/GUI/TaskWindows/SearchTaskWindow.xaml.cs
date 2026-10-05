@@ -1,4 +1,5 @@
 using EngineLayer;
+using EngineLayer.FdrAnalysis;
 using GuiFunctions;
 using MassSpectrometry;
 using MzLibUtil;
@@ -324,6 +325,10 @@ namespace MetaMorpheusGUI
             RenameTCProteinsRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RenameProtein;
             AllAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
             MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
+            MinRetentionTimeTextBox.Text = task.CommonParameters.RetentionTimeRange.Minimum.ToString(CultureInfo.InvariantCulture);
+            MaxRetentionTimeTextBox.Text = task.CommonParameters.RetentionTimeRange.Maximum == double.MaxValue
+                ? ""
+                : task.CommonParameters.RetentionTimeRange.Maximum.ToString(CultureInfo.InvariantCulture);
             TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             AddTruncationsCheckBox.IsChecked = task.CommonParameters.AddTruncations;
@@ -368,6 +373,7 @@ namespace MetaMorpheusGUI
             WriteDigestCountCheckBox.IsChecked = task.SearchParameters.WriteDigestionProductCountFile;
             WriteHighQPsmsCheckBox.IsChecked = task.SearchParameters.WriteHighQValuePsms;
             WriteDecoyCheckBox.IsChecked = task.SearchParameters.WriteDecoys;
+            IterativePepTrainingCheckBox.IsChecked = task.SearchParameters.IterativePepTraining;
             WriteContaminantCheckBox.IsChecked = task.SearchParameters.WriteContaminants;
             WriteIndividualResultsCheckBox.IsChecked = task.SearchParameters.WriteIndividualFiles;
             WriteSpectralLibraryCheckBox.IsChecked = task.SearchParameters.WriteSpectralLibrary;
@@ -375,6 +381,7 @@ namespace MetaMorpheusGUI
             CompressIndividualResultsCheckBox.IsChecked = task.SearchParameters.CompressIndividualFiles;
             IncludeMotifInModNamesCheckBox.IsChecked = task.SearchParameters.IncludeModMotifInMzid;
             WriteTargetDecoyFastaCheckBox.IsChecked = task.SearchParameters.WriteTargetDecoyFasta;
+            WriteSdrfCheckBox.IsChecked = task.SearchParameters.WriteSdrf;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -435,7 +442,22 @@ namespace MetaMorpheusGUI
                 ye.VerifyCheckState();
             }
 
-            _massDifferenceAcceptorViewModel = new(task.SearchParameters.MassDiffAcceptorType, task.SearchParameters.CustomMdac, task.CommonParameters.PrecursorMassTolerance.Value);
+            _massDifferenceAcceptorViewModel = new(task.SearchParameters.MassDiffAcceptorType, task.SearchParameters.CustomMdac, task.CommonParameters.PrecursorMassTolerance.Value, task.CommonParameters.PrecursorMassMatchMode);
+            switch (task.CommonParameters.RTPredictorName)
+            {
+                case RTPredictorNames.SSRCalc:
+                    SSRCalcRadioButton.IsChecked = true;
+                    break;
+                case RTPredictorNames.Prosit2019iRT:
+                    Prosit2019iRTRadioButton.IsChecked = true;
+                    break;
+                case RTPredictorNames.Prosit2020iRTTMT:
+                    Prosit2020iRTTMTRadioButton.IsChecked = true;
+                    break;
+                default:
+                    ChronologerRadioButton.IsChecked = true; // covers "Chronologer" and unknown/null
+                    break;
+            }
             WritePrunedDBCheckBox.IsChecked = task.SearchParameters.WritePrunedDatabase;
             UpdateModSelectionGrid();
 
@@ -584,6 +606,12 @@ namespace MetaMorpheusGUI
             bool TrimMsMsPeaks = TrimMsMs.IsChecked.Value;
             bool AddTruncations = AddTruncationsCheckBox.IsChecked.Value;
 
+            if (!TaskValidator.CheckRetentionTimeRange(MinRetentionTimeTextBox.Text, MaxRetentionTimeTextBox.Text,
+                out double minRetentionTime, out double maxRetentionTime))
+            {
+                return;
+            }
+
             int? numPeaksToKeep = null;
             if (int.TryParse(NumberOfPeaksToKeepPerWindowTextBox.Text, out int numberOfPeaksToKeeep))
             {
@@ -617,7 +645,13 @@ namespace MetaMorpheusGUI
             DeconvolutionParameters productDeconvolutionParameters = DeconHostViewModel.ProductDeconvolutionParameters.Parameters;
             bool useProvidedPrecursorInfo = DeconHostViewModel.UseProvidedPrecursors;
             bool doPrecursorDeconvolution = DeconHostViewModel.DoPrecursorDeconvolution;
-            
+
+            string rtPredictorModelName;
+            if (SSRCalcRadioButton.IsChecked == true) rtPredictorModelName = RTPredictorNames.SSRCalc;
+            else if (Prosit2019iRTRadioButton.IsChecked == true) rtPredictorModelName = RTPredictorNames.Prosit2019iRT;
+            else if (Prosit2020iRTTMTRadioButton.IsChecked == true) rtPredictorModelName = RTPredictorNames.Prosit2020iRTTMT;
+            else rtPredictorModelName = RTPredictorNames.Chronologer; // default
+
             CommonParameters commonParamsToSave = new CommonParameters(
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
@@ -649,7 +683,10 @@ namespace MetaMorpheusGUI
                 maxHeterozygousVariants: MaxHeterozygousVariants,
                 precursorDeconParams: precursorDeconvolutionParameters,
                 productDeconParams: productDeconvolutionParameters,
-                fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams() );
+                precursorMassMatchMode: _massDifferenceAcceptorViewModel.PrecursorMassMatchMode,
+                fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams(),
+                retentionTimeRange: new DoubleRange(minRetentionTime, maxRetentionTime),
+                rtPredictorName: rtPredictorModelName);
 
             if (ClassicSearchRadioButton.IsChecked.Value)
             {
@@ -686,6 +723,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.WriteMzId = CkbMzId.IsChecked.Value;
             TheTask.SearchParameters.WriteHighQValuePsms = WriteHighQPsmsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteDecoys = WriteDecoyCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.IterativePepTraining = IterativePepTrainingCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteSpectralLibrary = WriteSpectralLibraryCheckBox.IsChecked.Value;
@@ -694,6 +732,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.IncludeModMotifInMzid = IncludeMotifInModNamesCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteDigestionProductCountFile = WriteDigestCountCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteTargetDecoyFasta = WriteTargetDecoyFastaCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.WriteSdrf = WriteSdrfCheckBox.IsChecked.Value;
 
             if (RemoveContaminantRadioBox.IsChecked.Value)
             {
@@ -926,7 +965,7 @@ namespace MetaMorpheusGUI
                                 _fragmentationParamsViewModel.MinInternalIonLength = 10;
                                 CheckBoxNoQuant.IsChecked = true; 
                                 _massDifferenceAcceptorViewModel.SelectedType =
-                                    _massDifferenceAcceptorViewModel.MassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.PlusOrMinusThreeMM);
+                                    _massDifferenceAcceptorViewModel.MonoMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.PlusOrMinusThreeMM);
 
                                 //uncheck all variable mods
                                 foreach (var mod in VariableModTypeForTreeViewObservableCollection)

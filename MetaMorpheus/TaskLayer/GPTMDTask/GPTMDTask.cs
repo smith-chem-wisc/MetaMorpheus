@@ -80,7 +80,9 @@ namespace TaskLayer
 
             // temporary search type for writing prose
             // the actual search type is technically file-specific but we don't allow file-specific notches, so it's safe to do this
-            MassDiffAcceptor tempSearchMode = new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance);
+            MassDiffAcceptor tempSearchMode = CommonParameters.UsesMostAbundantPeak()
+                ? new MostAbundantDotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance, CommonParameters.GetAverageResidue(), expectedIsotopeSpacing: CommonParameters.IsotopeSpacing())
+                : new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance);
             ProseCreatedWhileRunning.Append("precursor mass tolerance(s) = {" + tempSearchMode.ToProseString() + "}; ");
 
             ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + ". ");
@@ -113,7 +115,9 @@ namespace TaskLayer
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-                MassDiffAcceptor searchMode = new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance);
+                MassDiffAcceptor searchMode = combinedParams.UsesMostAbundantPeak()
+                    ? new MostAbundantDotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance, combinedParams.GetAverageResidue(), expectedIsotopeSpacing: combinedParams.IsotopeSpacing())
+                    : new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance);
 
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
@@ -130,7 +134,11 @@ namespace TaskLayer
                     nextFileLoadingTask.Start();
                 }
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.GetPrecursorMassForSearch(combinedParams)).ToArray();
+                // A most-abundant search falls back to the monoisotopic mass for any scan with no observed
+                // apex. That is intended, but silent — report how often it happens so it is noticed.
+                string fallbackWarning = arrayOfMs2ScansSortedByMass.GetMonoisotopicFallbackWarning(combinedParams, Path.GetFileName(origDataFile));
+                if (fallbackWarning != null) { Warn(fallbackWarning); }
                 myFileManager.DoneWithFile(origDataFile);
                 SpectralMatch[] psmArray = new SpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 

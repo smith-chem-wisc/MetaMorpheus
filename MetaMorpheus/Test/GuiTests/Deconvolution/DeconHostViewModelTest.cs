@@ -4,6 +4,7 @@ using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
 using NUnit.Framework;
+using TaskLayer;
 
 namespace Test.GuiTests.Deconvolution;
 
@@ -36,6 +37,29 @@ public class DeconHostViewModelTests
         Assert.That(viewModel.Polarities, Does.Contain(Polarity.Positive));
         Assert.That(viewModel.Polarities, Does.Contain(Polarity.Negative));
     }
+    [Test]
+    public void PrecursorMassMatchMode_DefaultsToMonoisotopic_AndUseMostAbundantMassProjectsBothWays()
+    {
+        // Default: monoisotopic, checkbox unchecked
+        var viewModel = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Exact, "");
+        Assert.That(viewModel.PrecursorMassMatchMode, Is.EqualTo(PrecursorMassMatchMode.Monoisotopic));
+        Assert.That(viewModel.UseMostAbundantMass, Is.False);
+
+        // Constructor passthrough of the mode
+        var mostAbundant = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Exact, "",
+            precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
+        Assert.That(mostAbundant.UseMostAbundantMass, Is.True);
+
+        // Boolean checkbox projection writes through to the enum (and back), with change notification
+        var raised = 0;
+        viewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(viewModel.UseMostAbundantMass)) raised++; };
+        viewModel.UseMostAbundantMass = true;
+        Assert.That(viewModel.PrecursorMassMatchMode, Is.EqualTo(PrecursorMassMatchMode.MostAbundant));
+        viewModel.UseMostAbundantMass = false;
+        Assert.That(viewModel.PrecursorMassMatchMode, Is.EqualTo(PrecursorMassMatchMode.Monoisotopic));
+        Assert.That(raised, Is.GreaterThanOrEqualTo(2));
+    }
+
     [Test]
     public void Constructor_DefaultParameters_ShouldInitializeCorrectly_IsoDec()
     {
