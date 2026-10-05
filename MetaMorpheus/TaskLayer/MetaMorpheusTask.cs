@@ -33,7 +33,6 @@ using EngineLayer.Util;
 using EngineLayer.DIA;
 using Omics.Fragmentation;
 using EngineLayer.Deconvolution;
-using EngineLayer.Deconvolution.FeatureFileMapping;
 
 namespace TaskLayer
 {

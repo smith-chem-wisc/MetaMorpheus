@@ -109,8 +109,6 @@ namespace EngineLayer
         public static string CustomProteasePath => Path.Combine(DataDir, "proteases_custom.tsv");
         public static string CustomRnasePath => Path.Combine(DataDir, "rnase_custom.tsv");
         public static string CustomMonosaccharidePath => Path.Combine(DataDir, "MonosaccharidesCustom.tsv");
-        public static string FeatureMapsFilePath => Path.Combine(DataDir, "feature-maps.toml");
-
         /// <summary>
         /// The user's own O-glycan database, offered in the GlycoSearch task beside the shipped ones.
         /// </summary>

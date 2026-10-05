@@ -1,19 +1,14 @@
-using Nett;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EngineLayer.Deconvolution.FeatureFileMapping;
 
 namespace EngineLayer.Deconvolution;
 
 /// <summary>
-/// Feature file mapping used at time of search. This is a simplified version of the FeatureFileMap used for deconvolution, containing only the necessary information for searching.
+/// Explicit raw-file to MS1 feature-file mappings embedded in task parameters.
 /// </summary>
 public class SearchFeatureFileMap : IEquatable<SearchFeatureFileMap>
 {
-    public string SourceMapPath { get; set; } = string.Empty;
-    public string SelectedConditionKey { get; set; } = string.Empty;
-    public string SelectedConditionDisplayName { get; set; } = string.Empty;
     public List<SearchFeatureFileMapEntry> Entries { get; set; } = new();
 
     public bool TryGetFeaturePathForMassSpecFile(string massSpecFilePath, out string featureFilePath)
@@ -32,17 +27,13 @@ public class SearchFeatureFileMap : IEquatable<SearchFeatureFileMap>
     {
         return new SearchFeatureFileMap
         {
-            SourceMapPath = this.SourceMapPath,
-            SelectedConditionKey = this.SelectedConditionKey,
-            SelectedConditionDisplayName = this.SelectedConditionDisplayName,
             Entries = new List<SearchFeatureFileMapEntry>(this.Entries.Select(p => p.Clone()))
         };
     }
 
     /// <summary>
-    /// Returns true when this map has no entries and would fail at materialization time.
+    /// Returns true when no raw-file mappings are configured.
     /// </summary>
-    [TomlIgnore]
     public bool IsEmpty => Entries == null || Entries.Count == 0;
 
     /// <summary>
@@ -71,10 +62,7 @@ public class SearchFeatureFileMap : IEquatable<SearchFeatureFileMap>
             return true;
         }
 
-        // SourceMapPath is audit-only metadata; it does not affect execution equality.
-        return string.Equals(SelectedConditionKey, other.SelectedConditionKey, StringComparison.Ordinal)
-            && string.Equals(SelectedConditionDisplayName, other.SelectedConditionDisplayName, StringComparison.Ordinal)
-            && Entries.SequenceEqual(other.Entries);
+        return Entries.SequenceEqual(other.Entries);
     }
 
     public override bool Equals(object obj) => Equals(obj as SearchFeatureFileMap);
@@ -82,9 +70,6 @@ public class SearchFeatureFileMap : IEquatable<SearchFeatureFileMap>
     public override int GetHashCode()
     {
         var hash = new HashCode();
-        // SourceMapPath is intentionally excluded: it is audit-only metadata.
-        hash.Add(SelectedConditionKey, StringComparer.Ordinal);
-        hash.Add(SelectedConditionDisplayName, StringComparer.Ordinal);
         foreach (var entry in Entries)
         {
             hash.Add(entry);
@@ -94,23 +79,19 @@ public class SearchFeatureFileMap : IEquatable<SearchFeatureFileMap>
 }
 
 /// <summary>
-/// Represents a single entry in the SearchFeatureFileMap, associating a mass spectrometry file with its corresponding feature file for a specific condition.
+/// Associates one mass spectrometry file with its corresponding MS1 feature file.
 /// </summary>
 public class SearchFeatureFileMapEntry : IEquatable<SearchFeatureFileMapEntry>
 {
     public string MassSpecFilePath { get; set; } = string.Empty;
-    public string MassSpecFileName { get; set; } = string.Empty;
     public string FeatureFilePath { get; set; } = string.Empty;
-    public string FeatureFileName { get; set; } = string.Empty;
 
     public SearchFeatureFileMapEntry Clone()
     {
         return new SearchFeatureFileMapEntry
         {
             MassSpecFilePath = MassSpecFilePath,
-            MassSpecFileName = MassSpecFileName,
             FeatureFilePath = FeatureFilePath,
-            FeatureFileName = FeatureFileName,
         };
     }
 
@@ -127,15 +108,13 @@ public class SearchFeatureFileMapEntry : IEquatable<SearchFeatureFileMapEntry>
         }
 
         return string.Equals(MassSpecFilePath, other.MassSpecFilePath, StringComparison.Ordinal)
-            && string.Equals(MassSpecFileName, other.MassSpecFileName, StringComparison.Ordinal)
-            && string.Equals(FeatureFilePath, other.FeatureFilePath, StringComparison.Ordinal)
-            && string.Equals(FeatureFileName, other.FeatureFileName, StringComparison.Ordinal);
+            && string.Equals(FeatureFilePath, other.FeatureFilePath, StringComparison.Ordinal);
     }
 
     public override bool Equals(object obj) => Equals(obj as SearchFeatureFileMapEntry);
 
     public override int GetHashCode()
-        => HashCode.Combine(MassSpecFilePath, MassSpecFileName, FeatureFilePath, FeatureFileName);
+        => HashCode.Combine(MassSpecFilePath, FeatureFilePath);
 
     public override string ToString() => $"{MassSpecFilePath},{FeatureFilePath}";
 }

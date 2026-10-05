@@ -1187,7 +1187,7 @@ namespace Test
             var commonParams = new CommonParameters(rtPredictorName: RTPredictorNames.SSRCalc);
             var fileSpecificParams = new FileSpecificParameters(); // simulates a companion <basename>.toml existing
 
-            var result = MetaMorpheusTask.SetAllFileSpecificCommonParams(commonParams, fileSpecificParams);
+            var result = MetaMorpheusTask.SetAllFileSpecificCommonParams(commonParams, fileSpecificParams, null);
 
             Assert.That(result.RTPredictorName, Is.EqualTo(RTPredictorNames.SSRCalc));
         }
