@@ -6,6 +6,7 @@ using MassSpectrometry;
 using Nett;
 using Omics.Modifications;
 using Proteomics.AminoAcidPolymer;
+using Transcriptomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -169,6 +170,7 @@ namespace EngineLayer
             LoadRnaModifications();
             LoadGlycans();
             LoadCustomAminoAcids();
+            LoadCustomNucleotides();
             SetUpGlobalSettings();
             LoadDissociationTypes();
             LoadAvailableProteomes();
@@ -267,8 +269,14 @@ namespace EngineLayer
                     string[] line = aminoAcidLines[i].Split('\t').ToArray(); //tsv Name, one letter, monoisotopic, chemical formula
                     if (line.Length >= 4) //check something is there (not a blank line)
                     {
+                        if (string.IsNullOrWhiteSpace(line[0]) || string.IsNullOrWhiteSpace(line[1]) ||
+                            ContainsTabOrNewline(line[0]) || ContainsTabOrNewline(line[1]))
+                        {
+                            continue;
+                        }
+
                         char letter = line[1][0];
-                        if (InvalidAminoAcids.Contains(letter))
+                        if (!IsValidResidueLetter(letter) || InvalidAminoAcids.Contains(letter))
                         {
                             throw new MetaMorpheusException("Error while reading 'CustomAminoAcids.txt'. Line " + (i + 1).ToString() + " contains an invalid amino acid. (Ex: " + string.Join(", ", InvalidAminoAcids.Select(x => x.ToString())) + ")");
                         }
@@ -314,6 +322,130 @@ namespace EngineLayer
                 }
             }
             File.WriteAllLines(aminoAcidPath, linesToWrite.ToArray());
+        }
+
+        public static void LoadCustomNucleotides()
+        {
+            string nucleotidePath = Path.Combine(DataDir, "CustomNucleotides", "CustomNucleotides.txt");
+            if (!File.Exists(nucleotidePath))
+            {
+                WriteNucleotidesFile();
+                return;
+            }
+
+            string[] nucleotideLines = File.ReadAllLines(nucleotidePath);
+            for (int i = 1; i < nucleotideLines.Length; i++)
+            {
+                string[] line = nucleotideLines[i].Split('\t');
+                if (line.Length != 4 || string.IsNullOrWhiteSpace(nucleotideLines[i]) ||
+                    line[1].Length != 1)
+                    continue;
+
+                try
+                {
+                    char letter = line[1][0];
+                    if (!TryValidateCustomNucleotide(line[0], letter, line[2], out _))
+                        continue;
+
+                    ChemicalFormula formula = ChemicalFormula.ParseFormula(line[3]);
+
+                    bool letterExists = Nucleotide.TryGetResidue(letter, out Nucleotide existingByLetter);
+                    bool symbolExists = Nucleotide.TryGetResidue(line[2], out Nucleotide existingBySymbol);
+                    bool nameExists = Nucleotide.TryGetResidue(line[0], out Nucleotide existingByName);
+
+                    if (letterExists || symbolExists || nameExists)
+                    {
+                        continue;
+                    }
+
+                    Nucleotide.AddResidue(line[0], letter, line[2], formula);
+                }
+                catch (Exception)
+                {
+                    // Keep a malformed persisted row from preventing the application from starting.
+                    continue;
+                }
+            }
+        }
+
+        public static void WriteNucleotidesFile()
+        {
+            string directory = Path.Combine(DataDir, "CustomNucleotides");
+            if (!Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            string nucleotidePath = Path.Combine(directory, "CustomNucleotides.txt");
+            List<string> linesToWrite = new List<string>
+            {
+                "Name\tOneLetterAbbr.\tSymbol\tBaseChemicalFormula"
+            };
+
+            foreach (Nucleotide nucleotide in GetDefaultRnaNucleotides())
+            {
+                linesToWrite.Add($"{nucleotide.Name}\t{nucleotide.Letter}\t{nucleotide.Symbol}\t{nucleotide.BaseChemicalFormula.Formula}");
+            }
+
+            File.WriteAllLines(nucleotidePath, linesToWrite);
+        }
+
+        public static bool TryValidateCustomNucleotide(string name, char letter, string symbol, out string validationMessage)
+        {
+            if (string.IsNullOrWhiteSpace(name) || ContainsTabOrNewline(name))
+            {
+                validationMessage = "A nucleotide name without tab or newline characters is required.";
+                return false;
+            }
+
+            if (!IsValidResidueLetter(letter) || IsReservedNucleotideCharacter(letter))
+            {
+                validationMessage = $"The nucleotide character '{letter}' is reserved and cannot be assigned.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(symbol) || ContainsTabOrNewline(symbol))
+            {
+                validationMessage = "A nucleotide symbol without tab or newline characters is required.";
+                return false;
+            }
+
+            string letterText = letter.ToString();
+            if (name.Equals(symbol, StringComparison.Ordinal) || name.Equals(letterText, StringComparison.Ordinal) ||
+                symbol.Equals(letterText, StringComparison.Ordinal))
+            {
+                validationMessage = "The nucleotide name, letter, and symbol must be distinct.";
+                return false;
+            }
+
+            validationMessage = string.Empty;
+            return true;
+        }
+
+        public static bool ContainsTabOrNewline(string value)
+        {
+            return value.IndexOfAny(new[] { '\t', '\r', '\n' }) >= 0;
+        }
+
+        private static bool IsValidResidueLetter(char letter)
+        {
+            return letter <= 'z' && !char.IsControl(letter) && !char.IsWhiteSpace(letter);
+        }
+
+        private static bool IsReservedNucleotideCharacter(char letter)
+        {
+            return new[] { ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' }.Contains(letter);
+        }
+
+        private static IEnumerable<Nucleotide> GetDefaultRnaNucleotides()
+        {
+            return new[]
+            {
+                Nucleotide.AdenineBase,
+                Nucleotide.CytosineBase,
+                Nucleotide.GuanineBase,
+                Nucleotide.UracilBase,
+                Nucleotide.InosineBase,
+                Nucleotide.PseudoUracilBase
+            };
         }
 
         // Does the same thing as Process.Start() except it works on .NET Core
@@ -644,9 +776,43 @@ namespace EngineLayer
             };
         }
 
+        /// <summary>
+        /// Loads the catalogue of UniProt proteomes offered by the "Download UniProt Database" window.
+        /// </summary>
+        /// <remarks>
+        /// The catalogue is a convenience, not a prerequisite: MetaMorpheus searches perfectly well without
+        /// it, so failing to read it must never stop the program starting. It is normally shipped beside the
+        /// executable, but <see cref="DataDir"/> can resolve elsewhere — to %LOCALAPPDATA%\MetaMorpheus for a
+        /// Program Files install, or to a --customDataDir the user has already created — and in those cases
+        /// the file may simply not be there. This method is called from <see cref="SetUpGlobalVariables"/>,
+        /// which runs in the MainWindow constructor and in Program.Main outside any try/catch, so an escaping
+        /// exception is an unhandled crash at launch rather than a degraded feature.
+        /// <para>
+        /// An empty dictionary is the safe degraded value, not null: DownloadUniProtDatabaseWindow enumerates
+        /// this property and calls FirstOrDefault on it without a null check, so a null here has always been
+        /// a latent NullReferenceException the moment that window is opened.
+        /// </para>
+        /// </remarks>
         private static void LoadAvailableProteomes()
         {
-            AvailableUniProtProteomes = ProteinDbRetriever.UniprotProteomesList(Path.Combine(DataDir,@"Proteomes",@"availableUniProtProteomes.txt.gz"));
+            string proteomeListPath = Path.Combine(DataDir, @"Proteomes", @"availableUniProtProteomes.txt.gz");
+
+            try
+            {
+                // mzLib reports a missing or unreadable catalogue by exception and never returns null
+                // (smith-chem-wisc/mzLib#1126, shipped in 1.0.585).
+                AvailableUniProtProteomes = ProteinDbRetriever.UniprotProteomesList(proteomeListPath);
+            }
+            catch (Exception e)
+            {
+                // Deliberately broad: every way reading a local file can fail — absent, wrong extension,
+                // truncated, locked, unreadable — has the same consequence for this optional catalogue, and
+                // none of them is worth refusing to start over.
+                AvailableUniProtProteomes = new Dictionary<string, string>();
+
+                Console.WriteLine($"Could not read the list of available UniProt proteomes from '{proteomeListPath}'. " +
+                                  $"Downloading a proteome by name will be unavailable. {e.Message}");
+            }
         }
         private static void SetUpGlobalSettings()
         {
