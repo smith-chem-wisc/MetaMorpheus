@@ -443,6 +443,31 @@
 		<Component Id="src_PredictionClients.dll" Guid="C6398A43-F845-47C2-9F35-0BB2435AFE16">
 			<File Id="src_PredictionClients.dll" Name="PredictionClients.dll" Source="$(var.GUI_TargetDir)PredictionClients.dll" />
 		</Component>
+      <!--mzLib 1.0.593: StatisticalModels, and PdfPig 0.1.16 (Apache-2.0), which Readers.dll references.-->
+      <Component Id="src_StatisticalModels.dll" Guid="022E26DC-7BA7-431C-838D-AD89AC0A815D">
+        <File Id="src_StatisticalModels.dll" Name="StatisticalModels.dll" Source="$(var.GUI_TargetDir)StatisticalModels.dll" />
+      </Component>
+      <Component Id="src_UglyToad.PdfPig.dll" Guid="DB31F780-4794-498F-AB64-FCD46EEDEDD2">
+        <File Id="src_UglyToad.PdfPig.dll" Name="UglyToad.PdfPig.dll" Source="$(var.GUI_TargetDir)UglyToad.PdfPig.dll" />
+      </Component>
+      <Component Id="src_UglyToad.PdfPig.Core.dll" Guid="81E29A4C-31D0-4FEF-AA27-6549A4FBC8DA">
+        <File Id="src_UglyToad.PdfPig.Core.dll" Name="UglyToad.PdfPig.Core.dll" Source="$(var.GUI_TargetDir)UglyToad.PdfPig.Core.dll" />
+      </Component>
+      <Component Id="src_UglyToad.PdfPig.DocumentLayoutAnalysis.dll" Guid="F7588C86-C46E-436E-AF1C-E2D2D60C5BE9">
+        <File Id="src_UglyToad.PdfPig.DocumentLayoutAnalysis.dll" Name="UglyToad.PdfPig.DocumentLayoutAnalysis.dll" Source="$(var.GUI_TargetDir)UglyToad.PdfPig.DocumentLayoutAnalysis.dll" />
+      </Component>
+      <Component Id="src_UglyToad.PdfPig.Fonts.dll" Guid="559BADC7-CE32-445B-B838-B6AB0BB20726">
+        <File Id="src_UglyToad.PdfPig.Fonts.dll" Name="UglyToad.PdfPig.Fonts.dll" Source="$(var.GUI_TargetDir)UglyToad.PdfPig.Fonts.dll" />
+      </Component>
+      <Component Id="src_UglyToad.PdfPig.Package.dll" Guid="24D8CD7D-2D6D-45F3-A6EE-EB2B343F6A5F">
+        <File Id="src_UglyToad.PdfPig.Package.dll" Name="UglyToad.PdfPig.Package.dll" Source="$(var.GUI_TargetDir)UglyToad.PdfPig.Package.dll" />
+      </Component>
+      <Component Id="src_UglyToad.PdfPig.Tokenization.dll" Guid="425E2560-610C-470F-A2A9-3E98D707AEC6">
+        <File Id="src_UglyToad.PdfPig.Tokenization.dll" Name="UglyToad.PdfPig.Tokenization.dll" Source="$(var.GUI_TargetDir)UglyToad.PdfPig.Tokenization.dll" />
+      </Component>
+      <Component Id="src_UglyToad.PdfPig.Tokens.dll" Guid="B2A42BC5-A1D7-48EB-B2CC-4956AE553ABC">
+        <File Id="src_UglyToad.PdfPig.Tokens.dll" Name="UglyToad.PdfPig.Tokens.dll" Source="$(var.GUI_TargetDir)UglyToad.PdfPig.Tokens.dll" />
+      </Component>
 
       <!--Commandline Components-->
       <Component Id="src_CMD.deps.json" Guid="92190CCF-0138-4F0B-9356-02C914D5A439">
