@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -15,6 +15,9 @@ namespace TaskLayer
         private readonly List<(string, MetaMorpheusTask)> TaskList;
         private string OutputFolder;
         private List<string> CurrentRawDataFilenameList;
+
+        /// <summary>The files the run started from; CurrentRawDataFilenameList moves on to derivatives.</summary>
+        private readonly List<string> AcquiredRawDataFilenameList;
         private List<DbForTask> CurrentXmlDbFilenameList;
         private List<string> _warnings;
 
@@ -24,6 +27,7 @@ namespace TaskLayer
             OutputFolder = outputFolder.Trim('"');
 
             CurrentRawDataFilenameList = startingRawFilenameList;
+            AcquiredRawDataFilenameList = startingRawFilenameList?.ToList();
             CurrentXmlDbFilenameList = startingXmlDbFilenameList;
             _warnings = new();
         }
@@ -87,6 +91,24 @@ namespace TaskLayer
                
                 var ok = TaskList[i];
 
+                // Non-specific search is built around proteases -- terminal mod placement, the "single"
+                // agents, the FDR categories -- none of which have a nucleic acid counterpart yet.
+                // Refused here rather than only in SearchTask because a MetaMorpheusException out of
+                // RunSpecific is dumped into results.txt with a stack trace and rethrown, and the GUI
+                // routes the faulted task to EverythingRunnerExceptionHandler -- so the user is told
+                // MetaMorpheus crashed and invited to file a bug, and never sees the message that says
+                // what to do instead. The throw in SearchTask stays as a backstop for a caller invoking
+                // RunTask directly.
+                if (ok.Item2 is SearchTask nonSpecificCandidate
+                    && nonSpecificCandidate.SearchParameters.SearchType == SearchType.NonSpecific
+                    && GlobalVariables.AnalyteType == AnalyteType.Oligo)
+                {
+                    Warn("Cannot proceed. Non-specific search is only implemented for proteins. " +
+                         "Use Classic or Modern search for nucleic acid databases.");
+                    FinishedAllTasks(OutputFolder);
+                    return;
+                }
+
                 // reset product types for custom fragmentation
                 ok.Item2.CommonParameters.SetCustomProductTypes();
 
@@ -96,6 +118,7 @@ namespace TaskLayer
                     Directory.CreateDirectory(outputFolderForThisTask);
 
                 // Actual task running code
+                ok.Item2.AcquiredSpectraFiles = AcquiredRawDataFilenameList;
                 var myTaskResults = ok.Item2.RunTask(outputFolderForThisTask, CurrentXmlDbFilenameList, CurrentRawDataFilenameList, ok.Item1);
 
                 if (myTaskResults.NewDatabases != null)

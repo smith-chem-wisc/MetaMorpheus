@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<method>
+<submethods>
+<submethod program="microTOFQMaxControl" revision="109">
+<name>demo_line_for_austin.m</name>
+<files>
+<file name="microTOFQMaxAcquisition.method"/>
+</files>
+</submethod>
+</submethods>
+<locked>false</locked>
+<readonly>true</readonly>
+<comment></comment>
+</method>

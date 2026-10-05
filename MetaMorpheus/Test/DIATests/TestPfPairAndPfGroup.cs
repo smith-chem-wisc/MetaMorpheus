@@ -7,7 +7,6 @@ using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Data.Entity.Core;
 using System.Linq;
 using TaskLayer;
 namespace Test.DIATests

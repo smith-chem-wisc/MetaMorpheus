@@ -39,27 +39,10 @@ namespace TaskLayer
             IncludeModMotifInMzid = false;
             WriteDigestionProductCountFile = false;
             WriteTargetDecoyFasta = false;
+            WriteSdrf = false;
+            IterativePepTraining = true;
 
-            ModsToWriteSelection = new Dictionary<string, int>
-            {
-                //Key is modification type.
-
-                //Value is integer 0, 1, 2 and 3 interpreted as:
-                //   0:   Do not Write
-                //   1:   Write if in DB and Observed
-                //   2:   Write if in DB
-                //   3:   Write if Observed
-
-                {"N-linked glycosylation", 3},
-                {"O-linked glycosylation", 3},
-                {"Other glycosylation", 3},
-                {"Common Biological", 3},
-                {"Less Common", 3},
-                {"Metal", 3},
-                {"2+ nucleotide substitution", 3},
-                {"1 nucleotide substitution", 3},
-                {"UniProt", 2},
-            };
+            ModsToWriteSelection = DefaultModsToWriteSelection();
 
             WriteHighQValuePsms = true;
             WriteDecoys = true;
@@ -94,6 +77,28 @@ namespace TaskLayer
         public double MaxFragmentSize { get; set; }
         public int MinAllowedInternalFragmentLength { get; set; } //0 means "no internal fragments"
         public double HistogramBinTolInDaltons { get; set; }
+
+        /// <summary>
+        /// The default modification types written to a pruned database, keyed by modification type.
+        /// Values are 0 do not write, 1 write if in the database and observed, 2 write if in the database,
+        /// 3 write if observed. A fresh dictionary each call, since callers mutate their own copy.
+        /// </summary>
+        /// <remarks>
+        /// Shared with <see cref="GlycoSearchParameters"/>, which needs the same protein defaults.
+        /// <see cref="RnaSearchParameters"/> deliberately replaces it with an RNA-specific set.
+        /// </remarks>
+        public static Dictionary<string, int> DefaultModsToWriteSelection() => new Dictionary<string, int>
+        {
+            {"N-linked glycosylation", 3},
+            {"O-linked glycosylation", 3},
+            {"Other glycosylation", 3},
+            {"Common Biological", 3},
+            {"Less Common", 3},
+            {"Metal", 3},
+            {"2+ nucleotide substitution", 3},
+            {"1 nucleotide substitution", 3},
+            {"UniProt", 2},
+        };
         public Dictionary<string, int> ModsToWriteSelection { get; set; }
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
         public bool WriteMzId { get; set; }
@@ -112,5 +117,24 @@ namespace TaskLayer
         public bool IncludeModMotifInMzid { get; set; }
         public bool WriteDigestionProductCountFile { get; set; }
         public bool WriteTargetDecoyFasta { get; set; }
+
+        /// <summary>
+        /// Write an SDRF-Proteomics file describing this experiment alongside the results.
+        ///
+        /// OPT-IN, and deliberately so. An SDRF's sample half -- organism part, disease, cell type,
+        /// replicate structure -- is knowledge no search has; only a human does. A run that emitted
+        /// one unconditionally would have to write "not available" wherever it could not find a
+        /// value, and a corpus of those passes every validator, produces no drift findings, and
+        /// cannot be mined. Opting in is the user saying the sample metadata exists, which is what
+        /// makes it worth naming every gap before the run starts.
+        /// </summary>
+        public bool WriteSdrf { get; set; }
+
+        /// <summary>
+        /// Retrain the PEP model on its own output until the count of accepted target peptides stops growing
+        /// (semi-supervised, as in Percolator and mokapot). On by default, after entrapment checks on two datasets.
+        /// Off, PEP trains once, on labels from the search-score q-value.
+        /// </summary>
+        public bool IterativePepTraining { get; set; }
     }
 }

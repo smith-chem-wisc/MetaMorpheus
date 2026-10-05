@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using Easy.Common.Extensions;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using iText.Layout;
@@ -10,6 +11,7 @@ using MzLibUtil;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Wpf;
+using ThermoFisher.CommonCore.Data;
 using LinearAxis = OxyPlot.Axes.LinearAxis;
 using LineSeries = OxyPlot.Series.LineSeries;
 using Plot = mzPlot.Plot;
@@ -37,8 +39,15 @@ public class MassSpectrumPlot : Plot
     /// </summary>
     protected void DrawSpectrum()
     {
-        var yArray = Scan.MassSpectrum.YArray;
-        var xArray = Scan.MassSpectrum.XArray;
+        var firstX = Scan.MassSpectrum.XArray.First(p => p >= MetaDrawSettings.MinMzToPlot);
+        var firstXIndex = Array.IndexOf(Scan.MassSpectrum.XArray, firstX);
+
+        var lastX = Scan.MassSpectrum.XArray.Last(p => p <= MetaDrawSettings.MaxMzToPlot);
+        var lastXIndex = Array.IndexOf(Scan.MassSpectrum.XArray, lastX);
+
+        var xArray = Scan.MassSpectrum.XArray[firstXIndex..(lastXIndex + 1)];
+        var yArray = Scan.MassSpectrum.YArray[firstXIndex..(lastXIndex + 1)];
+
         double yMax = 0;
         for (int i = 0; i < yArray.Length; i++)
         {

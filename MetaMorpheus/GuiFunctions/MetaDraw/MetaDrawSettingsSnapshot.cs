@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Readers;
 using GuiFunctions.MetaDraw;
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 
 namespace GuiFunctions
 {
@@ -37,6 +38,8 @@ namespace GuiFunctions
         public double SpectrumDescriptionFontSize { get; set; } = 10;
         public bool DisplayChimeraLegend { get; set; } = true;
         public bool SuppressMessageBoxes { get; set; } = false;
+        public double MinMzToPlot { get; set; } = 0;
+        public double MaxMzToPlot { get; set; } = double.MaxValue;
 
         // Chimera Settings
         public bool ChimeraLegendTakeFirstIfAmbiguous { get; set; }
@@ -68,5 +71,6 @@ namespace GuiFunctions
 
         public int BioPolymerCoverageFontSize { get; set; } = 16;
         public List<string> BioPolymerCoverageColors { get; set; }
+        public ColorGradientType BioPolymerCoverageGradientType { get; set; } = ColorGradientType.Viridis;
     }
 }

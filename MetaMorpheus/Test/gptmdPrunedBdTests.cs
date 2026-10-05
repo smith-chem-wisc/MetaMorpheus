@@ -142,13 +142,13 @@ namespace Test
             Assert.That(protein.Count, Is.EqualTo(2));
             //The original database had two localized mods on the protein. Therefore. both protein and decoy should have two mods.
             Assert.That(protein[0].OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(2));
-            List<int> foundResidueIndicies = protein[0].OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
+            List<int> foundResidueIndices = protein[0].OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
             List<int> expectedResidueIndices = new List<int>() { 1, 3 };
-            Assert.That(foundResidueIndicies, Is.EquivalentTo(expectedResidueIndices));
+            Assert.That(foundResidueIndices, Is.EquivalentTo(expectedResidueIndices));
             Assert.That(protein[1].OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(2));
-            foundResidueIndicies = protein[1].OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
+            foundResidueIndices = protein[1].OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
             expectedResidueIndices = new List<int>() { 4, 6 }; //originally modified residues are now at the end in the decoy
-            Assert.That(foundResidueIndicies, Is.EquivalentTo(expectedResidueIndices));
+            Assert.That(foundResidueIndices, Is.EquivalentTo(expectedResidueIndices));
 
             var thisOk = ok;//for debugging
             var commonParamsAtThisPoint = task1.CommonParameters.DigestionParams; //for debugging
