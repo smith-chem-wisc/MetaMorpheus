@@ -284,12 +284,8 @@ public static class FromFileDeconvolutionSearchTests
         new() { new(Path.Combine(TestDataDirectory, "TaGe_SA_A549_3_snip.fasta"), false) };
 
     private static SearchFeatureFileMap CreateFixtureMap(IReadOnlyList<string> copiedRawFiles) =>
-        new()
-        {
-            Entries = copiedRawFiles
-                .Select((rawFile, index) => new SearchFeatureFileMapEntry(rawFile, FeatureFixturePath(InputBaseNames[index])))
-                .ToList()
-        };
+        new(copiedRawFiles
+            .Select((rawFile, index) => new SearchFeatureFileMapEntry(rawFile, FeatureFixturePath(InputBaseNames[index]))));
 
     private static SearchTask CreateSearchTask(CommonParameters commonParameters) =>
         new()

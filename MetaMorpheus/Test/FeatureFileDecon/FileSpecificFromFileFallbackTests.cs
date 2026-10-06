@@ -238,14 +238,11 @@ public static class FileSpecificFromFileFallbackTests
         Assume.That(File.Exists(SecondValidMs1FeaturePath), $"Fixture must exist at: {SecondValidMs1FeaturePath}");
 
         var taskWideMap = new FeatureMappedFromFileDeconvolutionParameters(
-            new SearchFeatureFileMap
+            new SearchFeatureFileMap(new[]
             {
-                Entries = new List<SearchFeatureFileMapEntry>
-                {
-                    new(massSpecFilePath: RawWithOverride, featureFilePath: ValidMs1FeaturePath),
-                    new(massSpecFilePath: RawWithoutOverride, featureFilePath: SecondValidMs1FeaturePath)
-                }
-            },
+                new SearchFeatureFileMapEntry(RawWithOverride, ValidMs1FeaturePath),
+                new SearchFeatureFileMapEntry(RawWithoutOverride, SecondValidMs1FeaturePath)
+            }),
             minCharge: 1,
             maxCharge: 20)
         {
@@ -266,13 +263,13 @@ public static class FileSpecificFromFileFallbackTests
             Assert.That(resolvedWithBadOverride.PrecursorDeconvolutionParameters,
                 Is.TypeOf<FromFileDeconvolutionParameters>());
             var mappedForBadRaw = (FromFileDeconvolutionParameters)resolvedWithBadOverride.PrecursorDeconvolutionParameters;
-            Assert.That(mappedForBadRaw.FilePath, Is.EqualTo(ValidMs1FeaturePath));
+            Assert.That(Path.GetFullPath(mappedForBadRaw.FilePath), Is.EqualTo(Path.GetFullPath(ValidMs1FeaturePath)));
             Assert.That(mappedForBadRaw.Features, Is.Not.Empty,
                 "The task-wide embedded map must resolve for the raw whose override failed");
 
             // The second raw is unaffected: one malformed source must not abort another raw.
             var mappedForOtherRaw = (FromFileDeconvolutionParameters)resolvedWithoutOverride.PrecursorDeconvolutionParameters;
-            Assert.That(mappedForOtherRaw.FilePath, Is.EqualTo(SecondValidMs1FeaturePath));
+            Assert.That(Path.GetFullPath(mappedForOtherRaw.FilePath), Is.EqualTo(Path.GetFullPath(SecondValidMs1FeaturePath)));
             Assert.That(mappedForOtherRaw.Features, Is.Not.Empty);
         });
 
@@ -283,7 +280,7 @@ public static class FileSpecificFromFileFallbackTests
         Assert.That(warnings[0], Does.Contain(nameof(FeatureMappedFromFileDeconvolutionParameters)),
             "Warning must name the mapped task-wide fallback");
 
-        Assert.That(taskWideMap.FeatureFileMap.Entries, Has.Count.EqualTo(2),
+        Assert.That(taskWideMap.FeatureFileMap, Has.Count.EqualTo(2),
             "Resolving the fallback must not mutate the task-wide embedded map");
     }
 
@@ -330,13 +327,10 @@ public static class FileSpecificFromFileFallbackTests
     public static void InvalidOverride_WithUnmappedTaskWideFallback_SurfacesExistingFailure()
     {
         var taskWideMap = new FeatureMappedFromFileDeconvolutionParameters(
-            new SearchFeatureFileMap
+            new SearchFeatureFileMap(new[]
             {
-                Entries = new List<SearchFeatureFileMapEntry>
-                {
-                    new(massSpecFilePath: RawWithoutOverride, featureFilePath: NonexistentFeaturePath)
-                }
-            },
+                new SearchFeatureFileMapEntry(RawWithoutOverride, NonexistentFeaturePath)
+            }),
             minCharge: 1,
             maxCharge: 20);
         var commonParameters = new CommonParameters(precursorDeconParams: taskWideMap);
