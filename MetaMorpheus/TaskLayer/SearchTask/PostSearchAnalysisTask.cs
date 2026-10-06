@@ -497,6 +497,8 @@ namespace TaskLayer
                     proteinGroup.IntensitiesBySample = new Dictionary<ISampleInfo, double>();
                 }
 
+                // A site modified in any sample group is reported as 0/N wherever another group covers it unmodified
+                proteinGroup.ReportSitesSeenModifiedInAnySampleGroup();
                 proteinGroup.PopulateSampleGroupResults();
             }
 
@@ -921,6 +923,7 @@ namespace TaskLayer
                     foreach (var proteinGroup in ProteinGroups)
                     {
                         proteinGroup.HasPeptideLevelQuantification = quantifiedPeptidesAvailable;
+                        proteinGroup.ReportSitesSeenModifiedInAnySampleGroup();
                         proteinGroup.PopulateSampleGroupResults();
                     }
                 }
@@ -967,6 +970,7 @@ namespace TaskLayer
                 proteinGroup.IntensitiesByFile = null;
                 proteinGroup.HasPeptideLevelQuantification = false;
                 proteinGroup.FilesForQuantification = spectraFileInfo;
+                proteinGroup.ReportSitesSeenModifiedInAnySampleGroup();
                 proteinGroup.PopulateSampleGroupResults();
             }
         }
