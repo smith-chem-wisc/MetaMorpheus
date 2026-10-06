@@ -709,6 +709,10 @@ namespace TaskLayer
         /// Task Settings TOMLs, the GUI's defaults), and the GUI has no field for it. A well-formed
         /// accession left over from another dataset would otherwise tie these files to the wrong
         /// experiment without a word. Warned, not refused: the accession is still written as supplied.
+        ///
+        /// The form check accepts PXD or RPXD (PRIDE's reprocessed datasets) followed by six or more
+        /// digits, in any case. The specification's value type is PXD\d+, so seven-digit accessions
+        /// are valid once they exist.
         /// </summary>
         private void WarnAboutProteomeXchangeAccession()
         {
@@ -716,9 +720,11 @@ namespace TaskLayer
             if (string.IsNullOrEmpty(accession))
                 return;
 
-            string malformed = System.Text.RegularExpressions.Regex.IsMatch(accession, @"^PXD\d{6}$")
+            string malformed = System.Text.RegularExpressions.Regex.IsMatch(accession, @"^R?PXD\d{6,}$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase)
                 ? ""
-                : " It does not look like one (PXD followed by six digits), and will be written as given.";
+                : " That is not the form of a ProteomeXchange accession (PXD followed by six or more digits); " +
+                  "it will be written as given.";
             Warn("SDRF output is on: the SDRF will record ProteomeXchange accession '" + accession +
                  "' as the dataset these spectra files came from." + malformed + " If they did not, " +
                  "clear ProteomeXchangeAccession in the task settings.");

@@ -756,6 +756,11 @@ namespace Test
         [TestCase("MSV000012345", true, true)]
         [TestCase("PXD012345", true, false)]
         [TestCase(" PXD012345 ", true, false)]
+        // The spec's value type is PXD\d+: seven digits will come. RPXD is PRIDE's reprocessed-dataset
+        // accession, legitimate for a re-analysis. Case is not the user's mistake worth a warning.
+        [TestCase("PXD1234567", true, false)]
+        [TestCase("RPXD012345", true, false)]
+        [TestCase("pxd012345", true, false)]
         [TestCase(null, false, false)]
         [TestCase("", false, false)]
         // An isobaric search too: merged with #2817, an early return in its multiplex branch skipped
@@ -800,7 +805,7 @@ namespace Test
             {
                 Assert.That(accessionWarnings[0], Does.Contain("'" + accession.Trim() + "'"));
                 Assert.That(accessionWarnings[0], Does.Contain("clear ProteomeXchangeAccession"));
-                Assert.That(accessionWarnings[0].Contains("does not look like one"), Is.EqualTo(malformed));
+                Assert.That(accessionWarnings[0].Contains("not the form of a ProteomeXchange accession"), Is.EqualTo(malformed));
             }
 
             Directory.Delete(folder, true);
