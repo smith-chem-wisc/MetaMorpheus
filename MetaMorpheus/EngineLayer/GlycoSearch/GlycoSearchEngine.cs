@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EngineLayer.Util;
 using MassSpectrometry;
 using EngineLayer.SpectrumMatch;
 
@@ -213,14 +214,14 @@ namespace EngineLayer.GlycoSearch
             var threadBudget = ThreadBudget ?? new Util.SearchThreadBudget(CommonParameters.MaxThreadsToUsePerFile);
             threadBudget.Run(ListOfSortedMs2Scans.Length, nextScan =>
             {
-                byte[] scoringTable = new byte[PeptideIndex.Count];
+                var scoringTable = new ScanScoringTable(PeptideIndex.Count, UseStampedScoringTable);
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
 
-                byte[] secondScoringTable = new byte[PeptideIndex.Count]; // We didn't use that right now.
+                var secondScoringTable = new ScanScoringTable(PeptideIndex.Count, UseStampedScoringTable); // We didn't use that right now.
                 List<int> childIdsOfPeptidesPossiblyObserved = new List<int>();
+                var scoreSorter = new DescendingScoreSorter();
 
                 List<int> idsOfPeptidesTopN = new List<int>();
-                int[] candidateCountsByScore = new int[byte.MaxValue + 1];
 
                 for (int scanIndex = nextScan(); scanIndex >= 0; scanIndex = nextScan())
                 {
@@ -228,7 +229,7 @@ namespace EngineLayer.GlycoSearch
                     if (GlobalVariables.StopLoops) { return; }
 
                     // empty the scoring table to score the new scan (conserves memory compared to allocating a new array)
-                    Array.Clear(scoringTable, 0, scoringTable.Length);
+                    scoringTable.BeginScan();
                     idsOfPeptidesPossiblyObserved.Clear();
                     idsOfPeptidesTopN.Clear();
 
@@ -273,7 +274,7 @@ namespace EngineLayer.GlycoSearch
                     // filtering the peptides candidate with the cufoff and limit the topN peptides.
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
-                        SelectTopCandidates(idsOfPeptidesPossiblyObserved, scoringTable, byteScoreCutoff, TopN, candidateCountsByScore, idsOfPeptidesTopN);
+                        scoreSorter.SelectTop(idsOfPeptidesPossiblyObserved, scoringTable, byteScoreCutoff, TopN, idsOfPeptidesTopN);
 
                         List<GlycoSpectralMatch> gsms = MatchCandidates(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff, null);
 
@@ -319,16 +320,16 @@ namespace EngineLayer.GlycoSearch
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
             Parallel.ForEach(threads, (scanIndex) =>
             {
-                byte[] scoringTable = new byte[PeptideIndex.Count];
+                var scoringTable = new ScanScoringTable(PeptideIndex.Count, UseStampedScoringTable);
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
                 List<int> idsOfPeptidesTopN = new List<int>();
-                int[] candidateCountsByScore = new int[byte.MaxValue + 1];
+                var scoreSorter = new DescendingScoreSorter();
 
                 for (; scanIndex < ListOfSortedMs2Scans.Length; scanIndex += maxThreadsPerFile)
                 {
                     if (GlobalVariables.StopLoops) { return; }
 
-                    Array.Clear(scoringTable, 0, scoringTable.Length);
+                    scoringTable.BeginScan();
                     idsOfPeptidesPossiblyObserved.Clear();
                     idsOfPeptidesTopN.Clear();
 
@@ -343,7 +344,7 @@ namespace EngineLayer.GlycoSearch
                     {
                         // Cutting this partition to TopN first cannot lose a global survivor: a partition's TopN-th
                         // score is never above the database's, so anything at or above the database's is kept here.
-                        SelectTopCandidates(idsOfPeptidesPossiblyObserved, scoringTable, byteScoreCutoff, TopN, candidateCountsByScore, idsOfPeptidesTopN);
+                        scoreSorter.SelectTop(idsOfPeptidesPossiblyObserved, scoringTable, byteScoreCutoff, TopN, idsOfPeptidesTopN);
 
                         if (idsOfPeptidesTopN.Count > 0)
                         {
@@ -427,9 +428,9 @@ namespace EngineLayer.GlycoSearch
         }
 
         /// <summary>
-        /// The same cut as <see cref="SelectTopCandidates"/>, applied to candidates pooled from several partitions. The sort
+        /// The same cut as <see cref="DescendingScoreSorter.SelectTop"/>, applied to candidates pooled from several partitions. The sort
         /// is stable, so equal scores stay in the order they were added: partition order, then the order
-        /// SelectTopCandidates produced within a partition.
+        /// SelectTop produced within a partition.
         /// </summary>
         internal static List<(int Partition, int PeptideId, byte Score)> KeepGlobalTopN(List<(int Partition, int PeptideId, byte Score)> candidates, int topN)
         {
@@ -471,62 +472,6 @@ namespace EngineLayer.GlycoSearch
             }
 
             Add2GlobalGsms(ref gsms, scanIndex);
-        }
-
-        /// <summary>
-        /// Keeps the candidate peptides worth matching: every id scoring at least <paramref name="scoreCutoff"/>, cut after the
-        /// <paramref name="topN"/>th best but keeping all ids tied with it, written to <paramref name="topCandidates"/> from highest score
-        /// to lowest and, within a score, in the order the ids were observed. That is exactly what a stable descending sort by score,
-        /// stopped below the topN-th score, produces. Scores are bytes, so counting them replaces sorting the whole candidate list, which
-        /// can run to hundreds of thousands of ids per scan when only 50 are kept.
-        /// </summary>
-        /// <param name="countsByScore"> Scratch space of length 256, reused across scans. Left zeroed. </param>
-        /// <param name="topCandidates"> Cleared and filled. </param>
-        internal static void SelectTopCandidates(List<int> candidateIds, byte[] scores, int scoreCutoff, int topN, int[] countsByScore, List<int> topCandidates)
-        {
-            topCandidates.Clear();
-            foreach (int id in candidateIds)
-            {
-                countsByScore[scores[id]]++;
-            }
-
-            // The lowest score kept: the score of the topN-th best candidate, or the cutoff when there are fewer than topN.
-            int lowestKeptScore = Math.Max(scoreCutoff, 0);
-            if (topN > 0)
-            {
-                int atOrAbove = 0;
-                for (int score = byte.MaxValue; score >= lowestKeptScore; score--)
-                {
-                    atOrAbove += countsByScore[score];
-                    if (atOrAbove >= topN)
-                    {
-                        lowestKeptScore = score;
-                        break;
-                    }
-                }
-            }
-
-            // Where each kept score's ids start in the output, highest score first.
-            int kept = 0;
-            for (int score = byte.MaxValue; score >= lowestKeptScore; score--)
-            {
-                int count = countsByScore[score];
-                countsByScore[score] = kept;
-                kept += count;
-            }
-
-            System.Runtime.InteropServices.CollectionsMarshal.SetCount(topCandidates, kept);
-            var output = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(topCandidates);
-            foreach (int id in candidateIds)
-            {
-                int score = scores[id];
-                if (score >= lowestKeptScore)
-                {
-                    output[countsByScore[score]++] = id;
-                }
-            }
-
-            Array.Clear(countsByScore);
         }
 
         private void Add2GlobalGsms(ref List<GlycoSpectralMatch> gsms, int scanIndex)
