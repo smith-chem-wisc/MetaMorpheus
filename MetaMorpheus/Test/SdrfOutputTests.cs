@@ -1098,7 +1098,63 @@ namespace Test
                 "A bridge is one sample measured in both plexes, so it keeps one source name.");
 
             Assert.That(InvokeSampleNamesReusedForDifferentSamples(plex1), Is.Empty,
-                "Within one plex, Read already guarantees each name is one sample.");
+                "Plex1 names each channel differently, so no name in it names two samples.");
+        }
+
+        /// <summary>
+        /// Read checks uniqueness within a plex on (sample, biological replicate, fraction, technical
+        /// replicate), not on the name, so one plex can name every channel after its cell line with a
+        /// different biological replicate on each (what Auto-fill writes). Adding the plex alone left all
+        /// those channels one source name, so they take the channel as well, and the warning says the name
+        /// repeats inside a plex rather than across plexes (pcruzparri, #2817 review).
+        /// </summary>
+        [Test]
+        public static void ASampleNameRepeatedOnChannelsOfOnePlexGetsOneSourceNamePerChannel()
+        {
+            var annotations = new List<TmtPlexAnnotation>
+            {
+                new() { Tag = "126", SampleName = "HeLa", Condition = "Ctrl", BiologicalReplicate = 1 },
+                new() { Tag = "127N", SampleName = "HeLa", Condition = "Ctrl", BiologicalReplicate = 2 },
+                new() { Tag = "127C", SampleName = "HeLa", Condition = "Drug", BiologicalReplicate = 3 },
+                new() { Tag = "128N", SampleName = "Pool", Condition = "Pool", BiologicalReplicate = 1 }
+            };
+            var fraction1 = new TmtFileInfo(@"C:\data\p1_F01.raw", "Plex1", 1, 1, annotations);
+            var fraction2 = new TmtFileInfo(@"C:\data\p1_F02.raw", "Plex1", 2, 1, annotations);
+
+            var reused = InvokeSampleNamesReusedForDifferentSamples(fraction1, fraction2);
+            Assert.That(reused, Is.EquivalentTo(new[] { "HeLa" }));
+
+            List<string> SourceNames(TmtFileInfo file) => InvokeChannelRows(file, IsobaricMassTagType.TMT11, reused)
+                .Select(r => r.Sample.SourceName).ToList();
+
+            Assert.That(SourceNames(fraction1),
+                Is.EqualTo(new[] { "Plex1 HeLa 126", "Plex1 HeLa 127N", "Plex1 HeLa 127C", "Pool" }),
+                "Three samples, three source names; Pool names one sample and keeps its name.");
+            Assert.That(SourceNames(fraction2), Is.EqualTo(SourceNames(fraction1)),
+                "Every fraction of the plex measures the same channels, so the names are the same.");
+
+            string warning = (string)typeof(PostSearchAnalysisTask)
+                .GetMethod("ReusedSampleNamesWarning", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { reused, InvokeSampleNamesRepeatedWithinAPlex(fraction1, fraction2) });
+            Assert.That(warning, Does.Contain("more than one channel of the same plex")
+                .And.Contain("'HeLa'").And.Contain("<plex> <sample name> <channel>")
+                .And.Not.Contain("in more than one plex"));
+        }
+
+        /// <summary>The within-plex repeat is named before the search too, in its own words.</summary>
+        [Test]
+        public static void ASampleNameRepeatedOnChannelsOfOnePlexIsWarnedBeforeTheSearch()
+        {
+            var warnings = WarningsBeforeAnIsobaricSearch(nameof(ASampleNameRepeatedOnChannelsOfOnePlexIsWarnedBeforeTheSearch),
+                "TMT11-plex on K", spectra => new[]
+                {
+                    $"{spectra}	Plex1	HeLa	126	Ctrl	1	1	1	study sample",
+                    $"{spectra}	Plex1	HeLa	127N	Drug	2	1	1	study sample"
+                });
+
+            Assert.That(warnings, Has.Count.EqualTo(1), string.Join(" | ", warnings));
+            Assert.That(warnings.Single(), Does.Contain("'HeLa'").And.Contain("more than one channel of the same plex")
+                .And.Not.Contain("in more than one plex"));
         }
 
         /// <summary>The same reuse is named before the search, when it is still cheap to rename.</summary>
@@ -1321,6 +1377,11 @@ namespace Test
                 .Invoke(null, new object[] { file, tagType, null, new SdrfAssay { DataFileName = "run1.raw", AssayName = "run run1" },
                     reusedSampleNames ?? new HashSet<string>() }))
             .ToList();
+
+        private static HashSet<string> InvokeSampleNamesRepeatedWithinAPlex(params TmtFileInfo[] files) =>
+            (HashSet<string>)typeof(PostSearchAnalysisTask)
+                .GetMethod("SampleNamesRepeatedWithinAPlex", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { files });
 
         private static HashSet<string> InvokeSampleNamesReusedForDifferentSamples(params TmtFileInfo[] files) =>
             (HashSet<string>)typeof(PostSearchAnalysisTask)

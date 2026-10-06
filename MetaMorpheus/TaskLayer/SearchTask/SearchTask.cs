@@ -752,10 +752,13 @@ namespace TaskLayer
                 Warn("SDRF output is on, but the SDRF will describe these files once, without their channels or " +
                      "samples: " + string.Join("; ", reasons) + ".");
 
-            var reusedSampleNames = PostSearchAnalysisTask.SampleNamesReusedForDifferentSamples(
-                files.Where(f => PostSearchAnalysisTask.ChannelRowsUnusableReason(f, tagType.Value) is null));
+            var usableFiles = files
+                .Where(f => PostSearchAnalysisTask.ChannelRowsUnusableReason(f, tagType.Value) is null)
+                .ToList();
+            var reusedSampleNames = PostSearchAnalysisTask.SampleNamesReusedForDifferentSamples(usableFiles);
             if (reusedSampleNames.Any())
-                Warn("SDRF output is on. " + PostSearchAnalysisTask.ReusedSampleNamesWarning(reusedSampleNames));
+                Warn("SDRF output is on. " + PostSearchAnalysisTask.ReusedSampleNamesWarning(reusedSampleNames,
+                    PostSearchAnalysisTask.SampleNamesRepeatedWithinAPlex(usableFiles)));
         }
 
 

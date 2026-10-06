@@ -105,7 +105,8 @@ namespace TaskLayer
                 : SampleNamesReusedForDifferentSamples(isobaric.Values
                     .Where(f => ChannelRowsUnusableReason(f, tagType!.Value) is null));
             if (reusedSampleNames.Any())
-                Warn(ReusedSampleNamesWarning(reusedSampleNames));
+                Warn(ReusedSampleNamesWarning(reusedSampleNames, SampleNamesRepeatedWithinAPlex(isobaric!.Values
+                    .Where(f => ChannelRowsUnusableReason(f, tagType!.Value) is null))));
 
             var organism = ResolveOrganismFromSearchDatabase();
 
@@ -220,8 +221,8 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// The channel sample names that name more than one sample: a name written in more than one plex
-        /// with a different (condition, biological replicate) in each. <see cref="TmtExperimentalDesign.Read"/>
+        /// The channel sample names that name more than one sample: a name written in more than one plex,
+        /// or on more than one channel of one plex, with a different (condition, biological replicate) on each. <see cref="TmtExperimentalDesign.Read"/>
         /// checks names only within a plex, on purpose -- a bridge channel carries one name across plexes --
         /// so a design that names each plex's channels S1, S2, ... for different material loads cleanly.
         /// Written as is, one source name would claim two conditions, and anything keyed on source name
@@ -239,12 +240,52 @@ namespace TaskLayer
                 .Select(g => g.Key)
                 .ToHashSet(StringComparer.Ordinal);
 
-        internal static string ReusedSampleNamesWarning(IEnumerable<string> names) =>
-            "The design uses these sample names in more than one plex with a different condition or biological " +
-            "replicate, so they name different samples: " +
-            string.Join(", ", names.OrderBy(n => n, StringComparer.Ordinal).Select(n => "'" + n + "'")) +
-            ". The SDRF writes each as '<plex> <sample name>' so that one source name stays one sample. " +
-            "Give them distinct names in " + GlobalVariables.TmtExperimentalDesignFileName + " to choose the names yourself.";
+        /// <summary>
+        /// The sample names one plex gives to more than one channel, with a different (condition, biological
+        /// replicate) on each: what Auto-fill writes when every channel is named after the cell line.
+        /// <see cref="TmtExperimentalDesign.Read"/> checks uniqueness within a plex on (sample, biological
+        /// replicate, fraction, technical replicate), not on the name, so this loads cleanly. Adding the plex
+        /// alone would leave these channels one source name, so they are scoped to the channel as well
+        /// (pcruzparri, #2817 review). Every fraction of a plex carries the same annotations, so the scope
+        /// is stable across fractions.
+        /// </summary>
+        internal static HashSet<string> SampleNamesRepeatedWithinAPlex(IEnumerable<TmtFileInfo> files) =>
+            files
+                .SelectMany(f => RepeatedWithin(f.Annotations))
+                .ToHashSet(StringComparer.Ordinal);
+
+        private static IEnumerable<string> RepeatedWithin(IEnumerable<TmtPlexAnnotation> annotations) =>
+            annotations
+                .Where(a => !string.IsNullOrWhiteSpace(a.SampleName))
+                .GroupBy(a => a.SampleName, StringComparer.Ordinal)
+                .Where(g => g.Select(a => ((a.Condition ?? "").Trim(), a.BiologicalReplicate)).Distinct().Count() > 1)
+                .Select(g => g.Key);
+
+        /// <summary>
+        /// The warning for names that name more than one sample. A name repeated inside one plex is
+        /// described as that, not as reuse across plexes, because the fix the user needs is different.
+        /// </summary>
+        internal static string ReusedSampleNamesWarning(IEnumerable<string> names, ISet<string> repeatedWithinAPlex)
+        {
+            string Quote(IEnumerable<string> list) =>
+                string.Join(", ", list.OrderBy(n => n, StringComparer.Ordinal).Select(n => "'" + n + "'"));
+
+            var withinPlex = names.Where(n => repeatedWithinAPlex?.Contains(n) == true).ToList();
+            var acrossPlexes = names.Except(withinPlex, StringComparer.Ordinal).ToList();
+            var parts = new List<string>();
+            if (acrossPlexes.Any())
+                parts.Add("The design uses these sample names in more than one plex with a different condition or " +
+                          "biological replicate, so they name different samples: " + Quote(acrossPlexes) +
+                          ". The SDRF writes each as '<plex> <sample name>' so that one source name stays one sample.");
+            if (withinPlex.Any())
+                parts.Add("The design gives these sample names to more than one channel of the same plex, with a " +
+                          "different condition or biological replicate on each, so they name different samples: " +
+                          Quote(withinPlex) + ". The SDRF writes each as '<plex> <sample name> <channel>' so that " +
+                          "one source name stays one sample.");
+            parts.Add("Give them distinct names in " + GlobalVariables.TmtExperimentalDesignFileName +
+                      " to choose the names yourself.");
+            return string.Join(" ", parts);
+        }
 
         /// <summary>
         /// The assay half of a row: everything the search itself knows about one data file. Shared by
@@ -316,6 +357,7 @@ namespace TaskLayer
 
             string stem = Path.GetFileNameWithoutExtension(tmtFile.FullFilePathWithExtension);
             string plexScope = string.IsNullOrWhiteSpace(tmtFile.Plex) ? stem : tmtFile.Plex.Trim();
+            var repeatedInThisPlex = RepeatedWithin(tmtFile.Annotations).ToHashSet(StringComparer.Ordinal);
 
             foreach (var annotation in tmtFile.Annotations.OrderBy(a => OrderOf(a.Tag)))
             {
@@ -338,12 +380,16 @@ namespace TaskLayer
                     // breaking joins -- on the day it does.
                     //
                     // A name the design reuses in another plex for a different sample is scoped the same way
-                    // (SampleNamesReusedForDifferentSamples); a bridge keeps its shared name.
+                    // (SampleNamesReusedForDifferentSamples); a bridge keeps its shared name. A name this
+                    // plex gives to several channels for different samples also takes the channel, since
+                    // the plex alone would still be one source name (SampleNamesRepeatedWithinAPlex).
                     SourceName = string.IsNullOrWhiteSpace(annotation.SampleName)
                         ? plexScope + " " + annotation.Tag.Trim()
-                        : reusedSampleNames?.Contains(annotation.SampleName) == true
-                            ? plexScope + " " + annotation.SampleName
-                            : annotation.SampleName,
+                        : repeatedInThisPlex.Contains(annotation.SampleName)
+                            ? plexScope + " " + annotation.SampleName + " " + annotation.Tag.Trim()
+                            : reusedSampleNames?.Contains(annotation.SampleName) == true
+                                ? plexScope + " " + annotation.SampleName
+                                : annotation.SampleName,
                     Organism = organism,
                     BiologicalReplicate = annotation.BiologicalReplicate,
                     Label = ResolveChannelLabel(tagType, annotation.Tag),
