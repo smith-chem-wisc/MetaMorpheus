@@ -719,10 +719,38 @@ namespace Test
         [TestCase(IsobaricMassTagType.TMT6, "127", "PRIDE:0000517")]
         [TestCase(IsobaricMassTagType.TMT18, "135N", "PRIDE:0000670")]
         [TestCase(IsobaricMassTagType.iTRAQ8, "121", "PRIDE:0000538")]
-        [TestCase(IsobaricMassTagType.TMT10, " 131n ", "PRIDE:0000580")]
+        // 131 depends on the kit: TMT131 (PRIDE:0000529) for TMT6/TMT10, TMT131N (PRIDE:0000580, a TMTpro
+        // term) for TMT11 and TMTpro, as sdrf-pipelines' channel_map.yaml spells them.
+        [TestCase(IsobaricMassTagType.TMT10, " 131n ", "PRIDE:0000529")]
+        [TestCase(IsobaricMassTagType.TMT6, "131", "PRIDE:0000529")]
+        [TestCase(IsobaricMassTagType.TMT11, "131N", "PRIDE:0000580")]
+        [TestCase(IsobaricMassTagType.TMT11, "131C", "PRIDE:0000581")]
+        [TestCase(IsobaricMassTagType.TMT18, "131N", "PRIDE:0000580")]
         public static void AnIsobaricChannelResolvesToItsPrideTerm(IsobaricMassTagType tagType, string channel, string accession)
         {
             Assert.That(InvokeChannelLabel(tagType, channel)?.Accession, Is.EqualTo(accession));
+        }
+
+        /// <summary>
+        /// A TMT10 file's label set is TMT10PLEX's, ending in TMT131. With TMT131N, a TMTpro term, the
+        /// smallest plex holding every label is tmt11plex, and tools that infer the plex from the labels
+        /// (sdrf-pipelines' _infer_plex) configure the wrong one (pcruzparri, Alexander-Sol, #2817 review).
+        /// </summary>
+        [Test]
+        public static void ATmt10FileWritesTheTmt10LabelSet()
+        {
+            var tmt10 = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.TMT10)!;
+            var file = new TmtFileInfo(@"C:\data\tmt10.raw", "Plex1", 1, 1, tmt10
+                .Select((tag, i) => new TmtPlexAnnotation { Tag = tag, SampleName = "S" + (i + 1), BiologicalReplicate = 1 })
+                .ToList());
+
+            var labels = InvokeChannelRows(file, IsobaricMassTagType.TMT10).Select(r => r.Sample.Label?.Name).ToList();
+
+            Assert.That(labels, Is.EqualTo(new[]
+            {
+                "TMT126", "TMT127N", "TMT127C", "TMT128N", "TMT128C",
+                "TMT129N", "TMT129C", "TMT130N", "TMT130C", "TMT131"
+            }));
         }
 
         /// <summary>

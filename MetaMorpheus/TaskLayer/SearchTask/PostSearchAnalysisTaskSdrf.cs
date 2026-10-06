@@ -400,8 +400,12 @@ namespace TaskLayer
         /// vocabulary, never constructed, so a channel PRIDE does not define resolves to nothing. That
         /// is every DiLeu channel, which PRIDE has no terms for.
         ///
-        /// TMTpro 18-plex channels share their names with TMT's in PRIDE (TMT126 ... TMT135N); PRIDE
-        /// distinguishes the kit, not the channel.
+        /// Most channels are one PRIDE term whatever the kit: TMT6, TMT10, TMT11 and TMTpro all write
+        /// 126 as TMT126. The 131 channel is the exception. PRIDE's TMT131 (PRIDE:0000529) is part of
+        /// TMT6PLEX, TMT10PLEX and TMT11PLEX, while TMT131N (PRIDE:0000580) is part of the TMTpro plexes
+        /// only. mzLib names TMT10's last channel "131N", so written as given a TMT10 file would carry
+        /// a TMTpro term, and tools that infer the plex from the set of labels (sdrf-pipelines'
+        /// _infer_plex) would read it as tmt11plex. TMT10's 131N is therefore written TMT131.
         /// </summary>
         private static CvParam ResolveChannelLabel(IsobaricMassTagType tagType, string channel)
         {
@@ -410,7 +414,13 @@ namespace TaskLayer
             if (family is null || string.IsNullOrWhiteSpace(channel))
                 return null;
 
-            return ControlledVocabulary.Pride.TryGetByName(family + channel.Trim(), out var term) ? term : null;
+            string name = family + channel.Trim();
+            if (tagType == IsobaricMassTagType.TMT10 && string.Equals(channel.Trim(), "131N", StringComparison.OrdinalIgnoreCase))
+                name = "TMT131";
+            // TMT11 keeps TMT131N and TMT131C. PRIDE would put TMT131 in TMT11PLEX too, but sdrf-pipelines'
+            // channel_map.yaml spells tmt11plex with 131N/131C, and a 131/131C file matches none of its tables.
+
+            return ControlledVocabulary.Pride.TryGetByName(name, out var term) ? term : null;
         }
 
         /// <summary>The prefix PRIDE's channel terms carry for this tag type, or null when PRIDE has none.</summary>
