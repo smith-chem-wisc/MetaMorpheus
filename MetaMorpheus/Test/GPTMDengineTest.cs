@@ -64,10 +64,13 @@ namespace Test
             newPsm.SetMs2Scan(scan.TheScan);
             allResultingIdentifications.Add(newPsm);
 
-            engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>(), null);
+            var recordingFilter = new RecordingGptmdFilter();
+            engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>(), null, new List<IGptmdFilter> { recordingFilter });
             res = (GptmdResults)engine.Run();
             Assert.That(res.Mods.Count, Is.EqualTo(1));
             Assert.That(res.Mods["accession"].Count, Is.EqualTo(numModifiedResidues));
+            Assert.That(recordingFilter.Sites, Is.Not.Empty);
+            Assert.That(recordingFilter.Sites.All(site => site >= 1 && site <= modPep.Length), Is.True);
         }
 
         [Test]
@@ -562,6 +565,25 @@ namespace Test
             }
 
             Directory.Delete(outputFolder, true);
+        }
+
+        private sealed class RecordingGptmdFilter : IGptmdFilter
+        {
+            public List<int> Sites { get; } = new();
+
+            public bool Passes(
+                IBioPolymerWithSetMods candidatePeptide,
+                SpectralMatch psm,
+                double newScore,
+                double originalScore,
+                List<MatchedFragmentIon> matchedIons,
+                int peptideOneBasedModSite,
+                int peptideLength,
+                Modification modAttemptingToAdd)
+            {
+                Sites.Add(peptideOneBasedModSite);
+                return true;
+            }
         }
     }
 }

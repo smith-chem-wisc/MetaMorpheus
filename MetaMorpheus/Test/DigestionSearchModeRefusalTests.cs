@@ -51,6 +51,7 @@ namespace Test
             "ClassicSearch" => Search(SearchType.Classic, searchModeType, terminus),
             "ModernSearch" => Search(SearchType.Modern, searchModeType, terminus),
             "NonSpecificSearch" => Search(SearchType.NonSpecific, searchModeType, terminus),
+            "Averaging" => new SpectralAveragingTask { CommonParameters = Common(searchModeType, terminus) },
             _ => throw new System.ArgumentException(kind),
         };
 
@@ -65,6 +66,7 @@ namespace Test
                 "ClassicSearch" => new SearchTask { CommonParameters = common, SearchParameters = new SearchParameters { SearchType = SearchType.Classic } },
                 "ModernSearch" => new SearchTask { CommonParameters = common, SearchParameters = new SearchParameters { SearchType = SearchType.Modern } },
                 "NonSpecificSearch" => new SearchTask { CommonParameters = common, SearchParameters = new SearchParameters { SearchType = SearchType.NonSpecific } },
+                "Averaging" => new SpectralAveragingTask { CommonParameters = common },
                 _ => throw new System.ArgumentException(kind),
             };
         }
@@ -105,6 +107,10 @@ namespace Test
                          (CleavageSpecificity.Full, FragmentationTerminus.Both) })
                 yield return new TestCaseData("NonSpecificSearch", mode, terminus, false).SetName($"NonSpecificSearch {mode}+{terminus} is allowed");
 
+            // a spectral averaging task digests nothing, so no digestion settings are refused for it
+            foreach (var (mode, terminus) in new[] { (CleavageSpecificity.Semi, FragmentationTerminus.N), (CleavageSpecificity.Semi, FragmentationTerminus.C),
+                         (CleavageSpecificity.None, FragmentationTerminus.Both), (CleavageSpecificity.Full, FragmentationTerminus.Both) })
+                yield return new TestCaseData("Averaging", mode, terminus, false).SetName($"Averaging {mode}+{terminus} is allowed (it does not digest)");
         }
 
         /// <summary>The rule for every task type and every combination of search mode and terminus.</summary>
@@ -163,6 +169,9 @@ namespace Test
 
             // non-specific search over nucleic acids is refused by the runner with its own message, not by this check
             yield return new TestCaseData("NonSpecificSearch", "singleN", false).SetName("NonSpecificSearch with singleN is left to the runner");
+
+            // a spectral averaging task digests nothing, so its rnase is never used
+            yield return new TestCaseData("Averaging", "singleC", false).SetName("Averaging with singleC is allowed (it does not digest)");
         }
 
         /// <summary>

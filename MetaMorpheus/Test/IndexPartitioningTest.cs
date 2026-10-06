@@ -866,7 +866,8 @@ namespace Test
                 diaParameters: DistinctDiaParameters(),
                 fragmentationParams: new FragmentationParams(),
                 precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant,
-                rtPredictorName: "SSRCalc3");
+                rtPredictorName: "SSRCalc3",
+                retentionTimeRange: new DoubleRange(12, 14));
 
             // CustomIons is not a constructor parameter — the constructor reads it from a global dictionary,
             // so give the original a distinctive value. Without this, a clone that simply re-read the global
@@ -965,7 +966,7 @@ namespace Test
                 double highestMass, List<PeptideWithSetModifications> peptideIndex)
             {
                 var observed = new List<int>();
-                new BinSearchProbe().IndexedScoring(fragmentIndex, binsToSearch, new byte[peptideIndex.Count], 1,
+                new BinSearchProbe().IndexedScoring(fragmentIndex, binsToSearch, new EngineLayer.Util.ScanScoringTable(new byte[peptideIndex.Count]), 1,
                     observed, peptideIndex.First(p => !double.IsNaN(p.MonoisotopicMass)).MonoisotopicMass,
                     lowestMass, highestMass, peptideIndex.Cast<IBioPolymerWithSetMods>().ToList(), new OpenSearchMode(), 0, DissociationType.HCD);
                 return observed;

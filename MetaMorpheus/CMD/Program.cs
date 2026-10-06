@@ -91,6 +91,12 @@ namespace MetaMorpheusCommandLine
                 GlobalVariables.UserSpecifiedDataDir = settings.CustomDataDirectory;
             }
 
+            // subscribed before startup so that what startup notices, such as a custom protease that
+            // collided with a built-in, reaches the console; WarnHandler reads the verbosity from here.
+            // Removed first so that calling Run more than once in a process does not print it twice.
+            CommandLineSettings = settings;
+            GlobalVariables.WarnHandler -= WarnHandler;
+            GlobalVariables.WarnHandler += WarnHandler;
             GlobalVariables.SetUpGlobalVariables();
 
             if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)

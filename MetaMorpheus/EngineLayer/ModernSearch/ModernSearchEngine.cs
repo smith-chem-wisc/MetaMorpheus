@@ -1,4 +1,5 @@
 ﻿using Chemistry;
+using EngineLayer.Util;
 using MassSpectrometry;
 using Omics;
 using Omics.Fragmentation;
@@ -22,6 +23,12 @@ namespace EngineLayer.ModernSearch
         protected readonly DissociationType DissociationType;
         protected readonly double MaxMassThatFragmentIonScoreIsDoubled;
 
+        /// <summary>
+        /// Whether the per-scan score table stamps cells instead of clearing them. Worth it when a scan
+        /// touches a small slice of the peptide index; see <see cref="ScanScoringTable.IsWorthStamping"/>.
+        /// </summary>
+        protected readonly bool UseStampedScoringTable;
+
         public ModernSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, IEnumerable<IBioPolymerWithSetMods> peptideIndex,
             Indexing.FragmentIndex fragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled,
             List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
@@ -34,6 +41,7 @@ namespace EngineLayer.ModernSearch
             MassDiffAcceptor = massDiffAcceptor;
             DissociationType = commonParameters.DissociationType;
             MaxMassThatFragmentIonScoreIsDoubled = maximumMassThatFragmentIonScoreIsDoubled;
+            UseStampedScoringTable = ScanScoringTable.IsWorthStamping(massDiffAcceptor);
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -50,9 +58,10 @@ namespace EngineLayer.ModernSearch
 
             Parallel.ForEach(threads, (scanIndex) =>
             {
-                byte[] scoringTable = new byte[PeptideIndex.Count];
+                var scoringTable = new ScanScoringTable(PeptideIndex.Count, UseStampedScoringTable);
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>(PeptideIndex.Count);
                 List<Product> peptideTheorProducts = new List<Product>();
+                var scoreSorter = new DescendingScoreSorter();
 
                 for (; scanIndex < ListOfSortedMs2Scans.Length; scanIndex += maxThreadsPerFile)
                 {
@@ -68,7 +77,7 @@ namespace EngineLayer.ModernSearch
                     IndexScoreScan(scan, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, CommonParameters.DissociationType);
 
                     // take indexed-scored peptides and re-score them using the more accurate but slower scoring algorithm
-                    FineScorePeptides(idsOfPeptidesPossiblyObserved, scan, scanIndex, scoringTable, CommonParameters.DissociationType, peptideTheorProducts);
+                    FineScorePeptides(idsOfPeptidesPossiblyObserved, scan, scanIndex, scoringTable, CommonParameters.DissociationType, peptideTheorProducts, scoreSorter);
 
                     //report search progress
                     progress++;
@@ -95,7 +104,7 @@ namespace EngineLayer.ModernSearch
         /// This is a first-pass scoring method which is supposed to be *very fast* but may sometimes miscount the number of truly matched fragments. The number
         /// of matched fragments should always be overestimated, never underestimated.
         /// </summary>
-        protected void IndexScoreScan(Ms2ScanWithSpecificMass scan, byte[] scoringTable, byte byteScoreCutoff, List<int> peptidesPossiblyObserved, DissociationType dissociationType)
+        protected void IndexScoreScan(Ms2ScanWithSpecificMass scan, ScanScoringTable scoringTable, byte byteScoreCutoff, List<int> peptidesPossiblyObserved, DissociationType dissociationType)
         {
             // get allowed theoretical masses from the known experimental mass
             // note that this is the OPPOSITE of the classic search (which calculates experimental masses from theoretical values)	
@@ -105,8 +114,8 @@ namespace EngineLayer.ModernSearch
             double lowestMassPeptideToLookFor = notches.Min(p => p.Minimum);
             double highestMassPeptideToLookFor = notches.Max(p => p.Maximum);
 
-            // clear the scoring table to score the new scan (conserves memory compared to allocating a new array)
-            Array.Clear(scoringTable, 0, scoringTable.Length);
+            // retire the previous scan's scores (conserves memory compared to allocating a new array)
+            scoringTable.BeginScan();
             peptidesPossiblyObserved.Clear();
 
             if (dissociationType == DissociationType.LowCID)
@@ -356,7 +365,7 @@ namespace EngineLayer.ModernSearch
         /// <summary>
         /// Adds a +1 score to all the peptides in the fragment mass bin that meet the precursor mass tolerance.
         /// </summary>
-        protected void IncrementPeptideScoresInBin(int start, int end, ReadOnlySpan<int> bin, byte[] scoringTable, Ms2ScanWithSpecificMass scan, byte byteScoreCutoff,
+        protected void IncrementPeptideScoresInBin(int start, int end, ReadOnlySpan<int> bin, ScanScoringTable scoringTable, Ms2ScanWithSpecificMass scan, byte byteScoreCutoff,
             List<int> peptidesPossiblyObserved, DissociationType dissociationType)
         {
             if (dissociationType == DissociationType.LowCID)
@@ -376,7 +385,7 @@ namespace EngineLayer.ModernSearch
                     }
 
                     // mark the peptide as potentially observed so it doesn't get added more than once
-                    scoringTable[peptideId] = 1;
+                    scoringTable.Set(peptideId, 1);
                 }
             }
             else
@@ -385,7 +394,7 @@ namespace EngineLayer.ModernSearch
                 for (int p = start; p <= end; p++)
                 {
                     int peptideId = bin[p];
-                    byte score = ++scoringTable[peptideId];
+                    byte score = scoringTable.Increment(peptideId);
 
                     // if the peptide has met the score cutoff, add it to the list of peptides 
                     // possibly observed so it can be re-scored with the "fine scoring" algorithm
@@ -436,8 +445,8 @@ namespace EngineLayer.ModernSearch
             return PeptideSpectralMatches[scanIndex];
         }
 
-        protected void FineScorePeptides(List<int> peptideIds, Ms2ScanWithSpecificMass scan, int scanIndex, byte[] scoringTable, 
-            DissociationType dissociationType, List<Product> peptideTheorProducts)
+        protected void FineScorePeptides(List<int> peptideIds, Ms2ScanWithSpecificMass scan, int scanIndex, ScanScoringTable scoringTable, 
+            DissociationType dissociationType, List<Product> peptideTheorProducts, DescendingScoreSorter scoreSorter)
         {
             // Every rough-scored candidate is fine-scored.
             //
@@ -454,18 +463,139 @@ namespace EngineLayer.ModernSearch
             // ordering below materialises the whole sort either way, and partly because partitioning itself
             // shrinks each loop. The ordering is kept so that equal-scoring matches are still recorded in a
             // stable order.
-            foreach (int id in peptideIds.OrderByDescending(p => scoringTable[p]))
+            foreach (int id in scoreSorter.Sort(peptideIds, scoringTable))
             {
                 FineScorePeptide(id, scan, scanIndex, peptideTheorProducts);
             }
         }
 
         /// <summary>
+        /// Whether every peptide's mass, as the bin searches see it (undefined reads as negative infinity), is at or above the one
+        /// before it. The indexing engine sorts the index this way, which is what lets a mass bound become a peptide id bound.
+        /// </summary>
+        protected static bool IsSortedForBinSearch(List<IBioPolymerWithSetMods> peptideIndex)
+        {
+            for (int id = 1; id < peptideIndex.Count; id++)
+            {
+                if (MassForBinSearch(peptideIndex[id].MonoisotopicMass) < MassForBinSearch(peptideIndex[id - 1].MonoisotopicMass))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// The last peptide id whose mass, as the bin searches see it, is at or below <paramref name="peptideMassToLookFor"/>, or -1
+        /// if there is none. Only meaningful on an index for which <see cref="IsSortedForBinSearch"/> is true.
+        /// </summary>
+        protected static int LastPeptideIdAtOrBelow(List<IBioPolymerWithSetMods> peptideIndex, double peptideMassToLookFor)
+        {
+            int low = 0;
+            int high = peptideIndex.Count - 1;
+            int result = -1;
+
+            while (low <= high)
+            {
+                int mid = low + ((high - low) / 2);
+
+                if (MassForBinSearch(peptideIndex[mid].MonoisotopicMass) <= peptideMassToLookFor)
+                {
+                    result = mid;
+                    low = mid + 1;
+                }
+                else
+                {
+                    high = mid - 1;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// The position of the last id in the bin that is at or below <paramref name="maxPeptideId"/>, or -1 if there is none. Ids
+        /// ascend within a bin, so this is an integer search over the bin itself, with no peptide read.
+        /// </summary>
+        protected static int LastBinPositionAtOrBelowId(ReadOnlySpan<int> bin, int maxPeptideId)
+        {
+            int low = 0;
+            int high = bin.Length - 1;
+            int result = -1;
+
+            while (low <= high)
+            {
+                int mid = low + ((high - low) / 2);
+
+                if (bin[mid] <= maxPeptideId)
+                {
+                    result = mid;
+                    low = mid + 1;
+                }
+                else
+                {
+                    high = mid - 1;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// The last peptide index checked with <see cref="IsSortedForBinSearch"/> and the answer, so the check runs once per index
+        /// rather than once per scan. Held by reference: an index is built once and not changed while it is searched. A search
+        /// starts all its threads at once, so the check is made under a lock: it reads every peptide, and each thread repeating it
+        /// cost more than the scoring it was guarding.
+        /// </summary>
+        private sealed record BinSearchOrder(List<IBioPolymerWithSetMods> PeptideIndex, bool Sorted);
+
+        private volatile BinSearchOrder _binSearchOrder;
+
+        private readonly object _binSearchOrderLock = new object();
+
+        private int _binSearchOrderChecks;
+
+        /// <summary>
+        /// How many times this engine has checked a peptide index's order, so a test can see the check is not repeated.
+        /// </summary>
+        internal int BinSearchOrderChecks => System.Threading.Volatile.Read(ref _binSearchOrderChecks);
+
+        private bool PeptideIndexIsSortedForBinSearch(List<IBioPolymerWithSetMods> peptideIndex)
+        {
+            BinSearchOrder known = _binSearchOrder;
+            if (known == null || !ReferenceEquals(known.PeptideIndex, peptideIndex))
+            {
+                lock (_binSearchOrderLock)
+                {
+                    known = _binSearchOrder;
+                    if (known == null || !ReferenceEquals(known.PeptideIndex, peptideIndex))
+                    {
+                        System.Threading.Interlocked.Increment(ref _binSearchOrderChecks);
+                        known = new BinSearchOrder(peptideIndex, IsSortedForBinSearch(peptideIndex));
+                        _binSearchOrder = known;
+                    }
+                }
+            }
+            return known.Sorted;
+        }
+
+        /// <summary>
         /// Deprecated.
         /// </summary>
-        protected void IndexedScoring(Indexing.FragmentIndex FragmentIndex, List<int> binsToSearch, byte[] scoringTable, byte byteScoreCutoff, List<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor,
+        protected void IndexedScoring(Indexing.FragmentIndex FragmentIndex, List<int> binsToSearch, ScanScoringTable scoringTable, byte byteScoreCutoff, List<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor,
             double highestMassPeptideToLookFor, List<IBioPolymerWithSetMods> peptideIndex, MassDiffAcceptor massDiffAcceptor, double maxMassThatFragmentIonScoreIsDoubled, DissociationType dissociationType)
         {
+            // The window ends at the last peptide no heavier than the upper bound. On an index sorted by mass, as the indexing engine
+            // builds it, ids are in mass order, so that is one peptide id for the whole scan, and each bin's end is the last id at or
+            // below it: the same position the per-bin mass search finds, without reading a peptide in every bin.
+            bool windowEndsAtAPeptideId = !Double.IsInfinity(highestMassPeptideToLookFor) && PeptideIndexIsSortedForBinSearch(peptideIndex);
+            int lastPeptideIdInWindow = windowEndsAtAPeptideId ? LastPeptideIdAtOrBelow(peptideIndex, highestMassPeptideToLookFor) : -1;
+
+            // OpenSearchMode accepts every mass, so a candidate's mass need not be read to ask it; the glyco and crosslink searches
+            // use it, and that read was a trip to a peptide object for every candidate reaching the cutoff. Exactly that type only:
+            // a subclass may override Accepts.
+            bool acceptorAcceptsEveryMass = massDiffAcceptor.GetType() == typeof(OpenSearchMode);
+
             // get all theoretical fragments this experimental fragment could be
             for (int i = 0; i < binsToSearch.Count; i++) //binsToSearch is the list of fragment in Spectra
             {
@@ -484,8 +614,20 @@ namespace EngineLayer.ModernSearch
                 // get index for highest mass allowed
                 int highestPeptideMassIndex = peptideIdsInThisBin.Length - 1;
 
-                if (!Double.IsInfinity(highestMassPeptideToLookFor)) //check if the highest mass is infinity
+                if (windowEndsAtAPeptideId)
                 {
+                    highestPeptideMassIndex = LastBinPositionAtOrBelowId(peptideIdsInThisBin, lastPeptideIdInWindow);
+
+                    // nothing in this bin is light enough for the window
+                    if (highestPeptideMassIndex < 0)
+                    {
+                        continue;
+                    }
+                }
+                else if (!Double.IsInfinity(highestMassPeptideToLookFor)) //check if the highest mass is infinity
+                {
+                    // An index out of mass order cannot bound the window by id, so each bin is searched by mass. The walk below never
+                    // moves the end: the search already returns the last entry at or below the bound.
                     highestPeptideMassIndex = BinarySearchBinForPrecursorIndex(peptideIdsInThisBin, highestMassPeptideToLookFor, peptideIndex); //get index for maximum monoisotopic allowed
 
                     // nothing in this bin is light enough for the window
@@ -517,13 +659,13 @@ namespace EngineLayer.ModernSearch
                         int id = peptideIdsInThisBin[j];
 
                         // add possible search results to the hashset of id's (only once)
-                        if (scoringTable[id] == 0 && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0)
+                        if (scoringTable[id] == 0 && (acceptorAcceptsEveryMass || massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0))
                         {
                             idsOfPeptidesPossiblyObserved.Add(id);
                         }
 
                         // mark the peptide as potentially observed so it doesn't get added more than once
-                        scoringTable[id] = 1;
+                        scoringTable.Set(id, 1);
                     }
                 }
                 else
@@ -532,10 +674,9 @@ namespace EngineLayer.ModernSearch
                     for (int j = lowestPeptideMassIndex; j <= highestPeptideMassIndex; j++) // iterate through the peptide index in the bin
                     {
                         int id = peptideIdsInThisBin[j];
-                        scoringTable[id]++;
 
                         // if the score of the peptide >3 (counts > 3 times), and the mass difference is accepted, add the peptide to the list of peptides possibly observed
-                        if (scoringTable[id] == byteScoreCutoff && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0)
+                        if (scoringTable.Increment(id) == byteScoreCutoff && (acceptorAcceptsEveryMass || massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0))
                         {
                             idsOfPeptidesPossiblyObserved.Add(id);
                         }

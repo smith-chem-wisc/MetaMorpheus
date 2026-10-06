@@ -81,12 +81,15 @@ namespace TaskLayer
         /// <remarks>
         /// Only the non-specific search engine, which a Search task runs for <see cref="SearchType.NonSpecific"/>, can use seeds
         /// (it makes its own N and C passes). Classic and Modern search, Glyco, crosslink, GPTMD and calibration score digestion
-        /// products as they are, so given seeds they finish normally and report far fewer, wrong identifications.
+        /// products as they are, so given seeds they finish normally and report far fewer, wrong identifications. A spectral
+        /// averaging task digests nothing, so its digestion settings are never used and are not checked, as it is already
+        /// exempt from needing a protein database.
         /// </remarks>
         /// <param name="taskName">The name the user knows the task by, included in the message when given.</param>
         public string GetSeedDigestionRefusal(string taskName = null)
         {
-            if (this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific }) // the non-specific search engine trims seeds
+            if (TaskType == MyTask.Average // averaging does not digest, so its digestion settings are never used
+                || this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific }) // the non-specific search engine trims seeds
             {
                 return null;
             }
@@ -191,18 +194,52 @@ namespace TaskLayer
             return digestionParams;
         }
 
-        /// <summary>The shipped fully specific protease with exactly these cleavage motifs, or null if there is none.</summary>
+        /// <summary>
+        /// The shipped fully specific protease that cleaves exactly like the removed one, or null if there is none.
+        /// </summary>
+        /// <remarks>
+        /// A candidate matches on its cleavage motifs and on its cleavage modification. The removed proteases modified
+        /// nothing when they cleaved, so a protease that carries a modification is a different digestion even with the same
+        /// motifs: it would add that modification at every terminus it cuts. The modification has to be part of the
+        /// comparison because the candidates are every protease in the dictionary, including the user's own custom ones, and
+        /// the tie-break is ordinal by name, which puts every capitalised name ahead of "trypsin".
+        /// </remarks>
         private static Protease FindShippedFullySpecificProtease(string motifs)
         {
-            static string Signature(IEnumerable<DigestionMotif> m) => string.Join(";", m
+            static string Signature(IEnumerable<DigestionMotif> m, Modification cleavageMod) => string.Join(";", m
                 .Select(x => $"{x.InducingCleavage}|{x.PreventingCleavage}|{x.CutIndex}|{x.ExcludeFromWildcard}")
-                .OrderBy(s => s, StringComparer.Ordinal));
+                .OrderBy(s => s, StringComparer.Ordinal)) + "#" + cleavageMod?.IdWithMotif;
 
-            string wanted = Signature(DigestionMotif.ParseDigestionMotifsFromString(motifs));
+            string wanted = Signature(DigestionMotif.ParseDigestionMotifsFromString(motifs), null);
             return ProteaseDictionary.Dictionary.Values
-                .Where(p => p.CleavageSpecificity == CleavageSpecificity.Full && Signature(p.DigestionMotifs) == wanted)
+                .Where(p => p.CleavageSpecificity == CleavageSpecificity.Full && Signature(p.DigestionMotifs, p.CleavageMod) == wanted)
                 .OrderBy(p => p.Name, StringComparer.Ordinal)
                 .FirstOrDefault();
+        }
+
+        private static DoubleRange ParseRetentionTimeRange(string value)
+        {
+            string[] bounds = value.Trim().Trim('[', ']').Split(';');
+            if (bounds.Length != 2)
+                throw new MetaMorpheusException($"Invalid retention time range '{value}'. Expected 'minimum;maximum'.");
+
+            bool minimumParsed = double.TryParse(bounds[0].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double minimum);
+            bool maximumIsMaxValue = bounds[1].Trim().Equals("MaxValue", StringComparison.OrdinalIgnoreCase);
+            double maximum = 0;
+            bool maximumParsed = maximumIsMaxValue
+                || double.TryParse(bounds[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out maximum);
+            if (maximumIsMaxValue)
+            {
+                maximum = double.MaxValue;
+            }
+
+            if (!minimumParsed || !maximumParsed || !double.IsFinite(minimum) || !double.IsFinite(maximum)
+                || minimum < 0 || maximum < 0 || maximum < minimum)
+            {
+                throw new MetaMorpheusException($"Invalid retention time range '{value}'. Expected 'minimum;maximum'.");
+            }
+
+            return new DoubleRange(minimum, maximum);
         }
 
         #endregion
@@ -217,6 +254,12 @@ namespace TaskLayer
             .ConfigureType<AbsoluteTolerance>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.ToString())))
+            .ConfigureType<DoubleRange>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(range => range.Maximum == double.MaxValue
+                        ? $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};MaxValue"
+                        : $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};{range.Maximum.ToString("R", CultureInfo.InvariantCulture)}")
+                    .FromToml(tomlString => ParseRetentionTimeRange(tomlString.Value))))
             .ConfigureType<Protease>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.ToString())
@@ -244,11 +287,13 @@ namespace TaskLayer
                             : tmlTable.Get<RnaDigestionParams>())))
             .ConfigureType<DigestionParams>(type => type
                 .IgnoreProperty(p => p.DigestionAgent)
+                .IgnoreProperty(p => p.SpecificDigestionAgent)
                 .IgnoreProperty(p => p.MaxMods)
                 .IgnoreProperty(p => p.MaxLength)
                 .IgnoreProperty(p => p.MinLength))
             .ConfigureType<RnaDigestionParams>(type => type
-                .IgnoreProperty(p => p.DigestionAgent))
+                .IgnoreProperty(p => p.DigestionAgent)
+                .IgnoreProperty(p => p.SpecificDigestionAgent))
             .ConfigureType<Rnase>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.Name)
@@ -353,6 +398,15 @@ namespace TaskLayer
         [TomlIgnore]
         public virtual string OutputFolder { get; private set; }
 
+        /// <summary>
+        /// The spectra files the whole run started from, before a Calibrate or Average task replaced them with
+        /// -calib / -averaged derivatives. Set by <see cref="EverythingRunnerEngine"/>; null when a task is run on
+        /// its own, in which case the files it is given are the acquired ones. An SDRF names these in
+        /// comment[data file] and the file the search read in comment[searched data file] (sdrf D46).
+        /// </summary>
+        [TomlIgnore]
+        public List<string> AcquiredSpectraFiles { get; set; }
+
         protected MyTaskResults MyTaskResults;
 
         protected MetaMorpheusTask(MyTask taskType)
@@ -395,7 +449,7 @@ namespace TaskLayer
 
         public static List<Ms2ScanWithSpecificMass>[] _GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
-            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
+            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1 && commonParameters.RetentionTimeRange.Contains(x.RetentionTime)).ToArray();
             var ms2Scans = msNScans.Where(p => p.MsnOrder == 2).ToArray();
             var ms3Scans = msNScans.Where(p => p.MsnOrder == 3).ToArray();
             List<Ms2ScanWithSpecificMass>[] scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[ms2Scans.Length];
@@ -589,17 +643,23 @@ namespace TaskLayer
         {
             if (commonParameters.DIAparameters != null)
             {
+                IEnumerable<Ms2ScanWithSpecificMass> pseudoMs2Scans;
                 switch (commonParameters.DIAparameters.AanalysisType)
                 {
                     case DIAanalysisType.DIA:
                         var diaEngine = new DIAEngine(myMSDataFile, commonParameters);
-                        return diaEngine.GetPseudoMs2Scans();
+                        pseudoMs2Scans = diaEngine.GetPseudoMs2Scans();
+                        break;
                     case DIAanalysisType.ISD:
                         var isdEngine = new ISDEngine(myMSDataFile, commonParameters);
-                        return isdEngine.GetPseudoMs2Scans();
+                        pseudoMs2Scans = isdEngine.GetPseudoMs2Scans();
+                        break;
                     default:
                         throw new NotImplementedException("DIA analysis type not implemented.");
                 }
+
+                // TODO: Move the retention time filtering to the inside of the engines. Currently, we do all the work then throw away the scans outside of the retention time range. This is inefficient, but it is a quick fix to get the retention time filtering working for DIA and ISD by someone who knows what is going on there. 
+                return pseudoMs2Scans.Where(scan => commonParameters.RetentionTimeRange.Contains(scan.RetentionTime));
             }
             var scansWithPrecursors = _GetMs2Scans(myMSDataFile, fullFilePath, commonParameters);
 
@@ -711,6 +771,9 @@ namespace TaskLayer
             switch (commonParams.DigestionParams)
             {
                 case DigestionParams digestionParams:
+                    // Every digestion setting a file does not override must be carried from the task. A field left out of
+                    // this list silently falls back to its constructor default for every file with file-specific settings;
+                    // the glycopeptide and SILAC flags used to be (see FileSpecificDigestionParamsTests).
                     fileSpecificDigestionParams = new DigestionParams(
                         protease: (fileSpecificParams.DigestionAgent ?? digestionParams.SpecificProtease).Name,
                         maxMissedCleavages: maxMissedCleavages, minPeptideLength: minPeptideLength,
@@ -718,7 +781,10 @@ namespace TaskLayer
                         maxModificationIsoforms: digestionParams.MaxModificationIsoforms,
                         initiatorMethionineBehavior: digestionParams.InitiatorMethionineBehavior,
                         fragmentationTerminus: digestionParams.FragmentationTerminus,
-                        searchModeType: digestionParams.SearchModeType);
+                        searchModeType: digestionParams.SearchModeType,
+                        generateUnlabeledProteinsForSilac: digestionParams.GeneratehUnlabeledProteinsForSilac,
+                        keepNGlycopeptide: digestionParams.KeepNGlycopeptide,
+                        keepOGlycopeptide: digestionParams.KeepOGlycopeptide);
                     break;
                 case RnaDigestionParams:
                     fileSpecificDigestionParams = new RnaDigestionParams(
@@ -791,7 +857,8 @@ namespace TaskLayer
                 useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
-                rtPredictorName: commonParams.RTPredictorName);
+                rtPredictorName: commonParams.RTPredictorName,
+                retentionTimeRange: commonParams.RetentionTimeRange);
 
             return returnParams;
         }
@@ -2129,3 +2196,5 @@ namespace TaskLayer
         }
     }
 }
+
+
