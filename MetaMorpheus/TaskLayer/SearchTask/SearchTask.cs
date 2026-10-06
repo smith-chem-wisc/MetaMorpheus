@@ -660,13 +660,20 @@ namespace TaskLayer
 
             // An isobaric search's samples live in TmtDesign.txt, one per channel, and the SDRF is
             // written one row per channel from it. ExperimentalDesign.tsv is not consulted, so its
-            // absence is not a gap worth naming.
+            // absence is not a gap worth naming. No early return: a check added below this branch
+            // has to run for isobaric searches too (#2817 review: one did not).
             if (SearchParameters.DoMultiplexQuantification)
-            {
                 WarnAboutIsobaricSdrfGaps(designDirectory, currentRawFileList);
-                return;
-            }
+            else
+                WarnAboutLabelFreeSdrfGaps(designDirectory, currentRawFileList);
+        }
 
+        /// <summary>
+        /// The ExperimentalDesign.tsv and SILAC half of <see cref="WarnAboutSdrfGaps"/>, for every search
+        /// that is not isobaric.
+        /// </summary>
+        private void WarnAboutLabelFreeSdrfGaps(string designDirectory, List<string> currentRawFileList)
+        {
             string designPath = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
 
             if (!File.Exists(designPath))
