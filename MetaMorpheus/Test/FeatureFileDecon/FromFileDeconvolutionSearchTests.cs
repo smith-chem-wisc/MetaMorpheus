@@ -31,24 +31,24 @@ public static class FromFileDeconvolutionSearchTests
         var rawFiles = inputBaseNames
             .Select(name => Path.Combine(dataDirectory, name + ".mzML"))
             .ToList();
-        var map = new SearchFeatureFileMap
-        {
-            Entries = inputBaseNames.Select((name, index) => new SearchFeatureFileMapEntry(massSpecFilePath: rawFiles[index],
-                featureFilePath: Path.Combine(featureDirectory, name + "_ms1.feature")
-            )).ToList()
-        };
+        var map = new SearchFeatureFileMap(inputBaseNames.Select((name, index) =>
+            new SearchFeatureFileMapEntry(
+                massSpecFilePath: rawFiles[index],
+                featureFilePath: Path.Combine(featureDirectory, name + "_ms1.feature"))));
         var mappedParameters = new FeatureMappedFromFileDeconvolutionParameters(map, minCharge: 1, maxCharge: 20)
         {
             UseGenericScore = true
         };
 
-        foreach (var entry in map.Entries)
+        for (int i = 0; i < rawFiles.Count; i++)
         {
-            Assert.That(File.Exists(entry.MassSpecFilePath), Is.True, entry.MassSpecFilePath);
-            Assert.That(File.Exists(entry.FeatureFilePath), Is.True, entry.FeatureFilePath);
+            string rawFilePath = rawFiles[i];
+            Assert.That(map.TryGetFeaturePathForMassSpecFile(rawFilePath, out var featureFilePath), Is.True);
+            Assert.That(File.Exists(rawFilePath), Is.True, rawFilePath);
+            Assert.That(File.Exists(featureFilePath), Is.True, featureFilePath);
             var fileParameters = (FromFileDeconvolutionParameters)
-                mappedParameters.ToDeconvolutionParameters(entry.MassSpecFilePath);
-            Assert.That(fileParameters.Features, Is.Not.Empty, entry.FeatureFilePath);
+                mappedParameters.ToDeconvolutionParameters(rawFilePath);
+            Assert.That(fileParameters.Features, Is.Not.Empty, featureFilePath);
         }
 
         var searchTask = new SearchTask
@@ -78,8 +78,16 @@ public static class FromFileDeconvolutionSearchTests
                 "Task Settings",
                 "FromFileDeconvolutionSearchconfig.toml");
             Assert.That(File.Exists(taskTomlPath), Is.True, taskTomlPath);
+            string taskToml = File.ReadAllText(taskTomlPath);
+            Assert.That(taskToml, Does.Contain("FeatureFileMap]"));
+            Assert.That(taskToml, Does.Contain("'TaGe_SA_A549_3_snip.mzML' = "));
+            Assert.That(taskToml, Does.Contain("'TaGe_SA_A549_3_snip_2.mzML' = "));
+            Assert.That(taskToml, Does.Contain("'TaGe_SA_HeLa_04_subset_longestSeq.mzML' = "));
+            Assert.That(taskToml, Does.Not.Contain("Entries"));
+            Assert.That(taskToml, Does.Contain("file-specific-decon"));
+            Assert.That(taskToml, Does.Not.Contain(testDirectory));
 
-            var roundTrippedTask = Toml.ReadFile<SearchTask>(taskTomlPath, MetaMorpheusTask.tomlConfig);
+            var roundTrippedTask = Toml.ReadString<SearchTask>(taskToml, MetaMorpheusTask.tomlConfig);
             var roundTrippedParameters = roundTrippedTask.CommonParameters.PrecursorDeconvolutionParameters
                 as FeatureMappedFromFileDeconvolutionParameters;
             Assert.That(roundTrippedParameters, Is.Not.Null);

@@ -16,47 +16,37 @@ public static class FeatureFileMappingTests
     [Test]
     public static void TryGetFeaturePathForMassSpecFile_MatchesPathIgnoringCase()
     {
-        var map = new SearchFeatureFileMap
-        {
-            Entries =
-            [
-                new SearchFeatureFileMapEntry(massSpecFilePath: @"E:\data\sample.mzML", featureFilePath: @"E:\features\sample.feature.tsv")
-            ]
-        };
+        var map = new SearchFeatureFileMap(
+        [
+            new SearchFeatureFileMapEntry(massSpecFilePath: @"E:\data\sample.mzML", featureFilePath: @"E:\features\sample.feature.tsv")
+        ]);
 
         Assert.That(map.TryGetFeaturePathForMassSpecFile(@"e:\DATA\SAMPLE.mzml", out var path), Is.True);
-        Assert.That(path, Is.EqualTo(@"E:\features\sample.feature.tsv"));
+        Assert.That(path, Is.EqualTo(@"E:\features\sample.feature.tsv").IgnoreCase);
     }
 
     [Test]
     public static void TryGetFeaturePathForMassSpecFile_ReturnsFalseAndClearsPathWhenUnmapped()
     {
-        var map = new SearchFeatureFileMap
-        {
-            Entries =
-            [
-                new SearchFeatureFileMapEntry(massSpecFilePath: @"E:\data\sample.mzML", featureFilePath: @"E:\features\sample.feature.tsv")
-            ]
-        };
+        var map = new SearchFeatureFileMap(
+        [
+            new SearchFeatureFileMapEntry(massSpecFilePath: @"E:\data\sample.mzML", featureFilePath: @"E:\features\sample.feature.tsv")
+        ]);
 
         Assert.That(map.TryGetFeaturePathForMassSpecFile(@"E:\data\other.mzML", out var path), Is.False);
         Assert.That(path, Is.Empty);
     }
 
     [Test]
-    public static void SearchFeatureFileMap_EmptyStateAndValidationCoverNullAndPopulatedEntries()
+    public static void SearchFeatureFileMap_EmptyStateAndValidationCoverEmptyAndPopulatedMaps()
     {
         var emptyMap = new SearchFeatureFileMap();
         Assert.That(emptyMap.IsEmpty, Is.True);
         Assert.Throws<FeatureMappingException>(() => emptyMap.ValidateNotEmpty());
 
-        var nullEntriesMap = new SearchFeatureFileMap { Entries = null };
-        Assert.That(nullEntriesMap.IsEmpty, Is.True);
-        Assert.Throws<FeatureMappingException>(() => nullEntriesMap.ValidateNotEmpty());
-
         var populatedMap = new SearchFeatureFileMap
         {
-            Entries = [new SearchFeatureFileMapEntry("raw.mzML", "features.ms1.feature")]
+            ["raw.mzML"] = "features.ms1.feature"
         };
         Assert.That(populatedMap.IsEmpty, Is.False);
         Assert.DoesNotThrow(() => populatedMap.ValidateNotEmpty());
@@ -65,16 +55,10 @@ public static class FeatureFileMappingTests
     [Test]
     public static void SearchFeatureFileMap_EqualityHashAndEntryRepresentAllMappingValues()
     {
-        var map = new SearchFeatureFileMap
-        {
-            Entries = [new SearchFeatureFileMapEntry("raw.mzML", "features.ms1.feature")]
-        };
+        var map = new SearchFeatureFileMap { ["raw.mzML"] = "features.ms1.feature" };
         var clone = map.Clone();
-        var differentMap = new SearchFeatureFileMap
-        {
-            Entries = [new SearchFeatureFileMapEntry("raw.mzML", "other.ms1.feature")]
-        };
-        var entry = map.Entries[0];
+        var differentMap = new SearchFeatureFileMap { ["raw.mzML"] = "other.ms1.feature" };
+        var entry = new SearchFeatureFileMapEntry("raw.mzML", "features.ms1.feature");
         var entryClone = entry.Clone();
         var differentEntry = new SearchFeatureFileMapEntry("other.mzML", "features.ms1.feature");
 
@@ -83,7 +67,10 @@ public static class FeatureFileMappingTests
         Assert.That(map.Equals(clone), Is.True);
         Assert.That(map.Equals(differentMap), Is.False);
         Assert.That(map.GetHashCode(), Is.EqualTo(clone.GetHashCode()));
-        Assert.That(clone.Entries[0], Is.Not.SameAs(entry));
+        Assert.That(clone, Is.Not.SameAs(map));
+        Assert.That(clone["raw.mzML"], Is.EqualTo("features.ms1.feature"));
+        Assert.That(map.ToString(), Is.EqualTo("\"raw.mzML\" = \"features.ms1.feature\""));
+        Assert.That(SearchFeatureFileMap.FromString(map.ToString()), Is.EqualTo(map));
 
         Assert.That(entry.Equals(null), Is.False);
         Assert.That(entry.Equals(entry), Is.True);
@@ -104,7 +91,7 @@ public static class FeatureFileMappingTests
 
         Assert.That(clone, Is.EqualTo(original));
         Assert.That(clone.FeatureFileMap, Is.Not.SameAs(original.FeatureFileMap));
-        Assert.That(clone.FeatureFileMap.Entries[0], Is.Not.SameAs(original.FeatureFileMap.Entries[0]));
+        Assert.That(clone.FeatureFileMap["sample.mzML"], Is.EqualTo(original.FeatureFileMap["sample.mzML"]));
         Assert.That(clone.MinAssumedChargeState, Is.EqualTo(original.MinAssumedChargeState));
         Assert.That(clone.MaxAssumedChargeState, Is.EqualTo(original.MaxAssumedChargeState));
         Assert.That(clone.Polarity, Is.EqualTo(original.Polarity));
@@ -121,7 +108,7 @@ public static class FeatureFileMappingTests
         var different = new FeatureMappedFromFileDeconvolutionParameters(
             new SearchFeatureFileMap
             {
-                Entries = [new SearchFeatureFileMapEntry(@"E:\data\sample.mzML", @"E:\features\other.feature.tsv")]
+                ["sample.mzML"] = @"E:\features\other.feature.tsv"
             },
             2,
             18,
@@ -146,10 +133,14 @@ public static class FeatureFileMappingTests
         };
 
         string toml = Toml.WriteString(originalTask, MetaMorpheusTask.tomlConfig);
+        Assert.That(toml, Does.Contain("sample.mzML"));
+        Assert.That(toml, Does.Contain("sample.feature.tsv"));
+        Assert.That(toml, Does.Not.Contain(@"E:\data"));
+        Assert.That(toml, Does.Not.Contain(@"E:\features"));
         var loadedTask = Toml.ReadString<SearchTask>(toml, MetaMorpheusTask.tomlConfig);
         var mapped = (FeatureMappedFromFileDeconvolutionParameters)loadedTask.CommonParameters.PrecursorDeconvolutionParameters;
 
-        Assert.That(mapped.FeatureFileMap.Entries, Has.Count.EqualTo(1));
+        Assert.That(mapped.FeatureFileMap, Has.Count.EqualTo(1));
         var resolved = (FromFileDeconvolutionParameters)mapped.ToDeconvolutionParameters(@"E:\data\sample.mzML");
         Assert.That(resolved.FilePath, Is.EqualTo(@"E:\features\sample.feature.tsv"));
         Assert.That(resolved.MinAssumedChargeState, Is.EqualTo(2));
@@ -181,28 +172,29 @@ public static class FeatureFileMappingTests
     }
 
     [Test]
-    public static void TaskTomlRead_RejectsMalformedSearchFeatureFileMapEntry()
+    public static void TaskTomlRoundTrip_SerializesMapEntriesAsTables()
     {
         var task = new SearchTask
         {
             CommonParameters = new CommonParameters(
                 precursorDeconParams: new FeatureMappedFromFileDeconvolutionParameters(
-                    new SearchFeatureFileMap
-                    {
-                        Entries = [new SearchFeatureFileMapEntry("raw.mzML", "features.ms1.feature")]
-                    },
+                    new SearchFeatureFileMap { ["raw.mzML"] = "features.ms1.feature" },
                     1,
                     20))
         };
         string toml = Toml.WriteString(task, MetaMorpheusTask.tomlConfig);
-        const string serializedEntry = "raw.mzML\\tfeatures.ms1.feature";
-        Assert.That(toml, Does.Contain(serializedEntry));
-        toml = toml.Replace(serializedEntry, "raw.mzML", System.StringComparison.Ordinal);
+        Assert.That(toml, Does.Contain("FeatureFileMap"));
+        Assert.That(toml, Does.Contain("raw.mzML"));
+        Assert.That(toml, Does.Contain("features.ms1.feature"));
+        Assert.That(toml, Does.Not.Contain("Entries"));
+        Assert.That(toml, Does.Not.Contain("raw.mzML\\tfeatures.ms1.feature"));
 
-        var exception = Assert.Throws<System.InvalidOperationException>(
-            () => Toml.ReadString<SearchTask>(toml, MetaMorpheusTask.tomlConfig));
+        var loadedTask = Toml.ReadString<SearchTask>(toml, MetaMorpheusTask.tomlConfig);
+        var loadedParameters = (FeatureMappedFromFileDeconvolutionParameters)
+            loadedTask.CommonParameters.PrecursorDeconvolutionParameters;
 
-        Assert.That(exception!.ToString(), Does.Contain("Invalid SearchFeatureFileMapEntry"));
+        Assert.That(loadedParameters.FeatureFileMap, Has.Count.EqualTo(1));
+        Assert.That(loadedParameters.FeatureFileMap["raw.mzML"], Is.EqualTo("features.ms1.feature"));
     }
 
     [Test]
@@ -253,13 +245,10 @@ public static class FeatureFileMappingTests
 
     private static FeatureMappedFromFileDeconvolutionParameters CreateParameters()
         => new(
-            new SearchFeatureFileMap
-            {
-                Entries = new List<SearchFeatureFileMapEntry>
-                {
-                    new(massSpecFilePath: @"E:\data\sample.mzML", featureFilePath: @"E:\features\sample.feature.tsv")
-                }
-            },
+            new SearchFeatureFileMap(
+            [
+                new SearchFeatureFileMapEntry(massSpecFilePath: @"E:\data\sample.mzML", featureFilePath: @"E:\features\sample.feature.tsv")
+            ]),
             2,
             18,
             Polarity.Negative,

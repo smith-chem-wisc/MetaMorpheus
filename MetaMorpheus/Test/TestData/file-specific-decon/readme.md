@@ -12,4 +12,13 @@ The matching `*_ms2.feature` outputs and other FlashDeconv exports are retained 
 
 `FromFileDeconvolutionSearchTests.SearchTask_UsesFlashDeconvFeaturesForThreeRawFiles` constructs the mapped deconvolution parameters directly and verifies that each feature file loads. It runs the search once, loads the task TOML written by that run into a second `SearchTask`, reruns the same inputs, and requires the two `AllPSMs.psmtsv` files to be byte-identical. This covers the backend TOML round trip without requiring GUI-generated settings.
 
+The generated TOML stores each raw-file basename and the corresponding feature-file path relative to that raw file's directory, rather than writing machine-specific absolute paths. For example:
+
+```toml
+[CommonParameters.PrecursorDeconvolutionParameters.FeatureFileMap]
+"TaGe_SA_A549_3_snip.mzML" = "file-specific-decon/TaGe_SA_A549_3_snip_ms1.feature"
+"TaGe_SA_A549_3_snip_2.mzML" = "file-specific-decon/TaGe_SA_A549_3_snip_2_ms1.feature"
+"TaGe_SA_HeLa_04_subset_longestSeq.mzML" = "file-specific-decon/TaGe_SA_HeLa_04_subset_longestSeq_ms1.feature"
+```
+
 FlashDeconv retention-time values in these files are expressed in seconds. mzLib's from-file reader normalizes these values to minutes for comparison with scan retention times.
