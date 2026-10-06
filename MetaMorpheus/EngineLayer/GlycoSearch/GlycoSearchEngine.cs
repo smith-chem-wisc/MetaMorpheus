@@ -834,6 +834,14 @@ namespace EngineLayer.GlycoSearch
                     iDLow++;
                     continue; // if there is no possible glycosylation site, we can skip this glycan.
                 }
+                // The same strict custom-oxonium gate O and N+O searches apply per glycan box, applied here per N-glycan.
+                // Only the custom-ion rule: the built-in NeuAc/HexHexNAc rules of DiagonsticFilter were never part of
+                // N-search, and OxoniumIonFilt is on by default, so adding them would change every existing N-search.
+                if (OxoniumIonFilter && !GlycoPeptides.CustomOxoniumFilter(oxoniumIonIntensities, NGlycans[iDLow].Kind))
+                {
+                    iDLow++;
+                    continue;
+                }
 
                 foreach (int possibleSite in modPos)
                 {
