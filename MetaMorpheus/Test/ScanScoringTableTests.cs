@@ -1,6 +1,12 @@
 using EngineLayer;
+using EngineLayer.Indexing;
+using EngineLayer.ModernSearch;
 using EngineLayer.Util;
 using MzLibUtil;
+using Omics;
+using Omics.Modifications;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -110,6 +116,69 @@ namespace Test
         {
             MassDiffAcceptor acceptor = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), type, null);
             Assert.That(ScanScoringTable.IsWorthStamping(acceptor), Is.EqualTo(expected));
+        }
+
+        /// <summary>
+        /// The window share is two binary searches per scan; this pins it to a linear count of the peptides in (min, max], the same
+        /// collapsed window IndexScoreScan scores, for a multi-notch acceptor and a plain interval.
+        /// </summary>
+        [Test]
+        public static void MeanWindowShareOfIndexMatchesALinearCount()
+        {
+            var peptideIndex = SortedTrypticIndex();
+            var masses = peptideIndex.Where(p => !double.IsNaN(p.MonoisotopicMass)).Select(p => p.MonoisotopicMass).Where((_, i) => i % 7 == 0).ToList();
+            var acceptors = new MassDiffAcceptor[]
+            {
+                SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.ThreeMM, null),
+                new IntervalMassDiffAcceptor("wide", new[] { new DoubleRange(-50, 120) }),
+            };
+
+            foreach (MassDiffAcceptor acceptor in acceptors)
+            {
+                double expected = masses.Average(mass =>
+                {
+                    var notches = acceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(mass).ToList();
+                    double low = notches.Min(n => n.Minimum);
+                    double high = notches.Max(n => n.Maximum);
+                    return peptideIndex.Count(p => p.MonoisotopicMass > low && p.MonoisotopicMass <= high) / (double)peptideIndex.Count;
+                });
+
+                double actual = ModernSearchEngine.MeanWindowShareOfIndex(peptideIndex, masses, acceptor);
+                Assert.That(actual, Is.EqualTo(expected).Within(1e-12), acceptor.FileNameAddition);
+            }
+
+            Assert.That(ModernSearchEngine.MeanWindowShareOfIndex(peptideIndex, new double[0], acceptors[0]), Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// Finite is not narrow. A wide Custom interval is bounded on both sides, so the acceptor check alone would stamp it, but its
+        /// window holds far more of the index than stamping pays for; an ordinary tolerance holds far less.
+        /// </summary>
+        [Test]
+        public static void AWideFiniteIntervalIsNotNarrowEnoughToStamp()
+        {
+            var peptideIndex = SortedTrypticIndex();
+            var masses = peptideIndex.Where(p => !double.IsNaN(p.MonoisotopicMass)).Select(p => p.MonoisotopicMass).ToList();
+
+            MassDiffAcceptor oneMissedMonoisotopic = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.OneMM, null);
+            MassDiffAcceptor wide = new IntervalMassDiffAcceptor("wide", new[] { new DoubleRange(-200, 500) });
+            Assert.That(ScanScoringTable.IsWorthStamping(wide), Is.True, "bounded on both sides");
+
+            Assert.That(ScanScoringTable.IsWindowNarrowEnoughToStamp(ModernSearchEngine.MeanWindowShareOfIndex(peptideIndex, masses, oneMissedMonoisotopic)), Is.True);
+            Assert.That(ScanScoringTable.IsWindowNarrowEnoughToStamp(ModernSearchEngine.MeanWindowShareOfIndex(peptideIndex, masses, wide)), Is.False);
+        }
+
+        private static List<IBioPolymerWithSetMods> SortedTrypticIndex()
+        {
+            var random = new Random(20261006);
+            const string residues = "ACDEFGHIKLMNPQRSTVWY";
+            var digestion = new DigestionParams(protease: "trypsin", maxMissedCleavages: 2, minPeptideLength: 5);
+            var peptides = Enumerable.Range(0, 400)
+                .Select(i => new Protein(new string(Enumerable.Range(0, 300).Select(_ => residues[random.Next(residues.Length)]).ToArray()), "P" + i))
+                .SelectMany(p => p.Digest(digestion, new List<Modification>(), new List<Modification>()))
+                .Cast<IBioPolymerWithSetMods>()
+                .ToList();
+            return IndexingEngine.SortByMonoisotopicMass(peptides);
         }
     }
 }

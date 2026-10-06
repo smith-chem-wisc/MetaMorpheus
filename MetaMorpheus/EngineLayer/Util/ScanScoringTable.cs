@@ -60,6 +60,24 @@ namespace EngineLayer.Util
                 .All(interval => !double.IsInfinity(interval.Minimum) && !double.IsInfinity(interval.Maximum));
         }
 
+        /// <summary>
+        /// The largest share of the peptide index a scan's precursor window may hold, on average, for stamping to be chosen.
+        /// A bounded window is not necessarily a narrow one: a wide Custom interval is finite and can still hold most of
+        /// the index, and it is how many cells a scan touches, not whether the window ends, that decides which table is faster.
+        /// A real search touches about two cells per peptide in the window, and at that rate stamping stops winning when the
+        /// window holds 0.2-0.3% of the index. Ordinary tolerances hold well under a tenth of that.
+        /// </summary>
+        public const double MaxWindowShareWorthStamping = 0.002;
+
+        /// <summary>
+        /// Whether a search whose precursor windows hold, on average, <paramref name="meanWindowShareOfIndex"/> of the peptide
+        /// index should stamp rather than clear. Only meaningful for an acceptor <see cref="IsWorthStamping"/> accepts.
+        /// </summary>
+        public static bool IsWindowNarrowEnoughToStamp(double meanWindowShareOfIndex)
+        {
+            return meanWindowShareOfIndex <= MaxWindowShareWorthStamping;
+        }
+
         private bool Stamped => _stampedCells != null;
 
         /// <summary>Discards the previous scan's scores.</summary>
