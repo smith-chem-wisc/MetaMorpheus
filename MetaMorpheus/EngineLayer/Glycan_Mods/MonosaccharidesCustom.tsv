@@ -52,12 +52,10 @@
 #                          monosaccharide, or if the candidate contains this
 #                          monosaccharide but the ion is absent.
 #
-#                          The strict filter runs in O-GLYCAN and N+O-GLYCAN
-#                          searches only. A pure N-glycan search uses a
-#                          different path whose only oxonium requirement is
-#                          the built-in 204.087 check, so there these ions are
-#                          scored but filter nothing. Ion prevalence
-#                          depends on collision energy, instrument and glycan
+#                          The strict filter runs in O-GLYCAN, N-GLYCAN and N+O-GLYCAN
+#                          searches. A pure N-glycan search applies only this custom-ion
+#                          rule and the built-in 204.087 check, not the other built-in oxonium ions rules.
+#                          Ion prevalence depends on collision energy, instrument and glycan
 #                          structure, so validate an ion against your own
 #                          acquisition conditions before relying on it to filter.
 #
