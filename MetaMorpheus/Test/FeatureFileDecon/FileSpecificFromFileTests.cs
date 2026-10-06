@@ -81,14 +81,11 @@ public static class FileSpecificFromFileTests
     public static void FileSpecificFromFile_OverridesTaskMap_ForSelectedRawOnly()
     {
         var taskWideMap = new FeatureMappedFromFileDeconvolutionParameters(
-            new SearchFeatureFileMap
+            new SearchFeatureFileMap(new[]
             {
-                Entries = new List<SearchFeatureFileMapEntry>
-                {
-                    new(massSpecFilePath: RawFileWithOverride, featureFilePath: MappedFeaturePathForRaw1),
-                    new(massSpecFilePath: RawFileWithoutOverride, featureFilePath: MappedFeaturePathForRaw2)
-                }
-            },
+                new SearchFeatureFileMapEntry(RawFileWithOverride, MappedFeaturePathForRaw1),
+                new SearchFeatureFileMapEntry(RawFileWithoutOverride, MappedFeaturePathForRaw2)
+            }),
             minCharge: 1,
             maxCharge: 20)
         {
@@ -137,10 +134,10 @@ public static class FileSpecificFromFileTests
             Is.EqualTo(MappedFeaturePathForRaw1));
 
         // Resolving per-file parameters must not mutate the task-wide embedded map.
-        Assert.That(taskWideMap.FeatureFileMap.Entries, Has.Count.EqualTo(2));
-        Assert.That(taskWideMap.FeatureFileMap.Entries[0].MassSpecFilePath, Is.EqualTo(RawFileWithOverride));
-        Assert.That(taskWideMap.FeatureFileMap.Entries[0].FeatureFilePath, Is.EqualTo(MappedFeaturePathForRaw1));
-        Assert.That(taskWideMap.FeatureFileMap.Entries[1].MassSpecFilePath, Is.EqualTo(RawFileWithoutOverride));
-        Assert.That(taskWideMap.FeatureFileMap.Entries[1].FeatureFilePath, Is.EqualTo(MappedFeaturePathForRaw2));
+        Assert.That(taskWideMap.FeatureFileMap, Has.Count.EqualTo(2));
+        Assert.That(taskWideMap.FeatureFileMap.TryGetFeaturePathForMassSpecFile(RawFileWithOverride, out var mappedPathForRaw1), Is.True);
+        Assert.That(Path.GetFullPath(mappedPathForRaw1), Is.EqualTo(Path.GetFullPath(MappedFeaturePathForRaw1)));
+        Assert.That(taskWideMap.FeatureFileMap.TryGetFeaturePathForMassSpecFile(RawFileWithoutOverride, out var mappedPathForRaw2), Is.True);
+        Assert.That(Path.GetFullPath(mappedPathForRaw2), Is.EqualTo(Path.GetFullPath(MappedFeaturePathForRaw2)));
     }
 }
