@@ -1,4 +1,5 @@
 ﻿using Chemistry;
+using EngineLayer.Util;
 using MassSpectrometry;
 using Omics;
 using Omics.Fragmentation;
@@ -22,6 +23,12 @@ namespace EngineLayer.ModernSearch
         protected readonly DissociationType DissociationType;
         protected readonly double MaxMassThatFragmentIonScoreIsDoubled;
 
+        /// <summary>
+        /// Whether the per-scan score table stamps cells instead of clearing them. Worth it when a scan
+        /// touches a small slice of the peptide index; see <see cref="ScanScoringTable.IsWorthStamping"/>.
+        /// </summary>
+        protected readonly bool UseStampedScoringTable;
+
         public ModernSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, IEnumerable<IBioPolymerWithSetMods> peptideIndex,
             Indexing.FragmentIndex fragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled,
             List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
@@ -34,6 +41,7 @@ namespace EngineLayer.ModernSearch
             MassDiffAcceptor = massDiffAcceptor;
             DissociationType = commonParameters.DissociationType;
             MaxMassThatFragmentIonScoreIsDoubled = maximumMassThatFragmentIonScoreIsDoubled;
+            UseStampedScoringTable = ScanScoringTable.IsWorthStamping(massDiffAcceptor);
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -50,9 +58,10 @@ namespace EngineLayer.ModernSearch
 
             Parallel.ForEach(threads, (scanIndex) =>
             {
-                byte[] scoringTable = new byte[PeptideIndex.Count];
+                var scoringTable = new ScanScoringTable(PeptideIndex.Count, UseStampedScoringTable);
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>(PeptideIndex.Count);
                 List<Product> peptideTheorProducts = new List<Product>();
+                var scoreSorter = new DescendingScoreSorter();
 
                 for (; scanIndex < ListOfSortedMs2Scans.Length; scanIndex += maxThreadsPerFile)
                 {
@@ -68,7 +77,7 @@ namespace EngineLayer.ModernSearch
                     IndexScoreScan(scan, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, CommonParameters.DissociationType);
 
                     // take indexed-scored peptides and re-score them using the more accurate but slower scoring algorithm
-                    FineScorePeptides(idsOfPeptidesPossiblyObserved, scan, scanIndex, scoringTable, CommonParameters.DissociationType, peptideTheorProducts);
+                    FineScorePeptides(idsOfPeptidesPossiblyObserved, scan, scanIndex, scoringTable, CommonParameters.DissociationType, peptideTheorProducts, scoreSorter);
 
                     //report search progress
                     progress++;
@@ -95,7 +104,7 @@ namespace EngineLayer.ModernSearch
         /// This is a first-pass scoring method which is supposed to be *very fast* but may sometimes miscount the number of truly matched fragments. The number
         /// of matched fragments should always be overestimated, never underestimated.
         /// </summary>
-        protected void IndexScoreScan(Ms2ScanWithSpecificMass scan, byte[] scoringTable, byte byteScoreCutoff, List<int> peptidesPossiblyObserved, DissociationType dissociationType)
+        protected void IndexScoreScan(Ms2ScanWithSpecificMass scan, ScanScoringTable scoringTable, byte byteScoreCutoff, List<int> peptidesPossiblyObserved, DissociationType dissociationType)
         {
             // get allowed theoretical masses from the known experimental mass
             // note that this is the OPPOSITE of the classic search (which calculates experimental masses from theoretical values)	
@@ -105,8 +114,8 @@ namespace EngineLayer.ModernSearch
             double lowestMassPeptideToLookFor = notches.Min(p => p.Minimum);
             double highestMassPeptideToLookFor = notches.Max(p => p.Maximum);
 
-            // clear the scoring table to score the new scan (conserves memory compared to allocating a new array)
-            Array.Clear(scoringTable, 0, scoringTable.Length);
+            // retire the previous scan's scores (conserves memory compared to allocating a new array)
+            scoringTable.BeginScan();
             peptidesPossiblyObserved.Clear();
 
             if (dissociationType == DissociationType.LowCID)
@@ -356,7 +365,7 @@ namespace EngineLayer.ModernSearch
         /// <summary>
         /// Adds a +1 score to all the peptides in the fragment mass bin that meet the precursor mass tolerance.
         /// </summary>
-        protected void IncrementPeptideScoresInBin(int start, int end, ReadOnlySpan<int> bin, byte[] scoringTable, Ms2ScanWithSpecificMass scan, byte byteScoreCutoff,
+        protected void IncrementPeptideScoresInBin(int start, int end, ReadOnlySpan<int> bin, ScanScoringTable scoringTable, Ms2ScanWithSpecificMass scan, byte byteScoreCutoff,
             List<int> peptidesPossiblyObserved, DissociationType dissociationType)
         {
             if (dissociationType == DissociationType.LowCID)
@@ -376,7 +385,7 @@ namespace EngineLayer.ModernSearch
                     }
 
                     // mark the peptide as potentially observed so it doesn't get added more than once
-                    scoringTable[peptideId] = 1;
+                    scoringTable.Set(peptideId, 1);
                 }
             }
             else
@@ -385,7 +394,7 @@ namespace EngineLayer.ModernSearch
                 for (int p = start; p <= end; p++)
                 {
                     int peptideId = bin[p];
-                    byte score = ++scoringTable[peptideId];
+                    byte score = scoringTable.Increment(peptideId);
 
                     // if the peptide has met the score cutoff, add it to the list of peptides 
                     // possibly observed so it can be re-scored with the "fine scoring" algorithm
@@ -436,8 +445,8 @@ namespace EngineLayer.ModernSearch
             return PeptideSpectralMatches[scanIndex];
         }
 
-        protected void FineScorePeptides(List<int> peptideIds, Ms2ScanWithSpecificMass scan, int scanIndex, byte[] scoringTable, 
-            DissociationType dissociationType, List<Product> peptideTheorProducts)
+        protected void FineScorePeptides(List<int> peptideIds, Ms2ScanWithSpecificMass scan, int scanIndex, ScanScoringTable scoringTable, 
+            DissociationType dissociationType, List<Product> peptideTheorProducts, DescendingScoreSorter scoreSorter)
         {
             // Every rough-scored candidate is fine-scored.
             //
@@ -454,7 +463,7 @@ namespace EngineLayer.ModernSearch
             // ordering below materialises the whole sort either way, and partly because partitioning itself
             // shrinks each loop. The ordering is kept so that equal-scoring matches are still recorded in a
             // stable order.
-            foreach (int id in peptideIds.OrderByDescending(p => scoringTable[p]))
+            foreach (int id in scoreSorter.Sort(peptideIds, scoringTable))
             {
                 FineScorePeptide(id, scan, scanIndex, peptideTheorProducts);
             }
@@ -573,7 +582,7 @@ namespace EngineLayer.ModernSearch
         /// <summary>
         /// Deprecated.
         /// </summary>
-        protected void IndexedScoring(Indexing.FragmentIndex FragmentIndex, List<int> binsToSearch, byte[] scoringTable, byte byteScoreCutoff, List<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor,
+        protected void IndexedScoring(Indexing.FragmentIndex FragmentIndex, List<int> binsToSearch, ScanScoringTable scoringTable, byte byteScoreCutoff, List<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor,
             double highestMassPeptideToLookFor, List<IBioPolymerWithSetMods> peptideIndex, MassDiffAcceptor massDiffAcceptor, double maxMassThatFragmentIonScoreIsDoubled, DissociationType dissociationType)
         {
             // The window ends at the last peptide no heavier than the upper bound. On an index sorted by mass, as the indexing engine
@@ -656,7 +665,7 @@ namespace EngineLayer.ModernSearch
                         }
 
                         // mark the peptide as potentially observed so it doesn't get added more than once
-                        scoringTable[id] = 1;
+                        scoringTable.Set(id, 1);
                     }
                 }
                 else
@@ -665,10 +674,9 @@ namespace EngineLayer.ModernSearch
                     for (int j = lowestPeptideMassIndex; j <= highestPeptideMassIndex; j++) // iterate through the peptide index in the bin
                     {
                         int id = peptideIdsInThisBin[j];
-                        scoringTable[id]++;
 
                         // if the score of the peptide >3 (counts > 3 times), and the mass difference is accepted, add the peptide to the list of peptides possibly observed
-                        if (scoringTable[id] == byteScoreCutoff && (acceptorAcceptsEveryMass || massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0))
+                        if (scoringTable.Increment(id) == byteScoreCutoff && (acceptorAcceptsEveryMass || massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0))
                         {
                             idsOfPeptidesPossiblyObserved.Add(id);
                         }

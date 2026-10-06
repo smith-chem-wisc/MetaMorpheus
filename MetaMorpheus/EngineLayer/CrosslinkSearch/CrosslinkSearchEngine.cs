@@ -1,4 +1,5 @@
 ﻿using EngineLayer.ModernSearch;
+using EngineLayer.Util;
 using MassSpectrometry;
 using MzLibUtil;
 using Omics;
@@ -124,13 +125,12 @@ namespace EngineLayer.CrosslinkSearch
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
             Parallel.ForEach(threads, (scanIndex) =>
             {
-                byte[] scoringTable = new byte[PeptideIndex.Count];
+                var scoringTable = new ScanScoringTable(PeptideIndex.Count, UseStampedScoringTable);
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
-                byte[] secondScoringTable = new byte[PeptideIndex.Count];
+                var secondScoringTable = new ScanScoringTable(PeptideIndex.Count, UseStampedScoringTable);
                 List<int> childIdsOfPeptidesPossiblyObserved = new List<int>();
-
-                byte scoreAtTopN = 0;
-                int peptideCount = 0;
+                var scoreSorter = new DescendingScoreSorter();
+                List<int> idsOfPeptidesTopN = new List<int>();
 
                 for (; scanIndex < ListOfSortedMs2Scans.Length; scanIndex += maxThreadsPerFile)
                 {
@@ -138,7 +138,7 @@ namespace EngineLayer.CrosslinkSearch
                     if (GlobalVariables.StopLoops) { return; }
 
                     // empty the scoring table to score the new scan (conserves memory compared to allocating a new array)
-                    Array.Clear(scoringTable, 0, scoringTable.Length);
+                    scoringTable.BeginScan();
                     idsOfPeptidesPossiblyObserved.Clear();      
 
                     var scan = ListOfSortedMs2Scans[scanIndex];
@@ -155,7 +155,7 @@ namespace EngineLayer.CrosslinkSearch
                     //child scan first - pass scoring
                     if (scan.ChildScans != null && CommonParameters.MS2ChildScanDissociationType != DissociationType.Unknown && CommonParameters.MS2ChildScanDissociationType != DissociationType.LowCID)
                     {
-                        Array.Clear(secondScoringTable, 0, secondScoringTable.Length);
+                        secondScoringTable.BeginScan();
                         childIdsOfPeptidesPossiblyObserved.Clear();
 
                         List<int> childBinsToSearch = new List<int>();
@@ -174,30 +174,18 @@ namespace EngineLayer.CrosslinkSearch
                             {
                                 idsOfPeptidesPossiblyObserved.Add(childId);
                             }
-                            scoringTable[childId] = (byte)(scoringTable[childId] + secondScoringTable[childId]);
+                            scoringTable.Set(childId, (byte)(scoringTable[childId] + secondScoringTable[childId]));
                         }
                     }
 
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
-                        scoreAtTopN = 0;
-                        peptideCount = 0;
+                        // keep the TopN best, plus everything tied with the TopN-th
+                        scoreSorter.SelectTop(idsOfPeptidesPossiblyObserved, scoringTable, 0, TopN, idsOfPeptidesTopN);
 
-                        foreach (int id in idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]))
+                        foreach (int id in idsOfPeptidesTopN)
                         {
-                            peptideCount++;
-                            // Whenever the count exceeds the TopN that we want to keep, we removed everything with a score lower than the score of the TopN-th peptide in the ids list
-                            if (peptideCount == TopN)
-                            {
-                                scoreAtTopN = scoringTable[id];
-                            }
-
-                            if (scoringTable[id] < scoreAtTopN)
-                            {
-                                break;
-                            }
-
                             if (Candidates[scanIndex] == null)
                             {
                                 Candidates[scanIndex] = new List<(int, int, int)>();

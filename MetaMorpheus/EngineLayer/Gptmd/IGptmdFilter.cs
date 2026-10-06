@@ -72,7 +72,7 @@ public sealed class DualDirectionalIonCoverageFilter : IGptmdFilter
         bool coveredFromCTerm = matchedIons.Any(m =>
            m.NeutralTheoreticalProduct.ProductType == ProductType.M ||
            (m.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime &&
-            m.NeutralTheoreticalProduct.ResiduePosition < site)
+            m.NeutralTheoreticalProduct.ResiduePosition <= site)
         );
 
         if (modAttemptingToAdd.LocationRestriction.Contains("terminal", StringComparison.InvariantCultureIgnoreCase))
@@ -112,7 +112,7 @@ public sealed class UniDirectionalIonCoverageFilter : IGptmdFilter
         bool coveredFromCTerm = matchedIons.Any(m =>
             m.NeutralTheoreticalProduct.ProductType == ProductType.M ||
             (m.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime &&
-             m.NeutralTheoreticalProduct.ResiduePosition < site)
+             m.NeutralTheoreticalProduct.ResiduePosition <= site)
         );
 
         return coveredFromNTerm || coveredFromCTerm;
@@ -140,16 +140,25 @@ public sealed class FlankingIonCoverageFilter : IGptmdFilter
 
         int site = peptideOneBasedModSite;
 
-        bool leftFlank = matchedIons.Any(m =>
-            m.NeutralTheoreticalProduct.ResiduePosition == site - 1);
+        bool leftFlank = matchedIons.Any(m => CleavesAt(m, site - 1));
 
-        bool rightFlank = matchedIons.Any(m =>
-            m.NeutralTheoreticalProduct.ResiduePosition == site);
+        bool rightFlank = matchedIons.Any(m => CleavesAt(m, site));
 
         if (modAttemptingToAdd.LocationRestriction.Contains("terminal", StringComparison.InvariantCultureIgnoreCase))
             return leftFlank || rightFlank;
 
         return leftFlank && rightFlank;
+    }
+
+    private static bool CleavesAt(MatchedFragmentIon ion, int position)
+    {
+        Product product = ion.NeutralTheoreticalProduct;
+        return product.Terminus switch
+        {
+            FragmentationTerminus.N or FragmentationTerminus.FivePrime => product.ResiduePosition == position,
+            FragmentationTerminus.C or FragmentationTerminus.ThreePrime => product.ResiduePosition - 1 == position,
+            _ => false
+        };
     }
 }
 
