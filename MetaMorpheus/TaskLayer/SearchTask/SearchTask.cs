@@ -654,6 +654,10 @@ namespace TaskLayer
             if (!SearchParameters.WriteSdrf || currentRawFileList is null || currentRawFileList.Count == 0)
                 return;
 
+            // First, and in its own method, so that no branch below can skip it. A branch that returns
+            // early (#2817's isobaric one did) would otherwise drop it for every TMT search.
+            WarnAboutProteomeXchangeAccession();
+
             // This check only warns, so it must never be what stops a search: a design another
             // program holds open (Excel locks what it opens) is reported, not thrown.
             string designPath = Path.Combine(
@@ -697,6 +701,33 @@ namespace TaskLayer
                 Warn("SDRF output on a labelled search: comment[label] is not filled in yet, because " +
                      "the SDRF is written one row per file, not one row per channel. Every other column " +
                      "will be written.");
+        }
+
+        /// <summary>
+        /// Names the ProteomeXchange accession before the run whenever one is set, not only when it is
+        /// malformed. The accession names ONE dataset but lives in task settings, which are reused (saved
+        /// Task Settings TOMLs, the GUI's defaults), and the GUI has no field for it. A well-formed
+        /// accession left over from another dataset would otherwise tie these files to the wrong
+        /// experiment without a word. Warned, not refused: the accession is still written as supplied.
+        ///
+        /// The form check accepts PXD or RPXD (PRIDE's reprocessed datasets) followed by six or more
+        /// digits, in any case. The specification's value type is PXD\d+, so seven-digit accessions
+        /// are valid once they exist.
+        /// </summary>
+        private void WarnAboutProteomeXchangeAccession()
+        {
+            string accession = SearchParameters.ProteomeXchangeAccession?.Trim();
+            if (string.IsNullOrEmpty(accession))
+                return;
+
+            string malformed = System.Text.RegularExpressions.Regex.IsMatch(accession, @"^R?PXD\d{6,}$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+                ? ""
+                : " That is not the form of a ProteomeXchange accession (PXD followed by six or more digits); " +
+                  "it will be written as given.";
+            Warn("SDRF output is on: the SDRF will record ProteomeXchange accession '" + accession +
+                 "' as the dataset these spectra files came from." + malformed + " If they did not, " +
+                 "clear ProteomeXchangeAccession in the task settings.");
         }
 
 

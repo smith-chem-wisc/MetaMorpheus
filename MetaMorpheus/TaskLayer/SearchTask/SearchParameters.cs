@@ -136,5 +136,17 @@ namespace TaskLayer
         /// Off, PEP trains once, on labels from the search-score q-value.
         /// </summary>
         public bool IterativePepTraining { get; set; }
+
+        /// <summary>
+        /// The ProteomeXchange accession (PXD######) of the public dataset this search re-analyses,
+        /// written into the SDRF as comment[proteomexchange accession number]. Null for a search of
+        /// data that has not been deposited.
+        ///
+        /// It is the join key for pooling: without it, a reanalysis SDRF describes a search but not
+        /// which experiment it searched, so it cannot be matched back to the deposition or to other
+        /// reanalyses of the same data. Supplied rather than inferred -- nothing in a spectra file
+        /// names the dataset it was deposited under.
+        /// </summary>
+        public string ProteomeXchangeAccession { get; set; }
     }
 }
