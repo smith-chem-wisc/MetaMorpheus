@@ -42,7 +42,8 @@ namespace TaskLayer
         Calibrate,
         XLSearch,
         GlycoSearch,
-        Average
+        Average,
+        Truncation
     }
 
     public abstract class MetaMorpheusTask
@@ -375,6 +376,42 @@ namespace TaskLayer
 
         [TomlIgnore]
         public virtual string OutputFolder { get; private set; }
+
+        /// <summary>
+        /// In-memory hand-off shared across the tasks in a run list (docs/Truncation-Search.md decision #1).
+        /// Assigned by <see cref="EverythingRunnerEngine"/> before each task runs; a finishing task can
+        /// deposit results that a later task retrieves, avoiding a file round-trip. Null for tasks run
+        /// outside the runner (e.g. directly in tests), in which case consumers fall back to disk.
+        /// </summary>
+        [TomlIgnore]
+        public TaskChainContext TaskChainContext { get; set; }
+
+        /// <summary>
+        /// True for tasks that read results out of the <see cref="TaskChainContext"/>. The runner wires the
+        /// context up only when a run list contains at least one such task, and clears it once one has run —
+        /// so a task that deposits into the context does not pin its results through run lists that will
+        /// never read them.
+        /// </summary>
+        [TomlIgnore]
+        public virtual bool ConsumesTaskChainContext => false;
+
+        /// <summary>
+        /// Called at the start of <see cref="RunTask"/>, before the task TOML is written and before file-specific
+        /// parameters are resolved, so a task can settle its <see cref="CommonParameters"/> (e.g. adopt an upstream
+        /// task's from the <see cref="TaskChainContext"/>) and have the written TOML record what actually ran.
+        /// </summary>
+        protected virtual void ResolveParametersBeforeRun()
+        {
+        }
+
+        /// <summary>
+        /// The spectra files the whole run started from, before a Calibrate or Average task replaced them with
+        /// -calib / -averaged derivatives. Set by <see cref="EverythingRunnerEngine"/>; null when a task is run on
+        /// its own, in which case the files it is given are the acquired ones. An SDRF names these in
+        /// comment[data file] and the file the search read in comment[searched data file] (sdrf D46).
+        /// </summary>
+        [TomlIgnore]
+        public List<string> AcquiredSpectraFiles { get; set; }
 
         protected MyTaskResults MyTaskResults;
 
@@ -835,6 +872,7 @@ namespace TaskLayer
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName)
         {
             this.OutputFolder = output_folder;
+            ResolveParametersBeforeRun();
             MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
             StartingSingleTask(displayName);
 
