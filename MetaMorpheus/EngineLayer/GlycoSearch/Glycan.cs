@@ -468,7 +468,7 @@ namespace EngineLayer
         /// <summary>
         /// Custom-monosaccharide diagnostic ions exposed as (observed m/z scaled by 1e5, Kind[] index)
         /// pairs in a deterministic order (by Kind index, then declaration order). Empty unless customs
-        /// were registered. Consumed by the strict custom-oxonium branch of GlycoPeptides.DiagonsticFilter
+        /// were registered. Consumed by the strict custom-oxonium branch of GlycoPeptides.CustomOxoniumFilter
         /// and used to size the oxonium intensity list. No hydrogen offset is applied: values are observed
         /// m/z, matching the convention of AllOxoniumIons and the MonosaccharidesCustom.tsv documentation.
         /// </summary>
