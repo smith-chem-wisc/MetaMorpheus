@@ -52,7 +52,7 @@ namespace MetaMorpheusCommandLine
         [Option("sdrfDesign", HelpText = "[Optional] Path to a label-free SDRF file to turn into an ExperimentalDesign.tsv, which is written beside the first spectra file given with -s, where a run looks for it. Every spectra file must be named exactly by one SDRF row; rows for other files are dropped and reported. Biological replicates are renumbered within each condition and the renumbering is printed; fractions are copied as they are. If the SDRF describes a design MetaMorpheus would reject, nothing is written and every reason is printed. An existing design file is never overwritten. Runs on its own: give -s, but no task or database.")]
         public string SdrfDesign { get; set; }
 
-        [Option("sdrfCondition", HelpText = "[Optional] The SDRF factor value columns the condition is built from, in order; space-delimited. A bare name such as 'genotype' means 'factor value[genotype]'. Values are joined with '_'. Needed when the SDRF has more than one factor value column. Only meaningful with --sdrfDesign.")]
+        [Option("sdrfCondition", HelpText = "[Optional] The SDRF factor value columns the condition is built from, in order; space-delimited. A bare name such as 'genotype' means 'factor value[genotype]'; the 'factor value[' prefix may be given in any case. Values are joined with '_'. Needed when the SDRF has more than one factor value column. Only meaningful with --sdrfDesign.")]
         public IEnumerable<string> SdrfConditionColumns { get; set; }
 
         public enum VerbosityType { none, minimal, normal };

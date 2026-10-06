@@ -1419,6 +1419,25 @@ namespace Test
             Assert.That(thrown.Message, Is.EqualTo("--sdrfCondition is only meaningful with --sdrfDesign."));
         }
 
+        /// <summary>
+        /// The "factor value[" prefix is recognised in any case and written as the specification names
+        /// it; it used to be wrapped a second time, into 'factor value[Factor Value[genotype]]'.
+        /// </summary>
+        [Test]
+        public static void TestSdrfConditionPrefixIsMatchedInAnyCase()
+        {
+            var (sdrf, data) = WriteLabelFreeSdrf(("a1.raw", "WT", "DMSO", 1, 1), ("b1.raw", "KO", "DMSO", 1, 1));
+            var settings = SdrfDesignSettings(sdrf, data, "Factor Value[genotype]");
+
+            var written = new StringWriter();
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(0), written.ToString());
+            var readBack = ExperimentalDesign.ReadExperimentalDesign(Path.Combine(data, GlobalVariables.ExperimentalDesignFileName),
+                settings.Spectra.Select(Path.GetFullPath).ToList(), out var errors);
+            Assert.That(errors, Is.Empty);
+            Assert.That(readBack.Select(f => f.Condition), Is.EquivalentTo(new[] { "WT", "KO" }));
+        }
+
         #endregion
     }
 }

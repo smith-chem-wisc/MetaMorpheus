@@ -560,9 +560,15 @@ namespace MetaMorpheusCommandLine
                 }
             }
 
-            // A bare name is the column's own name: 'genotype' means 'factor value[genotype]'.
+            // A bare name is the column's own name: 'genotype' means 'factor value[genotype]'. The prefix is
+            // matched in any case and written lowercase, as the SDRF specification names it, so
+            // 'Factor Value[genotype]' is that column too rather than 'factor value[Factor Value[genotype]]'.
+            // mzLib matches column names exactly, so the name inside the brackets is passed as given.
+            const string factorValuePrefix = "factor value[";
             var conditionColumns = settings.SdrfConditionColumns?
-                .Select(c => c.StartsWith("factor value[", StringComparison.Ordinal) ? c : "factor value[" + c + "]")
+                .Select(c => c.StartsWith(factorValuePrefix, StringComparison.OrdinalIgnoreCase)
+                    ? factorValuePrefix + c.Substring(factorValuePrefix.Length)
+                    : factorValuePrefix + c + "]")
                 .ToList();
 
             SdrfLabelFreeDesign design;
