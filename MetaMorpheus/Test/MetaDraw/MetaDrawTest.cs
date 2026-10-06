@@ -579,8 +579,12 @@ namespace Test.MetaDraw
                     fullSequence = fullSequence.Insert(mod.Key - 1 - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
                 }
 
-                List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
-                                                       p.NeutralTheoreticalProduct.ResiduePosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
+                List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p =>
+                {
+                    int cleavagePosition = DrawnSequence.GetCleavagePosition(p.NeutralTheoreticalProduct, psm.BaseSeq.Length);
+                    return cleavagePosition > MetaDrawSettings.FirstAAonScreenIndex
+                           && cleavagePosition < MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen;
+                }).ToList();
                 int psmStartResidue = int.Parse(psm.StartAndEndResiduesInParentSequence.Split("to")[0].Replace("[", ""));
                 var startAA = (MetaDrawSettings.FirstAAonScreenIndex + psmStartResidue).ToString();
                 var endAA = (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen + psmStartResidue - 1).ToString();
@@ -761,8 +765,12 @@ namespace Test.MetaDraw
                     fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
                 }
             }
-            List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
-                                                   p.NeutralTheoreticalProduct.ResiduePosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
+            List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p =>
+            {
+                int cleavagePosition = DrawnSequence.GetCleavagePosition(p.NeutralTheoreticalProduct, psm.BaseSeq.Length);
+                return cleavagePosition > MetaDrawSettings.FirstAAonScreenIndex
+                       && cleavagePosition < MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen;
+            }).ToList();
             Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + 
                 psm.StartAndEndResiduesInParentSequence.Replace("[","").Replace("]","").Replace("to", "").Replace(" ", "").Length + 2);
 
@@ -795,8 +803,12 @@ namespace Test.MetaDraw
                     fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
                 }
             }
-            matchedIons = modPsm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
-                                                p.NeutralTheoreticalProduct.ResiduePosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
+            matchedIons = modPsm.MatchedIons.Where(p =>
+            {
+                int cleavagePosition = DrawnSequence.GetCleavagePosition(p.NeutralTheoreticalProduct, modPsm.BaseSeq.Length);
+                return cleavagePosition > MetaDrawSettings.FirstAAonScreenIndex
+                       && cleavagePosition < MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen;
+            }).ToList();
             Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + 
                 psm.StartAndEndResiduesInParentSequence.Replace("[", "").Replace("]", "").Replace("to", "").Replace(" ", "").Length + 2);
 
