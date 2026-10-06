@@ -104,12 +104,12 @@ namespace Test
         [Test]
         public void FindNGlycan_NoCustomIons_FindsTheKnownGlycopeptide()
         {
-            // Baseline the other tests depend on: without custom ions, the filter-on N-search identifies the glycopeptide.
+            // Baseline the other tests depend on: without custom monosaccharides and custom ions, the filter-on N-search identifies the glycopeptide.
             try
             {
                 Glycan.ResetCustomMonosaccharides();
 
-                var matches = FindNGlycanForKnownGlycopeptide(oxoniumIonFilter: true, customIonObserved: false);
+                var matches = FindNGlycanForKnownGlycopeptide(oxoniumIonFilter: true, customIonObserved: false); // N-Search should behave the same with or without the custom ion, since it is not registered.
 
                 Assert.That(matches, Is.Not.Empty);
                 Assert.That(matches.Any(IsKnownGlycan), Is.True);
