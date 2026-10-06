@@ -758,16 +758,26 @@ namespace Test
         [TestCase(" PXD012345 ", true, false)]
         [TestCase(null, false, false)]
         [TestCase("", false, false)]
-        public static void ASetAccessionIsNamedBeforeTheRun(string accession, bool named, bool malformed)
+        // An isobaric search too: merged with #2817, an early return in its multiplex branch skipped
+        // this warning (Alexander-Sol, #2817 and #2870 review).
+        [TestCase("PXD012345", true, false, true)]
+        [TestCase("PXD12345", true, true, true)]
+        public static void ASetAccessionIsNamedBeforeTheRun(string accession, bool named, bool malformed,
+            bool multiplex = false)
         {
-            string folder = SetUpIsolatedRun(nameof(ASetAccessionIsNamedBeforeTheRun) + named + malformed + accession?.Trim(),
-                out string spectraPath, out _);
+            string folder = SetUpIsolatedRun(nameof(ASetAccessionIsNamedBeforeTheRun) + named + malformed + multiplex +
+                accession?.Trim(), out string spectraPath, out _);
             ExperimentalDesign.WriteExperimentalDesignToFile(
                 new List<SpectraFileInfo> { new(spectraPath, "condition", 0, 0, 0) });
 
             var task = new SearchTask
             {
-                SearchParameters = new SearchParameters { WriteSdrf = true, ProteomeXchangeAccession = accession }
+                SearchParameters = new SearchParameters
+                {
+                    WriteSdrf = true,
+                    ProteomeXchangeAccession = accession,
+                    DoMultiplexQuantification = multiplex
+                }
             };
 
             var warnings = new List<string>();
