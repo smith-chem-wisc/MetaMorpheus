@@ -72,7 +72,7 @@ public sealed class FromFileDeconParamsViewModel : DeconParamsViewModel
         try
         {
             var resultType = path.GetResultFileType();
-            if (resultType is IMs1FeatureFile)
+            if (resultType.GetInterfaces().Contains(typeof(IMs1FeatureFile)))
             {
                 validationMessage = string.Empty;
                 return true;
