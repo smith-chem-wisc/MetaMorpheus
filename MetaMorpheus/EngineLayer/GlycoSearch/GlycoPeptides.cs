@@ -533,7 +533,7 @@ namespace EngineLayer.GlycoSearch
         /// A missing 138.055 reference is reported as "not observed" rather than dividing by zero, which
         /// diverges from the built-in comparisons -- they see +Infinity there and call the ion observed.
         /// Neither verdict is neutral under the strict rule, so callers applying it must not use this
-        /// result when the reference is absent; <see cref="DiagonsticFilter"/> skips the custom branch
+        /// result when the reference is absent; <see cref="CustomOxoniumFilter"/> skips the custom branch
         /// in that case rather than letting either answer become a rejection.
         /// </summary>
         internal static bool CheckOxoniumPresence(double[] oxoniumIonsintensities, int index, double hexNAcReferenceIntensity)
