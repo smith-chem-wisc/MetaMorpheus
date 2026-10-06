@@ -325,6 +325,10 @@ namespace MetaMorpheusGUI
             RenameTCProteinsRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RenameProtein;
             AllAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
             MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
+            MinRetentionTimeTextBox.Text = task.CommonParameters.RetentionTimeRange.Minimum.ToString(CultureInfo.InvariantCulture);
+            MaxRetentionTimeTextBox.Text = task.CommonParameters.RetentionTimeRange.Maximum == double.MaxValue
+                ? ""
+                : task.CommonParameters.RetentionTimeRange.Maximum.ToString(CultureInfo.InvariantCulture);
             TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             AddTruncationsCheckBox.IsChecked = task.CommonParameters.AddTruncations;
@@ -377,6 +381,7 @@ namespace MetaMorpheusGUI
             CompressIndividualResultsCheckBox.IsChecked = task.SearchParameters.CompressIndividualFiles;
             IncludeMotifInModNamesCheckBox.IsChecked = task.SearchParameters.IncludeModMotifInMzid;
             WriteTargetDecoyFastaCheckBox.IsChecked = task.SearchParameters.WriteTargetDecoyFasta;
+            WriteSdrfCheckBox.IsChecked = task.SearchParameters.WriteSdrf;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -601,6 +606,12 @@ namespace MetaMorpheusGUI
             bool TrimMsMsPeaks = TrimMsMs.IsChecked.Value;
             bool AddTruncations = AddTruncationsCheckBox.IsChecked.Value;
 
+            if (!TaskValidator.CheckRetentionTimeRange(MinRetentionTimeTextBox.Text, MaxRetentionTimeTextBox.Text,
+                out double minRetentionTime, out double maxRetentionTime))
+            {
+                return;
+            }
+
             int? numPeaksToKeep = null;
             if (int.TryParse(NumberOfPeaksToKeepPerWindowTextBox.Text, out int numberOfPeaksToKeeep))
             {
@@ -674,6 +685,7 @@ namespace MetaMorpheusGUI
                 productDeconParams: productDeconvolutionParameters,
                 precursorMassMatchMode: _massDifferenceAcceptorViewModel.PrecursorMassMatchMode,
                 fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams(),
+                retentionTimeRange: new DoubleRange(minRetentionTime, maxRetentionTime),
                 rtPredictorName: rtPredictorModelName);
 
             if (ClassicSearchRadioButton.IsChecked.Value)
@@ -720,6 +732,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.IncludeModMotifInMzid = IncludeMotifInModNamesCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteDigestionProductCountFile = WriteDigestCountCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteTargetDecoyFasta = WriteTargetDecoyFastaCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.WriteSdrf = WriteSdrfCheckBox.IsChecked.Value;
 
             if (RemoveContaminantRadioBox.IsChecked.Value)
             {

@@ -6,12 +6,25 @@ using System.Windows.Shapes;
 using GuiFunctions;
 using GuiFunctions.MetaDraw;
 using NUnit.Framework;
+using Omics.Fragmentation;
 
 namespace Test.MetaDraw;
 
 [TestFixture, Apartment(ApartmentState.STA)]
 public class ChimeraDrawnSequenceTests
 {
+    [TestCase(ProductType.b, FragmentationTerminus.N, 2, 2, 2)]
+    [TestCase(ProductType.y, FragmentationTerminus.C, 2, 6, 5)]
+    [TestCase(ProductType.y, FragmentationTerminus.C, 2, 5, 5)]
+    [TestCase(ProductType.zDot, FragmentationTerminus.C, 1, 7, 6)]
+    public void DrawnSequence_UsesCleavageBoundaryForTerminalIons(
+        ProductType productType, FragmentationTerminus terminus, int fragmentNumber, int residuePosition, int expectedPosition)
+    {
+        var product = new Product(productType, terminus, 0, fragmentNumber, residuePosition, 0);
+
+        Assert.That(DrawnSequence.GetCleavagePosition(product, 7), Is.EqualTo(expectedPosition));
+    }
+
     [Test]
     public void ChimeraDrawnSequence_CreatesCanvasWithCorrectDimensions()
     {
