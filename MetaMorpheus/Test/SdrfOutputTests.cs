@@ -746,16 +746,21 @@ namespace Test
         }
 
         /// <summary>
-        /// A malformed accession is named before the run. It is not refused: the user's value is
-        /// still written, because a warning costs nothing and a refusal would cost the whole file.
+        /// Any accession that is set is named before the run, well-formed or not: it lives in task
+        /// settings, which are reused, so a valid accession left over from another dataset would
+        /// otherwise reach this run's SDRF unseen. A malformed one is also called malformed. Neither
+        /// is refused: the user's value is still written, because a warning costs nothing and a
+        /// refusal would cost the whole file.
         /// </summary>
-        [TestCase("PXD12345", true)]
-        [TestCase("MSV000012345", true)]
-        [TestCase("PXD012345", false)]
-        [TestCase(null, false)]
-        public static void AMalformedAccessionIsWarnedAboutBeforeTheRun(string accession, bool warned)
+        [TestCase("PXD12345", true, true)]
+        [TestCase("MSV000012345", true, true)]
+        [TestCase("PXD012345", true, false)]
+        [TestCase(" PXD012345 ", true, false)]
+        [TestCase(null, false, false)]
+        [TestCase("", false, false)]
+        public static void ASetAccessionIsNamedBeforeTheRun(string accession, bool named, bool malformed)
         {
-            string folder = SetUpIsolatedRun(nameof(AMalformedAccessionIsWarnedAboutBeforeTheRun) + warned + accession,
+            string folder = SetUpIsolatedRun(nameof(ASetAccessionIsNamedBeforeTheRun) + named + malformed + accession?.Trim(),
                 out string spectraPath, out _);
             ExperimentalDesign.WriteExperimentalDesignToFile(
                 new List<SpectraFileInfo> { new(spectraPath, "condition", 0, 0, 0) });
@@ -779,8 +784,14 @@ namespace Test
                 MetaMorpheusTask.WarnHandler -= handler;
             }
 
-            Assert.That(warnings.Any(w => w.Contains("ProteomeXchange accession")), Is.EqualTo(warned),
-                string.Join(" | ", warnings));
+            var accessionWarnings = warnings.Where(w => w.Contains("ProteomeXchange accession")).ToList();
+            Assert.That(accessionWarnings.Count, Is.EqualTo(named ? 1 : 0), string.Join(" | ", warnings));
+            if (named)
+            {
+                Assert.That(accessionWarnings[0], Does.Contain("'" + accession.Trim() + "'"));
+                Assert.That(accessionWarnings[0], Does.Contain("clear ProteomeXchangeAccession"));
+                Assert.That(accessionWarnings[0].Contains("does not look like one"), Is.EqualTo(malformed));
+            }
 
             Directory.Delete(folder, true);
         }

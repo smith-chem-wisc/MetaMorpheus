@@ -698,13 +698,21 @@ namespace TaskLayer
                      "the SDRF is written one row per file, not one row per channel. Every other column " +
                      "will be written.");
 
-            // Warned, not refused: the accession is still written as supplied. A typo here breaks the
-            // one join that ties this reanalysis back to its dataset, so it is worth naming now.
+            // Named whenever it is set, not only when malformed: the accession names ONE dataset but
+            // lives in task settings, which are reused (saved Task Settings TOMLs, the GUI's defaults),
+            // and the GUI has no field for it. A well-formed accession left over from another dataset
+            // would otherwise tie these files to the wrong experiment without a word. Warned, not
+            // refused: the accession is still written as supplied.
             string accession = SearchParameters.ProteomeXchangeAccession?.Trim();
-            if (!string.IsNullOrEmpty(accession)
-                && !System.Text.RegularExpressions.Regex.IsMatch(accession, @"^PXD\d{6}$"))
-                Warn("SDRF output is on, but the ProteomeXchange accession '" + accession + "' does not " +
-                     "look like one (PXD followed by six digits). It will be written as given.");
+            if (!string.IsNullOrEmpty(accession))
+            {
+                string malformed = System.Text.RegularExpressions.Regex.IsMatch(accession, @"^PXD\d{6}$")
+                    ? ""
+                    : " It does not look like one (PXD followed by six digits), and will be written as given.";
+                Warn("SDRF output is on: the SDRF will record ProteomeXchange accession '" + accession +
+                     "' as the dataset these spectra files came from." + malformed + " If they did not, " +
+                     "clear ProteomeXchangeAccession in the task settings.");
+            }
         }
 
 
