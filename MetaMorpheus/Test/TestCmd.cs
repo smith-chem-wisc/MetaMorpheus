@@ -1525,5 +1525,151 @@ namespace Test
         }
 
         #endregion
+
+        #region --sdrfDesign with --sdrfTag (isobaric)
+
+        private static readonly string[] Tmt6Labels = { "TMT126", "TMT127", "TMT128", "TMT129", "TMT130", "TMT131" };
+
+        /// <summary>
+        /// Writes a TMT6 SDRF, one row per (file, channel), and an empty spectra file per file into a "data"
+        /// folder. Each file is (name, plex); channel i of a file is sample "{plex}-{i}", treatment A for the
+        /// first three channels and B for the rest, biological replicate (i % 3) + 1.
+        /// </summary>
+        private static (string Sdrf, string Data) WriteTmt6Sdrf(params (string File, string Plex)[] files)
+        {
+            string data = Path.Combine(ScratchDataDirectory, "data");
+            Directory.CreateDirectory(data);
+
+            var lines = new List<string>
+            {
+                string.Join("\t", "source name", "characteristics[biological replicate]", "assay name", "comment[label]",
+                    "comment[fraction identifier]", "comment[technical replicate]", "comment[data file]", "comment[plex]",
+                    "factor value[treatment]")
+            };
+            foreach (var (file, plex) in files)
+            {
+                for (int i = 0; i < Tmt6Labels.Length; i++)
+                {
+                    lines.Add(string.Join("\t", $"{plex}-{i}", (i % 3) + 1, "run " + file, Tmt6Labels[i], 1, 1, file, plex, i < 3 ? "A" : "B"));
+                }
+                File.WriteAllText(Path.Combine(data, file), string.Empty);
+            }
+
+            string sdrf = Path.Combine(ScratchDataDirectory, "tmt.sdrf.tsv");
+            File.WriteAllLines(sdrf, lines);
+            return (sdrf, data);
+        }
+
+        private static CommandLineSettings TmtSdrfDesignSettings(string sdrf, string data, string tag,
+            string plexColumn = null, string plexPattern = null, string singlePlex = null)
+        {
+            var settings = new CommandLineSettings
+            {
+                SdrfDesign = sdrf,
+                _spectra = new[] { data },
+                SdrfConditionColumns = new[] { "treatment" },
+                SdrfTag = tag,
+                SdrfPlexColumn = plexColumn,
+                SdrfPlexPattern = plexPattern,
+                SdrfSinglePlex = singlePlex,
+            };
+            settings.ValidateCommandLineSettings();
+            return settings;
+        }
+
+        /// <summary>
+        /// The TmtDesign.txt mzLib writes is read by MetaMorpheus's own TMT reader with no error, every channel in
+        /// place, and the pre-flight a run makes passes.
+        /// </summary>
+        [Test]
+        public static void TestSdrfTmtDesignIsReadBackByMetaMorpheusWithoutError()
+        {
+            var (sdrf, data) = WriteTmt6Sdrf(("pool1_f1.raw", "pool1"), ("pool2_f1.raw", "pool2"));
+            var settings = TmtSdrfDesignSettings(sdrf, data, "TMT6", plexColumn: "comment[plex]");
+
+            var written = new StringWriter();
+            int exitCode = Program.WriteDesignFromSdrf(settings, written);
+
+            Assert.That(exitCode, Is.EqualTo(0), written.ToString());
+            string designPath = Path.Combine(data, GlobalVariables.TmtExperimentalDesignFileName);
+            Assert.That(File.Exists(designPath));
+            Assert.That(File.Exists(Path.Combine(data, GlobalVariables.ExperimentalDesignFileName)), Is.False, "a TMT run gets TmtDesign.txt only");
+
+            var searched = settings.Spectra.Select(Path.GetFullPath).ToList();
+            var readBack = TmtExperimentalDesign.Read(designPath, searched, out var errors);
+
+            Assert.That(errors, Is.Empty);
+            Assert.That(readBack.Select(f => f.Plex), Is.EquivalentTo(new[] { "pool1", "pool2" }));
+            var pool2 = readBack.Single(f => f.Plex == "pool2");
+            Assert.That(pool2.Annotations, Has.Count.EqualTo(6));
+            var channel130 = pool2.Annotations.Single(a => a.Tag == "130");
+            Assert.That((channel130.SampleName, channel130.Condition, channel130.BiologicalReplicate), Is.EqualTo(("pool2-4", "B", 2)),
+                "the sample, condition and replicate the SDRF gives, as written");
+
+            Assert.That(Program.ResolveExperimentalDesign(data, searched, normalizationRequested: true, reportToConsole: false), Is.EqualTo(0));
+        }
+
+        /// <summary>The plex can come from the file name or be the one plex every file belongs to.</summary>
+        [Test]
+        public static void TestSdrfTmtDesignTakesThePlexFromAPatternOrASinglePlex()
+        {
+            var (sdrf, data) = WriteTmt6Sdrf(("pool7_f1.raw", "ignored"));
+
+            var byPattern = TmtSdrfDesignSettings(sdrf, data, "TMT6", plexPattern: @"^(?<plex>pool\d+)_");
+            Assert.That(Program.WriteDesignFromSdrf(byPattern, new StringWriter()), Is.EqualTo(0));
+            string designPath = Path.Combine(data, GlobalVariables.TmtExperimentalDesignFileName);
+            Assert.That(TmtExperimentalDesign.Read(designPath, byPattern.Spectra.Select(Path.GetFullPath).ToList(), out _).Single().Plex, Is.EqualTo("pool7"));
+            File.Delete(designPath);
+
+            var single = TmtSdrfDesignSettings(sdrf, data, "TMT6", singlePlex: "only");
+            Assert.That(Program.WriteDesignFromSdrf(single, new StringWriter()), Is.EqualTo(0));
+            Assert.That(TmtExperimentalDesign.Read(designPath, single.Spectra.Select(Path.GetFullPath).ToList(), out _).Single().Plex, Is.EqualTo("only"));
+        }
+
+        /// <summary>A design MetaMorpheus would reject is refused, with the reason printed, and nothing is written.</summary>
+        [Test]
+        public static void TestSdrfTmtDesignWithAChannelTheKitDoesNotHaveIsRefused()
+        {
+            var (sdrf, data) = WriteTmt6Sdrf(("pool1_f1.raw", "pool1"));
+            File.WriteAllText(sdrf, File.ReadAllText(sdrf).Replace("TMT131", "TMT134N"));
+            var settings = TmtSdrfDesignSettings(sdrf, data, "TMT6", plexColumn: "comment[plex]");
+
+            var written = new StringWriter();
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(5));
+            Assert.That(written.ToString(), Does.Contain("refused").And.Contain("No design file was written."));
+            Assert.That(File.Exists(Path.Combine(data, GlobalVariables.TmtExperimentalDesignFileName)), Is.False);
+        }
+
+        [TestCase(null, "TMT6", null, null, "--sdrfTag is only meaningful with --sdrfDesign.")]
+        [TestCase("x", null, "comment[plex]", null, "--sdrfPlexColumn is only meaningful with --sdrfTag")]
+        [TestCase("x", "TMT6", null, null, "--sdrfTag needs exactly one of --sdrfPlexColumn, --sdrfPlexPattern and --sdrfSinglePlex")]
+        [TestCase("x", "TMT6", "comment[plex]", "one", "--sdrfPlexColumn and --sdrfSinglePlex were given")]
+        [TestCase("x", "TMT99", "comment[plex]", null, "--sdrfTag 'TMT99' is not an isobaric kit MetaMorpheus knows")]
+        public static void TestSdrfTagOptionsAreRefusedWhenTheyCannotWork(string sdrfDesign, string tag, string plexColumn, string singlePlex, string expected)
+        {
+            var settings = new CommandLineSettings
+            {
+                SdrfDesign = sdrfDesign,
+                _spectra = new[] { ScratchDataDirectory },
+                SdrfTag = tag,
+                SdrfPlexColumn = plexColumn,
+                SdrfSinglePlex = singlePlex,
+            };
+
+            var e = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(e.Message, Does.Contain(expected));
+        }
+
+        /// <summary>The kit can be named as the search names its multiplex modification.</summary>
+        [Test]
+        public static void TestSdrfTagAcceptsTheSearchsMultiplexModification()
+        {
+            var (sdrf, data) = WriteTmt6Sdrf(("pool1_f1.raw", "pool1"));
+            var settings = TmtSdrfDesignSettings(sdrf, data, "TMT6-plex on K", plexColumn: "comment[plex]");
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, new StringWriter()), Is.EqualTo(0));
+        }
+
+        #endregion
     }
 }
