@@ -24,6 +24,9 @@ namespace TaskLayer
             UseSharedPeptidesForLFQ = false;
             QuantifyPpmTol = 5;
             MbrFdrThreshold = 0.01;
+            DoBayesianProteinQuant = false;
+            BayesianFoldChangeCutoff = 0.1;
+            BayesianRandomSeed = 42;
             SearchTarget = true;
             DecoyType = DecoyType.Reverse;
             DoHistogramAnalysis = false;
@@ -136,5 +139,30 @@ namespace TaskLayer
         /// Off, PEP trains once, on labels from the search-score q-value.
         /// </summary>
         public bool IterativePepTraining { get; set; }
+
+        /// <summary>
+        /// Run FlashLFQ's Bayesian protein fold-change analysis after label-free quantification, comparing every
+        /// condition in the experimental design against <see cref="BayesianControlCondition"/>, and write
+        /// BayesianFoldChangeAnalysis.tsv. Needs a design with at least two conditions; off for SILAC.
+        /// </summary>
+        public bool DoBayesianProteinQuant { get; set; }
+
+        /// <summary>
+        /// The experimental-design condition every other condition is compared against. Must match one of the
+        /// design's conditions exactly, or the Bayesian step is skipped with a warning.
+        /// </summary>
+        public string BayesianControlCondition { get; set; }
+
+        /// <summary>
+        /// The fold change, as a log2 value, below which a protein counts as unchanged when the Bayesian step
+        /// estimates the probability of a real change. FlashLFQ's default, 0.1.
+        /// </summary>
+        public double BayesianFoldChangeCutoff { get; set; }
+
+        /// <summary>
+        /// Seed for the Bayesian step's Markov chain Monte Carlo sampling, so that the same input gives the same
+        /// fold changes. Fixed at 42 by default.
+        /// </summary>
+        public int BayesianRandomSeed { get; set; }
     }
 }

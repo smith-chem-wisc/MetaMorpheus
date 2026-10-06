@@ -961,9 +961,9 @@ namespace MetaMorpheusGUI
 
             if (!File.Exists(pathToExperDesign))
             {
-                if (searchTasks.Any(p => p.SearchParameters.Normalize))
+                if (searchTasks.Any(p => p.SearchParameters.Normalize || p.SearchParameters.DoBayesianProteinQuant))
                 {
-                    MessageBox.Show("Experimental design must be defined for normalization!\n" +
+                    MessageBox.Show("Experimental design must be defined for normalization and Bayesian protein quantification!\n" +
                     "Click the \"Set Experimental Design\" button in the the spectra files tab");
                     return;
                 }
@@ -974,7 +974,7 @@ namespace MetaMorpheusGUI
 
                 if (errors.Any())
                 {
-                    if (searchTasks.Any(p => p.SearchParameters.Normalize))
+                    if (searchTasks.Any(p => p.SearchParameters.Normalize || p.SearchParameters.DoBayesianProteinQuant))
                     {
                         MessageBox.Show(errors.First());
                         return;

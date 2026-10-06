@@ -526,6 +526,67 @@ namespace TaskLayer
             && (Parameters.SearchParameters.WriteContaminants || !proteinGroup.IsContaminant)
             && (Parameters.SearchParameters.WriteHighQValuePsms || proteinGroup.QValue <= qValueThreshold);
 
+        /// <summary>
+        /// Whether FlashLFQ's Bayesian protein fold-change step can run on this design. Every refusal warns and
+        /// turns off the Bayesian step alone: FlashLFQ throws on a blank or unknown control condition, and
+        /// <see cref="QuantificationAnalysis"/> reports any exception as a quantification crash, which would lose
+        /// every label-free table rather than just the fold changes. FlashLFQ also skips the step on its own, and
+        /// silently (MetaMorpheus runs it silent), when there are fewer than two conditions.
+        /// </summary>
+        private bool BayesianProteinQuantCanRun(List<SpectraFileInfo> spectraFileInfo, bool designFileFound)
+        {
+            var searchParameters = Parameters.SearchParameters;
+            if (!searchParameters.DoBayesianProteinQuant)
+            {
+                return false;
+            }
+
+            const string skipping = ". Skipping Bayesian protein quantification; the rest of quantification continues";
+
+            if (searchParameters.SilacLabels != null)
+            {
+                Warn("Bayesian protein quantification does not support SILAC: it would compare whole files before " +
+                     "their light and heavy peptides are separated" + skipping);
+                return false;
+            }
+
+            if (!designFileFound)
+            {
+                Warn("Bayesian protein quantification needs an experimental design with at least two conditions, " +
+                     "and no " + GlobalVariables.ExperimentalDesignFileName + " was found" + skipping);
+                return false;
+            }
+
+            if (spectraFileInfo.Any(file => string.IsNullOrWhiteSpace(file.Condition)))
+            {
+                Warn("Bayesian protein quantification needs a condition for every file in the experimental design" + skipping);
+                return false;
+            }
+
+            var conditions = spectraFileInfo.Select(file => file.Condition).Distinct().OrderBy(c => c, StringComparer.Ordinal).ToList();
+            if (conditions.Count < 2)
+            {
+                Warn("Bayesian protein quantification compares conditions, and the experimental design has only one (" +
+                     conditions.Single() + ")" + skipping);
+                return false;
+            }
+
+            if (!conditions.Contains(searchParameters.BayesianControlCondition))
+            {
+                Warn("The Bayesian control condition '" + searchParameters.BayesianControlCondition + "' is not one of the " +
+                     "experimental design's conditions (" + string.Join(", ", conditions) + ")" + skipping);
+                return false;
+            }
+
+            if (!searchParameters.Normalize)
+            {
+                Warn("Bayesian protein quantification is running on unnormalized intensities, so differences in how " +
+                     "much sample was loaded will appear as fold changes");
+            }
+
+            return true;
+        }
+
         private void QuantificationAnalysis()
         {
             try
@@ -859,6 +920,8 @@ namespace TaskLayer
                     }
                 }
 
+                bool doBayesianProteinQuant = BayesianProteinQuantCanRun(spectraFileInfo, File.Exists(assumedExperimentalDesignPath));
+
                 // run FlashLFQ
                 var flashLfqEngine = new FlashLfqEngine(
                     allIdentifications: flashLFQIdentifications,
@@ -870,6 +933,10 @@ namespace TaskLayer
                     matchBetweenRunsFdrThreshold: Parameters.SearchParameters.MbrFdrThreshold,
                     useSharedPeptidesForProteinQuant: Parameters.SearchParameters.UseSharedPeptidesForLFQ,
                     peptideSequencesToQuantify: Parameters.SearchParameters.SilacLabels == null ? peptideSequencesForQuantification : null, // Silac is doing it's own thing, no need to pass in peptide sequences
+                    bayesianProteinQuant: doBayesianProteinQuant,
+                    proteinQuantBaseCondition: Parameters.SearchParameters.BayesianControlCondition,
+                    proteinQuantFoldChangeCutoff: Parameters.SearchParameters.BayesianFoldChangeCutoff,
+                    randomSeed: Parameters.SearchParameters.BayesianRandomSeed,
                     silent: true,
                     maxThreads: CommonParameters.MaxThreadsToUsePerFile);
 
@@ -1671,6 +1738,8 @@ namespace TaskLayer
                 string filename = "AllQuantified" + GlobalVariables.AnalyteType + "s";
                 WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, filename, new List<string> { Parameters.SearchTaskId });
 
+                WriteBayesianProteinQuantResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, new List<string> { Parameters.SearchTaskId });
+
                 // write individual results
                 if (Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)
                 {
@@ -2197,6 +2266,55 @@ namespace TaskLayer
             flashLFQResults.WriteResults(null, fullSeqPath, null, null, true);
 
             FinishedWritingFile(fullSeqPath, nestedIds);
+        }
+
+        /// <summary>
+        /// Writes FlashLFQ's Bayesian fold changes, when the step ran, under the file name the FlashLFQ app uses.
+        /// Only the protein groups AllQuantifiedProteinGroups.tsv shows are written, judged by the protein
+        /// table's own predicate, so the two files never disagree about which groups exist. FlashLFQ's groups
+        /// include contaminants, groups above the protein q-value threshold and the catch-all UNDEFINED group,
+        /// whatever the protein table keeps. With parsimony off there is no protein table and nothing is filtered.
+        /// </summary>
+        private void WriteBayesianProteinQuantResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, List<string> nestedIds)
+        {
+            if (!flashLFQResults.ProteinGroups.Values.Any(group => group.ConditionToQuantificationResults.Any()))
+            {
+                return;
+            }
+
+            IEnumerable<KeyValuePair<string, FlashLFQ.ProteinGroup>> groupsToWrite = flashLFQResults.ProteinGroups;
+            if (ProteinGroups != null)
+            {
+                var filterType = FilteredPsms.Filter(Parameters.AllSpectralMatches,
+                    CommonParameters,
+                    includeDecoys: true,
+                    includeContaminants: true,
+                    includeAmbiguous: true,
+                    includeHighQValuePsms: false).FilterType;
+                double qValueThreshold = ProteinGroupQValueThreshold(filterType);
+                var writtenGroupNames = ProteinGroups
+                    .Where(group => ProteinGroupIsWritten(group, qValueThreshold))
+                    .Select(group => group.ProteinGroupName)
+                    .ToHashSet();
+                groupsToWrite = groupsToWrite.Where(group => writtenGroupNames.Contains(group.Key));
+            }
+
+            // FlashLFQ writes every group its results hold, so the kept groups go into a results object of their own.
+            var bayesianResults = new FlashLfqResults(flashLFQResults.SpectraFiles, new List<Identification>());
+            foreach (var group in groupsToWrite.Where(group => group.Value.ConditionToQuantificationResults.Any()))
+            {
+                bayesianResults.ProteinGroups.Add(group.Key, group.Value);
+            }
+
+            var bayesianPath = Path.Combine(outputFolder, "BayesianFoldChangeAnalysis.tsv");
+            bayesianResults.WriteResults(null, null, null, bayesianPath, true);
+            FinishedWritingFile(bayesianPath, nestedIds);
+
+            var searchParameters = Parameters.SearchParameters;
+            Parameters.SearchTaskResults.AddTaskSummaryText(
+                "Bayesian protein quantification: control condition " + searchParameters.BayesianControlCondition
+                + ", fold-change cutoff " + searchParameters.BayesianFoldChangeCutoff.ToString(CultureInfo.InvariantCulture)
+                + ", random seed " + searchParameters.BayesianRandomSeed);
         }
 
         private void WritePeakQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)

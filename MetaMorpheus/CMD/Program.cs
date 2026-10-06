@@ -275,7 +275,7 @@ namespace MetaMorpheusCommandLine
             List<string> startingRawFilenameList = settings.Spectra.Select(b => Path.GetFullPath(b)).ToList();
             List<DbForTask> startingXmlDbFilenameList = settings.Databases.Select(b => new DbForTask(Path.GetFullPath(b), IsContaminant(b))).ToList();
 
-            // check that an experimental design is defined if normalization is enabled
+            // check that an experimental design is defined if normalization or Bayesian protein quant is enabled
             var searchTasks = taskList
                 .Where(p => p.Item2.TaskType == MyTask.Search)
                 .Select(p => (SearchTask)p.Item2);
@@ -283,7 +283,7 @@ namespace MetaMorpheusCommandLine
             int designExitCode = ResolveExperimentalDesign(
                 Directory.GetParent(startingRawFilenameList.First()).FullName,
                 startingRawFilenameList,
-                searchTasks.Any(p => p.SearchParameters.Normalize),
+                searchTasks.Any(p => p.SearchParameters.Normalize || p.SearchParameters.DoBayesianProteinQuant),
                 settings.Verbosity == CommandLineSettings.VerbosityType.minimal
                     || settings.Verbosity == CommandLineSettings.VerbosityType.normal);
 
@@ -359,7 +359,7 @@ namespace MetaMorpheusCommandLine
         /// </summary>
         /// <param name="designDirectory">The folder beside the spectra files, where a design lives.</param>
         /// <param name="startingRawFilenameList">Full paths of the spectra files this run will search.</param>
-        /// <param name="normalizationRequested">True when any search task asks for normalization, which is what makes a design mandatory rather than optional.</param>
+        /// <param name="normalizationRequested">True when any search task asks for normalization or Bayesian protein quantification, which is what makes a design mandatory rather than optional.</param>
         /// <param name="reportToConsole">True at minimal or normal verbosity. At "none" there is nobody to ask, so a recoverable problem is recovered from silently.</param>
         /// <param name="write">Console writer; defaults to <see cref="Console.WriteLine(string)"/>.</param>
         /// <param name="readLine">Console reader; defaults to <see cref="Console.ReadLine"/>.</param>
@@ -394,12 +394,12 @@ namespace MetaMorpheusCommandLine
 
             if (!hasClassicDesign && !hasTmtDesign)
             {
-                // A design is optional until something needs it. Normalization is that something.
+                // A design is optional until something needs it. Normalization, or Bayesian protein quantification, is that something.
                 if (normalizationRequested)
                 {
                     if (reportToConsole)
                     {
-                        write("No experimental design file present. Normalization requires a design (ExperimentalDesign.tsv or TmtDesign.txt).");
+                        write("No experimental design file present. Normalization requires a design (ExperimentalDesign.tsv or TmtDesign.txt), and so does Bayesian protein quantification.");
                     }
 
                     return 5;
