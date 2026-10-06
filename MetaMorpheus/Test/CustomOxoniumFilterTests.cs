@@ -231,6 +231,109 @@ namespace Test
         }
 
         [Test]
+        public void CustomOxoniumFilter_NoCustoms_AcceptsWithoutReadingTheArrays()
+        {
+            // The N-search hook runs for every N-glycan in the precursor window, so with no customs registered it must be a
+            // no-op: even arrays too short for anything are accepted, which is what keeps default N-search byte-identical.
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                Assert.That(GlycoPeptides.CustomOxoniumFilter(new double[0], new byte[0]), Is.True);
+            }
+            finally
+            {
+                RestoreStartupMonosaccharides();
+            }
+        }
+
+        [TestCase(true, true, true)]
+        [TestCase(false, true, false)]
+        [TestCase(true, false, false)]
+        [TestCase(false, false, true)]
+        public void CustomOxoniumFilter_SingleNGlycanKind_FollowsTheStrictRule(bool ionObserved, bool monoPresent, bool expectedAccept)
+        {
+            // The N-search path passes one glycan's Kind rather than a box's; the rule must be the one O-search applies.
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                Glycan.RegisterCustomMonosaccharide("SugarU", 'U', 17603209, new[] { Ion512 });
+                int customIndex = Glycan.NameCharDic["SugarU"].Item2;
+
+                double[] intensities = new double[Glycan.AllOxoniumIonsIncludingCustoms.Length];
+                intensities[OxoniumIndex_R138] = 100;
+                intensities[OxoniumIndex_HexNAc204] = 1000;
+                if (ionObserved)
+                {
+                    intensities[Glycan.AllOxoniumIons.Length] = 500;
+                }
+
+                // An N-glycan-like composition, HexNAc(2)Hex(5), plus the custom monosaccharide when present.
+                byte[] kind = new byte[Glycan.KindCapacity];
+                kind[0] = 5;
+                kind[1] = 2;
+                if (monoPresent)
+                {
+                    kind[customIndex] = 1;
+                }
+
+                Assert.That(GlycoPeptides.CustomOxoniumFilter(intensities, kind), Is.EqualTo(expectedAccept));
+            }
+            finally
+            {
+                RestoreStartupMonosaccharides();
+            }
+        }
+
+        [Test]
+        public void CustomOxoniumFilter_SialylatedNGlycanWithoutNeuAcIons_IsNotRejectedByBuiltInRules()
+        {
+            // N-search gains only the custom-ion rule. DiagonsticFilter would reject this NeuAc-carrying glycan because the
+            // spectrum has no 274/292 signal; CustomOxoniumFilter must not, or N-search would silently lose sialylated hits.
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                Glycan.RegisterCustomMonosaccharide("SugarU", 'U', 17603209, new[] { Ion512 });
+
+                double[] intensities = new double[Glycan.AllOxoniumIonsIncludingCustoms.Length];
+                intensities[OxoniumIndex_R138] = 100;            // NeuAc 274/292 left at 0
+                byte[] kind = new byte[Glycan.KindCapacity];
+                kind[0] = 5;
+                kind[1] = 4;
+                kind[2] = 2;                                     // NeuAc(2), no custom monosaccharide
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(GlycoPeptides.CustomOxoniumFilter(intensities, kind), Is.True);
+                    Assert.That(GlycoPeptides.DiagonsticFilter(intensities, BoxWithKind(kind)), Is.False,
+                        "control: the built-in NeuAc rule does reject this in O and N+O searches");
+                });
+            }
+            finally
+            {
+                RestoreStartupMonosaccharides();
+            }
+        }
+
+        [Test]
+        public void CustomOxoniumFilter_UndersizedIntensityArray_Throws()
+        {
+            try
+            {
+                Glycan.ResetCustomMonosaccharides();
+                Glycan.RegisterCustomMonosaccharide("SugarU", 'U', 17603209, new[] { Ion512 });
+
+                double[] tooShort = new double[Glycan.AllOxoniumIons.Length];
+                var ex = Assert.Throws<ArgumentException>(
+                    () => GlycoPeptides.CustomOxoniumFilter(tooShort, new byte[Glycan.KindCapacity]));
+                Assert.That(ex.Message, Does.Contain("slots but"));
+            }
+            finally
+            {
+                RestoreStartupMonosaccharides();
+            }
+        }
+
+        [Test]
         public void DiagonsticFilter_UndersizedIntensityArray_Throws()
         {
             // A length mismatch is a programming error, not a data condition: the only producer of this
