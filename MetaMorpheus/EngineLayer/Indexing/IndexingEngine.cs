@@ -105,7 +105,7 @@ namespace EngineLayer.Indexing
             // because IDigestionParams is the declared type and RnaDigestionParams has no ToString()
             // override, so an unguarded call would append a constant type name carrying no settings.
             if (CommonParameters.DigestionParams is DigestionParams digestionParamsFingerprint)
-                sb.AppendLine("digestionParams: " + digestionParamsFingerprint);
+                sb.AppendLine("digestionParams: " + digestionParamsFingerprint.ToString());
 
             sb.AppendLine("maximumFragmentSize" + (int)Math.Round(MaxFragmentSize));
 
