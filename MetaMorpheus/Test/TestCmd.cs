@@ -1438,6 +1438,26 @@ namespace Test
             Assert.That(readBack.Select(f => f.Condition), Is.EquivalentTo(new[] { "WT", "KO" }));
         }
 
+        /// <summary>
+        /// -o cannot be honoured, since a run reads the design only from beside its first spectra file,
+        /// so it is ignored -- but said, not silently.
+        /// </summary>
+        [Test]
+        public static void TestSdrfDesignWarnsThatOutputFolderIsIgnored()
+        {
+            var (sdrf, data) = WriteLabelFreeSdrf(("a1.raw", "WT", "DMSO", 1, 1));
+            string elsewhere = Path.Combine(ScratchDataDirectory, "elsewhere");
+            var settings = SdrfDesignSettings(sdrf, data, "genotype");
+            settings.OutputFolder = elsewhere;
+
+            var written = new StringWriter();
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(0), written.ToString());
+            Assert.That(written.ToString(), Does.Contain("-o is ignored with --sdrfDesign"));
+            Assert.That(File.Exists(Path.Combine(data, GlobalVariables.ExperimentalDesignFileName)));
+            Assert.That(Directory.Exists(elsewhere), Is.False);
+        }
+
         #endregion
     }
 }

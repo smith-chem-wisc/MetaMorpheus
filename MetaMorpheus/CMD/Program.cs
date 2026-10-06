@@ -547,6 +547,13 @@ namespace MetaMorpheusCommandLine
         /// was refused or a design file is already there.</returns>
         public static int WriteDesignFromSdrf(CommandLineSettings settings, TextWriter output)
         {
+            // -o is not honoured: a design anywhere else is one the run never reads. Said rather than
+            // dropped silently, because "Wrote <path>" alone would read as -o having been obeyed.
+            if (settings.OutputFolder != null)
+            {
+                output.WriteLine("-o is ignored with --sdrfDesign: the design is written beside the first spectra file, where a run looks for it.");
+            }
+
             string designDirectory = Directory.GetParent(Path.GetFullPath(settings.Spectra.First())).FullName;
             string designPath = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
 
