@@ -1420,6 +1420,71 @@ namespace Test
         }
 
         /// <summary>
+        /// The same refusal through the real entry point and argument parser: a settings error, exit 2.
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        public static void TestSdrfConditionWithoutSdrfDesignExitsTwoThroughMain()
+        {
+            Assert.That(Program.Main(new[] { "--sdrfCondition", "genotype" }), Is.EqualTo(2));
+        }
+
+        [Test]
+        public static void TestSdrfDesignRefusesAnSdrfThatIsNotThere()
+        {
+            var (_, data) = WriteLabelFreeSdrf(("a1.raw", "WT", "DMSO", 1, 1));
+            string missing = Path.Combine(ScratchDataDirectory, "not-there.sdrf.tsv");
+            var settings = new CommandLineSettings { SdrfDesign = missing, _spectra = new[] { data } };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Is.EqualTo("The SDRF file was not found: " + missing));
+        }
+
+        [Test]
+        public static void TestSdrfDesignRefusesAFolderWithNoSpectra()
+        {
+            var (sdrf, _) = WriteLabelFreeSdrf(("a1.raw", "WT", "DMSO", 1, 1));
+            string empty = Path.Combine(ScratchDataDirectory, "no-spectra");
+            Directory.CreateDirectory(empty);
+            File.WriteAllText(Path.Combine(empty, "notes.txt"), "not a spectra file");
+            var settings = new CommandLineSettings { SdrfDesign = sdrf, _spectra = new[] { empty } };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.StartWith("No spectra files were found in: ").And.Contain("no-spectra"));
+        }
+
+        /// <summary>
+        /// No --sdrfCondition and one factor value column: the condition comes from that column. Driven
+        /// through Program.Main so that what the real parser hands over for an unset option (an empty
+        /// sequence, not null) is what mzLib sees.
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        public static void TestSdrfDesignUsesTheOnlyFactorColumnByDefaultThroughMain()
+        {
+            string data = Path.Combine(ScratchDataDirectory, "data");
+            Directory.CreateDirectory(data);
+            string sdrf = Path.Combine(ScratchDataDirectory, "one-factor.sdrf.tsv");
+            File.WriteAllLines(sdrf, new[]
+            {
+                "source name\tcharacteristics[biological replicate]\tassay name\tcomment[label]\tcomment[data file]\tfactor value[disease]",
+                "s1\t1\trun a\tlabel free sample\ta.raw\tnormal",
+                "s2\t1\trun b\tlabel free sample\tb.raw\tcancer",
+            });
+            File.WriteAllText(Path.Combine(data, "a.raw"), string.Empty);
+            File.WriteAllText(Path.Combine(data, "b.raw"), string.Empty);
+
+            Assert.That(Program.Main(new[] { "--sdrfDesign", sdrf, "-s", data }), Is.EqualTo(0));
+
+            string designPath = Path.Combine(data, GlobalVariables.ExperimentalDesignFileName);
+            var readBack = ExperimentalDesign.ReadExperimentalDesign(designPath,
+                new[] { "a.raw", "b.raw" }.Select(f => Path.Combine(data, f)).ToList(), out var errors);
+            Assert.That(errors, Is.Empty);
+            Assert.That(readBack.Select(f => (f.FilenameWithoutExtension, f.Condition)),
+                Is.EquivalentTo(new[] { ("a", "normal"), ("b", "cancer") }));
+        }
+
+        /// <summary>
         /// The "factor value[" prefix is recognised in any case and written as the specification names
         /// it; it used to be wrapped a second time, into 'factor value[Factor Value[genotype]]'.
         /// </summary>
