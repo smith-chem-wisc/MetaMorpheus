@@ -15,6 +15,8 @@ namespace EngineLayer
         private readonly HashSet<string> _decoyIdentifiers;
         private readonly FilterType _filterType;
         private readonly double _filterThreshold;
+        /// <summary>The tiered identification filter's choice, or null when tiered mode is off.</summary>
+        private readonly IdentificationTier _tier;
 
         public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, IList<SpectralMatch> filteredPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, 
             CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
@@ -26,7 +28,14 @@ namespace EngineLayer
             MergeIndistinguishableProteinGroups = mergeIndistinguishableProteinGroups;
             _decoyIdentifiers = proteinGroups.SelectMany(p => p.Proteins.Where(b => b.IsDecoy).Select(b => b.Accession.Split('_')[0])).ToHashSet();
 
-            if (CommonParameters.PepQValueThreshold < CommonParameters.QValueThreshold)
+            if (IdentificationFilter.IsTieredMode(CommonParameters))
+            {
+                // The same tier the PSM tables use, chosen by what was computed rather than by the thresholds alone.
+                _tier = IdentificationFilter.Resolve(filteredPsms, peptideLevel: false, CommonParameters);
+                _filterType = _tier.FilterType;
+                _filterThreshold = _tier.Threshold;
+            }
+            else if (CommonParameters.PepQValueThreshold < CommonParameters.QValueThreshold)
             {
                 _filterType = FilterType.PepQValue;
                 _filterThreshold = CommonParameters.PepQValueThreshold;
@@ -59,11 +68,14 @@ namespace EngineLayer
         {
             // add each protein groups PSMs
             var peptideToPsmMatching = new Dictionary<IBioPolymerWithSetMods, HashSet<SpectralMatch>>();
-            foreach (var psm in psmList.FilterByQValue(
-                includeHighQValuePsms: false,
-                qValueThreshold: _filterThreshold,
-                filterAtPeptideLevel: false,
-                filterType: _filterType))
+            var confidentPsms = _tier != null
+                ? psmList.Where(_tier.Passes)
+                : psmList.FilterByQValue(
+                    includeHighQValuePsms: false,
+                    qValueThreshold: _filterThreshold,
+                    filterAtPeptideLevel: false,
+                    filterType: _filterType);
+            foreach (var psm in confidentPsms)
             {
                 if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                 {
