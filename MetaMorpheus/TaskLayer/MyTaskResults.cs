@@ -45,6 +45,13 @@ namespace TaskLayer
                 {
                     sb.AppendLine("New databases: ");
                     sb.AppendLine(string.Join(Environment.NewLine + "\t", NewDatabases.Select(b => b.FilePath)).ToString());
+                    sb.AppendLine("New database identities: ");
+                    foreach (var db in NewDatabases)
+                    {
+                        sb.AppendLine("\t" + db.FileName + ": " + db.IdentityText());
+                        if (db.DerivedFromText() is { } derivedFrom)
+                            sb.AppendLine("\t\t" + derivedFrom);
+                    }
                 }
                 sb.AppendLine();
                 sb.AppendLine("--------------------------------------------------");
