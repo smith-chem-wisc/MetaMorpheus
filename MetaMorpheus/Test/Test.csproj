@@ -297,6 +297,117 @@
     <None Update="TestData\ExcelEditedPeptide.psmtsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\file-specific-decon\PrunedDbSpectra.ms1ft">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\PrunedDbSpectra.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\PrunedDbSpectra_deconv.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\PrunedDbSpectra_ms1.feature">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\PrunedDbSpectra_ms1.msalign">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\PrunedDbSpectra_ms1.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\PrunedDbSpectra_ms2.feature">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\PrunedDbSpectra_ms2.msalign">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\PrunedDbSpectra_ms2.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\readme.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip.ms1ft">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_2.ms1ft">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_2.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_2_deconv.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_2_ms1.feature">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_2_ms1.msalign">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_2_ms1.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_2_ms2.feature">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_2_ms2.msalign">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_2_ms2.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_deconv.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_ms1.feature">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_ms1.msalign">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_ms1.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_ms2.feature">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_ms2.msalign">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_A549_3_snip_ms2.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_HeLa_04_subset_longestSeq.ms1ft">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_HeLa_04_subset_longestSeq.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_HeLa_04_subset_longestSeq_deconv.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_HeLa_04_subset_longestSeq_ms1.feature">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_HeLa_04_subset_longestSeq_ms1.msalign">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_HeLa_04_subset_longestSeq_ms1.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_HeLa_04_subset_longestSeq_ms2.feature">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_HeLa_04_subset_longestSeq_ms2.msalign">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\file-specific-decon\TaGe_SA_HeLa_04_subset_longestSeq_ms2.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\frameshift.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -47,15 +47,48 @@ namespace GuiFunctions
             if (parameters is MultipleDeconParameters multipleParams)
                 return new MultipleDeconParamsViewModel(multipleParams, isPrecursor);
 
-            //if (parameters is FromFileDeconvolutionParameters file)
-            //    return new FromFileDeconvolutionParametersViewModel(file);
+            if (parameters is FromFileDeconvolutionParameters fromFileParams)
+                return new FromFileDeconParamsViewModel(fromFileParams);
 
             throw new NotImplementedException();
+        }
+
+        public static (int MinAssumedChargeState, int MaxAssumedChargeState, Polarity Polarity, AverageResidue AverageResidueModel) GetDefaultDeconParamValues(this AnalyteType analyteType, bool isPrecursor)
+        {
+            return (analyteType switch
+            {
+                AnalyteType.Peptide => 1,
+                AnalyteType.Proteoform => 1,
+                AnalyteType.Oligo => isPrecursor ? -20 : -10,
+                _ => throw new ArgumentOutOfRangeException()
+            },
+            analyteType switch
+            {
+                AnalyteType.Peptide => isPrecursor ? 12 : 10,
+                AnalyteType.Proteoform => isPrecursor ? 60 : 10,
+                AnalyteType.Oligo => -1,
+                _ => throw new ArgumentOutOfRangeException()
+            },
+            analyteType switch
+            {
+                AnalyteType.Peptide => Polarity.Positive,
+                AnalyteType.Proteoform => Polarity.Positive,
+                AnalyteType.Oligo => Polarity.Negative,
+                _ => throw new ArgumentOutOfRangeException()
+            },
+            analyteType switch
+            {
+                AnalyteType.Peptide => new Averagine(),
+                AnalyteType.Proteoform => new Averagine(),
+                AnalyteType.Oligo => new OxyriboAveragine(),
+                _ => throw new ArgumentOutOfRangeException()
+            });
         }
 
         public static DeconvolutionParameters GetDefaultDeconParams(this DeconvolutionType type, AnalyteType? analyteType = null, bool isPrecursor = true)
         {
             analyteType ??= GlobalVariables.AnalyteType;
+            var (minCharge, maxCharge, polarity, averageResidueModel) = analyteType.Value.GetDefaultDeconParamValues(isPrecursor);
 
             switch (type)
             {
@@ -69,60 +102,14 @@ namespace GuiFunctions
                     return new MultipleDeconParameters([inner], inner.MinAssumedChargeState, inner.MaxAssumedChargeState, inner.Polarity, inner.AverageResidueModel, inner.ExpectedIsotopeSpacing);
 
                 case DeconvolutionType.ClassicDeconvolution:
-
-                    // Precursor
-                    if (isPrecursor)
-                    {
-                        return analyteType switch
-                        {
-                            AnalyteType.Peptide => new ClassicDeconvolutionParameters(1, 12, 4, 3),
-                            AnalyteType.Proteoform => new ClassicDeconvolutionParameters(1, 60, 4, 3),
-                            AnalyteType.Oligo => new ClassicDeconvolutionParameters(-20, -1, 4, 3, Polarity.Negative,
-                                new OxyriboAveragine()),
-                            _ => throw new ArgumentOutOfRangeException()
-                        };
-                    }
-                    else
-                    {
-                        return analyteType switch
-                        {
-                            AnalyteType.Peptide => new ClassicDeconvolutionParameters(1, 10, 4, 3),
-                            AnalyteType.Proteoform => new ClassicDeconvolutionParameters(1, 10, 4, 3),
-                            AnalyteType.Oligo => new ClassicDeconvolutionParameters(-10, -1, 4, 3, Polarity.Negative,
-                                new OxyriboAveragine()),
-                            _ => throw new ArgumentOutOfRangeException()
-                        };
-                    }
-
+                    return new ClassicDeconvolutionParameters(minCharge, maxCharge, 4, 3, polarity, averageResidueModel);
+                    
                 case DeconvolutionType.IsoDecDeconvolution:
-
-                    // Precursor
-                    if (isPrecursor)
+                    return new IsoDecDeconvolutionParameters(polarity)
                     {
-                        return analyteType switch
-                        {
-                            AnalyteType.Peptide => new IsoDecDeconvolutionParameters() { MaxAssumedChargeState = 12 },
-                            AnalyteType.Proteoform => new IsoDecDeconvolutionParameters()
-                                { MaxAssumedChargeState = 60 },
-                            AnalyteType.Oligo => new IsoDecDeconvolutionParameters(Polarity.Negative)
-                                { MaxAssumedChargeState = -20, MinAssumedChargeState = -1 },
-                            _ => throw new ArgumentOutOfRangeException()
-                        };
-                    }
-                    else
-                    {
-                        return analyteType switch
-                        {
-                            AnalyteType.Peptide => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false)
-                                { MaxAssumedChargeState = 10 },
-                            AnalyteType.Proteoform => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false)
-                                { MaxAssumedChargeState = 10 },
-                            AnalyteType.Oligo => new IsoDecDeconvolutionParameters(Polarity.Negative,
-                                    reportMultipleMonoisos: false)
-                                { MaxAssumedChargeState = -10, MinAssumedChargeState = -1 },
-                            _ => throw new ArgumentOutOfRangeException()
-                        };
-                    }
+                        MaxAssumedChargeState = maxCharge,
+                        MinAssumedChargeState = minCharge,
+                    };
             }
 
             return null;

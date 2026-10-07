@@ -57,12 +57,21 @@ public class MzLibExtensionsTests
     }
 
     [Test]
+    public void ToViewModel_WithFromFileDeconvolutionParameters_ReturnsFromFileDeconParamsViewModel()
+    {
+        var fromFileParams = new FromFileDeconvolutionParameters("path_ms1.feature", 1, 12);
+        var result = fromFileParams.ToViewModel();
+
+        Assert.That(result, Is.InstanceOf<FromFileDeconParamsViewModel>());
+        Assert.That(result.DeconvolutionType, Is.EqualTo(DeconvolutionType.FromFile));
+        Assert.That(((FromFileDeconParamsViewModel)result).FilePath, Is.EqualTo("path_ms1.feature"));
+    }
+
+    [Test]
     public void ToViewModel_WithUnsupportedParameters_ThrowsNotImplementedException()
     {
-        // Arrange
         var unsupportedParams = new ExampleNewDeconvolutionParametersTemplate(1, 20);
 
-        // Act & Assert
         Assert.That(() => unsupportedParams.ToViewModel(), Throws.TypeOf<NotImplementedException>());
     }
 
