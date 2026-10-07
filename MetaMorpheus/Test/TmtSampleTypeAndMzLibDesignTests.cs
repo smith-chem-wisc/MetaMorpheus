@@ -405,6 +405,30 @@ namespace Test
             Assert.IsTrue(unannotated.All(s => !s.IsReferenceChannel));
         }
 
+        /// <summary>
+        /// The plex window offers TMT16, but there is no TMT16 search label, so a TMTpro 16-plex is searched
+        /// as TMT18 and its design is projected with TMT18's tag. The window says the annotation still applies
+        /// and that 134C and 135N come out as empty channels; this pins both halves of that note.
+        /// </summary>
+        [Test]
+        public static void ToMzLibDesign_ATmt16AnnotationProjectsOntoTmt18sFirstSixteenChannels()
+        {
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT18, GlobalVariables.AllModsKnown, out var tmt18);
+            var tmt16Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.TMT16);
+            var file = FileWith(FixturePath("data", "run1.raw"), "PlexA", 1, 1,
+                tmt16Labels.Select(label => (label, "Cond", 1, TmtSampleType.StudySample)).ToArray());
+
+            var design = TmtExperimentalDesign.ToMzLibDesign(new[] { file }, tmt18, out var errors);
+            Assert.IsEmpty(errors);
+
+            var samples = design.FileNameSampleInfoDictionary["run1.raw"].Cast<IsobaricQuantSampleInfo>().ToList();
+            Assert.AreEqual(18, samples.Count);
+            Assert.That(samples.Take(16).Select(s => s.ChannelLabel), Is.EqualTo(tmt16Labels));
+            Assert.IsTrue(samples.Take(16).All(s => s.Condition == "Cond"));
+            Assert.That(samples.Skip(16).Select(s => s.ChannelLabel), Is.EqualTo(new[] { "134C", "135N" }));
+            Assert.IsTrue(samples.Skip(16).All(s => s.Condition == string.Empty && s.SampleName == null));
+        }
+
         [Test]
         public static void ToMzLibDesign_ChannelThatIsNotPartOfTheTag_IsAnError()
         {
