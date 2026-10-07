@@ -33,7 +33,7 @@
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
-    <PackageReference Include="mzLib" Version="1.0.593" />
+    <PackageReference Include="mzLib" Version="1.0.594" />
     <PackageReference Include="Nett" Version="0.15.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="SQLite.Interop.dll" Version="1.0.103" />
@@ -43,6 +43,12 @@
 
   <ItemGroup>
     <None Update="Contaminants\MetaMorpheusContaminants.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Contaminants\Subsets\MetaMorpheusContaminants_NoUPS.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Contaminants\Subsets\MetaMorpheusContaminants_UPS.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Data\combos.txt">

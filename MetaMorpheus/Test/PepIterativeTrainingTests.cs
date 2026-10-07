@@ -93,10 +93,10 @@ namespace Test
             => matches.Where(m => !m.IsDecoy).ToHashSet();
 
         private static PepAnalysisEngine ScriptedEngine(List<SpectralMatch> psms, CommonParameters commonParameters, int maxTrainingRounds,
-            bool prune, params int[] counts)
+            params int[] counts)
         {
             Directory.CreateDirectory(OutputFolder);
-            return new PepAnalysisEngine(psms, "standard", FileSpecificParameters(commonParameters), OutputFolder, pruneAmbiguousHypotheses: prune)
+            return new PepAnalysisEngine(psms, "standard", FileSpecificParameters(commonParameters), OutputFolder)
             {
                 MaxTrainingRounds = maxTrainingRounds,
                 UsePeptideLevelQValueForTraining = true,
@@ -197,14 +197,14 @@ namespace Test
             NewEngine(roundZeroPsms, commonParameters, 1).ComputePEPValuesForAllPSMs();
 
             var psms = SearchHelaSubset(out commonParameters);
-            string metrics = ScriptedEngine(psms, commonParameters, PepAnalysisEngine.IterativeTrainingRoundCap, false, 10, 20, 15)
+            string metrics = ScriptedEngine(psms, commonParameters, PepAnalysisEngine.IterativeTrainingRoundCap, 10, 20, 15)
                 .ComputePEPValuesForAllPSMs();
             string progress = File.ReadAllText(ProgressFile);
             Assert.That(RoundsRun(metrics), Is.EqualTo(2), progress);
             Assert.That(progress, Does.Contain($"round 2: accepted 15  {PepAnalysisEngine.RoundVerdict.RevertAndStop}"));
 
             var cappedPsms = SearchHelaSubset(out commonParameters);
-            string cappedMetrics = ScriptedEngine(cappedPsms, commonParameters, 2, false, 10, 20).ComputePEPValuesForAllPSMs();
+            string cappedMetrics = ScriptedEngine(cappedPsms, commonParameters, 2, 10, 20).ComputePEPValuesForAllPSMs();
             Assert.That(RoundsRun(cappedMetrics), Is.EqualTo(2));
 
             Assert.That(Peps(psms), Is.EqualTo(Peps(cappedPsms)));
@@ -212,26 +212,31 @@ namespace Test
         }
 
         /// <summary>
-        /// Iteration and pruning are independent. Pruning waits until the loop has chosen a round, so the PEPs of a
-        /// pruning run equal a non-pruning run's round for round, and what it prunes is judged on the kept round.
+        /// The per-hypothesis PEPs, which disambiguation judges, come from the KEPT round, as the match PEPs do. With the
+        /// stopping count scripted to 10, 20, 15, round 2 is scored and rejected; if its predictions were recorded, the
+        /// hypothesis PEPs would differ from a run capped at 2 rounds. Each match's PEP must also be its best hypothesis's.
         /// </summary>
         [Test]
-        public static void Pruning_DoesNotLimitIteration_AndPrunesFromTheKeptRound()
+        public static void HypothesisPeps_AreTheKeptRounds()
         {
-            var plainPsms = SearchHelaSubset(out var commonParameters);
-            ScriptedEngine(plainPsms, commonParameters, PepAnalysisEngine.IterativeTrainingRoundCap, false, 10, 20, 15)
-                .ComputePEPValuesForAllPSMs();
-            int hypothesesBefore = plainPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count());
+            var roundZeroPsms = SearchHelaSubset(out var commonParameters);
+            NewEngine(roundZeroPsms, commonParameters, 1).ComputePEPValuesForAllPSMs();
 
-            var prunedPsms = SearchHelaSubset(out commonParameters);
-            string prunedMetrics = ScriptedEngine(prunedPsms, commonParameters, PepAnalysisEngine.IterativeTrainingRoundCap, true, 10, 20, 15)
+            var psms = SearchHelaSubset(out commonParameters);
+            string metrics = ScriptedEngine(psms, commonParameters, PepAnalysisEngine.IterativeTrainingRoundCap, 10, 20, 15)
                 .ComputePEPValuesForAllPSMs();
-            int removed = int.Parse(Regex.Match(prunedMetrics, @"Removed:\s+(\d+)").Groups[1].Value);
+            Assert.That(RoundsRun(metrics), Is.EqualTo(2));
 
-            Assert.That(RoundsRun(prunedMetrics), Is.EqualTo(2));
-            Assert.That(Peps(prunedPsms), Is.EqualTo(Peps(plainPsms)));
-            Assert.That(prunedPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count()), Is.EqualTo(hypothesesBefore - removed));
+            var cappedPsms = SearchHelaSubset(out commonParameters);
+            ScriptedEngine(cappedPsms, commonParameters, 2, 10, 20).ComputePEPValuesForAllPSMs();
+
+            Assert.That(HypothesisPeps(psms), Is.EqualTo(HypothesisPeps(cappedPsms)));
+            Assert.That(HypothesisPeps(psms), Is.Not.EqualTo(HypothesisPeps(roundZeroPsms)), "round 1 must have changed the PEPs");
+            Assert.That(psms.Select(p => p.BestMatchingBioPolymersWithSetMods.Min(h => h.PEP!.Value)), Is.EqualTo(Peps(psms)));
         }
+
+        private static List<double?> HypothesisPeps(List<SpectralMatch> psms)
+            => psms.SelectMany(p => p.BestMatchingBioPolymersWithSetMods).Select(h => h.PEP).ToList();
 
         /// <summary>
         /// The cap is the engine's, not the caller's: any MaxTrainingRounds above it runs at most
@@ -241,7 +246,7 @@ namespace Test
         public static void MaxTrainingRounds_IsClampedToTheCap()
         {
             var psms = SearchHelaSubset(out var commonParameters);
-            ScriptedEngine(psms, commonParameters, 1000, false, 10, 20, 15).ComputePEPValuesForAllPSMs();
+            ScriptedEngine(psms, commonParameters, 1000, 10, 20, 15).ComputePEPValuesForAllPSMs();
             Assert.That(File.ReadAllText(ProgressFile), Does.Contain($"max rounds {PepAnalysisEngine.IterativeTrainingRoundCap} ==="));
         }
 
@@ -259,7 +264,7 @@ namespace Test
             string trainOnceMetrics = trainOnce.ComputePEPValuesForAllPSMs();
 
             var psms = SearchHelaSubset(out commonParameters);
-            var engine = ScriptedEngine(psms, commonParameters, PepAnalysisEngine.IterativeTrainingRoundCap, false, 10, 20, 15);
+            var engine = ScriptedEngine(psms, commonParameters, PepAnalysisEngine.IterativeTrainingRoundCap, 10, 20, 15);
             engine.UsePeptideLevelQValueForTraining = false;
             string metrics = engine.ComputePEPValuesForAllPSMs();
 

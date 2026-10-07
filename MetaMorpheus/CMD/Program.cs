@@ -16,6 +16,8 @@ using TaskLayer;
 // ThermoRawFileReaderLicence, which this file uses, and CS0104 is not worth a whole namespace.
 using SdrfQuantAudit = Readers.SdrfQuantAudit;
 using SdrfQuantAuditor = Readers.SdrfQuantAuditor;
+using SdrfLabelFreeDesign = Readers.SdrfLabelFreeDesign;
+using SdrfLabelFreeDesignOptions = Readers.SdrfLabelFreeDesignOptions;
 
 namespace MetaMorpheusCommandLine
 {
@@ -134,6 +136,11 @@ namespace MetaMorpheusCommandLine
             if (settings.AuditSdrf != null)
             {
                 return AuditSdrf(settings, Console.Out);
+            }
+
+            if (settings.SdrfDesign != null)
+            {
+                return WriteDesignFromSdrf(settings, Console.Out);
             }
 
             // --acceptThermoLicence records the agreement without asking for it, for the situations that
@@ -261,6 +268,11 @@ namespace MetaMorpheusCommandLine
                     case "Average":
                         var AveragingTask = Toml.ReadFile<SpectralAveragingTask>(filePath, MetaMorpheusTask.tomlConfig);
                         taskList.Add(("Task" + (i + 1) + "AveragingTask", AveragingTask));
+                        break;
+
+                    case "Truncation":
+                        var truncationTask = Toml.ReadFile<TruncationSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        taskList.Add(("Task" + (i + 1) + "TruncationSearchTask", truncationTask));
                         break;
 
                     default:
@@ -526,6 +538,78 @@ namespace MetaMorpheusCommandLine
             }
         }
 
+        /// <summary>
+        /// Carries out --sdrfDesign: reads a label-free SDRF with mzLib's SdrfLabelFreeDesign and writes
+        /// ExperimentalDesign.tsv beside the first spectra file, which is where a run given the same -s
+        /// looks for it (ResolveExperimentalDesign). The design is checked against exactly those files.
+        ///
+        /// Refuses rather than writes anything MetaMorpheus would reject, because an invalid design is
+        /// worse than none: a run finding one skips quantification with only a warning. The report is
+        /// printed whatever the verbosity, as for --auditSdrf: it is what was asked for, and it is the
+        /// only record of a biological-replicate renumbering.
+        /// </summary>
+        /// <returns>0 when the design was written; 4 when the SDRF could not be read; 5 when the design
+        /// was refused or a design file is already there.</returns>
+        public static int WriteDesignFromSdrf(CommandLineSettings settings, TextWriter output)
+        {
+            // -o is not honoured: a design anywhere else is one the run never reads. Said rather than
+            // dropped silently, because "Wrote <path>" alone would read as -o having been obeyed.
+            if (settings.OutputFolder != null)
+            {
+                output.WriteLine("-o is ignored with --sdrfDesign: the design is written beside the first spectra file, where a run looks for it.");
+            }
+
+            string designDirectory = Directory.GetParent(Path.GetFullPath(settings.Spectra.First())).FullName;
+            string designPath = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
+
+            // Never overwrite a design: it may be the user's own, and a run with both kinds present exits 5.
+            foreach (string existing in new[] { designPath, Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName) })
+            {
+                if (File.Exists(existing))
+                {
+                    output.WriteLine("A design file is already there, and it is not overwritten: " + existing);
+                    return 5;
+                }
+            }
+
+            // A bare name is the column's own name: 'genotype' means 'factor value[genotype]'. The prefix is
+            // matched in any case and written lowercase, as the SDRF specification names it, so
+            // 'Factor Value[genotype]' is that column too rather than 'factor value[Factor Value[genotype]]'.
+            // mzLib matches column names exactly, so the name inside the brackets is passed as given.
+            const string factorValuePrefix = "factor value[";
+            var conditionColumns = settings.SdrfConditionColumns?
+                .Select(c => c.StartsWith(factorValuePrefix, StringComparison.OrdinalIgnoreCase)
+                    ? factorValuePrefix + c.Substring(factorValuePrefix.Length)
+                    : factorValuePrefix + c + "]")
+                .ToList();
+
+            SdrfLabelFreeDesign design;
+            try
+            {
+                design = SdrfLabelFreeDesign.Read(settings.SdrfDesign, new SdrfLabelFreeDesignOptions
+                {
+                    ConditionColumns = conditionColumns,
+                    SearchedFiles = settings.Spectra.Select(Path.GetFullPath).ToList(),
+                });
+            }
+            catch (Exception e)
+            {
+                output.WriteLine("The SDRF file could not be read: " + settings.SdrfDesign + Environment.NewLine + e.Message);
+                return 4;
+            }
+
+            output.WriteLine(design.Report());
+
+            if (!design.IsValid)
+            {
+                output.WriteLine("No design file was written.");
+                return 5;
+            }
+
+            design.WriteExperimentalDesignTsv(designPath);
+            output.WriteLine("Wrote " + designPath);
+            return 0;
+        }
         /// <summary>
         /// Prints what one SDRF document says about quantification, and runs nothing else.
         ///
