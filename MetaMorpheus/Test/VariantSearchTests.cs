@@ -35,7 +35,7 @@ namespace Test
         [TestCase(2, 0, true, "P4PPP")] // intersecting sequence between variant and detected peptide is smaller than the original sequence, so clearly identied
         [TestCase(4, 0, false, "PKPK4PK")]
         [TestCase(5, 1, true, "PTA4KT")] // counterpoint to (1), where the second peptide does distinguish
-        [TestCase(6, 0, true, "KKA4K")] // variant is identified becasuse it creates cleavage site to create peptide "IDE" instead of "AIDE" (without the variant)
+        [TestCase(6, 0, true, "KKA4K")] // variant is identified because it creates cleavage site to create peptide "IDE" instead of "AIDE" (without the variant)
         [TestCase(7, 1, true, "P4V[type:mod on V]")]
         [TestCase(8, 1, true, "P4PP[type:mod on P]P")]
         [TestCase(0, 0, true, "P6V", DecoyType.Reverse)] // variant is in the detected decoy peptide MEDITVEP
