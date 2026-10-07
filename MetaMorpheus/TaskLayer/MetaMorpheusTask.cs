@@ -528,11 +528,16 @@ namespace TaskLayer
                                     // self-reported abundance and is fine to surface as-is.
                                     var fractionalIntensity = 1.0;
 
-                                    // Score the FromFile envelope on the same method-agnostic scale the
-                                    // classic loop uses (the primary precursor decon params), so FromFile
-                                    // precursors feed a comparable DeconvolutionScore into PEP rather than
-                                    // the default 0. PrecursorDeconvolutionScore is a real PEP feature, so a
-                                    // constant default would systematically mis-weight FromFile precursors.
+                                    // Score the FromFile envelope with the same generic scorer the classic
+                                    // loop uses, so FromFile precursors do not feed PEP the default 0 (which,
+                                    // PrecursorDeconvolutionScore being a real PEP feature, would penalise
+                                    // every one of them). This is NOT evidence that the envelope is real: a
+                                    // FromFile envelope's peak list is synthetic, built from the feature file,
+                                    // so the score is close to a function of mass and sits near the ceiling
+                                    // (0.987-0.999 on the test fixture, where classic envelopes span 0-1).
+                                    // PEP therefore sees a near-maximal score whatever the MS1 evidence.
+                                    // Scoring the hypothesis against the actual MS1 spectrum would fix that;
+                                    // it needs an mzLib probe that is not yet released.
                                     double genericScore = envelope.GetOrComputeGenericScore(
                                         commonParameters.PrecursorDeconvolutionParameters);
 
@@ -848,7 +853,15 @@ namespace TaskLayer
             DeconvolutionParameters additionalPrecursorDeconParams = commonParams.AdditionalPrecursorDeconvolutionParameters;
             if (!string.IsNullOrWhiteSpace(fileSpecificParams.Ms1FeatureFilePath))
             {
-                if (File.Exists(fileSpecificParams.Ms1FeatureFilePath))
+                if (precursorDeconParams.Polarity == Polarity.Negative)
+                {
+                    // mzLib's FromFile source expands each feature's neutral mass to m/z as a positive
+                    // ion and filters on positive charge bounds, so in negative mode it would yield no
+                    // precursors at all after announcing itself. Say so instead.
+                    Warn("Ms1FeatureFilePath '" + fileSpecificParams.Ms1FeatureFilePath +
+                         "' ignored: external MS1 features are not supported in negative mode");
+                }
+                else if (File.Exists(fileSpecificParams.Ms1FeatureFilePath))
                 {
                     // The resolved precursor decon params are never null -- the CommonParameters
                     // constructor guarantees the fallback. Dot-access (not ?.) makes any future

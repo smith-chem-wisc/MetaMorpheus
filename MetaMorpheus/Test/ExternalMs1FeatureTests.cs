@@ -94,8 +94,194 @@ namespace Test
             // Additive: combining sources never loses the classic precursors.
             Assert.That(combinedScans.Count, Is.GreaterThanOrEqualTo(classicScans.Count));
 
-            // Dedup: combining can only remove overlaps, never exceed the union of the two sources.
-            Assert.That(combinedScans.Count, Is.LessThanOrEqualTo(classicScans.Count + fromFileScans.Count));
+            // Dedup across sources. The count bounds above hold even with no dedup at all, so check the
+            // property itself: some FromFile precursors sit within the dedup tolerance of a classic one
+            // in the same scan (otherwise there is nothing to collapse), and after combining, no scan
+            // holds two precursors of the same charge within that tolerance.
+            var tolerance = combinedParams.DeconvolutionMassTolerance;
+            static bool Same(Ms2ScanWithSpecificMass a, Ms2ScanWithSpecificMass b, MzLibUtil.Tolerance t) =>
+                a.TheScan.OneBasedScanNumber == b.TheScan.OneBasedScanNumber
+                && a.PrecursorCharge == b.PrecursorCharge
+                && t.Within(a.PrecursorMonoisotopicPeakMz, b.PrecursorMonoisotopicPeakMz);
+
+            var classicByScan = classicScans.ToLookup(s => s.TheScan.OneBasedScanNumber);
+            int overlapping = fromFileScans.Count(f => classicByScan[f.TheScan.OneBasedScanNumber].Any(c => Same(f, c, tolerance)));
+            Assert.That(overlapping, Is.GreaterThan(0), "fixture has no FromFile precursor that duplicates a classic one");
+
+            foreach (var scan in combinedScans.GroupBy(s => s.TheScan.OneBasedScanNumber))
+            {
+                var list = scan.ToList();
+                for (int i = 0; i < list.Count; i++)
+                    for (int j = i + 1; j < list.Count; j++)
+                        Assert.That(Same(list[i], list[j], tolerance), Is.False,
+                            $"scan {scan.Key}: z={list[i].PrecursorCharge} precursors at m/z {list[i].PrecursorMonoisotopicPeakMz} and {list[j].PrecursorMonoisotopicPeakMz} were not deduplicated");
+            }
+            Assert.That(combinedScans.Count, Is.LessThan(classicScans.Count + fromFileScans.Count),
+                "overlapping precursors exist, so the combined set must be smaller than the sum");
+        }
+
+        // Negative mode: mzLib's FromFile source expands neutral masses as positive ions, so it would yield
+        // nothing. It must be skipped with a warning rather than "enabled" and silently empty.
+        [Test]
+        public static void SetAllFileSpecificCommonParams_NegativeMode_SkipsFeatureFileWithWarning()
+        {
+            string featureFile = Path.Combine(
+                TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TDGPTMDSearchSingleSpectra_ms1.feature");
+            Assume.That(File.Exists(featureFile), $"missing {featureFile}");
+
+            var warnings = new System.Collections.Generic.List<string>();
+            EventHandler<StringEventArgs> onWarn = (_, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += onWarn;
+            try
+            {
+                var negative = new CommonParameters(deconvolutionMaxAssumedChargeState: -20);
+                var fsp = new FileSpecificParameters { Ms1FeatureFilePath = featureFile };
+                CommonParameters resolved = MetaMorpheusTask.SetAllFileSpecificCommonParams(negative, fsp);
+
+                Assert.That(resolved.AdditionalPrecursorDeconvolutionParameters, Is.Null);
+                Assert.That(warnings.Any(w => w.Contains(featureFile) && w.Contains("negative mode")), Is.True);
+
+                // Positive mode still resolves it, so the skip is about polarity and nothing else.
+                var positive = MetaMorpheusTask.SetAllFileSpecificCommonParams(
+                    new CommonParameters(deconvolutionMaxAssumedChargeState: 20), fsp);
+                Assert.That(positive.AdditionalPrecursorDeconvolutionParameters, Is.InstanceOf<FromFileDeconvolutionParameters>());
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= onWarn;
+            }
+        }
+
+        [Test]
+        public static void Ms1FeatureFileCalibrator_CombinesRoundsAndCorrectsAtTheApex()
+        {
+            // Two rounds over three MS1 scans at 10, 20 and 30 min.
+            var round1 = new System.Collections.Generic.List<(double, double)> { (10, 2e-6), (20, 4e-6), (30, -1e-6) };
+            var round2 = new System.Collections.Generic.List<(double, double)> { (10, 1e-6), (20, 0), (30, 0) };
+            var (rts, factors) = Ms1FeatureFileCalibrator.Combine(new[] { round1, round2 });
+            Assert.That(factors[0], Is.EqualTo((1 - 2e-6) * (1 - 1e-6)).Within(1e-15));
+            Assert.That(factors[1], Is.EqualTo(1 - 4e-6).Within(1e-15));
+
+            Assert.That(Ms1FeatureFileCalibrator.FactorAt(rts, factors, 14.9), Is.EqualTo(factors[0]));
+            Assert.That(Ms1FeatureFileCalibrator.FactorAt(rts, factors, 15.1), Is.EqualTo(factors[1]));
+            Assert.That(Ms1FeatureFileCalibrator.FactorAt(rts, factors, 99), Is.EqualTo(factors[2]));
+            Assert.That(Ms1FeatureFileCalibrator.FactorAt(rts, factors, 0), Is.EqualTo(factors[0]));
+
+            Assert.That(Ms1FeatureFileCalibrator.CanCalibrate("a/run_ms1.feature"), Is.True);
+            Assert.That(Ms1FeatureFileCalibrator.CanCalibrate("a/run.feature.tsv"), Is.False);
+
+            // Seconds-based file (Time_end > 500): apex 1210 s = 20.17 min must use the 20-min scan.
+            string dir = Path.Combine(Path.GetTempPath(), "mm_ms1featurecal_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            try
+            {
+                string src = Path.Combine(dir, "run_ms1.feature");
+                string dst = Path.Combine(dir, "run-calib_ms1.feature");
+                new Ms1FeatureFile
+                {
+                    Results = new System.Collections.Generic.List<Ms1Feature>
+                    {
+                        new() { Id = 1, Mass = 10000.0, Intensity = 1e6, RetentionTimeBegin = 1190, RetentionTimeEnd = 1230,
+                                RetentionTimeApex = 1210, IntensityApex = 1e5, ChargeStateMin = 5, ChargeStateMax = 9 },
+                    }
+                }.WriteResults(src);
+
+                int n = Ms1FeatureFileCalibrator.WriteCalibratedCopy(src, dst, new[] { round1, round2 }, rtInSeconds: true);
+                Assert.That(n, Is.EqualTo(1));
+                var row = new Ms1FeatureFile(dst).Results.Single();
+                Assert.That(row.Mass, Is.EqualTo(10000.0 * (1 - 4e-6)).Within(1e-9));
+                Assert.That(row.RetentionTimeApex, Is.EqualTo(1210), "units are left as they were");
+                Assert.That(row.ChargeStateMin, Is.EqualTo(5));
+                Assert.That(row.ChargeStateMax, Is.EqualTo(9));
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        // The review finding on #2650: after calibration, the feature masses were never calibrated, yet the
+        // path was carried into the -calib.toml. Build a feature file whose masses are exactly this file's
+        // classic precursor masses, calibrate, and check that the calibrated feature masses track the
+        // calibrated classic masses rather than keeping the pre-calibration offset.
+        [Test]
+        public static void CalibrationTask_CalibratesExternalFeatureMassesAndPointsTheCalibToml()
+        {
+            string testDir = TestContext.CurrentContext.TestDirectory;
+            string unitTestFolder = Path.Combine(testDir, "CalibrationTask_ExternalFeatures");
+            string outputFolder = Path.Combine(unitTestFolder, "TaskOutput");
+            if (Directory.Exists(unitTestFolder)) Directory.Delete(unitTestFolder, true);
+            Directory.CreateDirectory(outputFolder);
+            try
+            {
+                string mzml = Path.Combine(unitTestFolder, "calfeat.mzML");
+                File.Copy(Path.Combine(testDir, "TestData", "SmallCalibratible_Yeast.mzML"), mzml, true);
+                string db = Path.Combine(testDir, "TestData", "smalldb.fasta");
+
+                // One feature per classic precursor, keyed back to its scan and charge.
+                var classicParams = new CommonParameters();
+                var uncalibrated = MetaMorpheusTask.GetMs2Scans(Mzml.LoadAllStaticData(mzml), mzml, classicParams).ToList();
+                var rows = new System.Collections.Generic.List<Ms1Feature>();
+                var keys = new System.Collections.Generic.List<(int Scan, int Charge, double Mass)>();
+                foreach (var s in uncalibrated)
+                {
+                    double rt = s.TheScan.RetentionTime;
+                    rows.Add(new Ms1Feature
+                    {
+                        Id = rows.Count, Mass = s.PrecursorMass, Intensity = 1e6, IntensityApex = 1e5,
+                        RetentionTimeBegin = rt - 0.05, RetentionTimeEnd = rt + 0.05, RetentionTimeApex = rt,
+                        ChargeStateMin = s.PrecursorCharge, ChargeStateMax = s.PrecursorCharge,
+                    });
+                    keys.Add((s.TheScan.OneBasedScanNumber, s.PrecursorCharge, s.PrecursorMass));
+                }
+                string feature = Path.Combine(unitTestFolder, "calfeat_ms1.feature");
+                new Ms1FeatureFile { Results = rows }.WriteResults(feature);
+
+                new CalibrationTask().RunTask(outputFolder,
+                    new System.Collections.Generic.List<DbForTask> { new DbForTask(db, false) },
+                    new System.Collections.Generic.List<string> { mzml }, "test");
+
+                string calibratedMzml = Path.Combine(outputFolder, "calfeat-calib.mzML");
+                string calibratedFeature = Path.Combine(outputFolder, "calfeat-calib_ms1.feature");
+                string calibratedToml = Path.Combine(outputFolder, "calfeat-calib.toml");
+                Assert.That(File.Exists(calibratedMzml), "fixture did not calibrate");
+                Assert.That(File.Exists(calibratedFeature), "no calibrated feature file was written next to the calibrated mzML");
+
+                var tomlParams = new FileSpecificParameters(Nett.Toml.ReadFile(calibratedToml, MetaMorpheusTask.tomlConfig));
+                Assert.That(Path.GetFullPath(tomlParams.Ms1FeatureFilePath), Is.EqualTo(Path.GetFullPath(calibratedFeature)),
+                    "the -calib.toml must point at the calibrated features, not the uncalibrated source");
+
+                // Compare each feature with the classic precursor it was made from, both after calibration.
+                var calibratedRows = new Ms1FeatureFile(calibratedFeature).Results;
+                Assert.That(calibratedRows.Count, Is.EqualTo(rows.Count));
+                var calibratedClassic = MetaMorpheusTask.GetMs2Scans(Mzml.LoadAllStaticData(calibratedMzml), calibratedMzml, classicParams)
+                    .ToLookup(s => (s.TheScan.OneBasedScanNumber, s.PrecursorCharge));
+
+                var before = new System.Collections.Generic.List<double>();
+                var after = new System.Collections.Generic.List<double>();
+                for (int i = 0; i < keys.Count; i++)
+                {
+                    var (scan, z, original) = keys[i];
+                    var match = calibratedClassic[(scan, z)]
+                        .OrderBy(c => Math.Abs(c.PrecursorMass - original)).FirstOrDefault();
+                    if (match == null || Math.Abs(match.PrecursorMass - original) / original * 1e6 > 50)
+                        continue;
+                    before.Add(Math.Abs(original - match.PrecursorMass) / match.PrecursorMass * 1e6);
+                    after.Add(Math.Abs(calibratedRows[i].Mass - match.PrecursorMass) / match.PrecursorMass * 1e6);
+                }
+
+                Assert.That(after.Count, Is.GreaterThan(50), "too few feature/precursor pairs to compare");
+                double medianBefore = before.OrderBy(x => x).ElementAt(before.Count / 2);
+                double medianAfter = after.OrderBy(x => x).ElementAt(after.Count / 2);
+                TestContext.WriteLine($"pairs {after.Count}; median |feature - calibrated classic|: uncalibrated {medianBefore:F3} ppm, calibrated {medianAfter:F3} ppm");
+                Assert.That(medianBefore, Is.GreaterThan(0.3), "calibration did not shift this fixture enough to test anything");
+                Assert.That(medianAfter, Is.LessThan(0.1 * medianBefore),
+                    "calibrated feature masses should track the calibrated classic precursors");
+            }
+            finally
+            {
+                if (Directory.Exists(unitTestFolder)) Directory.Delete(unitTestFolder, true);
+            }
         }
 
         // fix_005 (FromFile resolution leg) — a configured, existing Ms1FeatureFilePath is resolved by
