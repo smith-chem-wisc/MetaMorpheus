@@ -198,12 +198,13 @@ namespace EngineLayer.FdrAnalysis
 
         /// <summary>
         /// 1 when <see cref="HydrophobicityZScore"/> was actually computed for this peptidoform, 0 when it is only the
-        /// saturated maximum standing in for a missing value. That happens in two cases:
+        /// saturated maximum standing in for a missing value. That happens in three cases:
         /// - the retention-time predictor could not produce a value. Chronologer declines a sequence longer than 50
         ///   residues, shorter than 7, or carrying a non-canonical amino acid such as selenocysteine; any predictor
         ///   can also fail outright.
         /// - there is no reference distribution for this file and retention-time bin (for LC or CZE), so there is
         ///   nothing to compare the prediction against.
+        /// - the computed z-score is NaN or infinite (a NaN prediction or bin mean, or a zero or NaN deviation).
         ///
         /// Companion to <see cref="HydrophobicityZScore"/> in the same way <see cref="HasSpectralAngle"/> is the
         /// companion to <see cref="SpectralAngle"/>: it lets the model distinguish "predicted, and disagrees with

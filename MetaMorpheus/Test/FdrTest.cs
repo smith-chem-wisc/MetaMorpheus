@@ -287,6 +287,20 @@ namespace Test
             }
             var unpredictableData = unpredictableEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
             Assert.That(unpredictableData.HasHydrophobicity, Is.EqualTo(0));
+
+            // A bin whose reference is NaN makes the z-score NaN. It saturates like a missing value, so it must be
+            // flagged like one, not marked available.
+            var nanReference = new Dictionary<string, Dictionary<int, Tuple<double, double>>>
+            {
+                { "TaGe_SA_HeLa_04_subset_longestSeq.mzML", new Dictionary<int, Tuple<double, double>> { { 154, new Tuple<double, double>(double.NaN, 1.0) } } }
+            };
+            pepEngine.GetType().GetProperty("FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified").SetValue(pepEngine, nanReference);
+            pepEngine.GetType().GetProperty("FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified").SetValue(pepEngine, nanReference);
+            PsmData lcNanZScore = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
+            Assert.That(lcNanZScore.HasHydrophobicity, Is.EqualTo(0));
+            Assert.That(lcNanZScore.HydrophobicityZScore, Is.EqualTo(100));
+            pepEngine.GetType().GetProperty("FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified").SetValue(pepEngine, fileSpecificRetTimeHI_behavior);
+            pepEngine.GetType().GetProperty("FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified").SetValue(pepEngine, fileSpecificRetTimeHI_behavior);
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
@@ -430,6 +444,15 @@ namespace Test
             PsmData czeWithoutBin = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
             Assert.That(czeWithoutBin.HasHydrophobicity, Is.EqualTo(0));
             Assert.That(czeWithoutBin.HydrophobicityZScore, Is.EqualTo(100));
+
+            // NaN reference in the PSM's bin: the z-score is NaN and saturates, so the flag must be 0, as for LC.
+            czeReference.SetValue(pepEngine, new Dictionary<string, Dictionary<int, Tuple<double, double>>>
+            {
+                { Path.GetFileName(maxScorePsm.FullFilePath), new Dictionary<int, Tuple<double, double>> { { (int)(2 * Math.Round(maxScorePsm.ScanRetentionTime / 2d, 0)), new Tuple<double, double>(double.NaN, 1.0) } } }
+            });
+            PsmData czeNanZScore = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
+            Assert.That(czeNanZScore.HasHydrophobicity, Is.EqualTo(0));
+            Assert.That(czeNanZScore.HydrophobicityZScore, Is.EqualTo(100));
 
             // Missing file: no reference distribution for this file at all.
             czeReference.SetValue(pepEngine, new Dictionary<string, Dictionary<int, Tuple<double, double>>>());

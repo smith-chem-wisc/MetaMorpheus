@@ -1553,8 +1553,9 @@ namespace EngineLayer
         /// predictor could not produce a value for it -- Chronologer rejects a sequence longer than 50 residues,
         /// shorter than 7, or carrying a non-canonical amino acid such as selenocysteine, and any predictor can fail
         /// outright -- or there is no reference distribution for this file and retention-time bin to compare it
-        /// against. Either way the z-score saturates at its maximum. Callers must surface this to the model (see
-        /// PsmData.HasHydrophobicity) rather than letting the returned z-score stand on its own.
+        /// against, or the z-score itself is NaN or infinite. In every case the z-score saturates at its maximum.
+        /// Callers must surface this to the model (see PsmData.HasHydrophobicity) rather than letting the returned
+        /// z-score stand on its own.
         /// </param>
         private static float GetRetentionTimeEquivalentZscore(SpectralMatch psm, IBioPolymerWithSetMods Peptide, Dictionary<string, Dictionary<int, Tuple<double, double>>> d, IRetentionTimePredictor predictor, out bool predictionAvailable)
         {
@@ -1577,8 +1578,10 @@ namespace EngineLayer
                         double? predicted = predictor.PredictRetentionTimeEquivalent(pep, out _);
                         if (predicted.HasValue)
                         {
-                            predictionAvailable = true;
                             hydrophobicityZscore = Math.Abs(d[Path.GetFileName(psm.FullFilePath)][time].Item1 - predicted.Value) / d[Path.GetFileName(psm.FullFilePath)][time].Item2;
+                            // A NaN or infinite z-score (NaN bin mean, zero or NaN deviation) saturates below
+                            // like a missing value, so it is flagged like one.
+                            predictionAvailable = double.IsFinite(hydrophobicityZscore);
                         }
                         // Otherwise leave the z-score at NaN. It saturates to the maximum below exactly as before,
                         // but predictionAvailable stays false, so HasHydrophobicity tells the model that the value
@@ -1597,8 +1600,9 @@ namespace EngineLayer
         }
 
         /// <param name="mobilityAvailable">
-        /// False when there is no reference distribution for this file and retention-time bin, so the z-score
-        /// saturates at its maximum and carries no information. Same meaning as the predictionAvailable flag of
+        /// False when there is no reference distribution for this file and retention-time bin, or the computed
+        /// z-score is NaN or infinite, so the z-score saturates at its maximum and carries no information. Same
+        /// meaning as the predictionAvailable flag of
         /// <see cref="GetRetentionTimeEquivalentZscore"/>, so HasHydrophobicity means one thing for LC and CZE alike.
         /// </param>
         private float GetMobilityZScore(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide, out bool mobilityAvailable)
@@ -1612,9 +1616,11 @@ namespace EngineLayer
                 if (FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE[Path.GetFileName(psm.FullFilePath)].Keys.Contains(time))
                 {
                     double predictedMobility = 100.0 * GetCifuentesMobility(selectedPeptide);
-                    mobilityAvailable = true;
 
                     mobilityZScore = Math.Abs(FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE[Path.GetFileName(psm.FullFilePath)][time].Item1 - predictedMobility) / FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE[Path.GetFileName(psm.FullFilePath)][time].Item2;
+                    // A NaN or infinite z-score (NaN mobility or bin mean, zero or NaN deviation) saturates below like a
+                    // missing value, so it is flagged like one.
+                    mobilityAvailable = double.IsFinite(mobilityZScore);
                 }
             }
 
