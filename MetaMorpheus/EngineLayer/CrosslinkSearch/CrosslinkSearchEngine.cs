@@ -1,6 +1,8 @@
 ﻿using EngineLayer.ModernSearch;
+using EngineLayer.Util;
 using MassSpectrometry;
 using MzLibUtil;
+using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -34,18 +36,26 @@ namespace EngineLayer.CrosslinkSearch
         private Modification NH2DeadEnd;
         private Modification Loop;
         private readonly char[] AllCrosslinkerSites;
-        private readonly List<int>[] SecondFragmentIndex;
+        private readonly Indexing.FragmentIndex SecondFragmentIndex;
         private readonly double[] PrecursorMassTable;
         private readonly double[] NextPrecursorMassTable;
 
-        public CrosslinkSearchEngine(List<CrosslinkSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
-            List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, 
+        /// <summary>
+        /// Cross-link search is proteomics-only (it already refuses non-protein digestion below), so it
+        /// keeps a peptide-typed view of the index that ModernSearchEngine now holds as
+        /// IBioPolymerWithSetMods. Same objects, narrower type.
+        /// </summary>
+        protected new readonly List<PeptideWithSetModifications> PeptideIndex;
+
+        public CrosslinkSearchEngine(List<CrosslinkSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, IEnumerable<IBioPolymerWithSetMods> peptideIndex,
+            Indexing.FragmentIndex fragmentIndex, Indexing.FragmentIndex secondFragmentIndex, int currentPartition, CommonParameters commonParameters,
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
             Crosslinker crosslinker, int CrosslinkSearchTopNum, bool CleaveAtCrosslinkSite, bool quench_H2O, bool quench_NH2, bool quench_Tris, List<string> nestedIds, 
             List<(int, int, int)>[] candidates, int nextPartition, 
-            List<PeptideWithSetModifications> nextPeptideIndex, List<List<(double, int, double)>> precursorss)
+            IEnumerable<IBioPolymerWithSetMods> nextPeptideIndex, List<List<(double, int, double)>> precursorss)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
+            PeptideIndex = peptideIndex.Cast<PeptideWithSetModifications>().ToList();
             // We are going to make the assumption that the XL search engine is only ran with proteins. If implemented for other BioPolymers in the future, this should be revised. 
             if (commonParameters.DigestionParams is not DigestionParams)
                 throw new ArgumentException($"Cross-link search engine does not currently support digestion of type {commonParameters.DigestionParams.GetType().FullName}.");
@@ -60,18 +70,18 @@ namespace EngineLayer.CrosslinkSearch
 
             this.Candidates = candidates;
             this.NextPartition = nextPartition + 1;
-            this.NextPeptideIndex = nextPeptideIndex;
+            this.NextPeptideIndex = nextPeptideIndex?.Cast<PeptideWithSetModifications>().ToList();
 
             Precursorss = precursorss;
 
-            PrecursorMassTable = peptideIndex.Select(p => p.MonoisotopicMass).ToArray();
+            PrecursorMassTable = PeptideIndex.Select(p => p.MonoisotopicMass).ToArray();
             if (currentPartition == nextPartition || nextPartition == -1)
             {
                 NextPrecursorMassTable = PrecursorMassTable;
             }
             else
             {
-                NextPrecursorMassTable = nextPeptideIndex.Select(p => p.MonoisotopicMass).ToArray();
+                NextPrecursorMassTable = NextPeptideIndex.Select(p => p.MonoisotopicMass).ToArray();
             }
 
             SecondFragmentIndex = secondFragmentIndex;
@@ -115,13 +125,12 @@ namespace EngineLayer.CrosslinkSearch
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
             Parallel.ForEach(threads, (scanIndex) =>
             {
-                byte[] scoringTable = new byte[PeptideIndex.Count];
+                var scoringTable = new ScanScoringTable(PeptideIndex.Count, UseStampedScoringTable);
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
-                byte[] secondScoringTable = new byte[PeptideIndex.Count];
+                var secondScoringTable = new ScanScoringTable(PeptideIndex.Count, UseStampedScoringTable);
                 List<int> childIdsOfPeptidesPossiblyObserved = new List<int>();
-
-                byte scoreAtTopN = 0;
-                int peptideCount = 0;
+                var scoreSorter = new DescendingScoreSorter();
+                List<int> idsOfPeptidesTopN = new List<int>();
 
                 for (; scanIndex < ListOfSortedMs2Scans.Length; scanIndex += maxThreadsPerFile)
                 {
@@ -129,7 +138,7 @@ namespace EngineLayer.CrosslinkSearch
                     if (GlobalVariables.StopLoops) { return; }
 
                     // empty the scoring table to score the new scan (conserves memory compared to allocating a new array)
-                    Array.Clear(scoringTable, 0, scoringTable.Length);
+                    scoringTable.BeginScan();
                     idsOfPeptidesPossiblyObserved.Clear();      
 
                     var scan = ListOfSortedMs2Scans[scanIndex];
@@ -141,12 +150,12 @@ namespace EngineLayer.CrosslinkSearch
                     var high_bound_limitation = scan.PrecursorMass + 5;
 
                     // first-pass scoring
-                    IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
+                    IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, base.PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
 
                     //child scan first - pass scoring
                     if (scan.ChildScans != null && CommonParameters.MS2ChildScanDissociationType != DissociationType.Unknown && CommonParameters.MS2ChildScanDissociationType != DissociationType.LowCID)
                     {
-                        Array.Clear(secondScoringTable, 0, secondScoringTable.Length);
+                        secondScoringTable.BeginScan();
                         childIdsOfPeptidesPossiblyObserved.Clear();
 
                         List<int> childBinsToSearch = new List<int>();
@@ -157,7 +166,7 @@ namespace EngineLayer.CrosslinkSearch
                             childBinsToSearch.AddRange(x);
                         }
 
-                        IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.MS2ChildScanDissociationType);
+                        IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, base.PeptideIndex, MassDiffAcceptor, 0, CommonParameters.MS2ChildScanDissociationType);
 
                         foreach (var childId in childIdsOfPeptidesPossiblyObserved)
                         {
@@ -165,30 +174,18 @@ namespace EngineLayer.CrosslinkSearch
                             {
                                 idsOfPeptidesPossiblyObserved.Add(childId);
                             }
-                            scoringTable[childId] = (byte)(scoringTable[childId] + secondScoringTable[childId]);
+                            scoringTable.Set(childId, (byte)(scoringTable[childId] + secondScoringTable[childId]));
                         }
                     }
 
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
-                        scoreAtTopN = 0;
-                        peptideCount = 0;
+                        // keep the TopN best, plus everything tied with the TopN-th
+                        scoreSorter.SelectTop(idsOfPeptidesPossiblyObserved, scoringTable, 0, TopN, idsOfPeptidesTopN);
 
-                        foreach (int id in idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]))
+                        foreach (int id in idsOfPeptidesTopN)
                         {
-                            peptideCount++;
-                            // Whenever the count exceeds the TopN that we want to keep, we removed everything with a score lower than the score of the TopN-th peptide in the ids list
-                            if (peptideCount == TopN)
-                            {
-                                scoreAtTopN = scoringTable[id];
-                            }
-
-                            if (scoringTable[id] < scoreAtTopN)
-                            {
-                                break;
-                            }
-
                             if (Candidates[scanIndex] == null)
                             {
                                 Candidates[scanIndex] = new List<(int, int, int)>();

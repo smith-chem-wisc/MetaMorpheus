@@ -1,0 +1,147 @@
+TaskType = "Search"
+
+[SearchParameters]
+DisposeOfFileWhenDone = true
+DoParsimony = true
+ModPeptidesAreDifferent = false
+NoOneHitWonders = false
+MatchBetweenRuns = false
+MbrFdrThreshold = 0.01
+Normalize = false
+QuantifyPpmTol = 5.0
+DoHistogramAnalysis = false
+SearchTarget = true
+DecoyType = "Reverse"
+MassDiffAcceptorType = "Custom"
+WritePrunedDatabase = false
+KeepAllUniprotMods = true
+DoLocalizationAnalysis = true
+DoLabelFreeQuantification = false
+UseSharedPeptidesForLFQ = false
+DoMultiplexQuantification = false
+SearchType = "Classic"
+LocalFdrCategories = ["FullySpecific"]
+CustomMdac = "Custom dot 50 ppm 0,1.00335,2.00671,3.01006"
+MaxFragmentSize = 30000.0
+MinAllowedInternalFragmentLength = 0
+HistogramBinTolInDaltons = 0.003
+MaximumMassThatFragmentIonScoreIsDoubled = 0.0
+WriteMzId = false
+WritePepXml = false
+WriteHighQValuePsms = true
+WriteDecoys = true
+WriteContaminants = true
+WriteIndividualFiles = true
+WriteSpectralLibrary = false
+UpdateSpectralLibrary = false
+CompressIndividualFiles = false
+TCAmbiguity = "RemoveContaminant"
+IncludeModMotifInMzid = false
+WriteDigestionProductCountFile = false
+WriteTargetDecoyFasta = false
+
+[SearchParameters.ModsToWriteSelection]
+Biological = 3
+'Digestion Termini' = 3
+
+[CommonParameters]
+TaskDescriptor = "RnaSearchTask"
+MaxThreadsToUsePerFile = 23
+ListOfModsFixed = ""
+ListOfModsVariable = "Digestion Termini\tCyclic Phosphate on X"
+DoPrecursorDeconvolution = true
+UseProvidedPrecursorInfo = true
+DeconvolutionMaxAssumedChargeState = -1
+TotalPartitions = 1
+ProductMassTolerance = "±50.0000 PPM"
+ProductMassTolerance_LowRes = "±0.3500 Absolute"
+PrecursorMassTolerance = "±30.0000 PPM"
+AddCompIons = false
+QValueThreshold = 0.05
+PepQValueThreshold = 1.0
+ScoreCutoff = 5.0
+QValueCutoffForPepCalculation = 0.005
+ReportAllAmbiguity = true
+NumberOfPeaksToKeepPerWindow = 200
+MinimumAllowedIntensityRatioToBasePeak = 0.01
+NormalizePeaksAccrossAllWindows = false
+TrimMs1Peaks = false
+TrimMsMsPeaks = true
+CustomIons = []
+AssumeOrphanPeaksAreZ1Fragments = false
+MaxHeterozygousVariants = 4
+MinVariantDepth = 1
+AddTruncations = false
+DissociationType = "CID"
+SeparationType = "HPLC"
+MS2ChildScanDissociationType = "Unknown"
+MS3ChildScanDissociationType = "Unknown"
+UseMostAbundantPrecursorIntensity = true
+PrecursorMassMatchMode = "Monoisotopic"
+RTPredictorName = "Chronologer"
+
+[CommonParameters.PrecursorDeconvolutionParameters]
+DeconvolutionType = "Multiple"
+MinAssumedChargeState = -40
+MaxAssumedChargeState = -1
+Polarity = "Negative"
+AverageResidueModel = "OxyriboAveragine"
+ExpectedIsotopeSpacing = 1.0033548381
+UseGenericScore = false
+
+[[CommonParameters.PrecursorDeconvolutionParameters.Parameters]]
+DeconvolutionType = "ClassicDeconvolution"
+DeconvolutionTolerancePpm = 10.0
+IntensityRatioLimit = 6.0
+MinAssumedChargeState = -40
+MaxAssumedChargeState = -1
+Polarity = "Negative"
+AverageResidueModel = "OxyriboAveragine"
+ExpectedIsotopeSpacing = 1.0033548381
+UseGenericScore = false
+[[CommonParameters.PrecursorDeconvolutionParameters.Parameters]]
+DeconvolutionType = "IsoDecDeconvolution"
+PhaseRes = 8
+CssThreshold = 0.699999988079071
+MatchTolerance = 5.0
+MaxShift = 3
+MzWindow = [-1.04999995231628, 2.04999995231628]
+KnockdownRounds = 5
+MinAreaCovered = 0.200000002980232
+DataThreshold = 0.0500000007450581
+ReportMulitpleMonoisos = false
+AdductMass = -1.00727272033691
+MinAssumedChargeState = -40
+MaxAssumedChargeState = -1
+Polarity = "Negative"
+AverageResidueModel = "Averagine"
+ExpectedIsotopeSpacing = 1.0033548381
+UseGenericScore = false
+
+[CommonParameters.ProductDeconvolutionParameters]
+DeconvolutionType = "ClassicDeconvolution"
+DeconvolutionTolerancePpm = 4.0
+IntensityRatioLimit = 3.0
+MinAssumedChargeState = -30
+MaxAssumedChargeState = -1
+Polarity = "Negative"
+AverageResidueModel = "OxyriboAveragine"
+ExpectedIsotopeSpacing = 1.0033548381
+UseGenericScore = false
+
+[CommonParameters.DigestionParams]
+MaxMissedCleavages = 3
+MinLength = 3
+MaxLength = 2147483647
+MaxModificationIsoforms = 1024
+MaxMods = 4
+Rnase = "top-down"
+FragmentationTerminus = "Both"
+SearchModeType = "Full"
+
+[CommonParameters.FragmentationParameters]
+GenerateMIon = true
+MIonLosses = "-P\t-H2O\t-P-H2O\t-A\t-C\t-G\t-U\t-A-H2O\t-C-H2O\t-G-H2O\t-U-H2O\t-A-P\t-C-P\t-G-P\t-U-P\t-A-P-H2O\t-C-P-H2O\t-G-P-H2O\t-U-P-H2O"
+ModificationsCanSuppressBaseLossIons = false
+
+[[FileSpecificParameters]]

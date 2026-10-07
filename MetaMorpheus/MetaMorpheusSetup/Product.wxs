@@ -35,6 +35,7 @@
       <ComponentGroupRef Id="Appsrc_OGlycan_files" />
       <ComponentGroupRef Id="Appsrc_Proteomes_files" />
       <ComponentGroupRef Id="Appsrc_Contaminants_files" />
+      <ComponentGroupRef Id="Appsrc_ContaminantSubsets_files" />
       <ComponentGroupRef Id="ExcelDefaults" />
       <ComponentRef Id="RemoveApp" />
       <ComponentRef Id="DesktopShortcut" />
@@ -123,7 +124,10 @@
           </Directory>
 
           <!--Contaminants Folder-->
-          <Directory Id="MetaAppContaminantsFolder" Name="Contaminants" />
+          <!--Subsets is a sub folder so that ADD DEFAULT CONTAMINANTS, which adds every file in Contaminants, still adds only the full panel-->
+          <Directory Id="MetaAppContaminantsFolder" Name="Contaminants">
+            <Directory Id="MetaAppContaminantSubsetsFolder" Name="Subsets" />
+          </Directory>
 
           <!--Proteomes Folder-->
           <Directory Id="MetaAppProteomesFolder" Name="Proteomes" />
@@ -439,6 +443,31 @@
 		<Component Id="src_PredictionClients.dll" Guid="C6398A43-F845-47C2-9F35-0BB2435AFE16">
 			<File Id="src_PredictionClients.dll" Name="PredictionClients.dll" Source="$(var.GUI_TargetDir)PredictionClients.dll" />
 		</Component>
+      <!--mzLib 1.0.593: StatisticalModels, and PdfPig 0.1.16 (Apache-2.0), which Readers.dll references.-->
+      <Component Id="src_StatisticalModels.dll" Guid="022E26DC-7BA7-431C-838D-AD89AC0A815D">
+        <File Id="src_StatisticalModels.dll" Name="StatisticalModels.dll" Source="$(var.GUI_TargetDir)StatisticalModels.dll" />
+      </Component>
+      <Component Id="src_UglyToad.PdfPig.dll" Guid="DB31F780-4794-498F-AB64-FCD46EEDEDD2">
+        <File Id="src_UglyToad.PdfPig.dll" Name="UglyToad.PdfPig.dll" Source="$(var.GUI_TargetDir)UglyToad.PdfPig.dll" />
+      </Component>
+      <Component Id="src_UglyToad.PdfPig.Core.dll" Guid="81E29A4C-31D0-4FEF-AA27-6549A4FBC8DA">
+        <File Id="src_UglyToad.PdfPig.Core.dll" Name="UglyToad.PdfPig.Core.dll" Source="$(var.GUI_TargetDir)UglyToad.PdfPig.Core.dll" />
+      </Component>
+      <Component Id="src_UglyToad.PdfPig.DocumentLayoutAnalysis.dll" Guid="F7588C86-C46E-436E-AF1C-E2D2D60C5BE9">
+        <File Id="src_UglyToad.PdfPig.DocumentLayoutAnalysis.dll" Name="UglyToad.PdfPig.DocumentLayoutAnalysis.dll" Source="$(var.GUI_TargetDir)UglyToad.PdfPig.DocumentLayoutAnalysis.dll" />
+      </Component>
+      <Component Id="src_UglyToad.PdfPig.Fonts.dll" Guid="559BADC7-CE32-445B-B838-B6AB0BB20726">
+        <File Id="src_UglyToad.PdfPig.Fonts.dll" Name="UglyToad.PdfPig.Fonts.dll" Source="$(var.GUI_TargetDir)UglyToad.PdfPig.Fonts.dll" />
+      </Component>
+      <Component Id="src_UglyToad.PdfPig.Package.dll" Guid="24D8CD7D-2D6D-45F3-A6EE-EB2B343F6A5F">
+        <File Id="src_UglyToad.PdfPig.Package.dll" Name="UglyToad.PdfPig.Package.dll" Source="$(var.GUI_TargetDir)UglyToad.PdfPig.Package.dll" />
+      </Component>
+      <Component Id="src_UglyToad.PdfPig.Tokenization.dll" Guid="425E2560-610C-470F-A2A9-3E98D707AEC6">
+        <File Id="src_UglyToad.PdfPig.Tokenization.dll" Name="UglyToad.PdfPig.Tokenization.dll" Source="$(var.GUI_TargetDir)UglyToad.PdfPig.Tokenization.dll" />
+      </Component>
+      <Component Id="src_UglyToad.PdfPig.Tokens.dll" Guid="B2A42BC5-A1D7-48EB-B2CC-4956AE553ABC">
+        <File Id="src_UglyToad.PdfPig.Tokens.dll" Name="UglyToad.PdfPig.Tokens.dll" Source="$(var.GUI_TargetDir)UglyToad.PdfPig.Tokens.dll" />
+      </Component>
 
       <!--Commandline Components-->
       <Component Id="src_CMD.deps.json" Guid="92190CCF-0138-4F0B-9356-02C914D5A439">
@@ -582,7 +611,14 @@
       <Component Id="Appsrc_Mods_tmt.txt" Guid="f064b7a0-c650-4a40-8a9f-301cc6cb946e" Condition="OVERWRITEAPPDATA">
         
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-        <File ReadOnly="no" Id="Appsrc_Mods_tmt.txt" Name="tmt.txt" Source="$(var.GUI_TargetDir)Mods\tmt.txt" />
+        <File ReadOnly="no" Id="Appsrc_Mods_tmt.txt" Name="TMT.txt" Source="$(var.GUI_TargetDir)Mods\TMT.txt" />
+      </Component>
+
+      <!-- RnaMods.txt -->
+      <Component Id="Appsrc_Mods_RnaMods.txt" Guid="8BC69D83-0C35-49A1-A907-A30CFE46190D" Condition="OVERWRITEAPPDATA">
+        
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        <File ReadOnly="no" Id="Appsrc_Mods_RnaMods.txt" Name="RnaMods.txt" Source="$(var.GUI_TargetDir)Mods\RnaMods.txt" />
       </Component>
     </ComponentGroup>
   </Fragment>
@@ -688,11 +724,6 @@
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Data_unimod.xml" Name="unimod.xml" Source="$(var.GUI_TargetDir)Data\unimod.xml" />
       </Component>
-      <Component Id="Appsrc_Data_elements.dat" Guid="5ba496cc-8b84-4d25-a410-b2274718ebf9" Condition="OVERWRITEAPPDATA">
-        
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-        <File ReadOnly="no" Id="Appsrc_Data_elements.dat" Name="elements.dat" Source="$(var.GUI_TargetDir)Data\elements.dat" />
-      </Component>
       <Component Id="Appsrc_Data_Crosslinkers.tsv" Guid="9F0C2C0A-FF6E-4714-BEF3-3E739B6573D2" Condition="OVERWRITEAPPDATA">
         
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
@@ -721,6 +752,24 @@
       <Component Id="Appsrc_Contaminants_MetaMorpheus_Contaminants.xml" Guid="d840b7a1-dfce-418a-bd4a-f3805625f53d" Condition="OVERWRITEAPPDATA">
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Contaminants_MetaMorpheusContaminants.xml" Name="MetaMorpheusContaminants.xml" Source="$(var.GUI_TargetDir)Contaminants\MetaMorpheusContaminants.xml" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!--Builds the App Contaminants Subsets folder-->
+  <Fragment>
+    <ComponentGroup Id="Appsrc_ContaminantSubsets_files" Directory="MetaAppContaminantSubsetsFolder">
+      <Component Id="RemoveContaminantSubsets" Guid="3FE15A2E-58BF-4C9F-A857-BC4BEA758A7C" Condition="OVERWRITEAPPDATA">
+        <RemoveFolder Id="MetaAppContaminantSubsetsFolder" On="both" />
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+      <Component Id="Appsrc_ContaminantSubsets_NoUPS.xml" Guid="4217D588-1D0C-4250-B81C-E72603E49131" Condition="OVERWRITEAPPDATA">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        <File ReadOnly="no" Id="Appsrc_ContaminantSubsets_MetaMorpheusContaminants_NoUPS.xml" Name="MetaMorpheusContaminants_NoUPS.xml" Source="$(var.GUI_TargetDir)Contaminants\Subsets\MetaMorpheusContaminants_NoUPS.xml" />
+      </Component>
+      <Component Id="Appsrc_ContaminantSubsets_UPS.xml" Guid="CB313C62-49B2-4810-B45F-87035B3E04F4" Condition="OVERWRITEAPPDATA">
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        <File ReadOnly="no" Id="Appsrc_ContaminantSubsets_MetaMorpheusContaminants_UPS.xml" Name="MetaMorpheusContaminants_UPS.xml" Source="$(var.GUI_TargetDir)Contaminants\Subsets\MetaMorpheusContaminants_UPS.xml" />
       </Component>
     </ComponentGroup>
   </Fragment>

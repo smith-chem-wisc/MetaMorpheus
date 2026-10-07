@@ -1,5 +1,9 @@
 ﻿using Easy.Common.Extensions;
 using EngineLayer;
+using Omics.BioPolymerGroup;
+using Omics.SpectralMatch;
+using Quantification.Strategies;
+using Quantification;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using EngineLayer.Localization;
@@ -21,15 +25,33 @@ using MzLibUtil;
 using Omics.Digestion;
 using Omics.BioPolymer;
 using Omics.Modifications;
+using IsobaricMassTag = EngineLayer.IsobaricMassTag;
 using Omics.SpectrumMatch;
 using EngineLayer.SpectrumMatch;
+using Omics.Fragmentation;
+using MassSpectrometry.MzSpectra;
+using PredictionClients.Koina.AbstractClasses;
+using PredictionClients.Koina.Client;
+using PredictionClients.Koina.SupportedModels.FragmentIntensityModels;
+using PredictionClients.Koina.Util;
+using Readers.SpectralLibrary;
 using ProteinGroup = FlashLFQ.ProteinGroup;
-
 
 namespace TaskLayer
 {
-    public class PostSearchAnalysisTask : MetaMorpheusTask
+    // partial so the SDRF adapter can live in its own file (PostSearchAnalysisTaskSdrf.cs) rather
+    // than adding another ~200 lines to a class that is already 1,700.
+    public partial class PostSearchAnalysisTask : MetaMorpheusTask
     {
+        /// <summary>
+        /// The value of mzIdentML's Enzyme/@semiSpecific for a search: true when SearchModeType is Semi or the protease is
+        /// itself semi-specific. mzIdentML defines semiSpecific as exactly one terminus following the enzyme rules, so a
+        /// fully specific and a non-specific (SearchModeType None) search are both false.
+        /// </summary>
+        public static bool IsSemiSpecificForMzIdentMl(IDigestionParams digestionParams) =>
+            digestionParams.SearchModeType == CleavageSpecificity.Semi
+            || (digestionParams.SearchModeType == CleavageSpecificity.Full && digestionParams.DigestionAgent.CleavageSpecificity == CleavageSpecificity.Semi);
+
         public PostSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
 
@@ -75,8 +97,15 @@ namespace TaskLayer
                 // just with slightly different precursor masses.
                 Parameters.AllSpectralMatches = Parameters.AllSpectralMatches.OrderByDescending(b => b)
                     .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
+                ComputeSpectrumSimilarity(Parameters.SpectralLibrary);
                 CalculatePsmAndPeptideFdr(Parameters.AllSpectralMatches);
                 DisambiguateSpectralMatches();
+            }
+            else if (Parameters.SearchParameters.UsePredictedSpectraForSpectralAngle)
+            {
+                // Semi- and non-specific searches run FDR inside the search engine, before this task, so
+                // there is no point at which a predicted angle could still reach PEP.
+                SkipPredictedSpectralAngles("semi- and non-specific searches compute FDR before post-search analysis");
             }
             ConstructResultsDictionary();
             DoMassDifferenceLocalizationAnalysis();
@@ -121,6 +150,11 @@ namespace TaskLayer
                 WriteDigestionCountHistogram();
             }
 
+            if (Parameters.SearchParameters.WriteSdrf)
+            {
+                WriteSdrf();
+            }
+
             WriteFlashLFQResults();
 
             if (Parameters.BioPolymerList.Any((p => p.AppliedSequenceVariations.Count > 0)))
@@ -139,6 +173,348 @@ namespace TaskLayer
         }
 
         /// <summary>
+        /// Computes spectral contrast angles for PSMs that don't yet have one, when the search opts in
+        /// with SearchParameters.UsePredictedSpectraForSpectralAngle (default off).
+        /// For each PSM, we use a real library spectrum when available; otherwise we
+        /// request a predicted spectrum from Prosit and use that. PSMs we can't score
+        /// for any reason are left with SpectralAngle = -1 (the sentinel).
+        ///
+        /// Turning this on changes q-values. SpectralAngle and HasSpectralAngle are PEP features, and
+        /// without a spectral library every PSM otherwise trains PEP at the -1 sentinel.
+        /// </summary>
+        internal void ComputeSpectrumSimilarity(SpectralLibrary spectralLibrary)
+        {
+            // Off means this does nothing at all, so a default search is untouched by the feature.
+            if (!Parameters.SearchParameters.UsePredictedSpectraForSpectralAngle)
+                return;
+
+            if (UnsupportedForPrositHcd() is string reason)
+            {
+                SkipPredictedSpectralAngles(reason);
+                return;
+            }
+
+            _predictionReport = new PredictionReport();
+            var psmsToScore = GetSpectralMatchesWithoutComputedSpectralAngle();
+            if (psmsToScore.Count > 0)
+            {
+                // Build a combined lookup: real library spectra take precedence, predicted
+                // spectra fill in the gaps.
+                var lookup = BuildCombinedSpectrumLookup(psmsToScore, spectralLibrary);
+
+                foreach (var psm in psmsToScore)
+                {
+                    var key = (psm.FullSequence, psm.ScanPrecursorCharge);
+                    psm.SpectralAngle = lookup.TryGetValue(key, out var spectrum)
+                        ? SpectralAngleByAnnotation(psm.MatchedFragmentIons, spectrum.MatchedFragmentIons)
+                        : -1;
+
+                    if (psm.SpectralAngle >= 0)
+                        _predictionReport.Scored++;
+                }
+            }
+            _predictionReport.Considered = psmsToScore.Count;
+
+            Log($"Supplemental spectral angles assigned to {_predictionReport.Scored} of {psmsToScore.Count} {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s", new List<string> { Parameters.SearchTaskId });
+            Parameters.SearchTaskResults.AddTaskSummaryText(_predictionReport.ToString());
+        }
+
+        /// <summary>
+        /// Why Prosit 2020 HCD cannot score this search, or null if it can. The model predicts b and y ions
+        /// of peptides under beam-type fragmentation, so anything else would be scored against ions it
+        /// never predicts: an ETD search's c and z ions never pair, and every PSM would get a confident
+        /// looking 0 that PEP reads as real. Oligos would also be sent to Koina as if they were peptides.
+        /// </summary>
+        private string UnsupportedForPrositHcd()
+        {
+            if (GlobalVariables.AnalyteType != AnalyteType.Peptide)
+                return $"Prosit predicts peptides, and this is a {GlobalVariables.AnalyteType} search";
+
+            // Autodetect and LowCID are refused too: the first is decided per scan, which a PSM does not
+            // record, and the second stores binned XCorr intensities that no prediction resembles.
+            var dissociationTypes = new[] { CommonParameters.DissociationType }
+                .Concat(FileSpecificParameters?.Select(f => f.Parameters.DissociationType) ?? Enumerable.Empty<DissociationType>())
+                .Distinct()
+                .ToList();
+            var unsupported = dissociationTypes.Where(d => d != DissociationType.HCD && d != DissociationType.CID).ToList();
+            if (unsupported.Count > 0)
+                return $"Prosit 2020 predicts HCD spectra, and this search uses {string.Join(", ", unsupported)}";
+
+            if (dissociationTypes.Contains(DissociationType.CID))
+                Warn("Predicted spectral angles come from an HCD model; on CID spectra they are an approximation.");
+            return null;
+        }
+
+        /// <summary>The flag is on but this search cannot use it: say so, both now and in results.txt.</summary>
+        private void SkipPredictedSpectralAngles(string reason)
+        {
+            string message = $"Predicted spectral angles were requested but not computed: {reason}.";
+            Warn(message);
+            Parameters.SearchTaskResults.AddTaskSummaryText(message);
+        }
+
+        /// <summary>
+        /// Normalized spectral contrast angle between a PSM's matched ions and a library or predicted
+        /// spectrum, with ions paired by annotation (type, number, charge, neutral loss) rather than by m/z.
+        /// Both sides are already annotated, so pairing needs no tolerance: the experimental ions were
+        /// accepted at the search's own product tolerance, and on low-resolution data their m/z can sit far
+        /// enough from the predicted m/z that an m/z pairing would score the mass error instead of the
+        /// intensities.
+        ///
+        /// Otherwise this follows the spectral-library search angle (SpectralLibrarySearchFunction):
+        /// square-root intensities, and every library ion counts, with an unobserved one at intensity 0,
+        /// while experimental ions the library lacks are ignored. Unlike that path there is no 300 m/z floor.
+        ///
+        /// Returns -1, the "not computed" sentinel, when the library spectrum has no ions.
+        /// </summary>
+        internal static double SpectralAngleByAnnotation(List<MatchedFragmentIon> experimental, List<MatchedFragmentIon> library)
+        {
+            if (library == null || library.Count == 0)
+                return -1;
+
+            // First wins: MatchFragmentIons adds the directly matched ions before any complementary ions,
+            // so a directly observed intensity is not replaced by one derived from the complement.
+            var observed = new Dictionary<IonAnnotation, double>();
+            foreach (var ion in experimental)
+                observed.TryAdd(IonAnnotation.Of(ion), ion.Intensity);
+
+            var experimentalIntensities = new double[library.Count];
+            var libraryIntensities = new double[library.Count];
+            for (int i = 0; i < library.Count; i++)
+            {
+                libraryIntensities[i] = Math.Sqrt(Math.Max(0, library[i].Intensity));
+                experimentalIntensities[i] = observed.TryGetValue(IonAnnotation.Of(library[i]), out double intensity)
+                    ? Math.Sqrt(Math.Max(0, intensity))
+                    : 0;
+            }
+
+            // Clamped: proportional vectors can give a cosine a hair above 1, and Acos of that is NaN.
+            double cosine = Math.Clamp(SpectralSimilarity.CosineOfAlignedVectors(experimentalIntensities, libraryIntensities), -1, 1);
+            return 1 - 2 * Math.Acos(cosine) / Math.PI;
+        }
+
+        /// <summary>What identifies a fragment ion independently of where it was measured.</summary>
+        private readonly record struct IonAnnotation(ProductType ProductType, int FragmentNumber,
+            ProductType? SecondaryProductType, int SecondaryFragmentNumber, int Charge, double NeutralLoss)
+        {
+            public static IonAnnotation Of(MatchedFragmentIon ion) => new(
+                ion.NeutralTheoreticalProduct.ProductType, ion.NeutralTheoreticalProduct.FragmentNumber,
+                ion.NeutralTheoreticalProduct.SecondaryProductType, ion.NeutralTheoreticalProduct.SecondaryFragmentNumber,
+                ion.Charge, Math.Round(ion.NeutralTheoreticalProduct.NeutralLoss, 2));
+        }
+
+        /// <summary>
+        /// What the predicted-angle step did, for results.txt. With the flag on, q-values depend on whether
+        /// Koina answered, so two runs of the same data can differ; this is the record that explains why.
+        /// </summary>
+        private sealed class PredictionReport
+        {
+            public string Model;
+            public int Considered, FromLibrary, Requested, Predicted, Rejected, Scored;
+            public string Failure;
+
+            public override string ToString() =>
+                $"Predicted spectral angles: model {Model ?? "none called"} at {HTTP.ModelsURL}; "
+                + $"{Considered} spectral matches without an angle, {FromLibrary} spectral library entries available; "
+                + $"{Requested} peptide/charge pairs requested, {Predicted} predicted, {Rejected} rejected by the model"
+                + (Failure == null ? "" : $", request failed ({Failure})")
+                + $"; {Scored} angles assigned.";
+        }
+
+        private PredictionReport _predictionReport = new();
+
+        /// <summary>
+        /// Builds a (FullSequence, Charge) -> LibrarySpectrum map by merging two
+        /// sources in priority order:
+        ///   1. the real spectral library (if provided), for any PSM whose
+        ///      (sequence, charge) is present there;
+        ///   2. Prosit-predicted spectra for the remaining PSMs.
+        /// Predictions are only requested for what the library doesn't cover, which
+        /// keeps API traffic and runtime down.
+        /// </summary>
+        internal Dictionary<(string, int), LibrarySpectrum> BuildCombinedSpectrumLookup(
+            List<SpectralMatch> psmsToScore,
+            SpectralLibrary spectralLibrary)
+        {
+            var lookup = new Dictionary<(string, int), LibrarySpectrum>();
+
+            // 1. Harvest whatever the real library can give us, keyed by (seq, charge).
+            //    Duplicates in the library collapse to the first occurrence.
+            if (spectralLibrary != null)
+            {
+                // SearchTask closes the library before post-search analysis runs, unless the run is
+                // updating it (SearchTask.cs, "if (spectralLibrary != null && UpdateSpectralLibrary
+                // == false)"). Reading it here therefore hits a closed file on an ordinary search
+                // with a supplied library, so treat that as "the library has nothing more to give"
+                // rather than losing the whole search to an ObjectDisposedException.
+                try
+                {
+                    foreach (var spectrum in spectralLibrary.GetAllLibrarySpectra())
+                    {
+                        var key = (spectrum.Sequence, spectrum.ChargeState);
+                        if (!lookup.ContainsKey(key))
+                            lookup[key] = spectrum;
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                    lookup.Clear();
+                }
+            }
+            _predictionReport.FromLibrary = lookup.Count;
+
+            // 2. Figure out which PSMs the library didn't cover and predict only those.
+            //    Deduplicate on (FullSequence, PrecursorCharge) — different CEs for the
+            //    same peptide/charge would otherwise spawn redundant API calls.
+            var needsPrediction = BuildPredictionInputs(psmsToScore, lookup);
+            if (needsPrediction.Count == 0 || GlobalVariables.StopLoops)
+                return lookup;
+
+            // 3. Run the predictions and merge the results in. Koina is a third-party web service,
+            //    and an outage, a timeout or a malformed response must cost the angles, not a search
+            //    that has already finished. This runs before FDR, so a throw here would lose every
+            //    output file.
+            _predictionReport.Requested = needsPrediction.Count;
+            List<LibrarySpectrum> predictedSpectra;
+            try
+            {
+                predictedSpectra = (SpectrumPredictor ?? PredictWithProsit)(needsPrediction.Values.ToList());
+            }
+            catch (Exception e)
+            {
+                _predictionReport.Failure = $"{e.GetType().Name}: {e.Message}";
+                Warn($"Predicted spectra were unavailable, so {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s without a library spectrum keep a spectral angle of -1. {_predictionReport.Failure}");
+                return lookup;
+            }
+
+            // The call cannot be interrupted, so a Stop pressed while it ran takes effect here.
+            if (GlobalVariables.StopLoops)
+                return lookup;
+
+            _predictionReport.Predicted = predictedSpectra.Count;
+            MergePredictedSpectra(predictedSpectra, lookup);
+            return lookup;
+        }
+
+        /// <summary>
+        /// Stands in for <see cref="PredictWithProsit"/> when set, so tests can exercise what happens
+        /// around the remote call - a service failure, or spectra coming back - without the network.
+        /// Null in production.
+        /// </summary>
+        internal Func<List<FragmentIntensityPredictionInput>, List<LibrarySpectrum>> SpectrumPredictor { get; set; }
+
+        /// <summary>
+        /// The remote call. Inputs Prosit cannot take (an unsupported modification, a charge above 6,
+        /// a peptide longer than 30) are dropped by the model before the request is sent and come back
+        /// with no spectrum; they are counted in a warning rather than silently lost.
+        /// </summary>
+        private List<LibrarySpectrum> PredictWithProsit(List<FragmentIntensityPredictionInput> inputs)
+        {
+            var model = new Prosit2020IntensityHCD(
+                modHandlingMode: Omics.SequenceConversion.SequenceConversionHandlingMode.ReturnNull,
+                fragmentIonMappingMode: FragmentIonMappingMode.MapToInputFullSequence,
+                maxNumberOfBatchesPerRequest: MaxConcurrentPredictionRequests);
+            _predictionReport.Model = model.ModelName;
+            model.Predict(inputs);
+            return LibrarySpectraFrom(model);
+        }
+
+        /// <summary>
+        /// How many requests go to Koina at once. mzLib's default sends every batch of a request
+        /// together, about 60 simultaneous POSTs for a 60,000-peptide search, to a public academic
+        /// service; and one failed batch fails the whole call, so fewer in flight is also fewer ways
+        /// to lose the batches that did succeed.
+        /// </summary>
+        internal const int MaxConcurrentPredictionRequests = 4;
+
+        /// <summary>
+        /// Library spectra from a model that has run. Inputs Prosit rejected come back with no
+        /// intensities and are counted rather than silently lost. Separate from the request so the
+        /// conversion - including a modified FullSequence mapped back through
+        /// FragmentIonMappingMode.MapToInputFullSequence - can be tested without the network.
+        /// </summary>
+        internal List<LibrarySpectrum> LibrarySpectraFrom(FragmentIntensityModel model)
+        {
+            int rejected = model.Predictions.Count(p => p.FragmentIntensities == null);
+            _predictionReport.Rejected = rejected;
+            if (rejected > 0)
+                Warn($"Prosit could not predict {rejected} of {model.Predictions.Count} peptide/charge pairs (unsupported sequence, modification or charge); those keep a spectral angle of -1.");
+
+            return model.GenerateLibrarySpectraFromPredictions(new double?[model.Predictions.Count], out _);
+        }
+
+        /// <summary>
+        /// Files predicted spectra into the lookup. The model is built with
+        /// FragmentIonMappingMode.MapToInputFullSequence, so each spectrum already comes back under
+        /// the FullSequence it was requested with - the same key the PSMs query with.
+        ///
+        /// Real library entries already in the lookup win: a measured spectrum beats a predicted one.
+        /// </summary>
+        internal static void MergePredictedSpectra(
+            IEnumerable<LibrarySpectrum> predictedSpectra,
+            Dictionary<(string, int), LibrarySpectrum> lookup)
+        {
+            foreach (var spectrum in predictedSpectra)
+            {
+                var key = (spectrum.Sequence, spectrum.ChargeState);
+                if (!lookup.ContainsKey(key))
+                    lookup[key] = spectrum;
+            }
+        }
+
+        /// <summary>
+        /// Which PSMs the library did not cover, as one prediction request each. Deduplicated on
+        /// (FullSequence, PrecursorCharge), deliberately not on collision energy: the lookup that
+        /// scores PSMs is keyed the same way, as the spectral library is. The prediction is made at the
+        /// energy of the first PSM for that key, and the PSMs arrive sorted best first, so it is the
+        /// best-scoring PSM's energy. In a multi-file run acquired at different NCEs, every file is
+        /// scored against the prediction at that one energy.
+        ///
+        /// Separate from the request itself so it can be unit tested. Everything here is a pure
+        /// function of the PSMs and the library lookup; only the Predict call that consumes it
+        /// needs the network.
+        /// </summary>
+        internal static Dictionary<(string, int), FragmentIntensityPredictionInput> BuildPredictionInputs(
+            List<SpectralMatch> psmsToScore,
+            Dictionary<(string, int), LibrarySpectrum> lookup)
+        {
+            var needsPrediction = new Dictionary<(string, int), FragmentIntensityPredictionInput>();
+            foreach (var psm in psmsToScore)
+            {
+                var key = (psm.FullSequence, psm.ScanPrecursorCharge);
+                if (lookup.ContainsKey(key) || needsPrediction.ContainsKey(key))
+                    continue;
+
+                needsPrediction[key] = new FragmentIntensityPredictionInput(
+                    FullSequence: psm.FullSequence,
+                    PrecursorCharge: psm.ScanPrecursorCharge,
+                    CollisionEnergy: ResolveCollisionEnergy(psm),
+                    InstrumentType: null,
+                    FragmentationType: null);
+            }
+
+            return needsPrediction;
+        }
+
+        /// <summary>
+        /// The collision energy to predict at: the scan's recorded HCD energy, which every PSM already
+        /// carries as CollisionalEnergy. Prosit needs a number, so 30 - a mid-range HCD energy rather
+        /// than a meaningful default - stands in when the scan did not record one.
+        /// </summary>
+        internal static int ResolveCollisionEnergy(SpectralMatch psm) =>
+            psm.CollisionalEnergy is double energy
+                ? (int)Math.Round(energy)
+                : 30;
+
+        internal List<SpectralMatch> GetSpectralMatchesWithoutComputedSpectralAngle()
+        {
+            // SpectralAngle < 0 is the "not computed" sentinel; 0 is a legitimate
+            // (terrible) score and must not trigger recomputation.
+            return Parameters.AllSpectralMatches
+                .Where(psm => psm.FullSequence != null && psm.SpectralAngle < 0)
+                .ToList();
+        }
+        /// <summary>
         /// Calculate estimated false-discovery rate (FDR) for peptide spectral matches (PSMs)
         /// </summary>
         private void CalculatePsmAndPeptideFdr(List<SpectralMatch> psms, string analysisType = "PSM", bool doPep = true)
@@ -149,7 +525,8 @@ namespace TaskLayer
 
             Status($"Estimating {GlobalVariables.AnalyteType.GetSpectralMatchLabel()} FDR...", Parameters.SearchTaskId);
             new FdrAnalysisEngine(psms, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters,
-                    new List<string> { Parameters.SearchTaskId }, analysisType: analysisType, doPEP: doPep, outputFolder: Parameters.OutputFolder).Run();
+                    new List<string> { Parameters.SearchTaskId }, analysisType: analysisType, doPEP: doPep, outputFolder: Parameters.OutputFolder,
+                    iterativePepTraining: Parameters.SearchParameters.IterativePepTraining).Run();
 
             Status($"Done estimating {GlobalVariables.AnalyteType.GetSpectralMatchLabel()} FDR!", Parameters.SearchTaskId);
         }
@@ -249,6 +626,261 @@ namespace TaskLayer
             }
         }
 
+        /// <summary>
+        /// Runs isobaric (TMT/iTRAQ) quantification through mzLib's <see cref="QuantificationEngine"/>.
+        /// </summary>
+        /// <remarks>
+        /// Before this existed, multiplex quantification stopped at the PSM level: reporter-ion
+        /// intensities were extracted during the search and written as extra columns in the .psmtsv, and
+        /// nothing rolled them up to peptides or proteins. This is the step that closes that gap.
+        ///
+        /// The three inputs the engine needs are now satisfied directly, with no .psmtsv round trip:
+        /// <see cref="SpectralMatch"/> implements <c>ISpectralMatch</c> (its <c>Intensities</c> are the
+        /// reporter-ion intensities), <see cref="ProteinGroup"/> implements <c>IBioPolymerGroup</c>, and
+        /// <see cref="TmtExperimentalDesign.ToMzLibDesign"/> projects TmtDesign.txt onto
+        /// <c>IExperimentalDesign</c>.
+        ///
+        /// Nothing here is fatal. A missing or unreadable design file leaves the search exactly as it
+        /// was — the reporter-ion columns still reach the .psmtsv — because a TMT search without a
+        /// channel-to-sample mapping is a legitimate thing to run.
+        /// </remarks>
+        private void MultiplexQuantificationAnalysis()
+        {
+            if (Parameters.CurrentRawFileList.IsNullOrEmpty())
+            {
+                return;
+            }
+
+            string designDirectory = Directory.GetParent(Parameters.CurrentRawFileList.First())?.FullName;
+            string tmtDesignPath = designDirectory == null
+                ? null
+                : Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName);
+
+            if (tmtDesignPath == null || !File.Exists(tmtDesignPath))
+            {
+                Warn($"No {GlobalVariables.TmtExperimentalDesignFileName} found next to the spectra files, so " +
+                     "reporter ion intensities were written per PSM but not quantified per channel.");
+                return;
+            }
+
+            Status("Quantifying multiplex channels...", Parameters.SearchTaskId);
+
+            var tmtFiles = TmtExperimentalDesign.Read(tmtDesignPath, Parameters.CurrentRawFileList, out var designErrors);
+            if (designErrors.Any())
+            {
+                Warn("Error reading TMT design file: " + designErrors.First() + ". Skipping multiplex quantification");
+                return;
+            }
+
+            // Copy the design into the output folder, as the label-free path does for ExperimentalDesign,
+            // so a result folder records the design it was quantified under. AFTER the read, not before:
+            // a design that could not be parsed was not quantified under anything, and archiving it
+            // anyway left it in the results folder and announced it through FinishedWritingFile while
+            // this method was on its way out.
+            try
+            {
+                string copiedDesign = Path.Combine(Parameters.OutputFolder, Path.GetFileName(tmtDesignPath));
+                File.Copy(tmtDesignPath, copiedDesign, overwrite: true);
+                FinishedWritingFile(copiedDesign, new List<string> { Parameters.SearchTaskId });
+            }
+            catch (Exception e)
+            {
+                // Named, not swallowed: a user whose archive failed can act on "access is denied" and
+                // can do nothing with "could not copy".
+                Warn("Could not copy the TMT design file to the search task output: " + e.Message +
+                     ". That's ok, the search will continue");
+            }
+
+            var tag = IsobaricMassTag.GetIsobaricMassTag(Parameters.SearchParameters.MultiplexModId);
+            var experimentalDesign = TmtExperimentalDesign.ToMzLibDesign(tmtFiles, tag, out var projectionErrors, out var projectionWarnings);
+            if (experimentalDesign == null || projectionErrors.Any())
+            {
+                Warn("Could not build a quantification design from the TMT design file: " +
+                     (projectionErrors.FirstOrDefault() ?? "unknown error") + ". Skipping multiplex quantification");
+                return;
+            }
+            foreach (var warning in projectionWarnings)
+                Warn(warning);
+
+            // includeAmbiguous: false is the unambiguous filter the design calls for. A PSM that could be
+            // more than one peptide would otherwise have its channel intensities credited to whichever
+            // candidate happened to sort first.
+            //
+            // includeContaminants follows WriteContaminants, the same switch ProteinGroupIsWritten reads
+            // below. Passing true unconditionally made the quantified set wider than the written set at
+            // the PSM and peptide levels but not the protein level: with the box unticked, contaminant
+            // peptides appeared in RawQuantification.tsv and PeptideQuantification.tsv while their
+            // groups were absent from ProteinGroupQuantification.tsv.
+            FilteredPsms FilterMatches(bool includeContaminants) => FilteredPsms.Filter(
+                Parameters.AllSpectralMatches,
+                CommonParameters,
+                includeDecoys: false,
+                includeContaminants: includeContaminants,
+                includeAmbiguous: false,
+                includeAmbiguousMods: false,
+                includeHighQValuePsms: false);
+
+            static bool CarriesReporterIons(SpectralMatch psm) =>
+                psm.IsobaricMassTagReporterIonIntensities is { Length: > 0 };
+
+            var filteredPsms = FilterMatches(Parameters.SearchParameters.WriteContaminants);
+
+            var quantifiablePsms = filteredPsms.Where(CarriesReporterIons).ToList();
+
+            if (quantifiablePsms.Count == 0)
+            {
+                // Name the filter that emptied the set. With the contaminant box unticked, every
+                // reporter-bearing match in a run can be a contaminant, and the plain wording then
+                // blames the data for what the filter above removed. Asked only on the way out, so a
+                // run that quantifies never pays for the second filter.
+                bool contaminantsCarriedThemAll = !Parameters.SearchParameters.WriteContaminants
+                    && FilterMatches(includeContaminants: true).Any(CarriesReporterIons);
+
+                Warn(contaminantsCarriedThemAll
+                    ? "Every spectral match that carried reporter ion intensities was a contaminant, and " +
+                      "contaminants are not being written. Skipping multiplex quantification"
+                    : "No spectral matches carried reporter ion intensities. Skipping multiplex quantification");
+                return;
+            }
+
+            if (ProteinGroups.IsNullOrEmpty())
+            {
+                Warn("Multiplex quantification needs protein groups, which this search did not produce " +
+                     "(parsimony may be off). Skipping multiplex quantification");
+                return;
+            }
+
+            // Quantify only the groups that AllProteinGroups.tsv will actually show. The PSMs above are
+            // filtered to targets below threshold; leaving the groups unfiltered put rows in
+            // ProteinGroupQuantification.tsv -- decoy groups, and groups above the q-value threshold --
+            // that the protein table suppresses, so the two files disagreed about which groups exist.
+            // The predicate is the writer's own, so the two cannot drift apart.
+            double proteinQValueThreshold = ProteinGroupQValueThreshold(filteredPsms.FilterType);
+            var quantifiableProteinGroups = ProteinGroups
+                .Where(proteinGroup => ProteinGroupIsWritten(proteinGroup, proteinQValueThreshold))
+                .ToList();
+
+            if (quantifiableProteinGroups.Count == 0)
+            {
+                Warn("No protein group survived the filters that decide what reaches AllProteinGroups.tsv, " +
+                     "so there is nothing to quantify onto. Skipping multiplex quantification");
+                return;
+            }
+
+            var peptides = quantifiablePsms
+                .SelectMany(psm => psm.GetIdentifiedBioPolymersWithSetMods())
+                .Distinct()
+                .ToList();
+
+            var quantParameters = new QuantificationParameters
+            {
+                // Deliberately conservative: sum reporter intensities up to peptides and proteins and
+                // normalize nothing. Every strategy mzLib offers -- reference-channel normalization in
+                // particular, which this design file can already describe via its Sample Type column --
+                // is a user-facing choice, and none of them should start applying themselves silently.
+                SpectralMatchNormalizationStrategy = new NoNormalization(),
+                SpectralMatchToPeptideRollUpStrategy = new SumRollUp(),
+                PeptideNormalizationStrategy = new NoNormalization(),
+                CollapseStrategy = new NoCollapse(),
+                CollapseAggregationStrategy = new SumAggregation(),
+                PeptideToProteinRollUpStrategy = new SumRollUp(),
+                ProteinNormalizationStrategy = new NoNormalization(),
+
+                // The same switch the label-free path reads, and the same GUI checkbox, which is labelled
+                // for quantification rather than for LFQ. Off by default, so a protein group left with no
+                // unique peptides quantifies to nothing -- the existing label-free behaviour, not
+                // something the isobaric path should decide differently on its own.
+                UseSharedPeptidesForProteinQuant = Parameters.SearchParameters.UseSharedPeptidesForLFQ,
+
+                // Set explicitly. Left empty, the engine falls back to writing beside the spectra files,
+                // which is right for a caller that has no output folder of its own and wrong for a task
+                // that does.
+                OutputDirectory = Parameters.OutputFolder,
+                WriteRawInformation = true,
+                WritePeptideInformation = true,
+                WriteProteinInformation = true
+            };
+
+            var engine = new QuantificationEngine(
+                quantParameters,
+                experimentalDesign,
+                quantifiablePsms.Cast<ISpectralMatch>().ToList(),
+                peptides,
+                quantifiableProteinGroups.Cast<IBioPolymerGroup>().ToList());
+
+            var results = engine.Run();
+
+            if (!results.Success)
+            {
+                Warn("Multiplex quantification did not run: " + results.Summary);
+                return;
+            }
+
+            Parameters.MultiplexQuantificationResults = results;
+
+            // The engine drops any match it cannot attribute to exactly one biopolymer, and counts them
+            // rather than throwing. Reported here because the loss is otherwise invisible: the peptide and
+            // protein tables simply total less than the per-PSM reporter columns, and in the worst case --
+            // every peptide in the search shared between two groups -- they total zero while the raw
+            // table looks perfectly healthy. The exclusion itself is mzLib's: one sequence found in two
+            // proteins is two unequal PeptideWithSetModifications, so the engine's unambiguous filter
+            // drops it. Tracked as smith-chem-wisc/mzLib#1280; this warning stands whatever comes of it.
+            if (results.AmbiguousSpectralMatchesExcluded > 0)
+            {
+                Warn($"{results.AmbiguousSpectralMatchesExcluded} spectral match(es) were left out of " +
+                     "multiplex quantification because they did not identify exactly one biopolymer, so the " +
+                     "peptide and protein tables total less than the reporter ion columns in the .psmtsv. A " +
+                     "peptide shared between two protein groups is the usual cause");
+            }
+
+            // Rebuild the per-group column schema the engine's write-back invalidated: assigning
+            // IntensitiesBySample and SamplesForQuantification clears the cached SampleGroupResults, and
+            // this copy of the protein header reads that cache without rebuilding it, unlike mzLib's base
+            // header. Left alone, AllProteinGroups.tsv loses its SpectralCount_ and CountOccupancy_
+            // columns and never gains the Intensity_ ones this method exists to produce. Same fix, and the
+            // same reason, as the label-free path's loop.
+            //
+            // The groups held back above are given this run's channels with no values, so that the header
+            // and every row agree on the columns however the groups happen to sort. The engine hands every
+            // group it received a dictionary -- empty when nothing was measured -- so a null one is
+            // exactly a group that was held back.
+            foreach (var proteinGroup in ProteinGroups)
+            {
+                if (proteinGroup.IntensitiesBySample == null)
+                {
+                    proteinGroup.SamplesForQuantification = results.Samples.ToList();
+                    proteinGroup.IntensitiesBySample = new Dictionary<ISampleInfo, double>();
+                }
+
+                proteinGroup.PopulateSampleGroupResults();
+            }
+
+            foreach (string writtenFile in results.WrittenFiles.Where(f => f != null))
+            {
+                FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
+            }
+        }
+
+        /// <summary>
+        /// The q-value threshold a protein group is held to for output, which follows whichever filter
+        /// type the PSMs were filtered under.
+        /// </summary>
+        private double ProteinGroupQValueThreshold(FilterType filterType) => filterType switch
+        {
+            FilterType.PepQValue => CommonParameters.PepQValueThreshold,
+            _ => CommonParameters.QValueThreshold
+        };
+
+        /// <summary>
+        /// True when a protein group will be written to AllProteinGroups.tsv under the current search
+        /// parameters. Shared with <see cref="WriteProteinGroupsToTsv"/>, so quantification cannot end up
+        /// covering a different set of groups than the protein table shows.
+        /// </summary>
+        private bool ProteinGroupIsWritten(EngineLayer.ProteinGroup proteinGroup, double qValueThreshold) =>
+            (Parameters.SearchParameters.WriteDecoys || !proteinGroup.IsDecoy)
+            && (Parameters.SearchParameters.WriteContaminants || !proteinGroup.IsContaminant)
+            && (Parameters.SearchParameters.WriteHighQValuePsms || proteinGroup.QValue <= qValueThreshold);
+
         private void QuantificationAnalysis()
         {
             try
@@ -266,6 +898,8 @@ namespace TaskLayer
                     {
                         Parameters.MultiplexModification = multiplexMods.MaxBy(m => m.DiagnosticIons.Count);
                     }
+
+                    MultiplexQuantificationAnalysis();
                     return;
                 }
 
@@ -559,6 +1193,8 @@ namespace TaskLayer
 
                     foreach (var psm in spectraFile)
                     {
+
+
                         flashLFQIdentifications.Add(
                             new Identification(
                                 fileInfo: rawfileinfo,
@@ -568,6 +1204,7 @@ namespace TaskLayer
                                 psm.ScanRetentionTime,
                                 psm.ScanPrecursorCharge,
                                 psmToProteinGroups[psm],
+                                optionalChemicalFormula: GlobalVariables.AnalyteType == AnalyteType.Oligo ? psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.ThisChemicalFormula : null,
                                 psmScore: psm.Score,
                                 qValue: psmsForQuantification.FilterType == FilterType.QValue ? psm.FdrInfo.QValue : psm.FdrInfo.PEP_QValue,
                                 decoy: psm.IsDecoy,
@@ -583,6 +1220,7 @@ namespace TaskLayer
                     normalize: Parameters.SearchParameters.Normalize,
                     ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
                     matchBetweenRunsPpmTolerance: Parameters.SearchParameters.QuantifyPpmTol,  // If these tolerances are not equivalent, then MBR will falsely classify peptides found in the initial search as MBR peaks
+                    rnaMode: GlobalVariables.AnalyteType == AnalyteType.Oligo,
                     matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
                     matchBetweenRunsFdrThreshold: Parameters.SearchParameters.MbrFdrThreshold,
                     useSharedPeptidesForProteinQuant: Parameters.SearchParameters.UseSharedPeptidesForLFQ,
@@ -990,8 +1628,7 @@ namespace TaskLayer
                     includeDecoys: false,
                     includeContaminants: false,
                     includeAmbiguous: false,
-                    includeHighQValuePsms: false
-                    );
+                    includeHighQValuePsms: false);
 
 
             //group psms by peptide and charge, then write highest scoring PSM to dictionary
@@ -1203,10 +1840,17 @@ namespace TaskLayer
 
                 // Per-file quant/occupancy columns on the subset groups, so the individual-file report
                 // carries the same schema as the combined one, computed from this file's own PSMs.
+                // Unconditional. The guard this replaced read FilesForQuantification, which is a
+                // SpectraFileInfo-only view: on a multiplex run every group carries isobaric samples
+                // and no spectra file, so ConstructSubsetProteinGroup finds nothing to match and leaves
+                // the subset's sample list unset -- and the guard then skipped the one call that would
+                // have given it columns. A subset with no samples is not a subset with nothing to say:
+                // mzLib groups its PSMs by source file and reports the counts, which is exactly what an
+                // individual-file table wants. Groups that DO carry files are unaffected, so the
+                // label-free path behaves as before.
                 foreach (var subsetProteinGroup in subsetProteinGroupsForThisFile)
                 {
-                    if (subsetProteinGroup.FilesForQuantification != null)
-                        subsetProteinGroup.PopulateSampleGroupResults();
+                    subsetProteinGroup.PopulateSampleGroupResults();
                 }
 
                 if (Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
@@ -1243,7 +1887,8 @@ namespace TaskLayer
                         CommonParameters.PrecursorMassTolerance,
                         CommonParameters.DigestionParams.MaxMissedCleavages,
                         mzidFilePath,
-                        Parameters.SearchParameters.IncludeModMotifInMzid);
+                        Parameters.SearchParameters.IncludeModMotifInMzid,
+                        IsSemiSpecificForMzIdentMl(CommonParameters.DigestionParams));
 
                     FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                 }
@@ -1272,10 +1917,107 @@ namespace TaskLayer
             }
         }
 
+        /// <summary>
+        /// Removes contaminant rows from the FlashLFQ-authored tables when the user asked not to write
+        /// contaminants, so AllQuantifiedPeptides.tsv and AllQuantifiedPeaks.tsv agree with the tables
+        /// beside them instead of contradicting them. WriteContaminants already reaches the protein
+        /// table (ProteinGroupIsWritten) and MetaMorpheus's own PSM and peptide tables; these two are
+        /// written by mzLib from FlashLfqResults, which has no contaminant concept, so the filter has
+        /// to be applied here.
+        ///
+        /// A sequence is dropped only when EVERY spectral match carrying it is a contaminant. A
+        /// sequence shared with a target protein is itself a contaminant, because
+        /// SpectralMatch.IsContaminant is Any(parent.IsContaminant), so it is withheld here exactly
+        /// as from AllPeptides.tsv. The target-match set only guards matches of one sequence that
+        /// disagree on the flag.
+        ///
+        /// DELIBERATELY AT WRITE TIME, not by narrowing peptideSequencesForQuantification above.
+        /// That list becomes FlashLfqEngine.PeptideModifiedSequencesToQuantify, which mzLib consults
+        /// INSIDE quantification rather than only on the way out - in its peak filtering, and in the MBR
+        /// choice between two peaks sharing an apex, where set membership decides which survives.
+        /// Narrowing it can therefore move target intensities. Filtering here cannot: the engine sees exactly what it saw before.
+        ///
+        /// Safe to mutate the results object because every consumer that reads a NUMBER out of it has
+        /// already run - protein group intensities at QuantificationAnalysis (the IntensitiesByFile
+        /// assignment), DistributeQuantifiedIntensities, and WriteProteinResults all precede this in
+        /// Run(). Nothing after this reads FlashLfqResults.
+        ///
+        /// Under SILAC the three sets of names do not agree: PSMs and peak identifications carry the
+        /// label's mass difference (PEPTIDEK(+8.014)), the peptide table is keyed by the unlabeled
+        /// sequence, and a label channel no spectrum identified has peaks but no PSM. So every name is
+        /// compared in the unlabeled form the peptide table uses.
+        /// </summary>
+        private void RemoveContaminantsFromQuantificationTables()
+        {
+            if (Parameters.SearchParameters.WriteContaminants)
+            {
+                return;
+            }
+
+            var sequencesWithATargetMatch = new HashSet<string>(Parameters.AllSpectralMatches
+                .Where(psm => !psm.IsContaminant && psm.FullSequence != null)
+                .Select(psm => UnlabeledSequence(psm.FullSequence)));
+
+            var contaminantOnlySequences = new HashSet<string>(Parameters.AllSpectralMatches
+                .Where(psm => psm.IsContaminant && psm.FullSequence != null)
+                .Select(psm => UnlabeledSequence(psm.FullSequence))
+                .Where(sequence => !sequencesWithATargetMatch.Contains(sequence)));
+
+            if (contaminantOnlySequences.Count == 0)
+            {
+                return;
+            }
+
+            foreach (string sequence in Parameters.FlashLfqResults.PeptideModifiedSequences.Keys.ToList())
+            {
+                if (contaminantOnlySequences.Contains(UnlabeledSequence(sequence)))
+                {
+                    Parameters.FlashLfqResults.PeptideModifiedSequences.Remove(sequence);
+                }
+            }
+
+            // A peak carries every identification that resolved to it, so it is a contaminant row only
+            // when none of them is a sequence still being written.
+            foreach (var file in Parameters.FlashLfqResults.Peaks.Keys.ToList())
+            {
+                Parameters.FlashLfqResults.Peaks[file].RemoveAll(peak =>
+                    peak.Identifications.Count > 0
+                    && peak.Identifications.All(id => contaminantOnlySequences.Contains(UnlabeledSequence(id.ModifiedSequence))));
+            }
+        }
+
+        /// <summary>
+        /// A sequence with every SILAC label written back as its original residue, the form the
+        /// SILAC peptide table is keyed by. Unchanged when the search has no SILAC labels.
+        /// </summary>
+        private string UnlabeledSequence(string sequence)
+        {
+            var labels = new List<SilacLabel>();
+            foreach (var label in (Parameters.SearchParameters.SilacLabels ?? new List<SilacLabel>())
+                .Append(Parameters.SearchParameters.StartTurnoverLabel)
+                .Append(Parameters.SearchParameters.EndTurnoverLabel)
+                .Where(label => label != null))
+            {
+                labels.Add(label);
+                if (label.AdditionalLabels != null)
+                {
+                    labels.AddRange(label.AdditionalLabels);
+                }
+            }
+
+            foreach (var label in labels)
+            {
+                sequence = sequence.Replace(SilacConversions.HeavyStringForPeptides(label), label.OriginalAminoAcid.ToString());
+            }
+            return sequence;
+        }
+
         private void WriteFlashLFQResults()
         {
             if (Parameters.SearchParameters.DoLabelFreeQuantification && Parameters.FlashLfqResults != null)
             {
+                RemoveContaminantsFromQuantificationTables();
+
                 // write peaks
                 WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
 
@@ -1705,20 +2447,14 @@ namespace TaskLayer
             if (proteinGroups != null && proteinGroups.Any())
             {
                 // Set threshold based on the filter type being used
-                double qValueThreshold = filterType switch
-                {
-                    FilterType.PepQValue => CommonParameters.PepQValueThreshold,
-                    _ => CommonParameters.QValueThreshold
-                };
+                double qValueThreshold = ProteinGroupQValueThreshold(filterType);
 
                 using (StreamWriter output = new StreamWriter(filePath))
                 {
                     output.WriteLine(proteinGroups.First().GetTabSeparatedHeader());
                     for (int i = 0; i < proteinGroups.Count; i++)
                     {
-                        if ((!Parameters.SearchParameters.WriteDecoys && proteinGroups[i].IsDecoy) ||
-                            (!Parameters.SearchParameters.WriteContaminants && proteinGroups[i].IsContaminant) ||
-                            (!Parameters.SearchParameters.WriteHighQValuePsms && proteinGroups[i].QValue > qValueThreshold))
+                        if (!ProteinGroupIsWritten(proteinGroups[i], qValueThreshold))
                         {
                             continue;
                         }

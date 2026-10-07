@@ -122,6 +122,39 @@ namespace Test
             Assert.That(Regex.Matches(pgHeader, @"\t").Count, Is.EqualTo(Regex.Matches(pgRow, @"\t").Count));
         }
 
+        // The header must follow the object, not the reference it is held by. AllProteinGroups.tsv is
+        // written by code that holds ProteinGroup, but nothing stops a caller from holding the base
+        // type, and ToString() has always overridden. While GetTabSeparatedHeader() only hid the base
+        // method with `new`, a BioPolymerGroup reference paired BASE column names with a MetaMorpheus
+        // row: "BioPolymer Accession" over a protein table, no "Best Peptide PEP" column for the value
+        // the row still wrote, and -- because the base method lazy-populates SampleGroupResults where
+        // this one does not -- a different number of columns as well. The override is what fixes that,
+        // so this asserts through the base reference, which is the binding that used to be wrong.
+        [Test]
+        public static void TestProteinGroupHeaderDispatchesThroughBaseReference()
+        {
+            Protein prot1 = new Protein("MEDEEK", "prot1");
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(prot1, new DigestionParams(), 1, 3,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            ProteinGroup pg = new ProteinGroup(new HashSet<IBioPolymer> { prot1 },
+                new HashSet<IBioPolymerWithSetMods> { pwsm1 }, new HashSet<IBioPolymerWithSetMods> { pwsm1 });
+
+            Omics.BioPolymerGroup.BioPolymerGroup asBase = pg;
+
+            string headerThroughBase = asBase.GetTabSeparatedHeader();
+
+            Assert.That(headerThroughBase, Is.EqualTo(pg.GetTabSeparatedHeader()),
+                "GetTabSeparatedHeader must dispatch to ProteinGroup through a base reference; if it does not, "
+                + "the base method's columns are written above ProteinGroup's rows.");
+            Assert.That(headerThroughBase, Does.Contain("Protein Accession"));
+            Assert.That(headerThroughBase, Does.Contain("Best Peptide PEP"));
+            Assert.That(headerThroughBase, Does.Not.Contain("BioPolymer Accession"));
+
+            // The header taken through the base reference must still line up with the row, which has
+            // always dispatched.
+            Assert.That(headerThroughBase.Split('	').Length, Is.EqualTo(asBase.ToString().Split('	').Length));
+        }
+
         // No upstream quant setup -> no dynamic columns in header or row.
         [Test]
         public static void TestProteinGroupNoDynamicColumnsWhenSampleGroupResultsNotPopulated()

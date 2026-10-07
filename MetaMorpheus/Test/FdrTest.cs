@@ -256,6 +256,37 @@ namespace Test
             float maxPsmIntensity = Math.Min(50, (float)Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0, 0));
             Assert.That(maxPsmIntensity, Is.EqualTo(maxPsmData.Intensity).Within(0.05));
             Assert.That(maxPsmData.HydrophobicityZScore, Is.EqualTo(52.0).Within(0.05));
+            // A retention time the predictor COULD produce must be marked available.
+            Assert.That(maxPsmData.HasHydrophobicity, Is.EqualTo(1));
+
+            // And a peptidoform the predictor cannot represent must be marked UNavailable, rather than being
+            // scored as though its predicted hydrophobicity were zero. Zero is a real and extreme value on this
+            // scale, so the old `?? 0` turned "could not predict" into the maximum z-score, which the model reads
+            // as strong evidence against the candidate. See PsmData.HasHydrophobicity.
+            var unpredictableEngine = new PepAnalysisEngine(nonNullPsms, "standard", fsp,
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"), new NeverPredictsRetentionTime());
+            foreach (var p in unpredictableEngine.GetType().GetProperties())
+            {
+                switch (p.Name)
+                {
+                    case "FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified":
+                        p.SetValue(unpredictableEngine, fileSpecificRetTimeHI_behavior);
+                        break;
+                    case "FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified":
+                        p.SetValue(unpredictableEngine, fileSpecificRetTemHI_behaviorModifiedPeptides);
+                        break;
+                    case "ChargeStateMode":
+                        p.SetValue(unpredictableEngine, chargeStateMode);
+                        break;
+                    case "FileSpecificMedianFragmentMassErrors":
+                        p.SetValue(unpredictableEngine, massError);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            var unpredictableData = unpredictableEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
+            Assert.That(unpredictableData.HasHydrophobicity, Is.EqualTo(0));
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
@@ -266,7 +297,10 @@ namespace Test
             List<SpectralMatch> psmCopyForPEPFailure = nonNullPsms.ToList();
             List<SpectralMatch> psmCopyForNoOutputFolder = nonNullPsms.ToList();
 
+            int hypothesesBeforePep = nonNullPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count());
             pepEngine.ComputePEPValuesForAllPSMs();
+            // PEP scores; by default it does not prune ambiguous hypotheses
+            Assert.That(nonNullPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count()), Is.EqualTo(hypothesesBeforePep));
 
             int trueCount = 0;
 
@@ -389,6 +423,151 @@ namespace Test
             string nullOutputFolderResults = pepEngine.ComputePEPValuesForAllPSMs();
         }
 
+        /// <summary>
+        /// A full PEP run, then disambiguation by PEP, as glyco, crosslink and nonspecific searches run them. PEP records
+        /// a PEP on every hypothesis and removes none. Disambiguation must not change any match's PEP (it never drops a
+        /// match's best hypothesis), and its results must report the count of hypotheses it removed.
+        /// </summary>
+        [Test]
+        public static void DisambiguationByPep_RemovesHypothesesButChangesNoPep()
+        {
+            List<SpectralMatch> Search(out List<(string fileName, CommonParameters fileSpecificParameters)> fsp)
+            {
+                var commonParameters = new CommonParameters(digestionParams: new DigestionParams());
+                fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("TaGe_SA_HeLa_04_subset_longestSeq.mzML", commonParameters) };
+                var dataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+                var msDataFile = new MyFileManager(true).LoadFile(dataFile, commonParameters);
+                List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, out _,
+                    ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex, ProteinDbLoader.UniprotOrganismRegex, -1);
+                var scans = MetaMorpheusTask.GetMs2Scans(msDataFile, dataFile, commonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+                SpectralMatch[] psmArray = new PeptideSpectralMatch[scans.Length];
+                new ClassicSearchEngine(psmArray, scans, new List<Modification>(), new List<Modification>(), null, null, null,
+                    proteins, new SinglePpmAroundZeroSearchMode(5), commonParameters, fsp, null, new List<string>(), false).Run();
+                var psms = psmArray.Where(p => p != null).ToList();
+                // Make some matches ambiguous: a decoy peptide as a second hypothesis at the same score.
+                var decoyPeptides = psms.Where(p => p.IsDecoy).Select(p => p.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer).ToList();
+                foreach (var (psm, decoy) in psms.Where(p => !p.IsDecoy).Zip(decoyPeptides).Take(30))
+                {
+                    psm.AddOrReplace(decoy, psm.Score, 0, true, psm.BestMatchingBioPolymersWithSetMods.First().MatchedIons);
+                    psm.ResolveAllAmbiguities();
+                }
+                new FdrAnalysisEngine(psms, 1, commonParameters, fsp, new List<string>()).Run();
+                return psms;
+            }
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\");
+
+            var keptPsms = Search(out var fsp);
+            int hypothesesBefore = keptPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count());
+            new PepAnalysisEngine(keptPsms, "standard", fsp, outputFolder).ComputePEPValuesForAllPSMs();
+
+            // PEP removes nothing, and each match's PEP is its best hypothesis's
+            Assert.That(keptPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count()), Is.EqualTo(hypothesesBefore));
+            Assert.That(keptPsms.SelectMany(p => p.BestMatchingBioPolymersWithSetMods).All(h => h.PEP.HasValue));
+            Assert.That(keptPsms.Select(p => p.BestMatchingBioPolymersWithSetMods.Min(h => h.PEP!.Value)),
+                Is.EqualTo(keptPsms.Select(p => p.PsmFdrInfo.PEP)));
+
+            var prunedPsms = Search(out fsp);
+            new PepAnalysisEngine(prunedPsms, "standard", fsp, outputFolder).ComputePEPValuesForAllPSMs();
+            var results = (DisambiguationEngineResults)new DisambiguationEngine(prunedPsms, fsp.First().fileSpecificParameters, fsp, new List<string>(),
+                AbsolutePepGapRule.PepEngineRule).Run();
+            int removed = hypothesesBefore - prunedPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count());
+
+            Assert.That(removed, Is.GreaterThan(0), "the fixture must have hypotheses to remove");
+            Assert.That(results.RemovedByPEP, Is.EqualTo(removed));
+            Assert.That(results.ToString(), Does.Contain($"removed by PEP: {removed}"));
+            Assert.That(prunedPsms.Select(p => p.PsmFdrInfo.PEP), Is.EqualTo(keptPsms.Select(p => p.PsmFdrInfo.PEP)));
+        }
+
+        /// <summary>
+        /// With no PEP rule, the engine removes nothing by PEP and its results carry no PEP line, so a search that does
+        /// not ask for it writes what it wrote before.
+        /// </summary>
+        [Test]
+        public static void DisambiguationEngine_WithoutPepRule_RemovesNothingByPep()
+        {
+            var (psm, hypotheses) = PsmWithFourSameNotchHypotheses(0, 0.2, 0.01, 0.3);
+            var results = (DisambiguationEngineResults)new DisambiguationEngine(new List<SpectralMatch> { psm }, new CommonParameters(),
+                new List<(string, CommonParameters)>(), new List<string>()).Run();
+
+            Assert.That(results.RemovedByPEP, Is.Null);
+            Assert.That(results.ToString(), Does.Not.Contain("by PEP"));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods, Is.EquivalentTo(hypotheses));
+        }
+
+        /// <summary>
+        /// Removes exactly the hypotheses the rule names, when more than one goes from one match. The PEP engine's own
+        /// removal indexed an unchanging copy of the hypotheses as if it shrank, so with two removals it removed the
+        /// wrong one and still counted two.
+        /// </summary>
+        [Test]
+        public static void DisambiguationByPep_RemovesEveryHypothesisTheRuleNames()
+        {
+            var (psm, hypotheses) = PsmWithFourSameNotchHypotheses(0, 0.2, 0.01, 0.3);
+            var results = (DisambiguationEngineResults)new DisambiguationEngine(new List<SpectralMatch> { psm }, new CommonParameters(),
+                new List<(string, CommonParameters)>(), new List<string>(), AbsolutePepGapRule.PepEngineRule).Run();
+
+            Assert.That(results.RemovedByPEP, Is.EqualTo(2));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods, Is.EquivalentTo(new[] { hypotheses[0], hypotheses[2] }));
+        }
+
+        /// <summary>
+        /// A match whose hypotheses do not all carry a PEP was not scored by PEP, and is left alone.
+        /// </summary>
+        [Test]
+        public static void DisambiguationByPep_SkipsAMatchWithoutPeps()
+        {
+            var (psm, hypotheses) = PsmWithFourSameNotchHypotheses(0, 0.2, 0.01, 0.3);
+            hypotheses[3].PEP = null;
+            var results = (DisambiguationEngineResults)new DisambiguationEngine(new List<SpectralMatch> { psm }, new CommonParameters(),
+                new List<(string, CommonParameters)>(), new List<string>(), AbsolutePepGapRule.PepEngineRule).Run();
+
+            Assert.That(results.RemovedByPEP, Is.EqualTo(0));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(4));
+        }
+
+        [Test]
+        public static void AbsolutePepGapRule_RemovesOnlyHypothesesMoreThanTheGapAboveTheBest()
+        {
+            var (_, hypotheses) = PsmWithFourSameNotchHypotheses(0.1, 0.14, 0.16, 0.4);
+            var removed = new AbsolutePepGapRule(0.05).HypothesesToRemove(hypotheses).ToList();
+
+            // the best is never removed
+            Assert.That(removed, Is.EquivalentTo(new[] { hypotheses[2], hypotheses[3] }));
+        }
+
+        /// <summary>
+        /// One match with four equal-score hypotheses at the same notch (four peptides of one protein), each given the
+        /// PEP at its position, as the PEP engine would record them. Same notch, so disambiguation by notch q-value
+        /// does not touch them.
+        /// </summary>
+        private static (SpectralMatch Psm, List<SpectralMatchHypothesis> Hypotheses) PsmWithFourSameNotchHypotheses(params double[] peps)
+        {
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(
+                    new MzSpectrum(new double[] { }, new double[] { }, false),
+                    2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
+                100, 1, null, new CommonParameters(), null);
+
+            var protein = new Protein("PEPTIDEK", "ACCESSION", "ORGANISM");
+            var peptides = Enumerable.Range(2, 4).Select(end => new PeptideWithSetModifications(protein, new DigestionParams(), 1, end,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0)).ToList();
+
+            SpectralMatch psm = new PeptideSpectralMatch(peptides[0], 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            foreach (var peptide in peptides.Skip(1))
+            {
+                psm.AddOrReplace(peptide, 1, 0, true, new List<MatchedFragmentIon>());
+            }
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 1, 0);
+            psm.PeptideFdrInfo = new FdrInfo();
+
+            var hypotheses = psm.BestMatchingBioPolymersWithSetMods.ToList();
+            for (int i = 0; i < hypotheses.Count; i++)
+            {
+                hypotheses[i].PEP = peps[i];
+            }
+            return (psm, hypotheses);
+        }
+
         [Test]
         public static void TestComputePEPValueTopDown()
         {
@@ -496,10 +675,8 @@ namespace Test
         }
 
         [Test]
-        public static void TestPEP_peptideRemoval()
+        public static void AssignPep_TakesTheBestPredictionAndRemovesNothing()
         {
-            int ambiguousPeptidesRemovedCount = 0;
-
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(
                 new MsDataScan(
                     new MzSpectrum(new double[] { }, new double[] { }, false),
@@ -514,18 +691,14 @@ namespace Test
             psm.SetFdrValues(1, 0, 0, 1, 0, 0, 1, 0);
             psm.PeptideFdrInfo = new FdrInfo();
 
-            List<int> indicesOfPeptidesToRemove = new List<int>();
-            List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
+            // the third hypothesis sits well below the best
             List<double> pepValuePredictions = new List<double> { 1.0d, 0.99d, 0.9d };
+            PepAnalysisEngine.AssignPep(psm, pepValuePredictions);
 
-            PepAnalysisEngine.GetIndicesOfPeptidesToRemove(indicesOfPeptidesToRemove, pepValuePredictions);
-            Assert.That(indicesOfPeptidesToRemove.Count, Is.EqualTo(1));
-            Assert.That(indicesOfPeptidesToRemove.FirstOrDefault(), Is.EqualTo(2));
-            Assert.That(pepValuePredictions.Count, Is.EqualTo(2));
-
-            PepAnalysisEngine.RemoveBestMatchingPeptidesWithLowPEP(psm, indicesOfPeptidesToRemove, psm.BestMatchingBioPolymersWithSetMods.ToList(), ref ambiguousPeptidesRemovedCount);
-            Assert.That(ambiguousPeptidesRemovedCount, Is.EqualTo(1));
-            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Select(b => b.Notch).ToList().Count, Is.EqualTo(2));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(3));
+            // PEP comes from the best hypothesis
+            Assert.That(psm.PsmFdrInfo.PEP, Is.EqualTo(0).Within(1e-12));
+            Assert.That(psm.PeptideFdrInfo.PEP, Is.EqualTo(0).Within(1e-12));
         }
 
         [Test]
@@ -713,7 +886,7 @@ namespace Test
                 "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch",
                 "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity",
                 "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide",
-                "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle",
+                "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle", "HasHydrophobicity",
                 "PrecursorDeconvolutionScore"
             };
             Assert.That(trainingInfoStandard, Is.EqualTo(expectedTrainingInfoStandard));
@@ -784,9 +957,10 @@ namespace Test
                 PrecursorFractionalIntensity = 26,
                 InternalIonCount = 27,
                 PrecursorDeconvolutionScore = 28,
+                HasHydrophobicity = 29,
             };
 
-            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t17\t18\t21\t22\t28";
+            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t17\t18\t21\t22\t29\t28";
             Assert.That(pd.ToString("standard"), Is.EqualTo(standardToString));
 
             string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9\t10\t21\t22\t23\t24\t25\t26\t27";
