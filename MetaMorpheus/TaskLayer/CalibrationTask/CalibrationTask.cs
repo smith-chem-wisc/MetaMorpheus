@@ -97,6 +97,15 @@ namespace TaskLayer
                     : fileSettingsList[spectraFileIndex].Clone();
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParams);
 
+                // An external MS1 feature file holds masses measured on the uncalibrated run. Each
+                // calibration round below also rewrites a copy of it with the same per-scan
+                // correction, so later acquisition rounds, and the tasks that read the -calib.toml,
+                // search calibrated feature masses alongside calibrated spectra.
+                var externalFeatures = combinedParams.AdditionalPrecursorDeconvolutionParameters as FromFileDeconvolutionParameters;
+                string calibratedFeatureFilePath = Path.Combine(Path.GetDirectoryName(calibratedNewFullFilePath),
+                    Path.GetFileNameWithoutExtension(calibratedNewFullFilePath) + SupportedFileType.Ms1Feature.GetFileExtension());
+                var featureCalibrationRounds = new List<IReadOnlyList<(double RetentionTime, double RelativeError)>>();
+
                 // load the file
                 Status("Loading spectra file...", new List<string> { _taskId, "Individual Spectra Files" });
                 MsDataFile myMsDataFile = _myFileManager.LoadFile(originalUncalibratedFilePath, combinedParams).LoadAllStaticData();
@@ -127,6 +136,8 @@ namespace TaskLayer
                 Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
                 CalibrationEngine engine = new(myMsDataFile, acquisitionResultsFirst, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 _ = engine.Run();
+                featureCalibrationRounds.Add(engine.Ms1Corrections);
+                CalibrateExternalFeatures(combinedParams, externalFeatures, calibratedFeatureFilePath, featureCalibrationRounds);
 
                 // Second round of calibration
                 DataPointAquisitionResults acquisitionResultsSecond = GetDataAcquisitionResults(engine.CalibratedDataFile, combinedParams, originalUncalibratedFilePath);
@@ -137,6 +148,9 @@ namespace TaskLayer
                 // this if statement only checks if things got worse
                 if (!SufficientAcquisitionResults(acquisitionResultsSecond))
                 {
+                    // The uncalibrated file goes forward with its original feature file; drop the calibrated copy.
+                    if (File.Exists(calibratedFeatureFilePath))
+                        File.Delete(calibratedFeatureFilePath);
                     WriteUncalibratedFile(originalUncalibratedFilePath, uncalibratedNewFullFilePath, _unsuccessfullyCalibratedFilePaths, acquisitionResultsFirst, taskId);
                     continue;
                 }
@@ -148,6 +162,8 @@ namespace TaskLayer
                 Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
                 engine = new(myMsDataFile, acquisitionResultsSecond, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 _ = engine.Run();
+                featureCalibrationRounds.Add(engine.Ms1Corrections);
+                CalibrateExternalFeatures(combinedParams, externalFeatures, calibratedFeatureFilePath, featureCalibrationRounds);
 
                 // Third round of calibration
                 DataPointAquisitionResults acquisitionResultsThird = GetDataAcquisitionResults(engine.CalibratedDataFile, combinedParams, originalUncalibratedFilePath);
@@ -156,6 +172,22 @@ namespace TaskLayer
                 {
                     myMsDataFile = engine.CalibratedDataFile;
                     UpdateCombinedParameters(combinedParams, acquisitionResultsThird);
+                }
+                else
+                {
+                    // The round-1 spectra are kept, so the features go back to round-1 masses too.
+                    featureCalibrationRounds.RemoveAt(featureCalibrationRounds.Count - 1);
+                    CalibrateExternalFeatures(combinedParams, externalFeatures, calibratedFeatureFilePath, featureCalibrationRounds);
+                }
+
+                // Point the -calib.toml at the calibrated feature file (it also sits next to the
+                // calibrated mzML, so auto-discovery would find it). If the source could not be
+                // calibrated, carry no path forward rather than uncalibrated masses.
+                if (externalFeatures != null)
+                {
+                    fileSpecificParams.Ms1FeatureFilePath = combinedParams.AdditionalPrecursorDeconvolutionParameters != null
+                        ? calibratedFeatureFilePath
+                        : null;
                 }
 
                 // Update file specific params to reflect the new tolerances, then write them out
@@ -179,6 +211,41 @@ namespace TaskLayer
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
             return MyTaskResults;
+        }
+
+        /// <summary>
+        /// Rewrites the external MS1 feature file with the calibration accumulated so far and points
+        /// <paramref name="combinedParams"/> at the rewritten copy. A source that cannot be rewritten
+        /// (a Dinosaur <c>.feature.tsv</c>) is turned off rather than searched at uncalibrated masses.
+        /// </summary>
+        private static void CalibrateExternalFeatures(CommonParameters combinedParams, FromFileDeconvolutionParameters source,
+            string calibratedFeatureFilePath, IReadOnlyList<IReadOnlyList<(double RetentionTime, double RelativeError)>> rounds)
+        {
+            if (source == null)
+                return;
+
+            if (!Ms1FeatureFileCalibrator.CanCalibrate(source.FilePath))
+            {
+                if (combinedParams.AdditionalPrecursorDeconvolutionParameters != null)
+                {
+                    Warn("External MS1 feature file '" + source.FilePath + "' is not an _ms1.feature file, so its masses " +
+                         "cannot be calibrated; it is not used for the calibrated spectra.");
+                    combinedParams.AdditionalPrecursorDeconvolutionParameters = null;
+                }
+                return;
+            }
+
+            _ = source.Features; // loaded already; makes RetentionTimeNormalizedFromSeconds valid
+            Ms1FeatureFileCalibrator.WriteCalibratedCopy(source.FilePath, calibratedFeatureFilePath, rounds,
+                source.RetentionTimeNormalizedFromSeconds);
+
+            var calibrated = new FromFileDeconvolutionParameters(calibratedFeatureFilePath,
+                source.MinAssumedChargeState, source.MaxAssumedChargeState, source.Polarity)
+            {
+                AverageResidueModel = source.AverageResidueModel,
+            };
+            _ = calibrated.Features;
+            combinedParams.AdditionalPrecursorDeconvolutionParameters = calibrated;
         }
 
         private void UpdateExperimentalDesignFile(List<string> currentRawFileList, string outputFolder)

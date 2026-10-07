@@ -187,8 +187,10 @@ namespace EngineLayer
         /// from this source are merged into the same precursor HashSet (and thus dedup'd) as the
         /// primary decon and the optional scan-header info. TomlIgnored because it's resolved at
         /// task-run time from per-file paths, not persisted in the task config.
+        /// Public setter required for calibration task, which swaps in a calibrated copy of the
+        /// feature file between calibration rounds.
         /// </summary>
-        [TomlIgnore] public DeconvolutionParameters AdditionalPrecursorDeconvolutionParameters { get; private set; }
+        [TomlIgnore] public DeconvolutionParameters AdditionalPrecursorDeconvolutionParameters { get; set; }
         [TomlIgnore] public Tolerance DeconvolutionMassTolerance { get; private set; }
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
