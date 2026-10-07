@@ -285,20 +285,6 @@ namespace Test
         // ----- the short hash itself -----
 
         [Test]
-        public static void ShortHashIgnoresLineEndings()
-        {
-            // Modification.ToString builds its text with AppendLine, which emits the writing machine's
-            // line ending. Spelled out as char codes so the test cannot be confused by its own source
-            // file's line endings.
-            string windowsStyle = "MM   15.994915" + CarriageReturn + LineFeed + "TG   M";
-            string unixStyle = "MM   15.994915" + LineFeed + "TG   M";
-            string oldMacStyle = "MM   15.994915" + CarriageReturn + "TG   M";
-
-            Assert.That(IndexingEngine.ShortHash(unixStyle), Is.EqualTo(IndexingEngine.ShortHash(windowsStyle)));
-            Assert.That(IndexingEngine.ShortHash(oldMacStyle), Is.EqualTo(IndexingEngine.ShortHash(windowsStyle)));
-        }
-
-        [Test]
         public static void ShortHashSeparatesDifferentDefinitions()
         {
             Assert.That(IndexingEngine.ShortHash("MM   15.994915"), Is.Not.EqualTo(IndexingEngine.ShortHash("MM   15.994916")));

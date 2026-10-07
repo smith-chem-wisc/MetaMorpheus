@@ -175,10 +175,6 @@ namespace EngineLayer.Indexing
         /// A short, stable hash of a definition string, for use inside the index cache key.
         /// </summary>
         /// <remarks>
-        /// Line endings are normalised first. <see cref="Modification.ToString"/> builds its text with
-        /// AppendLine, which emits the writing machine's line ending, so the same modification would
-        /// otherwise hash differently on Windows and Linux and force a rebuild on nothing.
-        ///
         /// Eight bytes separates the handful of modifications in a search many times over, and keeps the
         /// key readable next to the id it qualifies. This is a cache key, not a security boundary.
         /// </remarks>
@@ -189,8 +185,7 @@ namespace EngineLayer.Indexing
                 return "none";
             }
 
-            string normalized = definition.Replace("\r\n", "\n").Replace('\r', '\n');
-            byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(normalized));
+            byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(definition));
             return Convert.ToHexString(hash, 0, 8).ToLowerInvariant();
         }
 
