@@ -480,9 +480,11 @@ namespace TaskLayer
                     return;
                 }
 
+                // quantified as numbered; said now and in results.txt
                 foreach (string warning in ExperimentalDesign.GetWarningsInExperimentalDesign(spectraFileInfo))
                 {
                     Warn(warning);
+                    Parameters.GlycoSearchTaskResults?.AddTaskSummaryText(warning);
                 }
             }
             else

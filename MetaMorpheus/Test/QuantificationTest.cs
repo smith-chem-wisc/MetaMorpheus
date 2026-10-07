@@ -69,7 +69,7 @@ namespace Test
             Assert.That(readIn.Select(p => p.BiologicalReplicate), Is.EquivalentTo(new[] { 0, 1, 3 }));
             Assert.That(ExperimentalDesign.GetWarningsInExperimentalDesign(readIn), Has.Count.EqualTo(1));
 
-            // test non-consecutive fractions (should produce an error)
+            // test non-consecutive fractions, here 2, 3, 4 (a warning, not an error)
             spectraFiles.Clear();
 
             spectraFiles.Add(new SpectraFileInfo(Path.Combine(outputFolder, @"myFile.1.raw"), "condition1", 0, 0, 1));
@@ -83,9 +83,10 @@ namespace Test
                 spectraFiles.Select(p => p.FullFilePathWithExtension).ToList(),
                 out errors);
 
-            Assert.That(errors.Any());
+            Assert.That(errors, Is.Empty);
+            Assert.That(ExperimentalDesign.GetWarningsInExperimentalDesign(readIn), Has.Count.EqualTo(1));
 
-            // test non-consecutive techreps (should produce an error)
+            // test non-consecutive techreps, here 1, 3, 4 (a warning, not an error)
             spectraFiles.Clear();
 
             spectraFiles.Add(new SpectraFileInfo(Path.Combine(outputFolder, @"myFile.1.raw"), "condition1", 0, 0, 0));
@@ -99,7 +100,8 @@ namespace Test
                 spectraFiles.Select(p => p.FullFilePathWithExtension).ToList(),
                 out errors);
 
-            Assert.That(errors.Any());
+            Assert.That(errors, Is.Empty);
+            Assert.That(ExperimentalDesign.GetWarningsInExperimentalDesign(readIn), Has.Count.EqualTo(1));
 
             // test duplicates (should produce an error)
             spectraFiles.Clear();
@@ -168,8 +170,8 @@ namespace Test
             Assert.That(ExperimentalDesign.GetErrorsInExperimentalDesign(gap), Is.Null);
             Assert.That(ExperimentalDesign.GetWarningsInExperimentalDesign(gap), Is.EqualTo(new[]
             {
-                "Condition \"A\" has biorep 1, 2, 4 but not biorep 3. The bioreps are quantified as numbered; " +
-                "a missing number may be a sample that was lost or not searched."
+                "Condition \"A\": biological replicates 1, 2, 4, quantified as numbered; biological replicate 3 is not in the design. " +
+                "A missing number may be a sample or file that was lost or not searched."
             }));
 
             // study-wide numbering: each condition is judged on its own numbers
@@ -177,27 +179,119 @@ namespace Test
             Assert.That(ExperimentalDesign.GetErrorsInExperimentalDesign(studyWide), Is.Null);
             var warnings = ExperimentalDesign.GetWarningsInExperimentalDesign(studyWide);
             Assert.That(warnings, Has.Count.EqualTo(1));
-            Assert.That(warnings[0], Does.StartWith("Condition \"treated\" has biorep 3, 4 but not biorep 1, 2."));
+            Assert.That(warnings[0], Does.StartWith("Condition \"treated\": biological replicates 3, 4, quantified as numbered; biological replicates 1, 2 are not in the design."));
 
             // 1..N says nothing
             var complete = new List<SpectraFileInfo> { Info("a1", "A", 1), Info("a2", "A", 2) };
             Assert.That(ExperimentalDesign.GetWarningsInExperimentalDesign(complete), Is.Empty);
 
-            // a biorep after a gap still has its fractions checked
-            var fractionGap = new List<SpectraFileInfo> { Info("a1", "A", 1), Info("a4f2", "A", 4, oneBasedFraction: 2) };
-            Assert.That(ExperimentalDesign.GetErrorsInExperimentalDesign(fractionGap), Is.EqualTo("Condition \"A\" biorep 4 fraction 1 is missing!"));
+            // fractions and techreps: a gap is a warning too, named down to the biorep and fraction
+            var fractionGap = new List<SpectraFileInfo> { Info("a1f1", "A", 1), Info("a1f3", "A", 1, oneBasedFraction: 3) };
+            Assert.That(ExperimentalDesign.GetErrorsInExperimentalDesign(fractionGap), Is.Null);
+            Assert.That(ExperimentalDesign.GetWarningsInExperimentalDesign(fractionGap), Is.EqualTo(new[]
+            {
+                "Condition \"A\" biorep 1: fractions 1, 3, quantified as numbered; fraction 2 is not in the design. " +
+                "A missing number may be a sample or file that was lost or not searched."
+            }));
+            var techrepGap = new List<SpectraFileInfo> { new("t2.raw", "A", 0, 1, 0) };
+            Assert.That(ExperimentalDesign.GetErrorsInExperimentalDesign(techrepGap), Is.Null);
+            Assert.That(ExperimentalDesign.GetWarningsInExperimentalDesign(techrepGap),
+                Has.One.StartWith("Condition \"A\" biorep 1 fraction 1: technical replicates 2, quantified as numbered; technical replicate 1 is not in the design."));
+
+            // a duplicate is still refused
+            var duplicate = new List<SpectraFileInfo> { Info("x", "A", 4), Info("y", "A", 4) };
+            Assert.That(ExperimentalDesign.GetErrorsInExperimentalDesign(duplicate),
+                Is.EqualTo("Duplicates are not allowed:\nCondition \"A\" biorep 4 fraction 1 techrep 1"));
         }
 
         /// <summary>
         /// End to end, with normalization on: a design numbered study-wide (A: 2, 3; B: 4, 5) used to make
         /// the search skip quantification with one warning. It is now quantified under the numbers given,
-        /// and the gaps are warned about. The first condition has no biorep 1, which is the normalization
-        /// reference before mzLib #1422; without #1422 biorep normalization silently does nothing here.
+        /// and the gaps are warned about, in the log and in results.txt. The first condition has no
+        /// biorep 1, which is the normalization reference before mzLib #1422; without #1422 biorep
+        /// normalization silently does nothing here.
         /// </summary>
         [Test]
         public static void TestSearchQuantifiesADesignWithABiorepGap()
         {
-            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSearchQuantifiesADesignWithABiorepGap");
+            var run = RunOnePeptideSearch("TestSearchQuantifiesADesignWithABiorepGap", new[]
+            {
+                ("A2", "A", 2, 1, 1, 2e6), ("A3", "A", 3, 1, 1, 3e6), ("B4", "B", 4, 1, 1, 4e6), ("B5", "B", 5, 1, 1, 5e6)
+            });
+
+            Assert.That(run.Warnings, Has.None.Contain("Skipping quantification"));
+            foreach (string expected in new[]
+            {
+                "Condition \"A\": biological replicates 2, 3, quantified as numbered; biological replicate 1 is not in the design.",
+                "Condition \"B\": biological replicates 4, 5, quantified as numbered; biological replicates 1, 2, 3 are not in the design."
+            })
+            {
+                Assert.That(run.Warnings, Has.Some.StartWith(expected));
+                Assert.That(run.ResultsTxt, Does.Contain(expected), "the warning is recorded in results.txt too");
+            }
+
+            // the protein table's sample columns carry the numbers the design gives
+            Assert.That(run.ProteinHeader.Where(h => h.StartsWith("Intensity_")),
+                Is.EquivalentTo(new[] { "Intensity_A_2", "Intensity_A_3", "Intensity_B_4", "Intensity_B_5" }));
+
+            // and every file's peptide was quantified and normalized: the files were written at 2, 3, 4
+            // and 5 times one intensity, and normalization brings this one peptide back to one value
+            var intensities = run.PeptideIntensityByFile.Values.ToList();
+            Assert.That(intensities, Has.Count.EqualTo(4));
+            Assert.That(intensities, Has.All.GreaterThan(0));
+            Assert.That(intensities.Max() / intensities.Min(), Is.LessThan(1.01));
+        }
+
+        /// <summary>
+        /// End to end, with normalization on: the same five files numbered with a gap in fractions
+        /// (1, 3) and in techreps (1, 3), and numbered without one. Both are quantified, the gapped one
+        /// with warnings, and every file's normalized peptide intensity is the same in both: a gap
+        /// changes nothing but the numbers.
+        /// </summary>
+        [Test]
+        public static void TestSearchQuantifiesFractionAndTechrepGapsAsNumbered()
+        {
+            var gapped = RunOnePeptideSearch("TestFractionTechrepGapsGapped", new[]
+            {
+                ("Af1t1", "A", 1, 1, 1, 1e6), ("Af1tB", "A", 1, 1, 3, 2e6), ("AfBt1", "A", 1, 3, 1, 3e6),
+                ("Bf1t1", "B", 1, 1, 1, 4e6), ("BfBt1", "B", 1, 3, 1, 5e6)
+            });
+            var contiguous = RunOnePeptideSearch("TestFractionTechrepGapsContiguous", new[]
+            {
+                ("Af1t1", "A", 1, 1, 1, 1e6), ("Af1tB", "A", 1, 1, 2, 2e6), ("AfBt1", "A", 1, 2, 1, 3e6),
+                ("Bf1t1", "B", 1, 1, 1, 4e6), ("BfBt1", "B", 1, 2, 1, 5e6)
+            });
+
+            Assert.That(gapped.Warnings, Has.None.Contain("Skipping quantification"));
+            foreach (string expected in new[]
+            {
+                "Condition \"A\" biorep 1: fractions 1, 3, quantified as numbered; fraction 2 is not in the design.",
+                "Condition \"A\" biorep 1 fraction 1: technical replicates 1, 3, quantified as numbered; technical replicate 2 is not in the design.",
+                "Condition \"B\" biorep 1: fractions 1, 3, quantified as numbered; fraction 2 is not in the design."
+            })
+            {
+                Assert.That(gapped.Warnings, Has.Some.StartWith(expected));
+                Assert.That(gapped.ResultsTxt, Does.Contain(expected));
+            }
+            Assert.That(contiguous.Warnings, Has.None.Contain("not in the design"));
+
+            Assert.That(gapped.PeptideIntensityByFile.Keys, Is.EquivalentTo(contiguous.PeptideIntensityByFile.Keys));
+            Assert.That(gapped.PeptideIntensityByFile.Values, Has.All.GreaterThan(0));
+            foreach (var (file, intensity) in contiguous.PeptideIntensityByFile)
+            {
+                Assert.That(gapped.PeptideIntensityByFile[file], Is.EqualTo(intensity).Within(1e-9).Percent, file);
+            }
+        }
+
+        /// <summary>
+        /// Runs a search with normalization on over one-peptide files written at the given intensities,
+        /// under a design with the given one-based numbers, and returns what it warned, results.txt, the
+        /// protein table's header and the peptide table's intensity per file.
+        /// </summary>
+        private static (List<string> Warnings, string ResultsTxt, string[] ProteinHeader, Dictionary<string, double> PeptideIntensityByFile)
+            RunOnePeptideSearch(string folderName, (string Name, string Condition, int Biorep, int Fraction, int Techrep, double Intensity)[] files)
+        {
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, folderName);
             if (Directory.Exists(unitTestFolder))
             {
                 Directory.Delete(unitTestFolder, true);
@@ -205,16 +299,15 @@ namespace Test
             _ = Directory.CreateDirectory(unitTestFolder);
 
             string peptide = "PEPTIDE";
-            Protein prot = new(peptide, @"test");
             string dbName = Path.Combine(unitTestFolder, "testDB.fasta");
-            UsefulProteomicsDatabases.ProteinDbWriter.WriteFastaDatabase(new List<Protein> { prot }, dbName, ">");
+            UsefulProteomicsDatabases.ProteinDbWriter.WriteFastaDatabase(new List<Protein> { new(peptide, @"test") }, dbName, ">");
 
             var fileInfos = new List<SpectraFileInfo>();
-            foreach (var (condition, oneBasedBiorep) in new[] { ("A", 2), ("A", 3), ("B", 4), ("B", 5) })
+            foreach (var f in files)
             {
-                string fullPath = Path.Combine(unitTestFolder, condition + oneBasedBiorep + ".mzML");
-                WriteOnePeptideMzml(peptide, 1e6 * oneBasedBiorep, fullPath);
-                fileInfos.Add(new SpectraFileInfo(fullPath, condition, oneBasedBiorep - 1, 0, 0));
+                string fullPath = Path.Combine(unitTestFolder, f.Name + ".mzML");
+                WriteOnePeptideMzml(peptide, f.Intensity, fullPath);
+                fileInfos.Add(new SpectraFileInfo(fullPath, f.Condition, f.Biorep - 1, f.Techrep - 1, f.Fraction - 1));
             }
             _ = ExperimentalDesign.WriteExperimentalDesignToFile(fileInfos);
 
@@ -232,28 +325,16 @@ namespace Test
                 MetaMorpheusTask.WarnHandler -= handler;
             }
 
-            Assert.That(warnings, Has.None.Contain("Skipping quantification"));
-            Assert.That(warnings, Has.Some.StartWith("Condition \"A\" has biorep 2, 3 but not biorep 1."));
-            Assert.That(warnings, Has.Some.StartWith("Condition \"B\" has biorep 4, 5 but not biorep 1, 2, 3."));
+            string resultsTxt = File.ReadAllText(Path.Combine(unitTestFolder, "results.txt"));
+            string[] proteinHeader = File.ReadAllLines(Path.Combine(unitTestFolder, "AllQuantifiedProteinGroups.tsv"))[0].Split('\t');
 
-            // the protein table's sample columns carry the numbers the design gives
-            string proteinTable = Path.Combine(unitTestFolder, "AllQuantifiedProteinGroups.tsv");
-            Assert.That(File.Exists(proteinTable));
-            var proteinHeader = File.ReadAllLines(proteinTable)[0].Split('\t');
-            Assert.That(proteinHeader.Where(h => h.StartsWith("Intensity_")),
-                Is.EquivalentTo(new[] { "Intensity_A_2", "Intensity_A_3", "Intensity_B_4", "Intensity_B_5" }));
-
-            // and every file's peptide was quantified and normalized: the files were written at 2, 3, 4
-            // and 5 times one intensity, and normalization brings this one peptide back to one value
-            string[] lines = File.ReadAllLines(Path.Combine(unitTestFolder, "AllQuantifiedPeptides.tsv"));
-            var header = lines[0].Split('\t').ToList();
-            var intensities = new[] { "Intensity_A2", "Intensity_A3", "Intensity_B4", "Intensity_B5" }
-                .Select(column => double.Parse(lines[1].Split('\t')[header.IndexOf(column)]))
-                .ToList();
-            Assert.That(intensities, Has.All.GreaterThan(0));
-            Assert.That(intensities.Max() / intensities.Min(), Is.LessThan(1.01));
+            string[] peptideLines = File.ReadAllLines(Path.Combine(unitTestFolder, "AllQuantifiedPeptides.tsv"));
+            var peptideHeader = peptideLines[0].Split('\t').ToList();
+            var peptideIntensityByFile = files.ToDictionary(f => f.Name,
+                f => double.Parse(peptideLines[1].Split('\t')[peptideHeader.IndexOf("Intensity_" + f.Name)]));
 
             Directory.Delete(unitTestFolder, true);
+            return (warnings, resultsTxt, proteinHeader, peptideIntensityByFile);
         }
 
         /// <summary>

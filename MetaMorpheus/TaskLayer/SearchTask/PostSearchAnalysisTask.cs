@@ -680,6 +680,13 @@ namespace TaskLayer
                 return;
             }
 
+            // quantified as numbered; said now and in results.txt
+            foreach (string warning in TmtExperimentalDesign.GetWarningsInDesign(tmtFiles))
+            {
+                Warn(warning);
+                Parameters.SearchTaskResults.AddTaskSummaryText(warning);
+            }
+
             // Copy the design into the output folder, as the label-free path does for ExperimentalDesign,
             // so a result folder records the design it was quantified under. AFTER the read, not before:
             // a design that could not be parsed was not quantified under anything, and archiving it
@@ -955,9 +962,11 @@ namespace TaskLayer
                         return;
                     }
 
+                    // quantified as numbered; said now and in results.txt
                     foreach (string warning in ExperimentalDesign.GetWarningsInExperimentalDesign(spectraFileInfo))
                     {
                         Warn(warning);
+                        Parameters.SearchTaskResults.AddTaskSummaryText(warning);
                     }
                 }
                 else if (Parameters.SearchParameters.Normalize)

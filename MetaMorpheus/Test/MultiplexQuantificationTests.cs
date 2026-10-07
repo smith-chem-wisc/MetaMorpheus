@@ -1289,5 +1289,84 @@ namespace Test
 
         #endregion
 
+        #region Numbering gaps
+
+        /// <summary>
+        /// Two files of one plex as fractions 1 and 3, and as fractions 1 and 2. The gapped design used to
+        /// be refusable only in the GUI (the parser never checked); it is quantified, warned about in the
+        /// log and in results.txt, and every quantification table is the same as for the contiguous
+        /// numbering: isobaric quantification does not read the fraction number.
+        /// </summary>
+        [Test]
+        public static void TmtFractionGap_IsQuantifiedAsNumberedAndWarned()
+        {
+            var gapped = RunTwoFractionTmtSearch("TmtFractionGapGapped", secondFraction: 3);
+            var contiguous = RunTwoFractionTmtSearch("TmtFractionGapContiguous", secondFraction: 2);
+
+            string expected = "Plex Plex1: fractions 1, 3, quantified as numbered; fraction 2 is not in the design.";
+            Assert.That(gapped.Warnings, Has.Some.StartWith(expected));
+            Assert.That(gapped.ResultsTxt, Does.Contain(expected), "the warning is recorded in results.txt too");
+            Assert.That(contiguous.Warnings, Has.None.Contain("not in the design"));
+
+            foreach (string table in new[] { QuantificationWriter.PeptideFileName, QuantificationWriter.ProteinGroupFileName })
+            {
+                Assert.That(gapped.Tables[table], Has.Length.GreaterThan(1), table + " must quantify something");
+                Assert.That(gapped.Tables[table], Is.EqualTo(contiguous.Tables[table]), table);
+            }
+        }
+
+        private static (List<string> Warnings, string ResultsTxt, Dictionary<string, string[]> Tables) RunTwoFractionTmtSearch(string rootName, int secondFraction)
+        {
+            string root = Path.Combine(TestContext.CurrentContext.TestDirectory, rootName);
+            string dataFolder = Path.Combine(root, "data");
+            string outputFolder = Path.Combine(root, "out");
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+            Directory.CreateDirectory(dataFolder);
+
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                string source = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\VA084TQ_6.mzML");
+                var fractions = new[] { ("TmtFracA", 1), ("TmtFracB", secondFraction) };
+                var stagedPaths = fractions.Select(f =>
+                {
+                    string staged = Path.Combine(dataFolder, f.Item1 + ".mzML");
+                    File.Copy(source, staged);
+                    return staged;
+                }).ToList();
+
+                // One plex, two fractions: the fractions repeat the plex's channel-to-sample map.
+                var rows = fractions.SelectMany((f, file) => Tmt11Channels.Select((tag, i) =>
+                    $"{stagedPaths[file]}\tPlex1\tSample{i + 1}\t{tag}\tCond{(i % 2 == 0 ? "A" : "B")}\t{i / 2 + 1}\t{f.Item2}\t1\tstudy sample"));
+                File.WriteAllLines(
+                    Path.Combine(dataFolder, GlobalVariables.TmtExperimentalDesignFileName),
+                    new[] { TmtExperimentalDesign.Header }.Concat(rows));
+
+                var searchTask = Toml.ReadFile<SearchTask>(
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                    MetaMorpheusTask.tomlConfig);
+                searchTask.SearchParameters.DoParsimony = true;
+
+                new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("search", searchTask) },
+                    stagedPaths,
+                    new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\mouseTmt.fasta"), false) },
+                    outputFolder).Run();
+
+                string searchOut = Path.Combine(outputFolder, "search");
+                var tables = new[] { QuantificationWriter.PeptideFileName, QuantificationWriter.ProteinGroupFileName }
+                    .ToDictionary(t => t, t => File.ReadAllLines(Path.Combine(searchOut, t)));
+                return (warnings, File.ReadAllText(Path.Combine(searchOut, "results.txt")), tables);
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+                if (Directory.Exists(root)) Directory.Delete(root, true);
+            }
+        }
+
+        #endregion
     }
 }

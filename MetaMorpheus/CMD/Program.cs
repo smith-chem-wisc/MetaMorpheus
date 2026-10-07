@@ -437,7 +437,11 @@ namespace MetaMorpheusCommandLine
             }
             else
             {
-                TmtExperimentalDesign.Read(designPath, startingRawFilenameList, out errors);
+                var tmtFiles = TmtExperimentalDesign.Read(designPath, startingRawFilenameList, out errors);
+                if (!errors.Any())
+                {
+                    warnings = TmtExperimentalDesign.GetWarningsInDesign(tmtFiles);
+                }
             }
 
             if (!errors.Any())

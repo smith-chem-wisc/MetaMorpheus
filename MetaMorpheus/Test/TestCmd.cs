@@ -1316,26 +1316,55 @@ namespace Test
             var console = new List<string>();
             Assert.That(Program.ResolveExperimentalDesign(data, searched, normalizationRequested: true, reportToConsole: true, write: console.Add),
                 Is.EqualTo(0));
-            Assert.That(console, Has.Some.StartWith("Condition \"FA\" has biorep 3, 4 but not biorep 1, 2."));
+            Assert.That(console, Has.Some.StartWith("Condition \"FA\": biological replicates 3, 4, quantified as numbered; biological replicates 1, 2 are not in the design."));
         }
 
         /// <summary>
         /// A design MetaMorpheus would reject is never written, because a run finding it would skip
-        /// quantification with only a warning. Exit 5, every reason printed.
+        /// quantification with only a warning. Exit 5, every reason printed. The one such design is a
+        /// duplicate: two files at one condition, biorep, fraction and techrep.
         /// </summary>
         [Test]
-        public static void TestSdrfDesignRefusesAFractionGapAndWritesNothing()
+        public static void TestSdrfDesignRefusesADuplicateAndWritesNothing()
         {
             var (sdrf, data) = WriteLabelFreeSdrf(
-                ("a1.raw", "WT", "DMSO", 1, 1), ("a3.raw", "WT", "DMSO", 1, 3));
+                ("a1.raw", "WT", "DMSO", 1, 1), ("a2.raw", "WT", "DMSO", 1, 1));
             var settings = SdrfDesignSettings(sdrf, data, "genotype");
 
             var written = new StringWriter();
             int exitCode = Program.WriteDesignFromSdrf(settings, written);
 
             Assert.That(exitCode, Is.EqualTo(5));
-            Assert.That(written.ToString(), Does.Contain("fraction 2 is missing").And.Contain("No design file was written"));
+            Assert.That(written.ToString(), Does.Contain("biorep 1 fraction 1 techrep 1 is named by 2 files").And.Contain("No design file was written"));
             Assert.That(File.Exists(Path.Combine(data, GlobalVariables.ExperimentalDesignFileName)), Is.False);
+        }
+
+        /// <summary>
+        /// A fraction gap is written as the SDRF numbers it, and the SDRF report and the run say so in the
+        /// same words: mzLib notes "fractions 1, 3, kept as the SDRF numbers them", and the run's design check
+        /// warns "fractions 1, 3, quantified as numbered".
+        /// </summary>
+        [Test]
+        public static void TestSdrfDesignWritesAFractionGapAndBothSidesSaySo()
+        {
+            var (sdrf, data) = WriteLabelFreeSdrf(
+                ("a1.raw", "WT", "DMSO", 1, 1), ("a3.raw", "WT", "DMSO", 1, 3));
+            var settings = SdrfDesignSettings(sdrf, data, "genotype");
+
+            var written = new StringWriter();
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(0), written.ToString());
+            Assert.That(written.ToString(), Does.Contain("Condition 'WT' biorep 1: fractions 1, 3, kept as the SDRF numbers them."));
+
+            var searched = settings.Spectra.Select(Path.GetFullPath).ToList();
+            var readBack = ExperimentalDesign.ReadExperimentalDesign(
+                Path.Combine(data, GlobalVariables.ExperimentalDesignFileName), searched, out var errors);
+            Assert.That(errors, Is.Empty);
+            Assert.That(readBack.Select(f => f.Fraction), Is.EquivalentTo(new[] { 0, 2 }));
+
+            var console = new List<string>();
+            Assert.That(Program.ResolveExperimentalDesign(data, searched, normalizationRequested: true, reportToConsole: true, write: console.Add),
+                Is.EqualTo(0));
+            Assert.That(console, Has.Some.StartWith("Condition \"WT\" biorep 1: fractions 1, 3, quantified as numbered; fraction 2 is not in the design."));
         }
 
         [Test]
