@@ -1719,7 +1719,7 @@ namespace TaskLayer
                         if (originalBioPolymer is RNA r)
                         {
                             renamed = new RNA(originalBioPolymer.BaseSequence, originalBioPolymer.Accession + "_D" + bioPolymerNumber,
-                                r.OneBasedPossibleLocalizedModifications, r.ThreePrimeTerminus, r.FivePrimeTerminus, r.Name, r.Organism,
+                                r.OneBasedPossibleLocalizedModifications, r.FivePrimeTerminus, r.ThreePrimeTerminus, r.Name, r.Organism,
                                 r.DatabaseFilePath, r.IsContaminant, r.IsDecoy, r.GeneNames, r.AdditionalDatabaseFields, r.TruncationProducts,
                                 r.SequenceVariations, r.AppliedSequenceVariations, r.SampleNameForVariants, r.FullName);
                         }

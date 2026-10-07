@@ -85,6 +85,11 @@ public class RnaDatabaseLoadingTests
             Assert.That(bioPolymers[i].BaseSequence, Is.EqualTo(baseSequence));
             Assert.That(bioPolymers[i].Accession, Is.EqualTo(expectedAccessions[i]));
             Assert.That(bioPolymers[i].IsContaminant, Is.EqualTo(expectedIsContaminant[i]));
+
+            // Renaming rebuilds the RNA; its termini must not be swapped.
+            var rna = (RNA)bioPolymers[i];
+            Assert.That(rna.FivePrimeTerminus.ThisChemicalFormula, Is.EqualTo(NucleicAcid.DefaultFivePrimeTerminus));
+            Assert.That(rna.ThreePrimeTerminus.ThisChemicalFormula, Is.EqualTo(NucleicAcid.DefaultThreePrimeTerminus));
         }
     }
 
