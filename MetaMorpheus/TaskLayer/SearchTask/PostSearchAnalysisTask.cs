@@ -125,8 +125,13 @@ namespace TaskLayer
                 Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
                 if (Parameters.SearchParameters.WriteIndividualFiles)
                 {
-                    WriteIndividualPsmResults();
-                    WriteIndividualPeptideResults();
+                    // The individual tables re-run FDR file by file on the shared spectral matches. Their
+                    // per-file values must not outlive them: every later stage reads the whole-search FDR.
+                    using (FdrInfoSnapshot.Take(Parameters.AllSpectralMatches))
+                    {
+                        WriteIndividualPsmResults();
+                        WriteIndividualPeptideResults();
+                    }
                 }
             }
             WriteProteinResults();
