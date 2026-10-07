@@ -48,6 +48,9 @@ namespace TaskLayer
                 {
                     Software = new CvParam("MS", "MS:1002826", "MetaMorpheus", ""),
                     SoftwareVersion = GlobalVariables.MetaMorpheusVersion,
+                    // Written as supplied: a malformed accession was already named before the run,
+                    // by SearchTask.WarnAboutSdrfGaps, and the user's value is still the best one.
+                    ProteomeXchangeAccession = Parameters.SearchParameters.ProteomeXchangeAccession?.Trim(),
                     // The sample metadata is only as complete as the input allowed. Gaps were named
                     // before the run; by here it is committed, so accept what we have and let
                     // SdrfCoverage report on it rather than throwing mid-write.

@@ -37,6 +37,7 @@ namespace TaskLayer
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
             MaxFragmentSize = DefaultMaxFragmentSize;
             MinAllowedInternalFragmentLength = 0;
+            UsePredictedSpectraForSpectralAngle = false;
             WriteMzId = true;
             WritePepXml = false;
             IncludeModMotifInMzid = false;
@@ -111,6 +112,20 @@ namespace TaskLayer
         public bool WriteContaminants { get; set; }
         public bool WriteIndividualFiles { get; set; }
         public bool WriteSpectralLibrary { get; set; }
+        /// <summary>
+        /// Opt in to filling missing spectral angles with Prosit-predicted spectra. Off by
+        /// default because it is a call to a third-party web service (Koina) on every search:
+        /// a search that would otherwise run offline should not start depending on someone
+        /// else's uptime unless the user asked for it. Turning it on changes q-values: the
+        /// spectral angle is a PEP feature, which a search without a spectral library otherwise
+        /// trains at the -1 sentinel for every PSM.
+        ///
+        /// Applies only to classic and modern peptide searches with HCD or CID fragmentation, since the
+        /// model is Prosit 2020 HCD. Semi- and non-specific searches (which compute FDR before
+        /// post-search analysis), other dissociation types, and oligo or proteoform searches are
+        /// skipped with a warning and a line in results.txt.
+        /// </summary>
+        public bool UsePredictedSpectraForSpectralAngle { get; set; }
         public bool UpdateSpectralLibrary { get; set; }
         public bool CompressIndividualFiles { get; set; }
         public List<SilacLabel> SilacLabels { get; set; }
@@ -164,5 +179,17 @@ namespace TaskLayer
         /// fold changes. Fixed at 42 by default.
         /// </summary>
         public int BayesianRandomSeed { get; set; }
+
+        /// <summary>
+        /// The ProteomeXchange accession (PXD######) of the public dataset this search re-analyses,
+        /// written into the SDRF as comment[proteomexchange accession number]. Null for a search of
+        /// data that has not been deposited.
+        ///
+        /// It is the join key for pooling: without it, a reanalysis SDRF describes a search but not
+        /// which experiment it searched, so it cannot be matched back to the deposition or to other
+        /// reanalyses of the same data. Supplied rather than inferred -- nothing in a spectra file
+        /// names the dataset it was deposited under.
+        /// </summary>
+        public string ProteomeXchangeAccession { get; set; }
     }
 }
