@@ -163,7 +163,7 @@ namespace Test
             var masses = peptideIndex.Where(p => !double.IsNaN(p.MonoisotopicMass)).Select(p => p.MonoisotopicMass).ToList();
 
             MassDiffAcceptor oneMissedMonoisotopic = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.OneMM, null);
-            MassDiffAcceptor wide = new IntervalMassDiffAcceptor("wide", new[] { new DoubleRange(-200, 500) });
+            MassDiffAcceptor wide = new IntervalMassDiffAcceptor("wide", new[] { new DoubleRange(-500, 1500) });
             Assert.That(ScanScoringTable.IsWorthStamping(wide), Is.True, "bounded on both sides");
 
             Assert.That(ScanScoringTable.IsWindowNarrowEnoughToStamp(ModernSearchEngine.MeanWindowShareOfIndex(peptideIndex, masses, oneMissedMonoisotopic)), Is.True);
@@ -184,7 +184,7 @@ namespace Test
                 .Select(p => ScanAtMass(p.MonoisotopicMass, parameters)).ToArray();
 
             MassDiffAcceptor oneMissedMonoisotopic = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.OneMM, null);
-            MassDiffAcceptor wide = new IntervalMassDiffAcceptor("wide", new[] { new DoubleRange(-200, 500) });
+            MassDiffAcceptor wide = new IntervalMassDiffAcceptor("wide", new[] { new DoubleRange(-500, 1500) });
             MassDiffAcceptor open = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.Open, null);
 
             Assert.That(new StampChoiceProbe(scans, sorted, oneMissedMonoisotopic, parameters).Stamps, Is.True, "narrow window");
