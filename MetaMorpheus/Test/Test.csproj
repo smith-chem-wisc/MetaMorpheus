@@ -260,7 +260,7 @@
     <None Update="TestData\customCZ.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\d Tryp-SFYR MS2 CID35 plus2.mgf">
+    <None Update="TestData\TrypSFYR_linearized_MS2_CID35_z2.mgf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TestData\DbForPrunedDb.fasta">
@@ -368,7 +368,7 @@
     <None Update="TestData\ModificationAnalysis\SearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\my.mgf">
+    <None Update="TestData\AFYR_cyclic_MS2_CID30.mgf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TestData\myPrositLib.msp">

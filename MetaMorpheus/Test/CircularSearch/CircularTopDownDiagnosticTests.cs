@@ -17,7 +17,7 @@ using TaskLayer;
 namespace Test.CircularSearch
 {
     /// <summary>
-    /// Diagnostic test for top-down circular search of AFYRHTQESG against my.mgf.
+    /// Diagnostic test for top-down circular search of AFYRHTQESG against AFYR_cyclic_MS2_CID30.mgf.
     ///
     /// The ring input is "AFYRHTQESG" (N=10). CircularProtein will canonicalize it.
     /// Protease: top-down (no cleavage, no linear products).
@@ -39,7 +39,7 @@ namespace Test.CircularSearch
             Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData");
 
         private static string MgfPath =>
-            Path.Combine(TestDataDir, "my.mgf");
+            Path.Combine(TestDataDir, "AFYR_cyclic_MS2_CID30.mgf");
 
         private static string FastaPath =>
             Path.Combine(TestDataDir, "AFYRHTQESG_cyclic.fasta");
@@ -77,7 +77,7 @@ namespace Test.CircularSearch
         public static void Diagnostic_TopDown_AFYRHTQESG_InspectInternalIonMatching()
         {
             Assert.That(File.Exists(MgfPath),
-                $"MGF not found. Place 'my.mgf' in {TestDataDir}.");
+                $"MGF not found. Place 'AFYR_cyclic_MS2_CID30.mgf' in {TestDataDir}.");
 
             EnsureFastaExists();
 
@@ -155,7 +155,7 @@ namespace Test.CircularSearch
             if (scansFiltered.Length == 0)
             {
                 Console.WriteLine("ERROR: No MS2 scans found in MGF.");
-                Assert.Fail("No MS2 scans in my.mgf.");
+                Assert.Fail("No MS2 scans in AFYR_cyclic_MS2_CID30.mgf.");
                 return;
             }
 

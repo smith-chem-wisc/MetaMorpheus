@@ -17,7 +17,7 @@ namespace Test.CircularSearch
     /// <summary>
     /// Integration test using real MS data.
     ///
-    /// Data file : "d Tryp-SFYR MS2 CID35 plus2.mgf"
+    /// Data file : "TrypSFYR_linearized_MS2_CID35_z2.mgf"
     /// Ring      : input "HGQAETSFYR", canonical "AETSFYRHGQ" (A &lt; H)
     /// Protease  : trypsin, 0 missed cleavages
     ///
@@ -48,7 +48,7 @@ namespace Test.CircularSearch
             Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData");
 
         private static string MgfPath =>
-            Path.Combine(TestDataDir, "d Tryp-SFYR MS2 CID35 plus2.mgf");
+            Path.Combine(TestDataDir, "TrypSFYR_linearized_MS2_CID35_z2.mgf");
 
         private static string FastaPath =>
             Path.Combine(TestDataDir, "HGQAETSFYR_cyclic.fasta");
@@ -71,7 +71,7 @@ namespace Test.CircularSearch
         {
             // ── Pre-condition: MGF must exist ─────────────────────────────────
             Assert.That(File.Exists(MgfPath),
-                $"MGF not found. Place 'd Tryp-SFYR MS2 CID35 plus2.mgf' in {TestDataDir}.");
+                $"MGF not found. Place 'TrypSFYR_linearized_MS2_CID35_z2.mgf' in {TestDataDir}.");
 
             EnsureFastaExists();
 
