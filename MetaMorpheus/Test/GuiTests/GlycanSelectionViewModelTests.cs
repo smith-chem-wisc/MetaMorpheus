@@ -15,7 +15,7 @@ namespace Test.GuiTests
         /// </summary>
         private static Glycan MakeGlycan(string composition, string motif, GlycanType type = GlycanType.O_glycan)
         {
-            return new Glycan(GlycanDatabase.String2Kind(composition), motif, type);
+            return new Glycan(GlycanDatabase.ParseComposition(composition), motif, type);
         }
 
         private static Dictionary<string, List<Glycan>> TwoDatabases()

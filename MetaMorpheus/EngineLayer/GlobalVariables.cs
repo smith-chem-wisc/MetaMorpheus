@@ -905,7 +905,9 @@ namespace EngineLayer
         /// -- Hex, dHex, Galactosyl on N-term -- names a single residue, not a composition, and is kept as an
         /// ordinary modification. One that has a '(' but is not a composition is kept the same way, but said:
         /// this runs at startup, outside any try, so it must not throw, and it must not quietly become a
-        /// different glycan either.
+        /// different glycan either. The ID is cut the way a glycan database line is (GlycanDatabase.CompositionPart),
+        /// so text after the last ')' -- HexNAc(1)Hex(1) on S -- is ignored, as the old String2Kind ignored it,
+        /// and said, as the database loader says it.
         /// </summary>
         internal static byte[] GlycoModComposition(string originalId, string glycoFile)
         {
@@ -914,9 +916,11 @@ namespace EngineLayer
                 return null;
             }
 
+            string composition = GlycanDatabase.CompositionPart(originalId, out string ignored);
+            byte[] kind;
             try
             {
-                return GlycanDatabase.ParseComposition(originalId);
+                kind = GlycanDatabase.ParseComposition(composition);
             }
             catch (FormatException ex)
             {
@@ -924,6 +928,14 @@ namespace EngineLayer
                     $"kept as an ordinary modification. {ex.Message}");
                 return null;
             }
+
+            if (ignored != null)
+            {
+                Warn($"Read the glyco modification '{originalId}' in {glycoFile} as the glycan \"{composition}\", " +
+                    $"ignoring \"{ignored}\" after it. If that was meant to be part of the glycan, fix the ID: " +
+                    "a composition is a name and a count repeated, e.g. HexNAc(2)Hex(5)NeuAc(1).");
+            }
+            return kind;
         }
 
         private static void LoadDigestionAgents()

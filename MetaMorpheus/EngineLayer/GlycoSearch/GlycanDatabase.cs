@@ -737,7 +737,7 @@ namespace EngineLayer
         /// NeuAc(1, or a misspelled name -- or null when nothing was cut or only a column was: text that
         /// starts with whitespace and has no letter or '(' in it, such as a mass lined up with spaces.
         /// </param>
-        private static string CompositionPart(string line, out string ignored)
+        internal static string CompositionPart(string line, out string ignored)
         {
             ignored = null;
             string glycan = line.Split('\t')[0];

@@ -1086,13 +1086,15 @@ namespace Test
         /// <summary>
         /// A glyco.txt ID that is not a composition is kept as an ordinary modification: no '(' means a single
         /// residue and is passed over in silence; a '(' that does not parse is said, naming the ID and the
-        /// file, because startup must neither throw nor quietly read it as a different glycan.
+        /// file, because startup must neither throw nor quietly read it as a different glycan. The ID is cut the
+        /// way a database line is: text after the last ')' is ignored, as String2Kind ignored it, and said.
         /// </summary>
         [TestCase("Hex", null, false)]
         [TestCase("Galactosyl on N-term", null, false)]
         [TestCase("Hex(1)HexNAc(1)", "Hex(1)HexNAc(1)", false)]
         [TestCase("Hex(1)HexNo(1)", null, true)]
-        [TestCase("Hex(1)HexNAc(1", null, true)]
+        [TestCase("HexNAc(1)Hex(1) on S", "HexNAc(1)Hex(1)", true)]
+        [TestCase("Hex(1)HexNAc(1", "Hex(1)", true)]
         public static void AGlycoTxtIdIsAGlycanOnlyWhenItParsesAsAComposition(string id, string composition, bool warns)
         {
             var warnings = new List<string>();
@@ -1113,7 +1115,8 @@ namespace Test
             Assert.That(ours, warns ? Has.Count.EqualTo(1) : Is.Empty);
             if (warns)
             {
-                Assert.That(ours[0], Does.Contain("glyco.txt").And.Contain("ordinary modification"));
+                Assert.That(ours[0], Does.Contain("glyco.txt")
+                    .And.Contain(composition == null ? "ordinary modification" : "ignoring"));
             }
         }
 
