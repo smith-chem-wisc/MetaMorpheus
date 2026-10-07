@@ -658,10 +658,20 @@ namespace MetaMorpheusCommandLine
                 return 5;
             }
 
+            // MetaMorpheus has no TMT16 multiplex label: TMTpro 16-plex is searched with TMT18, the same
+            // reagent. TmtDesign.txt names no kit, and TMT16's channels are TMT18's first sixteen, so the
+            // file is one a TMT18 run reads as is. Said, so the search is not set to a label that is not there.
+            if (tag.TagType == Omics.Modifications.IsobaricMassTagType.TMT16)
+            {
+                output.WriteLine("TMT16 is searched in MetaMorpheus with its TMT18 multiplex label (TMTpro, the same reagent). "
+                    + "This design is read as is by such a run; channels 134C and 135N stay empty.");
+            }
+
             design.WriteTmtDesign(designPath);
             output.WriteLine("Wrote " + designPath);
             return 0;
         }
+
         /// <summary>
         /// Prints what one SDRF document says about quantification, and runs nothing else.
         ///
