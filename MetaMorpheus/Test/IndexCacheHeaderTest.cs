@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using TaskLayer;
+using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 
 namespace Test
@@ -394,5 +395,111 @@ namespace Test
                 Directory.Delete(folder, true);
             }
         }
+
+        /// <summary>
+        /// The fingerprint has to change when ANY digestion setting changes, because
+        /// <c>SameSettings</c> compares this text verbatim: a setting the fingerprint does not carry is
+        /// a setting under which a stale index is silently reused, and the run then searches a peptide
+        /// index built for different parameters. There is no error and nothing else notices.
+        /// </summary>
+        /// <remarks>
+        /// These are regression tests for a real gap rather than hypothetical ones. <c>ToString</c> named
+        /// digestion settings one at a time, so every option added to <c>DigestionParams</c> after those
+        /// lines were written has been invisible here. Three already were:
+        /// <c>KeepNGlycopeptide</c>, <c>KeepOGlycopeptide</c> and <c>GeneratehUnlabeledProteinsForSilac</c>.
+        /// The two cases below fail on the parent commit for exactly that reason. The third case is the
+        /// control: it varies a setting that WAS named individually, so it passes either way and proves
+        /// the comparison itself works.
+        /// </remarks>
+        [Test]
+        public static void IndexFingerprint_ChangesWhenKeepNGlycopeptideChanges() =>
+            AssertFingerprintDistinguishes(
+                new DigestionParams(keepNGlycopeptide: false),
+                new DigestionParams(keepNGlycopeptide: true));
+
+        [Test]
+        public static void IndexFingerprint_ChangesWhenSilacUnlabeledGenerationChanges() =>
+            AssertFingerprintDistinguishes(
+                new DigestionParams(generateUnlabeledProteinsForSilac: true),
+                new DigestionParams(generateUnlabeledProteinsForSilac: false));
+
+        [Test]
+        public static void IndexFingerprint_ChangesWhenMaxMissedCleavagesChanges() =>
+            AssertFingerprintDistinguishes(
+                new DigestionParams(maxMissedCleavages: 2),
+                new DigestionParams(maxMissedCleavages: 3));
+
+        /// <summary>
+        /// The <c>digestionParams:</c> line is the parameters as a saved task writes them. A setting that
+        /// is not in a task's TOML cannot be saved and reloaded, so tying the key to that TOML is what keeps
+        /// every user-settable option in the key without anyone remembering to add it. EngineLayer cannot
+        /// reach <see cref="MetaMorpheusTask.tomlConfig"/>, so this pins its own copy to identical output.
+        /// </summary>
+        [Test]
+        public static void IndexFingerprint_DigestionParamsLineIsTheSavedTaskToml()
+        {
+            var nonDefault = new DigestionParams("Asp-N", maxMissedCleavages: 4,
+                initiatorMethionineBehavior: InitiatorMethionineBehavior.Cleave, minPeptideLength: 5, maxPeptideLength: 33,
+                maxModificationIsoforms: 77, maxModsForPeptides: 3, searchModeType: Omics.Digestion.CleavageSpecificity.Semi,
+                fragmentationTerminus: Omics.Fragmentation.FragmentationTerminus.N, generateUnlabeledProteinsForSilac: false,
+                keepNGlycopeptide: true, keepOGlycopeptide: true);
+
+            foreach (Omics.Digestion.IDigestionParams digestionParams in new Omics.Digestion.IDigestionParams[]
+                { new DigestionParams(), nonDefault, new RnaDigestionParams(), new RnaDigestionParams("RNase T1", 3, 4, 20, 9, 2) })
+            {
+                string savedTaskToml = Nett.Toml.WriteString((object)digestionParams, MetaMorpheusTask.tomlConfig);
+                string expected = string.Join("; ", savedTaskToml.Split('\r', '\n').Where(line => line.Length > 0));
+
+                Assert.That(IndexingEngine.DescribeDigestionParams(digestionParams), Is.EqualTo(expected), digestionParams.GetType().Name);
+            }
+        }
+
+        /// <summary>
+        /// RNA parameters are covered too. <see cref="RnaDigestionParams"/> has no <c>ToString</c> override,
+        /// which is why the line used to be omitted for RNA rather than carry a constant type name.
+        /// </summary>
+        [Test]
+        public static void IndexFingerprint_DescribesRnaDigestionByItsSettings()
+        {
+            string folder = NewDatabaseFolder(out List<DbForTask> databases);
+
+            try
+            {
+                string fingerprint = MakeEngine(new CommonParameters(digestionParams: new RnaDigestionParams("RNase T1")), databases, generatePrecursorIndex: false).ToString();
+
+                Assert.That(fingerprint, Does.Contain("digestionParams: "));
+                Assert.That(fingerprint, Does.Contain("Rnase = \"RNase T1\""));
+                Assert.That(fingerprint, Does.Not.Contain(nameof(RnaDigestionParams)));
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// Builds two indexing engines that differ only in their digestion parameters and asserts their
+        /// fingerprints differ. Everything else -- databases, decoy type, fragment size -- is held equal,
+        /// so a failure can only come from the digestion settings.
+        /// </summary>
+        private static void AssertFingerprintDistinguishes(DigestionParams first, DigestionParams second)
+        {
+            string folder = NewDatabaseFolder(out List<DbForTask> databases);
+
+            try
+            {
+                string firstFingerprint = MakeEngine(new CommonParameters(digestionParams: first), databases, generatePrecursorIndex: false).ToString();
+                string secondFingerprint = MakeEngine(new CommonParameters(digestionParams: second), databases, generatePrecursorIndex: false).ToString();
+
+                Assert.That(firstFingerprint, Is.Not.EqualTo(secondFingerprint),
+                    "Two digestion settings that produce different peptides share an index fingerprint, so "
+                    + "SameSettings will reuse the index built under the other one.");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
     }
 }
