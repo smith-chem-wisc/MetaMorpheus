@@ -173,7 +173,9 @@ namespace EngineLayer
             }
         }
 
-        internal static void AddBasicMatchData(Dictionary<string, string> s, SpectralMatch psm, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false)
+        public const string AndromedaScoreHeader = "Andromeda Score";
+
+        internal static void AddBasicMatchData(Dictionary<string, string> s, SpectralMatch psm, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false, bool includeAndromedaScoreColumn = false)
         {
             s[SpectrumMatchFromTsvHeader.FileName] = psm == null ? " " : Path.GetFileNameWithoutExtension(psm.FullFilePath);
             s[SpectrumMatchFromTsvHeader.Ms2ScanNumber] = psm == null ? " " : psm.ScanNumber.ToString(CultureInfo.InvariantCulture);
@@ -190,6 +192,8 @@ namespace EngineLayer
             if (includeCollisionalEnergyColumn) // This information is only written if one or more spectra have collisional energy, otherwise it is not included in the output
                 s[SpectrumMatchFromTsvHeader.CollisionEnergy] = psm == null ? " " : psm.CollisionalEnergy.HasValue ? psm.CollisionalEnergy.Value.ToString("F2", CultureInfo.InvariantCulture) : "N/A";
             s[SpectrumMatchFromTsvHeader.Score] = psm == null ? " " : psm.Score.ToString("F3", CultureInfo.InvariantCulture);
+            if (includeAndromedaScoreColumn) // only written when SearchParameters.WriteAndromedaScore computed it
+                s[AndromedaScoreHeader] = psm == null ? " " : psm.AndromedaScore.HasValue ? psm.AndromedaScore.Value.ToString("F3", CultureInfo.InvariantCulture) : "N/A";
             s[SpectrumMatchFromTsvHeader.DeltaScore] = psm == null ? " " : psm.DeltaScore.ToString("F3", CultureInfo.InvariantCulture);
             s[SpectrumMatchFromTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Notch / MassDiffAcceptor.NotchScalar)).ResolvedString;
         }

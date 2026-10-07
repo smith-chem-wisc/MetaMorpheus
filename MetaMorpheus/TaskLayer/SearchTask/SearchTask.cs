@@ -529,6 +529,14 @@ namespace TaskLayer
                             }
                             ReportProgress(new ProgressEventArgs(100, "Done with spectral library similarity!", thisId));
                         }
+
+                        if (SearchParameters.WriteAndromedaScore)
+                        {
+                            foreach (var categoryPsms in fileSpecificPsmsSeparatedByFdrCategory.Where(c => c != null))
+                            {
+                                AndromedaScoring.ScorePsms(categoryPsms, arrayOfMs2ScansSortedByMass, paramToUse);
+                            }
+                        }
                     }
 
                     lock (psmLock)
@@ -573,6 +581,12 @@ namespace TaskLayer
                     Status("Calculating spectral library similarity...", thisId);
                     SpectralLibrarySearchFunction.CalculateSpectralAngles(spectralLibrary, fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams);
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
+                }
+
+                // Non-specific search scores its category arrays above, before they are merged
+                if (SearchParameters.WriteAndromedaScore && SearchParameters.SearchType != SearchType.NonSpecific)
+                {
+                    AndromedaScoring.ScorePsms(fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams);
                 }
 
                 lock (psmLock)
