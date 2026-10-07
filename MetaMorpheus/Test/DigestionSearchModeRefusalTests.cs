@@ -156,6 +156,14 @@ namespace Test
             Assert.That(MetaMorpheusTask.AsksForSeeds(digestionParams), Is.False);
         }
 
+        /// <summary>A task without CommonParameters has no digestion settings to refuse.</summary>
+        [Test]
+        public static void GetSeedDigestionRefusal_WithoutCommonParameters_IsNull()
+        {
+            var task = new SearchTask { CommonParameters = null };
+            Assert.That(task.GetSeedDigestionRefusal("MyTask"), Is.Null);
+        }
+
         private static IEnumerable<TestCaseData> EveryRnaTaskAndRnase()
         {
             foreach (string kind in new[] { "Gptmd", "Calibration", "ClassicSearch", "ModernSearch" })

@@ -95,7 +95,8 @@ namespace TaskLayer
             }
 
             string which = taskName == null ? "This task" : $"Task \"{taskName}\"";
-            if (CommonParameters?.DigestionParams is RnaDigestionParams rnaDigestionParams)
+            IDigestionParams digestion = CommonParameters?.DigestionParams; // null CommonParameters: nothing to check
+            if (digestion is RnaDigestionParams rnaDigestionParams)
             {
                 return AsksForSeeds(rnaDigestionParams)
                     ? $"Cannot proceed. {which} uses the rnase {rnaDigestionParams.Rnase.Name}, which gives seed oligos that only a non-specific search could use, " +
@@ -103,7 +104,7 @@ namespace TaskLayer
                     : null;
             }
 
-            if (CommonParameters?.DigestionParams is not DigestionParams digestionParams || !AsksForSeeds(digestionParams))
+            if (digestion is not DigestionParams digestionParams || !AsksForSeeds(digestionParams))
             {
                 return null;
             }
