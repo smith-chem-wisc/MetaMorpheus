@@ -13,6 +13,9 @@ using System.Threading.Tasks;
 using Omics;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
+using Omics.Digestion;
+using Nett;
+using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 
 namespace EngineLayer.Indexing
@@ -96,21 +99,62 @@ namespace EngineLayer.Indexing
             //
             // Three options were already in that state: KeepNGlycopeptide, KeepOGlycopeptide and
             // GeneratehUnlabeledProteinsForSilac have never appeared above. Rather than adding a line
-            // per option forever, append the whole stringification: DigestionParams.ToString() is
-            // append-only by convention, so every present and future option is covered here from the
-            // moment it exists, with no further change to this method.
+            // per option forever, append the parameters as MetaMorpheus saves them in a task's TOML:
+            // every user-settable option has to be in that TOML or a saved task could not reload it, so
+            // every present and future option is covered here from the moment it exists, with no further
+            // change to this method. See DescribeDigestionParams.
             //
             // The repetition of fields already named above is deliberate and harmless -- this text is
-            // only ever compared whole, never parsed. Guarded the same way as the two lines above,
-            // because IDigestionParams is the declared type and RnaDigestionParams has no ToString()
-            // override, so an unguarded call would append a constant type name carrying no settings.
-            if (CommonParameters.DigestionParams is DigestionParams digestionParamsFingerprint)
-                sb.AppendLine("digestionParams: " + digestionParamsFingerprint.ToString());
+            // only ever compared whole, never parsed.
+            sb.AppendLine("digestionParams: " + DescribeDigestionParams(CommonParameters.DigestionParams));
 
             sb.AppendLine("maximumFragmentSize" + (int)Math.Round(MaxFragmentSize));
 
             sb.Append("Localizeable mods: " + BioPolymerList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Writes digestion parameters the way <c>MetaMorpheusTask.tomlConfig</c> saves them, for the
+        /// digestion types only. That config lives in TaskLayer, which EngineLayer cannot reference;
+        /// <c>IndexCacheHeaderTest</c> pins the two to identical output so they cannot drift apart.
+        /// Write-only: nothing reads this text back.
+        /// </summary>
+        private static readonly TomlSettings DigestionParamsToml = TomlSettings.Create(cfg => cfg
+            .ConfigureType<Protease>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.ToString())))
+            .ConfigureType<Rnase>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.Name)))
+            .ConfigureType<DigestionParams>(type => type
+                .IgnoreProperty(p => p.DigestionAgent)
+                .IgnoreProperty(p => p.SpecificDigestionAgent)
+                .IgnoreProperty(p => p.MaxMods)
+                .IgnoreProperty(p => p.MaxLength)
+                .IgnoreProperty(p => p.MinLength))
+            .ConfigureType<RnaDigestionParams>(type => type
+                .IgnoreProperty(p => p.DigestionAgent)
+                .IgnoreProperty(p => p.SpecificDigestionAgent)));
+
+        /// <summary>
+        /// The digestion parameters for the index cache key: their TOML, one setting per entry, on one line.
+        /// </summary>
+        /// <remarks>
+        /// TOML rather than <c>DigestionParams.ToString()</c>, which covers only what mzLib remembers to
+        /// append to it, and nothing at all for <see cref="RnaDigestionParams"/>, which has no override.
+        /// The TOML is written by reflection over the runtime type, so it names every setting by key and
+        /// covers protein and RNA parameters alike.
+        /// </remarks>
+        internal static string DescribeDigestionParams(IDigestionParams digestionParams)
+        {
+            if (digestionParams == null)
+            {
+                return "none";
+            }
+
+            string toml = Toml.WriteString((object)digestionParams, DigestionParamsToml);
+            return string.Join("; ", toml.Split('\r', '\n').Where(line => line.Length > 0));
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()

@@ -430,20 +430,45 @@ namespace Test
                 new DigestionParams(maxMissedCleavages: 3));
 
         /// <summary>
-        /// RNA digestion parameters add no <c>digestionParams:</c> line. <see cref="RnaDigestionParams"/> has no
-        /// <c>ToString</c> override, so appending it unguarded would add a constant type name that carries no
-        /// settings and only looks like coverage.
+        /// The <c>digestionParams:</c> line is the parameters as a saved task writes them. A setting that
+        /// is not in a task's TOML cannot be saved and reloaded, so tying the key to that TOML is what keeps
+        /// every user-settable option in the key without anyone remembering to add it. EngineLayer cannot
+        /// reach <see cref="MetaMorpheusTask.tomlConfig"/>, so this pins its own copy to identical output.
         /// </summary>
         [Test]
-        public static void IndexFingerprint_OmitsTheWholeParamsLine_ForRnaDigestion()
+        public static void IndexFingerprint_DigestionParamsLineIsTheSavedTaskToml()
+        {
+            var nonDefault = new DigestionParams("Asp-N", maxMissedCleavages: 4,
+                initiatorMethionineBehavior: InitiatorMethionineBehavior.Cleave, minPeptideLength: 5, maxPeptideLength: 33,
+                maxModificationIsoforms: 77, maxModsForPeptides: 3, searchModeType: Omics.Digestion.CleavageSpecificity.Semi,
+                fragmentationTerminus: Omics.Fragmentation.FragmentationTerminus.N, generateUnlabeledProteinsForSilac: false,
+                keepNGlycopeptide: true, keepOGlycopeptide: true);
+
+            foreach (Omics.Digestion.IDigestionParams digestionParams in new Omics.Digestion.IDigestionParams[]
+                { new DigestionParams(), nonDefault, new RnaDigestionParams(), new RnaDigestionParams("RNase T1", 3, 4, 20, 9, 2) })
+            {
+                string savedTaskToml = Nett.Toml.WriteString((object)digestionParams, MetaMorpheusTask.tomlConfig);
+                string expected = string.Join("; ", savedTaskToml.Split('\r', '\n').Where(line => line.Length > 0));
+
+                Assert.That(IndexingEngine.DescribeDigestionParams(digestionParams), Is.EqualTo(expected), digestionParams.GetType().Name);
+            }
+        }
+
+        /// <summary>
+        /// RNA parameters are covered too. <see cref="RnaDigestionParams"/> has no <c>ToString</c> override,
+        /// which is why the line used to be omitted for RNA rather than carry a constant type name.
+        /// </summary>
+        [Test]
+        public static void IndexFingerprint_DescribesRnaDigestionByItsSettings()
         {
             string folder = NewDatabaseFolder(out List<DbForTask> databases);
 
             try
             {
-                string fingerprint = MakeEngine(new CommonParameters(digestionParams: new RnaDigestionParams()), databases, generatePrecursorIndex: false).ToString();
+                string fingerprint = MakeEngine(new CommonParameters(digestionParams: new RnaDigestionParams("RNase T1")), databases, generatePrecursorIndex: false).ToString();
 
-                Assert.That(fingerprint, Does.Not.Contain("digestionParams: "));
+                Assert.That(fingerprint, Does.Contain("digestionParams: "));
+                Assert.That(fingerprint, Does.Contain("Rnase = \"RNase T1\""));
                 Assert.That(fingerprint, Does.Not.Contain(nameof(RnaDigestionParams)));
             }
             finally
