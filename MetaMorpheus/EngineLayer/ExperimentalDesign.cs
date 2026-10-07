@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MassSpectrometry;
@@ -112,6 +113,9 @@ namespace EngineLayer
 
         /// <summary>
         /// Checks for errors in the experimental design. Will return null if there are no errors.
+        /// A gap in a condition's biological replicate numbers is not an error: a replicate number can
+        /// name a subject across conditions, or a sample that was lost, so it is kept as given and
+        /// reported by GetWarningsInExperimentalDesign. Fractions and techreps must still run 1..N.
         /// </summary>
         public static string GetErrorsInExperimentalDesign(List<SpectraFileInfo> spectraFileInfos)
         {
@@ -121,17 +125,11 @@ namespace EngineLayer
             foreach (var condition in conditions)
             {
                 var temp = condition.OrderBy(p => p.BiologicalReplicate).ThenBy(p => p.Fraction).ThenBy(p => p.TechnicalReplicate);
-                int numB = temp.Max(p => p.BiologicalReplicate + 1);
 
-                // check bioreps are in order
-                for (int b = 0; b < numB; b++)
+                // check each biorep that is present; a missing biorep is a warning, not an error
+                foreach (int b in temp.Select(p => p.BiologicalReplicate).Distinct())
                 {
                     var biorepFiles = temp.Where(p => p.BiologicalReplicate == b);
-
-                    if (!biorepFiles.Any())
-                    {
-                        return "Condition \"" + condition.Key + "\" biorep " + (b + 1) + " is missing!";
-                    }
 
                     // check fractions are in order
                     int numF = biorepFiles.Max(p => p.Fraction + 1);
@@ -168,6 +166,31 @@ namespace EngineLayer
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// One warning per condition whose biological replicates are not numbered 1..N, naming the
+        /// missing numbers. Such a design is quantified as numbered; the warning is there because a
+        /// missing number may be a sample that was lost or not searched. Empty when there is nothing to say.
+        /// </summary>
+        public static List<string> GetWarningsInExperimentalDesign(List<SpectraFileInfo> spectraFileInfos)
+        {
+            var warnings = new List<string>();
+
+            foreach (var condition in spectraFileInfos.GroupBy(p => p.Condition))
+            {
+                var present = condition.Select(p => p.BiologicalReplicate + 1).Distinct().OrderBy(b => b).ToList();
+                var missing = Enumerable.Range(1, Math.Max(0, present.Max())).Except(present).ToList();
+
+                if (missing.Any())
+                {
+                    warnings.Add("Condition \"" + condition.Key + "\" has biorep " + string.Join(", ", present) +
+                        " but not biorep " + string.Join(", ", missing) + ". The bioreps are quantified as numbered; " +
+                        "a missing number may be a sample that was lost or not searched.");
+                }
+            }
+
+            return warnings;
         }
     }
 }

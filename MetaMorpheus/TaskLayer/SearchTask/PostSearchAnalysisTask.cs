@@ -954,6 +954,11 @@ namespace TaskLayer
                         Warn("Error reading experimental design file: " + errors.First() + ". Skipping quantification");
                         return;
                     }
+
+                    foreach (string warning in ExperimentalDesign.GetWarningsInExperimentalDesign(spectraFileInfo))
+                    {
+                        Warn(warning);
+                    }
                 }
                 else if (Parameters.SearchParameters.Normalize)
                 {

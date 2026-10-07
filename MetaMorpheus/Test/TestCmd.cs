@@ -1290,11 +1290,12 @@ namespace Test
         }
 
         /// <summary>
-        /// Study-wide replicate numbering (control 1-2, treated 3-4) is rejected by MetaMorpheus as
-        /// "biorep 1 is missing". It is ranked within each condition, and the renumbering is printed.
+        /// Study-wide replicate numbering (control 1-2, treated 3-4) is kept as the SDRF gives it, and
+        /// the gap is reported. A run reads the design, warns about the gap and quantifies, rather than
+        /// refusing it as "biorep 1 is missing".
         /// </summary>
         [Test]
-        public static void TestSdrfDesignRenumbersStudyWideReplicatesAndSaysSo()
+        public static void TestSdrfDesignKeepsStudyWideReplicatesAndSaysSo()
         {
             var (sdrf, data) = WriteLabelFreeSdrf(
                 ("c1.raw", "WT", "DMSO", 1, 1), ("c2.raw", "WT", "DMSO", 2, 1),
@@ -1303,12 +1304,19 @@ namespace Test
 
             var written = new StringWriter();
             Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(0), written.ToString());
-            Assert.That(written.ToString(), Does.Contain("biological replicates renumbered 3 -> 1, 4 -> 2"));
+            Assert.That(written.ToString(), Does.Contain("Condition 'FA': biological replicates 3, 4, kept as the SDRF numbers them."));
+            Assert.That(written.ToString(), Does.Not.Contain("renumbered"));
 
+            var searched = settings.Spectra.Select(Path.GetFullPath).ToList();
             var readBack = ExperimentalDesign.ReadExperimentalDesign(
-                Path.Combine(data, GlobalVariables.ExperimentalDesignFileName), settings.Spectra.Select(Path.GetFullPath).ToList(), out var errors);
+                Path.Combine(data, GlobalVariables.ExperimentalDesignFileName), searched, out var errors);
             Assert.That(errors, Is.Empty);
-            Assert.That(readBack.Where(f => f.Condition == "FA").Select(f => f.BiologicalReplicate), Is.EquivalentTo(new[] { 0, 1 }));
+            Assert.That(readBack.Where(f => f.Condition == "FA").Select(f => f.BiologicalReplicate), Is.EquivalentTo(new[] { 2, 3 }));
+
+            var console = new List<string>();
+            Assert.That(Program.ResolveExperimentalDesign(data, searched, normalizationRequested: true, reportToConsole: true, write: console.Add),
+                Is.EqualTo(0));
+            Assert.That(console, Has.Some.StartWith("Condition \"FA\" has biorep 3, 4 but not biorep 1, 2."));
         }
 
         /// <summary>

@@ -425,10 +425,15 @@ namespace MetaMorpheusCommandLine
 
             string designPath = hasClassicDesign ? pathToExperDesign : pathToTmtDesign;
             List<string> errors;
+            var warnings = new List<string>();
 
             if (hasClassicDesign)
             {
-                ExperimentalDesign.ReadExperimentalDesign(designPath, startingRawFilenameList, out errors);
+                var design = ExperimentalDesign.ReadExperimentalDesign(designPath, startingRawFilenameList, out errors);
+                if (!errors.Any())
+                {
+                    warnings = ExperimentalDesign.GetWarningsInExperimentalDesign(design);
+                }
             }
             else
             {
@@ -440,6 +445,10 @@ namespace MetaMorpheusCommandLine
                 if (reportToConsole)
                 {
                     write("Read " + Path.GetFileName(designPath) + " successfully");
+                    foreach (string warning in warnings)
+                    {
+                        write(warning);
+                    }
                 }
 
                 return 0;
@@ -549,7 +558,7 @@ namespace MetaMorpheusCommandLine
         /// Refuses rather than writes anything MetaMorpheus would reject, because an invalid design is
         /// worse than none: a run finding one skips quantification with only a warning. The report is
         /// printed whatever the verbosity, as for --auditSdrf: it is what was asked for, and it is the
-        /// only record of a biological-replicate renumbering.
+        /// only record of a biological replicate number added where the SDRF gives none.
         /// </summary>
         /// <returns>0 when the design was written; 4 when the SDRF could not be read; 5 when the design
         /// was refused or a design file is already there.</returns>
