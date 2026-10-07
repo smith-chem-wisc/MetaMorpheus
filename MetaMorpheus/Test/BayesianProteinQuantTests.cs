@@ -158,7 +158,7 @@ namespace Test
                 Assert.That(bayesianGroups, Is.Unique);
 
                 Assert.That(File.ReadAllText(Path.Combine(firstRun, "results.txt")),
-                    Does.Contain("Bayesian protein quantification: control condition control, fold-change cutoff 0.1, random seed 42"));
+                    Does.Contain("Bayesian protein quantification: control condition control, fold-change cutoff 0.1, random seed 42. Its FDR values are estimated by FlashLFQ over all of its protein groups"));
 
                 Assert.That(File.ReadAllText(Path.Combine(secondRun, BayesianFileName)),
                     Is.EqualTo(File.ReadAllText(Path.Combine(firstRun, BayesianFileName))), "the fixed seed makes the step reproducible");

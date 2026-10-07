@@ -159,6 +159,11 @@ namespace TaskLayer
         /// Run FlashLFQ's Bayesian protein fold-change analysis after label-free quantification, comparing every
         /// condition in the experimental design against <see cref="BayesianControlCondition"/>, and write
         /// BayesianFoldChangeAnalysis.tsv. Needs a design with at least two conditions; off for SILAC.
+        /// Slow: it runs Markov chain Monte Carlo (1000 burn-in + 3000 steps) per protein for every condition
+        /// compared, with two model fits per unpaired comparison, so on a full proteome with several conditions it
+        /// can add minutes to hours. Its FDR column is estimated over all of FlashLFQ's protein groups, before
+        /// the file drops contaminants, high-q groups and UNDEFINED, and is not re-estimated on the rows written.
+        /// Set in the task toml only; there is no GUI control yet.
         /// </summary>
         public bool DoBayesianProteinQuant { get; set; }
 

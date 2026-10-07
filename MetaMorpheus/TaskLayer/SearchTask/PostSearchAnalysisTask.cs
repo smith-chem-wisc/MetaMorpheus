@@ -2668,7 +2668,10 @@ namespace TaskLayer
             Parameters.SearchTaskResults.AddTaskSummaryText(
                 "Bayesian protein quantification: control condition " + searchParameters.BayesianControlCondition
                 + ", fold-change cutoff " + searchParameters.BayesianFoldChangeCutoff.ToString(CultureInfo.InvariantCulture)
-                + ", random seed " + searchParameters.BayesianRandomSeed);
+                + ", random seed " + searchParameters.BayesianRandomSeed
+                + ". Its FDR values are estimated by FlashLFQ over all of its protein groups, including contaminants,"
+                + " groups above the protein q-value threshold and UNDEFINED, which " + Path.GetFileName(bayesianPath)
+                + " leaves out; they are not re-estimated on the rows written.");
         }
 
         private void WritePeakQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
