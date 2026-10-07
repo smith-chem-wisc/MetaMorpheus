@@ -134,8 +134,35 @@ namespace Test
             // Act
             float result = EngineLayer.PepAnalysisEngine.Xcorr(psm, selectedPeptide, new MzSpectrum(xArray, yArray, true));
 
-            // Assert
-            Assert.That(58.8, Is.EqualTo(result).Within(1)); // Allowing a small tolerance for floating-point comparison
+            // Assert. Fast xcorr (Eng et al. 2008) subtracts the mean over the 150 offsets in +/-75:
+            //   ion 150: 20 - (10 + 30) / 150 = 19.7333;  ion 250: 40 - (30 + 50) / 150 = 39.4667
+            // Dividing by the m/z span of the peaks present instead gives 19.6 + 39.2 = 58.8.
+            Assert.That(result, Is.EqualTo(59.2).Within(1e-4));
+        }
+
+        [Test]
+        public void Xcorr_IsotopePeak_BackgroundIsMeanOverOffsetsNotPeakSpan()
+        {
+            // A clean b ion at 500 (I = 100) with its +1 isotope at 501.003 (I = 50) and nothing else within +/-75.
+            // Fast xcorr background = 50 / 150, so the ion keeps almost all of its intensity.
+            var xArray = new double[] { 500, 501.003 };
+            var yArray = new double[] { 100, 50 };
+            var fragments = new List<MatchedFragmentIon>
+            {
+                new MatchedFragmentIon(new Product(ProductType.b, FragmentationTerminus.N, 500, 1, 1, 0), 500, 100, 1),
+            };
+            var psm = CreateSpectralMatch(xArray, yArray, [500], [100], fragments);
+            var selectedPeptide = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
+
+            float isotopeOnly = PepAnalysisEngine.Xcorr(psm, selectedPeptide, new MzSpectrum(xArray, yArray, true));
+            Assert.That(isotopeOnly, Is.EqualTo(100 - 50.0 / 150).Within(1e-4)); // 99.6667
+
+            // An unrelated, tiny peak 70 Th away must barely move the score (it adds 1 / 150 to the background).
+            var xFar = new double[] { 430, 500, 501.003 };
+            var yFar = new double[] { 1, 100, 50 };
+            float withFarPeak = PepAnalysisEngine.Xcorr(psm, selectedPeptide, new MzSpectrum(xFar, yFar, true));
+            Assert.That(withFarPeak, Is.EqualTo(100 - 51.0 / 150).Within(1e-4)); // 99.66
+            Assert.That(isotopeOnly - withFarPeak, Is.EqualTo(1.0 / 150).Within(1e-4));
         }
 
         [Test]

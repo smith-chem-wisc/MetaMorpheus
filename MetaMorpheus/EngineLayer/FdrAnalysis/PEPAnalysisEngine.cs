@@ -1720,9 +1720,15 @@ namespace EngineLayer
         /// (https://pmc.ncbi.nlm.nih.gov/articles/PMC5409104/), Scoring and results reporting:
         ///     hyperscore = log(Nb! * Ny! * sum(I_b,i) * sum(I_y,i))
         /// i.e. the product of the separate N- and C-terminal intensity sums, not a single combined sum.
-        /// Computed here in log10 and term by term. A terminus with no matched ions contributes nothing to
+        /// The returned value is log10 (the paper writes "log"); check the base before comparing it with a
+        /// hyperscore reported by MSFragger. A terminus with no matched ions contributes nothing to
         /// either the factorial or the intensity term (0! = 1, and its empty sum is left out of the
         /// product rather than zeroing it), so a one-sided match scores only on the side that matched.
+        ///
+        /// Generalised from b/y: Nb counts every matched N-terminal ion (a, b, c, ...) and Ny every
+        /// C-terminal ion (x, y, z, ...), including each charge state and neutral-loss variant. Intensities
+        /// are the raw <see cref="MatchedFragmentIon.Intensity"/>, so the score moves with total ion
+        /// current; consider normalising to the base peak before using it as a feature.
         /// </summary>
         public static float GetFraggerHyperScore(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide)
         {
@@ -1755,6 +1761,12 @@ namespace EngineLayer
             return matched_n_IonCountFactorial + matched_c_IonCountFactorial + (float)log10IntensityProduct;
         }
 
+        /// <summary>Largest offset, in m/z, over which fast xcorr averages the background (Eng et al. 2008).</summary>
+        private const double XcorrMaxOffset = 75;
+
+        /// <summary>Number of offsets in [-75, 75] excluding 0: the fixed divisor of the fast-xcorr background mean.</summary>
+        private const double XcorrOffsetCount = 2 * XcorrMaxOffset;
+
         /// <summary>
         /// An approximation of the SEQUEST cross-correlation score (Eng, McCormack and Yates, J. Am. Soc.
         /// Mass Spectrom. 1994, 5, 976-989), using the "fast xcorr" observation of Eng et al., J. Proteome
@@ -1762,10 +1774,15 @@ namespace EngineLayer
         /// offsets lets xcorr be computed as a single dot product with the theoretical spectrum
         /// (explained at https://willfondrie.com/2019/02/an-intuitive-look-at-the-xcorr-score-function-in-proteomics/).
         ///
-        /// Because the match is already chosen, the dot product is evaluated only at the matched ions,
-        /// each with unit theoretical intensity. The background is the summed intensity of the other peaks
-        /// within +/-75 m/z divided by the m/z width they span, on the unbinned centroid spectrum. It is
-        /// therefore not numerically identical to SEQUEST's or Comet's binned xcorr.
+        /// Because the match is already chosen, the dot product is evaluated only at the matched ions.
+        /// For each matched ion the background is the fast-xcorr mean, y' = y - (1/150) * sum of y(x + tau)
+        /// over tau in [-75, 75], tau != 0: the summed intensity of the other peaks within +/-75 m/z divided
+        /// by the fixed 150 offsets. Further differences from SEQUEST's or Comet's xcorr, so the values are
+        /// not numerically comparable with theirs:
+        /// - the unbinned centroid spectrum is used, with no 1.0005 Th binning;
+        /// - intensities are raw, with no square root and no normalisation in 10 windows, so the score
+        ///   scales with ion current (consider normalising to the base peak before using it as a feature);
+        /// - every matched ion has unit theoretical intensity, with no flanking-peak or neutral-loss weights.
         /// </summary>
         /// <param name="spectrum">The MS2 spectrum the ions were matched in. Passed in because a
         /// <see cref="SpectralMatch"/> only retains its scan when a task opts in (see SetMs2Scan).</param>
@@ -1778,8 +1795,8 @@ namespace EngineLayer
 
             foreach (var peptideFragmentIon in fragments)
             {
-                int startIndex = Array.BinarySearch(xArray, peptideFragmentIon.Mz - 75);
-                int endIndex = Array.BinarySearch(xArray, peptideFragmentIon.Mz + 75);
+                int startIndex = Array.BinarySearch(xArray, peptideFragmentIon.Mz - XcorrMaxOffset);
+                int endIndex = Array.BinarySearch(xArray, peptideFragmentIon.Mz + XcorrMaxOffset);
 
                 // Ensure valid indices
                 startIndex = startIndex < 0 ? ~startIndex : startIndex;
@@ -1793,7 +1810,7 @@ namespace EngineLayer
                     continue;
                 }
 
-                // Sum yArray values between startIndex and endIndex
+                // Intensity of the other peaks within +/-75 m/z
                 double sum = 0;
                 for (int i = startIndex; i <= endIndex; i++)
                 {
@@ -1801,13 +1818,11 @@ namespace EngineLayer
                 }
                 sum -= peptideFragmentIon.Intensity; // Subtract the intensity of the current ion
 
-                double range = xArray[endIndex] - xArray[startIndex];
-                if (range > 0)
-                {
-                    sum /= range;
-                }
+                // Fast xcorr background: the mean over the fixed number of offsets, not over the m/z span
+                // of whichever peaks happen to be present (which made the penalty depend on unrelated peaks).
+                double background = sum / XcorrOffsetCount;
 
-                xcorr += Math.Max(peptideFragmentIon.Intensity - sum, 0);
+                xcorr += Math.Max(peptideFragmentIon.Intensity - background, 0);
             }
 
             return (float)xcorr;
