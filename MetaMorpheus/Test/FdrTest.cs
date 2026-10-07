@@ -419,6 +419,19 @@ namespace Test
                 { Path.GetFileName(maxScorePsm.FullFilePath), new Dictionary<int, Tuple<double, double>> { { (int)(2 * Math.Round(maxScorePsm.ScanRetentionTime / 2d, 0)), at } } }
             });
             Assert.That(pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy).HasHydrophobicity, Is.EqualTo(1));
+
+            // Missing bin: the file has a reference distribution, but not for this PSM's retention-time bin. This
+            // is the state ComputeMobilityValues builds when no confident target landed in that bin.
+            int otherBin = (int)(2 * Math.Round(maxScorePsm.ScanRetentionTime / 2d, 0)) + 2;
+            czeReference.SetValue(pepEngine, new Dictionary<string, Dictionary<int, Tuple<double, double>>>
+            {
+                { Path.GetFileName(maxScorePsm.FullFilePath), new Dictionary<int, Tuple<double, double>> { { otherBin, at } } }
+            });
+            PsmData czeWithoutBin = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
+            Assert.That(czeWithoutBin.HasHydrophobicity, Is.EqualTo(0));
+            Assert.That(czeWithoutBin.HydrophobicityZScore, Is.EqualTo(100));
+
+            // Missing file: no reference distribution for this file at all.
             czeReference.SetValue(pepEngine, new Dictionary<string, Dictionary<int, Tuple<double, double>>>());
             PsmData czeWithoutReference = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
             Assert.That(czeWithoutReference.HasHydrophobicity, Is.EqualTo(0));
