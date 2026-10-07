@@ -48,8 +48,6 @@ namespace EngineLayer
                 RandomStart = false
             };
 
-        private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
-
         /// <summary>
         /// The most training rounds any caller gets. <see cref="MaxTrainingRounds"/> is clamped to it, and it is
         /// what <see cref="FdrAnalysisEngine"/> asks for when iterative training is switched on
@@ -105,12 +103,10 @@ namespace EngineLayer
         /// So recomputing them per round re-derives bit-identical values -- and RT prediction is the
         /// single most expensive thing this engine does (~67% of an entire search before #2841).
         ///
-        /// This is only CORRECT because nothing is pruned until every round has run. `Ambiguity` reads
-        /// BestMatchingBioPolymersWithSetMods.Count(), which pruning (<see cref="PruneAmbiguousHypotheses"/>:
-        /// glyco, crosslink, nonspecific) reduces in place. A pruned match's surviving hypotheses keep their cache
-        /// keys, so a round after a prune would reuse vectors whose `Ambiguity` still counts the removed hypotheses.
-        /// Pruning is therefore applied once, after the loop, from the kept round's predictions
-        /// (<see cref="PruneFromKeptRound"/>), and no feature vector is read after it.
+        /// This is only CORRECT because this engine removes no hypotheses. `Ambiguity` reads
+        /// BestMatchingBioPolymersWithSetMods.Count(); a removal would leave the survivors' cached vectors counting
+        /// hypotheses that are gone. Removal by PEP happens afterwards, in
+        /// <see cref="SpectrumMatch.DisambiguationEngine"/>, from the per-hypothesis PEPs this engine records.
         ///
         /// The cached instances are never handed out: callers get a copy via <see cref="PsmData.WithLabel"/>.
         /// Memory: one PsmData (~200 B) per hypothesis for the engine's lifetime. That is tens of MB for a
@@ -168,15 +164,8 @@ namespace EngineLayer
         public IRetentionTimePredictor RetentionTimePredictor { get; }
 
         /// <summary>
-        /// When true, PEP also removes ambiguous match hypotheses predicted well below the best one. Only for
-        /// callers with no DisambiguationEngine downstream (glyco, crosslink, and nonspecific or semi-specific searches); a classic or modern SearchTask leaves it false.
-        /// </summary>
-        public bool PruneAmbiguousHypotheses { get; }
-        private int _ambiguousHypothesesRemoved;
-
-        /// <summary>
-        /// When pruning, each hypothesis's prediction from the round being scored, so the prune can wait until the
-        /// loop has decided which round to keep. Null when not pruning.
+        /// Each hypothesis's prediction from the round being scored. Written to the hypotheses only after the loop
+        /// has decided which round to keep (<see cref="RecordHypothesisPeps"/>), so a rejected round leaves no trace.
         /// </summary>
         private ConcurrentDictionary<SpectralMatch, (List<SpectralMatchHypothesis> Hypotheses, List<double> Predictions)> _roundPredictions;
 
@@ -193,12 +182,11 @@ namespace EngineLayer
             FileSpecificParametersDictionary = fileSpecificParameters.ToDictionary(p => Path.GetFileName(p.fileName), p => p.fileSpecificParameters);
         }
 
-        public PepAnalysisEngine(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, IRetentionTimePredictor? rtPredictor = null, bool pruneAmbiguousHypotheses = false)
+        public PepAnalysisEngine(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, IRetentionTimePredictor? rtPredictor = null)
         {
             // This creates a new list of PSMs, but does not clone the Psms themselves.
             // This allows the PSMs to be modified and the order to be preserved
             AllPsms = psms.OrderByDescending(p => p).ToList();
-            PruneAmbiguousHypotheses = pruneAmbiguousHypotheses;
             TrainingVariables = PsmData.trainingInfos[searchType];
             OutputFolder = outputFolder;
             SearchType = searchType;
@@ -285,7 +273,6 @@ namespace EngineLayer
             int numGroups = 4;
             List<int>[] peptideGroupIndices = GetPeptideGroupIndices(peptideGroups, numGroups);
             int maxThreads = FileSpecificParametersDictionary.Values.FirstOrDefault().MaxThreadsToUsePerFile;
-            // Independent of pruning: pruning waits until the loop has chosen a round (see PruneFromKeptRound).
             // Clamped here rather than trusted from the caller, so no caller can exceed the cap.
             int maxRounds = Math.Clamp(MaxTrainingRounds, 1, IterativeTrainingRoundCap);
             // Iteration relabels each fold from its own model's scores, which keeps held-out data out of the labels
@@ -366,7 +353,7 @@ namespace EngineLayer
             int previousAccepted = 0;
             // Snapshot so a round that makes things worse can be undone. One double per PSM.
             double[] bestPepSnapshot = null;
-            // When pruning, the predictions of the round whose PEPs are kept; the prune is applied from them after the loop.
+            // The predictions of the round whose PEPs are kept; written to the hypotheses after the loop.
             ConcurrentDictionary<SpectralMatch, (List<SpectralMatchHypothesis> Hypotheses, List<double> Predictions)> keptRoundPredictions = null;
 
             for (int round = 0; round < maxRounds; round++)
@@ -408,10 +395,7 @@ namespace EngineLayer
                     trainingData = nextTrainingData;
                 }
 
-                if (PruneAmbiguousHypotheses)
-                {
-                    _roundPredictions = new();
-                }
+                _roundPredictions = new();
                 var roundMetrics = new List<CalibratedBinaryClassificationMetrics>();
                 for (int fold = 0; fold < numGroups; fold++)
                 {
@@ -468,16 +452,12 @@ namespace EngineLayer
 
             Progress($"done: {roundsRun} round(s) kept; feature cache holds {_featureCache.Count} vectors");
 
-            if (PruneAmbiguousHypotheses)
-            {
-                _ambiguousHypothesesRemoved = PruneFromKeptRound(keptRoundPredictions);
-            }
+            RecordHypothesisPeps(keptRoundPredictions);
 
             string output = iterating
                 ? AggregateMetricsForOutput(allMetrics, positiveTrainingCount, negativeTrainingcount, QValueCutoff,
-                    PruneAmbiguousHypotheses ? _ambiguousHypothesesRemoved : null, roundsRun, previousAccepted, roundLog.ToString())
-                : AggregateMetricsForOutput(allMetrics, positiveTrainingCount, negativeTrainingcount, QValueCutoff,
-                    PruneAmbiguousHypotheses ? _ambiguousHypothesesRemoved : null);
+                    roundsRun, previousAccepted, roundLog.ToString())
+                : AggregateMetricsForOutput(allMetrics, positiveTrainingCount, negativeTrainingcount, QValueCutoff);
 
             if (iterationSkippedAtPsmLevel)
             {
@@ -625,31 +605,26 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// The prune for callers that set <see cref="PruneAmbiguousHypotheses"/>, applied once after the training
-        /// loop from the predictions of the round whose PEPs were kept. Deferring it is what lets pruning and
-        /// iteration be independent: nothing is removed from a round that is later rejected, and no feature
-        /// vector is read after a hypothesis is removed. With one round it removes exactly what pruning inside
-        /// <see cref="Compute_PSM_PEP"/> removed, because a match's predictions depend only on its own fold's model.
+        /// Writes each hypothesis's PEP from the round whose PEPs were kept, for
+        /// <see cref="SpectrumMatch.DisambiguationEngine"/> to judge after FDR. Taken from the kept round, not the
+        /// last round scored: <see cref="RestorePepValues"/> restores only the match-level PEP. The best hypothesis's
+        /// PEP equals the match's, because the match's is 1 minus the highest prediction.
         /// </summary>
-        /// <returns>The number of hypotheses removed.</returns>
-        private static int PruneFromKeptRound(
+        private static void RecordHypothesisPeps(
             ConcurrentDictionary<SpectralMatch, (List<SpectralMatchHypothesis> Hypotheses, List<double> Predictions)> keptRoundPredictions)
         {
-            int removed = 0;
             if (keptRoundPredictions == null)
             {
-                return removed;
+                return;
             }
 
-            var indicesOfPeptidesToRemove = new List<int>();
-            foreach (var (psm, (hypotheses, predictions)) in keptRoundPredictions)
+            foreach (var (_, (hypotheses, predictions)) in keptRoundPredictions)
             {
-                indicesOfPeptidesToRemove.Clear();
-                GetIndicesOfPeptidesToRemove(indicesOfPeptidesToRemove, predictions);
-                RemoveBestMatchingPeptidesWithLowPEP(psm, indicesOfPeptidesToRemove, hypotheses, ref removed);
+                for (int i = 0; i < hypotheses.Count; i++)
+                {
+                    hypotheses[i].PEP = 1 - predictions[i];
+                }
             }
-
-            return removed;
         }
 
         /// <summary>
@@ -963,7 +938,7 @@ namespace EngineLayer
         }
 
         public static string AggregateMetricsForOutput(List<CalibratedBinaryClassificationMetrics> allMetrics,
-            int positiveTrainingCount, int negativeTrainingCount, double qValueCutoff, int? ambiguousHypothesesRemoved = null,
+            int positiveTrainingCount, int negativeTrainingCount, double qValueCutoff,
             int trainingRounds = 1, int acceptedTargets = 0, string roundLog = null)
 
         {
@@ -1014,8 +989,6 @@ namespace EngineLayer
             s.AppendLine("*       PositiveRecall:  " + positiveRecall.Average());
             s.AppendLine("*       NegativePrecision:  " + negativePrecision.Average());
             s.AppendLine("*       NegativeRecall:  " + negativeRecall.Average());
-            if (ambiguousHypothesesRemoved.HasValue)
-                s.AppendLine($"*       Count of Ambiguous {char.ToUpper(GlobalVariables.AnalyteType.GetUniqueFormLabel()[0]) + GlobalVariables.AnalyteType.GetUniqueFormLabel()[1..]}s Removed:  " + ambiguousHypothesesRemoved.Value);
             s.AppendLine("*       Q-Value Cutoff for Training Targets:  " + qValueCutoff);
             s.AppendLine("*       Targets Used for Training:  " + positiveTrainingCount);
             s.AppendLine("*       Decoys Used for Training:  " + negativeTrainingCount);
@@ -1034,10 +1007,9 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// Assigns a PEP to every spectral match in the given groups. This method scores; it does not prune. When
-        /// <see cref="PruneAmbiguousHypotheses"/> is set, it records each hypothesis's prediction so that
-        /// <see cref="PruneFromKeptRound"/> can prune after the training loop. The DisambiguationEngine that runs after a SearchTask resolves
-        /// only hypotheses at different notches; hypotheses at the same notch stay ambiguous.
+        /// Assigns a PEP to every spectral match in the given groups. This method scores; it removes nothing. It records
+        /// each hypothesis's prediction so that <see cref="RecordHypothesisPeps"/> can write the kept round's to the
+        /// hypotheses after the training loop.
         /// </summary>
         public void Compute_PSM_PEP(List<SpectralMatchGroup> peptideGroups,
             List<int> peptideGroupIndices,
@@ -1071,10 +1043,8 @@ namespace EngineLayer
                                 {
                                     pepValuePredictions.Clear();
 
-                                    // One prediction per ambiguous match hypothesis. The PSM keeps the best of them, and the
-                                    // others stay in place. The DisambiguationEngine only judges matches that are ambiguous
-                                    // across notches (Notch == null). Hypotheses at the same notch (equal-mass sequences, mod
-                                    // positions, variant vs canonical) are not resolved by anything before parsimony.
+                                    // One prediction per ambiguous match hypothesis. The PSM takes the best of them, and the
+                                    // others stay in place for the DisambiguationEngine to judge.
                                     var hypotheses = psm.BestMatchingBioPolymersWithSetMods.ToList();
                                     foreach (SpectralMatchHypothesis bestMatch in hypotheses)
                                     {
@@ -1084,9 +1054,7 @@ namespace EngineLayer
                                         //A score is available using the variable pepvaluePrediction.Score
                                     }
 
-                                    // Never prunes here: a later round may be kept instead, and pruning cannot be undone.
-                                    // The predictions are kept, and PruneFromKeptRound prunes from the kept round's.
-                                    AssignPep(psm, hypotheses, pepValuePredictions, false);
+                                    AssignPep(psm, pepValuePredictions);
                                     _roundPredictions?.TryAdd(psm, (hypotheses, pepValuePredictions.ToList()));
                                 }
 
@@ -1106,24 +1074,12 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// Sets the PSM's PEP from the best of its hypotheses' predictions. When
-        /// <paramref name="pruneAmbiguousHypotheses"/> is true, also removes every hypothesis predicted more than
-        /// <see cref="AbsoluteProbabilityThatDistinguishesPeptides"/> below the best, and returns how many were
-        /// removed. The PEP is the same either way, because the best prediction is never removed.
+        /// Sets the PSM's PEP from the best of its hypotheses' predictions.
         /// </summary>
-        public static int AssignPep(SpectralMatch psm, List<SpectralMatchHypothesis> hypotheses, List<double> pepValuePredictions, bool pruneAmbiguousHypotheses)
+        public static void AssignPep(SpectralMatch psm, List<double> pepValuePredictions)
         {
-            int removed = 0;
-            if (pruneAmbiguousHypotheses)
-            {
-                List<int> indicesOfPeptidesToRemove = new List<int>();
-                GetIndicesOfPeptidesToRemove(indicesOfPeptidesToRemove, pepValuePredictions);
-                RemoveBestMatchingPeptidesWithLowPEP(psm, indicesOfPeptidesToRemove, hypotheses, ref removed);
-            }
-
             psm.PsmFdrInfo.PEP = 1 - pepValuePredictions.Max();
             psm.PeptideFdrInfo.PEP = 1 - pepValuePredictions.Max();
-            return removed;
         }
 
         /// <summary>
@@ -1351,55 +1307,6 @@ namespace EngineLayer
                 InternalIonCount = internalMatchingFragmentCount,
                 PrecursorDeconvolutionScore = (float)psm.PrecursorScanDeconvolutionScore,
             };
-        }
-
-        /// <summary>
-        /// Removes the given ambiguous match hypotheses from the PSM.
-        /// <remarks>
-        /// Called only when <see cref="PruneAmbiguousHypotheses"/> is set (glyco, crosslink and nonspecific searches,
-        /// which have no DisambiguationEngine downstream). Otherwise PEP scores and does not prune:
-        /// disambiguation-by-PEP belongs in <see cref="SpectrumMatch.DisambiguationEngine"/>, whose
-        /// own summary already names "PEPAnalysisEngine -> By PEP" as a site to consolidate there.
-        /// That engine resolves only cross-notch ambiguity today; same-notch hypotheses stay ambiguous.
-        /// </remarks>
-        /// </summary>
-        public static void RemoveBestMatchingPeptidesWithLowPEP(SpectralMatch psm, List<int> indicesOfPeptidesToRemove, List<SpectralMatchHypothesis> allPeptides, ref int ambiguousPeptidesRemovedCount)
-        {
-            int peptidesRemoved = 0;
-            foreach (var toRemove in indicesOfPeptidesToRemove)
-            {
-                psm.RemoveThisAmbiguousPeptide(allPeptides[toRemove - peptidesRemoved]);
-                peptidesRemoved++;
-            }
-            ambiguousPeptidesRemovedCount += peptidesRemoved;
-        }
-
-        /// <summary>
-        /// Given a set of PEP values, this method will find the indices of BestMatchingBioPolymersWithSetMods that are not within the required tolerance
-        /// This method will also remove the low scoring predictions from the set.
-        /// <remarks>
-        /// Called only when pruning -- see <see cref="RemoveBestMatchingPeptidesWithLowPEP"/>.
-        /// Note that it never drops the maximum (max - max = 0 is not &gt; the threshold), which is why,
-        /// within one engine run, pruning or not leaves every assigned PEP unchanged: PEP is 1 - pepValuePredictions.Max().
-        /// Across runs on the same matches it does not hold: pruning changes the next run's training rows (one per
-        /// hypothesis), the Ambiguity feature and the sequence grouping. NonSpecificEnzymeSearchEngine runs PEP twice.
-        /// </remarks>
-        /// </summary>
-        public static void GetIndicesOfPeptidesToRemove(List<int> indicesOfPeptidesToRemove, List<double> pepValuePredictions)
-        {
-            double highestPredictedPEPValue = pepValuePredictions.Max();
-            for (int i = 0; i < pepValuePredictions.Count; i++)
-            {
-                if ((highestPredictedPEPValue - pepValuePredictions[i]) > AbsoluteProbabilityThatDistinguishesPeptides)
-                {
-                    indicesOfPeptidesToRemove.Add(i);
-                }
-            }
-
-            foreach (int i in indicesOfPeptidesToRemove.OrderByDescending(p => p))
-            {
-                pepValuePredictions.RemoveAt(i);
-            }
         }
 
         #region Dictionary Builder Functions and Utilities
