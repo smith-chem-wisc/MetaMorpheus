@@ -244,7 +244,7 @@ namespace EngineLayer
                         allMods.Add(mod);
                         modTypes.Add(mod.ModificationType);
                     }
-                    else if (!mod.ModificationType.Equals("Unimod"))
+                    else if (!mod.ModificationType.Equals("Unimod") && !mod.ModificationType.Equals("Modomics"))
                     {
                         ErrorsReadingMods.Add("Duplicate mod IDs! Skipping " + mod.ModificationType + ":" + mod.IdWithMotif);
                     }
