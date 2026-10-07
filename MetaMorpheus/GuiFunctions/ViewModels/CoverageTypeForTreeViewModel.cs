@@ -1,16 +1,10 @@
-﻿using GuiFunctions;
-using OxyPlot;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using OxyPlot;
+using OxyPlot.Wpf;
 using System.Windows.Media;
 
 namespace GuiFunctions
 {
-    public class CoverageTypeForTreeViewModel : BaseViewModel
+    public class ColorForTreeViewModel : BaseViewModel
     {
         #region Private Properties
 
@@ -47,12 +41,18 @@ namespace GuiFunctions
 
         #region Constructor
 
-        public CoverageTypeForTreeViewModel(string name)
+        public ColorForTreeViewModel(string name, OxyColor defaultColor)
         {
             Name = name;
-            OxyColor color = MetaDrawSettings.CoverageTypeToColor[name];
-            SelectedColor = AddSpaces(color.GetColorName());
-            ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
+            SelectedColor = AddSpaces(defaultColor.GetColorName());
+            ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(defaultColor);
+        }
+
+        public ColorForTreeViewModel(string name, SolidColorBrush brush)
+        {
+            Name = name;
+            ColorBrush = brush;
+            SelectedColor = AddSpaces(brush.ToOxyColor().GetColorName());
         }
 
         #endregion
@@ -63,4 +63,7 @@ namespace GuiFunctions
             HasChanged = true;
         }
     }
+
+    public class CoverageTypeForTreeViewModel(string name)
+        : ColorForTreeViewModel(name, MetaDrawSettings.CoverageTypeToColor[name]);
 }

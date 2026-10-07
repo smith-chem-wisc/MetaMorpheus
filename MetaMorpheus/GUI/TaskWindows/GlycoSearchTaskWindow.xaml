@@ -89,11 +89,12 @@
                                 <StackPanel Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
                                     <RadioButton x:Name="RbtOGlycoSearch" Content="O-Glycopeptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
                                     <RadioButton x:Name="RbtNGlycoSearch" Visibility="Visible"  Content="N-Glycopeptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
-                                    <RadioButton x:Name="Rbt_N_O_GlycoSearch" Visibility="Hidden"  Content="N-O-Glyco-peptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
+                                    <RadioButton x:Name="Rbt_N_O_GlycoSearch" Visibility="Visible"  Content="N-O-Glyco-peptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Grid>
                             <Grid Grid.Row="1">
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
@@ -114,7 +115,7 @@
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="5">
                                     <Label Content="Keep top N candidates" />
-                                    <TextBox x:Name="txtTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbTopNum}" />
+                                    <local:IntegerTexBoxControl x:Name="txtTopNum"  Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbTopNum}" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="2">
                                     <Label Content="Data Type    "/>
@@ -139,10 +140,97 @@
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="3">
                                     <Label Content="Maximum OGlycan Allowed"/>
-                                    <TextBox x:Name="TbMaxOGlycanNum" PreviewTextInput="CheckIfNumber" Width="45"/>
+                                    <local:IntegerTexBoxControl x:Name="TbMaxOGlycanNum" Width="45"/>
                                 </StackPanel>
                                 <CheckBox x:Name="CkbOxoniumIonFilt" Content="OxoniumIonFilt" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" Grid.Row="4" Margin="0,5,0,0" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <StackPanel.ToolTip>
+                                        <TextBlock>
+                                            The heaviest total glycan mass, in Da, searched on one peptide. Default 4000.
+                                            <LineBreak />
+                                            Applies to every search type: O-glycan, N-glycan, and N-O-glycan.
+                                            <LineBreak />
+                                            The limit is on the sum of all glycans placed on the peptide (the single N-glycan in an N-glycan search).
+                                            <LineBreak />
+                                            Heavier combinations are never built or searched; raising the limit makes large glycan lists much slower.
+                                        </TextBlock>
+                                    </StackPanel.ToolTip>
+                                    <Label Content="Maximum Glycan Mass (Da)"/>
+                                    <local:DoubleTextBoxControl x:Name="TbMaxGlycanBoxMass" Width="45" LowerBound="0"/>
+                                </StackPanel>
                             </Grid>
+                        </Grid>
+                    </Expander>
+                </GroupBox>
+                <GroupBox Header="Individual Glycans" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                    <GroupBox.ToolTip>
+                        <TextBlock>
+                            Pick individual glycans instead of a whole database. The database each list above selects
+                            appears here as a group (both of them for an N-O-glycan search).
+                            Checking a group is the same as searching that entire database, which is the default,
+                            including any glycan added to the file later. Leaving every box unchecked also searches
+                            the whole selected database.
+                            A glycan is listed once per attachment site, so the same composition appears more
+                            than once -- on S and on T, for instance.
+                        </TextBlock>
+                    </GroupBox.ToolTip>
+                    <Expander x:Name="GlycanSelectionExpander">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="25"/>
+                                <RowDefinition Height="1*"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Horizontal" Grid.Row="0">
+                                <Label Content="Glycans"/>
+                                <TextBox x:Name="SearchGlycan" TextChanged="TextChanged_Glycan" HorizontalAlignment="Left" Margin="5,0,0,0" Height="22" Width="220">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                            <Style.Resources>
+                                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                                    <VisualBrush.Visual>
+                                                        <Label Content="Search name, code or mass..." Foreground="Gray" />
+                                                    </VisualBrush.Visual>
+                                                </VisualBrush>
+                                            </Style.Resources>
+                                            <Style.Triggers>
+                                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="Text" Value="{x:Null}">
+                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                                    <Setter Property="Background" Value="White" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                                <Label x:Name="GlycanSelectionSummary" Content="{Binding Summary}" Foreground="Gray" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TreeView x:Name="glycanTreeView" Grid.Row="1" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="400"
+                                      VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling">
+                                <TreeView.Resources>
+                                    <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
+                                        <StackPanel Orientation="Horizontal" Background="{Binding Background}" AutomationProperties.Name="{Binding DisplayName}">
+                                            <CheckBox IsChecked="{Binding Use}" AutomationProperties.Name="{Binding DisplayName}" />
+                                            <TextBlock Text="{Binding DisplayName}" FontWeight="Bold" />
+                                        </StackPanel>
+                                    </HierarchicalDataTemplate>
+                                    <DataTemplate DataType="{x:Type guiFunctions:ModForTreeViewModel}">
+                                        <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}" AutomationProperties.Name="{Binding DisplayName}">
+                                            <CheckBox IsChecked="{Binding Use}" AutomationProperties.Name="{Binding DisplayName}" />
+                                            <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </TreeView.Resources>
+                                <TreeView.ItemContainerStyle>
+                                    <Style TargetType="TreeViewItem">
+                                        <Setter Property="IsExpanded" Value="{Binding Expanded}"/>
+                                        <Setter Property="AutomationProperties.Name" Value="{Binding DisplayName}"/>
+                                    </Style>
+                                </TreeView.ItemContainerStyle>
+                            </TreeView>
                         </Grid>
                     </Expander>
                 </GroupBox>
@@ -159,31 +247,18 @@
                             </Style>
                         </Expander.Style>
                         <StackPanel>
-                            <GroupBox Header="File Load Parameters">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <StackPanel Margin="5">
-                                            <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor"/>
-                                            <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Grid>
-                            </GroupBox>
+                            <local:HostDeconParamControl x:Name="DeisotopingControl" DataContext="{Binding}"/>
                             <GroupBox Header="Peak Trimming">
                                 <StackPanel>
                                     <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks"/>
                                     <CheckBox x:Name="trimMsMs" Content="Trim MS2 Peaks"/>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Top N peaks" />
-                                        <TextBox x:Name="TopNPeaksTextBox"  PreviewTextInput="CheckIfNumber" Width="45" />
+                                        <local:IntegerTexBoxControl x:Name="TopNPeaksTextBox"   Width="45" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Minimum ratio" />
-                                        <TextBox x:Name="MinRatioTextBox"  PreviewTextInput="CheckIfNumber" Width="45" />
+                                        <local:DoubleTextBoxControl x:Name="MinRatioTextBox"  Width="45" />
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>
@@ -215,15 +290,30 @@
                                         </RadioButton>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label1" Content="Max Missed Cleavages" />
-                                            <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="CheckIfNumber"  Width="45" TextChanged="NonSpecificUpdate"/>
+                                            <local:IntegerTexBoxControl x:Name="missedCleavagesTextBox" Width="45" TextChanged="NonSpecificUpdate"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label_Copy" Content="Protease" />
                                             <ComboBox x:Name="proteaseComboBox" SelectionChanged="NonSpecificUpdate" />
                                         </StackPanel>
+                                        <CheckBox x:Name="SemiSpecificCheckBox" Content="Semi-specific digestion" Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <CheckBox.ToolTip>
+                                                <TextBlock>
+                                                    Also search peptides with only one terminus made by the protease, the other made elsewhere
+                                                    <LineBreak />
+                                                    (for example by StcE or another glycoprotease before trypsin, or by endogenous processing).
+                                                    <LineBreak />
+                                                    This replaces the former "semi-trypsin" protease: choose trypsin and check this box.
+                                                    <LineBreak />
+                                                    The search space is much larger, so the search is slower.
+                                                </TextBlock>
+                                            </CheckBox.ToolTip>
+                                        </CheckBox>
+                                        <!-- shown only for a loaded task this window cannot show as it is (see TaskWindowSearchMode) -->
+                                        <TextBlock x:Name="SearchModeWarningTextBlock" Visibility="Collapsed" TextWrapping="Wrap" MaxWidth="450" HorizontalAlignment="Left" Margin="10,0,5,5" Foreground="DarkRed" FontWeight="DemiBold" />
                                         <StackPanel Orientation="Horizontal" Margin="1">
                                             <Label x:Name="label2" Content="Number of Database Partitions" />
-                                            <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="numberOfDatabaseSearchesTextBox" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
@@ -233,17 +323,17 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
-                                            <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="maxModificationIsoformsTextBox" Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="Lb_MaxMods" Content="Max Modification Per Peptide" />
-                                            <TextBox x:Name="TxtBoxMaxModPerPep" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="TxtBoxMaxModPerPep"  Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
-                                            <TextBox x:Name="MinPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="MinPeptideLengthTextBox" Width="45" />
                                             <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
-                                            <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" TextChanged="NonSpecificUpdate"/>
+                                            <local:IntegerTexBoxControl x:Name="MaxPeptideLengthTextBox" Width="45" TextChanged="NonSpecificUpdate"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
@@ -251,30 +341,48 @@
                             <GroupBox Header="Fragment Ion Search Parameters">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="1.5*" />
+                                        <ColumnDefinition Width="1.5*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal"  Margin="5">
-                                            <Label x:Name="lblPrecusorMsTl"  Content="Precursor mass tolerance" />
+                                            <Label x:Name="lblPrecusorMsTl"  Content="Precursor Mass tolerance" />
                                             <local:DoubleTextBoxControl x:Name="PrecusorMsTlTextBox"  Width="45" />
                                             <ComboBox x:Name="cbbPrecusorMsTl" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="label2_Copy" Content="Product Mass Tolerance" />
+                                            <Label x:Name="label2_Copy" Content="Product Mass Tolerance (Higher Res)" ToolTipService.ShowDuration="99999" ToolTipService.InitialShowDelay="500">
+                                                <Label.ToolTip>
+                                                    <TextBlock>
+                                                        Mass tolerance used for matching fragment ions in the main MS2 scan.
+                                                        Use this for higher-resolution analyzers (for example, Orbitrap/TOF).
+                                                    </TextBlock>
+                                                </Label.ToolTip>
+                                            </Label>
                                             <local:DoubleTextBoxControl x:Name="productMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
                                             <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left" />
                                         </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="lblChildMs2" Content="Product Mass Tolerance (Lower Res)" ToolTipService.ShowDuration="99999" ToolTipService.InitialShowDelay="500">
+                                                <Label.ToolTip>
+                                                    <TextBlock>
+                                                        Mass tolerance used for matching fragment ions in the MS2 child scan.
+                                                        Use this for lower-resolution analyzers (for example, ion trap).
+                                                    </TextBlock>
+                                                </Label.ToolTip>
+                                            </Label>
+                                            <local:DoubleTextBoxControl x:Name="productMassTolerance_LowResTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
+                                            <ComboBox x:Name="productMassTolerance_LowResComboBox" HorizontalAlignment="Left" />
+                                        </StackPanel>
                                     </StackPanel>
-                                    <StackPanel Grid.Column="2">
+                                    <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="ffdf" Content="Minimum score allowed:" />
-                                            <TextBox x:Name="minScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="minScoreAllowed" Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label Content="Max Threads" />
-                                            <TextBox x:Name="maxThreadsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <local:IntegerTexBoxControl x:Name="maxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
@@ -282,7 +390,7 @@
                                                         Enter a lower number to limit CPU usage.
                                                     </TextBlock>
                                                 </TextBox.ToolTip>
-                                            </TextBox>
+                                            </local:IntegerTexBoxControl>
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
@@ -448,7 +556,7 @@
                             </ToolTipService.ToolTip>
                         </RadioButton>
                         <StackPanel Orientation="Horizontal">
-                            <TextBox x:Name="PeakFindingToleranceTextBox"  PreviewTextInput="CheckIfNumber" Width="30" Height="20">
+                            <local:DoubleTextBoxControl x:Name="PeakFindingToleranceTextBox" Width="30" Height="20">
                                 <TextBox.IsEnabled>
                                     <MultiBinding Converter="{StaticResource boolOrConverter}">
                                         <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
@@ -457,7 +565,7 @@
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="PPM tolerance for MS1 (LFQ) peakfinding" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
-                            </TextBox>
+                            </local:DoubleTextBoxControl>
                             <Label x:Name="peakFindingLabel" Content=" ppm peakfinding tolerance">
                                 <Label.IsEnabled>
                                     <MultiBinding Converter="{StaticResource boolOrConverter}">
@@ -489,15 +597,109 @@
                     </StackPanel>
                 </GroupBox>
 
+                <!-- Post-Search Analysis -->
+                <GroupBox Header="Post-Search Analysis" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
+                    <Expander x:Name="AnalysisExpander" Collapsed="ApmdExpander_Collapsed">
+                        <Expander.Style>
+                            <Style TargetType="Expander">
+                                <Setter Property="Header" Value="{Binding AnalysisExpanderTitle}" />
+                                <Style.Triggers>
+                                    <Trigger Property="IsExpanded" Value="True">
+                                        <Setter Property="Header" Value="Hide" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Expander.Style>
+                        <StackPanel>
+                            <GroupBox Header="Retention Time Predictor">
+                                <StackPanel Margin="5">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="1*" />
+                                        </Grid.ColumnDefinitions>
+                                        <RadioButton x:Name="ChronologerRadioButton" Grid.Column="0" HorizontalAlignment="Center"
+                                                     GroupName="RTPredictorType" Content="Chronologer"  IsChecked="True"
+                                                     ToolTip="Deep-learning retention time predictor. More accurate but noticeably slower." />
+                                        <RadioButton x:Name="SSRCalcRadioButton" Grid.Column="1" HorizontalAlignment="Center"
+                                                     GroupName="RTPredictorType" Content="SSRCalc"
+                                                     ToolTip="Classic hydrophobicity-based retention time calculator. Much faster, slightly less accurate." />
+                                        <RadioButton x:Name="Prosit2019iRTRadioButton" Grid.Column="2" HorizontalAlignment="Center"
+                                                     GroupName="RTPredictorType" Content="Prosit 2019 (network)"
+                                                     ToolTip="Deep-learning retention time predictor served via Koina (network required). Predicts indexed RT for unmodified/oxidized peptides." />
+                                        <RadioButton x:Name="Prosit2020iRTTMTRadioButton" Grid.Column="3" HorizontalAlignment="Center"
+                                                     GroupName="RTPredictorType" Content="Prosit 2020 (network)"
+                                                     ToolTip="Deep-learning retention time predictor served via Koina (network required). Same as Prosit2019iRT but trained for TMT-labeled peptides." />
+                                    </Grid>
+                                </StackPanel>
+                            </GroupBox>
+                            <GroupBox Header="Pruned Database Writing">
+                                <StackPanel Margin="5">
+                                    <CheckBox Margin="0 0 0 5" x:Name="WritePrunedDBCheckBox" Content="Write Two Pruned Databases (Mod and Mod+Protein pruned)" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <ToolTipService.ToolTip>
+                                            <TextBlock>
+                        This is very uncommon and not recommended for the typical user.
+                        <LineBreak />
+                        This option writes two databases:
+                        <LineBreak />
+                        1) Retain all proteins but only keeps modifications found at a 1% FDR.
+                        <LineBreak />
+                        2) Retain only proteins and modifications found at a 1% FDR.
+                        <LineBreak />
+                        This is intended for further analysis, such as importing into Proteoform Suite to analyse top-down and intact-mass data.
+                                            </TextBlock>
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
+                                    <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=WritePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Mod Type"  Width="1*" Binding="{Binding ModName}" />
+                                            <DataGridTemplateColumn  Header=" Do not Write"  Width ="1*" IsReadOnly="False">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center" GroupName="{Binding ModName}" IsChecked="{Binding Item2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged }" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn  Header="Write if in DB and Observed"  Width ="1*" IsReadOnly="False">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center" GroupName="{Binding ModName}" IsChecked="{Binding Item3, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged }" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn  Header="Write if in DB"  Width ="1*" IsReadOnly="False">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center" GroupName="{Binding ModName}" IsChecked="{Binding Item4, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged }" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn  Header="Write if Observed"  Width ="1*" IsReadOnly="False">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <RadioButton HorizontalAlignment="Center"  GroupName="{Binding ModName}" IsChecked="{Binding Item5, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </StackPanel>
+                            </GroupBox>
+                        </StackPanel>
+                    </Expander>
+                </GroupBox>
+
                 <!--output options-->
                 <GroupBox Header="Output Options" DockPanel.Dock="Top">
                     <StackPanel Orientation="Vertical" Margin="5" Grid.Column="0">
                         <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
                         <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
                         <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />
+                        <CheckBox x:Name="WriteSpectrumLibraryCheckBox" Content="Write spectrum library" />
                     </StackPanel>
                 </GroupBox>
-                
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="188.333,5,261,5" Grid.Column="1">

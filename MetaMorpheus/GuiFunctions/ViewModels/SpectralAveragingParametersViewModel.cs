@@ -18,9 +18,7 @@ namespace GuiFunctions
     {
         #region Private Members
 
-        private SpectralAveragingParameters spectralAveragingParameters;
-        private int previousOverlap;
-        private string? savedPath;
+        private SpectralAveragingParameters _spectralAveragingParameters;
 
         #endregion
 
@@ -35,79 +33,79 @@ namespace GuiFunctions
 
         public SpectralAveragingParameters SpectralAveragingParameters
         {
-            get => spectralAveragingParameters;
-            set { spectralAveragingParameters = value; OnPropertyChanged(nameof(SpectralAveragingParameters)); UpdateVisualRepresentation(); }
+            get => _spectralAveragingParameters;
+            set { _spectralAveragingParameters = value; OnPropertyChanged(nameof(SpectralAveragingParameters)); UpdateVisualRepresentation(); }
         }
 
         public OutlierRejectionType RejectionType
         {
-            get => spectralAveragingParameters.OutlierRejectionType;
-            set { spectralAveragingParameters.OutlierRejectionType = value; OnPropertyChanged(nameof(RejectionType)); }
+            get => _spectralAveragingParameters.OutlierRejectionType;
+            set { _spectralAveragingParameters.OutlierRejectionType = value; OnPropertyChanged(nameof(RejectionType)); }
         }
 
         public SpectraWeightingType WeightingType
         {
-            get => spectralAveragingParameters.SpectralWeightingType;
-            set { spectralAveragingParameters.SpectralWeightingType = value; OnPropertyChanged(nameof(WeightingType)); }
+            get => _spectralAveragingParameters.SpectralWeightingType;
+            set { _spectralAveragingParameters.SpectralWeightingType = value; OnPropertyChanged(nameof(WeightingType)); }
         }
 
         public SpectraFileAveragingType SpectraFileAveragingType
         {
-            get => spectralAveragingParameters.SpectraFileAveragingType;
-            set { spectralAveragingParameters.SpectraFileAveragingType = value; OnPropertyChanged(nameof(SpectraFileAveragingType)); }
+            get => _spectralAveragingParameters.SpectraFileAveragingType;
+            set { _spectralAveragingParameters.SpectraFileAveragingType = value; OnPropertyChanged(nameof(SpectraFileAveragingType)); }
         }
 
         public bool PerformNormalization
         {
-            get => spectralAveragingParameters.NormalizationType == NormalizationType.RelativeToTics ? true : false;
+            get => _spectralAveragingParameters.NormalizationType == NormalizationType.RelativeToTics ? true : false;
             set
             {
-                spectralAveragingParameters.NormalizationType = value == true ? NormalizationType.RelativeToTics : NormalizationType.NoNormalization;
+                _spectralAveragingParameters.NormalizationType = value ? NormalizationType.RelativeToTics : NormalizationType.NoNormalization;
                 OnPropertyChanged(nameof(PerformNormalization));
             }
         }
 
         public double Percentile
         {
-            get => spectralAveragingParameters.Percentile;
-            set { spectralAveragingParameters.Percentile = value; OnPropertyChanged(nameof(Percentile)); }
+            get => _spectralAveragingParameters.Percentile;
+            set { _spectralAveragingParameters.Percentile = value; OnPropertyChanged(nameof(Percentile)); }
         }
 
         public double MinSigmaValue
         {
-            get => spectralAveragingParameters.MinSigmaValue;
-            set { spectralAveragingParameters.MinSigmaValue = value; OnPropertyChanged(nameof(MinSigmaValue)); }
+            get => _spectralAveragingParameters.MinSigmaValue;
+            set { _spectralAveragingParameters.MinSigmaValue = value; OnPropertyChanged(nameof(MinSigmaValue)); }
         }
 
         public double MaxSigmaValue
         {
-            get => spectralAveragingParameters.MaxSigmaValue;
-            set { spectralAveragingParameters.MaxSigmaValue = value; OnPropertyChanged(nameof(MaxSigmaValue)); }
+            get => _spectralAveragingParameters.MaxSigmaValue;
+            set { _spectralAveragingParameters.MaxSigmaValue = value; OnPropertyChanged(nameof(MaxSigmaValue)); }
         }
 
         public double BinSize
         {
-            get => spectralAveragingParameters.BinSize;
-            set { spectralAveragingParameters.BinSize = value; OnPropertyChanged(nameof(BinSize)); }
+            get => _spectralAveragingParameters.BinSize;
+            set { _spectralAveragingParameters.BinSize = value; OnPropertyChanged(nameof(BinSize)); }
         }
 
         public int NumberOfScansToAverage
         {
-            get => spectralAveragingParameters.NumberOfScansToAverage;
+            get => _spectralAveragingParameters.NumberOfScansToAverage;
             set 
             { 
-                spectralAveragingParameters.NumberOfScansToAverage = value;
-                spectralAveragingParameters.ScanOverlap = value - 1;
+                _spectralAveragingParameters.NumberOfScansToAverage = value;
+                _spectralAveragingParameters.ScanOverlap = value - 1;
                 OnPropertyChanged(nameof(NumberOfScansToAverage));
             }
         }
 
         public int MaxThreads
         {
-            get => spectralAveragingParameters.MaxThreadsToUsePerFile;
+            get => _spectralAveragingParameters.MaxThreadsToUsePerFile;
             set
             {
-                spectralAveragingParameters.MaxThreadsToUsePerFile = value;
+                _spectralAveragingParameters.MaxThreadsToUsePerFile = value;
                 OnPropertyChanged(nameof(MaxThreads));
             }
         }
@@ -123,7 +121,7 @@ namespace GuiFunctions
         public SpectralAveragingParametersViewModel(SpectralAveragingParameters parameters)
         {
             // value initialization
-            spectralAveragingParameters = parameters;
+            _spectralAveragingParameters = parameters;
             RejectionTypes = (OutlierRejectionType[])Enum.GetValues(typeof(OutlierRejectionType));
             WeightingTypes = new [] { SpectraWeightingType.WeightEvenly, SpectraWeightingType.TicValue};
             SpectraFileAveragingTypes = new[] { SpectraFileAveragingType.AverageAll, SpectraFileAveragingType.AverageDdaScans, SpectraFileAveragingType.AverageEverynScansWithOverlap};
@@ -180,7 +178,7 @@ namespace GuiFunctions
                     throw new ArgumentException("This should never be hit!");
             }
 
-            spectralAveragingParameters = parameters;
+            _spectralAveragingParameters = parameters;
             UpdateVisualRepresentation();
         }
 

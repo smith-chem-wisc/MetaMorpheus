@@ -1,18 +1,19 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using Readers;
+using System.Reflection.Metadata.Ecma335;
 
 namespace TaskLayer
 {
     public class MyFileManager
     {
         private readonly bool DisposeOfFileWhenDone;
-        private readonly Dictionary<string, MsDataFile> MyMsDataFiles = new Dictionary<string, MsDataFile>();
-        private readonly object FileLoadingLock = new object();
+        private readonly ConcurrentDictionary<string, MsDataFile> MyMsDataFiles = new ConcurrentDictionary<string, MsDataFile>(); // Dictionary to hold loaded MsDataFiles, with the file path as the key.
 
         public MyFileManager(bool disposeOfFileWhenDone)
         {
@@ -23,7 +24,7 @@ namespace TaskLayer
 
         public bool SeeIfOpen(string path)
         {
-            return (MyMsDataFiles.ContainsKey(path) && MyMsDataFiles[path] != null);
+            return MyMsDataFiles.TryGetValue(path, out var file);
         }
 
         public MsDataFile LoadFile(string origDataFile, CommonParameters commonParameters)
@@ -42,25 +43,19 @@ namespace TaskLayer
                 filter = null;
             }
 
-            if (MyMsDataFiles.TryGetValue(origDataFile, out MsDataFile value) && value != null)
-            {
+            if (MyMsDataFiles.TryGetValue(origDataFile, out MsDataFile value))
                 return value;
-            }
 
-            // By now know that need to load this file!!!
-            lock (FileLoadingLock) // Lock because reading is sequential
-            {
-                MyMsDataFiles[origDataFile] = MsDataFileReader.GetDataFile(origDataFile)
-                    .LoadAllStaticData(filter, commonParameters.MaxThreadsToUsePerFile);
-                return MyMsDataFiles[origDataFile];
-            }
+            return MyMsDataFiles.GetOrAdd(origDataFile,
+                MsDataFileReader.GetDataFile(origDataFile).LoadAllStaticData(filter, commonParameters.MaxThreadsToUsePerFile));
         }
 
         internal void DoneWithFile(string origDataFile)
         {
             if (DisposeOfFileWhenDone)
             {
-                MyMsDataFiles[origDataFile] = null;
+                // This would only return false if the file was not in the dictionary
+                MyMsDataFiles.TryRemove(origDataFile, out var file);
             }
         }
 

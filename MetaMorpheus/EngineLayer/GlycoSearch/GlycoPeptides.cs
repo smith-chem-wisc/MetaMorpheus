@@ -1,23 +1,31 @@
 ﻿using MassSpectrometry;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Chemistry;
+using Omics.Modifications;
 
 namespace EngineLayer.GlycoSearch
 {
-    public static class GlycoPeptides
+    public static class GlycoPeptides 
     {
+        /// <summary>
+        /// Generate a list of isotopic intesitry of the oxonium ions
+        /// </summary>
+        /// <param name="theScan"> The MS2 Scan</param>
+        /// <param name="massDiffAcceptor"></param>
+        /// <returns> int[], The intensity list </returns>
         public static double[] ScanOxoniumIonFilter(Ms2ScanWithSpecificMass theScan, MassDiffAcceptor massDiffAcceptor)
         {
-            double[] oxoniumIonsintensities = new double[Glycan.AllOxoniumIons.Length];
+            int[] allOxoniumIons = Glycan.AllOxoniumIonsIncludingCustoms;
+            double[] oxoniumIonsintensities = new double[allOxoniumIons.Length];
 
-            for (int i = 0; i < Glycan.AllOxoniumIons.Length; i++)
+            for (int i = 0; i < allOxoniumIons.Length; i++)
             {
-                var oxoMass = ((double)Glycan.AllOxoniumIons[i] / 1E5).ToMass(1);
+                var oxoMass = ((double)allOxoniumIons[i] / 1E5).ToMass(1);
                 var envelope = theScan.GetClosestExperimentalIsotopicEnvelope(oxoMass);
                 if (massDiffAcceptor.Accepts(envelope.MonoisotopicMass, oxoMass) >= 0)
                 {
@@ -148,10 +156,7 @@ namespace EngineLayer.GlycoSearch
 
         public static PeptideWithSetModifications GenerateGlycopeptide(int position, PeptideWithSetModifications peptide, Glycan glycan)
         {
-            Modification modification = Glycan.NGlycanToModification(glycan);
-
-
-            Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { position, modification } };
+            Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { position, glycan } };
 
             if (!peptide.AllModsOneIsNterminus.Keys.Contains(position))
             {
@@ -161,8 +166,8 @@ namespace EngineLayer.GlycoSearch
                 }
             }
 
-            var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
-                peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
+            var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidue,
+                peptide.OneBasedEndResidue, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
             
             return testPeptide;
 
@@ -179,7 +184,7 @@ namespace EngineLayer.GlycoSearch
                 return true;
             }
 
-            if (dissociationType == DissociationType.Custom )
+            if (dissociationType == DissociationType.Custom ) //Use the fragment type to determine the dissociation type.
             {
                 if (customIons.Contains(ProductType.zDot) || customIons.Contains(ProductType.c))
                 {
@@ -191,13 +196,22 @@ namespace EngineLayer.GlycoSearch
         }
 
         //TO THINK: filter reasonable fragments here. The final solution is to change mzLib.Proteomics.PeptideWithSetModifications.Fragment
+
+        /// <summary>
+        /// Get the theoretical fragments of the peptide with the glycan modification. With different dissociation type, the fragment ions are different.
+        /// </summary>
+        /// <param name="dissociationType"></param>
+        /// <param name="customIons"></param>
+        /// <param name="peptide"></param>
+        /// <param name="modPeptide"></param>
+        /// <returns> product[], Fragments list</returns>
         public static List<Product> OGlyGetTheoreticalFragments(DissociationType dissociationType, List<ProductType> customIons, PeptideWithSetModifications peptide, PeptideWithSetModifications modPeptide)
         {
             List<Product> theoreticalProducts = new List<Product>();        
             HashSet<double> masses = new HashSet<double>();
 
             List<Product> products = new List<Product>();
-            if (dissociationType == DissociationType.HCD || dissociationType == DissociationType.CID)
+            if (dissociationType == DissociationType.HCD || dissociationType == DissociationType.CID)  
             {
                 List<Product> diag = new List<Product>();
                 modPeptide.Fragment(dissociationType, FragmentationTerminus.Both, diag);
@@ -240,7 +254,7 @@ namespace EngineLayer.GlycoSearch
 
             }
 
-            foreach (var fragment in products)
+            foreach (var fragment in products) //this part just for the unique fragment ions. (filter the fragment with the same neturalMass)
             {
                 if (!masses.Contains(fragment.NeutralMass))
                 {
@@ -252,37 +266,51 @@ namespace EngineLayer.GlycoSearch
             return theoreticalProducts;
         }
 
+        
+        /// <summary>
+        /// Generate the theroertical glycan modified peptide. With the glycanBox, modPos, and the peptide.
+        /// </summary>
+        /// <param name="theModPositions"></param>
+        /// <param name="peptide"></param>
+        /// <param name="glycanBox"></param>
+        /// <returns> A modfiied peptide.</returns>
         public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(int[] theModPositions, PeptideWithSetModifications peptide, GlycanBox glycanBox)
         {
             Modification[] modifications = new Modification[glycanBox.NumberOfMods];
             for (int i = 0; i < glycanBox.NumberOfMods; i++)
             {
-                modifications[i] = GlycanBox.GlobalOGlycanModifications[glycanBox.ModIds.ElementAt(i)];
+                modifications[i] = GlycanBox.GlobalOGlycans[glycanBox.ModIds.ElementAt(i)]; // transfer the glycanBox information to a new list.
             }
 
             Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
             foreach (var mod in peptide.AllModsOneIsNterminus)
             {
-                testMods.Add(mod.Key, mod.Value);
+                testMods.Add(mod.Key, mod.Value);   // transfer the AllMod information to a new list.
             }
 
             for (int i = 0; i < theModPositions.Count(); i++)
             {
-                testMods.Add(theModPositions.ElementAt(i), modifications[i]);
+                testMods.Add(theModPositions.ElementAt(i), modifications[i]);  //combine the glycanBox information to the AllMod list
             }
 
-            var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
-                peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
+            var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidue,
+                peptide.OneBasedEndResidue, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
 
             return testPeptide;
         }
 
+        /// <summary>
+        /// Generate the theroertical glycan modified peptide. With the route the peptide. Because the route contains the glycanBox and modPos information.
+        /// </summary>
+        /// <param name="theModPositions"></param>
+        /// <param name="peptide"></param>
+        /// <returns> A modfiied peptide </returns>
         public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(Route theModPositions, PeptideWithSetModifications peptide)
         {
-            Modification[] modifications = new Modification[theModPositions.Mods.Count];
-            for (int i = 0; i < theModPositions.Mods.Count; i++)
+            Modification[] modifications = new Modification[theModPositions.ModSitePairs.Count];
+            for (int i = 0; i < theModPositions.ModSitePairs.Count; i++)
             {
-                modifications[i] = GlycanBox.GlobalOGlycanModifications[theModPositions.Mods[i].Item2];
+                modifications[i] = theModPositions.ModSitePairs[i].ModId >=0 ? GlycanBox.GlobalOGlycans[theModPositions.ModSitePairs[i].ModId] : GlycanBox.GlobalNGlycans[theModPositions.ModSitePairs[i].ModId];
             }
 
             Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
@@ -291,27 +319,35 @@ namespace EngineLayer.GlycoSearch
                 testMods.Add(mod.Key, mod.Value);
             }
 
-            for (int i = 0; i < theModPositions.Mods.Count; i++)
+            for (int i = 0; i < theModPositions.ModSitePairs.Count; i++)
             {
-                testMods.Add(theModPositions.Mods[i].Item1, modifications[i]);
+                testMods.Add(theModPositions.ModSitePairs[i].SiteIndex, modifications[i]);
             }
 
-            var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
-                peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
+            var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidue,
+                peptide.OneBasedEndResidue, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
 
             return testPeptide;
         }
 
-        //The function here is to calculate permutation localization which could be used to compare with Graph-Localization.
+        //Should be revised for easier understanding.
+        /// <summary>
+        /// Generate all possible glycosite for the glycan set. Supposed we will put the glycan on the glycosite in sequence.
+        /// </summary>
+        /// <param name="allModPos"> Ex. [3,5,2,7]</param>
+        /// <param name="glycanBoxId"> Ex. [2,2,3] means id2 + id2 + id3 </param>
+        /// <returns> A glycosite set collection. Ex. ([2,5,7],[3,5,7]...), each one list means the glcosites for glycanBox. 
+        /// [2,5,7] means we will put the glycan on position 2, 5, 7. </returns>
+        /// </returns>
         public static List<int[]> GetPermutations(List<int> allModPos, int[] glycanBoxId)
         {
             var length = glycanBoxId.Length;
-            var indexes = Enumerable.Range(0, length).ToArray();
+            var indexes = Enumerable.Range(0, length).ToArray();  // just the index for the glycanBoxId to keep the order.
             int[] orderGlycan = new int[length];
 
-            List<int[]> permutateModPositions = new List<int[]>();
+            List<int[]> permutateModPositions = new List<int[]>(); //The list to store all possible permutation localization.
 
-            var combinations = Glycan.GetKCombs(allModPos, length);
+            var combinations = Glycan.GetKCombs(allModPos, length); //Get all possible combinations of the mod sites. ex. four site[1,2,3,4], length:3 -> combination [1,2,3], [1,2,4], [1,3,4], [2,3,4]
         
             foreach (var com in combinations)
             {
@@ -331,7 +367,7 @@ namespace EngineLayer.GlycoSearch
                         orderGlycan[i] = glycanBoxId[indexes[i]];
                     }
                     var key = string.Join(",", orderGlycan.Select(p => p.ToString()));
-                    if (!keys.Contains(key))
+                    if (!keys.Contains(key)) //Remove the duplicate permutation localization.
                     {
                         keys.Add(key);
                         permutateModPositions.Add(per.ToArray());
@@ -342,42 +378,16 @@ namespace EngineLayer.GlycoSearch
             return permutateModPositions;
         }
 
-        //The purpose of the funtion is to generate hash fragment ions without generate the PeptideWithMod. keyValuePair key:GlycanBoxId, Value:mod sites
-        public static int[] GetFragmentHash(List<Product> products, Tuple<int, int[]> keyValuePair, GlycanBox[] OGlycanBoxes, int FragmentBinsPerDalton)
-        {
-            double[] newFragments = products.OrderBy(p=>p.ProductType).ThenBy(p=>p.FragmentNumber).Select(p => p.NeutralMass).ToArray();
-            var len = products.Count / 3;
-            if (keyValuePair.Item2!=null)
-            {
-                for (int i = 0; i < keyValuePair.Item2.Length; i++)
-                {
-                    var j = keyValuePair.Item2[i];
-                    while (j <= len + 1)
-                    {
-                        newFragments[j - 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
-                        j++;
-                    }
-                    j = keyValuePair.Item2[i];
-                    while (j >= 3)
-                    {
-                        //y ions didn't change in EThcD for O-glyco
-                        newFragments[len * 3 - j + 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
-                        j--;
-                    }
-                }
-            }
 
-
-            int[] fragmentHash = new int[products.Count];
-            for (int i = 0; i < products.Count; i++)
-            {
-                fragmentHash[i] = (int)Math.Round(newFragments[i] * FragmentBinsPerDalton);
-            }
-            return fragmentHash;
-        }
-
-        //Find FragmentHash for current box at modInd. 
-        //y-ion didn't change for O-Glycopeptide.
+        /// <summary>
+        /// Generate the fragment list with the specific childBox located on specific modPos. At here, the ModInd is the index for modPos. Not used in the current version.
+        /// </summary>
+        /// <param name="products"></param>
+        /// <param name="modPoses"> ModPos list </param>
+        /// <param name="modInd"> Specific ModPos, index in ModPos</param>
+        /// <param name="OGlycanBox"> Whole glycanBox</param>
+        /// <param name="localOGlycanBox">Partial glycanBox, at here is the childBox</param>
+        /// <returns></returns>
         public static List<double> GetLocalFragment(List<Product> products, int[] modPoses, int modInd, ModBox OGlycanBox, ModBox localOGlycanBox)
         {
             List<double> newFragments = new List<double>();
@@ -398,6 +408,34 @@ namespace EngineLayer.GlycoSearch
             }
 
             return newFragments;
+        }
+
+        /// <summary>
+        /// The unshifted c and zDot neutral masses between one glycosite and the next, in product order.
+        /// </summary>
+        public sealed class SiteFragmentMasses
+        {
+            public double[] C { get; init; }
+            public double[] Z { get; init; }
+        }
+
+        /// <summary>
+        /// For each site index but the last, the fragments <see cref="GetLocalFragment"/> selects for that site, before any glycan
+        /// mass is added. They depend only on the peptide's products and glycosites, so one array serves every glycan box tried
+        /// against the peptide.
+        /// </summary>
+        public static SiteFragmentMasses[] GetSiteFragmentMasses(List<Product> products, int[] modPoses)
+        {
+            var sites = new SiteFragmentMasses[modPoses.Length];
+            for (int modInd = 0; modInd < modPoses.Length - 1; modInd++)
+            {
+                sites[modInd] = new SiteFragmentMasses
+                {
+                    C = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses[modInd] - 1 && p.AminoAcidPosition < modPoses[modInd + 1] - 1).Select(p => p.NeutralMass).ToArray(),
+                    Z = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition >= modPoses[modInd] && p.AminoAcidPosition < modPoses[modInd + 1]).Select(p => p.NeutralMass).ToArray(),
+                };
+            }
+            return sites;
         }
 
         //Find FragmentMass for the fragments that doesn't contain localization Information. For example, "A|TAABBS|B", c1 and c7, z1 and z7, z8 ion don't contain localization information.
@@ -432,21 +470,38 @@ namespace EngineLayer.GlycoSearch
         }
 
 
-        //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons. 
-        //Rules are coded in the function.    
-        public static bool OxoniumIonsAnalysis(double[] oxoniumIonsintensities, GlycanBox glycanBox)
+        /// <summary>
+        /// Use the oxonium ions to determine the glycan type.
+        /// </summary>
+        /// <param name="oxoniumIonsintensities"> From the Scan </param>
+        /// <param name="glycanBox"> The glycanBox to be tested </param>
+        /// <returns >True : The Oglycan pass the filter, False : The OGl</returns>
+        public static bool DiagonsticFilter(double[] oxoniumIonsintensities, GlycanBox glycanBox)
         {
+            double HexNAc_diagnostic = oxoniumIonsintensities[OxoniumIonReservedIndices.R138];
+            double NeuAc_diagnostic1 = oxoniumIonsintensities[OxoniumIonReservedIndices.NeuAc274];
+            double NeuAc_diagnostic2 = oxoniumIonsintensities[OxoniumIonReservedIndices.NeuAc292];
+            double HexNAcPlusHex_diagnostic = oxoniumIonsintensities[OxoniumIonReservedIndices.HexHexNAc366];
+
             //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have sialic acids from the search.
-            if (oxoniumIonsintensities[10] <= 0 && oxoniumIonsintensities[12] <= 0)
+            if (NeuAc_diagnostic1 / HexNAc_diagnostic > OxoniumRelativeIntensityThreshold && NeuAc_diagnostic2 / HexNAc_diagnostic > OxoniumRelativeIntensityThreshold)
             {
-                if (glycanBox.Kind[2] != 0 || glycanBox.Kind[3] != 0)
+                if (glycanBox.Kind[2] == 0 )
+                {
+                    return false;
+                }
+            }
+
+            if(NeuAc_diagnostic1 / HexNAc_diagnostic < OxoniumRelativeIntensityThreshold && NeuAc_diagnostic2 / HexNAc_diagnostic < OxoniumRelativeIntensityThreshold)
+            {
+                if (glycanBox.Kind[2] != 0)
                 {
                     return false;
                 }
             }
 
             //If a spectrum has 366.1395, remove glycans that do not have HexNAc(1)Hex(1) or more. Here use the total glycan of glycanBox to calculate. 
-            if (oxoniumIonsintensities[14] > 0)
+            else if (HexNAcPlusHex_diagnostic / HexNAc_diagnostic > OxoniumRelativeIntensityThreshold)
             {
                 if (glycanBox.Kind[0] < 1 && glycanBox.Kind[1] < 1)
                 {
@@ -455,8 +510,123 @@ namespace EngineLayer.GlycoSearch
             }
 
             //Other rules:
-            //A spectrum needs to have 204.0867 to be considered as a glycopeptide.              
+            //A spectrum needs to have 204.0867 to be considered as a glycopeptide.
             //Ratio of 138.055 to 144.0655 can seperate O/N glycan.
+            // use some other oxonium ions to determine the glycan type.
+            return CustomOxoniumFilter(oxoniumIonsintensities, glycanBox.Kind);
+        }
+
+        /// <summary>
+        /// Relative-intensity threshold an oxonium ion must clear, as a fraction of the HexNAc 138.055
+        /// diagnostic ion, to count as observed. This is the same 0.02 the built-in NeuAc and
+        /// HexHexNAc rules have always used; it is named here so the custom-ion rule can share it
+        /// rather than inventing a second, looser notion of "observed".
+        /// </summary>
+        internal const double OxoniumRelativeIntensityThreshold = 0.02;
+
+        /// <summary>
+        /// Presence test for an oxonium ion, on the same footing as the built-in rules: the ion counts
+        /// as observed only when its intensity exceeds <see cref="OxoniumRelativeIntensityThreshold"/>
+        /// of the HexNAc 138.055 diagnostic ion. A bare "intensity &gt; 0" test would let a single noise
+        /// peak at the ion's m/z reject every candidate lacking the linked monosaccharide, since
+        /// ScanOxoniumIonFilter records an intensity for any envelope inside the product tolerance.
+        /// A missing 138.055 reference is reported as "not observed" rather than dividing by zero, which
+        /// diverges from the built-in comparisons -- they see +Infinity there and call the ion observed.
+        /// Neither verdict is neutral under the strict rule, so callers applying it must not use this
+        /// result when the reference is absent; <see cref="CustomOxoniumFilter"/> skips the custom branch
+        /// in that case rather than letting either answer become a rejection.
+        /// </summary>
+        internal static bool CheckOxoniumPresence(double[] oxoniumIonsintensities, int index, double hexNAcReferenceIntensity)
+        {
+            if (hexNAcReferenceIntensity <= 0)
+            {
+                return false;
+            }
+            return oxoniumIonsintensities[index] / hexNAcReferenceIntensity > OxoniumRelativeIntensityThreshold;
+        }
+
+        /// <summary>
+        /// Strict custom-oxonium rule: accept only when the ion's observed state matches the candidate's
+        /// possession of the linked monosaccharide. A mismatch in either direction rejects.
+        /// </summary>
+        internal static bool ApplyStrictMonoFilter(bool hasSignal, bool hasMono)
+        {
+            return hasSignal == hasMono;
+        }
+
+        /// <summary>
+        /// Strict custom-oxonium filter, for a glycan box (O and N+O search, via <see cref="DiagonsticFilter"/>) or a single
+        /// N-glycan (N search). Reuses the per-monosaccharide diagnostic ions registered from MonosaccharidesCustom.tsv
+        /// (column 4). Each custom ion was probed into oxoniumIonsintensities at the offset after the built-ins, in
+        /// Glycan.CustomOxoniumIons order.
+        /// </summary>
+        /// <remarks>
+        /// Strict semantics: a custom ion observed while its monosaccharide is absent from the candidate -- or its
+        /// monosaccharide present while the ion is absent -- rejects the candidate. "Observed" is the same
+        /// relative-intensity test the built-in rules use (above the OxoniumRelativeIntensityThreshold fraction of the
+        /// HexNAc 138.055 ion), not bare presence, so one noise peak at a custom ion's m/z cannot wipe out a scan. A
+        /// spectrum with no 138.055 reference at all has no basis for either verdict and the strict rule is skipped.
+        /// Custom ions that duplicate a built-in oxonium m/z are rejected at registration in
+        /// Glycan.RegisterCustomMonosaccharide. Gated on HasCustomOxoniumIons so the default (no customs) path is unchanged.
+        /// </remarks>
+        /// <param name="oxoniumIonsintensities"> From <see cref="ScanOxoniumIonFilter"/>. </param>
+        /// <param name="kind"> The candidate's summed composition: a glycan box's Kind, or one glycan's Kind. </param>
+        /// <returns> True when every custom ion's observed state matches the candidate's possession of its monosaccharide. </returns>
+        public static bool CustomOxoniumFilter(double[] oxoniumIonsintensities, byte[] kind)
+        {
+            if (!Glycan.HasCustomOxoniumIons)
+            {
+                return true;
+            }
+
+            var customOxoniumIons = Glycan.CustomOxoniumIons;
+            int builtInCount = Glycan.AllOxoniumIons.Length;
+            int requiredIntensitySlots = builtInCount + customOxoniumIons.Count;
+            if (oxoniumIonsintensities.Length < requiredIntensitySlots)
+            {
+                // Not a data condition: the only producer of this array sizes it from the same
+                // Glycan.AllOxoniumIonsIncludingCustoms this loop indexes into. Reading a missing
+                // slot as "absent" would make the strict rule reject every candidate carrying a
+                // custom monosaccharide, silently emptying the results, so fail loudly instead.
+                throw new ArgumentException(
+                    $"Oxonium intensity array has {oxoniumIonsintensities.Length} slots but {requiredIntensitySlots} are required " +
+                    $"({builtInCount} built-in + {customOxoniumIons.Count} custom). It must be produced by " +
+                    $"{nameof(ScanOxoniumIonFilter)} after the custom monosaccharides were registered.",
+                    nameof(oxoniumIonsintensities));
+            }
+            // The relative-intensity test divides by the 138.055 HexNAc ion. With no 138.055 in the
+            // spectrum there is no denominator and so no evidence either way, and under the strict
+            // rule "no evidence" must mean "say nothing" rather than "not observed": hasSignal ==
+            // hasMono makes an unobserved ion a rejection for every candidate that carries the
+            // monosaccharide. Skipping is the neutral outcome. This is reachable, not theoretical --
+            // 138.055 is a secondary fragment of 204.087 and is favoured at higher collision energy,
+            // so a low-energy HCD spectrum with a strong 204 and no 138 is ordinary.
+            double hexNAcReference = oxoniumIonsintensities[OxoniumIonReservedIndices.R138];
+            bool hexNAcReferenceObserved = hexNAcReference > 0;
+
+            for (int j = 0; j < customOxoniumIons.Count; j++)
+            {
+                int kindIndex = customOxoniumIons[j].KindIndex;
+                if (kindIndex >= kind.Length)
+                {
+                    throw new ArgumentException(
+                        $"Glycan Kind[] has {kind.Length} slots but custom monosaccharide index {kindIndex} was registered. " +
+                        $"Kind[] must be sized to {nameof(Glycan)}.{nameof(Glycan.KindCapacity)}.",
+                        nameof(kind));
+                }
+
+                if (!hexNAcReferenceObserved)
+                {
+                    continue;
+                }
+
+                bool hasSignal = CheckOxoniumPresence(oxoniumIonsintensities, builtInCount + j, hexNAcReference);
+                bool hasMono = kind[kindIndex] >= 1;
+                if (!ApplyStrictMonoFilter(hasSignal, hasMono))
+                {
+                    return false;
+                }
+            }
 
             return true;
         }

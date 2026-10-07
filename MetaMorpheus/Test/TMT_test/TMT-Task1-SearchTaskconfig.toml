@@ -16,7 +16,6 @@ WritePrunedDatabase = false
 KeepAllUniprotMods = true
 DoLocalizationAnalysis = true
 DoLabelFreeQuantification = false
-DoSpectralRecovery = false
 DoMultiplexQuantification = true
 MultiplexModId = "TMT11"
 SearchType = "Classic"

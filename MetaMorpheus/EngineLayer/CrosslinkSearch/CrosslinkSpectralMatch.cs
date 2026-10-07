@@ -1,11 +1,11 @@
 ﻿using Easy.Common.Extensions;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using MathNet.Numerics.Distributions;
+using Readers;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -23,9 +23,9 @@ namespace EngineLayer.CrosslinkSearch
         {
             //The XLTotalScore is set here because some CSMs are not crosslinks and we need this score to be non-zero.
             XLTotalScore = score;
-            _BestMatchingPeptides.Clear();
+            _BestMatchingBioPolymersWithSetMods.Clear();
 
-            _BestMatchingPeptides.Add((0, theBestPeptide));
+            _BestMatchingBioPolymersWithSetMods.Add(new SpectrumMatch.SpectralMatchHypothesis(0, theBestPeptide, matchedFragmentIons, score));
 
         }
 
@@ -95,40 +95,40 @@ namespace EngineLayer.CrosslinkSearch
             if (CrossType == PsmCrossType.Cross)
             {
                 // alpha peptide crosslink residue in the protein
-                XlProteinPos = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[0] - 1;
+                XlProteinPos = OneBasedStartResidue == null ? (int?)null : OneBasedStartResidue.Value + LinkPositions[0] - 1;
 
                 // beta crosslink residue in protein
-                BetaPeptide.XlProteinPos = BetaPeptide.OneBasedStartResidueInProtein == null ? (int?)null : BetaPeptide.OneBasedStartResidueInProtein.Value + BetaPeptide.LinkPositions[0] - 1;
+                BetaPeptide.XlProteinPos = BetaPeptide.OneBasedStartResidue == null ? (int?)null : BetaPeptide.OneBasedStartResidue.Value + BetaPeptide.LinkPositions[0] - 1;
             }
             else if (CrossType == PsmCrossType.DeadEnd || CrossType == PsmCrossType.DeadEndH2O || CrossType == PsmCrossType.DeadEndNH2 || CrossType == PsmCrossType.DeadEndTris)
             {
-                XlProteinPos = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[0] - 1;
+                XlProteinPos = OneBasedStartResidue == null ? (int?)null : OneBasedStartResidue.Value + LinkPositions[0] - 1;
             }
             else if (CrossType == PsmCrossType.Loop)
             {
-                XlProteinPos = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[0] - 1;
+                XlProteinPos = OneBasedStartResidue == null ? (int?)null : OneBasedStartResidue.Value + LinkPositions[0] - 1;
 
-                XlProteinPosLoop = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[1] - 1;
+                XlProteinPosLoop = OneBasedStartResidue == null ? (int?)null : OneBasedStartResidue.Value + LinkPositions[1] - 1;
             }
         }
 
         public static bool IsIntraCsm(CrosslinkSpectralMatch csm)
         {
             //The pair "ProteinA and Decoy_ProteinA" is count for intra-crosslink. 
-            if (csm.ProteinAccession != null && csm.BetaPeptide.ProteinAccession != null)
+            if (csm.Accession != null && csm.BetaPeptide.Accession != null)
             {
-                if (csm.ProteinAccession == csm.BetaPeptide.ProteinAccession ||
-                    csm.ProteinAccession == "DECOY_"+ csm.BetaPeptide.ProteinAccession ||
-                    csm.BetaPeptide.ProteinAccession == "DECOY_" + csm.ProteinAccession)
+                if (csm.Accession == csm.BetaPeptide.Accession ||
+                    csm.Accession == "DECOY_"+ csm.BetaPeptide.Accession ||
+                    csm.BetaPeptide.Accession == "DECOY_" + csm.Accession)
                 {
                     return true;
                 }
             }
 
-            if (csm.ProteinAccession == null)
+            if (csm.Accession == null)
             {
-                var alphaProteins = csm.BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession).ToList();
-                var betaProteins = csm.BetaPeptide.BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession).ToList();
+                var alphaProteins = csm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer.Parent.Accession).ToList();
+                var betaProteins = csm.BetaPeptide.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer.Parent.Accession).ToList();
 
                 foreach (var alpha in alphaProteins)
                 {
@@ -169,20 +169,20 @@ namespace EngineLayer.CrosslinkSearch
             if (csm.CrossType == PsmCrossType.Cross || csm.CrossType == PsmCrossType.Intra || csm.CrossType == PsmCrossType.Inter)
             {
                 // alpha peptide crosslink residue in the protein
-                csm.XlProteinPos = csm.OneBasedStartResidueInProtein == null ? (int?)null : csm.OneBasedStartResidueInProtein.Value + csm.LinkPositions[0] - 1;
+                csm.XlProteinPos = csm.OneBasedStartResidue == null ? (int?)null : csm.OneBasedStartResidue.Value + csm.LinkPositions[0] - 1;
 
                 // beta crosslink residue in protein
-                csm.BetaPeptide.XlProteinPos = csm.BetaPeptide.OneBasedStartResidueInProtein == null ? (int?)null : csm.BetaPeptide.OneBasedStartResidueInProtein.Value + csm.BetaPeptide.LinkPositions[0] - 1;
+                csm.BetaPeptide.XlProteinPos = csm.BetaPeptide.OneBasedStartResidue == null ? (int?)null : csm.BetaPeptide.OneBasedStartResidue.Value + csm.BetaPeptide.LinkPositions[0] - 1;
             }
             else if (csm.CrossType == PsmCrossType.DeadEnd || csm.CrossType == PsmCrossType.DeadEndH2O || csm.CrossType == PsmCrossType.DeadEndNH2 || csm.CrossType == PsmCrossType.DeadEndTris)
             {
-                csm.XlProteinPos = csm.OneBasedStartResidueInProtein == null ? (int?)null : csm.OneBasedStartResidueInProtein.Value + csm.LinkPositions[0] - 1;
+                csm.XlProteinPos = csm.OneBasedStartResidue == null ? (int?)null : csm.OneBasedStartResidue.Value + csm.LinkPositions[0] - 1;
             }
             else if (csm.CrossType == PsmCrossType.Loop)
             {
-                csm.XlProteinPos = csm.OneBasedStartResidueInProtein == null ? (int?)null : csm.OneBasedStartResidueInProtein.Value + csm.LinkPositions[0] - 1;
+                csm.XlProteinPos = csm.OneBasedStartResidue == null ? (int?)null : csm.OneBasedStartResidue.Value + csm.LinkPositions[0] - 1;
 
-                csm.XlProteinPosLoop = csm.OneBasedStartResidueInProtein == null ? (int?)null : csm.OneBasedStartResidueInProtein.Value + csm.LinkPositions[1] - 1;
+                csm.XlProteinPosLoop = csm.OneBasedStartResidue == null ? (int?)null : csm.OneBasedStartResidue.Value + csm.LinkPositions[1] - 1;
             }
         }
 
@@ -193,8 +193,8 @@ namespace EngineLayer.CrosslinkSearch
             bool wildcard = crosslinkerModSites.Any(p => p == 'X');
 
             var range = Enumerable.Range(0, peptide.BaseSequence.Length);
-            if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidueInProtein != peptide.Protein.Length 
-                && !peptide.Protein.ProteolysisProducts.Any(x => x.OneBasedEndPosition == peptide.OneBasedEndResidueInProtein))
+            if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidue != peptide.Protein.Length 
+                && !peptide.Protein.TruncationProducts.Any(x => x.OneBasedEndPosition == peptide.OneBasedEndResidue))
             {
                 //The C termial cannot be crosslinked and cleaved.
                 range = Enumerable.Range(0, peptide.BaseSequence.Length - 1);
@@ -233,58 +233,58 @@ namespace EngineLayer.CrosslinkSearch
         public static string GetTabSepHeaderCross()
         {
             var sb = new StringBuilder();
-            sb.Append(PsmTsvHeader.FileName + '\t');
-            sb.Append(PsmTsvHeader.UniqueSequence + '\t');
-            sb.Append(PsmTsvHeader.Ms2ScanNumber + '\t');
-            sb.Append(PsmTsvHeader.PrecursorScanNum + '\t');
-            sb.Append(PsmTsvHeader.PrecursorMz + '\t');
-            sb.Append(PsmTsvHeader.PrecursorCharge + '\t');
-            sb.Append(PsmTsvHeader.PrecursorMass + '\t');
-            sb.Append(PsmTsvHeader.CrossTypeLabel + '\t');
-            sb.Append(PsmTsvHeader.LinkResiduesLabel + "\t");
+            sb.Append(SpectrumMatchFromTsvHeader.FileName + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.UniqueSequence + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.Ms2ScanNumber + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PrecursorScanNum + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PrecursorMz + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PrecursorCharge + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PrecursorMass + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.CrossTypeLabel + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.LinkResiduesLabel + "\t");
 
             sb.Append("Peptide Info -->" + '\t');
-            sb.Append(PsmTsvHeader.ProteinAccession + '\t');
-            sb.Append(PsmTsvHeader.ProteinLinkSiteLabel + '\t');
-            sb.Append(PsmTsvHeader.BaseSequence + '\t');
-            sb.Append(PsmTsvHeader.FullSequence + '\t');
-            sb.Append(PsmTsvHeader.PeptideMonoMass + '\t');
-            sb.Append(PsmTsvHeader.Score + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.ProteinAccession + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.ProteinLinkSiteLabel + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.BaseSequence + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.FullSequence + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PeptideMonoMass + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.Score + '\t');
 
-            sb.Append(PsmTsvHeader.MatchedIonSeries + '\t');
-            sb.Append(PsmTsvHeader.MatchedIonMzRatios + '\t');
-            sb.Append(PsmTsvHeader.MatchedIonMassDiffDa + '\t');
-            sb.Append(PsmTsvHeader.MatchedIonMassDiffPpm + '\t');
-            sb.Append(PsmTsvHeader.MatchedIonIntensities + '\t');
-            sb.Append(PsmTsvHeader.MatchedIonCounts + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.MatchedIonSeries + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.MatchedIonMzRatios + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.MatchedIonMassDiffDa + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.MatchedIonMassDiffPpm + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.MatchedIonIntensities + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.MatchedIonCounts + '\t');
 
             sb.Append("Beta Peptide Info -->" + '\t');
-            sb.Append(PsmTsvHeader.BetaPeptideProteinAccessionLabel + '\t');
-            sb.Append(PsmTsvHeader.BetaPeptideProteinLinkSiteLabel + '\t');
-            sb.Append(PsmTsvHeader.BetaPeptideBaseSequenceLabel + '\t');
-            sb.Append(PsmTsvHeader.BetaPeptideFullSequenceLabel + '\t');
-            sb.Append(PsmTsvHeader.BetaPeptideTheoreticalMassLabel + '\t');
-            sb.Append(PsmTsvHeader.BetaPeptideScoreLabel + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.BetaPeptideProteinAccessionLabel + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.BetaPeptideProteinLinkSiteLabel + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.BetaPeptideBaseSequenceLabel + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.BetaPeptideFullSequenceLabel + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.BetaPeptideTheoreticalMassLabel + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.BetaPeptideScoreLabel + '\t');
 
             sb.Append("Beta Peptide Matched Ions" + '\t');
-            sb.Append(PsmTsvHeader.BetaPeptideMatchedIonsLabel + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.BetaPeptideMatchedIonsLabel + '\t');
             sb.Append("Beta Peptide Matched Ion Mass Diff (Da)" + '\t');
             sb.Append("Beta Peptide Matched Ion Mass Diff (Ppm)" + '\t');
             sb.Append("Beta Peptide Matched Ion Intensities" + '\t');
             sb.Append("Beta Peptide Matched Ion Counts" + '\t');
 
             sb.Append("Summary Info -->" + '\t');
-            sb.Append(PsmTsvHeader.XLTotalScoreLabel + '\t');
-            sb.Append(PsmTsvHeader.MassDiffDa + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.XLTotalScoreLabel + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.MassDiffDa + '\t');
             sb.Append("AlphaIndexingRank" + '\t');
-            sb.Append(PsmTsvHeader.ParentIonsLabel + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.ParentIonsLabel + '\t');
             sb.Append("ParentIonsNum" + '\t');
             sb.Append("AlphaParentIonMaxIntensityRank" + '\t');
             sb.Append("BetaParentIonMaxIntensityRank" + '\t');
-            sb.Append(PsmTsvHeader.DecoyContaminantTarget + '\t');
-            sb.Append(PsmTsvHeader.QValue + '\t');
-            sb.Append(PsmTsvHeader.PEP + '\t');
-            sb.Append(PsmTsvHeader.PEP_QValue + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.DecoyContaminantTarget + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.QValue + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PEP + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PEP_QValue + '\t');
 
             return sb.ToString();
         }
@@ -293,7 +293,7 @@ namespace EngineLayer.CrosslinkSearch
         {
             var sb = new StringBuilder();
             sb.Append("File Name" + '\t');
-            sb.Append(PsmTsvHeader.UniqueSequence + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.UniqueSequence + '\t');
             sb.Append("Scan Number" + '\t');
             sb.Append("Precursor Scan Number" + '\t');
             sb.Append("Precursor MZ" + '\t');
@@ -318,8 +318,8 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Matched Ion Counts" + '\t');
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("QValue" + '\t');
-            sb.Append(PsmTsvHeader.PEP + '\t');
-            sb.Append(PsmTsvHeader.PEP_QValue + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PEP + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.PEP_QValue + '\t');
 
             return sb.ToString();
         }
@@ -373,13 +373,13 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             sb.Append("\t"); //Intentionally left empty for readability in the tsv file.
-            List<PeptideWithSetModifications> pepsWithMods = BestMatchingPeptides.Select(p => p.Peptide).ToList();
-            var proteinAccessionString = ProteinAccession ?? PsmTsvWriter.Resolve(pepsWithMods.Select(b => b.Protein.Accession), FullSequence).ResolvedString;
+            List<PeptideWithSetModifications> pepsWithMods = BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer as PeptideWithSetModifications).ToList();
+            var proteinAccessionString = Accession ?? PsmTsvWriter.Resolve(pepsWithMods.Select(b => b.Protein.Accession), FullSequence).ResolvedString;
             sb.Append(proteinAccessionString + "\t");
             sb.Append(XlProteinPos + (XlProteinPosLoop.HasValue ? "~" + XlProteinPosLoop.Value : null) + "\t");
             sb.Append(BaseSequence + "\t");
             sb.Append(FullSequence + position + "\t");
-            sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---"));
+            sb.Append((BioPolymerWithSetModsMonoisotopicMass.HasValue ? BioPolymerWithSetModsMonoisotopicMass.Value.ToString() : "---"));
             sb.Append("\t");
             sb.Append(Score + "\t");
 
@@ -422,13 +422,13 @@ namespace EngineLayer.CrosslinkSearch
             if (BetaPeptide != null)
             {
                 sb.Append("\t"); //Intentionally left empty for readability in the tsv file.
-                List<PeptideWithSetModifications> betaPepsWithMods = BetaPeptide.BestMatchingPeptides.Select(p => p.Peptide).ToList();
-                var betaProteinAccessionString = BetaPeptide.ProteinAccession ?? PsmTsvWriter.Resolve(betaPepsWithMods.Select(b => b.Protein.Accession), FullSequence).ResolvedString;
+                List<PeptideWithSetModifications> betaPepsWithMods = BetaPeptide.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer as PeptideWithSetModifications).ToList();
+                var betaProteinAccessionString = BetaPeptide.Accession ?? PsmTsvWriter.Resolve(betaPepsWithMods.Select(b => b.Protein.Accession), FullSequence).ResolvedString;
                 sb.Append(betaProteinAccessionString + "\t");
                 sb.Append(BetaPeptide.XlProteinPos + "\t");
                 sb.Append(BetaPeptide.BaseSequence + "\t");
                 sb.Append(BetaPeptide.FullSequence + "(" + BetaPeptide.LinkPositions[0].ToString() + ")" + "\t");
-                sb.Append(BetaPeptide.PeptideMonisotopicMass.ToString() + "\t");
+                sb.Append(BetaPeptide.BioPolymerWithSetModsMonoisotopicMass.ToString() + "\t");
                 sb.Append(BetaPeptide.Score + "\t");
 
                 if (BetaPeptide.ChildMatchedFragmentIons == null)
@@ -469,7 +469,7 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append(XLTotalScore + "\t");
 
                 // mass of crosslinker
-                sb.Append(((PeptideMonisotopicMass.HasValue) ? (ScanPrecursorMass - BetaPeptide.PeptideMonisotopicMass - PeptideMonisotopicMass.Value).ToString() : "---")); sb.Append("\t");
+                sb.Append(((BioPolymerWithSetModsMonoisotopicMass.HasValue) ? (ScanPrecursorMass - BetaPeptide.BioPolymerWithSetModsMonoisotopicMass - BioPolymerWithSetModsMonoisotopicMass.Value).ToString() : "---")); sb.Append("\t");
 
                 sb.Append(XlRank.ToString() + "\t");
 

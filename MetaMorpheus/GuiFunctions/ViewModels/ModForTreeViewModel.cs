@@ -14,6 +14,7 @@ namespace GuiFunctions
         private bool _isChecked;
         private string _selectedColor;
         private SolidColorBrush _colorBrush;
+        private bool _colorDataLoaded;
 
         #endregion
 
@@ -23,10 +24,7 @@ namespace GuiFunctions
 
         public bool Use
         {
-            get
-            {
-                return _isChecked;
-            }
+            get => _isChecked;
             set
             {
                 _isChecked = value;
@@ -40,17 +38,26 @@ namespace GuiFunctions
         public Brush Background { get; }
         public string SelectedColor
         {
-            get { return _selectedColor; }
+            get
+            {
+                EnsureColorDataLoaded();
+                return _selectedColor;
+            }
             set
             {
                 _selectedColor = value;
                 ColorBrush = DrawnSequence.ParseColorBrushFromName(_selectedColor);
+                _colorDataLoaded = true;
                 OnPropertyChanged(nameof(SelectedColor));
             }
         }
         public SolidColorBrush ColorBrush
         {
-            get { return _colorBrush; }
+            get
+            {
+                EnsureColorDataLoaded();
+                return _colorBrush;
+            }
             set
             {
                 _colorBrush = value;
@@ -69,13 +76,6 @@ namespace GuiFunctions
             Use = use;
             ModName = modName;
             DisplayName = modName;
-            if (MetaDrawSettings.ModificationTypeToColor != null)
-            {
-                OxyColor color = MetaDrawSettings.ModificationTypeToColor[modName];
-                SelectedColor = AddSpaces(color.GetColorName());
-                ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
-            }
-            
 
             if (toolTip.ToLower().Contains("terminal"))
             {
@@ -99,7 +99,46 @@ namespace GuiFunctions
                 Background = new SolidColorBrush(Colors.Transparent);
         }
 
+        /// <summary>
+        /// As the constructor above, but with an explicit <see cref="DisplayName"/>.
+        /// </summary>
+        /// <remarks>
+        /// The other constructor derives DisplayName from modName, which is right when the identifier is
+        /// already readable ("Oxidation on M"). A glycan's identifier is a composition code -- "H5N4A2 on N"
+        /// -- so its row needs a label the reader can actually use, while ModName stays the key the task
+        /// parameters persist and the tree restores by.
+        /// </remarks>
+        public ModForTreeViewModel(string toolTip, bool use, string modName, bool bad, ModTypeForTreeViewModel parent, string displayName)
+            : this(toolTip, use, modName, bad, parent)
+        {
+            if (!string.IsNullOrWhiteSpace(displayName))
+            {
+                DisplayName = displayName;
+            }
+        }
+
         #endregion
+
+        /// <summary>
+        /// Ensures the color data is loaded. This is necessary because the color data is not loaded until the first time it is accessed.
+        /// This enables the use of the same control in MetaDraw and Task Windows without loading the color data for task windows. 
+        /// </summary>
+        private void EnsureColorDataLoaded()
+        {
+            if (!_colorDataLoaded)
+            {
+                if (MetaDrawSettings.ModificationTypeToColor != null)
+                {
+                    // This if statement prevents a crash from loading a search task modifications not found on launch
+                    // This can occur due to new custom modifications or a mod in the xml database that was not in our initial list
+                    if (!MetaDrawSettings.ModificationTypeToColor.TryGetValue(ModName, out OxyColor color))
+                        color = MetaDrawSettings.FallbackColor;
+                    _selectedColor = AddSpaces(MetaDrawSettings.PossibleColors[color]);
+                    _colorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
+                }
+                _colorDataLoaded = true;
+            }
+        }
 
         public void SelectionChanged(string newColor)
         {

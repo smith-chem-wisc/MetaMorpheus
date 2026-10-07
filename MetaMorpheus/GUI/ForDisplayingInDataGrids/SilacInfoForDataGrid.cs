@@ -1,6 +1,7 @@
 ﻿using Chemistry;
 using Proteomics;
 using System.Collections.Generic;
+using Omics.Modifications;
 
 namespace MetaMorpheusGUI
 {

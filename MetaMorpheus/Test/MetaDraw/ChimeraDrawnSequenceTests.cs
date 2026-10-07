@@ -1,0 +1,107 @@
+﻿using System.Linq;
+using System.Threading;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Shapes;
+using GuiFunctions;
+using GuiFunctions.MetaDraw;
+using NUnit.Framework;
+using Omics.Fragmentation;
+
+namespace Test.MetaDraw;
+
+[TestFixture, Apartment(ApartmentState.STA)]
+public class ChimeraDrawnSequenceTests
+{
+    [TestCase(ProductType.b, FragmentationTerminus.N, 2, 2, 2)]
+    [TestCase(ProductType.y, FragmentationTerminus.C, 2, 6, 5)]
+    [TestCase(ProductType.y, FragmentationTerminus.C, 2, 5, 5)]
+    [TestCase(ProductType.zDot, FragmentationTerminus.C, 1, 7, 6)]
+    public void DrawnSequence_UsesCleavageBoundaryForTerminalIons(
+        ProductType productType, FragmentationTerminus terminus, int fragmentNumber, int residuePosition, int expectedPosition)
+    {
+        var product = new Product(productType, terminus, 0, fragmentNumber, residuePosition, 0);
+
+        Assert.That(DrawnSequence.GetCleavagePosition(product, 7), Is.EqualTo(expectedPosition));
+    }
+
+    [Test]
+    public void ChimeraDrawnSequence_CreatesCanvasWithCorrectDimensions()
+    {
+        // Arrange
+        var chimeraGroup = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        var canvas = new Canvas();
+
+        // Act
+        var drawnSequence = new ChimeraDrawnSequence(canvas, chimeraGroup);
+
+        // Assert
+        int longestSequenceLength = chimeraGroup.ChimericPsms.Max(psm => psm.Psm.BaseSeq.Split('|')[0].Length);
+        double expectedWidth = (longestSequenceLength + 4) * MetaDrawSettings.AnnotatedSequenceTextSpacing + 20;
+        double expectedHeight = 40 * chimeraGroup.ChimericPsms.Count + 20;
+        Assert.That(canvas.Width, Is.EqualTo(expectedWidth));
+        Assert.That(canvas.Height, Is.EqualTo(expectedHeight));
+    }
+
+    [Test]
+    public void ChimeraDrawnSequence_DrawsAllSequences()
+    {
+        // Arrange
+        var chimeraGroup = ChimeraGroupViewModelTests.TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
+        var canvas = new Canvas();
+
+        // Act
+        var drawnSequence = new ChimeraDrawnSequence(canvas, chimeraGroup);
+
+        // Assert
+        // At least one text element per residue per sequence
+        int minTextBlocks = chimeraGroup.ChimericPsms.Sum(psm => psm.Psm.BaseSeq.Split('|')[0].Length);
+        int actualTextBlocks = canvas.Children.OfType<System.Windows.Controls.TextBlock>().Count();
+        Assert.That(actualTextBlocks, Is.GreaterThanOrEqualTo(minTextBlocks));
+    }
+
+    [Test]
+    public void ChimeraDrawnSequence_AddsMatchedIonsWithCorrectColors()
+    {
+        // Arrange
+        var chimeraGroup = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        var expectedIons = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ExpectedIonsByColor;
+        var canvas = new Canvas();
+
+        // Act
+        var drawnSequence = new ChimeraDrawnSequence(canvas, chimeraGroup);
+
+        // Assert
+        // For each expected color, check that at least one shape with that color exists
+        foreach (var color in expectedIons.Keys)
+        {
+            var wpfColor = DrawnSequence.ParseColorFromOxyColor(color);
+            bool found = canvas.Children.OfType<Polyline>().Any(line => (line.Stroke as SolidColorBrush)?.Color == wpfColor);
+            Assert.That(found, Is.True, $"Expected to find a shape with color {wpfColor} for ion color {color}.");
+        }
+    }
+
+    [Test]
+    public void UpdateData_UpdatesCanvasWithNewChimeraGroup()
+    {
+        // Arrange
+        var initialGroup = ChimeraGroupViewModelTests.OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        var newGroup = ChimeraGroupViewModelTests.TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
+        var canvas = new Canvas();
+        var drawnSequence = new ChimeraDrawnSequence(canvas, initialGroup);
+
+        // Act
+        var updatedDrawnSequence = drawnSequence.UpdateData(newGroup);
+
+        // Assert
+        // The returned object should not be null and should reference the new group
+        Assert.That(updatedDrawnSequence, Is.Not.Null);
+        Assert.That(updatedDrawnSequence.ChimeraGroupViewModel, Is.EqualTo(newGroup));
+
+        // The canvas should be updated to reflect the new group's sequence count
+        int expectedTextBlocks = newGroup.ChimericPsms.Sum(psm => psm.Psm.BaseSeq.Split('|')[0].Length);
+        int actualTextBlocks = canvas.Children.OfType<System.Windows.Controls.TextBlock>().Count();
+        Assert.That(actualTextBlocks, Is.GreaterThanOrEqualTo(expectedTextBlocks));
+    }
+
+}

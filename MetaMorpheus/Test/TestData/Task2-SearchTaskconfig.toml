@@ -22,7 +22,7 @@ MaxFragmentSize = 30000.0
 HistogramBinTolInDaltons = 0.003
 MaximumMassThatFragmentIonScoreIsDoubled = 0.0
 WriteMzId = false
-WritePepXml = false
+WritePepXml = true
 WriteDecoys = true
 WriteContaminants = true
 

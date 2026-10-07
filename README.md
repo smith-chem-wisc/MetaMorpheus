@@ -1,7 +1,8 @@
-# <img src="https://user-images.githubusercontent.com/16883585/75211541-da01c680-5749-11ea-9f6c-096dc2ec4dbc.png" width="30"/> MetaMorpheus: Free, Open-Source PTM Discovery [![Follow us on Twitter](https://img.shields.io/twitter/follow/smith_chem_wisc?label=Twitter&style=social)](https://twitter.com/smith_chem_wisc)
+# <img src="https://user-images.githubusercontent.com/16883585/75211541-da01c680-5749-11ea-9f6c-096dc2ec4dbc.png" width="30"/> MetaMorpheus: Free, Open-Source PTM Discovery
 
 [![Release](https://img.shields.io/github/v/release/smith-chem-wisc/MetaMorpheus)](https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest)
-[![Build status](https://ci.appveyor.com/api/projects/status/0jt31252xny5aoxt/branch/master?svg=true)](https://ci.appveyor.com/project/smith-chem-wisc/metamorpheus/branch/master)
+[![Build status](https://github.com/smith-chem-wisc/MetaMorpheus/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/smith-chem-wisc/MetaMorpheus/actions/workflows/build.yml)
+[![Tests](https://github.com/smith-chem-wisc/MetaMorpheus/actions/workflows/Test.yml/badge.svg?branch=master)](https://github.com/smith-chem-wisc/MetaMorpheus/actions/workflows/Test.yml)
 [![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus)
 [![Github All Releases](https://img.shields.io/github/downloads/smith-chem-wisc/MetaMorpheus/total.svg)](https://github.com/smith-chem-wisc/MetaMorpheus/releases)
 [![Github All Releases](https://img.shields.io/docker/pulls/smithchemwisc/metamorpheus)](https://hub.docker.com/r/smithchemwisc/metamorpheus/tags?page=1&ordering=last_updated)
@@ -29,22 +30,38 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 
 * Environment:
   * 64-bit operating system
-  * .NET Core 6.0:
-     * Windows: https://dotnet.microsoft.com/download/dotnet/thank-you/runtime-desktop-6.0.4-windows-x64-installer
-     * macOS, x64 Intel processor: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-6.0.4-macos-x64-installer
-     * macOS, ARM Apple Silicon processor: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-6.0.4-macos-arm64-installer
-     * Linux: https://docs.microsoft.com/dotnet/core/install/linux-package-managers
-* Note that the installer (MetaMorpheusInstaller.msi) only works on Windows. The command-line version of MetaMorpheus supports any operating system that supports .NET Core (Windows, MacOS, Linux)
+  * .NET 10.0, from https://dotnet.microsoft.com/en-us/download/dotnet/10.0 — that page offers
+    installers for Windows, macOS (both Intel and Apple Silicon) and Linux
+     * Running the GUI needs the **Desktop** Runtime (the plain Runtime is not enough for WPF); the CLI needs only the Runtime, and building from source needs the SDK
+* Note that the installer (MetaMorpheusInstaller.msi) only works on Windows. The command-line version of MetaMorpheus supports any operating system that supports .NET (Windows, macOS, Linux)
 * 8 GB RAM recommended
 
 ## Spectra Requirements
 
 * One of the following formats:
-   * Thermo .raw (Windows and Linux only)
+   * Thermo .raw (Windows, macOS and Linux)
    * .mzML file in centroid mode. Please watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[How to convert files to .mzML](https://www.youtube.com/watch?v=hOJ6ibCA5Pk) video on YouTube.
    * .mgf
 * MS1 and MS2 scans
 * If you would like to know more about the types of files that can be searched with MetaMorpheus, please watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[Mass Spectra Files Video](https://www.youtube.com/watch?v=SN6_T2JyxhA&list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb&index=3) on YouTube.
+
+### Agreeing to the Thermo licence
+
+Reading Thermo `.raw` files requires agreeing to Thermo's RawFileReader licence. The GUI asks the first time a `.raw` file is added; the command line asks the first time a run includes one.
+
+Where there is no console to answer that prompt — a container, a scheduled cluster job, a CI runner, anything with stdin redirected or closed — pass `--acceptThermoLicence`. It prints the licence, records the agreement, and does not prompt:
+
+```
+dotnet CMD.dll --acceptThermoLicence
+```
+
+It may also be given alongside a run, which then proceeds without prompting:
+
+```
+dotnet CMD.dll --acceptThermoLicence -t SearchTask.toml -d database.fasta -s spectra.raw -o output
+```
+
+The agreement is stored as `UserHasAgreedToThermoRawFileReaderLicence` in `settings.toml` in the MetaMorpheus data directory. For a Windows installation that is `%LOCALAPPDATA%\MetaMorpheus`, so it is recorded once per user and survives upgrades. Otherwise it is the folder MetaMorpheus was extracted into, so a new download, conda environment or container layer will need the agreement again.
 
 ## Database Requirements
 
@@ -62,6 +79,89 @@ Installation and typical usage is described for the on the [Getting Started](htt
 * [Test Conda Installation (Linux, macOS, Windows)](https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Getting-Started#test-conda-installation-linux-macos-windows)
 
 
+## Auditing an SDRF file
+
+An SDRF file describes the samples an experiment was built from, and what it says about labelling
+decides how many samples a quantitative search can see. That is easy to get wrong invisibly: a file
+whose `comment[label]` names the reagent kit — `TMT10plex` on every row — rather than the channel
+parses cleanly and validates cleanly, and then yields one channel for a ten-channel experiment. So
+does a file with two rows per (data file, channel), or one that declares no isobaric modification at
+all. None of that is a structural defect, so the SDRF validator is right not to report it, and the
+usual way a user finds out is a wrong number downstream.
+
+`--auditSdrf` prints what one SDRF says about quantification and runs nothing else:
+
+```
+dotnet CMD.dll --auditSdrf experiment.sdrf.tsv
+```
+
+```
+SDRF quantification audit: experiment.sdrf.tsv
+  design            : ChannelLevel
+  channels          : 4 (TMT126, TMT127N, TMT127C, TMT128N)
+  plex              : Column -- characteristics[biological replicate batch] -> 1
+  isobaric mod      : NOT DECLARED
+  label form        : 4 bare, 0 accessioned
+  facts:
+     1. data file               ok
+     2. channel                 ok
+     3. reporter m/z           ABSENT  SDRF has no column for it; it is derived from the channel
+     ...
+```
+
+and the case it exists for:
+
+```
+  design            : KitOnly
+  kit               : TMT6PLEX -- channels are never enumerated
+```
+
+Add `--auditData` to check the file's `comment[data file]` entries against a folder of downloaded
+files, which are then reported as found or missing:
+
+```
+dotnet CMD.dll --auditSdrf experiment.sdrf.tsv --auditData ./downloaded
+```
+
+which adds a line to the report:
+
+```
+  data files        : 3 found, 1 missing
+```
+
+The audit is read-only and runs on its own, so it is refused alongside anything that asks for work —
+`-t`/`-d`/`-s`, `-g`, `--test` or `--acceptThermoLicence` — rather than honouring one of the two
+silently. It exits 0 with a report, 2 for a settings error, and 4 for a document it could not read.
+
+
+## Writing an experimental design from a label-free SDRF
+
+`--sdrfDesign` turns a label-free SDRF into the `ExperimentalDesign.tsv` that label-free
+quantification reads, for exactly the spectra files a search given the same `-s` would use:
+
+```
+dotnet CMD.dll --sdrfDesign experiment.sdrf.tsv -s ./spectra
+```
+
+The design is written beside the first spectra file, which is where a run looks for it, so `-o` is
+ignored, with a warning. Each spectra file must be named by one SDRF row (`comment[data file]`); rows
+for files that are not there are dropped and reported. The condition comes from the SDRF's
+`factor value[...]` column when it has only one. When it has several, name the ones to use, in order,
+with `--sdrfCondition`; their values are joined with `_`, and a bare name means that factor column:
+
+```
+dotnet CMD.dll --sdrfDesign experiment.sdrf.tsv -s ./spectra --sdrfCondition genotype treatment
+```
+
+The report of what was read is always printed, whatever `-v` says. A design that MetaMorpheus would
+reject is never written; every reason is printed instead. An existing `ExperimentalDesign.tsv` or
+`TmtDesign.txt` in that folder is never overwritten. Like `--auditSdrf`, it runs on its own and is
+refused alongside `-t`, `-d`, `-g`, `--test` or `--acceptThermoLicence`; write the design, then run
+the search. It exits 0 when the design was written, 2 for a settings error (such as an SDRF that is
+not there, or no spectra files in `-s`), 4 for an SDRF it could not read, and 5 when the design was
+refused or a design file is already there.
+
+
 ## References & Citation Guide for MetaMorpheus
 
 MetaMorpheus:
@@ -76,6 +176,9 @@ Quantification:
   * [Ultrafast Peptide Label-Free Quantification with FlashLFQ, J Proteome Res **2018**, _17_, 386–391.](https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00608)
   * If you use SILAC quantification: [An atlas of protein turnover rates in mouse tissues, Nat Communications **2021**, _12_, 6778.](https://www.nature.com/articles/s41467-021-26842-3)
 
+Crosslinking MS (XL-MS) search: [Identification of MS-Cleavable and Noncleavable Chemically Cross-Linked Peptides with MetaMorpheus
+, J. Proteome Res. **2018**, 17, 7, 2370–2376.](https://pubs.acs.org/doi/10.1021/acs.jproteome.8b00141)
+
 Multiple protease parsimony: [Improved Protein Inference from Multiple Protease Bottom-Up Mass Spectrometry Data, J Proteome Res **2019**, _18_, 9, 3429–3438.](https://pubs.acs.org/doi/10.1021/acs.jproteome.9b00330)
 
 Glycoproteomic searches: [O-Pair Search with MetaMorpheus for O-glycopeptide characterization, Nat Methods **2020**, _17_, 1133–1138.](https://www.nature.com/articles/s41592-020-00985-5)
@@ -83,6 +186,10 @@ Glycoproteomic searches: [O-Pair Search with MetaMorpheus for O-glycopeptide cha
 Proteogenomic database searches with Spritz: [Spritz: A Proteogenomic Database Engine, J Proteome Res **2021**, _20_, 1826–1834.](https://pubs.acs.org/doi/10.1021/acs.jproteome.0c00407)
 
 Long-read proteogenomic characterization: [Enhanced protein isoform characterization through long-read proteogenomics, Genome Biology **2022**, _23_, 69.](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02624-y)
+
+Spectral library GPTMD search: [A Hybrid Spectral Library and Protein Sequence Database Search Strategy for Bottom-Up and Top-Down Proteomic Data Analysis, J of Proteome Res **2022**, _21_, 2609-2618](https://pubs.acs.org/doi/10.1021/acs.jproteome.2c00305)
+
+Spectral Averaging: [Spectral averaging with outlier rejection algorithms to increase identifications in top-down proteomics](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11216233/)
 
 ## mzLib, an all-purpose mass spectrometry toolchest implemented by MetaMorpheus
 

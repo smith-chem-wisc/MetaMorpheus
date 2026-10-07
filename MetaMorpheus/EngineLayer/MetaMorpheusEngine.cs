@@ -1,16 +1,13 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using Microsoft.ML.Trainers.FastTree;
-using MzLibUtil;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
+using Transcriptomics.Digestion;
 
 namespace EngineLayer
 {
@@ -29,7 +26,6 @@ namespace EngineLayer
 
         public readonly CommonParameters CommonParameters;
         protected readonly List<(string FileName, CommonParameters Parameters)> FileSpecificParameters;
-
         protected readonly List<string> NestedIds;
 
         protected MetaMorpheusEngine(CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIds)
@@ -129,34 +125,22 @@ namespace EngineLayer
             }
 
             return score;
+
         }
 
-        public static double AndromedaScore(int totalNumberOfTheoreticalIons, int totalNumberOfMatchingIons, double numberOfPeaksPer100Thomsons)
+        public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters, bool matchAllCharges = false, bool includeExperimentalEnvelope = false, bool isLowRes = false)
         {
-            double localSum = 0;
-            for (int j = totalNumberOfMatchingIons; j <= totalNumberOfTheoreticalIons; j++)
-            {
-                localSum += (Math.Pow((numberOfPeaksPer100Thomsons/100),j)*Math.Pow((1-numberOfPeaksPer100Thomsons/100),totalNumberOfTheoreticalIons-j));
-            }
-
-            return -10.0 * Math.Log10(localSum);
-        }
-        public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters, bool matchAllCharges = false)
-        {
+            // if this is a child scan and it's an ion trap 2D scan, we want to use the wider tolerance for matching
+            var productMassTolerance = isLowRes? commonParameters.ProductMassTolerance_LowRes : commonParameters.ProductMassTolerance;
             if (matchAllCharges)
             {
-                return MatchFragmentIonsOfAllCharges(scan, theoreticalProducts, commonParameters);
+                return MatchFragmentIonsOfAllCharges(scan, theoreticalProducts, commonParameters, isLowRes);
             }
 
             var matchedFragmentIons = new List<MatchedFragmentIon>();
 
             if (scan.TheScan.MassSpectrum.XcorrProcessed && scan.TheScan.MassSpectrum.XArray.Length != 0)
             {
-                // if the spectrum has no peaks
-                if (scan.TheScan.MassSpectrum.XArray.Length == 0)
-                {
-                    return matchedFragmentIons;
-                }
 
                 for (int i = 0; i < theoreticalProducts.Count; i++)
                 {
@@ -167,12 +151,14 @@ namespace EngineLayer
                         continue;
                     }
 
+                    // Magic number represents mzbinning space. 
                     double theoreticalFragmentMz = Math.Round(product.NeutralMass.ToMz(1) / 1.0005079, 0) * 1.0005079;
                     var closestMzIndex = scan.TheScan.MassSpectrum.GetClosestPeakIndex(theoreticalFragmentMz);
 
-                    if (commonParameters.ProductMassTolerance.Within(scan.TheScan.MassSpectrum.XArray[closestMzIndex], theoreticalFragmentMz))
+
+                    if (productMassTolerance.Within(scan.TheScan.MassSpectrum.XArray[closestMzIndex], theoreticalFragmentMz))
                     {
-                        matchedFragmentIons.Add(new MatchedFragmentIon(ref product, theoreticalFragmentMz, scan.TheScan.MassSpectrum.YArray[closestMzIndex], 1));
+                        matchedFragmentIons.Add(new MatchedFragmentIon(product, theoreticalFragmentMz, scan.TheScan.MassSpectrum.YArray[closestMzIndex], 1));
                     }
                 }
 
@@ -186,7 +172,6 @@ namespace EngineLayer
             }
 
             // search for ions in the spectrum
-            //foreach (Product product in theoreticalProducts)
             for (int i = 0; i < theoreticalProducts.Count; i++)
             {
                 var product = theoreticalProducts[i];
@@ -200,10 +185,23 @@ namespace EngineLayer
                 var closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(product.NeutralMass);
 
                 // is the mass error acceptable?
-                if (closestExperimentalMass != null && commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)//TODO apply this filter before picking the envelope
+                if (closestExperimentalMass != null
+                    && productMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass)
+                    && Math.Abs(closestExperimentalMass.Charge) <= Math.Abs(scan.PrecursorCharge))
                 {
-                    matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
-                        closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
+                    if (includeExperimentalEnvelope)
+                    {
+                        matchedFragmentIons.Add(new MatchedFragmentIonWithEnvelope(product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
+                            closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge)
+                        {
+                            Envelope = closestExperimentalMass
+                        });
+                    }
+                    else
+                    {
+                        matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
+                            closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
+                    }
                 }
             }
             if (commonParameters.AddCompIons)
@@ -227,12 +225,22 @@ namespace EngineLayer
                         IsotopicEnvelope closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(compIonMass);
 
                         // is the mass error acceptable?
-                        if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, compIonMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)
+                        if (closestExperimentalMass != null && productMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, compIonMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)
                         {
                             //found the peak, but we don't want to save that m/z because it's the complementary of the observed ion that we "added". Need to create a fake ion instead.
                             double mz = (scan.PrecursorMass + protonMassShift - closestExperimentalMass.MonoisotopicMass).ToMz(closestExperimentalMass.Charge);
 
-                            matchedFragmentIons.Add(new MatchedFragmentIon(ref product, mz, closestExperimentalMass.TotalIntensity, closestExperimentalMass.Charge));
+                            if (includeExperimentalEnvelope)
+                            {
+                                matchedFragmentIons.Add(new MatchedFragmentIonWithEnvelope(product, mz, closestExperimentalMass.TotalIntensity, closestExperimentalMass.Charge)
+                                {
+                                    Envelope = closestExperimentalMass
+                                });
+                            }
+                            else
+                            {
+                                matchedFragmentIons.Add(new MatchedFragmentIon(product, mz, closestExperimentalMass.TotalIntensity, closestExperimentalMass.Charge));
+                            }
                         }
                     }
                 }
@@ -240,12 +248,13 @@ namespace EngineLayer
 
             return matchedFragmentIons;
         }
-
+        
         //Used only when user wants to generate spectral library.
         //Normal search only looks for one match ion for one fragment, and if it accepts it then it doesn't try to look for different charge states of that same fragment. 
         //But for library generation, we need find all the matched peaks with all the different charges.
-        private static List<MatchedFragmentIon> MatchFragmentIonsOfAllCharges(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
+        private static List<MatchedFragmentIon> MatchFragmentIonsOfAllCharges(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters, bool isLowRes = false)
         {
+            var productMassTolerance = isLowRes ? commonParameters.ProductMassTolerance_LowRes : commonParameters.ProductMassTolerance;
             var matchedFragmentIons = new List<MatchedFragmentIon>();
             var ions = new List<string>();
 
@@ -265,18 +274,21 @@ namespace EngineLayer
                 }
 
                 //get the range we can accept 
-                var minMass = commonParameters.ProductMassTolerance.GetMinimumValue(product.NeutralMass);
-                var maxMass = commonParameters.ProductMassTolerance.GetMaximumValue(product.NeutralMass);
+                var minMass = productMassTolerance.GetMinimumValue(product.NeutralMass);
+                var maxMass = productMassTolerance.GetMaximumValue(product.NeutralMass);
                 var closestExperimentalMassList = scan.GetClosestExperimentalIsotopicEnvelopeList(minMass, maxMass);
                 if (closestExperimentalMassList != null)
                 {
                     foreach (var x in closestExperimentalMassList)
                     {
                         String ion = $"{product.ProductType.ToString()}{ product.FragmentNumber}^{x.Charge}-{product.NeutralLoss}";
-                        if (x != null && !ions.Contains(ion) && commonParameters.ProductMassTolerance.Within(x.MonoisotopicMass, product.NeutralMass) && x.Charge <= scan.PrecursorCharge)//TODO apply this filter before picking the envelope
+                        if (x != null 
+                            && !ions.Contains(ion) 
+                            && productMassTolerance.Within(x.MonoisotopicMass, product.NeutralMass) 
+                            && Math.Abs(x.Charge) <= Math.Abs(scan.PrecursorCharge))//TODO apply this filter before picking the envelope
                         {
                             Product temProduct = product;
-                            matchedFragmentIons.Add(new MatchedFragmentIon(ref temProduct, x.MonoisotopicMass.ToMz(x.Charge),
+                            matchedFragmentIons.Add(new MatchedFragmentIon(temProduct, x.MonoisotopicMass.ToMz(x.Charge),
                                 x.Peaks.First().intensity, x.Charge));
 
                             ions.Add(ion);
@@ -287,18 +299,55 @@ namespace EngineLayer
 
             return matchedFragmentIons;
         }
+        protected abstract MetaMorpheusEngineResults RunSpecific();
 
         public MetaMorpheusEngineResults Run()
         {
+            DetermineAnalyteType(CommonParameters);
             StartingSingleEngine();
             var stopWatch = new Stopwatch();
             stopWatch.Start();
+            this.CommonParameters.SetCustomProductTypes();
             var myResults = RunSpecific();
             stopWatch.Stop();
             myResults.Time = stopWatch.Elapsed;
             FinishedSingleEngine(myResults);
             return myResults;
         }
+
+        public Task<MetaMorpheusEngineResults> RunAsync() => Task.Run(Run);
+
+        /// <summary>
+        /// Determines and sets the analyte type based on CommonParameters digestion settings.
+        /// This method is called automatically by MetaMorpheusEngine.Run() to handle:
+        /// - RNA mode (RnaDigestionParams → Oligo)
+        /// - Top-down mode (protease == "top-down" → Proteoform)  
+        /// - Bottom-up/default mode (→ Peptide)
+        /// 
+        /// IMPORTANT: This recalculates the analyte type at runtime and may differ from the GUI mode
+        /// set by GuiGlobalParamsViewModel.IsRnaMode. This is intentional to support:
+        /// - File-specific parameters with different modes
+        /// - Mixed mode workflows
+        /// 
+        /// For GUI initialization, rely on GuiGlobalParamsViewModel.IsRnaMode which sets 
+        /// GlobalVariables.AnalyteType. Do NOT call this method during GUI task window initialization.
+        /// </summary>
+        /// <param name="commonParameters"></param>
+        public static void DetermineAnalyteType(CommonParameters commonParameters)
+        {
+            // Comment made while DetermineAnalyteType happened at the task layer
+            // TODO: note that this will not function well if the user is using file-specific settings, but it's assumed
+            // that bottom-up and top-down data is not being searched in the same task. 
+
+            // Update: Now that it is in the engine layer, analyte type specific operations will be okay at the engine layer, meaning searching top-down and bottom-up with file specific params will execute the proper control flow. However, a problem still exists in PostSearchAnalysis where that analyte type will be set to whatever the main parameters are. 
+
+            if (commonParameters == null || commonParameters.DigestionParams == null)
+                return;
+
+            GlobalVariables.AnalyteType = commonParameters.DetermineAnalyteType();
+        }
+
+        #region Event Helpers
 
         public string GetId()
         {
@@ -308,6 +357,15 @@ namespace EngineLayer
         protected void Warn(string v)
         {
             WarnHandler?.Invoke(this, new StringEventArgs(v, NestedIds));
+        }
+
+        /// <summary>
+        /// Static counterpart to <see cref="Warn(string)"/>, for warnings raised from static contexts,
+        /// where no engine instance (and therefore no nested id) is available
+        /// </summary>
+        protected static void WarnStatic(string v)
+        {
+            WarnHandler?.Invoke(null, new StringEventArgs(v, null));
         }
 
         protected void Status(string v)
@@ -320,8 +378,6 @@ namespace EngineLayer
             OutProgressHandler?.Invoke(this, v);
         }
 
-        protected abstract MetaMorpheusEngineResults RunSpecific();
-
         private void StartingSingleEngine()
         {
             StartingSingleEngineHander?.Invoke(this, new SingleEngineEventArgs(this));
@@ -331,5 +387,7 @@ namespace EngineLayer
         {
             FinishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
         }
+
+        #endregion
     }
 }

@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using System.Collections.Generic;
 using EngineLayer;
 using MzLibUtil;
 using Nett;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
-using Proteomics.Fragmentation;
+using Omics.Digestion;
+using Omics.Fragmentation;
+using Transcriptomics.Digestion;
 
 namespace TaskLayer
 {
@@ -13,6 +14,9 @@ namespace TaskLayer
     {
         public FileSpecificParameters(TomlTable tomlTable)
         {
+            if (tomlTable == null)
+                throw new MetaMorpheusException("File-specific parameters TOML table cannot be null");
+
             foreach (var keyValuePair in tomlTable)
             {
                 switch (keyValuePair.Key)
@@ -23,8 +27,35 @@ namespace TaskLayer
                         PrecursorMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
                     case nameof(ProductMassTolerance):
                         ProductMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
-                    case nameof(Protease):
-                        Protease = keyValuePair.Value.Get<Protease>(); break;
+                    case nameof(ProductMassTolerance_LowRes):
+                        ProductMassTolerance_LowRes = keyValuePair.Value.Get<Tolerance>(); break;
+                    case nameof(DigestionAgent): // Support new tomls that labeled by Digestion Agent Type instead of specific type
+                        string valueString = keyValuePair.Value.Get<string>();
+
+                        // If type is top-down we only have the analyte type to go off of. 
+                        // This should be updated if there is ever an Rnase and Protease that share a same name. 
+                        if (valueString.Contains("top-down"))
+                        {
+                            if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
+                                DigestionAgent = keyValuePair.Value.Get<Rnase>();
+                            else
+                                DigestionAgent = keyValuePair.Value.Get<Protease>();
+                        }
+
+                        // If type is not top-down we can check the digestion agent dictionaries. 
+                        if (ProteaseDictionary.Dictionary.ContainsKey(valueString))
+                            DigestionAgent = keyValuePair.Value.Get<Protease>();
+                        else if (RnaseDictionary.Dictionary.ContainsKey(valueString))
+                            DigestionAgent = keyValuePair.Value.Get<Rnase>();
+                        else
+                            throw new MetaMorpheusException("Unrecognized digestion agent type \"" + valueString + "\" in file-specific parameters toml");
+                        break;
+                    case "Rnase": // Support old tomls that labeled by Digestion Agent Type instead of DigestionAgent
+                        DigestionAgent = keyValuePair.Value.Get<Rnase>();
+                        break;
+                    case "Protease": // Support old tomls that labeled by Digestion Agent Type instead of DigestionAgent
+                        DigestionAgent = keyValuePair.Value.Get<Protease>();
+                        break;
                     case nameof(MinPeptideLength):
                         MinPeptideLength = keyValuePair.Value.Get<int>(); break;
                     case nameof(MaxPeptideLength):
@@ -42,6 +73,10 @@ namespace TaskLayer
                     case nameof(CustomIons):
                         CustomIons = keyValuePair.Value.Get<List<ProductType>>(); break;
 
+                    case nameof(PrecursorDeconvolutionParameters):
+                        PrecursorDeconvolutionParameters = keyValuePair.Value.Get<DeconvolutionParameters>(); break;
+                    case nameof(ProductDeconvolutionParameters):
+                        ProductDeconvolutionParameters = keyValuePair.Value.Get<DeconvolutionParameters>(); break;
 
                     default:
                         throw new MetaMorpheusException("Unrecognized parameter \"" + keyValuePair.Key + "\" in file-specific parameters toml");
@@ -56,7 +91,8 @@ namespace TaskLayer
 
         public Tolerance PrecursorMassTolerance { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
-        public Protease Protease { get; set; }
+        public Tolerance ProductMassTolerance_LowRes { get; set; }
+        public DigestionAgent DigestionAgent { get; set; }
         public int? MinPeptideLength { get; set; }
         public int? MaxPeptideLength { get; set; }
         public int? MaxMissedCleavages { get; set; }
@@ -66,9 +102,27 @@ namespace TaskLayer
 
         public List<ProductType> CustomIons { get; set; }
 
+        public DeconvolutionParameters PrecursorDeconvolutionParameters { get; set; }
+        public DeconvolutionParameters ProductDeconvolutionParameters { get; set; }
+
         public FileSpecificParameters Clone()
         {
-            return (FileSpecificParameters)this.MemberwiseClone();
+            return new FileSpecificParameters
+            {
+                PrecursorMassTolerance = this.PrecursorMassTolerance,
+                ProductMassTolerance = this.ProductMassTolerance,
+                ProductMassTolerance_LowRes = this.ProductMassTolerance_LowRes,
+                DigestionAgent = this.DigestionAgent,
+                MinPeptideLength = this.MinPeptideLength,
+                MaxPeptideLength = this.MaxPeptideLength,
+                MaxMissedCleavages = this.MaxMissedCleavages,
+                MaxModsForPeptide = this.MaxModsForPeptide,
+                DissociationType = this.DissociationType,
+                SeparationType = this.SeparationType,
+                CustomIons = this.CustomIons != null ? new List<ProductType>(this.CustomIons) : null,
+                PrecursorDeconvolutionParameters = this.PrecursorDeconvolutionParameters,
+                ProductDeconvolutionParameters = this.ProductDeconvolutionParameters
+            };
         }
     }
 }

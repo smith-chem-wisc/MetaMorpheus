@@ -1,11 +1,9 @@
 ﻿using System.Collections.ObjectModel;
-using System.Windows;
 
 namespace GuiFunctions
 {
     public class LegendViewModel : BaseViewModel
     {
-        
         private bool visibility;
         private double topOffset;
         private ObservableCollection<LegendItemViewModel> legendItemViewModels = new();

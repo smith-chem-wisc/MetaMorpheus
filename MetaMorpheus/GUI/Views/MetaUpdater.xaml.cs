@@ -2,7 +2,6 @@
 using EngineLayer;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -72,6 +71,10 @@ namespace MetaMorpheusGUI
             try
             {
                 var tempDownloadLocation = Path.Combine(Path.GetTempPath(), "MetaMorpheusInstaller.msi");
+                if (File.Exists(tempDownloadLocation))
+                {
+                    File.Delete(tempDownloadLocation);
+                }
 
                 // download the installer
                 HttpResponseMessage urlResponse = Task.Run(() => client.GetAsync(uri)).Result;
@@ -137,31 +140,6 @@ namespace MetaMorpheusGUI
 
             //this opens the URL in the user's default browser
             GlobalVariables.StartProcess(e.Uri.ToString());
-        }
-
-        private void PortableClicked(object semder, RoutedEventArgs e)
-        {
-            DialogResult = true;
-            HttpClient client = new();
-            var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + MainWindow.NewestKnownMetaMorpheusVersion + @"/MetaMorpheusGuiDotNetFrameworkAppveyor.zip");
-
-            try
-            {
-                var tempDownloadLocation = Path.Combine(Path.GetTempPath(), "MetaMorpheusGuiDotNetFrameworkAppveyor.zip");
-                HttpResponseMessage urlResponse = Task.Run(() => client.GetAsync(uri)).Result;
-                using (FileStream stream = new(tempDownloadLocation, FileMode.CreateNew))
-                {
-                    Task.Run(() => urlResponse.Content.CopyToAsync(stream)).Wait();
-                }
-                Process p = new Process();
-                p.StartInfo.FileName = tempDownloadLocation;
-                Application.Current.Shutdown();
-                p.Start();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
         }
 
         private void NoClicked(object semder, RoutedEventArgs e)

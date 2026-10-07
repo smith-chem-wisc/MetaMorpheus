@@ -4,20 +4,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using MathNet.Numerics.Statistics;
+using System.IO;
 
 namespace EngineLayer.Calibration
 {
+    /// <summary>
+    /// Returns PSMs that can be used for calibration based on tolerance limits passed from the calibration task
+    /// </summary>
     public class DataPointAquisitionResults : MetaMorpheusEngineResults
     {
         public DataPointAquisitionResults(
             MetaMorpheusEngine dataPointAcquisitionEngine,
-            List<PeptideSpectralMatch> psms,
+            List<SpectralMatch> psms,
             List<LabeledDataPoint> ms1List,
             List<LabeledDataPoint> ms2List,
             int numMs1MassChargeCombinationsConsidered,
             int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
             int numMs2MassChargeCombinationsConsidered,
-            int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
+            int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
+            CommonParameters commonParameters = null)
             : base(dataPointAcquisitionEngine)
         {
             Psms = psms;
@@ -27,21 +32,23 @@ namespace EngineLayer.Calibration
 
             var ms1Range = Ms1List.Select(b => b.ExperimentalMz - b.TheoreticalMz).ToArray();
             var ms2Range = Ms2List.Select(b => b.ExperimentalMz - b.TheoreticalMz).ToArray();
-            Ms1InfoTh = new Tuple<double, double>(ArrayStatistics.Mean(ms1Range), ArrayStatistics.StandardDeviation(ms1Range));
-            Ms2InfoTh = new Tuple<double, double>(ArrayStatistics.Mean(ms2Range), ArrayStatistics.StandardDeviation(ms2Range));
-
 
             var ms1PpmRange = Ms1List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).ToArray();
             var ms2PpmRange = Ms2List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).ToArray();
-            Ms1InfoPpm = new Tuple<double, double>(ArrayStatistics.Mean(ms1PpmRange), ArrayStatistics.StandardDeviation(ms1PpmRange));
-            Ms2InfoPpm = new Tuple<double, double>(ArrayStatistics.Mean(ms2PpmRange), ArrayStatistics.StandardDeviation(ms2PpmRange));
 
-            NumMs1MassChargeCombinationsConsidered = numMs1MassChargeCombinationsConsidered;
-            NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
-            NumMs2MassChargeCombinationsConsidered = numMs2MassChargeCombinationsConsidered;
-            NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
-
-            var precursorErrors = psms.Select(p => (p.ScanPrecursorMass - p.PeptideMonisotopicMass.Value) / p.PeptideMonisotopicMass.Value * 1e6).ToList();
+            // Calibration must see instrument m/z drift, not isotope-assignment error. A most-abundant
+            // search admits PSMs whose deconvoluted monoisotopic peak is off by whole isotopologues (the
+            // apex notch set), so the raw (ScanPrecursorMass - peptideMonoisotopic) difference carries
+            // those offsets; left in, they inflate the IQR and make calibration write runaway precursor
+            // tolerances (e.g. 1940 ppm). GetObservedMonoisotopicMass removes exactly the offset the search
+            // allowed, using the isotope spacing from the deconvolution parameters. In the default
+            // monoisotopic mode it is the identity, so baseline calibration behaviour is preserved exactly.
+            var precursorErrors = psms.Select(p =>
+            {
+                double theoreticalMass = p.BioPolymerWithSetModsMonoisotopicMass.Value;
+                double observedMass = p.GetObservedMonoisotopicMass(theoreticalMass, commonParameters);
+                return (observedMass - theoreticalMass) / theoreticalMass * 1e6;
+            }).ToList();
             PsmPrecursorIqrPpmError = precursorErrors.InterquartileRange();
             PsmPrecursorMedianPpmError = precursorErrors.Median();
 
@@ -50,16 +57,6 @@ namespace EngineLayer.Calibration
             PsmProductMedianPpmError = productErrors.Median();
         }
 
-        public Tuple<double, double> Ms1InfoTh { get; }
-        public Tuple<double, double> Ms2InfoTh { get; }
-        public Tuple<double, double> Ms1InfoPpm { get; }
-        public Tuple<double, double> Ms2InfoPpm { get; }
-
-        public int NumMs1MassChargeCombinationsConsidered { get; }
-        public int NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks { get; }
-        public int NumMs2MassChargeCombinationsConsidered { get; }
-        public int NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks { get; }
-
         public List<LabeledDataPoint> Ms1List { get; }
         public List<LabeledDataPoint> Ms2List { get; }
 
@@ -67,9 +64,7 @@ namespace EngineLayer.Calibration
         public readonly double PsmProductMedianPpmError;
         public readonly double PsmPrecursorIqrPpmError;
         public readonly double PsmProductIqrPpmError;
-        public readonly List<PeptideSpectralMatch> Psms;
-
-        public int Count { get { return Ms1List.Count + Ms2List.Count; } }
+        public readonly List<SpectralMatch> Psms;
 
         public override string ToString()
         {

@@ -1,10 +1,11 @@
 ﻿using MassSpectrometry;
 using Proteomics;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Omics.Fragmentation;
+using Omics.Modifications;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -41,8 +42,8 @@ namespace EngineLayer.CrosslinkSearch
                         testMods.Add(mod.Key, mod.Value);
                     }
 
-                    var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
-                    peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
+                    var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidue,
+                    peptide.OneBasedEndResidue, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
                     
                     testPeptide.Fragment(dissociationType, FragmentationTerminus.Both, fragments);
 
@@ -109,7 +110,7 @@ namespace EngineLayer.CrosslinkSearch
                         modDict.Add(position1 + 1, loopMass);
                     }
                     PeptideWithSetModifications peptideWithLoop = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams,
-                        peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory,
+                        peptide.OneBasedStartResidue, peptide.OneBasedEndResidue, peptide.CleavageSpecificityForFdrCategory,
                         peptide.PeptideDescription, peptide.MissedCleavages, modDict, peptide.NumFixedMods);
                     
                     peptideWithLoop.Fragment(dissociationType, FragmentationTerminus.Both, loopProducts);
@@ -133,7 +134,7 @@ namespace EngineLayer.CrosslinkSearch
                         modDict.Add(position2 + 1, loopMass);
                     }
                     peptideWithLoop = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams,
-                        peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory,
+                        peptide.OneBasedStartResidue, peptide.OneBasedEndResidue, peptide.CleavageSpecificityForFdrCategory,
                         peptide.PeptideDescription, peptide.MissedCleavages, modDict, peptide.NumFixedMods);
 
                     peptideWithLoop.Fragment(dissociationType, FragmentationTerminus.Both, loopProducts);

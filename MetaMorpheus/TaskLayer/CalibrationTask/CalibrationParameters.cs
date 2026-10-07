@@ -8,14 +8,19 @@
             MinMS1IsotopicPeaksNeededForConfirmedIdentification = 3;
             MinMS2IsotopicPeaksNeededForConfirmedIdentification = 2;
             NumFragmentsNeededForEveryIdentification = 10;
+            QValueCutoffForCalibratingPSMs = 0.01;
             WriteIndexedMzml = true;
+            SearchType = SearchType.Classic;
         }
 
         public bool WriteIntermediateFiles { get; set; }
         public bool WriteIndexedMzml { get; set; }
+        public SearchType SearchType { get; set; }
 
         public int MinMS1IsotopicPeaksNeededForConfirmedIdentification { get; set; }
         public int MinMS2IsotopicPeaksNeededForConfirmedIdentification { get; set; }
         public int NumFragmentsNeededForEveryIdentification { get; set; }
+
+        public double QValueCutoffForCalibratingPSMs { get; set; }
     }
 }
