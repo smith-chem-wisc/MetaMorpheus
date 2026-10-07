@@ -1,7 +1,9 @@
+using Chemistry;
 using EngineLayer;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.Util;
+using MassSpectrometry;
 using MzLibUtil;
 using Omics;
 using Omics.Modifications;
@@ -166,6 +168,49 @@ namespace Test
 
             Assert.That(ScanScoringTable.IsWindowNarrowEnoughToStamp(ModernSearchEngine.MeanWindowShareOfIndex(peptideIndex, masses, oneMissedMonoisotopic)), Is.True);
             Assert.That(ScanScoringTable.IsWindowNarrowEnoughToStamp(ModernSearchEngine.MeanWindowShareOfIndex(peptideIndex, masses, wide)), Is.False);
+        }
+
+        /// <summary>
+        /// The engine's choice end to end, including the fallback: when the window share cannot be measured (no scans, or an index
+        /// not sorted by mass) the acceptor alone decides, as it did before the share check. Open never stamps.
+        /// </summary>
+        [Test]
+        public static void EngineStampsOnlyWhenTheWindowShareIsSmallOrCannotBeMeasured()
+        {
+            var sorted = SortedTrypticIndex();
+            var unsorted = Enumerable.Reverse(sorted).ToList();
+            var parameters = new CommonParameters();
+            var scans = sorted.Where(p => !double.IsNaN(p.MonoisotopicMass)).Where((_, i) => i % 7 == 0)
+                .Select(p => ScanAtMass(p.MonoisotopicMass, parameters)).ToArray();
+
+            MassDiffAcceptor oneMissedMonoisotopic = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.OneMM, null);
+            MassDiffAcceptor wide = new IntervalMassDiffAcceptor("wide", new[] { new DoubleRange(-200, 500) });
+            MassDiffAcceptor open = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.Open, null);
+
+            Assert.That(new StampChoiceProbe(scans, sorted, oneMissedMonoisotopic, parameters).Stamps, Is.True, "narrow window");
+            Assert.That(new StampChoiceProbe(scans, sorted, wide, parameters).Stamps, Is.False, "wide window, measured");
+            Assert.That(new StampChoiceProbe(null, sorted, wide, parameters).Stamps, Is.True, "no scans: the acceptor decides");
+            Assert.That(new StampChoiceProbe(scans, unsorted, wide, parameters).Stamps, Is.True, "unsorted index: the acceptor decides");
+            Assert.That(new StampChoiceProbe(scans, sorted, open, parameters).Stamps, Is.False, "open never stamps");
+        }
+
+        private sealed class StampChoiceProbe : ModernSearchEngine
+        {
+            public StampChoiceProbe(Ms2ScanWithSpecificMass[] scans, List<IBioPolymerWithSetMods> peptideIndex, MassDiffAcceptor acceptor,
+                CommonParameters parameters)
+                : base(new SpectralMatch[scans?.Length ?? 0], scans, peptideIndex, null, 0, parameters,
+                    new List<(string, CommonParameters)> { ("", parameters) }, acceptor, 0, new List<string>())
+            {
+            }
+
+            public bool Stamps => UseStampedScoringTable;
+        }
+
+        private static Ms2ScanWithSpecificMass ScanAtMass(double mass, CommonParameters parameters)
+        {
+            var dataScan = new MsDataScan(new MzSpectrum(new[] { 500.0 }, new[] { 1000.0 }, false), 1, 2, true, Polarity.Positive, 1,
+                new MzRange(0, 5000), "", MZAnalyzerType.Orbitrap, 1000, null, null, "");
+            return new Ms2ScanWithSpecificMass(dataScan, mass.ToMz(1), 1, "", parameters, new IsotopicEnvelope[0]);
         }
 
         private static List<IBioPolymerWithSetMods> SortedTrypticIndex()
