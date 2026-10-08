@@ -2,6 +2,7 @@ using Chemistry;
 using EngineLayer;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 using EngineLayer.Indexing;
 using MassSpectrometry;
 using MzLibUtil;
@@ -570,8 +571,10 @@ namespace Test
 
             // We have pretty high peptide-level q values for crosslinks, so we need to up the cut-off is we want PEP to run
             commonParameters2.QValueCutoffForPepCalculation = 0.05;
-            var fdrResultsXLink = new FdrAnalysisEngine(firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Inter || c.CrossType == PsmCrossType.Intra).ToList<SpectralMatch>(), 1, commonParameters2, fsp, new List<string>(), "crosslink",
-                pruneAmbiguousHypotheses: true).Run(); // as PostXLSearchAnalysisTask runs it
+            // as PostXLSearchAnalysisTask runs it: FDR, then disambiguation by PEP
+            var crosslinkCsms = firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Inter || c.CrossType == PsmCrossType.Intra).ToList<SpectralMatch>();
+            var fdrResultsXLink = new FdrAnalysisEngine(crosslinkCsms, 1, commonParameters2, fsp, new List<string>(), "crosslink").Run();
+            new DisambiguationEngine(crosslinkCsms, commonParameters2, fsp, new List<string>(), AbsolutePepGapRule.PepEngineRule).Run();
 
             unnasignedCrossType = 0;
             inter = 0;
