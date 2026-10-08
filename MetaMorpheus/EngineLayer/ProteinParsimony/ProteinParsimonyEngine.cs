@@ -277,15 +277,18 @@ namespace EngineLayer
                     }
                 }
 
-                foreach (var uniquePeptide in peptideSequenceToProteinsForThisProtease.Where(p => p.Value.Count == 1))
+                // A sequence is unique when ONE protein contains it. That protein can appear in the list several times
+                // (once per modified form, per full sequence of an ambiguous match, per position of a repeat), so count
+                // distinct proteins, not list entries.
+                foreach (var uniquePeptide in peptideSequenceToProteinsForThisProtease.Where(p => p.Value.Distinct().Count() == 1))
                 {
                     // add the protein with the unique peptide to the parsimonious protein list
                     IBioPolymer proteinWithUniquePeptideSequence = uniquePeptide.Value.First();
                     parsimoniousProteinList.Add(proteinWithUniquePeptideSequence);
 
-                    // add the unique peptide to the list of unique peptides
-                    IBioPolymerWithSetMods uniquePwsm = sequenceToPwsm[uniquePeptide.Key].First();
-                    uniquePeptides.Add(uniquePwsm);
+                    // add every peptide with this sequence (each form, each position) to the list of unique peptides;
+                    // a form left out would be reported as shared
+                    uniquePeptides.UnionWith(sequenceToPwsm[uniquePeptide.Key]);
                 }
             }
 
