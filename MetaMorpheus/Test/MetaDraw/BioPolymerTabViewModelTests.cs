@@ -35,8 +35,8 @@ namespace Test.MetaDraw
             Assert.That(vm.FilteredGroups, Is.Not.Null);
             Assert.That(vm.CoverageMapViewModel, Is.Not.Null);
             Assert.That(vm.ExportDirectory, Is.EqualTo("C:\\Export"));
-            Assert.That(vm.LoadDatabaseCommand, Is.Not.Null);
-            Assert.That(vm.ResetDatabaseCommand, Is.Not.Null);
+            Assert.That(vm.LoadDataCommand, Is.Not.Null);
+            Assert.That(vm.ResetDataCommand, Is.Not.Null);
             Assert.That(vm.ExportImageCommand, Is.Not.Null);
             Assert.That(vm.DatabaseName, Is.EqualTo("Add Database Files..."));
             Assert.That(vm.DatabasePathsTooltip, Is.Null);

@@ -461,7 +461,7 @@ public class MetaDrawDataLoader
         // Load DB if present but not loaded
         if (!tab.IsDatabaseLoaded && tab.DatabasePaths.Count > 0)
         {
-            tab.LoadDatabaseCommand.Execute(null);
+            tab.LoadDataCommand.Execute(null);
         }
 
         if (tab.IsDatabaseLoaded)
