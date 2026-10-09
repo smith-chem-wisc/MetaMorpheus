@@ -320,9 +320,13 @@ public class MetaDrawDataLoader
         bool loadedSearchParams = false;
         bool loadedFragmentationParams = false;
 
-        var searchDirectories = _logic.SpectralMatchResultFilePaths
+        var resultDirectories = _logic.SpectralMatchResultFilePaths
             .Select(Path.GetDirectoryName)
             .Where(p => p != null)
+            .Distinct()
+            .ToArray();
+
+        var searchDirectories = resultDirectories
             .Select(p =>
             {
                 // If directory name contains "Individual File Results", go up one parent
@@ -446,8 +450,50 @@ public class MetaDrawDataLoader
         }
         catch (Exception) { loadedDb = false; }
 
+        try
+        {
+            var proteinGroupsFile = FindProteinGroupsFile(resultDirectories.Take(1));
+            if (proteinGroupsFile != null)
+            {
+                bpTabVm.ProteinGroupsFilePath = proteinGroupsFile;
+                bpTabVm.OnPropertyChanged(nameof(bpTabVm.ProteinGroupName));
+            }
+        }
+        catch (Exception) { }
 
         return (loadedDb, loadedSearchParams, loadedFragmentationParams);
+    }
+
+    private static string? FindProteinGroupsFile(IEnumerable<string?> resultDirectories)
+    {
+        foreach (var resultDirectory in resultDirectories)
+        {
+            if (resultDirectory == null || !Directory.Exists(resultDirectory))
+                continue;
+
+            var directoriesToSearch = new List<string> { resultDirectory };
+            if (Path.GetFileName(resultDirectory)?.Contains("Individual File Results", StringComparison.OrdinalIgnoreCase) ?? false)
+            {
+                var parent = Directory.GetParent(resultDirectory)?.FullName;
+                if (parent != null)
+                    directoriesToSearch.Add(parent);
+            }
+
+            foreach (var directory in directoriesToSearch)
+            {
+                foreach (var file in Directory.GetFiles(directory).OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        if (BioPolymerTabViewModel.SupportedProteinGroupFileTypes.Contains(file.ParseFileType()))
+                            return file;
+                    }
+                    catch (Exception) { }
+                }
+            }
+        }
+
+        return null;
     }
 
     #endregion

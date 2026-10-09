@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Media;
 using GuiFunctions;
 using GuiFunctions.MetaDraw;
@@ -40,6 +42,43 @@ namespace Test.MetaDraw
             Assert.That(vm.ExportImageCommand, Is.Not.Null);
             Assert.That(vm.DatabaseName, Is.EqualTo("Add Database Files..."));
             Assert.That(vm.DatabasePathsTooltip, Is.Null);
+        }
+
+        [TestCase("AllProteinGroups.tsv")]
+        [TestCase("AllQuantifiedProteinGroups.tsv")]
+        [TestCase("AllTranscriptGroups.tsv")]
+        [TestCase("AllQuantifiedTranscriptGroups.tsv")]
+        public void LoadProteinGroups_LoadsSupportedProteinAndTranscriptFiles(string fileName)
+        {
+            string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            string filePath = Path.Combine(directory, fileName);
+
+            try
+            {
+                Directory.CreateDirectory(directory);
+                File.WriteAllText(filePath,
+                    "Protein Accession\tProtein Decoy/Contaminant/Target\tProtein QValue\n" +
+                    "ACC\tT\t0.004\n");
+
+                var vm = new BioPolymerTabViewModel(new DummyMetaDrawLogic())
+                {
+                    ProteinGroupsFilePath = filePath
+                };
+                var method = typeof(BioPolymerTabViewModel)
+                    .GetMethod("LoadProteinGroups", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+                method!.Invoke(vm, null);
+                Task.Delay(500).Wait();
+
+                Assert.That(vm.IsProteinGroupsLoaded, Is.True);
+                Assert.That(vm.Groups, Has.Count.EqualTo(1));
+                Assert.That(vm.Groups[0].ProteinGroupName, Is.EqualTo("ACC"));
+            }
+            finally
+            {
+                if (Directory.Exists(directory))
+                    Directory.Delete(directory, true);
+            }
         }
 
         [Test]
