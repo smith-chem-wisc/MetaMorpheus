@@ -1150,6 +1150,98 @@ namespace Test
         }
 
         /// <summary>
+        /// The individual-file PSM and peptide tables re-run FDR on each file's spectral matches, on
+        /// purpose: they show what that file would give searched alone. That pass must not leave its
+        /// per-file q-values on the shared spectral matches, because the stages after it (per-file
+        /// mzID and pepXML, the per-file protein groups, the pruned database, the spectral library,
+        /// the variant tables) read FdrInfo and must see the whole-search FDR. So every output written
+        /// after the individual tables must be the same whether or not WriteIndividualFiles is on.
+        ///
+        /// The two spectra files are copies of each other, and QvalueThresholdOverride selects the
+        /// (D+1)/T q-value: per file it is (D+1)/T, over both files (2D+1)/2T, so the per-file and
+        /// whole-search q-values of the same spectrum really differ and an overwrite is visible.
+        /// </summary>
+        [Test]
+        public static void IndividualFileResultsDoNotChangeTheWholeSearchFdr()
+        {
+            string root = Path.Combine(TestContext.CurrentContext.TestDirectory, "IndividualFileResultsKeepWholeSearchFdr");
+            if (Directory.Exists(root))
+                Directory.Delete(root, true);
+
+            string individual = RunTwoFileSearch(Path.Combine(root, "individual"), writeIndividualFiles: true);
+            string noIndividual = RunTwoFileSearch(Path.Combine(root, "noIndividual"), writeIndividualFiles: false);
+            string individualFolder = Path.Combine(individual, "Individual File Results");
+
+            // mzID is written per file in both runs, after the individual tables, from psm.FdrInfo.
+            foreach (string rawFile in new[] { "TaGe_SA_A549_3_snip", "TaGe_SA_A549_3_snip_2" })
+            {
+                string withTables = File.ReadAllText(Path.Combine(individualFolder, rawFile + ".mzID"));
+                string withoutTables = File.ReadAllText(Path.Combine(noIndividual, "Individual File Results", rawFile + ".mzID"));
+                Assert.That(withTables, Is.EqualTo(withoutTables),
+                    $"{rawFile}.mzID must carry the whole-search FDR whether or not the individual tables were written");
+            }
+
+            // Both pruned databases (with all mods, and proteinPruned) are chosen from confident PSMs.
+            foreach (string pruned in new[] { "TaGe_SA_A549_3_snippruned.xml", "TaGe_SA_A549_3_snipproteinPruned.xml" })
+            {
+                Assert.That(File.ReadAllText(Path.Combine(individual, pruned)), Is.EqualTo(File.ReadAllText(Path.Combine(noIndividual, pruned))),
+                    $"{pruned} must be chosen with the whole-search FDR");
+            }
+
+            // The individual tables themselves keep their own, per-file q-values.
+            var wholeSearchQ = QValuesByScan(Path.Combine(individual, "AllPSMs.psmtsv"));
+            var perFileQ = QValuesByScan(Path.Combine(individualFolder, "TaGe_SA_A549_3_snip_PSMs.psmtsv"));
+            Assert.That(perFileQ.Keys.Count(wholeSearchQ.ContainsKey), Is.GreaterThan(0));
+            Assert.That(perFileQ.Count(kv => wholeSearchQ.TryGetValue(kv.Key, out double q) && q != kv.Value), Is.GreaterThan(0),
+                "the individual PSM table must report per-file q-values, not the whole-search ones");
+
+            Directory.Delete(root, true);
+        }
+
+        private static string RunTwoFileSearch(string outputFolder, bool writeIndividualFiles)
+        {
+            string testDirectory = TestContext.CurrentContext.TestDirectory;
+            var task = Nett.Toml.ReadFile<SearchTask>(Path.Combine(testDirectory, @"TestData\Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            task.CommonParameters.QValueCutoffForPepCalculation = 0.01;
+            task.SearchParameters.WriteIndividualFiles = writeIndividualFiles;
+            task.SearchParameters.WriteMzId = true;
+            task.SearchParameters.WritePrunedDatabase = true;
+            var spectraFiles = new List<string>
+            {
+                Path.Combine(testDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML"),
+                Path.Combine(testDirectory, @"TestData\TaGe_SA_A549_3_snip_2.mzML")
+            };
+            var databases = new List<DbForTask> { new DbForTask(Path.Combine(testDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta"), false) };
+
+            var qValueOverride = typeof(EngineLayer.FdrAnalysis.FdrAnalysisEngine).GetProperty("QvalueThresholdOverride");
+            lock (EverythingRunnerEngineTestCase.myLock)
+            {
+                try
+                {
+                    qValueOverride.SetValue(null, true);
+                    new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", task) }, spectraFiles, databases, outputFolder).Run();
+                }
+                finally
+                {
+                    qValueOverride.SetValue(null, false);
+                }
+            }
+            return Path.Combine(outputFolder, "search");
+        }
+
+        private static Dictionary<(string File, string Scan), double> QValuesByScan(string psmtsv)
+        {
+            string[] lines = File.ReadAllLines(psmtsv);
+            var header = lines[0].Split('\t').ToList();
+            int file = header.IndexOf("File Name"), scan = header.IndexOf("Scan Number"), qValue = header.IndexOf("QValue");
+            Assert.That(new[] { file, scan, qValue }, Has.None.EqualTo(-1), $"unexpected header in {psmtsv}");
+            return lines.Skip(1)
+                .Select(line => line.Split('\t'))
+                .GroupBy(cells => (cells[file], cells[scan]))
+                .ToDictionary(g => g.Key, g => double.Parse(g.First()[qValue], System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        /// <summary>
         /// WriteContaminants reaches AllProteinGroups.tsv and MetaMorpheus's own PSM and peptide tables,
         /// but the FlashLFQ-authored ones are written by mzLib from FlashLfqResults, which has no
         /// contaminant concept -- so before this filter a user who unticked the box got a peptide
