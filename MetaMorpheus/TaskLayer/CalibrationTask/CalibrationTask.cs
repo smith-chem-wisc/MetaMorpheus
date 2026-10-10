@@ -218,21 +218,25 @@ namespace TaskLayer
                 return;
             }
 
+            // Into the output folder by name: a file that could not be calibrated keeps its original path, so the first
+            // file's folder can be the input folder, and the input design must not be overwritten.
             _ = TmtExperimentalDesign.Write(originalDesign
                 .Select(file => new TmtFileInfo(CalibratedFilePath(file.FullFilePathWithExtension, outputFolder),
                     file.Plex, file.Fraction, file.TechnicalReplicate, file.Annotations))
-                .ToList());
+                .ToList(), outputFolder);
         }
 
         /// <summary>
-        /// The file this task wrote for <paramref name="originalFilePath"/>: the -calib mzML, or, when the file could not
-        /// be calibrated, the copy written to the output folder under its own name.
+        /// The file the next task searches in place of <paramref name="originalFilePath"/>: the -calib mzML, or, when the
+        /// file could not be calibrated, the original itself. EverythingRunnerEngine passes the original on in that case,
+        /// not the copy this task writes to its output folder.
         /// </summary>
         private string CalibratedFilePath(string originalFilePath, string outputFolder)
         {
             string name = Path.GetFileNameWithoutExtension(originalFilePath);
-            return _unsuccessfullyCalibratedFilePaths.FirstOrDefault(path => Path.GetFileNameWithoutExtension(path) == name)
-                ?? Path.Combine(outputFolder, name + CalibSuffix + ".mzML");
+            return _unsuccessfullyCalibratedFilePaths.Any(path => Path.GetFileNameWithoutExtension(path) == name)
+                ? originalFilePath
+                : Path.Combine(outputFolder, name + CalibSuffix + ".mzML");
         }
 
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters, string originalDataFile)

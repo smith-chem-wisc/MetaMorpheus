@@ -250,12 +250,15 @@ namespace Test
         private static readonly string[] Tmt11Channels =
             { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" };
 
-        /// <summary>A TmtDesign.txt beside <paramref name="spectraFile"/> annotating every TMT11 channel of it.</summary>
-        private static void WriteTmtDesignBeside(string spectraFile) =>
+        /// <summary>
+        /// A TmtDesign.txt beside the first of <paramref name="spectraFiles"/> annotating every TMT11 channel, one plex with
+        /// each file a fraction of it.
+        /// </summary>
+        private static void WriteTmtDesignBeside(params string[] spectraFiles) =>
             File.WriteAllLines(
-                Path.Combine(Path.GetDirectoryName(spectraFile), GlobalVariables.TmtExperimentalDesignFileName),
-                new[] { TmtExperimentalDesign.Header }.Concat(Tmt11Channels.Select((tag, i) =>
-                    $"{spectraFile}\tPlex1\tSample{i + 1}\t{tag}\tCond{(i % 2 == 0 ? "A" : "B")}\t{i / 2 + 1}\t1\t1\tstudy sample")));
+                Path.Combine(Path.GetDirectoryName(spectraFiles[0]), GlobalVariables.TmtExperimentalDesignFileName),
+                new[] { TmtExperimentalDesign.Header }.Concat(spectraFiles.SelectMany((file, fraction) => Tmt11Channels.Select((tag, i) =>
+                    $"{file}\tPlex1\tSample{i + 1}\t{tag}\tCond{(i % 2 == 0 ? "A" : "B")}\t{i / 2 + 1}\t{fraction + 1}\t1\tstudy sample"))));
 
         /// <summary>
         /// Calibration rewrote ExperimentalDesign.tsv for the -calib file names but not TmtDesign.txt, so the search
@@ -306,11 +309,12 @@ namespace Test
         }
 
         /// <summary>
-        /// A file calibration could not calibrate is copied to the output folder under its own name, and the search reads
-        /// that copy, so the rewritten design must name it.
+        /// A file calibration could not calibrate is copied to the output folder, but the task after calibration searches
+        /// the original (EverythingRunnerEngine passes it on), so the rewritten design names the original. It is still
+        /// written into the output folder: the design beside the input files is the user's and must not change.
         /// </summary>
         [Test]
-        public static void TmtDesignNamesTheCopyOfAFileCalibrationCouldNotCalibrate()
+        public static void TmtDesignNamesTheOriginalOfAFileCalibrationCouldNotCalibrate()
         {
             string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtDesignCalibrationFailureTest");
             string outputFolder = Path.Combine(unitTestFolder, "TaskOutput");
@@ -319,6 +323,7 @@ namespace Test
             string spectraFile = Path.Combine(unitTestFolder, "filename1.mzML");
             File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), spectraFile, true);
             WriteTmtDesignBeside(spectraFile);
+            byte[] inputDesign = File.ReadAllBytes(Path.Combine(unitTestFolder, GlobalVariables.TmtExperimentalDesignFileName));
 
             try
             {
@@ -327,16 +332,16 @@ namespace Test
                     new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fa"), false) },
                     new List<string> { spectraFile }, "test");
 
-                string copiedFile = Path.Combine(outputFolder, "filename1.mzML");
                 Assert.That(File.Exists(Path.Combine(outputFolder, "filename1-calib.mzML")), Is.False,
                     "the fixture only means anything if calibration fails");
-                Assert.That(File.Exists(copiedFile));
 
                 var rewritten = TmtExperimentalDesign.Read(Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName),
-                    new List<string> { copiedFile }, out var errors);
+                    new List<string> { spectraFile }, out var errors);
 
                 Assert.That(errors, Is.Empty);
-                Assert.That(Path.GetFullPath(rewritten.Single().FullFilePathWithExtension), Is.EqualTo(Path.GetFullPath(copiedFile)).IgnoreCase);
+                Assert.That(Path.GetFullPath(rewritten.Single().FullFilePathWithExtension), Is.EqualTo(Path.GetFullPath(spectraFile)).IgnoreCase);
+                Assert.That(File.ReadAllBytes(Path.Combine(unitTestFolder, GlobalVariables.TmtExperimentalDesignFileName)), Is.EqualTo(inputDesign),
+                    "the input design is the user's");
             }
             finally
             {
@@ -412,6 +417,56 @@ namespace Test
 
                 Assert.That(File.Exists(Path.Combine(outputFolder, "calibrate", "filename1-calib.mzML")),
                     "the fixture only means anything if calibration succeeds");
+                Assert.That(warnings, Has.None.Contains("No " + GlobalVariables.TmtExperimentalDesignFileName + " found"));
+                Assert.That(File.Exists(Path.Combine(outputFolder, "search", GlobalVariables.TmtExperimentalDesignFileName)), Is.True,
+                    string.Join(Environment.NewLine, warnings));
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= onWarn;
+                Directory.Delete(unitTestFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// End to end with one file calibrated and one not, the case a real run hits (PXD014145: 11 of 12 files calibrated).
+        /// The search after calibration gets the -calib file and the ORIGINAL of the other, and reads the design beside the
+        /// first of them, so that design has to name both.
+        /// </summary>
+        [Test]
+        public static void SearchAfterCalibration_FindsTheTmtDesign_WhenOneFileCouldNotBeCalibrated()
+        {
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtCalibrateThenSearchMixedTest");
+            string outputFolder = Path.Combine(unitTestFolder, "TaskOutput");
+            if (Directory.Exists(unitTestFolder)) Directory.Delete(unitTestFolder, true);
+            Directory.CreateDirectory(outputFolder);
+            string calibratable = Path.Combine(unitTestFolder, "filename1.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), calibratable, true);
+            // mouse TMT spectra against a yeast database: no PSMs, so calibration copies it instead
+            string notCalibratable = Path.Combine(unitTestFolder, "VA084TQ_6.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TMT_test", "VA084TQ_6.mzML"), notCalibratable, true);
+            WriteTmtDesignBeside(calibratable, notCalibratable);
+
+            var searchTask = new SearchTask();
+            searchTask.SearchParameters.DoMultiplexQuantification = true;
+            searchTask.SearchParameters.MultiplexModId = "TMT11";
+            searchTask.SearchParameters.DoParsimony = true;
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> onWarn = (_, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += onWarn;
+            try
+            {
+                new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("calibrate", new CalibrationTask()), ("search", searchTask) },
+                    new List<string> { calibratable, notCalibratable },
+                    new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta"), false) },
+                    outputFolder).Run();
+
+                Assert.That(File.Exists(Path.Combine(outputFolder, "calibrate", "filename1-calib.mzML")), Is.True,
+                    "the fixture only means anything if one file calibrates");
+                Assert.That(File.Exists(Path.Combine(outputFolder, "calibrate", "VA084TQ_6-calib.mzML")), Is.False,
+                    "and the other does not");
+                Assert.That(warnings, Has.None.Contains("TMT design"));
                 Assert.That(warnings, Has.None.Contains("No " + GlobalVariables.TmtExperimentalDesignFileName + " found"));
                 Assert.That(File.Exists(Path.Combine(outputFolder, "search", GlobalVariables.TmtExperimentalDesignFileName)), Is.True,
                     string.Join(Environment.NewLine, warnings));
