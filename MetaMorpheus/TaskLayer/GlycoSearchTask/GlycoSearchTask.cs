@@ -86,6 +86,8 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
+            // one view of each database for every index key this task builds; see SnapshotDatabases
+            List<FileInfo> databaseFileInfos = IndexingEngine.SnapshotDatabases(dbFilenameList);
             var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, _glycoSearchParameters.DecoyType, true, localizeableModificationTypes);
             var loadingResults = dbLoader.Run() as DatabaseLoadingEngineResults;
             List<Protein> proteinList = loadingResults!.BioPolymers.Cast<Protein>().ToList();
@@ -147,7 +149,6 @@ namespace TaskLayer
                 _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.MaximumGlycanBoxMass, _glycoSearchParameters.SelectedGlycans);
 
             var thisIds = currentRawFileList.Select(file => new List<string> { taskId, "Individual Spectra Files", file }).ToList();
-            var databaseFileInfos = dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList();
 
             Ms2ScanWithSpecificMass[] LoadMs2Scans(int spectraFileIndex, CommonParameters loadParams)
             {
