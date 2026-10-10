@@ -12,6 +12,7 @@ using NUnit.Framework;
 using Omics;
 using Omics.Modifications;
 using Proteomics;
+using Readers;
 using System;
 using System.Reflection;
 using System.Collections.Generic;
@@ -320,13 +321,19 @@ namespace Test
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
 
+        /// <summary>
+        /// LowCID calibrates MS1 only: no fragments are deconvoluted in that mode and CalibrationEngine
+        /// leaves MS2 scans as they are, so calibration must not require MS2 datapoints, must not crash
+        /// looking for them, and must write back the product tolerance it was given.
+        /// </summary>
         [Test]
         public static void CalibrationTestYeastLowRes()
         {
-            CalibrationTask calibrationTask = new CalibrationTask();
-
-            CommonParameters CommonParameters = new(dissociationType: DissociationType.LowCID,
-                scoreCutoff: 1);
+            CalibrationTask calibrationTask = new CalibrationTask
+            {
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.LowCID,
+                    productMassTolerance: new AbsoluteTolerance(0.5), scoreCutoff: 1)
+            };
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestCalibrationLow");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML");
@@ -338,11 +345,24 @@ namespace Test
             Assert.That(File.Exists(Path.Combine(outputFolder, @"SmallCalibratible_Yeast-calib.toml")));
             var lines = File.ReadAllLines(Path.Combine(outputFolder, @"SmallCalibratible_Yeast-calib.toml"));
             var tolerance = Regex.Match(lines[0], @"\d+\.\d*").Value;
-            var tolerance1 = Regex.Match(lines[1], @"\d+\.\d*").Value;
             Assert.That(double.TryParse(tolerance, out double tol) == true);
-            Assert.That(double.TryParse(tolerance1, out double tol1) == true);
             Assert.That(lines[0].Contains("PrecursorMassTolerance"));
-            Assert.That(lines[1].Contains("ProductMassTolerance"));
+            Assert.That(lines[1], Is.EqualTo("ProductMassTolerance = \"±0.5000 Absolute\""));
+
+            // MS1 is calibrated; every MS2 scan is written back unchanged
+            var original = Mzml.LoadAllStaticData(myFile).GetAllScansList();
+            var calibrated = Mzml.LoadAllStaticData(Path.Combine(outputFolder, @"SmallCalibratible_Yeast-calib.mzML")).GetAllScansList();
+            Assert.That(calibrated.Count, Is.EqualTo(original.Count));
+            for (int i = 0; i < original.Count; i++)
+            {
+                if (original[i].MsnOrder > 1)
+                {
+                    Assert.That(calibrated[i].MassSpectrum.XArray, Is.EqualTo(original[i].MassSpectrum.XArray));
+                }
+            }
+            Assert.That(Enumerable.Range(0, original.Count).Any(i => original[i].MsnOrder == 1
+                && !calibrated[i].MassSpectrum.XArray.SequenceEqual(original[i].MassSpectrum.XArray)));
+
             Directory.Delete(outputFolder, true);
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
