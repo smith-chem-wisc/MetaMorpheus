@@ -58,7 +58,7 @@ namespace Test
                 generateUnlabeledProteinsForSilac: generateUnlabeledProteinsForSilac,
                 keepNGlycopeptide: keepNGlycopeptide, keepOGlycopeptide: keepOGlycopeptide));
 
-            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { MaxMissedCleavages = 5 });
+            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { MaxMissedCleavages = 5 }, null);
 
             var digestionParams = (DigestionParams)combined.DigestionParams;
             Assert.That(digestionParams.MaxMissedCleavages, Is.EqualTo(5), "the file-specific override still applies");
@@ -80,7 +80,7 @@ namespace Test
                 generateUnlabeledProteinsForSilac: false, keepNGlycopeptide: true, keepOGlycopeptide: true);
             var task = new CommonParameters(digestionParams: original);
 
-            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { PrecursorMassTolerance = new PpmTolerance(7) });
+            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { PrecursorMassTolerance = new PpmTolerance(7) }, null);
 
             Assert.That(combined.PrecursorMassTolerance.Value, Is.EqualTo(7), "the file-specific override still applies");
             Assert.That(combined.DigestionParams, Is.EqualTo(original),
@@ -194,7 +194,7 @@ namespace Test
                 retentionTimeRange: new DoubleRange(12.5, 48.75));
 
             var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task,
-                new FileSpecificParameters { PrecursorMassTolerance = new PpmTolerance(7) });
+                new FileSpecificParameters { PrecursorMassTolerance = new PpmTolerance(7) }, null);
 
             Assert.That(combined.RetentionTimeRange.Minimum, Is.EqualTo(12.5));
             Assert.That(combined.RetentionTimeRange.Maximum, Is.EqualTo(48.75));
