@@ -382,8 +382,19 @@ namespace EngineLayer
             if (files == null || files.Count == 0)
                 throw new InvalidOperationException("No TMT files to write.");
 
-            var dir = Directory.GetParent(files.First().FullFilePathWithExtension)!.FullName;
-            var path = Path.Combine(dir, GlobalVariables.TmtExperimentalDesignFileName);
+            return Write(files, Directory.GetParent(files.First().FullFilePathWithExtension)!.FullName);
+        }
+
+        /// <summary>
+        /// Writes the design into <paramref name="directory"/> rather than beside its first file, for a design whose files
+        /// are not all in one folder.
+        /// </summary>
+        public static string Write(List<TmtFileInfo> files, string directory)
+        {
+            if (files == null || files.Count == 0)
+                throw new InvalidOperationException("No TMT files to write.");
+
+            var path = Path.Combine(directory, GlobalVariables.TmtExperimentalDesignFileName);
 
             using var sw = new StreamWriter(path);
             sw.WriteLine(Header);

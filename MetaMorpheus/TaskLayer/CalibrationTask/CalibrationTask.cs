@@ -181,6 +181,7 @@ namespace TaskLayer
 
             // re-write experimental design (if it has been defined) with new calibrated file names
             UpdateExperimentalDesignFile(currentRawFileList, outputFolder);
+            UpdateTmtDesignFile(currentRawFileList, outputFolder);
 
             // finished calibrating all files for the task
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
@@ -196,6 +197,46 @@ namespace TaskLayer
             {
                 WriteNewExperimentalDesignFile(assumedPathToExperDesign, outputFolder, currentRawFileList, _unsuccessfullyCalibratedFilePaths);
             }
+        }
+
+        /// <summary>
+        /// Re-writes TmtDesign.txt, if there is one beside the spectra files, for the files calibration wrote. The search
+        /// looks for it beside the files it searches, so without this a TMT search after calibration quantified no channel.
+        /// </summary>
+        private void UpdateTmtDesignFile(List<string> currentRawFileList, string outputFolder)
+        {
+            string designPath = Path.Combine(Directory.GetParent(currentRawFileList.First()).FullName, GlobalVariables.TmtExperimentalDesignFileName);
+            if (!File.Exists(designPath))
+            {
+                return;
+            }
+
+            List<TmtFileInfo> originalDesign = TmtExperimentalDesign.Read(designPath, currentRawFileList, out var errors);
+            if (errors.Any())
+            {
+                Warn($"{GlobalVariables.TmtExperimentalDesignFileName} was not re-written for the calibrated files: " + string.Join(" ", errors));
+                return;
+            }
+
+            // Into the output folder by name: a file that could not be calibrated keeps its original path, so the first
+            // file's folder can be the input folder, and the input design must not be overwritten.
+            _ = TmtExperimentalDesign.Write(originalDesign
+                .Select(file => new TmtFileInfo(CalibratedFilePath(file.FullFilePathWithExtension, outputFolder),
+                    file.Plex, file.Fraction, file.TechnicalReplicate, file.Annotations))
+                .ToList(), outputFolder);
+        }
+
+        /// <summary>
+        /// The file the next task searches in place of <paramref name="originalFilePath"/>: the -calib mzML, or, when the
+        /// file could not be calibrated, the original itself. EverythingRunnerEngine passes the original on in that case,
+        /// not the copy this task writes to its output folder.
+        /// </summary>
+        private string CalibratedFilePath(string originalFilePath, string outputFolder)
+        {
+            string name = Path.GetFileNameWithoutExtension(originalFilePath);
+            return _unsuccessfullyCalibratedFilePaths.Any(path => Path.GetFileNameWithoutExtension(path) == name)
+                ? originalFilePath
+                : Path.Combine(outputFolder, name + CalibSuffix + ".mzML");
         }
 
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters, string originalDataFile)
