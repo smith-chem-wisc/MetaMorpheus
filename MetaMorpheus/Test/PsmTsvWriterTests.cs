@@ -1471,6 +1471,37 @@ namespace Test
             psm.ResolveAllAmbiguities();
 
             Assert.That(LabelOf(psm), Is.EqualTo("T|ET"));
+            // One full sequence, not PEPTIDEK|PEPTIDEK. The column collapses when every candidate
+            // agrees, and mzLib's EntrapmentFraction reads a T|ET row with a single sequence as the real
+            // peptide rather than as half an entrapment discovery.
+            Assert.That(ColumnOf(psm, SpectrumMatchFromTsvHeader.FullSequence), Is.EqualTo("PEPTIDEK"));
+        }
+
+        /// <summary>
+        /// Entrapment is searched as a target, so the spectral library filter, which excludes decoys and
+        /// contaminants, let a PSM explained only by entrapment proteins into the library. A peptide that
+        /// a target protein also carries is real and stays.
+        /// </summary>
+        [Test]
+        public static void ASpectralLibraryLeavesOutPeptidesOnlyEntrapmentExplains()
+        {
+            SpectralMatch target = PsmOn(new Protein("PEPTIDEK", "P1"));
+            SpectralMatch entrapmentOnly = PsmOn(new Protein("PEPTLDEK", "Random_P2_f0", isEntrapment: true));
+            SpectralMatch shared = PsmOn(new Protein("PEPTIDER", "P3"));
+            var partner = new Protein("PEPTIDER", "Random_P3_f0", isEntrapment: true);
+            shared.AddOrReplace(new PeptideWithSetModifications(partner, new DigestionParams(), 1, 8, CleavageSpecificity.Full, "", 0,
+                new Dictionary<int, Modification>(), 0), shared.Score, 0, true, new List<MatchedFragmentIon>());
+            var psms = new List<SpectralMatch> { target, entrapmentOnly, shared };
+            psms.ForEach(p => p.ResolveAllAmbiguities());
+            psms.ForEach(p => p.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
+
+            List<SpectralMatch> forLibrary = FilteredPsms.Filter(psms, new CommonParameters(), includeDecoys: false,
+                includeContaminants: false, includeAmbiguous: false, includeEntrapment: false).FilteredPsmsList;
+            List<SpectralMatch> everything = FilteredPsms.Filter(psms, new CommonParameters(), includeDecoys: false,
+                includeContaminants: false, includeAmbiguous: false).FilteredPsmsList;
+
+            Assert.That(forLibrary, Is.EquivalentTo(new[] { target, shared }));
+            Assert.That(everything, Is.EquivalentTo(psms), "every other caller still sees entrapment");
         }
 
         private static SpectralMatch PsmOn(Protein protein)
@@ -1483,9 +1514,11 @@ namespace Test
             return psm;
         }
 
-        private static string LabelOf(SpectralMatch psm)
+        private static string LabelOf(SpectralMatch psm) => ColumnOf(psm, SpectrumMatchFromTsvHeader.DecoyContaminantTarget);
+
+        private static string ColumnOf(SpectralMatch psm, string header)
         {
-            int column = SpectralMatch.GetTabSeparatedHeader().Split('\t').IndexOf(SpectrumMatchFromTsvHeader.DecoyContaminantTarget);
+            int column = SpectralMatch.GetTabSeparatedHeader().Split('\t').IndexOf(header);
             return psm.ToString().Split('\t')[column];
         }
 

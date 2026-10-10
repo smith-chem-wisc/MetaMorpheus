@@ -97,7 +97,8 @@ namespace EngineLayer.SpectrumMatch
             bool includeHighQValuePsms = false,
             double? qValueThreshold = null,
             double? pepQValueThreshold = null,
-            bool filterAtPeptideLevel = false)
+            bool filterAtPeptideLevel = false,
+            bool includeEntrapment = true)
         {
 
             qValueThreshold ??= commonParams.QValueThreshold;
@@ -124,6 +125,7 @@ namespace EngineLayer.SpectrumMatch
             filteredPsms = psms.Where(psm => 
                     (includeDecoys || !psm.IsDecoy) 
                     && (includeContaminants || !psm.IsContaminant)
+                    && (includeEntrapment || !IsEntrapmentOnly(psm))
                     && (includeAmbiguous || !psm.BaseSequence.IsNullOrEmpty())
                     && (includeAmbiguousMods || !psm.FullSequence.IsNullOrEmpty()))
                 .FilterByQValue(includeHighQValuePsms, filterThreshold, filterAtPeptideLevel, filterType, true)
@@ -132,6 +134,20 @@ namespace EngineLayer.SpectrumMatch
 
             return new FilteredPsms(filteredPsms, filterType, filterThreshold, filteringNotPerformed, filterAtPeptideLevel);
         }
+
+        /// <summary>
+        /// True when every candidate of the PSM comes from an entrapment protein, so the search knows
+        /// its peptide only as entrapment.
+        /// </summary>
+        /// <remarks>
+        /// Entrapment is searched as a target, so <see cref="SpectralMatch.IsDecoy"/> and
+        /// <see cref="SpectralMatch.IsContaminant"/> never exclude it. A PSM that a target protein also
+        /// explains is not excluded: the same peptide in a target and in its entrapment partner (written
+        /// T|ET) is a real peptide.
+        /// </remarks>
+        private static bool IsEntrapmentOnly(SpectralMatch psm) =>
+            psm.BestMatchingBioPolymersWithSetMods.Any()
+            && psm.BestMatchingBioPolymersWithSetMods.All(h => h.SpecificBioPolymer.Parent.IsEntrapment);
 
         public IEnumerator<SpectralMatch> GetEnumerator()
         {
