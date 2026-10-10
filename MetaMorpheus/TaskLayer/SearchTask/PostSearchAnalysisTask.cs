@@ -826,19 +826,17 @@ namespace TaskLayer
 
             Parameters.MultiplexQuantificationResults = results;
 
-            // The engine drops any match it cannot attribute to exactly one biopolymer, and counts them
+            // The engine drops any match it cannot attribute to exactly one full sequence, and counts them
             // rather than throwing. Reported here because the loss is otherwise invisible: the peptide and
-            // protein tables simply total less than the per-PSM reporter columns, and in the worst case --
-            // every peptide in the search shared between two groups -- they total zero while the raw
-            // table looks perfectly healthy. The exclusion itself is mzLib's: one sequence found in two
-            // proteins is two unequal PeptideWithSetModifications, so the engine's unambiguous filter
-            // drops it. Tracked as smith-chem-wisc/mzLib#1280; this warning stands whatever comes of it.
+            // protein tables simply total less than the per-PSM reporter columns while the raw table looks
+            // perfectly healthy. One sequence found in several proteins is one peptide to the engine
+            // (smith-chem-wisc/mzLib#1463), and the filter above already removes matches with two different
+            // sequences, so this count is expected to be zero; the warning stays as a guard.
             if (results.AmbiguousSpectralMatchesExcluded > 0)
             {
                 Warn($"{results.AmbiguousSpectralMatchesExcluded} spectral match(es) were left out of " +
-                     "multiplex quantification because they did not identify exactly one biopolymer, so the " +
-                     "peptide and protein tables total less than the reporter ion columns in the .psmtsv. A " +
-                     "peptide shared between two protein groups is the usual cause");
+                     "multiplex quantification because they did not identify exactly one full sequence, so the " +
+                     "peptide and protein tables total less than the reporter ion columns in the .psmtsv");
             }
 
             // Rebuild the per-group column schema the engine's write-back invalidated: assigning
