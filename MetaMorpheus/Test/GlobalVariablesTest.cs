@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Test
@@ -16,7 +17,8 @@ namespace Test
         /// catalogue by throwing rather than returning null (smith-chem-wisc/mzLib#1126).
         ///
         /// The file is shipped beside the executable, but DataDir can resolve to %LOCALAPPDATA%\MetaMorpheus
-        /// for a Program Files install, or to a --customDataDir the user already created, and in those cases
+        /// for a Program Files install, or to a data directory the user already created and passed with
+        /// --mmsettings, and in those cases
         /// it may simply be absent. This hides it to reproduce that.
         /// </summary>
         [Test]
@@ -41,6 +43,12 @@ namespace Test
             if (wasPresent)
                 Directory.Move(proteomesDirectory, hiddenDirectory);
 
+            // The failure must reach WarnHandler, the startup channel both front ends subscribe to;
+            // a Console write would be invisible in the GUI and ignore the CLI's -v none.
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> recordWarning = (sender, e) => warnings.Add(e.S);
+            GlobalVariables.WarnHandler += recordWarning;
+
             try
             {
                 Assert.DoesNotThrow(() => GlobalVariables.SetUpGlobalVariables(),
@@ -50,9 +58,14 @@ namespace Test
                 // FirstOrDefault on it with no null check, so null would be a latent NullReferenceException.
                 Assert.That(GlobalVariables.AvailableUniProtProteomes, Is.Not.Null);
                 Assert.That(GlobalVariables.AvailableUniProtProteomes, Is.Empty);
+
+                Assert.That(warnings, Has.Some.Contains("available UniProt proteomes"),
+                    "the missing catalogue must be reported through GlobalVariables.WarnHandler");
             }
             finally
             {
+                GlobalVariables.WarnHandler -= recordWarning;
+
                 if (wasPresent)
                 {
                     if (Directory.Exists(proteomesDirectory))

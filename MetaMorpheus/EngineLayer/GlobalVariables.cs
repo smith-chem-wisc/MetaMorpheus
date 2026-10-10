@@ -822,10 +822,15 @@ namespace EngineLayer
         /// The catalogue is a convenience, not a prerequisite: MetaMorpheus searches perfectly well without
         /// it, so failing to read it must never stop the program starting. It is normally shipped beside the
         /// executable, but <see cref="DataDir"/> can resolve elsewhere — to %LOCALAPPDATA%\MetaMorpheus for a
-        /// Program Files install, or to a --customDataDir the user has already created — and in those cases
+        /// Program Files install, or to a data directory the user has already created and passed with
+        /// --mmsettings — and in those cases
         /// the file may simply not be there. This method is called from <see cref="SetUpGlobalVariables"/>,
         /// which runs in the MainWindow constructor and in Program.Main outside any try/catch, so an escaping
         /// exception is an unhandled crash at launch rather than a degraded feature.
+        /// <para>
+        /// The failure is reported through <see cref="WarnHandler"/>, not the console: the GUI has no
+        /// console, and the CLI's handler honours -v none. Both front ends subscribe before startup.
+        /// </para>
         /// <para>
         /// An empty dictionary is the safe degraded value, not null: DownloadUniProtDatabaseWindow enumerates
         /// this property and calls FirstOrDefault on it without a null check, so a null here has always been
@@ -839,7 +844,7 @@ namespace EngineLayer
             try
             {
                 // mzLib reports a missing or unreadable catalogue by exception and never returns null
-                // (smith-chem-wisc/mzLib#1126, shipped in 1.0.585).
+                // (smith-chem-wisc/mzLib#1126, first released in 1.0.584).
                 AvailableUniProtProteomes = ProteinDbRetriever.UniprotProteomesList(proteomeListPath);
             }
             catch (Exception e)
@@ -849,8 +854,8 @@ namespace EngineLayer
                 // none of them is worth refusing to start over.
                 AvailableUniProtProteomes = new Dictionary<string, string>();
 
-                Console.WriteLine($"Could not read the list of available UniProt proteomes from '{proteomeListPath}'. " +
-                                  $"Downloading a proteome by name will be unavailable. {e.Message}");
+                Warn($"Could not read the list of available UniProt proteomes from '{proteomeListPath}'. " +
+                     $"Downloading a proteome by name will be unavailable. {e.Message}");
             }
         }
         private static void SetUpGlobalSettings()
