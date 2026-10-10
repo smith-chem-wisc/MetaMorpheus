@@ -13,6 +13,14 @@ namespace EngineLayer.Calibration
         private readonly DataPointAquisitionResults Datapoints;
         public MsDataFile CalibratedDataFile { get; private set; }
 
+        /// <summary>
+        /// The smoothed relative m/z error removed from each MS1 scan, in retention-time order, as
+        /// (retention time, relative error). A scan's m/z values were multiplied by
+        /// <c>1 - RelativeError</c>. Exposed so that masses which do not come from the spectra
+        /// (an external MS1 feature file) can be given the same correction as the scans.
+        /// </summary>
+        public IReadOnlyList<(double RetentionTime, double RelativeError)> Ms1Corrections { get; private set; }
+
         public CalibrationEngine(MsDataFile myMSDataFile, DataPointAquisitionResults datapoints, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             MyMsDataFile = myMSDataFile;
@@ -65,6 +73,7 @@ namespace EngineLayer.Calibration
 
             //apply a smoothing function, so that outlier scans aren't wildly shifted
             double[] ms1SmoothedErrors = SmoothErrors(ms1RelativeErrors);
+            Ms1Corrections = ms1Scans.Select((scan, i) => (scan.RetentionTime, ms1SmoothedErrors[i])).ToList();
             double[] ms2SmoothedErrors = new double[ms2RelativeErrors.Length];
             if (CommonParameters.DissociationType != DissociationType.LowCID)
             {
