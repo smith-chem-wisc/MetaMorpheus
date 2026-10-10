@@ -209,9 +209,9 @@ namespace TaskLayer
                 FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
                 MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullName, false));
-                if(dbFilenameList.Any(p=>p.IsSpectralLibrary))
+                if (dbFilenameList.AnySpectralLibrary())
                 {
-                    MyTaskResults.NewDatabases.Add(dbFilenameList.First(p => p.IsSpectralLibrary));
+                    MyTaskResults.NewDatabases.Add(dbFilenameList.SpectralLibraries().First());
                 }
                 MyTaskResults.AddTaskSummaryText("Modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
                 MyTaskResults.AddTaskSummaryText("Mods types and counts:");

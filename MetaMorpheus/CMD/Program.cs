@@ -178,6 +178,10 @@ namespace MetaMorpheusCommandLine
             MetaMorpheusEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
             MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
 
+            // Without this the runner's "Cannot proceed" gates print nothing here: EverythingRunnerEngine
+            // has its own WarnHandler and only the GUI was subscribed to it.
+            EverythingRunnerEngine.WarnHandler += WarnHandler;
+
             MetaMorpheusTask.WarnHandler += WarnHandler;
             MetaMorpheusTask.LogHandler += LogHandler;
             MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
@@ -318,6 +322,13 @@ namespace MetaMorpheusCommandLine
             try
             {
                 a.Run();
+
+                // A refusal used to leave through here as exit code 0 with nothing written, which a script
+                // cannot tell from a successful run.
+                if (a.RefusedToProceed)
+                {
+                    errorCode = 6;
+                }
             }
             catch (Exception e)
             {
