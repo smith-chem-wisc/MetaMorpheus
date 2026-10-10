@@ -148,7 +148,7 @@ namespace GuiFunctions
         {
             if (sm.QValue <= QValueFilter
                  && (sm.QValueNotch == null || sm.QValueNotch <= QValueFilter)
-                 && (sm.DecoyContamTarget == "T" || (sm.DecoyContamTarget == "D" && ShowDecoys) || (sm.DecoyContamTarget == "C" && ShowContaminants))
+                 && (EveryParentIs(sm.DecoyContamTarget, "T", "ET") || (EveryParentIs(sm.DecoyContamTarget, "D", "ED") && ShowDecoys) || (sm.DecoyContamTarget == "C" && ShowContaminants))
                  // Glyco localization level filtering - only applies to glyco psms that have localization levels
                  && (sm is not GlycoPsmFromTsv { GlycanLocalizationLevel: not null } gly || (gly.GlycanLocalizationLevel.Value >= LocalizationLevelStart && gly.GlycanLocalizationLevel.Value <= LocalizationLevelEnd)))
             {
@@ -165,6 +165,14 @@ namespace GuiFunctions
 
             return false;
         }
+
+        /// <summary>
+        /// True when every parent named by a Decoy/Contaminant/Target label is one of the two kinds.
+        /// Entrapment is written ET/ED but is a target or decoy for filtering, and a peptide shared by
+        /// a target and an entrapment protein reads "T|ET"; a mixed "T|D" or "T|C" still matches neither.
+        /// </summary>
+        private static bool EveryParentIs(string label, string kind, string entrapmentKind) =>
+            !string.IsNullOrEmpty(label) && label.Split('|').All(part => part == kind || part == entrapmentKind);
 
         private static void InitializeDictionaries()
         {
