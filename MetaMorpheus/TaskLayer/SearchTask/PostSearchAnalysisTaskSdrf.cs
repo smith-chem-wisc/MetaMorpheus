@@ -10,6 +10,8 @@ using Omics.Modifications;
 using Proteomics;
 using Readers;
 using UsefulProteomicsDatabases;
+using IsobaricMassTag = EngineLayer.IsobaricMassTag;
+using IsobaricMassTagType = EngineLayer.IsobaricMassTagType;
 
 namespace TaskLayer
 {
@@ -54,7 +56,10 @@ namespace TaskLayer
                     // The sample metadata is only as complete as the input allowed. Gaps were named
                     // before the run; by here it is committed, so accept what we have and let
                     // SdrfCoverage report on it rather than throwing mid-write.
-                    RequireSampleMetadata = false
+                    RequireSampleMetadata = false,
+                    // comment[label] is written bare (TMT126), not accessioned: it is what the
+                    // community writes, and quantms crashes on the accessioned form.
+                    LabelForm = SdrfLabelForm.Bare
                 });
 
                 string path = Path.Combine(Parameters.OutputFolder, "experiment.sdrf.tsv");
@@ -79,19 +84,39 @@ namespace TaskLayer
             // which every file is its own biological replicate with an empty condition. That design is
             // not read here. Without a design the replicate and fraction numbers are UNKNOWN, so they
             // are passed as null and written `not available` (mzLib #1378), never a claimed 1.
-            var design = ReadExperimentalDesignIfPresent();
+            //
+            // An isobaric search keeps its design in TmtDesign.txt instead, and that file is the only
+            // place the channel-to-sample map exists. When it is usable the SDRF gets one row per
+            // sample per channel, as the specification wants; when it is not, the search is described
+            // one row per file with the label left unresolved, exactly as before. A file whose channel
+            // rows could not say which channel is which (ChannelRowsUnusableReason) gets the same
+            // fallback, keeping the fraction and technical replicate the design gives it.
+            //
+            // ExperimentalDesign.tsv is never read for an isobaric search, even when TmtDesign.txt is
+            // missing or unusable: SearchTask.WarnAboutSdrfGaps told the user before the run that it is
+            // not consulted, and a file-level condition would misdescribe a file holding many samples.
+            var isobaric = ReadIsobaricDesignIfPresent(out var tagType);
+            var design = Parameters.SearchParameters.DoMultiplexQuantification
+                ? new Dictionary<string, SpectraFileInfo>(StringComparer.OrdinalIgnoreCase)
+                : ReadExperimentalDesignIfPresent();
+            var describedOnce = new List<string>();
+
+            // A sample name reused across plexes for different material (#2817 review): only those names
+            // are scoped to their plex. A bridge, which agrees on condition and replicate, keeps its name.
+            var reusedSampleNames = isobaric is null
+                ? new HashSet<string>()
+                : SampleNamesReusedForDifferentSamples(isobaric.Values
+                    .Where(f => ChannelRowsUnusableReason(f, tagType!.Value) is null));
+            if (reusedSampleNames.Any())
+                Warn(ReusedSampleNamesWarning(reusedSampleNames, SampleNamesRepeatedWithinAPlex(isobaric!.Values
+                    .Where(f => ChannelRowsUnusableReason(f, tagType!.Value) is null))));
 
             var organism = ResolveOrganismFromSearchDatabase();
 
             foreach (var rawFilePath in Parameters.CurrentRawFileList)
             {
-                // Two names (sdrf D46). comment[data file] is the ACQUIRED file, as deposited -- what the
-                // SDRF specification means by the column and what SdrfAssay.DataFileName documents. After a
-                // Calibrate or Average task the search reads a -calib / -averaged derivative instead, and that
-                // name goes to comment[searched data file]. The acquired name, extension included, comes from
-                // the files the run started from; a task run on its own was given the acquired files.
-                string searchedName = Path.GetFileName(rawFilePath);
-                string acquiredName = AcquiredFileNameOf(rawFilePath) ?? searchedName;
+                // comment[data file] is the ACQUIRED file and comment[searched data file] the derivative a
+                // Calibrate or Average task made (sdrf D46); BuildAssay writes both, for file and channel rows.
                 string stem = Path.GetFileNameWithoutExtension(rawFilePath);
 
                 // Per-file parameters, not task-level. MetaMorpheus supports per-file overrides of
@@ -105,6 +130,23 @@ namespace TaskLayer
                 var common = FileSpecificParameters
                     ?.FirstOrDefault(f => string.Equals(f.FileName, rawFilePath, StringComparison.OrdinalIgnoreCase))
                     .Parameters ?? CommonParameters;
+
+                TmtFileInfo tmtFile = null;
+                if (isobaric is not null && isobaric.TryGetValue(Path.GetFullPath(rawFilePath), out tmtFile))
+                {
+                    if (ChannelRowsUnusableReason(tmtFile, tagType!.Value) is { } reason)
+                    {
+                        describedOnce.Add(reason);
+                    }
+                    else
+                    {
+                        foreach (var row in BuildChannelRows(tmtFile, tagType.Value, organism,
+                                     BuildAssay(rawFilePath, common, tmtFile.TechnicalReplicate, tmtFile.Fraction),
+                                     reusedSampleNames))
+                            yield return row;
+                        continue;
+                    }
+                }
 
                 design.TryGetValue(stem, out var sampleInfo);
 
@@ -131,28 +173,313 @@ namespace TaskLayer
                         : "factor value[condition]"
                 };
 
-                var assay = new SdrfAssay
+                var assay = BuildAssay(rawFilePath, common,
+                    technicalReplicate: tmtFile?.TechnicalReplicate ?? sampleInfo?.TechnicalReplicate + 1,
+                    fraction: tmtFile?.Fraction ?? sampleInfo?.Fraction + 1);
+
+                yield return new SdrfRowInput(sample, assay);
+            }
+
+            if (describedOnce.Any())
+                Warn("The SDRF describes these files once, without their channels or samples: " +
+                     string.Join("; ", describedOnce.Distinct()) + ".");
+        }
+
+        /// <summary>
+        /// Why channel rows cannot be written for <paramref name="file"/>, or null when they can. Each
+        /// case falls back to one row per file, because a channel row that cannot say which channel it
+        /// is misdescribes the file:
+        ///
+        /// 1. A tag type PRIDE has no channel terms for (DiLeu). Every row would carry
+        ///    `not available` in comment[label], which mzLib's SdrfQuantAuditor reads as a label-free
+        ///    file holding that many samples.
+        /// 2. A plex with no annotated channels: the placeholder row TmtExperimentalDesign.Write emits,
+        ///    which Read accepts without error. There are no channel rows to write, and the file used to
+        ///    vanish from the SDRF.
+        /// 3. A channel the search's plex does not have (a TMT6 "127" on a TMT11 search). Read does not
+        ///    know the tag type; this is the check <see cref="TmtExperimentalDesign.ToMzLibDesign"/>
+        ///    makes, and quantification skips such a channel. Written, it would carry another kit's label.
+        ///
+        /// Shared with SearchTask's pre-run warning, so a search is told before it runs.
+        /// </summary>
+        internal static string ChannelRowsUnusableReason(TmtFileInfo file, IsobaricMassTagType tagType)
+        {
+            if (PrideLabelFamily(tagType) is null)
+                return $"the PRIDE vocabulary defines channel terms for TMT and iTRAQ only, not {tagType}, " +
+                       "so comment[label] could not say which channel a row is";
+
+            string fileName = Path.GetFileName(file.FullFilePathWithExtension);
+            if (file.Annotations is not { Count: > 0 })
+                return $"{fileName} has no annotated channels in {GlobalVariables.TmtExperimentalDesignFileName}";
+
+            var channels = IsobaricMassTag.GetReporterIonLabels(tagType) ?? new List<string>();
+            var offPlex = file.Annotations
+                .Select(a => a.Tag?.Trim() ?? "")
+                .Where(tag => !channels.Contains(tag, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+            return offPlex.Any()
+                ? $"{fileName} annotates {string.Join(", ", offPlex.Select(t => "'" + t + "'"))}, which is not a " +
+                  $"channel of {tagType}"
+                : null;
+        }
+
+        /// <summary>
+        /// The channel sample names that name more than one sample: a name written in more than one plex,
+        /// or on more than one channel of one plex, with a different (condition, biological replicate) on each. <see cref="TmtExperimentalDesign.Read"/>
+        /// checks names only within a plex, on purpose -- a bridge channel carries one name across plexes --
+        /// so a design that names each plex's channels S1, S2, ... for different material loads cleanly.
+        /// Written as is, one source name would claim two conditions, and anything keyed on source name
+        /// (REQ-2, MAP-01) would merge two samples. A name that agrees everywhere is a bridge and is not
+        /// returned. Blank names are not returned: they are already scoped to their plex.
+        ///
+        /// Shared with SearchTask's pre-run warning, so a search is told before it runs.
+        /// </summary>
+        internal static HashSet<string> SampleNamesReusedForDifferentSamples(IEnumerable<TmtFileInfo> files) =>
+            files
+                .SelectMany(f => f.Annotations)
+                .Where(a => !string.IsNullOrWhiteSpace(a.SampleName))
+                .GroupBy(a => a.SampleName, StringComparer.Ordinal)
+                .Where(g => g.Select(a => ((a.Condition ?? "").Trim(), a.BiologicalReplicate)).Distinct().Count() > 1)
+                .Select(g => g.Key)
+                .ToHashSet(StringComparer.Ordinal);
+
+        /// <summary>
+        /// The sample names one plex gives to more than one channel, with a different (condition, biological
+        /// replicate) on each: what Auto-fill writes when every channel is named after the cell line.
+        /// <see cref="TmtExperimentalDesign.Read"/> checks uniqueness within a plex on (sample, biological
+        /// replicate, fraction, technical replicate), not on the name, so this loads cleanly. Adding the plex
+        /// alone would leave these channels one source name, so they are scoped to the channel as well
+        /// (pcruzparri, #2817 review). Every fraction of a plex carries the same annotations, so the scope
+        /// is stable across fractions.
+        /// </summary>
+        internal static HashSet<string> SampleNamesRepeatedWithinAPlex(IEnumerable<TmtFileInfo> files) =>
+            files
+                .SelectMany(f => RepeatedWithin(f.Annotations))
+                .ToHashSet(StringComparer.Ordinal);
+
+        private static IEnumerable<string> RepeatedWithin(IEnumerable<TmtPlexAnnotation> annotations) =>
+            annotations
+                .Where(a => !string.IsNullOrWhiteSpace(a.SampleName))
+                .GroupBy(a => a.SampleName, StringComparer.Ordinal)
+                .Where(g => g.Select(a => ((a.Condition ?? "").Trim(), a.BiologicalReplicate)).Distinct().Count() > 1)
+                .Select(g => g.Key);
+
+        /// <summary>
+        /// The warning for names that name more than one sample. A name repeated inside one plex is
+        /// described as that, not as reuse across plexes, because the fix the user needs is different.
+        /// </summary>
+        internal static string ReusedSampleNamesWarning(IEnumerable<string> names, ISet<string> repeatedWithinAPlex)
+        {
+            string Quote(IEnumerable<string> list) =>
+                string.Join(", ", list.OrderBy(n => n, StringComparer.Ordinal).Select(n => "'" + n + "'"));
+
+            var withinPlex = names.Where(n => repeatedWithinAPlex?.Contains(n) == true).ToList();
+            var acrossPlexes = names.Except(withinPlex, StringComparer.Ordinal).ToList();
+            var parts = new List<string>();
+            if (acrossPlexes.Any())
+                parts.Add("The design uses these sample names in more than one plex with a different condition or " +
+                          "biological replicate, so they name different samples: " + Quote(acrossPlexes) +
+                          ". The SDRF writes each as '<plex> <sample name>' so that one source name stays one sample.");
+            if (withinPlex.Any())
+                parts.Add("The design gives these sample names to more than one channel of the same plex, with a " +
+                          "different condition or biological replicate on each, so they name different samples: " +
+                          Quote(withinPlex) + ". The SDRF writes each as '<plex> <sample name> <channel>' so that " +
+                          "one source name stays one sample.");
+            parts.Add("Give them distinct names in " + GlobalVariables.TmtExperimentalDesignFileName +
+                      " to choose the names yourself.");
+            return string.Join(" ", parts);
+        }
+
+        /// <summary>
+        /// The assay half of a row: everything the search itself knows about one data file. Shared by
+        /// every channel row of an isobaric file, which is what makes those rows one assay.
+        /// </summary>
+        private SdrfAssay BuildAssay(string rawFilePath, CommonParameters common, int? technicalReplicate, int? fraction) =>
+            new SdrfAssay
+            {
+                // Two names (sdrf D46): the acquired file, and the derivative the search read when they differ.
+                DataFileName = AcquiredFileNameOf(rawFilePath) ?? Path.GetFileName(rawFilePath),
+                SearchedDataFileName = AcquiredFileNameOf(rawFilePath) is { } acquired
+                    && !string.Equals(acquired, Path.GetFileName(rawFilePath), StringComparison.OrdinalIgnoreCase)
+                        ? Path.GetFileName(rawFilePath)
+                        : null,
+                AssayName = "run " + Path.GetFileNameWithoutExtension(rawFilePath),
+                Instrument = ResolveInstrument(rawFilePath),
+                PrecursorMassTolerance = common.PrecursorMassTolerance,
+                ProductMassTolerance = common.ProductMassTolerance,
+                CleavageAgent = common.DigestionParams?.DigestionAgent,
+                FixedModifications = ResolveModifications(common.ListOfModsFixed),
+                VariableModifications = ResolveModifications(common.ListOfModsVariable),
+                DissociationType = common.DissociationType,
+                AcquisitionMethod = ResolveAcquisitionMethod(common),
+                TechnicalReplicate = technicalReplicate,
+                Fraction = fraction
+            };
+
+        /// <summary>
+        /// One row per annotated channel of an isobaric data file, in reporter m/z order.
+        ///
+        /// Read from <see cref="TmtFileInfo"/> rather than from mzLib's projection of it, because
+        /// <see cref="TmtExperimentalDesign.ToMzLibDesign"/> drops the sample name, and the sample name
+        /// is exactly what SDRF's <c>source name</c> is. TmtDesign.txt's replicate and fraction
+        /// numbers are already 1-based, so unlike ExperimentalDesign.tsv nothing is added to them.
+        ///
+        /// EVERY annotated channel is written, including one marked Empty. Skipping Empty channels was
+        /// the first attempt and it is wrong twice over (QuantProject thread 002 §5):
+        ///
+        /// 1. It breaks the round trip BY CONSTRUCTION. The document then has fewer rows than the
+        ///    design has channels, so a reader projecting the SDRF back into a design cannot
+        ///    reproduce what was searched -- a loss that would have to be enumerated rather than one
+        ///    anybody wants.
+        /// 2. It changes the plex downstream tooling infers. bigbio's <c>infer_tmtplex</c> reads the
+        ///    SET OF LABELS per file; a short set has already been measured inferring the wrong plex,
+        ///    and wrong default TMT modifications follow from that.
+        ///
+        /// An empty channel is a real channel of a real plex, not absent data, and <c>empty</c> is a
+        /// value the curated corpus writes. The design does state each channel's sample type
+        /// (<see cref="TmtPlexAnnotation.SampleType"/>); writing it is DEFERRED, not impossible.
+        /// <c>characteristics[sample type]</c> waits for QuantProject's M4 to put the concept in mzLib
+        /// (MAP-08), so every writer spells it one way. When it lands, the only change here is a column
+        /// appearing, never rows reappearing or source names changing.
+        ///
+        /// A channel the design does not annotate at all is still not written, and that is a
+        /// different question -- it has no biological replicate, and inventing one is QP-S6, which
+        /// QuantProject owes us. <see cref="TmtExperimentalDesign.ToMzLibDesign"/> makes such a
+        /// channel Empty for quantification's positional array; doing the same here would put a row
+        /// in the file asserting a replicate nobody stated.
+        /// </summary>
+        private static IEnumerable<SdrfRowInput> BuildChannelRows(TmtFileInfo tmtFile, IsobaricMassTagType tagType,
+            CvParam organism, SdrfAssay assay, ISet<string> reusedSampleNames)
+        {
+            var channelOrder = IsobaricMassTag.GetReporterIonLabels(tagType) ?? new List<string>();
+            int OrderOf(string tag)
+            {
+                int index = channelOrder.FindIndex(l => string.Equals(l, tag?.Trim(), StringComparison.OrdinalIgnoreCase));
+                return index < 0 ? int.MaxValue : index;
+            }
+
+            string stem = Path.GetFileNameWithoutExtension(tmtFile.FullFilePathWithExtension);
+            string plexScope = string.IsNullOrWhiteSpace(tmtFile.Plex) ? stem : tmtFile.Plex.Trim();
+            var repeatedInThisPlex = RepeatedWithin(tmtFile.Annotations).ToHashSet(StringComparer.Ordinal);
+
+            foreach (var annotation in tmtFile.Annotations.OrderBy(a => OrderOf(a.Tag)))
+            {
+                var sample = new SdrfSample
                 {
-                    DataFileName = acquiredName,
-                    SearchedDataFileName = string.Equals(acquiredName, searchedName, StringComparison.OrdinalIgnoreCase)
+                    // Written, as `not available` when unknown, on channel rows as on file rows (#2816 review).
+                    Characteristics = new Dictionary<string, CvParam>
+                    {
+                        ["characteristics[disease]"] = null,
+                        ["characteristics[cell type]"] = null
+                    },
+                    // The design may leave a channel's sample name blank (an empty channel, or one the
+                    // user never named: AnnotatePlexWindow defaults it to ""), and source name is the
+                    // column REQ-2 keys sample blocks on -- so it has to be present and distinct. Plex
+                    // plus tag is both, and it is the same in every fraction of the plex, which shares
+                    // one channel-to-sample map: keyed on the file, one channel of a 12-fraction plex
+                    // became 12 samples. The file stem stands in only when the plex has no name. It
+                    // deliberately does not spell "empty": that belongs in characteristics[sample type]
+                    // when M4 lands, and encoding it here would mean rewriting source names -- and
+                    // breaking joins -- on the day it does.
+                    //
+                    // A name the design reuses in another plex for a different sample is scoped the same way
+                    // (SampleNamesReusedForDifferentSamples); a bridge keeps its shared name. A name this
+                    // plex gives to several channels for different samples also takes the channel, since
+                    // the plex alone would still be one source name (SampleNamesRepeatedWithinAPlex).
+                    SourceName = string.IsNullOrWhiteSpace(annotation.SampleName)
+                        ? plexScope + " " + annotation.Tag.Trim()
+                        : repeatedInThisPlex.Contains(annotation.SampleName)
+                            ? plexScope + " " + annotation.SampleName + " " + annotation.Tag.Trim()
+                            : reusedSampleNames?.Contains(annotation.SampleName) == true
+                                ? plexScope + " " + annotation.SampleName
+                                : annotation.SampleName,
+                    Organism = organism,
+                    BiologicalReplicate = annotation.BiologicalReplicate,
+                    Label = ResolveChannelLabel(tagType, annotation.Tag),
+                    FactorValue = annotation.Condition,
+                    FactorValueColumn = string.IsNullOrWhiteSpace(annotation.Condition)
                         ? null
-                        : searchedName,
-                    AssayName = "run " + stem,
-                    Instrument = ResolveInstrument(rawFilePath),
-                    PrecursorMassTolerance = common.PrecursorMassTolerance,
-                    ProductMassTolerance = common.ProductMassTolerance,
-                    CleavageAgent = common.DigestionParams?.DigestionAgent,
-                    FixedModifications = ResolveModifications(common.ListOfModsFixed),
-                    VariableModifications = ResolveModifications(common.ListOfModsVariable),
-                    DissociationType = common.DissociationType,
-                    AcquisitionMethod = ResolveAcquisitionMethod(common),
-                    TechnicalReplicate = sampleInfo?.TechnicalReplicate + 1,
-                    Fraction = sampleInfo?.Fraction + 1
+                        : "factor value[condition]"
                 };
 
                 yield return new SdrfRowInput(sample, assay);
             }
         }
+
+        /// <summary>
+        /// The parsed TmtDesign.txt keyed by full file path, or null when this is not an isobaric
+        /// search or its design cannot be used. Null makes the caller fall back to one row per file.
+        ///
+        /// Read again rather than shared with multiplex quantification, which keeps its parse in a
+        /// local: the file is small, and reading it here leaves the quantification path untouched.
+        /// No warning is raised on failure -- quantification has already named the problem, and
+        /// SearchTask.WarnAboutSdrfGaps named its consequence for the SDRF before the run.
+        /// </summary>
+        private Dictionary<string, TmtFileInfo> ReadIsobaricDesignIfPresent(out IsobaricMassTagType? tagType)
+        {
+            tagType = null;
+            if (!Parameters.SearchParameters.DoMultiplexQuantification || Parameters.CurrentRawFileList.Count == 0)
+                return null;
+
+            tagType = IsobaricMassTag.GetTagTypeFromModificationId(Parameters.SearchParameters.MultiplexModId);
+            if (tagType is null)
+                return null;
+
+            string designPath = Path.Combine(
+                Path.GetDirectoryName(Parameters.CurrentRawFileList.First()) ?? "",
+                GlobalVariables.TmtExperimentalDesignFileName);
+            if (!File.Exists(designPath))
+                return null;
+
+            var files = TmtExperimentalDesign.Read(designPath, Parameters.CurrentRawFileList, out var errors);
+            if (errors.Any())
+                return null;
+
+            var byPath = new Dictionary<string, TmtFileInfo>(StringComparer.OrdinalIgnoreCase);
+            foreach (var file in files)
+                byPath[Path.GetFullPath(file.FullFilePathWithExtension)] = file;
+            return byPath;
+        }
+
+        /// <summary>
+        /// A reporter channel as a PRIDE term: TMT11's "127N" is <c>TMT127N</c>, PRIDE:0000519.
+        ///
+        /// The design file writes the channel bare, so only the reagent family is added, and it comes
+        /// from the search's own tag type. The term itself is looked up in mzLib's pinned PRIDE
+        /// vocabulary, never constructed, so a channel PRIDE does not define resolves to nothing. That
+        /// is every DiLeu channel, which PRIDE has no terms for.
+        ///
+        /// Most channels are one PRIDE term whatever the kit: TMT6, TMT10, TMT11 and TMTpro all write
+        /// 126 as TMT126. The 131 channel is the exception. PRIDE's TMT131 (PRIDE:0000529) is part of
+        /// TMT6PLEX, TMT10PLEX and TMT11PLEX, while TMT131N (PRIDE:0000580) is part of the TMTpro plexes
+        /// only. mzLib names TMT10's last channel "131N", so written as given a TMT10 file would carry
+        /// a TMTpro term, and tools that infer the plex from the set of labels (sdrf-pipelines'
+        /// _infer_plex) would read it as tmt11plex. TMT10's 131N is therefore written TMT131.
+        /// </summary>
+        private static CvParam ResolveChannelLabel(IsobaricMassTagType tagType, string channel)
+        {
+            string family = PrideLabelFamily(tagType);
+
+            if (family is null || string.IsNullOrWhiteSpace(channel))
+                return null;
+
+            string name = family + channel.Trim();
+            if (tagType == IsobaricMassTagType.TMT10 && string.Equals(channel.Trim(), "131N", StringComparison.OrdinalIgnoreCase))
+                name = "TMT131";
+            // TMT11 keeps TMT131N and TMT131C. PRIDE would put TMT131 in TMT11PLEX too, but sdrf-pipelines'
+            // channel_map.yaml spells tmt11plex with 131N/131C, and a 131/131C file matches none of its tables.
+
+            return ControlledVocabulary.Pride.TryGetByName(name, out var term) ? term : null;
+        }
+
+        /// <summary>The prefix PRIDE's channel terms carry for this tag type, or null when PRIDE has none.</summary>
+        private static string PrideLabelFamily(IsobaricMassTagType tagType) => tagType switch
+        {
+            IsobaricMassTagType.TMT6 or IsobaricMassTagType.TMT10 or IsobaricMassTagType.TMT11
+                or IsobaricMassTagType.TMT18 => "TMT",
+            IsobaricMassTagType.iTRAQ4 or IsobaricMassTagType.iTRAQ8 => "ITRAQ",
+            _ => null
+        };
 
         /// <summary>
         /// The acquired file a searched file came from: the run's starting file with the same stem once the
@@ -263,11 +590,12 @@ namespace TaskLayer
         /// <summary>
         /// Only a genuinely label-free search is described as label free.
         ///
-        /// SDRF wants one row per sample per CHANNEL, and this writer emits one row per file. SILAC
-        /// has no channel-to-sample mapping in MetaMorpheus at all. Isobaric runs do, in
-        /// TmtDesign.txt, but expanding rows from it is not done here yet. Until it is, the label is
-        /// left unresolved and the coverage report shows it; guessing would invent an experimental
-        /// design.
+        /// This resolves the label for a row that describes a whole FILE. SDRF wants one row per sample
+        /// per channel for a labelled run. An isobaric run with a usable TmtDesign.txt gets those rows
+        /// from <see cref="BuildChannelRows"/> and never reaches here; one without falls back to a row
+        /// per file. SILAC has no channel-to-sample mapping in MetaMorpheus at all. Either way the
+        /// label is left unresolved and the coverage report shows it; guessing would invent an
+        /// experimental design.
         ///
         /// Returning "label free sample" for a labelled run would be worse than returning nothing:
         /// the column comes out fully populated with a confident falsehood, which
@@ -343,9 +671,13 @@ namespace TaskLayer
                 .Select(c => c.Column)
                 .ToList();
 
+            string designFileName = Parameters.SearchParameters.DoMultiplexQuantification
+                ? GlobalVariables.TmtExperimentalDesignFileName
+                : GlobalVariables.ExperimentalDesignFileName;
+
             if (uninformative.Any())
                 Warn("The SDRF was written, but these columns say nothing and cannot be mined: " +
-                     string.Join(", ", uninformative) + ". " + GlobalVariables.ExperimentalDesignFileName +
+                     string.Join(", ", uninformative) + ". " + designFileName +
                      " can supply conditions, biological and technical replicates and fractions; everything " +
                      "else (organism part, disease, cell type and the like) has to be curated by hand in the " +
                      "written SDRF, since MetaMorpheus reads no input SDRF.");

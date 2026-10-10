@@ -17,6 +17,8 @@ using Proteomics;
 using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using IsobaricMassTag = EngineLayer.IsobaricMassTag;
+using IsobaricMassTagType = EngineLayer.IsobaricMassTagType;
 
 namespace Test
 {
@@ -418,8 +420,8 @@ namespace Test
             // requires them: disease and cell type among them, written `not available` when unknown.
             Assert.That(SdrfValidator.RecommendedColumns.Where(c => !document.Header.Contains(c)), Is.Empty);
             Assert.That(document.Results[0]["characteristics[disease]"], Is.EqualTo("not available"));
-            Assert.That(document.Results[0]["comment[label]"], Does.Contain("MS:1002038"),
-                "label free sample, with its accession");
+            Assert.That(document.Results[0]["comment[label]"], Is.EqualTo("label free sample"),
+                "written bare (sdrf D25, SdrfLabelForm.Bare): what the community writes, and quantms crashes on the accessioned form");
 
             Directory.Delete(folder, true);
         }
@@ -526,6 +528,28 @@ namespace Test
 
             Assert.That(resolve.Invoke(task, new object[] { "a.raw" }), Is.EqualTo(velos));
             Assert.That(resolve.Invoke(task, new object[] { readable }), Is.Null, "not read again, though it could be");
+        }
+
+        /// <summary>
+        /// Not every data file names its instrument (nbollis's review of #2817). An MGF carries no instrument model,
+        /// so the search records none, and the row says `not available` rather than failing or guessing.
+        /// </summary>
+        [Test]
+        public static void AFileThatNamesNoInstrumentWritesNotAvailable()
+        {
+            string folder = SetUpIsolatedRun(nameof(AFileThatNamesNoInstrumentWritesNotAvailable), out _, out DbForTask database);
+            string mgfPath = Path.Combine(folder, "ok.mgf");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "ok.mgf"), mgfPath, true);
+            string output = Path.Combine(folder, "TaskOutput");
+            Directory.CreateDirectory(output);
+
+            BuildSearchTask(writeSdrf: true).RunTask(output, new List<DbForTask> { database }, new List<string> { mgfPath }, "sdrf");
+
+            var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
+            document.LoadResults();
+            Assert.That(document.Results.Single()["comment[instrument]"], Is.EqualTo("not available"));
+
+            Directory.Delete(folder, true);
         }
 
         /// <summary>
@@ -675,6 +699,614 @@ namespace Test
                 Is.True, string.Join(" | ", warnings));
 
             Directory.Delete(folder, true);
+        }
+
+        #endregion
+
+        #region Isobaric searches
+
+        private static readonly string[] Tmt11Channels =
+            { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" };
+
+        /// <summary>
+        /// A channel is a PRIDE term, looked up rather than spelled. The accessions are the check:
+        /// PRIDE numbers 127C before 127N, so a resolver that walked the vocabulary in accession
+        /// order instead of by name would transpose them and still produce plausible-looking cells.
+        /// </summary>
+        [TestCase(IsobaricMassTagType.TMT11, "126", "PRIDE:0000516")]
+        [TestCase(IsobaricMassTagType.TMT11, "127N", "PRIDE:0000519")]
+        [TestCase(IsobaricMassTagType.TMT11, "127C", "PRIDE:0000518")]
+        [TestCase(IsobaricMassTagType.TMT6, "127", "PRIDE:0000517")]
+        [TestCase(IsobaricMassTagType.TMT18, "135N", "PRIDE:0000670")]
+        [TestCase(IsobaricMassTagType.iTRAQ8, "121", "PRIDE:0000538")]
+        // 131 depends on the kit: TMT131 (PRIDE:0000529) for TMT6/TMT10, TMT131N (PRIDE:0000580, a TMTpro
+        // term) for TMT11 and TMTpro, as sdrf-pipelines' channel_map.yaml spells them.
+        [TestCase(IsobaricMassTagType.TMT10, " 131n ", "PRIDE:0000529")]
+        [TestCase(IsobaricMassTagType.TMT6, "131", "PRIDE:0000529")]
+        [TestCase(IsobaricMassTagType.TMT11, "131N", "PRIDE:0000580")]
+        [TestCase(IsobaricMassTagType.TMT11, "131C", "PRIDE:0000581")]
+        [TestCase(IsobaricMassTagType.TMT18, "131N", "PRIDE:0000580")]
+        public static void AnIsobaricChannelResolvesToItsPrideTerm(IsobaricMassTagType tagType, string channel, string accession)
+        {
+            Assert.That(InvokeChannelLabel(tagType, channel)?.Accession, Is.EqualTo(accession));
+        }
+
+        /// <summary>
+        /// A TMT10 file's label set is TMT10PLEX's, ending in TMT131. With TMT131N, a TMTpro term, the
+        /// smallest plex holding every label is tmt11plex, and tools that infer the plex from the labels
+        /// (sdrf-pipelines' _infer_plex) configure the wrong one (pcruzparri, Alexander-Sol, #2817 review).
+        /// </summary>
+        [Test]
+        public static void ATmt10FileWritesTheTmt10LabelSet()
+        {
+            var tmt10 = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.TMT10)!;
+            var file = new TmtFileInfo(@"C:\data\tmt10.raw", "Plex1", 1, 1, tmt10
+                .Select((tag, i) => new TmtPlexAnnotation { Tag = tag, SampleName = "S" + (i + 1), BiologicalReplicate = 1 })
+                .ToList());
+
+            var labels = InvokeChannelRows(file, IsobaricMassTagType.TMT10).Select(r => r.Sample.Label?.Name).ToList();
+
+            Assert.That(labels, Is.EqualTo(new[]
+            {
+                "TMT126", "TMT127N", "TMT127C", "TMT128N", "TMT128C",
+                "TMT129N", "TMT129C", "TMT130N", "TMT130C", "TMT131"
+            }));
+        }
+
+        /// <summary>
+        /// PRIDE defines no DiLeu channels, and a channel name that is not a real channel resolves to
+        /// nothing rather than to a term someone assembled from a prefix.
+        /// </summary>
+        [TestCase(IsobaricMassTagType.diLeu12, "115a")]
+        [TestCase(IsobaricMassTagType.TMT11, "999N")]
+        [TestCase(IsobaricMassTagType.TMT11, "")]
+        public static void AChannelPrideDoesNotDefineResolvesToNothing(IsobaricMassTagType tagType, string channel)
+        {
+            Assert.That(InvokeChannelLabel(tagType, channel), Is.Null);
+        }
+
+        /// <summary>
+        /// The whole isobaric feature, end to end, on the TMT11 fixture MultiplexQuantificationTests
+        /// uses. A TMT search with a TmtDesign.txt writes one row per sample per channel: the source
+        /// name is the design's sample, the label is the channel's PRIDE term, the rows run in
+        /// reporter m/z order, and EVERY annotated channel gets a row -- including the Empty one,
+        /// whose absence would shorten the label set infer_tmtplex reads and make the round trip
+        /// impossible by construction (QuantProject 002 §5).
+        ///
+        /// The document is then handed to mzLib's two independent readers of SDRF. The validator
+        /// checks the row key (source name + assay name + label) is unique; the quantification auditor
+        /// has to recognise a channel-level design from the file alone, which is what a later reader
+        /// projecting it back into a design will depend on.
+        /// </summary>
+        [Test]
+        public static void ATmtSearchWritesOneRowPerSamplePerChannel()
+        {
+            string root = RunTmtSearchWritingSdrf("SdrfOutput_TmtChannels", writeDesign: true,
+                out string output, out _);
+
+            var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
+            document.LoadResults();
+
+            var expectedChannels = Tmt11Channels.ToList();
+            Assert.That(document.Results.Count, Is.EqualTo(expectedChannels.Count),
+                "One row per annotated channel of the one file this run searched -- all eleven, so " +
+                "the channel count in the file is the plex size.");
+
+            for (int i = 0; i < expectedChannels.Count; i++)
+            {
+                SdrfRow row = document.Results[i];
+                Assert.That(row["comment[label]"], Is.EqualTo("TMT" + expectedChannels[i]),
+                    "Rows follow the plex's reporter m/z order, not the design file's row order, and " +
+                    "the label is written bare (D25): it is what the community writes, and quantms " +
+                    "crashes on the accessioned form.");
+                Assert.That(row["source name"], Is.EqualTo("Sample" + (i + 1)),
+                    "The source name is the sample the design put in this channel.");
+                Assert.That(row["comment[data file]"], Is.EqualTo("VA084TQ_6.mzML"));
+                Assert.That(row["assay name"], Is.EqualTo("run VA084TQ_6"),
+                    "Every channel of one file is one assay.");
+            }
+
+            Assert.That(document.Results.Any(r => r["comment[label]"].Contains("TMT131C")), Is.True,
+                "The Empty channel is a real channel of a real plex: it gets a row, so the set of " +
+                "labels in this file is the whole plex and not ten elevenths of it.");
+            Assert.That(document.Header.Contains("characteristics[sample type]"), Is.False,
+                "Deferred, not unknown: the design states each channel's sample type (131C is empty " +
+                "here), but characteristics[sample type] waits for QuantProject's M4 to put the concept " +
+                "in mzLib (MAP-08). When it lands a column appears; no row or source name changes.");
+
+            SdrfValidationResult validation = SdrfValidator.Validate(document);
+            Assert.That(validation.Errors, Is.Empty, "mzLib's validator rejects the TMT SDRF: " + validation);
+
+            SdrfQuantAudit audit = SdrfQuantAuditor.Audit(document);
+            Assert.That(audit.Kind, Is.EqualTo(SdrfQuantKind.ChannelLevel), audit.ToReport());
+            Assert.That(audit.Channels, Has.Count.EqualTo(expectedChannels.Count), audit.ToReport());
+            Assert.That(audit.DuplicateFileLabelPairs, Is.Empty, audit.ToReport());
+
+            Directory.Delete(root, true);
+        }
+
+        /// <summary>
+        /// An empty channel whose design row names no sample still gets a row, with a source name
+        /// that is present and distinct.
+        ///
+        /// This is the case that writing every channel creates. A design is allowed to leave an empty
+        /// channel's sample name blank, and `source name` is the one column REQ-2 keys incoming sample
+        /// blocks on (D27) -- so a blank there would either collide two empty channels into one sample
+        /// or be written as a reserved word, and both are worse than naming the channel after the file
+        /// and tag it actually is.
+        ///
+        /// What it deliberately does NOT do is spell "empty" in the source name. That fact belongs in
+        /// characteristics[sample type] when M4 lands, and putting it here would mean rewriting source
+        /// names -- and breaking every join made against them -- on the day it does.
+        /// </summary>
+        [Test]
+        public static void AnUnnamedEmptyChannelIsStillNamedInTheDocument()
+        {
+            string root = RunTmtSearchWritingSdrf("SdrfOutput_TmtUnnamedEmpty", writeDesign: true,
+                out string output, out _, emptyChannelIsUnnamed: true);
+
+            var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
+            document.LoadResults();
+
+            Assert.That(document.Results.Count, Is.EqualTo(Tmt11Channels.Length),
+                "Every annotated channel is written whether or not its sample is named.");
+
+            SdrfRow empty = document.Results.Single(r => r["comment[label]"].Contains("TMT131C"));
+            Assert.That(empty["source name"], Is.EqualTo("Plex1 131C"),
+                "The plex and the tag are facts already in the design, and together they are unique.");
+            Assert.That(document.Results.Select(r => r["source name"]).Distinct().Count(),
+                Is.EqualTo(Tmt11Channels.Length),
+                "No two channels of one file may share a source name.");
+
+            SdrfValidationResult validation = SdrfValidator.Validate(document);
+            Assert.That(validation.Errors, Is.Empty, "mzLib's validator rejects the document: " + validation);
+
+            Directory.Delete(root, true);
+        }
+
+        /// <summary>
+        /// Without a TmtDesign.txt there is no channel-to-sample map, so the SDRF falls back to one row
+        /// per file with the label unresolved -- and the user is told so BEFORE the search, naming
+        /// the TMT design file rather than ExperimentalDesign.tsv, which an isobaric search never reads.
+        /// </summary>
+        [Test]
+        public static void ATmtSearchWithoutItsDesignDescribesEachFileOnce_AndSaysWhy()
+        {
+            string root = RunTmtSearchWritingSdrf("SdrfOutput_TmtNoDesign", writeDesign: false,
+                out string output, out List<string> warnings);
+
+            var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
+            document.LoadResults();
+
+            Assert.That(document.Results.Count, Is.EqualTo(1), "One row for the one file, as for any search.");
+            Assert.That(document.Results.Single()["comment[label]"], Is.EqualTo("not available"),
+                "No design means no channel to name, and a TMT run is never called label free.");
+
+            Assert.That(warnings.Any(w => w.Contains(GlobalVariables.TmtExperimentalDesignFileName)
+                                          && w.Contains("without its channels or samples")), Is.True,
+                "The fallback is announced, naming the file that would fix it: " + string.Join(" | ", warnings));
+            // Matched on the file name, not on "no ...": the post-run warning starts "No ExperimentalDesign.tsv".
+            Assert.That(warnings.Where(w => w.Contains(GlobalVariables.ExperimentalDesignFileName)), Is.Empty,
+                "An isobaric search does not read ExperimentalDesign.tsv, before or after the run, so its " +
+                "absence is not reported.");
+
+            Directory.Delete(root, true);
+        }
+
+        /// <summary>
+        /// A TmtDesign.txt the reader refuses is no better than none: the SDRF falls back to one row
+        /// per file, and the warning before the search says the design is the reason, not its absence.
+        /// </summary>
+        [Test]
+        public static void ATmtSearchWithAnUnusableDesignDescribesEachFileOnce_AndSaysWhy()
+        {
+            string root = RunTmtSearchWritingSdrf("SdrfOutput_TmtUnusableDesign", writeDesign: true,
+                out string output, out List<string> warnings, designIsUnusable: true);
+
+            var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
+            document.LoadResults();
+
+            Assert.That(document.Results.Count, Is.EqualTo(1), "A refused design gives no channels to expand.");
+            Assert.That(document.Results.Single()["comment[label]"], Is.EqualTo("not available"));
+
+            Assert.That(warnings.Any(w => w.Contains("cannot be used as it stands")
+                                          && w.Contains("not a sample type")), Is.True,
+                "The warning names the design's own error: " + string.Join(" | ", warnings));
+            Assert.That(warnings.Where(w => w.Contains(GlobalVariables.ExperimentalDesignFileName)), Is.Empty,
+                "The fallback does not turn to ExperimentalDesign.tsv either.");
+
+            Directory.Delete(root, true);
+        }
+
+        /// <summary>
+        /// PRIDE has no DiLeu channel terms, so a DiLeu channel row could not say which channel it is:
+        /// N rows on one file with no label is what mzLib's auditor reads as a label-free file holding
+        /// N samples. A DiLeu file is therefore described once, like a TMT file with no design, and the
+        /// warning before the search says so.
+        /// </summary>
+        [Test]
+        public static void ADiLeuSearchIsWarnedThatEachFileIsDescribedOnce()
+        {
+            var warnings = WarningsBeforeAnIsobaricSearch(nameof(ADiLeuSearchIsWarnedThatEachFileIsDescribedOnce),
+                "DiLeu-12plex on K", spectra => new[] { $"{spectra}	Plex1	Sample1	115a	CondA	1	1	1	study sample" });
+
+            Assert.That(warnings, Has.Count.EqualTo(1), string.Join(" | ", warnings));
+            Assert.That(warnings.Single(), Does.Contain("diLeu12").And.Contain("comment[label]")
+                .And.Contain("without their channels or samples"));
+        }
+
+        /// <summary>
+        /// The gate that decides channel rows, for the three cases that must fall back to one row per
+        /// file: a tag type PRIDE has no channel terms for, a plex nobody annotated (the placeholder row
+        /// TmtExperimentalDesign.Write emits, which Read accepts without error), and a channel the
+        /// search's plex does not have. Without the gate, the first gives unlabelled channel rows, the
+        /// second drops the file from the SDRF, and the third writes a TMT6 label on a TMT11 search.
+        /// </summary>
+        [TestCase(IsobaricMassTagType.diLeu12, "115a", "not diLeu12")]
+        [TestCase(IsobaricMassTagType.TMT11, null, "no annotated channels")]
+        [TestCase(IsobaricMassTagType.TMT11, "127", "not a channel of TMT11")]
+        public static void ChannelRowsAreRefusedWhenTheyCouldNotSayWhichChannelIsWhich(
+            IsobaricMassTagType tagType, string tag, string reason)
+        {
+            var annotations = tag is null
+                ? new List<TmtPlexAnnotation>()
+                : new List<TmtPlexAnnotation> { new() { Tag = tag, SampleName = "S1", BiologicalReplicate = 1 } };
+            var file = new TmtFileInfo(@"C:\data\run1.raw", "Plex1", 1, 1, annotations);
+
+            Assert.That(InvokeChannelRowsUnusableReason(file, tagType), Does.Contain(reason));
+        }
+
+        [Test]
+        public static void ChannelRowsAreAllowedForAnAnnotatedPlexOfTheSearchedTag()
+        {
+            var file = new TmtFileInfo(@"C:\data\run1.raw", "Plex1", 1, 1, new List<TmtPlexAnnotation>
+            {
+                new() { Tag = "126", SampleName = "S1", BiologicalReplicate = 1 },
+                new() { Tag = "127N", SampleName = "S2", BiologicalReplicate = 1 }
+            });
+
+            Assert.That(InvokeChannelRowsUnusableReason(file, IsobaricMassTagType.TMT11), Is.Null);
+        }
+
+        /// <summary>
+        /// A plex with no annotated channels, a channel off the search's plex, and a multiplex label
+        /// MetaMorpheus does not recognise all mean one row per file. Each is named before the search,
+        /// when it is still cheap to fix.
+        /// </summary>
+        [Test]
+        public static void AnUnannotatedPlexIsWarnedBeforeTheSearch()
+        {
+            var warnings = WarningsBeforeAnIsobaricSearch(nameof(AnUnannotatedPlexIsWarnedBeforeTheSearch),
+                "TMT11-plex on K", spectra => new[] { spectra + "\tPlex1" + new string('\t', 7) });
+
+            Assert.That(warnings, Has.Count.EqualTo(1), string.Join(" | ", warnings));
+            Assert.That(warnings.Single(), Does.Contain("no annotated channels")
+                .And.Contain("without their channels or samples"));
+        }
+
+        [Test]
+        public static void AChannelOffTheSearchedPlexIsWarnedBeforeTheSearch()
+        {
+            var warnings = WarningsBeforeAnIsobaricSearch(nameof(AChannelOffTheSearchedPlexIsWarnedBeforeTheSearch),
+                "TMT11-plex on K", spectra => new[] { $"{spectra}	Plex1	Sample1	127	CondA	1	1	1	study sample" });
+
+            Assert.That(warnings, Has.Count.EqualTo(1), string.Join(" | ", warnings));
+            Assert.That(warnings.Single(), Does.Contain("'127'").And.Contain("not a channel of TMT11"));
+        }
+
+        [Test]
+        public static void AnUnrecognisedMultiplexLabelIsWarnedBeforeTheSearch()
+        {
+            var warnings = WarningsBeforeAnIsobaricSearch(nameof(AnUnrecognisedMultiplexLabelIsWarnedBeforeTheSearch),
+                "Nonsense on K", spectra => new[] { $"{spectra}	Plex1	Sample1	126	CondA	1	1	1	study sample" });
+
+            Assert.That(warnings, Has.Count.EqualTo(1), string.Join(" | ", warnings));
+            Assert.That(warnings.Single(), Does.Contain("Nonsense on K")
+                .And.Contain("without its channels or samples"));
+        }
+
+        /// <summary>
+        /// After the search, the same unrecognised multiplex label leaves no isobaric design to write
+        /// channel rows from, even with a usable TmtDesign.txt beside the spectra: with no tag type
+        /// there is no plex to check the channels against, so the file is described once.
+        /// </summary>
+        [Test]
+        public static void AnUnrecognisedMultiplexLabelReadsNoIsobaricDesign()
+        {
+            string folder = SetUpIsolatedRun(nameof(AnUnrecognisedMultiplexLabelReadsNoIsobaricDesign), out string spectraPath, out _);
+            File.WriteAllLines(Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName),
+                new[] { TmtExperimentalDesign.Header, $"{spectraPath}	Plex1	Sample1	126	CondA	1	1	1	study sample" });
+            var task = new PostSearchAnalysisTask
+            {
+                Parameters = new PostSearchAnalysisParameters
+                {
+                    CurrentRawFileList = new List<string> { spectraPath },
+                    SearchParameters = new SearchParameters { DoMultiplexQuantification = true, MultiplexModId = "Nonsense on K" }
+                }
+            };
+
+            var args = new object[] { null };
+            var design = typeof(PostSearchAnalysisTask)
+                .GetMethod("ReadIsobaricDesignIfPresent", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(task, args);
+
+            Assert.That(design, Is.Null);
+            Assert.That(args[0], Is.Null, "no tag type");
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// An unnamed channel belongs to the plex, and every fraction of a plex carries the same
+        /// channel-to-sample map. So its source name is built from the plex, not the file: with the
+        /// file stem, one unnamed channel of a two-fraction plex became two samples downstream.
+        /// </summary>
+        [Test]
+        public static void AnUnnamedChannelHasOneSourceNameAcrossTheFractionsOfItsPlex()
+        {
+            var annotations = new List<TmtPlexAnnotation>
+            {
+                new() { Tag = "126", SampleName = "S1", BiologicalReplicate = 1 },
+                new() { Tag = "131C", SampleName = "", BiologicalReplicate = 1, SampleType = TmtSampleType.Empty }
+            };
+            var fraction1 = new TmtFileInfo(@"C:\data\plexA_F01.raw", "PlexA", 1, 1, annotations);
+            var fraction2 = new TmtFileInfo(@"C:\data\plexA_F02.raw", "PlexA", 2, 1, annotations);
+
+            string UnnamedSourceName(TmtFileInfo file) => InvokeChannelRows(file, IsobaricMassTagType.TMT11)
+                .Single(r => r.Sample.Label?.Name == "TMT131C").Sample.SourceName;
+
+            Assert.That(UnnamedSourceName(fraction1), Is.EqualTo("PlexA 131C"));
+            Assert.That(UnnamedSourceName(fraction2), Is.EqualTo(UnnamedSourceName(fraction1)),
+                "Both fractions measure the same channel of the same plex, so it is one sample.");
+
+            var noPlex = new TmtFileInfo(@"C:\data\plexA_F01.raw", "", 1, 1, annotations);
+            Assert.That(UnnamedSourceName(noPlex), Is.EqualTo("plexA_F01 131C"),
+                "With no plex name the file stem is the only scope left, and it is still unique.");
+        }
+
+        /// <summary>
+        /// TmtExperimentalDesign.Read checks sample names only within a plex, so a two-plex design can
+        /// name each plex's channels S1, S2, ... for different material (pcruzparri, #2817 review). Source
+        /// name is the sample key, so such a name is scoped to its plex; a bridge, named the same in both
+        /// plexes with the same condition and replicate, is one sample and keeps its one name.
+        /// </summary>
+        [Test]
+        public static void ASampleNameReusedInAnotherPlexForADifferentSampleIsScopedToItsPlex()
+        {
+            var plex1 = new TmtFileInfo(@"C:\data\p1.raw", "Plex1", 1, 1, new List<TmtPlexAnnotation>
+            {
+                new() { Tag = "126", SampleName = "S1", Condition = "Ctrl", BiologicalReplicate = 1 },
+                new() { Tag = "127N", SampleName = "Bridge", Condition = "Pool", BiologicalReplicate = 1 }
+            });
+            var plex2 = new TmtFileInfo(@"C:\data\p2.raw", "Plex2", 1, 1, new List<TmtPlexAnnotation>
+            {
+                new() { Tag = "126", SampleName = "S1", Condition = "Drug", BiologicalReplicate = 2 },
+                new() { Tag = "127N", SampleName = "Bridge", Condition = "Pool", BiologicalReplicate = 1 }
+            });
+
+            var reused = InvokeSampleNamesReusedForDifferentSamples(plex1, plex2);
+            Assert.That(reused, Is.EquivalentTo(new[] { "S1" }), "Only the name that names two samples.");
+
+            string SourceName(TmtFileInfo file, string label) => InvokeChannelRows(file, IsobaricMassTagType.TMT11, reused)
+                .Single(r => r.Sample.Label?.Name == label).Sample.SourceName;
+
+            Assert.That(SourceName(plex1, "TMT126"), Is.EqualTo("Plex1 S1"));
+            Assert.That(SourceName(plex2, "TMT126"), Is.EqualTo("Plex2 S1"),
+                "Two samples, two source names.");
+            Assert.That(SourceName(plex1, "TMT127N"), Is.EqualTo("Bridge"));
+            Assert.That(SourceName(plex2, "TMT127N"), Is.EqualTo("Bridge"),
+                "A bridge is one sample measured in both plexes, so it keeps one source name.");
+
+            Assert.That(InvokeSampleNamesReusedForDifferentSamples(plex1), Is.Empty,
+                "Plex1 names each channel differently, so no name in it names two samples.");
+        }
+
+        /// <summary>
+        /// Read checks uniqueness within a plex on (sample, biological replicate, fraction, technical
+        /// replicate), not on the name, so one plex can name every channel after its cell line with a
+        /// different biological replicate on each (what Auto-fill writes). Adding the plex alone left all
+        /// those channels one source name, so they take the channel as well, and the warning says the name
+        /// repeats inside a plex rather than across plexes (pcruzparri, #2817 review).
+        /// </summary>
+        [Test]
+        public static void ASampleNameRepeatedOnChannelsOfOnePlexGetsOneSourceNamePerChannel()
+        {
+            var annotations = new List<TmtPlexAnnotation>
+            {
+                new() { Tag = "126", SampleName = "HeLa", Condition = "Ctrl", BiologicalReplicate = 1 },
+                new() { Tag = "127N", SampleName = "HeLa", Condition = "Ctrl", BiologicalReplicate = 2 },
+                new() { Tag = "127C", SampleName = "HeLa", Condition = "Drug", BiologicalReplicate = 3 },
+                new() { Tag = "128N", SampleName = "Pool", Condition = "Pool", BiologicalReplicate = 1 }
+            };
+            var fraction1 = new TmtFileInfo(@"C:\data\p1_F01.raw", "Plex1", 1, 1, annotations);
+            var fraction2 = new TmtFileInfo(@"C:\data\p1_F02.raw", "Plex1", 2, 1, annotations);
+
+            var reused = InvokeSampleNamesReusedForDifferentSamples(fraction1, fraction2);
+            Assert.That(reused, Is.EquivalentTo(new[] { "HeLa" }));
+
+            List<string> SourceNames(TmtFileInfo file) => InvokeChannelRows(file, IsobaricMassTagType.TMT11, reused)
+                .Select(r => r.Sample.SourceName).ToList();
+
+            Assert.That(SourceNames(fraction1),
+                Is.EqualTo(new[] { "Plex1 HeLa 126", "Plex1 HeLa 127N", "Plex1 HeLa 127C", "Pool" }),
+                "Three samples, three source names; Pool names one sample and keeps its name.");
+            Assert.That(SourceNames(fraction2), Is.EqualTo(SourceNames(fraction1)),
+                "Every fraction of the plex measures the same channels, so the names are the same.");
+
+            string warning = (string)typeof(PostSearchAnalysisTask)
+                .GetMethod("ReusedSampleNamesWarning", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { reused, InvokeSampleNamesRepeatedWithinAPlex(fraction1, fraction2) });
+            Assert.That(warning, Does.Contain("more than one channel of the same plex")
+                .And.Contain("'HeLa'").And.Contain("<plex> <sample name> <channel>")
+                .And.Not.Contain("in more than one plex"));
+        }
+
+        /// <summary>The within-plex repeat is named before the search too, in its own words.</summary>
+        [Test]
+        public static void ASampleNameRepeatedOnChannelsOfOnePlexIsWarnedBeforeTheSearch()
+        {
+            var warnings = WarningsBeforeAnIsobaricSearch(nameof(ASampleNameRepeatedOnChannelsOfOnePlexIsWarnedBeforeTheSearch),
+                "TMT11-plex on K", spectra => new[]
+                {
+                    $"{spectra}	Plex1	HeLa	126	Ctrl	1	1	1	study sample",
+                    $"{spectra}	Plex1	HeLa	127N	Drug	2	1	1	study sample"
+                });
+
+            Assert.That(warnings, Has.Count.EqualTo(1), string.Join(" | ", warnings));
+            Assert.That(warnings.Single(), Does.Contain("'HeLa'").And.Contain("more than one channel of the same plex")
+                .And.Not.Contain("in more than one plex"));
+        }
+
+        /// <summary>The same reuse is named before the search, when it is still cheap to rename.</summary>
+        [Test]
+        public static void ASampleNameReusedInAnotherPlexIsWarnedBeforeTheSearch()
+        {
+            var warnings = WarningsBeforeAnIsobaricSearch(nameof(ASampleNameReusedInAnotherPlexIsWarnedBeforeTheSearch),
+                "TMT11-plex on K", spectra =>
+                {
+                    string second = Path.Combine(Path.GetDirectoryName(spectra)!, "plex2.mzML");
+                    return new[]
+                    {
+                        $"{spectra}	Plex1	S1	126	Ctrl	1	1	1	study sample",
+                        $"{spectra}	Plex1	Bridge	127N	Pool	1	1	1	reference",
+                        $"{second}	Plex2	S1	126	Drug	2	1	1	study sample",
+                        $"{second}	Plex2	Bridge	127N	Pool	1	1	1	reference"
+                    };
+                }, "plex2.mzML");
+
+            Assert.That(warnings, Has.Count.EqualTo(1), string.Join(" | ", warnings));
+            Assert.That(warnings.Single(), Does.Contain("'S1'").And.Not.Contain("'Bridge'")
+                .And.Contain("<plex> <sample name>"));
+        }
+
+        /// <summary>
+        /// End to end: a TmtDesign.txt whose only row for the file is the channel-less placeholder
+        /// (the GUI's normal state while a design is half-filled). The file used to vanish from the
+        /// SDRF, and with every file in that state no SDRF was written at all.
+        /// </summary>
+        [Test]
+        public static void ATmtSearchWhosePlexHasNoAnnotatedChannelsStillDescribesTheFile()
+        {
+            string root = RunTmtSearchWritingSdrf("SdrfOutput_TmtPlaceholderOnly", writeDesign: true,
+                out string output, out List<string> warnings, placeholderOnly: true);
+
+            string path = Path.Combine(output, SdrfFileName);
+            Assert.That(File.Exists(path), Is.True, "An SDRF is written: " + string.Join(" | ", warnings));
+            var document = new SdrfDocument(path);
+            document.LoadResults();
+
+            Assert.That(document.Results.Count, Is.EqualTo(1), "The file is described once.");
+            Assert.That(document.Results.Single()["comment[data file]"], Is.EqualTo("VA084TQ_6.mzML"));
+            Assert.That(document.Results.Single()["comment[label]"], Is.EqualTo("not available"));
+            Assert.That(warnings.Any(w => w.Contains("no annotated channels")), Is.True, string.Join(" | ", warnings));
+
+            Directory.Delete(root, true);
+        }
+
+        /// <summary>
+        /// The warnings SearchTask gives before an isobaric search with SDRF output on, for a
+        /// TmtDesign.txt of <paramref name="designRows"/> (given the spectra path) beside the spectra.
+        /// </summary>
+        private static List<string> WarningsBeforeAnIsobaricSearch(string testName, string multiplexModId,
+            Func<string, string[]> designRows, params string[] otherSpectraFileNames)
+        {
+            string folder = SetUpIsolatedRun(testName, out string spectraPath, out _);
+            var spectraPaths = new List<string> { spectraPath }
+                .Concat(otherSpectraFileNames.Select(n => Path.Combine(folder, n))).ToList();
+            File.WriteAllLines(Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName),
+                new[] { TmtExperimentalDesign.Header }.Concat(designRows(spectraPath)));
+
+            var task = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    WriteSdrf = true,
+                    DoMultiplexQuantification = true,
+                    MultiplexModId = multiplexModId
+                }
+            };
+
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                typeof(SearchTask)
+                    .GetMethod("WarnAboutSdrfGaps", BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .Invoke(task, new object[] { spectraPaths });
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+                Directory.Delete(folder, true);
+            }
+
+            return warnings;
+        }
+
+        /// <summary>
+        /// Runs the TMT11 fixture MultiplexQuantificationTests uses, with SDRF output on, in a folder of
+        /// its own. With <paramref name="writeDesign"/>, a TmtDesign.txt goes beside the spectra: the
+        /// last channel is Empty, and the rows are written in reverse so document order cannot pass
+        /// for reporter m/z order. With <paramref name="designIsUnusable"/>, every row's Sample Type is
+        /// one the design reader refuses. Returns the root folder to delete.
+        /// </summary>
+        private static string RunTmtSearchWritingSdrf(string folderName, bool writeDesign,
+            out string output, out List<string> warnings, bool designIsUnusable = false,
+            bool emptyChannelIsUnnamed = false, bool placeholderOnly = false)
+        {
+            string root = Path.Combine(TestContext.CurrentContext.TestDirectory, folderName);
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+            string dataFolder = Path.Combine(root, "data");
+            Directory.CreateDirectory(dataFolder);
+
+            string mzml = Path.Combine(dataFolder, "VA084TQ_6.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\VA084TQ_6.mzML"), mzml);
+
+            if (writeDesign)
+            {
+                bool IsEmptyChannel(int i) => i == Tmt11Channels.Length - 1;
+                IEnumerable<string> designRows = Tmt11Channels
+                    .Select((tag, i) =>
+                        $"{mzml}	Plex1	" +
+                        // A design may leave an empty channel's sample name blank -- there is no
+                        // sample to name -- and a real one often does.
+                        (emptyChannelIsUnnamed && IsEmptyChannel(i) ? "" : $"Sample{i + 1}") +
+                        $"	{tag}	Cond{(i % 2 == 0 ? "A" : "B")}	{i / 2 + 1}	1	1	" +
+                        (designIsUnusable ? "not a sample type"
+                            : IsEmptyChannel(i) ? "empty" : "study sample"))
+                    .Reverse();
+                if (placeholderOnly)
+                    // The channel-less row TmtExperimentalDesign.Write emits for a plex nobody has annotated.
+                    designRows = new[] { mzml + "\tPlex1" + new string('\t', 7) };
+                File.WriteAllLines(Path.Combine(dataFolder, GlobalVariables.TmtExperimentalDesignFileName),
+                    new[] { TmtExperimentalDesign.Header }.Concat(designRows));
+            }
+
+            var searchTask = Toml.ReadFile<SearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                MetaMorpheusTask.tomlConfig);
+            searchTask.SearchParameters.WriteSdrf = true;
+            searchTask.SearchParameters.DoParsimony = true;
+
+            output = Path.Combine(root, "out");
+            Directory.CreateDirectory(output);
+            string fasta = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\mouseTmt.fasta");
+
+            var captured = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => captured.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                searchTask.RunTask(output, new List<DbForTask> { new(fasta, false) }, new List<string> { mzml }, "tmt-sdrf");
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+            }
+
+            warnings = captured;
+            return root;
         }
 
         #endregion
@@ -861,6 +1493,34 @@ namespace Test
             (CvParam)typeof(PostSearchAnalysisTask)
                 .GetMethod("ResolveLabel", BindingFlags.NonPublic | BindingFlags.Static)!
                 .Invoke(null, new object[] { searchParameters });
+
+        private static CvParam InvokeChannelLabel(IsobaricMassTagType tagType, string channel) =>
+            (CvParam)typeof(PostSearchAnalysisTask)
+                .GetMethod("ResolveChannelLabel", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { tagType, channel });
+
+        private static string InvokeChannelRowsUnusableReason(TmtFileInfo file, IsobaricMassTagType tagType) =>
+            (string)typeof(PostSearchAnalysisTask)
+                .GetMethod("ChannelRowsUnusableReason", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { file, tagType });
+
+        private static List<SdrfRowInput> InvokeChannelRows(TmtFileInfo file, IsobaricMassTagType tagType,
+            ISet<string> reusedSampleNames = null) =>
+            ((IEnumerable<SdrfRowInput>)typeof(PostSearchAnalysisTask)
+                .GetMethod("BuildChannelRows", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { file, tagType, null, new SdrfAssay { DataFileName = "run1.raw", AssayName = "run run1" },
+                    reusedSampleNames ?? new HashSet<string>() }))
+            .ToList();
+
+        private static HashSet<string> InvokeSampleNamesRepeatedWithinAPlex(params TmtFileInfo[] files) =>
+            (HashSet<string>)typeof(PostSearchAnalysisTask)
+                .GetMethod("SampleNamesRepeatedWithinAPlex", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { files });
+
+        private static HashSet<string> InvokeSampleNamesReusedForDifferentSamples(params TmtFileInfo[] files) =>
+            (HashSet<string>)typeof(PostSearchAnalysisTask)
+                .GetMethod("SampleNamesReusedForDifferentSamples", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { files });
 
         /// <summary>
         /// A search whose parameters are cheap but not degenerate. Notch/parsimony settings match

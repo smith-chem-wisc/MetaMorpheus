@@ -722,6 +722,9 @@
                                             records which sample each file came from, and nothing in a search knows that. Without
                                             it the search still runs, a warning names what is missing, and those columns say
                                             "not available".
+                                            <LineBreak/>
+                                            A TMT or iTRAQ search reads TmtDesign.txt instead, and writes one row for each sample
+                                            in each channel.
                                         </TextBlock>
                                     </CheckBox.ToolTip>
                                 </CheckBox>
