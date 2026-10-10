@@ -1358,10 +1358,11 @@ namespace TaskLayer
                 // Only emit the most-abundant mass-error column when a run actually used most-abundant
                 // selection (its property is null otherwise), mirroring the data-driven gating above.
                 bool includeMostAbundantColumn = psms.Any(p => p.MostAbundantMassErrorPpm != null);
-                output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn));
+                bool includeAndromedaScoreColumn = psms.Any(p => p.AndromedaScore.HasValue);
+                output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn, includeAndromedaScoreColumn));
                 foreach (var psm in psms)
                 {
-                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn));
+                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn, includeAndromedaScoreColumn));
                 }
             }
         }
