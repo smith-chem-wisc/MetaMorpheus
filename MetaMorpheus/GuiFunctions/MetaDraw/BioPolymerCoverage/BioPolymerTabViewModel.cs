@@ -43,6 +43,8 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
 
         LoadDataCommand = new RelayCommand(LoadData);
         ResetDataCommand = new RelayCommand(ResetData);
+        ResetDataBaseCommand = new RelayCommand(ResetDatabase);
+        ResetProteinGroupsCommand = new RelayCommand(ResetProteinGroups);
         ExportImageCommand = new RelayCommand(ExportImage);
 
         BindingOperations.EnableCollectionSynchronization(AllGroups, ThreadLocker);
@@ -149,6 +151,10 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
 
     #region Protein Group Handling
 
+    // ==================================================
+    // TODO: Change this behavior once Mzlib supports all of our protein/transcript group files (Working on that PR)
+    // ==================================================
+
     // In Mzlib, the quantified protein and transcript group file types also load non-quantified protein and transcript groups, so we can use the same list for both.
     public static List<SupportedFileType> SupportedProteinGroupFileTypes = new()
     {
@@ -166,7 +172,24 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
             OnPropertyChanged(nameof(IsProteinGroupsLoaded));
         }
     }
-    public string? ProteinGroupsFilePath { get; set; }
+    private string? _proteinGroupsFilePath;
+    public string? ProteinGroupsFilePath
+    {
+        get => _proteinGroupsFilePath;
+        set
+        {
+            if (_proteinGroupsFilePath == value)
+                return;
+
+            _proteinGroupsFilePath = value;
+            OnPropertyChanged(nameof(ProteinGroupsFilePath));
+            OnPropertyChanged(nameof(ProteinGroupName));
+            OnPropertyChanged(nameof(HasProteinGroupsFile));
+        }
+    }
+
+    public bool HasProteinGroupsFile => !string.IsNullOrWhiteSpace(ProteinGroupsFilePath);
+
     public string? ProteinGroupName
     {
         get
@@ -201,7 +224,6 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
     private void ResetProteinGroups()
     {
         ProteinGroupsFilePath = null;
-        OnPropertyChanged(nameof(ProteinGroupName));
 
         Groups?.Clear();
         IsProteinGroupsLoaded = false;
@@ -213,6 +235,8 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
 
     public ICommand LoadDataCommand { get; set; }
     public ICommand ResetDataCommand { get; set; }
+    public ICommand ResetProteinGroupsCommand { get; set; }
+    public ICommand ResetDataBaseCommand { get; set; }
 
     public async void LoadData()
     {

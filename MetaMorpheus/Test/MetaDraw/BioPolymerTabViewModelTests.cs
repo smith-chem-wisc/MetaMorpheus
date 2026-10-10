@@ -39,9 +39,45 @@ namespace Test.MetaDraw
             Assert.That(vm.ExportDirectory, Is.EqualTo("C:\\Export"));
             Assert.That(vm.LoadDataCommand, Is.Not.Null);
             Assert.That(vm.ResetDataCommand, Is.Not.Null);
+            Assert.That(vm.ResetProteinGroupsCommand, Is.Not.Null);
             Assert.That(vm.ExportImageCommand, Is.Not.Null);
             Assert.That(vm.DatabaseName, Is.EqualTo("Add Database Files..."));
             Assert.That(vm.DatabasePathsTooltip, Is.Null);
+        }
+
+        [Test]
+        public void ResetProteinGroupsCommand_ClearsFileAndLoadedGroups()
+        {
+            var vm = new BioPolymerTabViewModel(new DummyMetaDrawLogic())
+            {
+                ProteinGroupsFilePath = "C:\\groups.tsv",
+                Groups = new List<ProteinGroupFromTsv> { new() },
+                IsProteinGroupsLoaded = true
+            };
+
+            vm.ResetProteinGroupsCommand.Execute(null);
+
+            Assert.That(vm.ProteinGroupsFilePath, Is.Null);
+            Assert.That(vm.ProteinGroupName, Is.EqualTo("Add Protein Groups File..."));
+            Assert.That(vm.HasProteinGroupsFile, Is.False);
+            Assert.That(vm.Groups, Is.Empty);
+            Assert.That(vm.IsProteinGroupsLoaded, Is.False);
+        }
+
+        [Test]
+        public void ProteinGroupsFilePath_NotifiesFileStateAndName()
+        {
+            var vm = new BioPolymerTabViewModel(new DummyMetaDrawLogic());
+            var changedProperties = new List<string>();
+            vm.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName!);
+
+            vm.ProteinGroupsFilePath = "C:\\groups.tsv";
+
+            Assert.That(vm.HasProteinGroupsFile, Is.True);
+            Assert.That(vm.ProteinGroupName, Is.EqualTo("groups"));
+            Assert.That(changedProperties, Does.Contain(nameof(vm.ProteinGroupsFilePath)));
+            Assert.That(changedProperties, Does.Contain(nameof(vm.ProteinGroupName)));
+            Assert.That(changedProperties, Does.Contain(nameof(vm.HasProteinGroupsFile)));
         }
 
         [TestCase("AllProteinGroups.tsv")]
