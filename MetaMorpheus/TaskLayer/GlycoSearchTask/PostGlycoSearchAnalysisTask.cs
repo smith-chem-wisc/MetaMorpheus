@@ -412,6 +412,8 @@ namespace TaskLayer
             foreach (var proteinGroup in ProteinGroups)
             {
                 proteinGroup.FilesForQuantification = spectraFiles;
+                // A site modified in any sample group is reported as 0/N wherever another group covers it unmodified
+                proteinGroup.ReportSitesSeenModifiedInAnySampleGroup();
                 proteinGroup.PopulateSampleGroupResults();
             }
         }
@@ -610,6 +612,7 @@ namespace TaskLayer
                     // Populate SampleGroupResults from the shared spectraFileInfo so
                     // every PG carries the same dynamic-column schema. Without this, the writer
                     // would have no way to produce uniform headers/rows.
+                    proteinGroup.ReportSitesSeenModifiedInAnySampleGroup();
                     proteinGroup.PopulateSampleGroupResults();
                 }
             }
