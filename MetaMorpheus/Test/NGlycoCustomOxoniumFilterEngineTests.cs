@@ -91,7 +91,7 @@ namespace Test
         // HexNAc(4)Hex(3)Fuc(1), the glycan the fragment test matches in this scan.
         private static bool IsKnownGlycan(GlycoSpectralMatch match)
         {
-            byte[] expected = GlycanDatabase.String2Kind("HexNAc(4)Hex(3)Fuc(1)");
+            byte[] expected = GlycanDatabase.ParseComposition("HexNAc(4)Hex(3)Fuc(1)");
             return match.NGlycan != null && match.NGlycan.Single().Kind.SequenceEqual(expected);
         }
 
