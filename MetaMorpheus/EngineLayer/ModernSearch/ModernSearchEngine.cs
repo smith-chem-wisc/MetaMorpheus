@@ -25,7 +25,8 @@ namespace EngineLayer.ModernSearch
 
         /// <summary>
         /// Whether the per-scan score table stamps cells instead of clearing them. Worth it when a scan
-        /// touches a small slice of the peptide index; see <see cref="ScanScoringTable.IsWorthStamping"/>.
+        /// touches a small slice of the peptide index; see <see cref="ScanScoringTable.IsWorthStamping"/> and
+        /// <see cref="ScanScoringTable.MaxWindowShareWorthStamping"/>.
         /// </summary>
         protected readonly bool UseStampedScoringTable;
 
@@ -41,7 +42,52 @@ namespace EngineLayer.ModernSearch
             MassDiffAcceptor = massDiffAcceptor;
             DissociationType = commonParameters.DissociationType;
             MaxMassThatFragmentIonScoreIsDoubled = maximumMassThatFragmentIonScoreIsDoubled;
-            UseStampedScoringTable = ScanScoringTable.IsWorthStamping(massDiffAcceptor);
+            UseStampedScoringTable = ScanScoringTable.IsWorthStamping(massDiffAcceptor) && PrecursorWindowsAreNarrowEnoughToStamp();
+        }
+
+        /// <summary>
+        /// Whether this engine's scans, on average, put few enough of the index in their precursor window for stamping to win;
+        /// see <see cref="ScanScoringTable.MaxWindowShareWorthStamping"/>. When that cannot be measured (no scans, no peptides,
+        /// or an index not sorted by mass) the acceptor alone decides, as it did before. Either table gives the same scores.
+        /// </summary>
+        private bool PrecursorWindowsAreNarrowEnoughToStamp()
+        {
+            if (ListOfSortedMs2Scans == null || PeptideIndex == null || !PeptideIndexIsSortedForBinSearch(PeptideIndex))
+            {
+                return true;
+            }
+
+            var precursorMasses = ListOfSortedMs2Scans.Select(scan => scan.GetPrecursorMassForSearch(CommonParameters));
+            return ScanScoringTable.IsWindowNarrowEnoughToStamp(MeanWindowShareOfIndex(PeptideIndex, precursorMasses, MassDiffAcceptor));
+        }
+
+        /// <summary>
+        /// The share of <paramref name="peptideIndex"/> inside the precursor window <see cref="IndexScoreScan"/> scores for each mass,
+        /// averaged over <paramref name="precursorMasses"/>, or zero when there are none. The coarse scoring touches only peptides
+        /// in that window, so this bounds how much of the scoring table a scan touches. Two binary searches per scan, and only
+        /// meaningful on an index for which <see cref="IsSortedForBinSearch"/> is true.
+        /// </summary>
+        internal static double MeanWindowShareOfIndex(List<IBioPolymerWithSetMods> peptideIndex, IEnumerable<double> precursorMasses,
+            MassDiffAcceptor massDiffAcceptor)
+        {
+            if (peptideIndex.Count == 0)
+            {
+                return 0;
+            }
+
+            long peptidesInWindows = 0;
+            int scans = 0;
+            foreach (double precursorMass in precursorMasses)
+            {
+                // The same min/max collapse IndexScoreScan makes: one window spanning every allowed notch.
+                List<AllowedIntervalWithNotch> notches = massDiffAcceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(precursorMass).ToList();
+                int lastBelowWindow = LastPeptideIdAtOrBelow(peptideIndex, notches.Min(p => p.Minimum));
+                int lastInWindow = LastPeptideIdAtOrBelow(peptideIndex, notches.Max(p => p.Maximum));
+                peptidesInWindows += Math.Max(0, lastInWindow - lastBelowWindow);
+                scans++;
+            }
+
+            return scans == 0 ? 0 : (double)peptidesInWindows / scans / peptideIndex.Count;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
