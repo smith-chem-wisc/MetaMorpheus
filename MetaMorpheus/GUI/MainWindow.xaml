@@ -702,8 +702,11 @@
                     </Grid>
 
                     <!--List of tasks-->
-                    <TreeView x:Name="tasksTreeView" Grid.Row="3" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" 
-                              Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}" PreviewKeyDown="BoxWithList_PreviewKeyDown">
+                    <TreeView x:Name="tasksTreeView" Grid.Row="3" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick"
+                              Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}" PreviewKeyDown="BoxWithList_PreviewKeyDown"
+                              AllowDrop="True" PreviewMouseLeftButtonDown="TaskTreeView_PreviewMouseLeftButtonDown"
+                              PreviewMouseMove="TaskTreeView_PreviewMouseMove" DragOver="TaskTreeView_DragOver"
+                              DragLeave="TaskTreeView_DragLeave" Drop="TaskTreeView_Drop">
                     </TreeView>
                 </Grid>
             </TabItem>
@@ -794,7 +797,10 @@
 
                         <!--Task Summary-->
                         <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="0,10,20,10" MouseDoubleClick="TasksTreeView_MouseDoubleClick"
-                                  PreviewKeyDown="BoxWithList_PreviewKeyDown">
+                                  PreviewKeyDown="BoxWithList_PreviewKeyDown"
+                                  AllowDrop="True" PreviewMouseLeftButtonDown="TaskTreeView_PreviewMouseLeftButtonDown"
+                                  PreviewMouseMove="TaskTreeView_PreviewMouseMove" DragOver="TaskTreeView_DragOver"
+                                  DragLeave="TaskTreeView_DragLeave" Drop="TaskTreeView_Drop">
                             <TreeView.ItemContainerStyle>
                                 <Style TargetType="{x:Type TreeViewItem}">
                                     <Setter Property="FontSize" Value="13" />
