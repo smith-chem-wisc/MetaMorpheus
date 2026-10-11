@@ -229,14 +229,15 @@ namespace TaskLayer
         /// <summary>
         /// The file the next task searches in place of <paramref name="originalFilePath"/>: the -calib mzML, or, when the
         /// file could not be calibrated, the original itself. EverythingRunnerEngine passes the original on in that case,
-        /// not the copy this task writes to its output folder.
+        /// not the copy this task writes to its output folder. The -calib name goes through ToSafeOutputPath, as the run
+        /// loop's does, so a name trimmed to fit the path cap is named trimmed.
         /// </summary>
         private string CalibratedFilePath(string originalFilePath, string outputFolder)
         {
             string name = Path.GetFileNameWithoutExtension(originalFilePath);
             return _unsuccessfullyCalibratedFilePaths.Any(path => Path.GetFileNameWithoutExtension(path) == name)
                 ? originalFilePath
-                : Path.Combine(outputFolder, name + CalibSuffix + ".mzML");
+                : Path.Combine(outputFolder, name + CalibSuffix + ".mzML").ToSafeOutputPath(CalibSuffix + ".mzML");
         }
 
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters, string originalDataFile)

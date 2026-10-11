@@ -478,6 +478,63 @@ namespace Test
             }
         }
 
+        /// <summary>
+        /// The run loop names the calibrated file through ToSafeOutputPath, so a -calib path over the path cap is written
+        /// trimmed. The rewritten TMT design has to name that trimmed file, or the search after calibration finds a design
+        /// that does not name the file it searches. The input path stays under the cap; only the -calib path is over it.
+        /// </summary>
+        [Test]
+        public static void SearchAfterCalibration_FindsTheTmtDesign_WhenTheCalibratedNameIsTrimmed()
+        {
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtCalibrateLongName");
+            string outputFolder = Path.Combine(unitTestFolder, "TaskOutput");
+            if (Directory.Exists(unitTestFolder)) Directory.Delete(unitTestFolder, true);
+            Directory.CreateDirectory(outputFolder);
+            string calibrationFolder = Path.Combine(outputFolder, "calibrate");
+            string calibratedEnding = CalibrationTask.CalibSuffix + ".mzML";
+            // five characters over the cap once the -calib ending is added in the calibration folder
+            int nameLength = EngineLayer.Util.PathSafety.DefaultMaxPath - (calibrationFolder.Length + 1) - calibratedEnding.Length + 5;
+            string spectraFile = Path.Combine(unitTestFolder, new string('a', nameLength) + ".mzML");
+            Assert.That(spectraFile.Length, Is.LessThan(EngineLayer.Util.PathSafety.DefaultMaxPath),
+                "the fixture only means anything if the input path itself is under the cap");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), spectraFile, true);
+            WriteTmtDesignBeside(spectraFile);
+
+            var searchTask = new SearchTask();
+            searchTask.SearchParameters.DoMultiplexQuantification = true;
+            searchTask.SearchParameters.MultiplexModId = "TMT11";
+            searchTask.SearchParameters.DoParsimony = true;
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> onWarn = (_, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += onWarn;
+            try
+            {
+                new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("calibrate", new CalibrationTask()), ("search", searchTask) },
+                    new List<string> { spectraFile },
+                    new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta"), false) },
+                    outputFolder).Run();
+
+                var calibrated = Directory.GetFiles(calibrationFolder, "*" + calibratedEnding);
+                Assert.That(calibrated, Has.Length.EqualTo(1), "the fixture only means anything if calibration succeeds");
+                Assert.That(Path.GetFileName(calibrated[0]).Length, Is.LessThan(nameLength + calibratedEnding.Length),
+                    "and if the run loop trimmed the calibrated name");
+
+                var rewritten = TmtExperimentalDesign.Read(Path.Combine(calibrationFolder, GlobalVariables.TmtExperimentalDesignFileName),
+                    new List<string> { calibrated[0] }, out var errors);
+                Assert.That(errors, Is.Empty);
+                Assert.That(Path.GetFullPath(rewritten.Single().FullFilePathWithExtension), Is.EqualTo(Path.GetFullPath(calibrated[0])).IgnoreCase);
+                Assert.That(warnings, Has.None.Contains("TMT design"));
+                Assert.That(File.Exists(Path.Combine(outputFolder, "search", GlobalVariables.TmtExperimentalDesignFileName)), Is.True,
+                    string.Join(Environment.NewLine, warnings));
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= onWarn;
+                Directory.Delete(unitTestFolder, true);
+            }
+        }
+
         [Test]
         [NonParallelizable]
         public static void CalibrationTooFewMS1DataPoints()
