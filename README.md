@@ -134,6 +134,34 @@ The audit is read-only and runs on its own, so it is refused alongside anything 
 silently. It exits 0 with a report, 2 for a settings error, and 4 for a document it could not read.
 
 
+## Writing an experimental design from a label-free SDRF
+
+`--sdrfDesign` turns a label-free SDRF into the `ExperimentalDesign.tsv` that label-free
+quantification reads, for exactly the spectra files a search given the same `-s` would use:
+
+```
+dotnet CMD.dll --sdrfDesign experiment.sdrf.tsv -s ./spectra
+```
+
+The design is written beside the first spectra file, which is where a run looks for it, so `-o` is
+ignored, with a warning. Each spectra file must be named by one SDRF row (`comment[data file]`); rows
+for files that are not there are dropped and reported. The condition comes from the SDRF's
+`factor value[...]` column when it has only one. When it has several, name the ones to use, in order,
+with `--sdrfCondition`; their values are joined with `_`, and a bare name means that factor column:
+
+```
+dotnet CMD.dll --sdrfDesign experiment.sdrf.tsv -s ./spectra --sdrfCondition genotype treatment
+```
+
+The report of what was read is always printed, whatever `-v` says. A design that MetaMorpheus would
+reject is never written; every reason is printed instead. An existing `ExperimentalDesign.tsv` or
+`TmtDesign.txt` in that folder is never overwritten. Like `--auditSdrf`, it runs on its own and is
+refused alongside `-t`, `-d`, `-g`, `--test` or `--acceptThermoLicence`; write the design, then run
+the search. It exits 0 when the design was written, 2 for a settings error (such as an SDRF that is
+not there, or no spectra files in `-s`), 4 for an SDRF it could not read, and 5 when the design was
+refused or a design file is already there.
+
+
 ## References & Citation Guide for MetaMorpheus
 
 MetaMorpheus:
