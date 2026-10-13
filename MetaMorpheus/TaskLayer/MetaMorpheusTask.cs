@@ -891,10 +891,7 @@ namespace TaskLayer
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
                 rtPredictorName: commonParams.RTPredictorName,
-                retentionTimeRange: commonParams.RetentionTimeRange,
-                numberOfWindows: commonParams.NumberOfWindows,
-                diaParameters: commonParams.DIAparameters,
-                qValueCutoffForPepCalculation: commonParams.QValueCutoffForPepCalculation
+                retentionTimeRange: commonParams.RetentionTimeRange
                 );
 
             return returnParams;
