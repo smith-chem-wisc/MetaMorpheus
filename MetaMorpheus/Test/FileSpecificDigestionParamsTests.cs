@@ -146,7 +146,7 @@ namespace Test
                 .SetValue(task, new List<ProductType> { ProductType.c, ProductType.zDot });
 
             var fileSpecificTolerance = new PpmTolerance(7);
-            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { PrecursorMassTolerance = fileSpecificTolerance });
+            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { PrecursorMassTolerance = fileSpecificTolerance }, "TaGe_SA_A549_3_snip_2");
 
             Assert.That(combined.PrecursorMassTolerance, Is.SameAs(fileSpecificTolerance), "the file-specific override still applies");
 
