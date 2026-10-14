@@ -132,14 +132,15 @@ public class MzLibExtensionsTests
 
     [Test]
     [TestCaseSource(nameof(IsoDecDefaultCases))]
-    public void GetDefaultDeconParams_IsoDec_SetsMonoisotopeFlagFromIsPrecursor(AnalyteType analyteType, bool isPrecursor, int expectedMinCharge, int expectedMaxCharge)
+    public void GetDefaultDeconParams_IsoDec_AlwaysReportsSingleMonoisotope(AnalyteType analyteType, bool isPrecursor, int expectedMinCharge, int expectedMaxCharge)
     {
         var result = DeconvolutionType.IsoDecDeconvolution.GetDefaultDeconParams(analyteType, isPrecursor);
 
         Assert.That(result, Is.InstanceOf<IsoDecDeconvolutionParameters>());
         var isoDec = (IsoDecDeconvolutionParameters)result;
 
-        Assert.That(isoDec.ReportMulitpleMonoisos, Is.EqualTo(isPrecursor));
+        Assert.That(isoDec.ReportMulitpleMonoisos, Is.False,
+            "IsoDec must always report a single monoisotope, regardless of analyte type or precursor/product mode");
         Assert.That(isoDec.MinAssumedChargeState, Is.EqualTo(expectedMinCharge));
         Assert.That(isoDec.MaxAssumedChargeState, Is.EqualTo(expectedMaxCharge));
         Assert.That(isoDec.Polarity, Is.EqualTo(analyteType == AnalyteType.Oligo ? Polarity.Negative : Polarity.Positive));
