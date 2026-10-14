@@ -379,6 +379,66 @@ public static class FileSpecificFromFileFallbackTests
     }
 
     [Test]
+    public static void FileSpecificFromFile_Fallback_LaterLoadableFileAfterInitialFailure_KeepsCachedFallback()
+    {
+        Assume.That(File.Exists(ValidMs1FeaturePath), $"Fixture must exist at: {ValidMs1FeaturePath}");
+
+        string tempDirectory = CreateTempDirectory();
+        try
+        {
+            string rawPath = @"E:\data\raw_transient.mzML";
+            string lateFeaturePath = Path.Combine(tempDirectory, "appears_later_ms1.feature");
+            var commonParameters = ClassicCommonParameters();
+            var fileSpecific = FromFileSettings(lateFeaturePath);
+
+            List<string> warnings = CaptureWarnings(() =>
+            {
+                // Call 1: the feature file does not exist yet, so the override fails and falls back.
+                var firstCall = MetaMorpheusTask.SetAllFileSpecificCommonParams(
+                    commonParameters, fileSpecific, rawPath);
+                Assert.That(firstCall.PrecursorDeconvolutionParameters,
+                    Is.SameAs(commonParameters.PrecursorDeconvolutionParameters),
+                    "A missing feature file must fall back on the first call");
+
+                // The file becomes loadable only after the fallback was logged. Without memoization a
+                // later call would load it and contradict the fallback already taken and warned about.
+                File.Copy(ValidMs1FeaturePath, lateFeaturePath);
+
+                var secondCall = MetaMorpheusTask.SetAllFileSpecificCommonParams(
+                    commonParameters, fileSpecific, rawPath);
+                var thirdCall = MetaMorpheusTask.SetAllFileSpecificCommonParams(
+                    commonParameters, fileSpecific, rawPath);
+
+                Assert.That(secondCall.PrecursorDeconvolutionParameters,
+                    Is.SameAs(commonParameters.PrecursorDeconvolutionParameters),
+                    "A transient later load must not override the cached fallback decision");
+                Assert.That(thirdCall.PrecursorDeconvolutionParameters,
+                    Is.SameAs(commonParameters.PrecursorDeconvolutionParameters),
+                    "The cached decision must stay stable for every later call");
+
+                // Control: the file really is loadable now, so a fresh settings instance resolves it.
+                // The earlier instance stays on its cached fallback only because the verdict was memoized.
+                var freshSettings = FromFileSettings(lateFeaturePath);
+                var freshCall = MetaMorpheusTask.SetAllFileSpecificCommonParams(
+                    commonParameters, freshSettings, rawPath);
+                Assert.That(freshCall.PrecursorDeconvolutionParameters,
+                    Is.SameAs(freshSettings.PrecursorDeconvolutionParameters),
+                    "Control: a fresh settings instance loads the now-present file");
+            });
+
+            Assert.That(warnings, Has.Count.EqualTo(1),
+                "Only the initial failure may warn; later calls reuse the cached decision silently");
+            Assert.That(warnings[0], Does.Contain(rawPath));
+            Assert.That(warnings[0], Does.Contain(lateFeaturePath));
+            Assert.That(warnings[0].ToLowerInvariant(), Does.Contain("does not exist"));
+        }
+        finally
+        {
+            DeleteTempDirectory(tempDirectory);
+        }
+    }
+
+    [Test]
     public static void FileSpecificFromFile_Fallback_SameSettingsDifferentRaws_WarnOncePerRaw()
     {
         var commonParameters = ClassicCommonParameters();

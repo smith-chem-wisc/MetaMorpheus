@@ -120,6 +120,31 @@ public class MzLibExtensionsTests
         Assert.That(result.DeconvolutionType, Is.EqualTo(DeconvolutionType.Multiple));
     }
 
+    private static IEnumerable<TestCaseData> IsoDecDefaultCases()
+    {
+        yield return new TestCaseData(AnalyteType.Peptide, true, 1, 12);
+        yield return new TestCaseData(AnalyteType.Peptide, false, 1, 10);
+        yield return new TestCaseData(AnalyteType.Proteoform, true, 1, 60);
+        yield return new TestCaseData(AnalyteType.Proteoform, false, 1, 10);
+        yield return new TestCaseData(AnalyteType.Oligo, true, -20, -1);
+        yield return new TestCaseData(AnalyteType.Oligo, false, -10, -1);
+    }
+
+    [Test]
+    [TestCaseSource(nameof(IsoDecDefaultCases))]
+    public void GetDefaultDeconParams_IsoDec_SetsMonoisotopeFlagFromIsPrecursor(AnalyteType analyteType, bool isPrecursor, int expectedMinCharge, int expectedMaxCharge)
+    {
+        var result = DeconvolutionType.IsoDecDeconvolution.GetDefaultDeconParams(analyteType, isPrecursor);
+
+        Assert.That(result, Is.InstanceOf<IsoDecDeconvolutionParameters>());
+        var isoDec = (IsoDecDeconvolutionParameters)result;
+
+        Assert.That(isoDec.ReportMulitpleMonoisos, Is.EqualTo(isPrecursor));
+        Assert.That(isoDec.MinAssumedChargeState, Is.EqualTo(expectedMinCharge));
+        Assert.That(isoDec.MaxAssumedChargeState, Is.EqualTo(expectedMaxCharge));
+        Assert.That(isoDec.Polarity, Is.EqualTo(analyteType == AnalyteType.Oligo ? Polarity.Negative : Polarity.Positive));
+    }
+
     [Test]
     public void GetDefaultViewModel_FromFile_ReturnsNull()
     {

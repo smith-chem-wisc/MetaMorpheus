@@ -169,11 +169,15 @@ public static class FromFileDeconvolutionSearchTests
     }
 
     /// <summary>
-    /// Byte-equivalence coverage: the same raw files, FASTA, raw order, CommonParameters (including
-    /// the task-wide embedded raw-to-feature map), SearchParameters, feature pairings, charge bounds,
-    /// polarity and <c>UseGenericScore</c> are run once through the existing task-map route and once
-    /// through per-raw companion TOMLs with the equivalent native FromFile parameters. Only the two
+    /// Byte-equivalence coverage: the same raw files, FASTA, raw order, SearchParameters, feature
+    /// pairings, charge bounds, polarity and <c>UseGenericScore</c> are run once through the existing
+    /// task-wide embedded map and once through per-raw companion TOMLs. Only the two
     /// <c>AllPSMs.psmtsv</c> files are compared, byte for byte.
+    /// <para>
+    /// The legs deliberately disagree on the task-wide precursor deconvolution (embedded map vs
+    /// Classic), so byte equality is achievable only when every raw consumed its companion TOML
+    /// instead of falling back to the task-wide: the assertion discriminates the two routes.
+    /// </para>
     /// </summary>
     [Test, NonParallelizable] // subscribes to the process-wide MetaMorpheusTask.WarnHandler
     public static void SearchTask_FileSpecificFromFile_MatchesTaskMapOutputBytes()
@@ -193,11 +197,16 @@ public static class FromFileDeconvolutionSearchTests
                 UseGenericScore = true
             };
 
-            var commonParameters = CreateCommonParameters(mappedParameters);
+            var mappedCommonParameters = CreateCommonParameters(mappedParameters);
 
             List<string> mappedWarnings = RunSearchCapturingWarnings(
-                CreateSearchTask(commonParameters), mappedOutputDirectory, rawFiles);
+                CreateSearchTask(mappedCommonParameters), mappedOutputDirectory, rawFiles);
             AssertNoFileSpecificFallbackWarnings(mappedWarnings);
+
+            // Per-file leg uses a Classic task-wide so equality is impossible unless the companion
+            // TOMLs were consumed; the mapped leg keeps the embedded map as its task-wide.
+            var classicCommonParameters = CreateCommonParameters(
+                new ClassicDeconvolutionParameters(MinCharge, MaxCharge, 4, 3));
 
             // Write companion TOMLs only after the mapped run so the mapped route cannot consume them.
             for (int i = 0; i < rawFiles.Count; i++)
@@ -206,11 +215,11 @@ public static class FromFileDeconvolutionSearchTests
                     "Companion TOMLs must not exist while the mapped route runs");
                 WriteCompanionToml(rawFiles[i], FeatureFixturePath(InputBaseNames[i]));
                 AssertCompanionOverridesTaskWide(
-                    LoadCompanionSettings(rawFiles[i]), commonParameters, rawFiles[i], FeatureFixturePath(InputBaseNames[i]));
+                    LoadCompanionSettings(rawFiles[i]), classicCommonParameters, rawFiles[i], FeatureFixturePath(InputBaseNames[i]));
             }
 
             List<string> fileSpecificWarnings = RunSearchCapturingWarnings(
-                CreateSearchTask(commonParameters), fileSpecificOutputDirectory, rawFiles);
+                CreateSearchTask(classicCommonParameters), fileSpecificOutputDirectory, rawFiles);
             AssertNoFileSpecificFallbackWarnings(fileSpecificWarnings);
 
             string mappedPsmsPath = Path.Combine(mappedOutputDirectory, "AllPSMs.psmtsv");

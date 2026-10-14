@@ -5,20 +5,47 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace TaskLayer.Util;
 
 /// <summary>
 /// Performs runtime-only validation for native file-specific FromFile deconvolution parameters.
 /// UI validation remains intentionally lightweight; this class forces mzLib's lazy feature load
-/// immediately before task processing and keeps warning deduplication scoped to parsed settings.
+/// immediately before task processing and memoizes the resulting verdict so a later call cannot
+/// contradict the fallback decision (and warning) already made for the same settings and raw file.
 /// </summary>
 internal static class FileSpecificDeconvolutionPreflight
 {
-    private static readonly ConditionalWeakTable<FileSpecificParameters, ConcurrentDictionary<string, byte>> WarnedFallbackRawPaths = new();
+    private static readonly ConditionalWeakTable<FileSpecificParameters, ConcurrentDictionary<string, Lazy<PreflightDecision>>> Decisions = new();
 
-    internal static bool ShouldWarnFor(FileSpecificParameters fileSpecificParams, string rawFilePath) =>
-        WarnedFallbackRawPaths.GetOrCreateValue(fileSpecificParams).TryAdd(rawFilePath ?? "<unknown raw file>", 0);
+    /// <summary>
+    /// Returns the FromFile-or-fallback verdict for this (file-specific settings, raw file) pair,
+    /// forcing the lazy feature load at most once. The first call decides; every later call returns
+    /// the same verdict without re-attempting the load, so a transient later load cannot diverge
+    /// from the fallback already taken and warned about.
+    /// </summary>
+    internal static PreflightDecision Resolve(
+        FileSpecificParameters fileSpecificParams,
+        FromFileDeconvolutionParameters fromFileParams,
+        string rawFilePath)
+    {
+        string key = rawFilePath ?? "<unknown raw file>";
+        ConcurrentDictionary<string, Lazy<PreflightDecision>> perSettings =
+            Decisions.GetOrCreateValue(fileSpecificParams);
+
+        return perSettings.GetOrAdd(
+            key,
+            _ => new Lazy<PreflightDecision>(
+                () => CreateDecision(fromFileParams),
+                LazyThreadSafetyMode.ExecutionAndPublication)).Value;
+    }
+
+    private static PreflightDecision CreateDecision(FromFileDeconvolutionParameters fromFileParams)
+    {
+        bool succeeded = TryPreload(fromFileParams, out string failureReason);
+        return new PreflightDecision(succeeded, failureReason);
+    }
 
     /// <summary>
     /// Forces the lazy feature load so malformed or empty sources are diagnosed before scan processing.
@@ -72,5 +99,27 @@ internal static class FileSpecificDeconvolutionPreflight
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// The memoized outcome of the file-specific preflight. <see cref="TryConsumeWarning"/> hands out
+    /// the fallback warning at most once no matter how many callers reuse this decision.
+    /// </summary>
+    internal sealed class PreflightDecision
+    {
+        private int _warningConsumed;
+
+        internal PreflightDecision(bool succeeded, string failureReason)
+        {
+            Succeeded = succeeded;
+            FailureReason = failureReason;
+        }
+
+        internal bool Succeeded { get; }
+
+        internal string FailureReason { get; }
+
+        /// <summary>Returns true the first time only, so the fallback is logged once per decision.</summary>
+        internal bool TryConsumeWarning() => Interlocked.Exchange(ref _warningConsumed, 1) == 0;
     }
 }

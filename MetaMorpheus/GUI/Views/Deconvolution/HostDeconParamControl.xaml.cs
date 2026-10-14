@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -13,9 +12,6 @@ namespace MetaMorpheusGUI
         public HostDeconParamControl()
         {
             InitializeComponent();
-            DependencyPropertyDescriptor
-                .FromProperty(ContentControl.ContentProperty, typeof(ContentControl))
-                .AddValueChanged(PrecursorSpecificParams, (_, _) => PropagateFilePickerOverride());
         }
 
         public static readonly DependencyProperty GroupBoxHeaderProperty =

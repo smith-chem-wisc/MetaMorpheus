@@ -109,6 +109,7 @@ namespace GuiFunctions
                     {
                         MaxAssumedChargeState = maxCharge,
                         MinAssumedChargeState = minCharge,
+                        ReportMulitpleMonoisos = false,
                     };
             }
 
