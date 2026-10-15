@@ -1554,6 +1554,14 @@ namespace TaskLayer
 
         private static void WritePeptideIndex(List<PeptideWithSetModifications> peptideIndex, string peptideIndexFileName)
         {
+            // The full sequence is the only part of a peptide's modifications that is written: ReadPeptideIndex rebuilds
+            // them from it. Digestion may leave it to be built when first read (mzLib builds it lazily for the many
+            // peptides a search never reports), so read it for every peptide before writing any.
+            foreach (PeptideWithSetModifications peptide in peptideIndex)
+            {
+                _ = peptide.FullSequence;
+            }
+
             var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
             var ser = new NetSerializer.Serializer(messageTypes);
 
