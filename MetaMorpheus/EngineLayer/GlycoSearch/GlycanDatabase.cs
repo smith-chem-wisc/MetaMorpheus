@@ -274,7 +274,7 @@ namespace EngineLayer
             string ions = string.Join(", ", ionsScaled.Select(i => ((double)i / 1E5).ToString("F5", CultureInfo.InvariantCulture)));
             AddModWarning(
                 $"Custom monosaccharide '{name}' declares diagnostic ion(s) {ions}. With OxoniumIonFilt enabled (the default) " +
-                $"these act as strict gates in O-glycan and N+O-glycan searches: a candidate is rejected when one of these ions " +
+                $"these act as strict gates in O-glycan, N-glycan and N+O-glycan searches: a candidate is rejected when one of these ions " +
                 $"is observed but the candidate does not contain '{name}', and when the candidate contains '{name}' but the ion " +
                 $"is not observed. Uncheck OxoniumIonFilt to score these ions without filtering on them.");
         }

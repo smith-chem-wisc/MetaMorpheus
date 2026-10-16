@@ -300,8 +300,8 @@ namespace TaskLayer
         {
             // calculate single PSM FDR
             List<SpectralMatch> psms = items.Select(p => p as SpectralMatch).ToList();
-            // No DisambiguationEngine runs after glyco FDR, so PEP keeps its ambiguous-hypothesis pruning here.
-            new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds, pruneAmbiguousHypotheses: true).Run();
+            new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds).Run();
+            new DisambiguationEngine(psms, commonParameters, this.FileSpecificParameters, taskIds, AbsolutePepGapRule.PepEngineRule).Run();
 
         }
         private void GlycoProteinAnalysis(List<GlycoSpectralMatch> gsms, string outputFolder, string individualFileFolder = null, MyTaskResults myTaskResults = null )
@@ -412,6 +412,8 @@ namespace TaskLayer
             foreach (var proteinGroup in ProteinGroups)
             {
                 proteinGroup.FilesForQuantification = spectraFiles;
+                // A site modified in any sample group is reported as 0/N wherever another group covers it unmodified
+                proteinGroup.ReportSitesSeenModifiedInAnySampleGroup();
                 proteinGroup.PopulateSampleGroupResults();
             }
         }
@@ -610,6 +612,7 @@ namespace TaskLayer
                     // Populate SampleGroupResults from the shared spectraFileInfo so
                     // every PG carries the same dynamic-column schema. Without this, the writer
                     // would have no way to produce uniform headers/rows.
+                    proteinGroup.ReportSitesSeenModifiedInAnySampleGroup();
                     proteinGroup.PopulateSampleGroupResults();
                 }
             }
