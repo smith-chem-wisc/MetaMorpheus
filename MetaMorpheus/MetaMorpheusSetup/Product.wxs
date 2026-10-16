@@ -468,6 +468,22 @@
       <Component Id="src_UglyToad.PdfPig.Tokens.dll" Guid="B2A42BC5-A1D7-48EB-B2CC-4956AE553ABC">
         <File Id="src_UglyToad.PdfPig.Tokens.dll" Name="UglyToad.PdfPig.Tokens.dll" Source="$(var.GUI_TargetDir)UglyToad.PdfPig.Tokens.dll" />
       </Component>
+      <!--mzLib 1.0.595: Parquet.Net 6.1.0 (MIT, managed only) and its dependencies; Readers.dll and UsefulProteomicsDatabases.dll reference it.-->
+      <Component Id="src_Parquet.dll" Guid="38A9514C-E150-4B2E-9671-224B3E9883BA">
+        <File Id="src_Parquet.dll" Name="Parquet.dll" Source="$(var.GUI_TargetDir)Parquet.dll" />
+      </Component>
+      <Component Id="src_CommunityToolkit.HighPerformance.dll" Guid="DC81C4D3-4F93-4DE5-9870-B5A9542D67BA">
+        <File Id="src_CommunityToolkit.HighPerformance.dll" Name="CommunityToolkit.HighPerformance.dll" Source="$(var.GUI_TargetDir)CommunityToolkit.HighPerformance.dll" />
+      </Component>
+      <Component Id="src_K4os.Compression.LZ4.dll" Guid="9359C660-A224-4E92-A3E9-2A6D26A65F21">
+        <File Id="src_K4os.Compression.LZ4.dll" Name="K4os.Compression.LZ4.dll" Source="$(var.GUI_TargetDir)K4os.Compression.LZ4.dll" />
+      </Component>
+      <Component Id="src_Microsoft.IO.RecyclableMemoryStream.dll" Guid="1324FA9B-089E-46A8-A4AA-5C94015728B4">
+        <File Id="src_Microsoft.IO.RecyclableMemoryStream.dll" Name="Microsoft.IO.RecyclableMemoryStream.dll" Source="$(var.GUI_TargetDir)Microsoft.IO.RecyclableMemoryStream.dll" />
+      </Component>
+      <Component Id="src_Snappier.dll" Guid="95CA0477-ED18-416A-B1CD-B4F7B14A9D68">
+        <File Id="src_Snappier.dll" Name="Snappier.dll" Source="$(var.GUI_TargetDir)Snappier.dll" />
+      </Component>
 
       <!--Commandline Components-->
       <Component Id="src_CMD.deps.json" Guid="92190CCF-0138-4F0B-9356-02C914D5A439">
