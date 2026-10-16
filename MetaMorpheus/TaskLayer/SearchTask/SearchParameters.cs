@@ -163,5 +163,16 @@ namespace TaskLayer
         /// names the dataset it was deposited under.
         /// </summary>
         public string ProteomeXchangeAccession { get; set; }
+
+        /// <summary>
+        /// An SDRF describing the samples this search's files came from, or null. With <see cref="WriteSdrf"/>, the
+        /// SDRF the search writes then copies each searched file's sample columns from it cell for cell (source name,
+        /// characteristics, material type, factor values and sample comments), instead of building them from
+        /// ExperimentalDesign.tsv or TmtDesign.txt. Statistics reads per-sample facts (individual, age, batch) only
+        /// from the written SDRF, and the curator's cells are the only record of them (sdrf D50).
+        ///
+        /// Set in the task file by a pipeline that re-analyses a deposit; the GUI has no field for it.
+        /// </summary>
+        public string InputSdrfPath { get; set; }
     }
 }

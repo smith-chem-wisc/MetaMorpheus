@@ -671,6 +671,10 @@ namespace TaskLayer
             // early (#2817's isobaric one did) would otherwise drop it for every TMT search.
             WarnAboutProteomeXchangeAccession();
 
+            // Before the branch too: an input SDRF governs label-free and isobaric searches alike (sdrf D50).
+            if (!string.IsNullOrWhiteSpace(SearchParameters.InputSdrfPath))
+                WarnAboutInputSdrf(currentRawFileList);
+
             // These checks only warn, so they must never be what stops a search: a design another
             // program holds open (Excel locks what it opens) is reported, not thrown.
             string designDirectory = Path.GetDirectoryName(currentRawFileList.First()) ?? string.Empty;
@@ -692,8 +696,17 @@ namespace TaskLayer
         private void WarnAboutLabelFreeSdrfGaps(string designDirectory, List<string> currentRawFileList)
         {
             string designPath = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
+            bool sampleColumnsCopied = !string.IsNullOrWhiteSpace(SearchParameters.InputSdrfPath);
 
-            if (!File.Exists(designPath))
+            if (!File.Exists(designPath) && sampleColumnsCopied)
+            {
+                // The input SDRF gives the sample columns, conditions and biological replicates included; the design
+                // would give only the technical replicate and fraction (QuantProject 037 B4).
+                Warn("SDRF output is on with an input SDRF, but there is no " + GlobalVariables.ExperimentalDesignFileName +
+                     " beside the spectra files (" + designPath + "). The sample columns will be copied from the input " +
+                     "SDRF; technical replicate and fraction will say 'not available'.");
+            }
+            else if (!File.Exists(designPath))
             {
                 Warn("SDRF output is on, but there is no " + GlobalVariables.ExperimentalDesignFileName +
                      " beside the spectra files (" + designPath + "). The search parameters will be " +
@@ -707,14 +720,16 @@ namespace TaskLayer
                     ExperimentalDesign.ReadExperimentalDesign(designPath, currentRawFileList, out var designErrors);
                     if (designErrors.Any())
                         Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
-                             " cannot be used as it stands, so the SDRF will describe the search only: " +
+                             " cannot be used as it stands, so the SDRF will " +
+                             (sampleColumnsCopied ? "give no technical replicates or fractions: " : "describe the search only: ") +
                              string.Join("; ", designErrors));
                 }
                 catch (Exception e) when (e is IOException or UnauthorizedAccessException)
                 {
                     Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
                          " could not be read before the search (" + e.Message + "). If it is still " +
-                         "unreadable when the SDRF is written, the SDRF will describe the search only.");
+                         "unreadable when the SDRF is written, the SDRF will " +
+                         (sampleColumnsCopied ? "give no technical replicates or fractions." : "describe the search only."));
                 }
             }
 
@@ -780,7 +795,8 @@ namespace TaskLayer
                 .Where(f => PostSearchAnalysisTask.ChannelRowsUnusableReason(f, tagType.Value) is null)
                 .ToList();
             var reusedSampleNames = PostSearchAnalysisTask.SampleNamesReusedForDifferentSamples(usableFiles);
-            if (reusedSampleNames.Any())
+            // Not with an input SDRF: its source names are copied, not built from the design's sample names.
+            if (reusedSampleNames.Any() && string.IsNullOrWhiteSpace(SearchParameters.InputSdrfPath))
                 Warn("SDRF output is on. " + PostSearchAnalysisTask.ReusedSampleNamesWarning(reusedSampleNames,
                     PostSearchAnalysisTask.SampleNamesRepeatedWithinAPlex(usableFiles)));
         }
@@ -796,6 +812,56 @@ namespace TaskLayer
         /// digits, in any case. The specification's value type is PXD\d+, so seven-digit accessions
         /// are valid once they exist.
         /// </summary>
+        /// <summary>
+        /// The input SDRF half of <see cref="WarnAboutSdrfGaps"/> (sdrf D50). The writer copies each searched file's
+        /// sample columns from the input SDRF, and writes no SDRF when it cannot: the input is unreadable, a searched
+        /// file has no row in it, or a row to be copied has a blank sample fact, which mzLib's builder refuses. Each is
+        /// named here, cell by cell, while it can still be fixed (QuantProject 037 B4, 054 B7). Only the rows of the
+        /// files this search reads are checked.
+        /// </summary>
+        private void WarnAboutInputSdrf(List<string> currentRawFileList)
+        {
+            string path = SearchParameters.InputSdrfPath.Trim();
+            string consequence = "so no " + PostSearchAnalysisTask.SdrfFileName + " will be written";
+
+            SdrfSearchScoping scope;
+            List<string> blanks;
+            try
+            {
+                scope = SdrfSearchScope.Restrict(new SdrfDocument(path), currentRawFileList,
+                    PostSearchAnalysisTask.AcquiredFileNames(currentRawFileList, AcquiredSpectraFiles));
+                blanks = scope.Document.Results.SelectMany(row => BlankSampleFacts(scope.Document, row)).ToList();
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or MzLibException or ArgumentException)
+            {
+                Warn($"SDRF output is on, but the input SDRF {path} cannot be read ({e.Message}), {consequence}.");
+                return;
+            }
+
+            var problems = PostSearchAnalysisTask.InputSdrfJoinProblems(scope);
+            if (problems.Any())
+                Warn($"SDRF output is on, but the input SDRF {path} cannot describe this search, {consequence}: " +
+                     string.Join("; ", problems) + ".");
+
+            if (blanks.Any())
+                Warn($"SDRF output is on, but these sample facts are blank in the input SDRF {path}, {consequence} until " +
+                     "they are filled with a value or a reserved word such as 'not available' (a blank comment[...] is " +
+                     "written blank): " + string.Join("; ", blanks) + ".");
+        }
+
+        /// <summary>
+        /// The blank sample facts of one input row, each as <c>file ('source name'): column</c>. The copied cells are
+        /// <see cref="SdrfSampleCopy"/>'s to choose; of those, mzLib's builder refuses a blank in any but a
+        /// comment[...] column, which it writes blank.
+        /// </summary>
+        private static IEnumerable<string> BlankSampleFacts(SdrfDocument scoped, SdrfRow row)
+        {
+            var copy = SdrfSampleCopy.FromRow(scoped, row);
+            return copy.Cells
+                .Where(c => string.IsNullOrWhiteSpace(c.Value) && !c.Key.StartsWith("comment[", StringComparison.Ordinal))
+                .Select(c => $"{row["comment[searched data file]"]} ('{copy.SourceName}'): {c.Key}");
+        }
+
         private void WarnAboutProteomeXchangeAccession()
         {
             string accession = SearchParameters.ProteomeXchangeAccession?.Trim();

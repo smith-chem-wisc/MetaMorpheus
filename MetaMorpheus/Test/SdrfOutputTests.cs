@@ -1249,11 +1249,12 @@ namespace Test
         /// its own. With <paramref name="writeDesign"/>, a TmtDesign.txt goes beside the spectra: the
         /// last channel is Empty, and the rows are written in reverse so document order cannot pass
         /// for reporter m/z order. With <paramref name="designIsUnusable"/>, every row's Sample Type is
-        /// one the design reader refuses. Returns the root folder to delete.
+        /// one the design reader refuses. With <paramref name="inputSdrf"/>, its rows are the search's input SDRF.
+        /// Returns the root folder to delete.
         /// </summary>
         private static string RunTmtSearchWritingSdrf(string folderName, bool writeDesign,
             out string output, out List<string> warnings, bool designIsUnusable = false,
-            bool emptyChannelIsUnnamed = false, bool placeholderOnly = false)
+            bool emptyChannelIsUnnamed = false, bool placeholderOnly = false, IEnumerable<string[]> inputSdrf = null)
         {
             string root = Path.Combine(TestContext.CurrentContext.TestDirectory, folderName);
             if (Directory.Exists(root)) Directory.Delete(root, true);
@@ -1288,6 +1289,12 @@ namespace Test
                 MetaMorpheusTask.tomlConfig);
             searchTask.SearchParameters.WriteSdrf = true;
             searchTask.SearchParameters.DoParsimony = true;
+            if (inputSdrf is not null)
+            {
+                string inputPath = Path.Combine(dataFolder, "input.sdrf.tsv");
+                File.WriteAllLines(inputPath, inputSdrf.Select(cells => string.Join("\t", cells)));
+                searchTask.SearchParameters.InputSdrfPath = inputPath;
+            }
 
             output = Path.Combine(root, "out");
             Directory.CreateDirectory(output);
@@ -1441,6 +1448,411 @@ namespace Test
             }
 
             Directory.Delete(folder, true);
+        }
+
+        #endregion
+
+        #region An input SDRF's sample columns are copied (sdrf D50, QuantProject 037 PR-B)
+
+        /// <summary>The sample columns <see cref="LabelFreeInputSdrf"/> gives, in the order the copy must keep.</summary>
+        private static readonly string[] InputSampleColumns =
+        {
+            "source name", "characteristics[organism]", "characteristics[organism part]",
+            "characteristics[organism part]", "characteristics[individual]", "characteristics[age]",
+            "characteristics[sex]", "characteristics[disease]", "characteristics[cell type]",
+            "characteristics[biological replicate]", "material type", "comment[sample preparation batch]",
+            "comment[file uri]", "factor value[disease]", "factor value[treatment]"
+        };
+
+        /// <summary>
+        /// A curated label-free SDRF for a.raw, b.raw and c.raw: a term with a key mzLib does not know (TA=x), a
+        /// repeated column, `not available`, a `pooled` replicate, a blank comment, an accession, and one misspelled
+        /// column (characteristic[mouse line]) that no copy carries.
+        /// </summary>
+        private static List<string[]> LabelFreeInputSdrf(params string[] dataFiles)
+        {
+            var rows = new List<string[]>
+            {
+                new[]
+                {
+                    "source name", "characteristics[organism]", "characteristics[organism part]",
+                    "characteristics[organism part]", "characteristics[individual]", "characteristics[age]",
+                    "characteristics[sex]", "characteristics[disease]", "characteristics[cell type]",
+                    "characteristics[biological replicate]", "material type", "assay name", "technology type",
+                    "comment[data file]", "comment[label]", "comment[proteomexchange accession number]",
+                    "comment[sample preparation batch]", "comment[file uri]", "characteristic[mouse line]",
+                    "factor value[disease]", "factor value[treatment]"
+                }
+            };
+            var samples = new Dictionary<string, string[]>
+            {
+                ["a.raw"] = new[]
+                {
+                    "donor A liver", "NT=Mus musculus;AC=NCBITaxon:10090", "NT=liver;AC=UBERON:0002107;TA=x",
+                    "NT=hepatic lobule;AC=UBERON:0004647", "donor A", "12M", "female", "NT=normal;AC=PATO:0000461",
+                    "not available", "1", "tissue", "run a", "proteomic profiling by mass spectrometry", "a.raw",
+                    "label free sample", "PXD012345", "batch 1", "", "C57BL/6", "normal", "vehicle"
+                },
+                ["b.raw"] = new[]
+                {
+                    "pool QC", "NT=Mus musculus;AC=NCBITaxon:10090", "NT=liver;AC=UBERON:0002107",
+                    "NT=hepatic lobule;AC=UBERON:0004647", "pool", "not available", "not available",
+                    "NT=normal;AC=PATO:0000461", "not available", "pooled", "tissue", "run b",
+                    "proteomic profiling by mass spectrometry", "b.raw", "label free sample", "PXD012345", "batch 2",
+                    "https://example.org/b.raw", "C57BL/6", "normal", "none"
+                },
+                ["c.raw"] = new[]
+                {
+                    "donor C liver", "NT=Mus musculus;AC=NCBITaxon:10090", "NT=liver;AC=UBERON:0002107",
+                    "NT=hepatic lobule;AC=UBERON:0004647", "donor C", "14M", "male", "NT=normal;AC=PATO:0000461",
+                    "not available", "2", "tissue", "run c", "proteomic profiling by mass spectrometry", "c.raw",
+                    "label free sample", "PXD012345", "batch 1", "", "C57BL/6", "normal", "vehicle"
+                }
+            };
+            rows.AddRange((dataFiles.Length == 0 ? samples.Keys.ToArray() : dataFiles).Select(f => samples[f]));
+            return rows;
+        }
+
+        /// <summary>
+        /// The whole copy (B6.1, B6.3, B6.5, B6.6), end to end. Two files are searched against an input SDRF that also
+        /// describes a third: the two rows written carry the input's sample columns byte for byte, in the input's order,
+        /// with the repeat repeated and the reserved words as written; c.raw, not searched, is left out. The assay half
+        /// is still this search's own, and the input's accession is written because the task set none (B8).
+        /// </summary>
+        [Test]
+        public static void AnInputSdrfsSampleColumnsAreCopiedCellForCell()
+        {
+            string output = RunSearchWithInputSdrf(nameof(AnInputSdrfsSampleColumnsAreCopiedCellForCell),
+                LabelFreeInputSdrf(), out string folder, out var warnings);
+
+            var input = new SdrfDocument(Path.Combine(folder, "input.sdrf.tsv"));
+            input.LoadResults();
+            var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
+            document.LoadResults();
+
+            Assert.That(document.Results.Select(r => r["source name"]), Is.EquivalentTo(new[] { "donor A liver", "pool QC" }),
+                "One row per searched file, named as the input names it; c.raw was not searched, so its row is left out.");
+
+            var copied = new HashSet<string>(InputSampleColumns, StringComparer.Ordinal);
+            Assert.That(document.Header.Where(copied.Contains), Is.EqualTo(InputSampleColumns),
+                "The input's sample columns, in the input's order, the repeated one twice.");
+
+            foreach (SdrfRow row in document.Results)
+            {
+                SdrfRow source = input.Results.Single(r => r["source name"] == row["source name"]);
+                foreach (string column in copied)
+                    Assert.That(row.All(column), Is.EqualTo(source.All(column)),
+                        $"'{column}' of '{row["source name"]}' is copied byte for byte.");
+            }
+
+            SdrfRow donor = document.Results.Single(r => r["source name"] == "donor A liver");
+            SdrfRow pool = document.Results.Single(r => r["source name"] == "pool QC");
+            Assert.That(donor.All("characteristics[organism part]"),
+                Is.EqualTo(new[] { "NT=liver;AC=UBERON:0002107;TA=x", "NT=hepatic lobule;AC=UBERON:0004647" }),
+                "A repeated column is written twice, in order, and a key mzLib does not know (TA=x) survives.");
+            Assert.That(pool["characteristics[biological replicate]"], Is.EqualTo("pooled"));
+            Assert.That(pool["characteristics[sex]"], Is.EqualTo("not available"));
+            Assert.That(donor["comment[file uri]"], Is.EqualTo(""), "A blank comment is written blank, never invented.");
+
+            Assert.That(donor["comment[data file]"], Is.EqualTo("a.mzml"), "The assay half is this search's: the file it read.");
+            Assert.That(donor["comment[cleavage agent details]"], Does.Contain("Trypsin").IgnoreCase);
+            Assert.That(donor["comment[label]"], Is.EqualTo("label free sample"));
+            Assert.That(donor["comment[proteomexchange accession number]"], Is.EqualTo("PXD012345"),
+                "The task set no accession, so the input's is written (B8).");
+
+            Assert.That(SdrfValidator.Validate(document).Errors, Is.Empty, "mzLib's validator rejects the copied SDRF.");
+
+            string notCarried = warnings.SingleOrDefault(w => w.Contains("not carried"));
+            Assert.That(notCarried, Does.Contain("characteristic[mouse line]"),
+                "An input column the written SDRF lacks is named (B9). " + string.Join(" | ", warnings));
+            Assert.That(notCarried, Does.Not.Contain("comment[searched data file]").And.Not.Contain("comment[label]"));
+            Assert.That(warnings.Any(w => w.Contains("since MetaMorpheus reads no input SDRF")), Is.False,
+                "The coverage report must not say MetaMorpheus read no input SDRF when it did (B5).");
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// The task's own accession wins over the input's (B8): the input's is only the fallback for an empty one.
+        /// Checked on the builder options alone, without a search.
+        /// </summary>
+        [TestCase(null, "PXD012345")]
+        [TestCase(" ", "PXD012345")]
+        [TestCase(" PXD000001 ", "PXD000001")]
+        public static void TheInputsAccessionIsWrittenOnlyWhenTheTaskSetsNone(string taskAccession, string written)
+        {
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "SdrfOutput_InputAccession");
+            Directory.CreateDirectory(folder);
+            string inputPath = Path.Combine(folder, "input.sdrf.tsv");
+            File.WriteAllLines(inputPath, LabelFreeInputSdrf("a.raw").Select(cells => string.Join("\t", cells)));
+            var scope = SdrfSearchScope.Restrict(new SdrfDocument(inputPath), new[] { "a.mzml" });
+
+            string accession = (string)typeof(PostSearchAnalysisTask)
+                .GetMethod("AccessionToWrite", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { taskAccession, scope });
+
+            Assert.That(accession, Is.EqualTo(written));
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// Calibrate -> Search (B6.2): the input names the acquired sample1.mzML and the search reads
+        /// sample1-calib.mzML. The row is still found, its sample columns copied, and the derivative named.
+        /// </summary>
+        [Test]
+        public static void AfterCalibrationTheInputRowOfTheAcquiredFileIsCopied()
+        {
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "SdrfOutput_InputCalib");
+            if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            Directory.CreateDirectory(folder);
+            string spectraPath = Path.Combine(folder, "sample1.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), spectraPath, true);
+            string database = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
+            ExperimentalDesign.WriteExperimentalDesignToFile(
+                new List<SpectraFileInfo> { new(spectraPath, "condition", 0, 0, 0) });
+
+            var input = LabelFreeInputSdrf("a.raw");
+            input[1][Array.IndexOf(input[0], "comment[data file]")] = "sample1.mzML";
+            string inputPath = Path.Combine(folder, "input.sdrf.tsv");
+            File.WriteAllLines(inputPath, input.Select(cells => string.Join("\t", cells)));
+
+            var search = BuildSearchTask(writeSdrf: true);
+            search.SearchParameters.InputSdrfPath = inputPath;
+            new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("Task1-Calibrate", new CalibrationTask()), ("Task2-Search", search) },
+                new List<string> { spectraPath }, new List<DbForTask> { new DbForTask(database, false) }, folder).Run();
+
+            var document = new SdrfDocument(Path.Combine(folder, "Task2-Search", SdrfFileName));
+            document.LoadResults();
+            SdrfRow row = document.Results.Single();
+
+            Assert.That(row["source name"], Is.EqualTo("donor A liver"));
+            Assert.That(row["characteristics[age]"], Is.EqualTo("12M"));
+            Assert.That(row["comment[data file]"], Is.EqualTo("sample1.mzML"));
+            Assert.That(row["comment[searched data file]"], Is.EqualTo("sample1-calib.mzML"));
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// A searched file the input has no row for, or (label-free) more than one row for, cannot be described from
+        /// the input, so no SDRF is written (B2.3, B6.4). The crash record names the file and the search's own
+        /// results stand. A missing row is also named before the run.
+        /// </summary>
+        [TestCase(0)]
+        [TestCase(2)]
+        public static void ASearchedFileWithoutExactlyOneInputRowWritesNoSdrfButKeepsTheSearch(int rowsForB)
+        {
+            var input = LabelFreeInputSdrf("a.raw");
+            for (int i = 0; i < rowsForB; i++)
+            {
+                var row = LabelFreeInputSdrf("b.raw")[1];
+                row[0] = "pool QC " + (i + 1);
+                input.Add(row);
+            }
+
+            string output = RunSearchWithInputSdrf(nameof(ASearchedFileWithoutExactlyOneInputRowWritesNoSdrfButKeepsTheSearch) + rowsForB,
+                input, out string folder, out var warnings);
+
+            Assert.That(File.Exists(Path.Combine(output, SdrfFileName)), Is.False);
+            Assert.That(File.Exists(Path.Combine(output, "AllPSMs.psmtsv")), Is.True, "The search's results stand.");
+            string crash = File.ReadAllText(Path.Combine(output, "SdrfWriter_crash.txt"));
+            Assert.That(crash, Does.Contain("b.mzml"));
+            Assert.That(crash, Does.Not.Contain("a.mzml"), "a.mzml has its one row; only the problem is listed.");
+            if (rowsForB == 0)
+                Assert.That(warnings.Any(w => w.Contains("b.mzml") && w.Contains("no " + SdrfFileName)), Is.True,
+                    "A file with no input row is named before the search. " + string.Join(" | ", warnings));
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// TMT (B6.7): each channel row takes the input row of its file whose comment[label] is the channel's label,
+        /// whatever order the input lists them in and whatever the case. A channel the input has no row for refuses
+        /// the SDRF, naming the channel.
+        /// </summary>
+        [TestCase(false)]
+        [TestCase(true)]
+        public static void ATmtChannelRowCopiesTheInputRowWithItsLabel(bool inputLacksAChannel)
+        {
+            var input = new List<string[]>
+            {
+                new[]
+                {
+                    "source name", "characteristics[organism]", "characteristics[individual]",
+                    "characteristics[biological replicate]", "assay name", "technology type", "comment[data file]",
+                    "comment[label]", "factor value[treatment]"
+                }
+            };
+            input.AddRange(Tmt11Channels
+                .Select((tag, i) => new[]
+                {
+                    "donor " + (i + 1), "NT=Mus musculus;AC=NCBITaxon:10090", "D" + (i + 1), (i + 1).ToString(),
+                    "run VA084TQ_6", "proteomic profiling by mass spectrometry", "VA084TQ_6.raw",
+                    tag == "127N" ? "tmt127n" : "TMT" + tag, i % 2 == 0 ? "drug" : "vehicle"
+                })
+                .Where(r => !(inputLacksAChannel && r[7] == "TMT131C"))
+                .Reverse());
+
+            string root = RunTmtSearchWritingSdrf("SdrfOutput_TmtInput" + inputLacksAChannel, writeDesign: true,
+                out string output, out _, inputSdrf: input);
+
+            if (inputLacksAChannel)
+            {
+                Assert.That(File.Exists(Path.Combine(output, SdrfFileName)), Is.False);
+                Assert.That(File.ReadAllText(Path.Combine(output, "SdrfWriter_crash.txt")), Does.Contain("TMT131C"));
+                Directory.Delete(root, true);
+                return;
+            }
+
+            var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
+            document.LoadResults();
+            Assert.That(document.Results.Count, Is.EqualTo(Tmt11Channels.Length));
+            for (int i = 0; i < Tmt11Channels.Length; i++)
+            {
+                SdrfRow row = document.Results.Single(r => r["comment[label]"] == "TMT" + Tmt11Channels[i]);
+                Assert.That(row["source name"], Is.EqualTo("donor " + (i + 1)),
+                    "The input's sample for this channel, not TmtDesign.txt's Sample" + (i + 1) + ".");
+                Assert.That(row["characteristics[individual]"], Is.EqualTo("D" + (i + 1)));
+                Assert.That(row["factor value[treatment]"], Is.EqualTo(i % 2 == 0 ? "drug" : "vehicle"));
+            }
+
+            Directory.Delete(root, true);
+        }
+
+        /// <summary>A pipeline sets the input SDRF in the task file (B1, B6.8), so it survives a TOML round trip.</summary>
+        [Test]
+        public static void TheInputSdrfPathSurvivesTheTaskFile()
+        {
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "SdrfOutput_InputSdrfToml");
+            Directory.CreateDirectory(folder);
+            string tomlPath = Path.Combine(folder, "SearchTask.toml");
+
+            Assert.That(new SearchParameters().InputSdrfPath, Is.Null, "Off unless a pipeline sets it.");
+            var task = BuildSearchTask(writeSdrf: true);
+            task.SearchParameters.InputSdrfPath = @"C:\data\PXD012345.sdrf.tsv";
+            Toml.WriteFile(task, tomlPath, MetaMorpheusTask.tomlConfig);
+
+            var reread = Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
+            Assert.That(reread.SearchParameters.InputSdrfPath, Is.EqualTo(@"C:\data\PXD012345.sdrf.tsv"));
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// Before the run (B7): every blank sample fact in the rows the search will use is named, with its file, source
+        /// name and column, because the writer refuses one and the SDRF would be lost. A blank comment is not named: it
+        /// is written blank. Rows for files the search does not read are not checked.
+        /// </summary>
+        [Test]
+        public static void ABlankSampleFactInTheInputIsNamedBeforeTheRun()
+        {
+            var input = LabelFreeInputSdrf();
+            input[1][Array.IndexOf(input[0], "characteristics[age]")] = "";
+            input[2][Array.IndexOf(input[0], "factor value[treatment]")] = " ";
+            input[3][Array.IndexOf(input[0], "characteristics[sex]")] = "";
+
+            var warnings = WarningsBeforeASearchWithAnInputSdrf(nameof(ABlankSampleFactInTheInputIsNamedBeforeTheRun), input);
+
+            string blanks = warnings.Single(w => w.Contains("blank"));
+            Assert.That(blanks, Does.Contain("a.mzml").And.Contain("donor A liver").And.Contain("characteristics[age]"));
+            Assert.That(blanks, Does.Contain("b.mzml").And.Contain("pool QC").And.Contain("factor value[treatment]"));
+            Assert.That(blanks, Does.Not.Contain("comment[file uri]"), "a.raw's blank comment is written blank.");
+            Assert.That(blanks, Does.Not.Contain("characteristics[sex]"), "c.raw is not searched.");
+            Assert.That(blanks, Does.Contain("no " + SdrfFileName));
+        }
+
+        /// <summary>
+        /// Before the run (B4): an input SDRF that cannot be read is named, with the consequence. And with an input SDRF,
+        /// a missing ExperimentalDesign.tsv no longer warns that the sample columns will say `not available`: the input
+        /// gives them, and only the technical replicate and fraction are lost.
+        /// </summary>
+        [Test]
+        public static void AnUnreadableInputSdrfIsNamedBeforeTheRun_AndNoDesignIsNoLongerASampleGap()
+        {
+            var warnings = WarningsBeforeASearchWithAnInputSdrf(
+                nameof(AnUnreadableInputSdrfIsNamedBeforeTheRun_AndNoDesignIsNoLongerASampleGap), inputSdrf: null);
+
+            Assert.That(warnings.Any(w => w.Contains("missing.sdrf.tsv") && w.Contains("no " + SdrfFileName)), Is.True,
+                string.Join(" | ", warnings));
+            Assert.That(warnings.Any(w => w.Contains("sample columns will say 'not available'")), Is.False,
+                string.Join(" | ", warnings));
+            Assert.That(warnings.Any(w => w.Contains(GlobalVariables.ExperimentalDesignFileName)
+                                          && w.Contains("technical replicate and fraction")), Is.True,
+                string.Join(" | ", warnings));
+
+            var readable = WarningsBeforeASearchWithAnInputSdrf(
+                nameof(AnUnreadableInputSdrfIsNamedBeforeTheRun_AndNoDesignIsNoLongerASampleGap) + "Readable",
+                LabelFreeInputSdrf());
+            Assert.That(readable.Any(w => w.Contains("no " + SdrfFileName)), Is.False,
+                "A readable input that covers every searched file with no blank sample fact gives no input warning. " +
+                string.Join(" | ", readable));
+        }
+
+        /// <summary>
+        /// Searches a.mzml and b.mzml (copies of the pruned spectra) with SDRF output on, <paramref name="inputSdrf"/>
+        /// as the input SDRF, and no ExperimentalDesign.tsv. Returns the output folder.
+        /// </summary>
+        private static string RunSearchWithInputSdrf(string testName, IEnumerable<string[]> inputSdrf,
+            out string folder, out List<string> warnings)
+        {
+            folder = SetUpIsolatedRun(testName, out string spectraPath, out DbForTask database);
+            var searched = new List<string> { Path.Combine(folder, "a.mzml"), Path.Combine(folder, "b.mzml") };
+            foreach (string path in searched)
+                File.Copy(spectraPath, path, true);
+
+            string inputPath = Path.Combine(folder, "input.sdrf.tsv");
+            File.WriteAllLines(inputPath, inputSdrf.Select(cells => string.Join("\t", cells)));
+
+            var task = BuildSearchTask(writeSdrf: true);
+            task.SearchParameters.InputSdrfPath = inputPath;
+            string output = Path.Combine(folder, "TaskOutput");
+            Directory.CreateDirectory(output);
+
+            var captured = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => captured.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                task.RunTask(output, new List<DbForTask> { database }, searched, "sdrf-input");
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+            }
+
+            warnings = captured;
+            return output;
+        }
+
+        /// <summary>
+        /// The warnings SearchTask gives before a label-free search of a.mzml and b.mzml with SDRF output on and an input
+        /// SDRF of <paramref name="inputSdrf"/>, or a path that does not exist when it is null. No ExperimentalDesign.tsv.
+        /// </summary>
+        private static List<string> WarningsBeforeASearchWithAnInputSdrf(string testName, IEnumerable<string[]> inputSdrf)
+        {
+            string folder = SetUpIsolatedRun(testName, out _, out _);
+            string inputPath = Path.Combine(folder, inputSdrf is null ? "missing.sdrf.tsv" : "input.sdrf.tsv");
+            if (inputSdrf is not null)
+                File.WriteAllLines(inputPath, inputSdrf.Select(cells => string.Join("\t", cells)));
+
+            var task = new SearchTask { SearchParameters = new SearchParameters { WriteSdrf = true, InputSdrfPath = inputPath } };
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                typeof(SearchTask)
+                    .GetMethod("WarnAboutSdrfGaps", BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .Invoke(task, new object[] { new List<string> { Path.Combine(folder, "a.mzml"), Path.Combine(folder, "b.mzml") } });
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+                Directory.Delete(folder, true);
+            }
+
+            return warnings;
         }
 
         #endregion
