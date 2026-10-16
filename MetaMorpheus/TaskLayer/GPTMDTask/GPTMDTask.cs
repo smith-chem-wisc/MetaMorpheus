@@ -208,7 +208,12 @@ namespace TaskLayer
 
                 FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
-                MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullName, false));
+                var newDb = new DbForTask(outputXMLdbFullName, false)
+                {
+                    DerivedFrom = dbFilenameList.Where(p => !p.IsContaminant && !p.IsSpectralLibrary).ToList()
+                };
+                newDb.RecordIdentity();
+                MyTaskResults.NewDatabases.Add(newDb);
                 if(dbFilenameList.Any(p=>p.IsSpectralLibrary))
                 {
                     MyTaskResults.NewDatabases.Add(dbFilenameList.First(p => p.IsSpectralLibrary));
@@ -235,7 +240,12 @@ namespace TaskLayer
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(allModDictionary, toWrite, outputXMLdbFullNameContaminants);
 
                 FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
-                MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
+                var newContaminantDb = new DbForTask(outputXMLdbFullNameContaminants, true)
+                {
+                    DerivedFrom = dbFilenameList.Where(p => p.IsContaminant).ToList()
+                };
+                newContaminantDb.RecordIdentity();
+                MyTaskResults.NewDatabases.Add(newContaminantDb);
                 MyTaskResults.AddTaskSummaryText("Contaminant modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
                 MyTaskResults.AddTaskSummaryText("Mods types and counts:");
                 MyTaskResults.AddTaskSummaryText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));

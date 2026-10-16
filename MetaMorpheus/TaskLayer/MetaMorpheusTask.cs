@@ -974,16 +974,16 @@ namespace TaskLayer
                 file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilepathList.Select(b => '\t' + b)));
                 file.WriteLine("Databases:");
 
+                // One line per database (they used to run together on one line), each naming the file's content
+                // as well as its path: the same path can hold a different database from one run to the next.
                 foreach (var proteinDb in currentProteinDbFilenameList)
                 {
-                    if (proteinDb.IsContaminant)
-                    {
-                        file.Write(string.Join(Environment.NewLine, '\t' + "Contaminants " + proteinDb.FilePath + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()));
-                    }
-                    else
-                    {
-                        file.Write(string.Join(Environment.NewLine, '\t' + proteinDb.FilePath + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()));
-                    }
+                    string line = '\t' + (proteinDb.IsContaminant ? "Contaminants " : "") + proteinDb.FilePath
+                        + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()
+                        + " (" + proteinDb.IdentityText() + ")";
+                    if (proteinDb.DerivedFromText() is { } derivedFrom)
+                        line += "; " + derivedFrom;
+                    file.WriteLine(line);
                 }
             }
             FinishedWritingFile(proseFilePath, new List<string> { displayName });

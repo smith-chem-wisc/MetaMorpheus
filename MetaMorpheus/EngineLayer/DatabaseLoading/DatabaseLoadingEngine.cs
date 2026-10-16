@@ -85,6 +85,10 @@ public class DatabaseLoadingEngine(
         int emptyEntries = 0;
         errors = new();
         List<IBioPolymer> bioPolymerList = new();
+        // Every database the task was given, spectral libraries included, is identified by its content as it is
+        // loaded, so results.txt and the manuscript prose say exactly which files were searched.
+        foreach (var db in dbFilenameList)
+            db.RecordIdentity();
         foreach (var db in dbFilenameList.Where(p => !p.IsSpectralLibrary))
         {
             IEnumerable<IBioPolymer> dbBioPolymers;
@@ -350,6 +354,11 @@ public class DatabaseLoadingEngineResults(DatabaseLoadingEngine engine, List<DbF
             sb.AppendLine(
                 $"\t{Path.GetFileName(db.FilePath)}: {db.BioPolymerCount} {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s");
             sb.AppendLine($"\t\t{db.TargetCount} Target {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s \t {db.DecoyCount} Decoy {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s");
+            // Appended under the two lines above, which keep their format for anything that already reads them.
+            sb.AppendLine($"\t\tPath: {db.FilePath}");
+            sb.AppendLine($"\t\t{db.IdentityText()}");
+            if (db.DerivedFromText() is { } derivedFrom)
+                sb.AppendLine($"\t\t{derivedFrom}");
         }
         sb.AppendLine($"Total {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s loaded: {BioPolymers.Count + BioPolymersRemovedBySanitization}");
         sb.AppendLine($"Total {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s removed by sanitization: {BioPolymersRemovedBySanitization}");
