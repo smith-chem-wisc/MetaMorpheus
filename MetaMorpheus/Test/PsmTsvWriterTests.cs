@@ -1440,5 +1440,88 @@ namespace Test
         }
 
         #endregion
+
+        #region Entrapment label
+
+        /// <summary>
+        /// The Decoy/Contaminant/Target column wrote only D/C/T, so no psmtsv recorded entrapment even
+        /// though the loader flags it. Entrapment stays a target for FDR; the label just says so.
+        /// </summary>
+        [TestCase(false, false, "T")]
+        [TestCase(true, false, "D")]
+        [TestCase(false, true, "ET")]
+        [TestCase(true, true, "ED")]
+        public static void PsmLabelWritesEntrapment(bool isDecoy, bool isEntrapment, string expected)
+        {
+            var protein = new Protein("PEPTIDEK", isEntrapment ? "Random_P1_f0" : "P1", isDecoy: isDecoy, isEntrapment: isEntrapment);
+            SpectralMatch psm = PsmOn(protein);
+
+            Assert.That(LabelOf(psm), Is.EqualTo(expected));
+            Assert.That(psm.IsDecoy, Is.EqualTo(isDecoy), "entrapment must not change how FDR sees the PSM");
+        }
+
+        [Test]
+        public static void APeptideSharedWithAnEntrapmentProteinIsLabelledWithBoth()
+        {
+            var real = new Protein("PEPTIDEK", "P1");
+            var partner = new Protein("PEPTIDEK", "Random_P1_f0", isEntrapment: true);
+            SpectralMatch psm = PsmOn(real);
+            var shared = new PeptideWithSetModifications(partner, new DigestionParams(), 1, 8, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            psm.AddOrReplace(shared, psm.Score, 0, true, new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+
+            Assert.That(LabelOf(psm), Is.EqualTo("T|ET"));
+            // One full sequence, not PEPTIDEK|PEPTIDEK. The column collapses when every candidate
+            // agrees, and mzLib's EntrapmentFraction reads a T|ET row with a single sequence as the real
+            // peptide rather than as half an entrapment discovery.
+            Assert.That(ColumnOf(psm, SpectrumMatchFromTsvHeader.FullSequence), Is.EqualTo("PEPTIDEK"));
+        }
+
+        /// <summary>
+        /// Entrapment is searched as a target, so the spectral library filter, which excludes decoys and
+        /// contaminants, let a PSM explained only by entrapment proteins into the library. A peptide that
+        /// a target protein also carries is real and stays.
+        /// </summary>
+        [Test]
+        public static void ASpectralLibraryLeavesOutPeptidesOnlyEntrapmentExplains()
+        {
+            SpectralMatch target = PsmOn(new Protein("PEPTIDEK", "P1"));
+            SpectralMatch entrapmentOnly = PsmOn(new Protein("PEPTLDEK", "Random_P2_f0", isEntrapment: true));
+            SpectralMatch shared = PsmOn(new Protein("PEPTIDER", "P3"));
+            var partner = new Protein("PEPTIDER", "Random_P3_f0", isEntrapment: true);
+            shared.AddOrReplace(new PeptideWithSetModifications(partner, new DigestionParams(), 1, 8, CleavageSpecificity.Full, "", 0,
+                new Dictionary<int, Modification>(), 0), shared.Score, 0, true, new List<MatchedFragmentIon>());
+            var psms = new List<SpectralMatch> { target, entrapmentOnly, shared };
+            psms.ForEach(p => p.ResolveAllAmbiguities());
+            psms.ForEach(p => p.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
+
+            List<SpectralMatch> forLibrary = FilteredPsms.Filter(psms, new CommonParameters(), includeDecoys: false,
+                includeContaminants: false, includeAmbiguous: false, includeEntrapment: false).FilteredPsmsList;
+            List<SpectralMatch> everything = FilteredPsms.Filter(psms, new CommonParameters(), includeDecoys: false,
+                includeContaminants: false, includeAmbiguous: false).FilteredPsmsList;
+
+            Assert.That(forLibrary, Is.EquivalentTo(new[] { target, shared }));
+            Assert.That(everything, Is.EquivalentTo(psms), "every other caller still sees entrapment");
+        }
+
+        private static SpectralMatch PsmOn(Protein protein)
+        {
+            var peptide = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 8, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            var scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""), peptide.MonoisotopicMass.ToMz(1), 1, "", new CommonParameters());
+            SpectralMatch psm = new PeptideSpectralMatch(peptide, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+            return psm;
+        }
+
+        private static string LabelOf(SpectralMatch psm) => ColumnOf(psm, SpectrumMatchFromTsvHeader.DecoyContaminantTarget);
+
+        private static string ColumnOf(SpectralMatch psm, string header)
+        {
+            int column = SpectralMatch.GetTabSeparatedHeader().Split('\t').IndexOf(header);
+            return psm.ToString().Split('\t')[column];
+        }
+
+        #endregion
     }
 }

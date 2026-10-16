@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+﻿using System;
+using EngineLayer;
 using FlashLFQ;
 using NUnit.Framework;
 using Proteomics;
@@ -98,6 +99,43 @@ namespace Test
             string exectedProteinGroupWithDecoyToString =
     "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t0\tT\t0\t0\t0\t0\t0\t0";
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupWithDecoyToString));
+        }
+
+        /// <summary>
+        /// Entrapment competes as a target, so it is labelled rather than reclassified: ET for an
+        /// entrapment target, ED for a decoy of one. A group is entrapment if any member is, so a
+        /// real protein grouped with an entrapment protein reads ET.
+        /// </summary>
+        [TestCase(false, false, false, "T")]
+        [TestCase(true, false, false, "D")]
+        [TestCase(false, true, false, "C")]
+        [TestCase(false, false, true, "ET")]
+        [TestCase(true, false, true, "ED")]
+        public static void ProteinGroupWritesEntrapmentInItsLabel(bool isDecoy, bool isContaminant, bool isEntrapment, string expected)
+        {
+            var protein = new Protein("MEDEEK", "prot1", isDecoy: isDecoy, isContaminant: isContaminant, isEntrapment: isEntrapment);
+            var group = new ProteinGroup(new HashSet<IBioPolymer> { protein },
+                new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
+
+            Assert.That(LabelOf(group), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public static void AGroupHoldingAnyEntrapmentMemberReadsEt()
+        {
+            var real = new Protein("MEDEEK", "P12345");
+            var partner = new Protein("MEEDEK", "Random_P12345_f0", isEntrapment: true);
+            var group = new ProteinGroup(new HashSet<IBioPolymer> { real, partner },
+                new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
+
+            Assert.That(LabelOf(group), Is.EqualTo("ET"));
+        }
+
+        private static string LabelOf(ProteinGroup group)
+        {
+            int column = Array.IndexOf(group.GetTabSeparatedHeader().Split('\t'), "Protein Decoy/Contaminant/Target");
+            Assert.That(column, Is.GreaterThanOrEqualTo(0));
+            return group.ToString().Split('\t')[column];
         }
 
         [Test]
