@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using EngineLayer;
+using Omics.Modifications;
 
 namespace MetaMorpheusGUI
 {
@@ -61,7 +62,7 @@ namespace MetaMorpheusGUI
         /// prompt -- and the design was then written with plex 1 as a file-only placeholder row.
         ///
         /// The Tag always comes from the tag type's own table rather than from the stored annotation.
-        /// Channel counts across the eight tag types are 6/10/11/18/4/8/4/12, so 4 is the only count
+        /// Channel counts across the nine tag types are 6/10/11/16/18/4/8/4/12, so 4 is the only count
         /// that occurs twice: iTRAQ4 is 114,115,116,117 and diLeu4 is 115,116,117,118. Reusing stored
         /// tags whenever the counts matched therefore carried iTRAQ4's labels into a diLeu4 plex, and
         /// <see cref="EngineLayer.TmtExperimentalDesign.ToMzLibDesign"/> rejects a tag that is not a
@@ -152,7 +153,7 @@ namespace MetaMorpheusGUI
         /// IsobaricMassTag was corrected rather than this window changed to match it.
         /// </remarks>
         private static List<string> GetReporterIonLabels(IsobaricMassTagType type) =>
-            IsobaricMassTag.GetReporterIonLabels(type) ?? new List<string>();
+            IsobaricMassTag.GetReporterIonLabels(type).ToList();
 
         private void Paste_CanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
