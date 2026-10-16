@@ -633,6 +633,8 @@ namespace TaskLayer
                 DigestionCountDictionary = digestionCountDictionary
             };
             MyTaskResults postSearchResults = postProcessing.Run();
+            // Name the identification filter actually applied (tiered mode only) in the manuscript prose.
+            ProseCreatedWhileRunning.Append(postProcessing.IdentificationFilterProse);
 
             // Hand the resolved, FDR'd PSM set to a downstream TruncationSearchTask via the shared
             // in-memory task-chain context (decision #1). The consumer dedups to proteoform level, applies

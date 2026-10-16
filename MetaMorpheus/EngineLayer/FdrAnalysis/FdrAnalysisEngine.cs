@@ -74,7 +74,16 @@ namespace EngineLayer.FdrAnalysis
             Status("Running FDR analysis...");
             DoFalseDiscoveryRateAnalysis(myAnalysisResults);
             Status("Done.");
-            myAnalysisResults.PsmsWithin1PercentFdr = AllPsms.Count(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy);
+            if (IdentificationFilter.IsTieredMode(CommonParameters))
+            {
+                // "within 1% FDR" under the tiered identification filter: the chosen tier's value < 0.01
+                var tier = IdentificationFilter.Resolve(AllPsms, peptideLevel: false, threshold: 0.01);
+                myAnalysisResults.PsmsWithin1PercentFdr = AllPsms.Count(b => tier.Passes(b) && !b.IsDecoy);
+            }
+            else
+            {
+                myAnalysisResults.PsmsWithin1PercentFdr = AllPsms.Count(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy);
+            }
 
             return myAnalysisResults;
         }
@@ -165,7 +174,7 @@ namespace EngineLayer.FdrAnalysis
                 psms = psms.OrderByDescending(p => p).ToList();
                 CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: false);
                 
-                CountPsm(psms);
+                CountPsm(psms, commonParameters);
             }
         }
 
@@ -487,14 +496,20 @@ namespace EngineLayer.FdrAnalysis
         /// <summary>
         /// This method gets the count of PSMs with the same full sequence (with q-value < 0.01) to include in the psmtsv output
         /// </summary>
-        public static void CountPsm(List<SpectralMatch> proteasePsms)
+        /// <param name="commonParameters">when these put the tiered identification filter in effect, the count uses
+        /// its tier at 0.01 (strict); otherwise (or when null) q-value and q-value notch &lt;= 0.01, as before</param>
+        public static void CountPsm(List<SpectralMatch> proteasePsms, CommonParameters commonParameters = null)
         {
             // exclude ambiguous psms and has a fdr cutoff = 0.01
             var allUnambiguousPsms = proteasePsms.Where(psm => psm.FullSequence != null).ToList();
 
-            var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
-                    psm.FdrInfo.QValue <= 0.01
-                    && psm.FdrInfo.QValueNotch <= 0.01)
+            Func<SpectralMatch, bool> withinOnePercentFdr = psm => psm.FdrInfo.QValue <= 0.01 && psm.FdrInfo.QValueNotch <= 0.01;
+            if (IdentificationFilter.IsTieredMode(commonParameters))
+            {
+                withinOnePercentFdr = IdentificationFilter.Resolve(proteasePsms, peptideLevel: false, threshold: 0.01).Passes;
+            }
+
+            var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(withinOnePercentFdr)
                 .GroupBy(p => p.FullSequence);
 
             Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();

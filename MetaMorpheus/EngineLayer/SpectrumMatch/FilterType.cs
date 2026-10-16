@@ -13,6 +13,12 @@ namespace EngineLayer.SpectrumMatch
         /// <summary>
         /// Filter based on PEP q-value (posterior error probability)
         /// </summary>
-        PepQValue
+        PepQValue,
+
+        /// <summary>
+        /// Filter based on the q-value notch alone. Used only by the tiered identification filter
+        /// (<see cref="IdentificationFilter"/>), as the fallback when PEP was not trained.
+        /// </summary>
+        QValueNotch
     }
 }

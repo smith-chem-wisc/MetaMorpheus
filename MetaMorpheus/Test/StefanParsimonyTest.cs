@@ -384,7 +384,13 @@ namespace Test
             psm.SetFdrValues(0, 0, 0.005, 0, 0, 0.005, 0.2, 0.2);
             psm.ResolveAllAmbiguities();
 
-            List<SpectralMatch> psms = new List<SpectralMatch> { psm };
+            // A second match with a different PEP: one PEP value alone cannot show that PEP was trained
+            // (mzLib QuantifiedPsmRule.PepIsUsable), and the tiered filter would fall back to the notch.
+            SpectralMatch psm2 = new PeptideSpectralMatch(peptides[0], 0, 9, 2, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm2.SetFdrValues(0, 0, 0.005, 0, 0, 0.005, 0.3, 0.2);
+            psm2.ResolveAllAmbiguities();
+
+            List<SpectralMatch> psms = new List<SpectralMatch> { psm, psm2 };
 
             var commonParams = new CommonParameters(qValueThreshold: 0.05, pepQValueThreshold: 0.01);
 
@@ -489,7 +495,13 @@ namespace Test
             psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0.01, 0); // Last param is PEP_QValue
             psm.ResolveAllAmbiguities();
 
-            List<SpectralMatch> psms = new List<SpectralMatch> { psm };
+            // A second match with a different PEP: one PEP value alone cannot show that PEP was trained
+            // (mzLib QuantifiedPsmRule.PepIsUsable), and the tiered filter would fall back to the notch.
+            SpectralMatch psm2 = new PeptideSpectralMatch(peptides[0], 0, 9, 2, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0.02, 0);
+            psm2.ResolveAllAmbiguities();
+
+            List<SpectralMatch> psms = new List<SpectralMatch> { psm, psm2 };
 
             // Create CommonParameters with PepQValueThreshold < QValueThreshold to trigger PepQValue filtering
             var commonParams = new CommonParameters(qValueThreshold: 0.05, pepQValueThreshold: 0.01);
