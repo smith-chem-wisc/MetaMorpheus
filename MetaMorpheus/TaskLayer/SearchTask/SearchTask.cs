@@ -380,9 +380,17 @@ namespace TaskLayer
                         throw new MetaMorpheusException("Could not find isobaric mass tag with the name " + SearchParameters.MultiplexModId);
                     }
 
+                    // Reporter ions come from the scans as the file stores them, read again here. The loaded copy is
+                    // trimmed (MS2 when TrimMsMsPeaks is on, MS3 always) and a LowCID search bins its MS2 spectra in
+                    // place; either can remove a reporter ion, which would then be quantified as 0.
+                    Dictionary<int, MsDataScan> storedScans = MsDataFileReader.GetDataFile(origDataFile)
+                        .LoadAllStaticData(null, combinedParams.MaxThreadsToUsePerFile)
+                        .GetAllScansList()
+                        .Where(scan => scan.MsnOrder > 1)
+                        .ToDictionary(scan => scan.OneBasedScanNumber);
                     foreach (var scan in arrayOfMs2ScansSortedByMass)
                     {
-                        scan.SetIsobaricMassTagReporterIonIntensities(massTag);
+                        scan.SetIsobaricMassTagReporterIonIntensities(massTag, storedScans);
                     }
                 }
 
