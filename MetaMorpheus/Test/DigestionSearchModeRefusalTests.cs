@@ -55,10 +55,11 @@ namespace Test
             _ => throw new System.ArgumentException(kind),
         };
 
-        /// <summary>A task of this kind that digests nucleic acids with this rnase.</summary>
-        private static MetaMorpheusTask MakeRnaTask(string kind, string rnase)
+        /// <summary>A task of this kind that digests nucleic acids with this rnase, search mode and terminus.</summary>
+        private static MetaMorpheusTask MakeRnaTask(string kind, string rnase,
+            CleavageSpecificity searchModeType = CleavageSpecificity.Full, FragmentationTerminus terminus = FragmentationTerminus.Both)
         {
-            var common = new CommonParameters(digestionParams: new RnaDigestionParams(rnase));
+            var common = new CommonParameters(digestionParams: new RnaDigestionParams(rnase, fragmentationTerminus: terminus, searchModeType: searchModeType));
             return kind switch
             {
                 "Gptmd" => new GptmdTask { CommonParameters = common },
@@ -134,8 +135,7 @@ namespace Test
         }
 
         /// <summary>
-        /// Nucleic acid digestion ignores SearchModeType; the rnase decides. singleN and singleC give seed oligos, every other
-        /// rnase gives oligos.
+        /// With SearchModeType Full the rnase decides: singleN and singleC give seed oligos, every other rnase gives oligos.
         /// </summary>
         [Test]
         [TestCase("singleN", true)]
@@ -148,12 +148,23 @@ namespace Test
             Assert.That(MetaMorpheusTask.AsksForSeeds(new RnaDigestionParams(rnase)), Is.EqualTo(expected));
         }
 
-        /// <summary>SearchModeType is not what makes a nucleic acid task ask for seeds, so it does not cause a refusal.</summary>
+        /// <summary>
+        /// Since mzLib 1.0.592 nucleic acid digestion follows SearchModeType: None with any terminus, and Semi with a single
+        /// terminus, give seed oligos from a fully specific rnase. Semi with Both asks for semi-specific oligos, not seeds.
+        /// </summary>
         [Test]
-        public static void AsksForSeeds_ForNucleicAcids_IgnoresSearchModeType()
+        [TestCase(CleavageSpecificity.None, FragmentationTerminus.Both, true)]
+        [TestCase(CleavageSpecificity.None, FragmentationTerminus.FivePrime, true)]
+        [TestCase(CleavageSpecificity.Semi, FragmentationTerminus.FivePrime, true)]
+        [TestCase(CleavageSpecificity.Semi, FragmentationTerminus.ThreePrime, true)]
+        [TestCase(CleavageSpecificity.Semi, FragmentationTerminus.N, true)]
+        [TestCase(CleavageSpecificity.Semi, FragmentationTerminus.C, true)]
+        [TestCase(CleavageSpecificity.Semi, FragmentationTerminus.Both, false)]
+        [TestCase(CleavageSpecificity.Full, FragmentationTerminus.FivePrime, false)]
+        public static void AsksForSeeds_ForNucleicAcids_FollowsSearchModeType(CleavageSpecificity searchModeType, FragmentationTerminus terminus, bool expected)
         {
-            var digestionParams = new RnaDigestionParams("RNase T1") { SearchModeType = CleavageSpecificity.None };
-            Assert.That(MetaMorpheusTask.AsksForSeeds(digestionParams), Is.False);
+            var digestionParams = new RnaDigestionParams("RNase T1", fragmentationTerminus: terminus, searchModeType: searchModeType);
+            Assert.That(MetaMorpheusTask.AsksForSeeds(digestionParams), Is.EqualTo(expected));
         }
 
         /// <summary>A task without CommonParameters has no digestion settings to refuse.</summary>
@@ -166,36 +177,43 @@ namespace Test
 
         private static IEnumerable<TestCaseData> EveryRnaTaskAndRnase()
         {
+            const CleavageSpecificity Full = CleavageSpecificity.Full, Semi = CleavageSpecificity.Semi, None = CleavageSpecificity.None;
+            const FragmentationTerminus Both = FragmentationTerminus.Both;
             foreach (string kind in new[] { "Gptmd", "Calibration", "ClassicSearch", "ModernSearch" })
             {
-                yield return new TestCaseData(kind, "RNase T1", false).SetName($"{kind} with RNase T1 is allowed");
-                yield return new TestCaseData(kind, "top-down", false).SetName($"{kind} with top-down is allowed");
-                yield return new TestCaseData(kind, "non-specific", false).SetName($"{kind} with the rnase non-specific is allowed");
-                yield return new TestCaseData(kind, "singleN", true).SetName($"{kind} with singleN is refused (seed oligos)");
-                yield return new TestCaseData(kind, "singleC", true).SetName($"{kind} with singleC is refused (seed oligos)");
+                yield return new TestCaseData(kind, "RNase T1", Full, Both, null).SetName($"{kind} with RNase T1 is allowed");
+                yield return new TestCaseData(kind, "top-down", Full, Both, null).SetName($"{kind} with top-down is allowed");
+                yield return new TestCaseData(kind, "non-specific", Full, Both, null).SetName($"{kind} with the rnase non-specific is allowed");
+                yield return new TestCaseData(kind, "singleN", Full, Both, "the rnase singleN").SetName($"{kind} with singleN is refused (seed oligos)");
+                yield return new TestCaseData(kind, "singleC", Full, Both, "the rnase singleC").SetName($"{kind} with singleC is refused (seed oligos)");
+                yield return new TestCaseData(kind, "RNase T1", None, Both, "SearchModeType None").SetName($"{kind} with RNase T1 and SearchModeType None is refused (seed oligos)");
+                yield return new TestCaseData(kind, "RNase T1", Semi, FragmentationTerminus.ThreePrime, "SearchModeType Semi with FragmentationTerminus ThreePrime")
+                    .SetName($"{kind} with RNase T1, Semi and ThreePrime is refused (seed oligos)");
             }
 
             // non-specific search over nucleic acids is refused by the runner with its own message, not by this check
-            yield return new TestCaseData("NonSpecificSearch", "singleN", false).SetName("NonSpecificSearch with singleN is left to the runner");
+            yield return new TestCaseData("NonSpecificSearch", "singleN", Full, Both, null).SetName("NonSpecificSearch with singleN is left to the runner");
+            yield return new TestCaseData("NonSpecificSearch", "RNase T1", Semi, FragmentationTerminus.FivePrime, null).SetName("NonSpecificSearch with Semi and FivePrime is left to the runner");
 
             // a spectral averaging task digests nothing, so its rnase is never used
-            yield return new TestCaseData("Averaging", "singleC", false).SetName("Averaging with singleC is allowed (it does not digest)");
+            yield return new TestCaseData("Averaging", "singleC", Full, Both, null).SetName("Averaging with singleC is allowed (it does not digest)");
         }
 
         /// <summary>
-        /// A nucleic acid task that asks for seed oligos is refused, and the message says what to choose instead. Before
-        /// this, such a task ran to completion and scored each seed as if it were a whole oligo.
+        /// A nucleic acid task that asks for seed oligos is refused, and the message names the setting and says what to choose
+        /// instead. Before this, such a task ran to completion and scored each seed as if it were a whole oligo.
         /// </summary>
         [Test]
         [TestCaseSource(nameof(EveryRnaTaskAndRnase))]
-        public static void GetSeedDigestionRefusal_ForNucleicAcids_RefusesSingleNAndSingleC(string taskKind, string rnase, bool expectedRefused)
+        public static void GetSeedDigestionRefusal_ForNucleicAcids_RefusesSeedDigestion(string taskKind, string rnase,
+            CleavageSpecificity searchModeType, FragmentationTerminus terminus, string expectedSetting)
         {
-            string refusal = MakeRnaTask(taskKind, rnase).GetSeedDigestionRefusal("MyTask");
-            if (expectedRefused)
+            string refusal = MakeRnaTask(taskKind, rnase, searchModeType, terminus).GetSeedDigestionRefusal("MyTask");
+            if (expectedSetting != null)
             {
                 Assert.That(refusal, Does.StartWith("Cannot proceed."));
                 Assert.That(refusal, Does.Contain("\"MyTask\""), "the message must name the task");
-                Assert.That(refusal, Does.Contain(rnase), "the message must name the rnase");
+                Assert.That(refusal, Does.Contain(expectedSetting), "the message must name the setting that asks for seeds");
                 Assert.That(refusal, Does.Contain("seed oligos"), "the message must say why");
                 Assert.That(refusal, Does.Contain("fully specific rnase"), "the message must say what to do instead");
             }

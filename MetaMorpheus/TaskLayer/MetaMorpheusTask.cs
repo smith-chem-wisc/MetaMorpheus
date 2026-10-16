@@ -65,15 +65,22 @@ namespace TaskLayer
             || (digestionParams.SearchModeType == CleavageSpecificity.Semi && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C);
 
         /// <summary>
-        /// Whether these settings make digestion return seed oligos rather than oligos: the rnase singleN or singleC.
+        /// Whether these settings make digestion return seed oligos rather than oligos: the rnase singleN or singleC,
+        /// SearchModeType None with any terminus, or Semi with a single terminus.
         /// </summary>
         /// <remarks>
-        /// Nucleic acid digestion ignores <c>SearchModeType</c>; the rnase's own specificity decides what it returns
-        /// (mzLib <c>Rnase.GetUnmodifiedOligos</c>). singleN and singleC return, for every position, the longest oligo fixed
-        /// at that 5' or 3' end, leaving the other end to a search engine that decides it from the precursor mass.
+        /// Since mzLib 1.0.592 (#1318) nucleic acid digestion follows <c>SearchModeType</c> as protein digestion does.
+        /// With None, <c>RnaDigestionParams</c> swaps the rnase for singleN (terminus N or FivePrime) or singleC and keeps the
+        /// named one as <c>SpecificRnase</c>, so the rnase's specificity covers None and a named singleN or singleC alike.
+        /// Semi with FivePrime or ThreePrime gives the longest oligo from each cleavage site, fixed at that end. Each leaves
+        /// the other end to a search engine that decides it from the precursor mass. Semi with Both asks for semi-specific
+        /// oligos, not seeds; mzLib 1.0.595 does not digest it for nucleic acids yet, and this rule does not refuse it.
         /// </remarks>
         public static bool AsksForSeeds(RnaDigestionParams digestionParams) =>
-            digestionParams.Rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC;
+            digestionParams.Rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
+            || (digestionParams.SearchModeType == CleavageSpecificity.Semi
+                && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C
+                    or FragmentationTerminus.FivePrime or FragmentationTerminus.ThreePrime);
 
         /// <summary>
         /// Why this task cannot run with its digestion settings, or null when it can. The GUI's Run button and the command
@@ -99,10 +106,18 @@ namespace TaskLayer
             IDigestionParams digestion = CommonParameters?.DigestionParams; // null CommonParameters: nothing to check
             if (digestion is RnaDigestionParams rnaDigestionParams)
             {
-                return AsksForSeeds(rnaDigestionParams)
-                    ? $"Cannot proceed. {which} uses the rnase {rnaDigestionParams.Rnase.Name}, which gives seed oligos that only a non-specific search could use, " +
-                      "and non-specific search is not yet implemented for nucleic acids. Choose a fully specific rnase, or the rnase non-specific to search every oligo."
-                    : null;
+                if (!AsksForSeeds(rnaDigestionParams))
+                {
+                    return null;
+                }
+
+                string setting = rnaDigestionParams.SpecificRnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
+                    ? $"uses the rnase {rnaDigestionParams.SpecificRnase.Name}"
+                    : rnaDigestionParams.SearchModeType == CleavageSpecificity.None
+                        ? "has SearchModeType None (non-specific)"
+                        : $"has SearchModeType Semi with FragmentationTerminus {rnaDigestionParams.FragmentationTerminus}";
+                return $"Cannot proceed. {which} {setting}, which gives seed oligos that only a non-specific search could use, " +
+                       "and non-specific search is not yet implemented for nucleic acids. Choose a fully specific rnase with SearchModeType Full.";
             }
 
             if (digestion is not DigestionParams digestionParams || !AsksForSeeds(digestionParams))
