@@ -877,10 +877,9 @@ namespace EngineLayer
             var glycoMods = ModificationLoader.ReadModsFromFile(glycoFile, out var errorMods);
             foreach (var glycoMod in glycoMods)
             {
-                var kind = GlycanDatabase.String2Kind(glycoMod.OriginalId);
+                byte[] kind = GlycoModComposition(glycoMod.OriginalId, glycoFile);
 
-                // If we cannot parse the glycan string, we add the glycoMod as a normal modification.
-                if (kind.Sum(p => p) == 0)
+                if (kind == null || kind.Sum(p => p) == 0)
                 {
                     _AllModsKnown.Add(glycoMod);
                     continue;
@@ -899,6 +898,44 @@ namespace EngineLayer
                 }
                 _AllModsKnown.Add(glycan);
             }
+        }
+
+        /// <summary>
+        /// The composition a glyco.txt modification ID names, or null when it names none. An ID with no '('
+        /// -- Hex, dHex, Galactosyl on N-term -- names a single residue, not a composition, and is kept as an
+        /// ordinary modification. One that has a '(' but is not a composition is kept the same way, but said:
+        /// this runs at startup, outside any try, so it must not throw, and it must not quietly become a
+        /// different glycan either. The ID is cut the way a glycan database line is (GlycanDatabase.CompositionPart),
+        /// so text after the last ')' -- HexNAc(1)Hex(1) on S -- is ignored, as the old String2Kind ignored it,
+        /// and said, as the database loader says it.
+        /// </summary>
+        internal static byte[] GlycoModComposition(string originalId, string glycoFile)
+        {
+            if (originalId.IndexOf('(') < 0)
+            {
+                return null;
+            }
+
+            string composition = GlycanDatabase.CompositionPart(originalId, out string ignored);
+            byte[] kind;
+            try
+            {
+                kind = GlycanDatabase.ParseComposition(composition);
+            }
+            catch (FormatException ex)
+            {
+                Warn($"The glyco modification '{originalId}' in {glycoFile} is not a glycan composition, so it is " +
+                    $"kept as an ordinary modification. {ex.Message}");
+                return null;
+            }
+
+            if (ignored != null)
+            {
+                Warn($"Read the glyco modification '{originalId}' in {glycoFile} as the glycan \"{composition}\", " +
+                    $"ignoring \"{ignored}\" after it. If that was meant to be part of the glycan, fix the ID: " +
+                    "a composition is a name and a count repeated, e.g. HexNAc(2)Hex(5)NeuAc(1).");
+            }
+            return kind;
         }
 
         private static void LoadDigestionAgents()
