@@ -48,6 +48,8 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
+            // one view of each database for every index key this task builds; see SnapshotDatabases
+            List<FileInfo> databasesAsLoaded = IndexingEngine.SnapshotDatabases(dbFilenameList);
             var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, XlSearchParameters.DecoyType, true, localizeableModificationTypes);
             var loadingResults = dbLoader.Run() as DatabaseLoadingEngineResults;
             List<Protein> proteinList = loadingResults!.BioPolymers.Cast<Protein>().ToList();
@@ -134,7 +136,7 @@ namespace TaskLayer
                     //Only reverse Decoy for crosslink search has been tested and are set as fixed parameter.
                     var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, currentPartition,
                         UsefulProteomicsDatabases.DecoyType.Reverse, indexParams, this.FileSpecificParameters, 30000.0, false,
-                        dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
+                        databasesAsLoaded, TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
 
                     FragmentIndex fragmentIndex = null;
                     List<int>[] precursorIndex = null;
@@ -153,7 +155,7 @@ namespace TaskLayer
                         }
                         var secondIndexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, currentPartition,
                             UsefulProteomicsDatabases.DecoyType.Reverse, secondCombinedParams, this.FileSpecificParameters, 30000.0, false,
-                            dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
+                            databasesAsLoaded, TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
                         GenerateSecondIndexes(indexEngine, secondIndexEngine, dbFilenameList, ref secondFragmentIndex, proteinList, taskId);
                     }
 
@@ -182,7 +184,7 @@ namespace TaskLayer
 
                     var indexEngine_a = new IndexingEngine(proteinListSubset_a, variableModifications, fixedModifications, null, null, null, currentPartition,
                         UsefulProteomicsDatabases.DecoyType.Reverse, indexParams, this.FileSpecificParameters, 30000.0, false,
-                        dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
+                        databasesAsLoaded, TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
 
                     List<int>[] precursorIndex_a = null;
                     GenerateIndexes_PeptideOnly(indexEngine_a, dbFilenameList, ref peptideIndex_a, ref precursorIndex_a, proteinList, taskId);
@@ -203,7 +205,7 @@ namespace TaskLayer
 
                             var indexEngine_b = new IndexingEngine(proteinListSubset_b, variableModifications, fixedModifications, null, null, null, nextPartition,
                                 UsefulProteomicsDatabases.DecoyType.Reverse, indexParams, this.FileSpecificParameters, 30000.0, false,
-                                dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
+                                databasesAsLoaded, TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
 
                             List<int>[] precursorIndex_b = null;
                             GenerateIndexes_PeptideOnly(indexEngine_b, dbFilenameList, ref peptideIndex_b, ref precursorIndex_b, proteinList, taskId);

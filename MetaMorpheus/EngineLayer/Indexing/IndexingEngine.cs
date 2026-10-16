@@ -1,9 +1,11 @@
 ﻿using Chemistry;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.NonSpecificEnzymeSearch;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -23,6 +25,9 @@ namespace EngineLayer.Indexing
         private static readonly double WaterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
 
         private const int FragmentBinsPerDalton = 1000;
+
+        // keyed on a file's path, length and last write time; see ContentHash
+        private static readonly ConcurrentDictionary<string, string> ContentHashes = new();
         private readonly List<IBioPolymer> BioPolymerList;
         private readonly List<Modification> FixedModifications;
         private readonly List<Modification> VariableModifications;
@@ -66,7 +71,7 @@ namespace EngineLayer.Indexing
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Databases: " + string.Join(",", ProteinDatabases.OrderBy(p => p.Name).Select(p => p.Name + ":" + p.CreationTime)));
+            sb.AppendLine("Databases: " + DescribeDatabases(ProteinDatabases));
             sb.AppendLine("Partitions: " + CurrentPartition + "/" + CommonParameters.TotalPartitions);
             sb.AppendLine("Precursor Index: " + GeneratePrecursorIndex);
             sb.AppendLine("Search Decoys: " + DecoyType);
@@ -187,6 +192,114 @@ namespace EngineLayer.Indexing
 
             byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(definition));
             return Convert.ToHexString(hash, 0, 8).ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// The identity of the database list, for the index cache key.
+        /// </summary>
+        /// <remarks>
+        /// Each database is named and then qualified by a hash of its content. The key previously used
+        /// the file name and its CreationTime, and CreationTime does not move when a file is edited in
+        /// place: regenerate or hand-edit a FASTA at the same path and every byte of the key stays the
+        /// same, so the search reuses an index built from the old proteins. The name on its own is not
+        /// an identity either, being a bare file name rather than a path.
+        ///
+        /// Hashing is gated on (path, length, last write time) and memoised, because ToString is called
+        /// once per candidate index folder per database per partition and hashing on every call would
+        /// cost minutes on a large proteome. Content still decides the key, so touching a database
+        /// without changing it re-hashes but does not invalidate the cache. Within one process a file
+        /// edited to exactly its former length and write time would keep its old hash; across processes
+        /// the memo starts empty.
+        ///
+        /// The list order is preserved rather than sorted, for the same reason the modification list is.
+        /// DatabaseLoadingEngine.LoadBioPolymers appends each database's entries in list order and
+        /// SearchTask slices that list by index to build partitions, so with more than one partition a
+        /// reordered database list puts different proteins in partition k. Sorting here, as the key used
+        /// to, lets those two orders share one key.
+        /// </remarks>
+        internal static string DescribeDatabases(IEnumerable<FileInfo> databases)
+        {
+            if (databases == null)
+            {
+                return "none";
+            }
+
+            return string.Join(",", databases.Select(DescribeDatabase));
+        }
+
+        internal static string DescribeDatabase(FileInfo database)
+        {
+            if (database == null)
+            {
+                return "none";
+            }
+
+            return database.Name + "[" + ContentHash(database) + "]";
+        }
+
+        /// <summary>
+        /// The task's databases as the index cache key describes them, taken once, before the databases are
+        /// loaded. Pass this one list to every IndexingEngine the task builds.
+        /// </summary>
+        /// <remarks>
+        /// Everything a task indexes comes from the proteins it loaded when it started, so every key the
+        /// task builds must describe that content, not whatever is on disk by the time a later file,
+        /// partition or round builds its key. Each <see cref="FileInfo"/> keeps the stamp it read here, and
+        /// <see cref="ContentHash"/> memoises the hash under that stamp, so an edit made while the task
+        /// runs changes none of its keys: XL search's second round still finds the folder its first round
+        /// wrote, and no index of the old proteins is filed under the edited file's hash. The next task
+        /// takes a new snapshot and sees the edit.
+        /// </remarks>
+        public static List<FileInfo> SnapshotDatabases(IEnumerable<DbForTask> dbFilenameList)
+        {
+            List<FileInfo> databases = dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList();
+            DescribeDatabases(databases);
+            return databases;
+        }
+
+        /// <summary>
+        /// A short hash of a file's content, memoised so a database is read at most once per edit.
+        /// </summary>
+        /// <remarks>
+        /// A file that cannot be read falls back to hashing its stamp, which still moves when the file
+        /// is edited. Throwing would take down a cache-key comparison over a database the search is
+        /// about to fail on anyway, and returning a constant would let two unreadable files share a key.
+        /// </remarks>
+        internal static string ContentHash(FileInfo database)
+        {
+            // Deliberately no Refresh(). FileInfo keeps the metadata it first read, and a task passes the
+            // same instances (see SnapshotDatabases) to every engine it builds, so all of that task's keys
+            // describe the database as it was loaded. A new FileInfo, as the next task makes, sees an edit.
+            if (!database.Exists)
+            {
+                return "missing";
+            }
+
+            // The separators are load-bearing: without them "<dir>/x1.fasta" of length 23 and
+            // "<dir>/x1.fasta2" of length 3 produce the same stamp, and the second file would be handed
+            // the first one's hash.
+            string stamp = database.FullName + "|" + database.Length + "|" + database.LastWriteTimeUtc.ToBinary();
+
+            if (ContentHashes.TryGetValue(stamp, out string cached))
+            {
+                return cached;
+            }
+
+            string hash;
+            try
+            {
+                using FileStream stream = database.OpenRead();
+                hash = Convert.ToHexString(SHA256.HashData(stream), 0, 8).ToLowerInvariant();
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // Deliberately not memoised. A database locked by another process for a moment must not
+                // pin its stamp to the fallback for the life of the process.
+                return ShortHash(stamp);
+            }
+
+            ContentHashes[stamp] = hash;
+            return hash;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
