@@ -23,5 +23,11 @@ namespace EngineLayer
         public List<(string, string)> ListOfModsGptmd { get; set; }
         public List<IGptmdFilter> GptmdFilters { get; set; } 
         public bool WriteDecoys { get; set; } = true;
+
+        /// <summary>
+        /// Also try each modification the database put on an identified peptide (a UniProt phosphosite, say) at the
+        /// peptide's other residues, and add the sites that score at least as well. The database's own site is kept.
+        /// </summary>
+        public bool AddAlternativeSitesForDatabaseMods { get; set; } = true;
     }
 }

@@ -24,6 +24,7 @@ namespace EngineLayer.Gptmd
         private static readonly double QValueNotchThreshold = 0.05;
         public Dictionary<string, HashSet<Tuple<int, Modification>>> ModDictionary { get; init; }
         private readonly List<IGptmdFilter> Filters;
+        private readonly bool AddAlternativeSitesForDatabaseMods;
 
         public GptmdEngine(
             List<SpectralMatch> allIdentifications,
@@ -34,7 +35,8 @@ namespace EngineLayer.Gptmd
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
             List<string> nestedIds,
             Dictionary<string, HashSet<Tuple<int, Modification>>> modDictionary,
-            List<IGptmdFilter> filters = null)
+            List<IGptmdFilter> filters = null,
+            bool addAlternativeSitesForDatabaseMods = true)
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllIdentifications = allIdentifications;
@@ -43,6 +45,7 @@ namespace EngineLayer.Gptmd
             FilePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
             ModDictionary = modDictionary ?? new Dictionary<string, HashSet<Tuple<int, Modification>>>();
             Filters = filters ?? new List<IGptmdFilter>();
+            AddAlternativeSitesForDatabaseMods = addAlternativeSitesForDatabaseMods;
         }
 
         public static bool ModFits(Modification attemptToLocalize, IBioPolymer protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
@@ -117,7 +120,6 @@ namespace EngineLayer.Gptmd
 
                         bestMatches.Clear();
                         var pepWithSetMods = hypothesis.SpecificBioPolymer;
-                        var isVariantProtein = pepWithSetMods.Parent != pepWithSetMods.Parent.ConsensusVariant;
 
                         // Each candidate mass (peptide + modification) is tested against the observation the way
                         // this search matches: monoisotopic-to-monoisotopic by default, apex-to-apex within the
@@ -142,14 +144,9 @@ namespace EngineLayer.Gptmd
                                     continue;
 
                                 var newPep = pepWithSetMods.Localize(pepSeqIndex, mod.MonoisotopicMass.Value);
-                                peptideTheorProducts.Clear();
-                                newPep.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts, CommonParameters.FragmentationParameters);
-
                                 ms2ScanWithSpecificMass ??= new Ms2ScanWithSpecificMass(scan, precursorMass, precursorCharge, fileName, CommonParameters);
-                                var matchedIons = MatchFragmentIons(ms2ScanWithSpecificMass, peptideTheorProducts, CommonParameters, matchAllCharges: false);
-                                double score = CalculatePeptideScore(scan, matchedIons);
+                                double score = ScoreCandidate(newPep, dissociationType, ms2ScanWithSpecificMass, peptideTheorProducts, out var matchedIons);
 
-                                int modSiteInProteinIndex = pepWithSetMods.OneBasedStartResidue + pepSeqIndex;
                                 int modSiteInPeptideResidue = pepSeqIndex + 1;
                                 if (Filters.Any(f => !f.Passes(newPep, psm, score, originalScore, matchedIons, modSiteInPeptideResidue, pepWithSetMods.Length, mod)))
                                     continue;
@@ -157,45 +154,7 @@ namespace EngineLayer.Gptmd
                                 if (score < bestScore - ScoreTolerance)
                                     continue;
 
-                                // resolve variant protein location
-                                string accession;
-                                int adjustedSite = modSiteInProteinIndex;
-                                if (!isVariantProtein)
-                                {
-                                    accession = pepWithSetMods.Parent.Accession;
-                                }
-                                else
-                                {
-                                    accession = null;
-                                    int offset = 0;
-                                    foreach (var variant in pepWithSetMods.Parent.AppliedSequenceVariations.OrderBy(v => v.OneBasedBeginPosition))
-                                    {
-                                        bool modIsBeforeVariant = indexInProtein < variant.OneBasedBeginPosition + offset;
-                                        bool modIsOnVariant = variant.OneBasedBeginPosition + offset <= indexInProtein &&
-                                                              indexInProtein <= variant.OneBasedEndPosition + offset;
-
-                                        if (modIsOnVariant)
-                                        {
-                                            accession = pepWithSetMods.Parent.Accession;
-                                            break;
-                                        }
-
-                                        if (modIsBeforeVariant)
-                                        {
-                                            accession = pepWithSetMods.Parent.ConsensusVariant.Accession;
-                                            adjustedSite = indexInProtein - offset;
-                                            break;
-                                        }
-
-                                        offset += variant.VariantSequence.Length - variant.OriginalSequence.Length;
-                                    }
-
-                                    if (accession == null)
-                                    {
-                                        accession = pepWithSetMods.Parent.ConsensusVariant.Accession;
-                                        adjustedSite = indexInProtein - offset;
-                                    }
-                                }
+                                var (adjustedSite, accession) = ResolveSiteInDatabase(pepWithSetMods, indexInProtein);
 
                                 if (score > bestScore + ScoreTolerance) // new high score, reset list
                                 {
@@ -215,6 +174,17 @@ namespace EngineLayer.Gptmd
                             AddIndexedMod(modDict, match.proteinAccession, new Tuple<int, Modification>(match.site, match.mod));
                             Interlocked.Increment(ref modsAdded);
                         }
+
+                        if (!AddAlternativeSitesForDatabaseMods)
+                            continue;
+
+                        foreach (var match in FindAlternativeSitesForDatabaseMods(psm, pepWithSetMods, FilePathToPrecursorMassTolerance[fileName], dissociationType,
+                                     () => ms2ScanWithSpecificMass ??= new Ms2ScanWithSpecificMass(scan, precursorMass, precursorCharge, fileName, CommonParameters),
+                                     peptideTheorProducts))
+                        {
+                            AddIndexedMod(modDict, match.proteinAccession, new Tuple<int, Modification>(match.site, match.mod));
+                            Interlocked.Increment(ref modsAdded);
+                        }
                     }
                 }
             });
@@ -223,6 +193,147 @@ namespace EngineLayer.Gptmd
             foreach(var kvp in modDict)
                 ModDictionary.MergeOrCreate(kvp.Key, new HashSet<Tuple<int, Modification>>(kvp.Value));
             return new GptmdResults(this, ModDictionary, modsAdded);
+        }
+
+        /// <summary>
+        /// Other sites for the modifications the database put on this peptide.
+        /// <para>
+        /// GPTMD otherwise looks only at precursor mass a peptide leaves unexplained. A spectrum matched to a database
+        /// modification (a UniProt phosphoserine, say) leaves none, so that modification is never tried at another
+        /// residue, and the search can only report the annotated one.
+        /// </para>
+        /// <para>
+        /// Here, when the precursor matches the peptide with its database modifications as they are, each one is moved
+        /// (not duplicated) to every other residue where a GPTMD modification of the same chemistry fits. Each move is
+        /// scored and filtered as an ordinary GPTMD candidate is, against the original placement scored the same way.
+        /// Every move within <see cref="ScoreTolerance"/> of the best score, the original's included, is returned:
+        /// a spectrum that cannot tell two sites apart puts both in the database, so the search can report the site
+        /// as ambiguous. The original stays in the database.
+        /// </para>
+        /// </summary>
+        private List<(int site, Modification mod, string proteinAccession)> FindAlternativeSitesForDatabaseMods(SpectralMatch psm,
+            IBioPolymerWithSetMods peptide, Tolerance precursorTolerance, DissociationType dissociationType,
+            Func<Ms2ScanWithSpecificMass> getScan, List<Product> theoreticalProducts)
+        {
+            var alternatives = new List<(int site, Modification mod, string proteinAccession)>();
+            if (!psm.MatchesCandidateMass(peptide.MonoisotopicMass, precursorTolerance, CommonParameters))
+                return alternatives;
+
+            foreach (var (key, databaseMod) in peptide.AllModsOneIsNterminus)
+            {
+                // zero-based residue; modifications on the termini (keys 1 and Length + 2) are not moved
+                int fromIndex = key - 2;
+                if (fromIndex < 0 || fromIndex >= peptide.Length || !databaseMod.MonoisotopicMass.HasValue
+                    || !IsDatabaseMod(peptide, fromIndex, databaseMod))
+                    continue;
+
+                var sameChemistry = GptmdModifications.Where(m => m.ValidModification == true && IsSameChemistry(m, databaseMod)).ToList();
+                if (sameChemistry.Count == 0)
+                    continue;
+
+                double mass = databaseMod.MonoisotopicMass.Value;
+                var scanWithMass = getScan();
+
+                // the original placement, scored the way every GPTMD candidate is (as a mass-only modification)
+                double originalPlacementScore = ScoreCandidate(peptide.Localize(fromIndex, 0), dissociationType, scanWithMass, theoreticalProducts, out _);
+                double bestScore = originalPlacementScore;
+                var bestMoves = new List<(int site, Modification mod, string proteinAccession)>();
+
+                foreach (var mod in sameChemistry)
+                {
+                    for (int toIndex = 0; toIndex < peptide.Length; toIndex++)
+                    {
+                        // a residue that already carries a modification cannot take a second one in the search
+                        if (toIndex == fromIndex || peptide.AllModsOneIsNterminus.ContainsKey(toIndex + 2))
+                            continue;
+
+                        int indexInProtein = peptide.OneBasedStartResidue + toIndex;
+                        if (!ModFits(mod, peptide.Parent, toIndex + 1, peptide.Length, indexInProtein))
+                            continue;
+
+                        var moved = peptide.Localize(fromIndex, -mass).Localize(toIndex, mass);
+                        double score = ScoreCandidate(moved, dissociationType, scanWithMass, theoreticalProducts, out var matchedIons);
+
+                        if (Filters.Any(f => !f.Passes(moved, psm, score, originalPlacementScore, matchedIons, toIndex + 1, peptide.Length, mod)))
+                            continue;
+
+                        if (score < bestScore - ScoreTolerance)
+                            continue;
+
+                        if (score > bestScore + ScoreTolerance) // new high score, reset list
+                        {
+                            bestScore = score;
+                            bestMoves.Clear();
+                        }
+
+                        var (site, accession) = ResolveSiteInDatabase(peptide, indexInProtein);
+                        bestMoves.Add((site, mod, accession));
+                    }
+                }
+
+                alternatives.AddRange(bestMoves);
+            }
+
+            return alternatives;
+        }
+
+        /// <summary>
+        /// Whether the database, rather than a fixed or variable modification, put this modification at this residue.
+        /// </summary>
+        private static bool IsDatabaseMod(IBioPolymerWithSetMods peptide, int zeroBasedResidue, Modification mod)
+        {
+            return peptide.Parent.OneBasedPossibleLocalizedModifications.TryGetValue(peptide.OneBasedStartResidue + zeroBasedResidue, out var modsHere)
+                && modsHere.Contains(mod);
+        }
+
+        /// <summary>
+        /// Same chemical formula, or, when either has none, the same mass within the 0.005 Da that <see cref="ModFits"/>
+        /// uses. UniProt's "Phosphoserine" and GPTMD's "Phosphorylation on T" are the same chemistry.
+        /// </summary>
+        private static bool IsSameChemistry(Modification a, Modification b)
+        {
+            if (a.ChemicalFormula != null && b.ChemicalFormula != null)
+                return a.ChemicalFormula.Equals(b.ChemicalFormula);
+            return a.MonoisotopicMass.HasValue && b.MonoisotopicMass.HasValue
+                && Math.Abs(a.MonoisotopicMass.Value - b.MonoisotopicMass.Value) < 0.005;
+        }
+
+        private double ScoreCandidate(IBioPolymerWithSetMods candidate, DissociationType dissociationType, Ms2ScanWithSpecificMass scan,
+            List<Product> theoreticalProducts, out List<MatchedFragmentIon> matchedIons)
+        {
+            theoreticalProducts.Clear();
+            candidate.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, theoreticalProducts, CommonParameters.FragmentationParameters);
+            matchedIons = MatchFragmentIons(scan, theoreticalProducts, CommonParameters, matchAllCharges: false);
+            return CalculatePeptideScore(scan.TheScan, matchedIons);
+        }
+
+        /// <summary>
+        /// The accession and one-based site a modification is written under. A site on an applied sequence variant goes
+        /// to the variant's accession; any other site goes to the consensus protein, shifted by the length changes of
+        /// the variants before it.
+        /// </summary>
+        private static (int site, string accession) ResolveSiteInDatabase(IBioPolymerWithSetMods peptide, int indexInProtein)
+        {
+            if (peptide.Parent == peptide.Parent.ConsensusVariant)
+                return (indexInProtein, peptide.Parent.Accession);
+
+            int offset = 0;
+            foreach (var variant in peptide.Parent.AppliedSequenceVariations.OrderBy(v => v.OneBasedBeginPosition))
+            {
+                bool modIsBeforeVariant = indexInProtein < variant.OneBasedBeginPosition + offset;
+                bool modIsOnVariant = variant.OneBasedBeginPosition + offset <= indexInProtein &&
+                                      indexInProtein <= variant.OneBasedEndPosition + offset;
+
+                if (modIsOnVariant)
+                    return (indexInProtein, peptide.Parent.Accession);
+
+                if (modIsBeforeVariant)
+                    return (indexInProtein - offset, peptide.Parent.ConsensusVariant.Accession);
+
+                offset += variant.VariantSequence.Length - variant.OriginalSequence.Length;
+            }
+
+            return (indexInProtein - offset, peptide.Parent.ConsensusVariant.Accession);
         }
 
         private static void AddIndexedMod(ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>> modDict, string proteinAccession, Tuple<int, Modification> indexedMod)
