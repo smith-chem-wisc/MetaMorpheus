@@ -120,36 +120,15 @@ namespace EngineLayer.Indexing
         }
 
         /// <summary>
-        /// Writes digestion parameters the way <c>MetaMorpheusTask.tomlConfig</c> saves them, for the
-        /// digestion types only. That config lives in TaskLayer, which EngineLayer cannot reference;
-        /// <c>IndexCacheHeaderTest</c> pins the two to identical output so they cannot drift apart.
-        /// Write-only: nothing reads this text back.
-        /// </summary>
-        private static readonly TomlSettings DigestionParamsToml = TomlSettings.Create(cfg => cfg
-            .ConfigureType<Protease>(type => type
-                .WithConversionFor<TomlString>(convert => convert
-                    .ToToml(custom => custom.ToString())))
-            .ConfigureType<Rnase>(type => type
-                .WithConversionFor<TomlString>(convert => convert
-                    .ToToml(custom => custom.Name)))
-            .ConfigureType<DigestionParams>(type => type
-                .IgnoreProperty(p => p.DigestionAgent)
-                .IgnoreProperty(p => p.SpecificDigestionAgent)
-                .IgnoreProperty(p => p.MaxMods)
-                .IgnoreProperty(p => p.MaxLength)
-                .IgnoreProperty(p => p.MinLength))
-            .ConfigureType<RnaDigestionParams>(type => type
-                .IgnoreProperty(p => p.DigestionAgent)
-                .IgnoreProperty(p => p.SpecificDigestionAgent)));
-
-        /// <summary>
         /// The digestion parameters for the index cache key: their TOML, one setting per entry, on one line.
         /// </summary>
         /// <remarks>
         /// TOML rather than <c>DigestionParams.ToString()</c>, which covers only what mzLib remembers to
         /// append to it, and nothing at all for <see cref="RnaDigestionParams"/>, which has no override.
         /// The TOML is written by reflection over the runtime type, so it names every setting by key and
-        /// covers protein and RNA parameters alike.
+        /// covers protein and RNA parameters alike. It is written with <see cref="DigestionTomlSettings"/>,
+        /// the configuration <c>MetaMorpheusTask.tomlConfig</c> saves tasks with, so the key carries exactly
+        /// the digestion settings a saved task carries. Write-only: nothing reads this text back.
         /// </remarks>
         internal static string DescribeDigestionParams(IDigestionParams digestionParams)
         {
@@ -158,7 +137,7 @@ namespace EngineLayer.Indexing
                 return "none";
             }
 
-            string toml = Toml.WriteString((object)digestionParams, DigestionParamsToml);
+            string toml = Toml.WriteString((object)digestionParams, DigestionTomlSettings.Settings);
             return string.Join("; ", toml.Split('\r', '\n').Where(line => line.Length > 0));
         }
 

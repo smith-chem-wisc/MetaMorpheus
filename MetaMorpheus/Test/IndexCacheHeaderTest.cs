@@ -432,8 +432,9 @@ namespace Test
         /// <summary>
         /// The <c>digestionParams:</c> line is the parameters as a saved task writes them. A setting that
         /// is not in a task's TOML cannot be saved and reloaded, so tying the key to that TOML is what keeps
-        /// every user-settable option in the key without anyone remembering to add it. EngineLayer cannot
-        /// reach <see cref="MetaMorpheusTask.tomlConfig"/>, so this pins its own copy to identical output.
+        /// every user-settable option in the key without anyone remembering to add it. Both are written with
+        /// <see cref="DigestionTomlSettings"/>; this catches a digestion type configured in
+        /// <see cref="MetaMorpheusTask.tomlConfig"/> directly, which the key would not see.
         /// </summary>
         [Test]
         public static void IndexFingerprint_DigestionParamsLineIsTheSavedTaskToml()
