@@ -60,6 +60,26 @@ namespace EngineLayer.Util
                 .All(interval => !double.IsInfinity(interval.Minimum) && !double.IsInfinity(interval.Maximum));
         }
 
+        /// <summary>
+        /// The largest share of the peptide index a scan's precursor window may hold, on average, for stamping to be chosen.
+        /// A bounded window is not necessarily a narrow one: a wide Custom interval is finite and can still hold most of
+        /// the index, and it is how many cells a scan touches, not whether the window ends, that decides which table is faster.
+        /// Measured end to end (modern search, 9,640 yeast MS2 scans against a 9.5M-peptide yeast index, 8 threads), stamping
+        /// is faster up to a window holding about 2.5% of the index and breaks even near 5%; at 13% clearing is 1.14x faster.
+        /// Ordinary tolerances hold under 0.1%. A synthetic scoring loop put the crossover at 0.2-0.3%, but its tables fit in
+        /// cache; a real index's table does not, so each clear costs a full pass over memory.
+        /// </summary>
+        public const double MaxWindowShareWorthStamping = 0.05;
+
+        /// <summary>
+        /// Whether a search whose precursor windows hold, on average, <paramref name="meanWindowShareOfIndex"/> of the peptide
+        /// index should stamp rather than clear. Only meaningful for an acceptor <see cref="IsWorthStamping"/> accepts.
+        /// </summary>
+        public static bool IsWindowNarrowEnoughToStamp(double meanWindowShareOfIndex)
+        {
+            return meanWindowShareOfIndex <= MaxWindowShareWorthStamping;
+        }
+
         private bool Stamped => _stampedCells != null;
 
         /// <summary>Discards the previous scan's scores.</summary>

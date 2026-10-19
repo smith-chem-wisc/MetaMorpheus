@@ -242,7 +242,9 @@ namespace TaskLayer
             .ConfigureType<Protease>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.ToString())
-                    .FromToml(tmlString => ProteaseDictionary.Dictionary[tmlString.Value])))
+                    // GetProtease, not the raw indexer: it maps the names older releases wrote, such as
+                    // "chymotrypsin (don't cleave before proline)", onto the enzyme they meant.
+                    .FromToml(tmlString => ProteaseDictionary.GetProtease(tmlString.Value))))
             .ConfigureType<List<string>>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => string.Join("\t", custom))
