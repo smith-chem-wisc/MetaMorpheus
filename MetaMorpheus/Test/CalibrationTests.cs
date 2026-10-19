@@ -431,10 +431,12 @@ namespace Test
         /// <summary>
         /// End to end with one file calibrated and one not, the case a real run hits (PXD014145: 11 of 12 files calibrated).
         /// The search after calibration gets the -calib file and the ORIGINAL of the other, and reads the design beside the
-        /// first of them, so that design has to name both.
+        /// first of them, so that design has to name both. The design may spell a file in another case, as
+        /// TmtExperimentalDesign.Read allows: a failed file spelled so was named as a -calib file that was never written.
         /// </summary>
-        [Test]
-        public static void SearchAfterCalibration_FindsTheTmtDesign_WhenOneFileCouldNotBeCalibrated()
+        [TestCase("VA084TQ_6.mzML")]
+        [TestCase("va084tq_6.mzML")]
+        public static void SearchAfterCalibration_FindsTheTmtDesign_WhenOneFileCouldNotBeCalibrated(string notCalibratableAsTheDesignSpellsIt)
         {
             string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtCalibrateThenSearchMixedTest");
             string outputFolder = Path.Combine(unitTestFolder, "TaskOutput");
@@ -445,7 +447,7 @@ namespace Test
             // mouse TMT spectra against a yeast database: no PSMs, so calibration copies it instead
             string notCalibratable = Path.Combine(unitTestFolder, "VA084TQ_6.mzML");
             File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TMT_test", "VA084TQ_6.mzML"), notCalibratable, true);
-            WriteTmtDesignBeside(calibratable, notCalibratable);
+            WriteTmtDesignBeside(calibratable, Path.Combine(unitTestFolder, notCalibratableAsTheDesignSpellsIt));
 
             var searchTask = new SearchTask();
             searchTask.SearchParameters.DoMultiplexQuantification = true;

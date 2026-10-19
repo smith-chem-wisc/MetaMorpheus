@@ -234,8 +234,9 @@ namespace TaskLayer
         /// </summary>
         private string CalibratedFilePath(string originalFilePath, string outputFolder)
         {
+            // ignoring case, as TmtExperimentalDesign.Read matches the design's File column to the spectra files
             string name = Path.GetFileNameWithoutExtension(originalFilePath);
-            return _unsuccessfullyCalibratedFilePaths.Any(path => Path.GetFileNameWithoutExtension(path) == name)
+            return _unsuccessfullyCalibratedFilePaths.Any(path => string.Equals(Path.GetFileNameWithoutExtension(path), name, StringComparison.OrdinalIgnoreCase))
                 ? originalFilePath
                 : Path.Combine(outputFolder, name + CalibSuffix + ".mzML").ToSafeOutputPath(CalibSuffix + ".mzML");
         }
