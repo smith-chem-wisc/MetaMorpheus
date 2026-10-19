@@ -66,19 +66,22 @@ namespace TaskLayer
 
         /// <summary>
         /// Whether these settings make digestion return seed oligos rather than oligos: the rnase singleN or singleC,
-        /// SearchModeType None with any terminus, or Semi with a single terminus.
+        /// SearchModeType None with any terminus, or Semi (from SearchModeType or the rnase's own specificity) with a single
+        /// terminus.
         /// </summary>
         /// <remarks>
         /// Since mzLib 1.0.592 (#1318) nucleic acid digestion follows <c>SearchModeType</c> as protein digestion does.
         /// With None, <c>RnaDigestionParams</c> swaps the rnase for singleN (terminus N or FivePrime) or singleC and keeps the
         /// named one as <c>SpecificRnase</c>, so the rnase's specificity covers None and a named singleN or singleC alike.
-        /// Semi with FivePrime or ThreePrime gives the longest oligo from each cleavage site, fixed at that end. Each leaves
-        /// the other end to a search engine that decides it from the precursor mass. Semi with Both asks for semi-specific
-        /// oligos, not seeds; mzLib 1.0.595 does not digest it for nucleic acids yet, and this rule does not refuse it.
+        /// Semi with FivePrime or ThreePrime gives the longest oligo from each cleavage site, fixed at that end. mzLib's
+        /// <c>Rnase.GetUnmodifiedOligos</c> takes Semi from SearchModeType or, failing that, from the rnase, so an rnase
+        /// defined as semi (rnase_custom.tsv allows it) does the same under SearchModeType Full. Each leaves the other end
+        /// to a search engine that decides it from the precursor mass. Semi with Both asks for semi-specific oligos, not
+        /// seeds; mzLib 1.0.595 does not digest it for nucleic acids yet, and this rule does not refuse it.
         /// </remarks>
         public static bool AsksForSeeds(RnaDigestionParams digestionParams) =>
             digestionParams.Rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
-            || (digestionParams.SearchModeType == CleavageSpecificity.Semi
+            || ((digestionParams.SearchModeType == CleavageSpecificity.Semi || digestionParams.Rnase.CleavageSpecificity == CleavageSpecificity.Semi)
                 && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C
                     or FragmentationTerminus.FivePrime or FragmentationTerminus.ThreePrime);
 
@@ -114,11 +117,14 @@ namespace TaskLayer
                 // Name what AsksForSeeds decided on. Rnase, not SpecificRnase: a task file saved before mzLib 1.0.592 has no
                 // SpecificRnase, so it reads back as top-down there while Rnase is singleN or singleC.
                 Rnase rnase = rnaDigestionParams.Rnase;
+                string terminus = $"FragmentationTerminus {rnaDigestionParams.FragmentationTerminus}";
                 string setting = rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
                     ? rnaDigestionParams.SearchModeType == CleavageSpecificity.None
                         ? "has SearchModeType None (non-specific)"
                         : $"uses the rnase {rnase.Name}"
-                    : $"has SearchModeType Semi with FragmentationTerminus {rnaDigestionParams.FragmentationTerminus}";
+                    : rnaDigestionParams.SearchModeType == CleavageSpecificity.Semi
+                        ? $"has SearchModeType Semi with {terminus}"
+                        : $"uses the semi-specific rnase {rnase.Name} with {terminus}";
                 return $"Cannot proceed. {which} {setting}, which gives seed oligos that only a non-specific search could use, " +
                        "and non-specific search is not yet implemented for nucleic acids. Choose a fully specific rnase with SearchModeType Full.";
             }

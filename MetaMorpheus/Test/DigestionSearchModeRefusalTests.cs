@@ -4,10 +4,13 @@ using Nett;
 using NUnit.Framework;
 using Omics.Digestion;
 using Omics.Fragmentation;
+using Omics.Modifications;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using TaskLayer;
+using Transcriptomics;
 using Transcriptomics.Digestion;
 
 namespace Test
@@ -223,6 +226,51 @@ namespace Test
                 Assert.That(refusal, Is.Null);
             }
         }
+
+        /// <summary>
+        /// mzLib takes Semi from the rnase's own specificity as well as from SearchModeType, so an rnase defined as semi (a
+        /// user can add one in rnase_custom.tsv) gives seed oligos with a single terminus even under SearchModeType Full. Such
+        /// a task is refused like RNase T1 with SearchModeType Semi, and the message names the rnase. With Both it is left
+        /// alone, as SearchModeType Semi with Both is.
+        /// </summary>
+        [Test]
+        [TestCase(FragmentationTerminus.FivePrime)]
+        [TestCase(FragmentationTerminus.ThreePrime)]
+        public static void GetSeedDigestionRefusal_WithASemiSpecificRnaseAndOneTerminus_RefusesTheTask(FragmentationTerminus terminus)
+        {
+            const string semiRnase = "semi G| (DigestionSearchModeRefusalTests)";
+            string tsv = Path.Combine(TestContext.CurrentContext.WorkDirectory, $"{nameof(GetSeedDigestionRefusal_WithASemiSpecificRnaseAndOneTerminus_RefusesTheTask)}_{terminus}.tsv");
+            File.WriteAllLines(tsv, new[] { "Name\tMotif\tSpecificity", $"{semiRnase}\tG|\tsemi" });
+            try
+            {
+                Assert.That(RnaseDictionary.LoadAndMergeCustomRnases(tsv).Added, Is.EqualTo(new[] { semiRnase }));
+
+                // premise: under Full, mzLib digests the semi rnase into the seeds of RNase T1 with SearchModeType Semi
+                var rna = new RNA("AAGUACUGCCGAUUGAGGCAU");
+                var semiRnaseUnderFull = new RnaDigestionParams(semiRnase, maxMissedCleavages: 1, fragmentationTerminus: terminus);
+                var rnaseT1UnderSemi = new RnaDigestionParams("RNase T1", maxMissedCleavages: 1, fragmentationTerminus: terminus, searchModeType: CleavageSpecificity.Semi);
+                Assert.That(Oligos(rna, semiRnaseUnderFull), Is.EquivalentTo(Oligos(rna, rnaseT1UnderSemi)));
+                Assert.That(MetaMorpheusTask.AsksForSeeds(rnaseT1UnderSemi), Is.True);
+
+                Assert.That(MetaMorpheusTask.AsksForSeeds(semiRnaseUnderFull), Is.True);
+                foreach (string kind in new[] { "Gptmd", "Calibration", "ClassicSearch", "ModernSearch" })
+                {
+                    string refusal = MakeRnaTask(kind, semiRnase, CleavageSpecificity.Full, terminus).GetSeedDigestionRefusal("MyTask");
+                    Assert.That(refusal, Does.Contain($"uses the semi-specific rnase {semiRnase} with FragmentationTerminus {terminus}"), kind);
+                    Assert.That(refusal, Does.Contain("seed oligos"), kind);
+                }
+
+                Assert.That(MetaMorpheusTask.AsksForSeeds(new RnaDigestionParams(semiRnase)), Is.False, "with Both it is semi-specific, not seeds");
+            }
+            finally
+            {
+                RnaseDictionary.Dictionary.Remove(semiRnase);
+                File.Delete(tsv);
+            }
+        }
+
+        private static List<string> Oligos(RNA rna, RnaDigestionParams digestionParams) =>
+            rna.Digest(digestionParams, new List<Modification>(), new List<Modification>()).Select(o => o.BaseSequence).Distinct().ToList();
 
         /// <summary>
         /// A task file saved before mzLib 1.0.592 has no SpecificRnase, so that reads back as the parameterless constructor's
