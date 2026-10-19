@@ -39,6 +39,7 @@ namespace TaskLayer
             WritePepXml = false;
             IncludeModMotifInMzid = false;
             WriteDigestionProductCountFile = false;
+            WriteAndromedaScore = false;
             WriteTargetDecoyFasta = false;
             WriteSdrf = false;
             IterativePepTraining = true;
@@ -131,6 +132,14 @@ namespace TaskLayer
         public TargetContaminantAmbiguity TCAmbiguity { get; set; }
         public bool IncludeModMotifInMzid { get; set; }
         public bool WriteDigestionProductCountFile { get; set; }
+
+        /// <summary>
+        /// Add an "Andromeda Score" column to the psmtsv (Cox et al. 2011), for comparison with
+        /// MaxQuant. Off by default: it costs a re-fragmentation of every PSM and is an output
+        /// column only -- it does not reach FDR or PEP. Computed for targets and decoys alike, in
+        /// classic, modern and non-specific search.
+        /// </summary>
+        public bool WriteAndromedaScore { get; set; }
         public bool WriteTargetDecoyFasta { get; set; }
 
         /// <summary>
