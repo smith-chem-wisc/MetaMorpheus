@@ -1,5 +1,6 @@
 using EngineLayer;
 using MetaMorpheusCommandLine;
+using Nett;
 using NUnit.Framework;
 using Omics.Digestion;
 using Omics.Fragmentation;
@@ -220,6 +221,37 @@ namespace Test
             else
             {
                 Assert.That(refusal, Is.Null);
+            }
+        }
+
+        /// <summary>
+        /// A task file saved before mzLib 1.0.592 has no SpecificRnase, so that reads back as the parameterless constructor's
+        /// top-down while Rnase says singleN or singleC. The refusal is decided on Rnase, so the message has to name Rnase,
+        /// not fall through to a Semi wording for a file that says SearchModeType Full.
+        /// </summary>
+        [Test]
+        [TestCase("singleN")]
+        [TestCase("singleC")]
+        public static void GetSeedDigestionRefusal_ForATaskFileWithoutSpecificRnase_NamesTheRnase(string rnase)
+        {
+            string text = File.ReadAllText(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "RnaSearchTask_MultipleDecon.toml"));
+            Assert.That(text, Does.Not.Contain("SpecificRnase"), "premise: the file predates SpecificRnase");
+            string path = Path.Combine(TestContext.CurrentContext.WorkDirectory, $"{nameof(GetSeedDigestionRefusal_ForATaskFileWithoutSpecificRnase_NamesTheRnase)}_{rnase}.toml");
+            File.WriteAllText(path, text.Replace("Rnase = \"top-down\"", $"Rnase = \"{rnase}\""));
+            try
+            {
+                var task = Toml.ReadFile<SearchTask>(path, MetaMorpheusTask.tomlConfig);
+                var digestionParams = (RnaDigestionParams)task.CommonParameters.DigestionParams;
+                Assert.That(digestionParams.Rnase.Name, Is.EqualTo(rnase), "premise");
+                Assert.That(digestionParams.SearchModeType, Is.EqualTo(CleavageSpecificity.Full), "premise");
+
+                string refusal = task.GetSeedDigestionRefusal("Task1SearchTask");
+                Assert.That(refusal, Does.Contain($"uses the rnase {rnase},"));
+                Assert.That(refusal, Does.Not.Contain("SearchModeType Semi"));
+            }
+            finally
+            {
+                File.Delete(path);
             }
         }
 

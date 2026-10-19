@@ -111,11 +111,14 @@ namespace TaskLayer
                     return null;
                 }
 
-                string setting = rnaDigestionParams.SpecificRnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
-                    ? $"uses the rnase {rnaDigestionParams.SpecificRnase.Name}"
-                    : rnaDigestionParams.SearchModeType == CleavageSpecificity.None
+                // Name what AsksForSeeds decided on. Rnase, not SpecificRnase: a task file saved before mzLib 1.0.592 has no
+                // SpecificRnase, so it reads back as top-down there while Rnase is singleN or singleC.
+                Rnase rnase = rnaDigestionParams.Rnase;
+                string setting = rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
+                    ? rnaDigestionParams.SearchModeType == CleavageSpecificity.None
                         ? "has SearchModeType None (non-specific)"
-                        : $"has SearchModeType Semi with FragmentationTerminus {rnaDigestionParams.FragmentationTerminus}";
+                        : $"uses the rnase {rnase.Name}"
+                    : $"has SearchModeType Semi with FragmentationTerminus {rnaDigestionParams.FragmentationTerminus}";
                 return $"Cannot proceed. {which} {setting}, which gives seed oligos that only a non-specific search could use, " +
                        "and non-specific search is not yet implemented for nucleic acids. Choose a fully specific rnase with SearchModeType Full.";
             }
