@@ -253,7 +253,15 @@ namespace EngineLayer.Indexing
         public static List<FileInfo> SnapshotDatabases(IEnumerable<DbForTask> dbFilenameList)
         {
             List<FileInfo> databases = dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList();
-            DescribeDatabases(databases);
+
+            // Called for its effect, not its value: this is where each snapshot reads its stamp and the
+            // content is hashed. A FileInfo reads its metadata on first use and keeps it, so without this the
+            // first key the task builds, after loading, would describe the file as it is then.
+            foreach (FileInfo database in databases)
+            {
+                _ = ContentHash(database);
+            }
+
             return databases;
         }
 
