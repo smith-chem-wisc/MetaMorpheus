@@ -14,9 +14,11 @@ namespace EngineLayer.FdrAnalysis
     /// the matches (the individual-file results, which re-run FDR file by file) would otherwise leave its
     /// values behind for every later reader that expects the first pass's.
     ///
-    /// Taking the snapshot gives each match a copy of its FdrInfo objects, so the subset pass writes into
-    /// the copies, starting from exactly the values it would have seen before (including PEP, which it
-    /// reads but does not recompute). The original FdrInfo objects are never written to.
+    /// Taking the snapshot gives each match a copy of its FdrInfo objects (<see cref="FdrInfo.Clone"/>), so
+    /// the subset pass writes into the copies, starting from exactly the values it would have seen before
+    /// (including PEP, which it reads but does not recompute). The original FdrInfo objects are never
+    /// written to. The notch values are saved per hypothesis object and each hypothesis gets its own back,
+    /// so a notch-ambiguous match keeps a different q-value notch on each of its hypotheses.
     /// </summary>
     public sealed class FdrInfoSnapshot : IDisposable
     {
@@ -30,8 +32,8 @@ namespace EngineLayer.FdrAnalysis
             foreach (var match in matches.Where(m => m != null))
             {
                 _matches.Add((match, match.PsmFdrInfo, match.PeptideFdrInfo, match.PsmCount));
-                match.PsmFdrInfo = Copy(match.PsmFdrInfo);
-                match.PeptideFdrInfo = Copy(match.PeptideFdrInfo);
+                match.PsmFdrInfo = match.PsmFdrInfo?.Clone();
+                match.PeptideFdrInfo = match.PeptideFdrInfo?.Clone();
 
                 foreach (var h in match.BestMatchingBioPolymersWithSetMods)
                 {
@@ -71,17 +73,5 @@ namespace EngineLayer.FdrAnalysis
                 s.Hypothesis.PeptideCumulativeDecoyNotch = s.PeptideCumulativeDecoyNotch;
             }
         }
-
-        private static FdrInfo Copy(FdrInfo fdrInfo) => fdrInfo == null ? null : new FdrInfo
-        {
-            CumulativeTarget = fdrInfo.CumulativeTarget,
-            CumulativeDecoy = fdrInfo.CumulativeDecoy,
-            CumulativeTargetNotch = fdrInfo.CumulativeTargetNotch,
-            CumulativeDecoyNotch = fdrInfo.CumulativeDecoyNotch,
-            QValue = fdrInfo.QValue,
-            QValueNotch = fdrInfo.QValueNotch,
-            PEP = fdrInfo.PEP,
-            PEP_QValue = fdrInfo.PEP_QValue
-        };
     }
 }
