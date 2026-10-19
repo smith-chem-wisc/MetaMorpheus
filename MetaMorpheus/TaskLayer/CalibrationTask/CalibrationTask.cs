@@ -208,6 +208,7 @@ namespace TaskLayer
             string designPath = Path.Combine(Directory.GetParent(currentRawFileList.First()).FullName, GlobalVariables.TmtExperimentalDesignFileName);
             if (!File.Exists(designPath))
             {
+                DeleteEarlierTmtDesign(designPath, outputFolder);
                 return;
             }
 
@@ -215,6 +216,7 @@ namespace TaskLayer
             if (errors.Any())
             {
                 Warn($"{GlobalVariables.TmtExperimentalDesignFileName} was not re-written for the calibrated files: " + string.Join(" ", errors));
+                DeleteEarlierTmtDesign(designPath, outputFolder);
                 return;
             }
 
@@ -224,6 +226,21 @@ namespace TaskLayer
                 .Select(file => new TmtFileInfo(CalibratedFilePath(file.FullFilePathWithExtension, outputFolder),
                     file.Plex, file.Fraction, file.TechnicalReplicate, file.Annotations))
                 .ToList(), outputFolder);
+        }
+
+        /// <summary>
+        /// Deletes a TmtDesign.txt an earlier run wrote into <paramref name="outputFolder"/>, for a run that writes none.
+        /// Nothing empties a task folder before a run, so the search after calibration would read it as describing this
+        /// run's files. The input design <paramref name="inputDesignPath"/> is never deleted, even when the output folder
+        /// is the input folder.
+        /// </summary>
+        private static void DeleteEarlierTmtDesign(string inputDesignPath, string outputFolder)
+        {
+            string earlierDesign = Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName);
+            if (!string.Equals(Path.GetFullPath(earlierDesign), Path.GetFullPath(inputDesignPath), StringComparison.OrdinalIgnoreCase))
+            {
+                File.Delete(earlierDesign);
+            }
         }
 
         /// <summary>

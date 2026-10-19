@@ -481,6 +481,104 @@ namespace Test
         }
 
         /// <summary>
+        /// Nothing empties a task folder before a run, so a TmtDesign.txt an earlier run wrote into a reused calibration
+        /// folder was still there when this run could not re-write it, and the search quantified under the earlier run's
+        /// sample annotations. With the input design deleted it did so with no warning at all; with an input design that
+        /// does not describe the files, calibration warned and the search still read the old one.
+        /// </summary>
+        [TestCase(true)]
+        [TestCase(false)]
+        public static void SecondRunIntoTheSameFolder_DoesNotSearchUnderTheFirstRunsTmtDesign(bool deleteTheInputDesign)
+        {
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtCalibrateTwiceTest");
+            string outputFolder = Path.Combine(unitTestFolder, "TaskOutput");
+            if (Directory.Exists(unitTestFolder)) Directory.Delete(unitTestFolder, true);
+            Directory.CreateDirectory(outputFolder);
+            string spectraFile = Path.Combine(unitTestFolder, "filename1.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), spectraFile, true);
+            string inputDesign = Path.Combine(unitTestFolder, GlobalVariables.TmtExperimentalDesignFileName);
+            string calibrationDesign = Path.Combine(outputFolder, "calibrate", GlobalVariables.TmtExperimentalDesignFileName);
+            WriteTmtDesignBeside(spectraFile);
+
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> onWarn = (_, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += onWarn;
+            void CalibrateThenSearch()
+            {
+                var searchTask = new SearchTask();
+                searchTask.SearchParameters.DoMultiplexQuantification = true;
+                searchTask.SearchParameters.MultiplexModId = "TMT11";
+                new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("calibrate", new CalibrationTask()), ("search", searchTask) },
+                    new List<string> { spectraFile },
+                    new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta"), false) },
+                    outputFolder).Run();
+            }
+            try
+            {
+                CalibrateThenSearch();
+                Assert.That(File.Exists(calibrationDesign), Is.True, "the fixture only means anything if the first run writes a design");
+                Assert.That(warnings, Has.None.Contains("No " + GlobalVariables.TmtExperimentalDesignFileName + " found"));
+
+                if (deleteTheInputDesign)
+                {
+                    File.Delete(inputDesign);
+                }
+                else
+                {
+                    WriteTmtDesignBeside(Path.Combine(unitTestFolder, "someOtherFile.mzML"));
+                }
+                byte[] inputDesignBefore = deleteTheInputDesign ? null : File.ReadAllBytes(inputDesign);
+                warnings.Clear();
+                CalibrateThenSearch();
+
+                Assert.That(File.Exists(calibrationDesign), Is.False, "the first run's design is gone");
+                Assert.That(warnings, Has.Some.Contains("No " + GlobalVariables.TmtExperimentalDesignFileName + " found"),
+                    string.Join(Environment.NewLine, warnings));
+                if (!deleteTheInputDesign)
+                {
+                    Assert.That(File.ReadAllBytes(inputDesign), Is.EqualTo(inputDesignBefore), "the input design is the user's");
+                }
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= onWarn;
+                Directory.Delete(unitTestFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// The design calibration removes when it cannot re-write one is the one in its output folder, never the input
+        /// design, even when the output folder is the input folder.
+        /// </summary>
+        [Test]
+        public static void TmtDesignThatCannotBeRewritten_IsKept_WhenTheOutputFolderIsTheInputFolder()
+        {
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtDesignCalibrationSameFolderTest");
+            if (Directory.Exists(unitTestFolder)) Directory.Delete(unitTestFolder, true);
+            Directory.CreateDirectory(unitTestFolder);
+            string spectraFile = Path.Combine(unitTestFolder, "filename1.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), spectraFile, true);
+            WriteTmtDesignBeside(Path.Combine(unitTestFolder, "someOtherFile.mzML"));
+            string inputDesign = Path.Combine(unitTestFolder, GlobalVariables.TmtExperimentalDesignFileName);
+            byte[] inputDesignBefore = File.ReadAllBytes(inputDesign);
+
+            try
+            {
+                new CalibrationTask().RunTask(unitTestFolder,
+                    new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta"), false) },
+                    new List<string> { spectraFile }, "test");
+
+                Assert.That(File.Exists(inputDesign), Is.True);
+                Assert.That(File.ReadAllBytes(inputDesign), Is.EqualTo(inputDesignBefore));
+            }
+            finally
+            {
+                Directory.Delete(unitTestFolder, true);
+            }
+        }
+
+        /// <summary>
         /// The run loop names the calibrated file through ToSafeOutputPath, so a -calib path over the path cap is written
         /// trimmed. The rewritten TMT design has to name that trimmed file, or the search after calibration finds a design
         /// that does not name the file it searches. The input path stays under the cap; only the -calib path is over it.
