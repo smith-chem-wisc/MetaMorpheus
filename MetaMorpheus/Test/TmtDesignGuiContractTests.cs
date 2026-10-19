@@ -1,5 +1,6 @@
 using EngineLayer;
 using MetaMorpheusCommandLine;
+using Omics.Modifications;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System;
@@ -77,7 +78,7 @@ namespace Test
         [Test]
         public static void AnItraq4LabelInADiLeu4PlexIsRejectedByTheProjection()
         {
-            var diLeu4 = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.diLeu4);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.diLeu4, GlobalVariables.AllModsKnown, out var diLeu4);
 
             // "114" is iTRAQ4's first channel and is not a diLeu4 channel at all.
             var file = FileWith(SpectraPath("stale.mzML"), "Plex1", 1, 1, ("114", 1, TmtSampleType.StudySample));
@@ -121,8 +122,8 @@ namespace Test
                     "annotating the second plex used to truncate the first out of the file");
             });
 
-            var projected = TmtExperimentalDesign.ToMzLibDesign(readBack,
-                IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT11), out var projectionErrors);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT11, GlobalVariables.AllModsKnown, out var tmt11);
+            var projected = TmtExperimentalDesign.ToMzLibDesign(readBack, tmt11, out var projectionErrors);
 
             Assert.Multiple(() =>
             {

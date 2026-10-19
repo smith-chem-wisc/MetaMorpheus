@@ -3,6 +3,7 @@ using EngineLayer.DatabaseLoading;
 using MassSpectrometry;
 using Nett;
 using NUnit.Framework;
+using Omics.Modifications;
 using Readers;
 using System.Collections.Generic;
 using System.Globalization;
@@ -45,7 +46,7 @@ namespace Test
         {
             var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
             Assert.That(searchTask.CommonParameters.TrimMsMsPeaks, Is.True, "the fixture only means anything with trimming on");
-            var tag = IsobaricMassTag.GetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId);
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
             string mzml = TestFile("VA084TQ_6.mzML");
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsFromStoredScansMs2");
 
@@ -95,7 +96,7 @@ namespace Test
         public static void Ms3ReporterIons_AreReadFromTheStoredChildScan_NotTheTrimmedOne()
         {
             string mzml = TestFile("MS3_TMT11_Mouse_snip.mzML");
-            var tag = IsobaricMassTag.GetIsobaricMassTag("TMT11");
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag("TMT11", GlobalVariables.AllModsKnown, out var tag), Is.True);
             var commonParameters = new CommonParameters(dissociationType: DissociationType.CID,
                 ms3childScanDissociationType: DissociationType.HCD, trimMsMsPeaks: false,
                 numberOfPeaksToKeepPerWindow: 10, numberOfWindows: 10);

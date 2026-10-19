@@ -25,7 +25,6 @@ using MzLibUtil;
 using Omics.Digestion;
 using Omics.BioPolymer;
 using Omics.Modifications;
-using IsobaricMassTag = EngineLayer.IsobaricMassTag;
 using Omics.SpectrumMatch;
 using EngineLayer.SpectrumMatch;
 using Omics.Fragmentation;
@@ -691,7 +690,7 @@ namespace TaskLayer
                      ". That's ok, the search will continue");
             }
 
-            var tag = IsobaricMassTag.GetIsobaricMassTag(Parameters.SearchParameters.MultiplexModId);
+            IsobaricMassTag.TryGetIsobaricMassTag(Parameters.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag);
             var experimentalDesign = TmtExperimentalDesign.ToMzLibDesign(tmtFiles, tag, out var projectionErrors, out var projectionWarnings);
             if (experimentalDesign == null || projectionErrors.Any())
             {
@@ -852,6 +851,8 @@ namespace TaskLayer
                     proteinGroup.IntensitiesBySample = new Dictionary<ISampleInfo, double>();
                 }
 
+                // A site modified in any sample group is reported as 0/N wherever another group covers it unmodified
+                proteinGroup.ReportSitesSeenModifiedInAnySampleGroup();
                 proteinGroup.PopulateSampleGroupResults();
             }
 
@@ -1276,6 +1277,7 @@ namespace TaskLayer
                     foreach (var proteinGroup in ProteinGroups)
                     {
                         proteinGroup.HasPeptideLevelQuantification = quantifiedPeptidesAvailable;
+                        proteinGroup.ReportSitesSeenModifiedInAnySampleGroup();
                         proteinGroup.PopulateSampleGroupResults();
                     }
                 }
@@ -1322,6 +1324,7 @@ namespace TaskLayer
                 proteinGroup.IntensitiesByFile = null;
                 proteinGroup.HasPeptideLevelQuantification = false;
                 proteinGroup.FilesForQuantification = spectraFileInfo;
+                proteinGroup.ReportSitesSeenModifiedInAnySampleGroup();
                 proteinGroup.PopulateSampleGroupResults();
             }
         }
@@ -2041,7 +2044,9 @@ namespace TaskLayer
         {
             using (StreamWriter output = new StreamWriter(filePath))
             {
-                var reporterIonLabels = IsobaricMassTag.GetReporterIonLabels(Parameters.SearchParameters.MultiplexModId);
+                var reporterIonLabels = IsobaricMassTag.TryGetTagType(Parameters.SearchParameters.MultiplexModId, out var tagType)
+                    ? IsobaricMassTag.GetReporterIonLabels(tagType)
+                    : Array.Empty<string>();
                 string headerWithReporterIons = SpectralMatch.GetTabSeparatedHeader().Trim() + '\t' +
                                                 string.Join('\t', reporterIonLabels);
                 output.WriteLine(headerWithReporterIons);
