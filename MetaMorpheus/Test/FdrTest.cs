@@ -29,6 +29,17 @@ namespace Test
     [TestFixture]
     public static class FdrTest
     {
+        /// <summary>
+        /// QValueNotch_IsSet_OnlyOnUnambiguousPSMs_BeforeDisambiguation_Inverted forces the process-wide
+        /// FdrAnalysisEngine.QvalueThresholdOverride on and turns it off on its last line, which a failing assertion
+        /// skips. See SearchEngineTests.ResetQvalueThresholdOverride for what a leak does.
+        /// </summary>
+        [TearDown]
+        public static void ResetQvalueThresholdOverride()
+        {
+            typeof(FdrAnalysisEngine).GetProperty("QvalueThresholdOverride").SetValue(null, false);
+        }
+
         [Test]
         public static void TestSeeModsThatShiftMobility()
         {
