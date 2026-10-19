@@ -822,10 +822,15 @@ namespace EngineLayer
         /// The catalogue is a convenience, not a prerequisite: MetaMorpheus searches perfectly well without
         /// it, so failing to read it must never stop the program starting. It is normally shipped beside the
         /// executable, but <see cref="DataDir"/> can resolve elsewhere — to %LOCALAPPDATA%\MetaMorpheus for a
-        /// Program Files install, or to a --customDataDir the user has already created — and in those cases
+        /// Program Files install, or to a data directory the user has already created and passed with
+        /// --mmsettings — and in those cases
         /// the file may simply not be there. This method is called from <see cref="SetUpGlobalVariables"/>,
         /// which runs in the MainWindow constructor and in Program.Main outside any try/catch, so an escaping
         /// exception is an unhandled crash at launch rather than a degraded feature.
+        /// <para>
+        /// The failure is reported through <see cref="WarnHandler"/>, not the console: the GUI has no
+        /// console, and the CLI's handler honours -v none. Both front ends subscribe before startup.
+        /// </para>
         /// <para>
         /// An empty dictionary is the safe degraded value, not null: DownloadUniProtDatabaseWindow enumerates
         /// this property and calls FirstOrDefault on it without a null check, so a null here has always been
@@ -839,7 +844,7 @@ namespace EngineLayer
             try
             {
                 // mzLib reports a missing or unreadable catalogue by exception and never returns null
-                // (smith-chem-wisc/mzLib#1126, shipped in 1.0.585).
+                // (smith-chem-wisc/mzLib#1126, first released in 1.0.584).
                 AvailableUniProtProteomes = ProteinDbRetriever.UniprotProteomesList(proteomeListPath);
             }
             catch (Exception e)
@@ -849,8 +854,8 @@ namespace EngineLayer
                 // none of them is worth refusing to start over.
                 AvailableUniProtProteomes = new Dictionary<string, string>();
 
-                Console.WriteLine($"Could not read the list of available UniProt proteomes from '{proteomeListPath}'. " +
-                                  $"Downloading a proteome by name will be unavailable. {e.Message}");
+                Warn($"Could not read the list of available UniProt proteomes from '{proteomeListPath}'. " +
+                     $"Downloading a proteome by name will be unavailable. {e.Message}");
             }
         }
         private static void SetUpGlobalSettings()
@@ -877,10 +882,9 @@ namespace EngineLayer
             var glycoMods = ModificationLoader.ReadModsFromFile(glycoFile, out var errorMods);
             foreach (var glycoMod in glycoMods)
             {
-                var kind = GlycanDatabase.String2Kind(glycoMod.OriginalId);
+                byte[] kind = GlycoModComposition(glycoMod.OriginalId, glycoFile);
 
-                // If we cannot parse the glycan string, we add the glycoMod as a normal modification.
-                if (kind.Sum(p => p) == 0)
+                if (kind == null || kind.Sum(p => p) == 0)
                 {
                     _AllModsKnown.Add(glycoMod);
                     continue;
@@ -899,6 +903,44 @@ namespace EngineLayer
                 }
                 _AllModsKnown.Add(glycan);
             }
+        }
+
+        /// <summary>
+        /// The composition a glyco.txt modification ID names, or null when it names none. An ID with no '('
+        /// -- Hex, dHex, Galactosyl on N-term -- names a single residue, not a composition, and is kept as an
+        /// ordinary modification. One that has a '(' but is not a composition is kept the same way, but said:
+        /// this runs at startup, outside any try, so it must not throw, and it must not quietly become a
+        /// different glycan either. The ID is cut the way a glycan database line is (GlycanDatabase.CompositionPart),
+        /// so text after the last ')' -- HexNAc(1)Hex(1) on S -- is ignored, as the old String2Kind ignored it,
+        /// and said, as the database loader says it.
+        /// </summary>
+        internal static byte[] GlycoModComposition(string originalId, string glycoFile)
+        {
+            if (originalId.IndexOf('(') < 0)
+            {
+                return null;
+            }
+
+            string composition = GlycanDatabase.CompositionPart(originalId, out string ignored);
+            byte[] kind;
+            try
+            {
+                kind = GlycanDatabase.ParseComposition(composition);
+            }
+            catch (FormatException ex)
+            {
+                Warn($"The glyco modification '{originalId}' in {glycoFile} is not a glycan composition, so it is " +
+                    $"kept as an ordinary modification. {ex.Message}");
+                return null;
+            }
+
+            if (ignored != null)
+            {
+                Warn($"Read the glyco modification '{originalId}' in {glycoFile} as the glycan \"{composition}\", " +
+                    $"ignoring \"{ignored}\" after it. If that was meant to be part of the glycan, fix the ID: " +
+                    "a composition is a name and a count repeated, e.g. HexNAc(2)Hex(5)NeuAc(1).");
+            }
+            return kind;
         }
 
         private static void LoadDigestionAgents()
