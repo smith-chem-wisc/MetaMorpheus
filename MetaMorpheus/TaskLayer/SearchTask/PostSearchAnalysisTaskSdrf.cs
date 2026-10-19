@@ -10,8 +10,6 @@ using Omics.Modifications;
 using Proteomics;
 using Readers;
 using UsefulProteomicsDatabases;
-using IsobaricMassTag = EngineLayer.IsobaricMassTag;
-using IsobaricMassTagType = EngineLayer.IsobaricMassTagType;
 
 namespace TaskLayer
 {
@@ -212,7 +210,7 @@ namespace TaskLayer
             if (file.Annotations is not { Count: > 0 })
                 return $"{fileName} has no annotated channels in {GlobalVariables.TmtExperimentalDesignFileName}";
 
-            var channels = IsobaricMassTag.GetReporterIonLabels(tagType) ?? new List<string>();
+            var channels = IsobaricMassTag.GetReporterIonLabels(tagType);
             var offPlex = file.Annotations
                 .Select(a => a.Tag?.Trim() ?? "")
                 .Where(tag => !channels.Contains(tag, StringComparer.OrdinalIgnoreCase))
@@ -351,7 +349,7 @@ namespace TaskLayer
         private static IEnumerable<SdrfRowInput> BuildChannelRows(TmtFileInfo tmtFile, IsobaricMassTagType tagType,
             CvParam organism, SdrfAssay assay, ISet<string> reusedSampleNames)
         {
-            var channelOrder = IsobaricMassTag.GetReporterIonLabels(tagType) ?? new List<string>();
+            var channelOrder = IsobaricMassTag.GetReporterIonLabels(tagType).ToList();
             int OrderOf(string tag)
             {
                 int index = channelOrder.FindIndex(l => string.Equals(l, tag?.Trim(), StringComparison.OrdinalIgnoreCase));
@@ -421,9 +419,9 @@ namespace TaskLayer
             if (!Parameters.SearchParameters.DoMultiplexQuantification || Parameters.CurrentRawFileList.Count == 0)
                 return null;
 
-            tagType = IsobaricMassTag.GetTagTypeFromModificationId(Parameters.SearchParameters.MultiplexModId);
-            if (tagType is null)
+            if (!IsobaricMassTag.TryGetTagType(Parameters.SearchParameters.MultiplexModId, out var type))
                 return null;
+            tagType = type;
 
             string designPath = Path.Combine(
                 Path.GetDirectoryName(Parameters.CurrentRawFileList.First()) ?? "",
@@ -476,7 +474,7 @@ namespace TaskLayer
         private static string PrideLabelFamily(IsobaricMassTagType tagType) => tagType switch
         {
             IsobaricMassTagType.TMT6 or IsobaricMassTagType.TMT10 or IsobaricMassTagType.TMT11
-                or IsobaricMassTagType.TMT18 => "TMT",
+                or IsobaricMassTagType.TMT16 or IsobaricMassTagType.TMT18 => "TMT",
             IsobaricMassTagType.iTRAQ4 or IsobaricMassTagType.iTRAQ8 => "ITRAQ",
             _ => null
         };

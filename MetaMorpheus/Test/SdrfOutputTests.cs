@@ -17,8 +17,6 @@ using Proteomics;
 using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using IsobaricMassTag = EngineLayer.IsobaricMassTag;
-using IsobaricMassTagType = EngineLayer.IsobaricMassTagType;
 
 namespace Test
 {
@@ -977,7 +975,7 @@ namespace Test
         public static void AnUnannotatedPlexIsWarnedBeforeTheSearch()
         {
             var warnings = WarningsBeforeAnIsobaricSearch(nameof(AnUnannotatedPlexIsWarnedBeforeTheSearch),
-                "TMT11-plex on K", spectra => new[] { spectra + "\tPlex1" + new string('\t', 7) });
+                "TMT11", spectra => new[] { spectra + "\tPlex1" + new string('\t', 7) });
 
             Assert.That(warnings, Has.Count.EqualTo(1), string.Join(" | ", warnings));
             Assert.That(warnings.Single(), Does.Contain("no annotated channels")
@@ -988,7 +986,7 @@ namespace Test
         public static void AChannelOffTheSearchedPlexIsWarnedBeforeTheSearch()
         {
             var warnings = WarningsBeforeAnIsobaricSearch(nameof(AChannelOffTheSearchedPlexIsWarnedBeforeTheSearch),
-                "TMT11-plex on K", spectra => new[] { $"{spectra}	Plex1	Sample1	127	CondA	1	1	1	study sample" });
+                "TMT11", spectra => new[] { $"{spectra}	Plex1	Sample1	127	CondA	1	1	1	study sample" });
 
             Assert.That(warnings, Has.Count.EqualTo(1), string.Join(" | ", warnings));
             Assert.That(warnings.Single(), Does.Contain("'127'").And.Contain("not a channel of TMT11"));
@@ -1146,7 +1144,7 @@ namespace Test
         public static void ASampleNameRepeatedOnChannelsOfOnePlexIsWarnedBeforeTheSearch()
         {
             var warnings = WarningsBeforeAnIsobaricSearch(nameof(ASampleNameRepeatedOnChannelsOfOnePlexIsWarnedBeforeTheSearch),
-                "TMT11-plex on K", spectra => new[]
+                "TMT11", spectra => new[]
                 {
                     $"{spectra}	Plex1	HeLa	126	Ctrl	1	1	1	study sample",
                     $"{spectra}	Plex1	HeLa	127N	Drug	2	1	1	study sample"
@@ -1162,7 +1160,7 @@ namespace Test
         public static void ASampleNameReusedInAnotherPlexIsWarnedBeforeTheSearch()
         {
             var warnings = WarningsBeforeAnIsobaricSearch(nameof(ASampleNameReusedInAnotherPlexIsWarnedBeforeTheSearch),
-                "TMT11-plex on K", spectra =>
+                "TMT11", spectra =>
                 {
                     string second = Path.Combine(Path.GetDirectoryName(spectra)!, "plex2.mzML");
                     return new[]

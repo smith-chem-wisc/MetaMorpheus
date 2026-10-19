@@ -754,7 +754,9 @@ namespace TaskLayer
                 return;
             }
 
-            var tagType = IsobaricMassTag.GetTagTypeFromModificationId(SearchParameters.MultiplexModId);
+            IsobaricMassTagType? tagType = IsobaricMassTag.TryGetTagType(SearchParameters.MultiplexModId, out var type)
+                ? type
+                : null;
             if (tagType is null)
             {
                 Warn("SDRF output is on, but the multiplex label '" + SearchParameters.MultiplexModId + "' is not " +
