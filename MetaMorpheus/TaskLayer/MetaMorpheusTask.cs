@@ -33,8 +33,6 @@ using EngineLayer.DIA;
 using EngineLayer.SpectrumMatch;
 using Omics.Fragmentation;
 
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Test")]
-
 namespace TaskLayer
 {
     public enum MyTask
