@@ -1,3 +1,4 @@
+using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using NUnit.Framework;
 using System;
@@ -7,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -123,6 +125,78 @@ namespace Test
                 Assert.That(databaseLine, Does.StartWith("\t" + gptmdDb + " Downloaded on: "));
                 Assert.That(databaseLine, Does.Contain($"(SHA-256 {gptmdHash}, "));
                 Assert.That(databaseLine, Does.Contain($"Derived from: {Path.GetFileName(database)} (SHA-256 {parentHash}, "));
+            }
+            finally
+            {
+                Directory.Delete(output, true);
+            }
+        }
+
+        /// <summary>
+        /// GPTMD with a contaminant database beside the target one writes two databases: the target proteins to one,
+        /// the contaminant proteins to a second, contaminant-flagged one. Each must name only the database its proteins
+        /// came from, and the search after GPTMD must list both, the contaminant one as a contaminant.
+        /// </summary>
+        [Test]
+        public static void GptmdWithAContaminantDatabase_EachWrittenDatabaseNamesTheDatabaseItsProteinsCameFrom()
+        {
+            string spectra = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mouseOne.mzML");
+            string target = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mouseOne.xml");
+            string contaminant = Path.Combine(TestContext.CurrentContext.TestDirectory, "DatabaseTests", "ProteaseModTest.fasta");
+            string output = Path.Combine(TestContext.CurrentContext.TestDirectory, "DatabaseIdentity_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(output);
+            try
+            {
+                var tasks = new List<(string, MetaMorpheusTask)>
+                {
+                    ("gptmd", new GptmdTask()),
+                    ("search", new SearchTask { SearchParameters = new SearchParameters { DoLabelFreeQuantification = false } }),
+                };
+                new EverythingRunnerEngine(tasks, new List<string> { spectra },
+                    new List<DbForTask> { new DbForTask(target, false), new DbForTask(contaminant, true) }, output).Run();
+
+                string targetHash = Sha256Of(target);
+                string contaminantHash = Sha256Of(contaminant);
+                string writtenTarget = Path.Combine(output, "gptmd", "mouseOneGPTMD.xml");
+                string writtenContaminant = Path.Combine(output, "gptmd", "ProteaseModTestGPTMD.xml");
+                Assert.That(Directory.GetFiles(Path.Combine(output, "gptmd"), "*GPTMD.xml").Select(Path.GetFileName),
+                    Is.EquivalentTo(new[] { Path.GetFileName(writtenTarget), Path.GetFileName(writtenContaminant) }));
+
+                // What each written database holds: the contaminant protein is in the contaminant one only.
+                static List<string> Accessions(string xml) => ProteinDbLoader.LoadProteinXML(xml, true, DecoyType.None,
+                    GlobalVariables.AllModsKnown, false, new List<string>(), out _).Select(p => p.Accession).ToList();
+                Assert.That(Accessions(writtenContaminant), Is.EqualTo(new[] { "testProtein_1" }));
+                Assert.That(Accessions(writtenTarget), Does.Not.Contain("testProtein_1").And.Not.Empty);
+
+                string targetParent = $"Derived from: {Path.GetFileName(target)} (SHA-256 {targetHash}, {new FileInfo(target).Length} bytes)";
+                string contaminantParent = $"Derived from: {Path.GetFileName(contaminant)} (SHA-256 {contaminantHash}, {new FileInfo(contaminant).Length} bytes)";
+
+                // GPTMD's own results: one identity line per written database, each followed by its own parent only.
+                string[] gptmdResults = File.ReadAllLines(Path.Combine(output, "gptmd", "results.txt"));
+                int targetAt = Array.IndexOf(gptmdResults, $"\t{Path.GetFileName(writtenTarget)}: SHA-256 {Sha256Of(writtenTarget)}, {new FileInfo(writtenTarget).Length} bytes");
+                int contaminantAt = Array.IndexOf(gptmdResults, $"\t{Path.GetFileName(writtenContaminant)}: SHA-256 {Sha256Of(writtenContaminant)}, {new FileInfo(writtenContaminant).Length} bytes");
+                Assert.That(targetAt, Is.GreaterThanOrEqualTo(0));
+                Assert.That(contaminantAt, Is.GreaterThanOrEqualTo(0));
+                Assert.That(gptmdResults[targetAt + 1], Is.EqualTo("\t\t" + targetParent));
+                Assert.That(gptmdResults[contaminantAt + 1], Is.EqualTo("\t\t" + contaminantParent));
+
+                // The search loads both written databases and names each one's parent.
+                string[] searchResults = File.ReadAllLines(Path.Combine(output, "search", "results.txt"));
+                foreach (var (written, parent) in new[] { (writtenTarget, targetParent), (writtenContaminant, contaminantParent) })
+                {
+                    int at = Array.FindIndex(searchResults, l => l.StartsWith($"\t{Path.GetFileName(written)}: ", StringComparison.Ordinal));
+                    Assert.That(at, Is.GreaterThanOrEqualTo(0), $"the search lists {Path.GetFileName(written)}");
+                    Assert.That(searchResults[at + 2], Is.EqualTo($"\t\tPath: {written}"));
+                    Assert.That(searchResults[at + 3], Does.StartWith($"\t\tSHA-256 {Sha256Of(written)}, "));
+                    Assert.That(searchResults[at + 4], Is.EqualTo("\t\t" + parent));
+                }
+
+                // The prose marks the contaminant database as one, with its own parent.
+                string[] prose = File.ReadAllLines(Path.Combine(output, "search", "AutoGeneratedManuscriptProse.txt"));
+                var databaseLines = prose.SkipWhile(l => l != "Databases:").Skip(1).TakeWhile(l => l.StartsWith('\t')).ToList();
+                Assert.That(databaseLines, Has.Count.EqualTo(2));
+                Assert.That(databaseLines.Single(l => l.StartsWith("\t" + writtenTarget + " ", StringComparison.Ordinal)), Does.EndWith("; " + targetParent));
+                Assert.That(databaseLines.Single(l => l.StartsWith("\tContaminants " + writtenContaminant + " ", StringComparison.Ordinal)), Does.EndWith("; " + contaminantParent));
             }
             finally
             {
