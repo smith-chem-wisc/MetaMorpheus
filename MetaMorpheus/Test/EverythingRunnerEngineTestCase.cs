@@ -77,9 +77,16 @@ namespace Test
                     property = type.GetProperty("QvalueThresholdOverride");
                     property.SetValue(null, true);
                 }
-                var runner = new EverythingRunnerEngine(TaskList, DataFileList, DatabaseList, OutputDirectory);
-                runner.Run();
-                if (TestCase != EverythingRunnerEngineTestCases.TopDownQValue && TestCase != EverythingRunnerEngineTestCases.TopDownQValueSingle) property.SetValue(null, false);
+                try
+                {
+                    var runner = new EverythingRunnerEngine(TaskList, DataFileList, DatabaseList, OutputDirectory);
+                    runner.Run();
+                }
+                finally
+                {
+                    // the override is process-wide; an exception from the run must not leave it on
+                    property?.SetValue(null, false);
+                }
             }
             HasRun = true;
         }
