@@ -65,6 +65,26 @@ namespace Test
             }
         }
 
+        /// <summary>
+        /// The hashes are taken on their own thread while the databases are parsed. LoadBioPolymers must still return
+        /// only once every entry, the spectral library included, carries its identity.
+        /// </summary>
+        [Test]
+        public static void LoadBioPolymers_ReturnsWithTheIdentityOfEveryDatabaseRecorded()
+        {
+            string database = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "mouseOne.xml");
+            string library = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "myPrositLib.msp");
+            var dbs = new List<DbForTask> { new DbForTask(database, false), new DbForTask(library, false) };
+
+            var proteins = DatabaseLoadingEngine.LoadBioPolymers("identity", dbs, true, DecoyType.Reverse,
+                GlobalVariables.AllModTypesKnown.ToList(), new EngineLayer.CommonParameters(), out _);
+
+            Assert.That(proteins, Is.Not.Empty);
+            Assert.That(dbs[1].IsSpectralLibrary, Is.True);
+            Assert.That(dbs.Select(d => d.Sha256), Is.EqualTo(new[] { Sha256Of(database), Sha256Of(library) }));
+            Assert.That(dbs.Select(d => d.SizeBytes), Is.EqualTo(new long?[] { new FileInfo(database).Length, new FileInfo(library).Length }));
+        }
+
         /// <summary>A file that cannot be read is recorded as unidentified, with the reason, instead of throwing.</summary>
         [Test]
         public static void RecordIdentity_MissingFile_RecordsWhyAndDoesNotThrow()
