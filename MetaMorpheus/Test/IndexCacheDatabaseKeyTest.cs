@@ -248,7 +248,31 @@ namespace Test
             File.SetLastWriteTimeUtc(first.FullName, shared);
             File.SetLastWriteTimeUtc(second.FullName, shared);
 
+            // New FileInfos. The two above read their write times when Length was asserted, before the
+            // shared time was set, and keep them; whenever the two writes straddled a clock tick the stamps
+            // then differed by write time and hid a dropped separator.
+            first = new FileInfo(first.FullName);
+            second = new FileInfo(second.FullName);
+            Assert.That(second.LastWriteTimeUtc, Is.EqualTo(first.LastWriteTimeUtc));
+
             Assert.That(IndexingEngine.ContentHash(second), Is.Not.EqualTo(IndexingEngine.ContentHash(first)));
+        }
+
+        [Test]
+        public static void AnEditThatKeepsTheLengthStillChangesTheHash()
+        {
+            // Same path, same length, different bytes: only the write time tells the memo the file changed.
+            // Leave it out of the stamp and the second hash is the first one, read back from the memo.
+            FileInfo database = WriteDatabase("samelength/proteins.fasta", new string('A', 23));
+            File.SetLastWriteTimeUtc(database.FullName, DateTime.UtcNow.AddMinutes(-2));
+            string before = IndexingEngine.ContentHash(new FileInfo(database.FullName));
+
+            File.WriteAllText(database.FullName, new string('B', 23));
+            File.SetLastWriteTimeUtc(database.FullName, DateTime.UtcNow.AddMinutes(-1));
+            FileInfo edited = new FileInfo(database.FullName); // a new FileInfo, as the next task makes
+
+            Assert.That(edited.Length, Is.EqualTo(23));
+            Assert.That(IndexingEngine.ContentHash(edited), Is.Not.EqualTo(before));
         }
 
         [Test]
