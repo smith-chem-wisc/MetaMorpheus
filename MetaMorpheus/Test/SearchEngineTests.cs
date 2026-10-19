@@ -33,6 +33,18 @@ namespace Test
     public static class SearchEngineTests
     {
         /// <summary>
+        /// Three tests here force FdrAnalysisEngine.QvalueThresholdOverride on and turn it off on their last line,
+        /// which a failing assertion skips. The flag is process-wide, so a leak changes the q-values of every task
+        /// that runs afterwards: one count assertion failing here left the SILAC, glyco, sliced and RNA tests later in
+        /// the run with no quantified output. A teardown runs either way; see also XLTest.
+        /// </summary>
+        [TearDown]
+        public static void ResetQvalueThresholdOverride()
+        {
+            typeof(FdrAnalysisEngine).GetProperty("QvalueThresholdOverride").SetValue(null, false);
+        }
+
+        /// <summary>
         /// The fragment index as the List-of-bins shape the precursor index still uses. Only needed by the
         /// tests below, which pass the fragment index where a precursor index is expected.
         /// </summary>
