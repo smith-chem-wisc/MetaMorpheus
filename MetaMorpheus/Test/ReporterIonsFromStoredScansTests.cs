@@ -103,7 +103,7 @@ namespace Test
 
             var loaded = new MyFileManager(true).LoadFile(mzml, commonParameters);
             var stored = MsDataFileReader.GetDataFile(mzml).LoadAllStaticData();
-            var storedByScanNumber = stored.GetAllScansList().ToDictionary(s => s.OneBasedScanNumber);
+            var storedScanFor = MyFileManager.PairWithStoredScans(loaded, stored);
 
             var withChildren = MetaMorpheusTask.GetMs2Scans(loaded, mzml, commonParameters)
                 .Where(s => s.ChildScans.Any(c => c.TheScan.MsnOrder == 3))
@@ -117,11 +117,183 @@ namespace Test
             {
                 foreach (var scan in withChildren)
                 {
-                    scan.SetIsobaricMassTagReporterIonIntensities(tag, storedByScanNumber);
+                    scan.SetIsobaricMassTagReporterIonIntensities(tag, storedScanFor);
                     Assert.That(Formatted(scan.IsobaricMassTagReporterIonIntensities),
                         Is.EqualTo(Formatted(Extract(stored, scan.OneBasedScanNumber, tag))), $"scan {scan.OneBasedScanNumber}");
                 }
             });
+        }
+
+        /// <summary>The scan of VA084TQ_6.mzML that is identified, and that the MGF fixture below writes twice.</summary>
+        private const int RepeatedScan = 6;
+
+        /// <summary>
+        /// Writes <paramref name="mzml"/> as an MGF in which the block for <see cref="RepeatedScan"/> is followed by a copy
+        /// with the same SCANS value, as an export that writes a scan once per candidate charge would. A static MGF load
+        /// keeps both blocks. The copy's reporter peaks (below m/z 135) are three times as intense and its TIC is 1, so the
+        /// two blocks can be told apart in the spectra and in AllPSMs.psmtsv.
+        /// </summary>
+        private static string WriteMgfWithRepeatedScan(string mzml, string mgf)
+        {
+            MgfMethods.WriteMgf(MsDataFileReader.GetDataFile(mzml).LoadAllStaticData(), mgf);
+            string text = File.ReadAllText(mgf).Replace("\r\n", "\n");
+            int start = text.LastIndexOf("BEGIN IONS", text.IndexOf($"\nSCANS={RepeatedScan}\n"), System.StringComparison.Ordinal);
+            int end = text.IndexOf("END IONS", start, System.StringComparison.Ordinal) + "END IONS".Length;
+            var copy = text[start..end].Split('\n').Select(line =>
+            {
+                if (line.StartsWith("TIC=")) return "TIC=1";
+                string[] peak = line.Split(' ');
+                return peak.Length == 2 && double.TryParse(peak[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double mz) && mz < 135
+                    ? peak[0] + " " + (3 * double.Parse(peak[1], CultureInfo.InvariantCulture)).ToString("R", CultureInfo.InvariantCulture)
+                    : line;
+            });
+            File.WriteAllText(mgf, text.Insert(end, "\n" + string.Join("\n", copy)));
+            return mgf;
+        }
+
+        /// <summary>
+        /// Keying the stored scans by scan number threw "An item with the same key has already been added" on an MGF that
+        /// repeats a SCANS value, so the whole search failed where master searched the file.
+        /// </summary>
+        [Test]
+        public static void Mgf_WithARepeatedScanNumber_IsSearched_AndEachPsmReadsItsOwnBlock()
+        {
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsRepeatedMgfScan");
+
+            try
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+                Directory.CreateDirectory(folder);
+                string mgf = WriteMgfWithRepeatedScan(TestFile("VA084TQ_6.mzML"), Path.Combine(folder, "VA084TQ_6.mgf"));
+                string outputFolder = Path.Combine(folder, "output");
+                new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", searchTask) },
+                    new List<string> { mgf }, new List<DbForTask> { new DbForTask(TestFile("mouseTMT.fasta"), false) },
+                    outputFolder).Run();
+
+                string[] lines = File.ReadAllLines(Path.Combine(outputFolder, "search", "AllPSMs.psmtsv"));
+                string[] header = lines[0].Split('\t');
+                int scanColumn = System.Array.IndexOf(header, "Scan Number");
+                int ticColumn = System.Array.IndexOf(header, "Total Ion Current");
+                int channels = tag.ReporterIonMzs.Length;
+                var rows = lines.Skip(1).Select(l => l.Split('\t'))
+                    .Where(c => int.Parse(c[scanColumn], CultureInfo.InvariantCulture) == RepeatedScan)
+                    .ToList();
+                var blocks = MsDataFileReader.GetDataFile(mgf).LoadAllStaticData().GetAllScansList()
+                    .Where(s => s.OneBasedScanNumber == RepeatedScan)
+                    .ToList();
+
+                Assert.That(blocks, Has.Count.EqualTo(2));
+                Assert.That(rows, Is.Not.Empty, "the fixture only means anything if a block with the repeated scan number is identified");
+                Assert.Multiple(() =>
+                {
+                    foreach (var row in rows)
+                    {
+                        double tic = double.Parse(row[ticColumn], CultureInfo.InvariantCulture);
+                        var block = blocks.MinBy(b => System.Math.Abs(b.TotalIonCurrent - tic));
+                        Assert.That(row[^channels..], Is.EqualTo(Formatted(tag.GetReporterIonIntensities(block.MassSpectrum))), $"TIC {tic}");
+                    }
+                });
+            }
+            finally
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// Two blocks with one scan number are two scans: each is read from its own stored block, never from the other.
+        /// </summary>
+        [Test]
+        public static void RepeatedScanNumber_EachBlockIsReadFromItsOwnStoredBlock()
+        {
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsRepeatedScanPairing");
+
+            try
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+                Directory.CreateDirectory(folder);
+                string mgf = WriteMgfWithRepeatedScan(TestFile("VA084TQ_6.mzML"), Path.Combine(folder, "VA084TQ_6.mgf"));
+                var loaded = new MyFileManager(true).LoadFile(mgf, searchTask.CommonParameters);
+                var stored = MsDataFileReader.GetDataFile(mgf).LoadAllStaticData();
+                var storedScanFor = MyFileManager.PairWithStoredScans(loaded, stored);
+                List<MsDataScan> loadedScans = loaded.GetAllScansList();
+                List<MsDataScan> storedScans = stored.GetAllScansList();
+
+                Assert.That(storedScanFor, Has.Count.EqualTo(loadedScans.Count));
+                var repeated = Enumerable.Range(0, loadedScans.Count).Where(i => loadedScans[i].OneBasedScanNumber == RepeatedScan).ToList();
+                Assert.That(repeated, Has.Count.EqualTo(2));
+                var expected = repeated.Select(i => Formatted(tag.GetReporterIonIntensities(storedScans[i].MassSpectrum))).ToList();
+                Assert.That(expected[0], Is.Not.EqualTo(expected[1]), "the fixture only means anything if the two blocks' reporters differ");
+
+                var ms2Scans = MetaMorpheusTask.GetMs2Scans(loaded, mgf, searchTask.CommonParameters).ToList();
+                Assert.Multiple(() =>
+                {
+                    for (int k = 0; k < repeated.Count; k++)
+                    {
+                        var fromBlock = ms2Scans.Where(s => ReferenceEquals(s.TheScan, loadedScans[repeated[k]])).ToList();
+                        Assert.That(fromBlock, Is.Not.Empty, $"block {k}");
+                        foreach (var scan in fromBlock)
+                        {
+                            scan.SetIsobaricMassTagReporterIonIntensities(tag, storedScanFor);
+                            Assert.That(Formatted(scan.IsobaricMassTagReporterIonIntensities), Is.EqualTo(expected[k]), $"block {k}");
+                        }
+                    }
+                });
+            }
+            finally
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// Pairing is by position, so it is checked: a position whose two scans have different scan numbers is left out, and
+        /// a scan with no pair is read from its loaded spectrum, as master read every scan. Here the second read is the mzML
+        /// the MGF was written from, which holds the repeated scan once, so every position after the repeat disagrees.
+        /// </summary>
+        [Test]
+        public static void ScansWhoseTwoReadsDisagree_AreLeftUnpaired_AndReadFromTheLoadedSpectrum()
+        {
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsUnpairedScans");
+
+            try
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+                Directory.CreateDirectory(folder);
+                string mzml = TestFile("VA084TQ_6.mzML");
+                string mgf = WriteMgfWithRepeatedScan(mzml, Path.Combine(folder, "VA084TQ_6.mgf"));
+                var loaded = new MyFileManager(true).LoadFile(mgf, searchTask.CommonParameters);
+                List<MsDataScan> loadedScans = loaded.GetAllScansList();
+                var storedScanFor = MyFileManager.PairWithStoredScans(loaded, MsDataFileReader.GetDataFile(mzml).LoadAllStaticData());
+
+                int firstRepeat = loadedScans.FindIndex(s => s.OneBasedScanNumber == RepeatedScan);
+                Assert.That(storedScanFor.Keys, Is.EquivalentTo(loadedScans.Take(firstRepeat + 1)));
+
+                var unpaired = MetaMorpheusTask.GetMs2Scans(loaded, mgf, searchTask.CommonParameters)
+                    .Where(s => s.OneBasedScanNumber > RepeatedScan)
+                    .ToList();
+                Assert.That(unpaired, Is.Not.Empty);
+                Assert.Multiple(() =>
+                {
+                    foreach (var scan in unpaired)
+                    {
+                        scan.SetIsobaricMassTagReporterIonIntensities(tag);
+                        string[] fromLoaded = Formatted(scan.IsobaricMassTagReporterIonIntensities);
+                        scan.SetIsobaricMassTagReporterIonIntensities(tag, storedScanFor);
+                        Assert.That(Formatted(scan.IsobaricMassTagReporterIonIntensities), Is.EqualTo(fromLoaded), $"scan {scan.OneBasedScanNumber}");
+                    }
+                });
+            }
+            finally
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
         }
     }
 }

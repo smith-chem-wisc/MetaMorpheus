@@ -50,6 +50,28 @@ namespace TaskLayer
                 MsDataFileReader.GetDataFile(origDataFile).LoadAllStaticData(filter, commonParameters.MaxThreadsToUsePerFile));
         }
 
+        /// <summary>
+        /// Pairs each scan of a loaded file with the same scan in a second read of that file, by position: one reader
+        /// returns a file's scans in the same order however it filters their peaks. A scan number alone does not identify
+        /// a scan, because an MGF can repeat a SCANS= value and a static load keeps every such block. A position whose two
+        /// scans have different scan numbers is left unpaired.
+        /// </summary>
+        /// <returns>The stored scan for each paired loaded scan, keyed by reference.</returns>
+        public static Dictionary<MsDataScan, MsDataScan> PairWithStoredScans(MsDataFile loaded, MsDataFile stored)
+        {
+            List<MsDataScan> loadedScans = loaded.GetAllScansList();
+            List<MsDataScan> storedScans = stored.GetAllScansList();
+            var storedScanFor = new Dictionary<MsDataScan, MsDataScan>(ReferenceEqualityComparer.Instance);
+            for (int i = 0; i < Math.Min(loadedScans.Count, storedScans.Count); i++)
+            {
+                if (loadedScans[i].OneBasedScanNumber == storedScans[i].OneBasedScanNumber)
+                {
+                    storedScanFor.Add(loadedScans[i], storedScans[i]);
+                }
+            }
+            return storedScanFor;
+        }
+
         internal void DoneWithFile(string origDataFile)
         {
             if (DisposeOfFileWhenDone)
