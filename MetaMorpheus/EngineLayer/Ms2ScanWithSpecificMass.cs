@@ -1,6 +1,7 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
+using Omics.Modifications;
 using System;
 using System.Collections.Generic;
 using System.Linq;
