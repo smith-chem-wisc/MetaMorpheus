@@ -230,16 +230,20 @@ namespace TaskLayer
         /// (REQ-2, MAP-01) would merge two samples. A name that agrees everywhere is a bridge and is not
         /// returned. Blank names are not returned: they are already scoped to their plex.
         ///
+        /// Names are compared ignoring case, as mzLib's SdrfSampleBlock.BySourceName compares source names and
+        /// as Read compares a channel's two descriptions: "Liver" in one plex and "liver" in another are one
+        /// source name downstream, so for different samples they are a reused name.
+        ///
         /// Shared with SearchTask's pre-run warning, so a search is told before it runs.
         /// </summary>
         internal static HashSet<string> SampleNamesReusedForDifferentSamples(IEnumerable<TmtFileInfo> files) =>
             files
                 .SelectMany(f => f.Annotations)
                 .Where(a => !string.IsNullOrWhiteSpace(a.SampleName))
-                .GroupBy(a => a.SampleName, StringComparer.Ordinal)
+                .GroupBy(a => a.SampleName, StringComparer.OrdinalIgnoreCase)
                 .Where(g => g.Select(a => ((a.Condition ?? "").Trim(), a.BiologicalReplicate)).Distinct().Count() > 1)
                 .Select(g => g.Key)
-                .ToHashSet(StringComparer.Ordinal);
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// The sample names one plex gives to more than one channel, with a different (condition, biological
@@ -253,12 +257,12 @@ namespace TaskLayer
         internal static HashSet<string> SampleNamesRepeatedWithinAPlex(IEnumerable<TmtFileInfo> files) =>
             files
                 .SelectMany(f => RepeatedWithin(f.Annotations))
-                .ToHashSet(StringComparer.Ordinal);
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         private static IEnumerable<string> RepeatedWithin(IEnumerable<TmtPlexAnnotation> annotations) =>
             annotations
                 .Where(a => !string.IsNullOrWhiteSpace(a.SampleName))
-                .GroupBy(a => a.SampleName, StringComparer.Ordinal)
+                .GroupBy(a => a.SampleName, StringComparer.OrdinalIgnoreCase)
                 .Where(g => g.Select(a => ((a.Condition ?? "").Trim(), a.BiologicalReplicate)).Distinct().Count() > 1)
                 .Select(g => g.Key);
 
@@ -272,7 +276,7 @@ namespace TaskLayer
                 string.Join(", ", list.OrderBy(n => n, StringComparer.Ordinal).Select(n => "'" + n + "'"));
 
             var withinPlex = names.Where(n => repeatedWithinAPlex?.Contains(n) == true).ToList();
-            var acrossPlexes = names.Except(withinPlex, StringComparer.Ordinal).ToList();
+            var acrossPlexes = names.Except(withinPlex, StringComparer.OrdinalIgnoreCase).ToList();
             var parts = new List<string>();
             if (acrossPlexes.Any())
                 parts.Add("The design uses these sample names in more than one plex with a different condition or " +
@@ -358,7 +362,7 @@ namespace TaskLayer
 
             string stem = Path.GetFileNameWithoutExtension(tmtFile.FullFilePathWithExtension);
             string plexScope = string.IsNullOrWhiteSpace(tmtFile.Plex) ? stem : tmtFile.Plex.Trim();
-            var repeatedInThisPlex = RepeatedWithin(tmtFile.Annotations).ToHashSet(StringComparer.Ordinal);
+            var repeatedInThisPlex = RepeatedWithin(tmtFile.Annotations).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             foreach (var annotation in tmtFile.Annotations.OrderBy(a => OrderOf(a.Tag)))
             {

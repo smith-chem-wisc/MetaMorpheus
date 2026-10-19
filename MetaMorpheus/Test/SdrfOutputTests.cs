@@ -1178,6 +1178,87 @@ namespace Test
         }
 
         /// <summary>
+        /// mzLib's SdrfSampleBlock.BySourceName groups rows by source name ignoring case, so "Liver" in one plex
+        /// and "liver" in another are one sample downstream. For different samples they are therefore a reused
+        /// name, and each is scoped to its plex.
+        /// </summary>
+        [Test]
+        public static void SampleNamesThatDifferOnlyInCaseAreOneName()
+        {
+            var rows = IsobaricSdrfRows(nameof(SampleNamesThatDifferOnlyInCaseAreOneName),
+                new[] { "p1.mzML", "p2.mzML" }, folder => new[]
+                {
+                    TmtDesignRow(folder, "p1.mzML", "Plex1", "Liver", "126", "Ctrl", 1, 1),
+                    TmtDesignRow(folder, "p2.mzML", "Plex2", "liver", "126", "Drug", 2, 1)
+                }, out _);
+
+            Assert.That(rows.Select(r => r.Sample.SourceName), Is.EqualTo(new[] { "Plex1 Liver", "Plex2 liver" }));
+            AssertEachSourceNameIsOneSample(rows);
+        }
+
+        /// <summary>
+        /// The rows BuildSdrfRows gives for a TMT11 search of <paramref name="fileNames"/>, with a TmtDesign.txt
+        /// of <paramref name="designRows"/> (given the folder) beside them, and the warnings it raised. No
+        /// search is run and the spectra files need not exist: only the design is read.
+        /// </summary>
+        private static List<SdrfRowInput> IsobaricSdrfRows(string testName, string[] fileNames,
+            Func<string, IEnumerable<string>> designRows, out List<string> warnings)
+        {
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "SdrfOutput_" + testName);
+            if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            Directory.CreateDirectory(folder);
+            File.WriteAllLines(Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName),
+                new[] { TmtExperimentalDesign.Header }.Concat(designRows(folder)));
+
+            var task = new PostSearchAnalysisTask
+            {
+                CommonParameters = new CommonParameters(),
+                Parameters = new PostSearchAnalysisParameters
+                {
+                    CurrentRawFileList = fileNames.Select(n => Path.Combine(folder, n)).ToList(),
+                    SearchParameters = new SearchParameters { DoMultiplexQuantification = true, MultiplexModId = "TMT11" }
+                }
+            };
+
+            var captured = new List<string>();
+            warnings = captured;
+            EventHandler<StringEventArgs> handler = (o, e) => captured.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                return ((IEnumerable<SdrfRowInput>)typeof(PostSearchAnalysisTask)
+                        .GetMethod("BuildSdrfRows", BindingFlags.NonPublic | BindingFlags.Instance)!
+                        .Invoke(task, null))
+                    .ToList();
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>One TmtDesign.txt row, technical replicate 1, for a study sample.</summary>
+        private static string TmtDesignRow(string folder, string file, string plex, string sampleName, string channel,
+            string condition, int biologicalReplicate, int fraction) =>
+            string.Join("\t", Path.Combine(folder, file), plex, sampleName, channel, condition, biologicalReplicate,
+                fraction, 1, "study sample");
+
+        /// <summary>
+        /// No source name, compared ignoring case as mzLib's SdrfSampleBlock.BySourceName compares it, is
+        /// given to two samples, where a sample is a (condition, biological replicate).
+        /// </summary>
+        private static void AssertEachSourceNameIsOneSample(IEnumerable<SdrfRowInput> rows)
+        {
+            var merged = rows
+                .GroupBy(r => r.Sample.SourceName, StringComparer.OrdinalIgnoreCase)
+                .Where(g => g.Select(r => (r.Sample.FactorValue, r.Sample.BiologicalReplicate)).Distinct().Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+            Assert.That(merged, Is.Empty, "These source names each name more than one sample.");
+        }
+
+        /// <summary>
         /// End to end: a TmtDesign.txt whose only row for the file is the channel-less placeholder
         /// (the GUI's normal state while a design is half-filled). The file used to vanish from the
         /// SDRF, and with every file in that state no SDRF was written at all.
