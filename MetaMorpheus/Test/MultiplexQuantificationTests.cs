@@ -6,7 +6,6 @@ using NUnit.Framework;
 using Omics;
 using Omics.Fragmentation;
 using Omics.Modifications;
-using IsobaricMassTag = EngineLayer.IsobaricMassTag;
 using Omics.SpectralMatch;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
@@ -1200,7 +1199,7 @@ namespace Test
         /// </remarks>
         private static Ms2ScanWithSpecificMass ReporterIonScan(string rawPath, int scanNumber = 1, bool withReporterIons = true)
         {
-            var tag = IsobaricMassTag.GetIsobaricMassTag("TMT11");
+            IsobaricMassTag.TryGetIsobaricMassTag("TMT11", GlobalVariables.AllModsKnown, out var tag);
             double[] reporterMzs = tag.ReporterIonMzs.ToArray();
             double[] reporterIntensities = Enumerable.Range(1, reporterMzs.Length).Select(i => 1000.0 * i).ToArray();
 
@@ -1223,6 +1222,69 @@ namespace Test
             }
 
             return scan;
+        }
+
+        #endregion
+
+        #region The kit, resolved through mzLib's IsobaricMassTag
+
+        /// <summary>
+        /// A search asked for multiplex quantification with a modification that names no kit stops with an error
+        /// naming it, before any spectrum is searched, rather than quantifying against a guessed kit.
+        /// </summary>
+        [Test]
+        public static void ASearchWithAMultiplexModificationThatNamesNoKitStops()
+        {
+            string folder = StageFolder("MultiplexUnknownKit");
+            try
+            {
+                var task = new SearchTask
+                {
+                    SearchParameters = new SearchParameters { DoMultiplexQuantification = true, MultiplexModId = "NotAKit" }
+                };
+                string spectra = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+                string database = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+
+                Assert.That(() => task.RunTask(folder, new List<DbForTask> { new DbForTask(database, false) }, new List<string> { spectra }, "unknownKit"),
+                    Throws.InstanceOf<MetaMorpheusException>().With.Message.EqualTo("Could not find isobaric mass tag with the name NotAKit"));
+            }
+            finally
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>Writes the reporter-ion PSM table's header for a multiplex modification, with no PSMs.</summary>
+        private static string ReporterIonHeader(string multiplexModId)
+        {
+            string folder = StageFolder("ReporterIonHeader");
+            string path = Path.Combine(folder, "psms.psmtsv");
+            var task = new PostSearchAnalysisTask { CommonParameters = new CommonParameters() };
+            task.GetType().GetProperty("Parameters").SetValue(task, new PostSearchAnalysisParameters
+            {
+                SearchParameters = new SearchParameters { MultiplexModId = multiplexModId }
+            });
+
+            task.GetType().GetMethod("WritePsmPlusMultiplexIons", BindingFlags.NonPublic | BindingFlags.Instance)
+                .Invoke(task, new object[] { new List<SpectralMatch>(), path, false });
+
+            string header = File.ReadLines(path).First();
+            Directory.Delete(folder, true);
+            return header;
+        }
+
+        /// <summary>
+        /// The header names one column per channel of the kit, in reporter m/z order. A modification that names no kit
+        /// gets no reporter columns rather than another kit's: a search stops before this point, so this guards only
+        /// a caller that skipped the search's check.
+        /// </summary>
+        [Test]
+        public static void TheReporterIonHeaderNamesTheKitsChannelsAndNoOtherKits()
+        {
+            string psmHeader = SpectralMatch.GetTabSeparatedHeader().Trim();
+
+            Assert.That(ReporterIonHeader("TMT6"), Is.EqualTo(psmHeader + "\t126\t127\t128\t129\t130\t131"));
+            Assert.That(ReporterIonHeader("NotAKit"), Is.EqualTo(psmHeader + "\t"));
         }
 
         #endregion
