@@ -1085,7 +1085,7 @@ namespace Test
             var reused = InvokeSampleNamesReusedForDifferentSamples(plex1, plex2);
             Assert.That(reused, Is.EquivalentTo(new[] { "S1" }), "Only the name that names two samples.");
 
-            string SourceName(TmtFileInfo file, string label) => InvokeChannelRows(file, IsobaricMassTagType.TMT11, reused)
+            string SourceName(TmtFileInfo file, string label) => InvokeChannelRows(file, IsobaricMassTagType.TMT11, plex1, plex2)
                 .Single(r => r.Sample.Label?.Name == label).Sample.SourceName;
 
             Assert.That(SourceName(plex1, "TMT126"), Is.EqualTo("Plex1 S1"));
@@ -1122,7 +1122,7 @@ namespace Test
             var reused = InvokeSampleNamesReusedForDifferentSamples(fraction1, fraction2);
             Assert.That(reused, Is.EquivalentTo(new[] { "HeLa" }));
 
-            List<string> SourceNames(TmtFileInfo file) => InvokeChannelRows(file, IsobaricMassTagType.TMT11, reused)
+            List<string> SourceNames(TmtFileInfo file) => InvokeChannelRows(file, IsobaricMassTagType.TMT11, fraction1, fraction2)
                 .Select(r => r.Sample.SourceName).ToList();
 
             Assert.That(SourceNames(fraction1),
@@ -1194,6 +1194,94 @@ namespace Test
 
             Assert.That(rows.Select(r => r.Sample.SourceName), Is.EqualTo(new[] { "Plex1 Liver", "Plex2 liver" }));
             AssertEachSourceNameIsOneSample(rows);
+        }
+
+        /// <summary>
+        /// A source name the SDRF makes up is checked against every name in the document (Alexander-Sol,
+        /// #2817 review). The unnamed channel 126 of Plex1 is called "Plex1 126", and nothing stops the design
+        /// giving another sample exactly that name. Both would then be one source name, and anything keyed on
+        /// it (REQ-2, mzLib's SdrfSampleBlock.BySourceName) would merge a Ctrl sample with a Drug one. The name
+        /// the user wrote is kept; the made-up one is numbered, the same way in every fraction of the plex.
+        /// </summary>
+        [Test]
+        public static void AMadeUpSourceNameIsNeverANameTheDesignGivesAnotherSample()
+        {
+            var rows = IsobaricSdrfRows(nameof(AMadeUpSourceNameIsNeverANameTheDesignGivesAnotherSample),
+                new[] { "plex1_F1.mzML", "plex1_F2.mzML" }, folder => new[] { 1, 2 }.SelectMany(fraction => new[]
+                {
+                    TmtDesignRow(folder, $"plex1_F{fraction}.mzML", "Plex1", "", "126", "Ctrl", 1, fraction),
+                    TmtDesignRow(folder, $"plex1_F{fraction}.mzML", "Plex1", "Plex1 126", "127N", "Drug", 2, fraction)
+                }), out var warnings);
+
+            string SourceName(int fraction, string label) => rows
+                .Single(r => r.Assay.DataFileName == $"plex1_F{fraction}.mzML" && r.Sample.Label?.Name == label)
+                .Sample.SourceName;
+
+            Assert.That(SourceName(1, "TMT127N"), Is.EqualTo("Plex1 126"), "The name the user wrote is written as given.");
+            Assert.That(SourceName(1, "TMT126"), Is.EqualTo("Plex1 126 (2)"),
+                "The unnamed channel is another sample, so it takes the next free name.");
+            Assert.That(SourceName(2, "TMT126"), Is.EqualTo(SourceName(1, "TMT126")),
+                "Both fractions measure the same channel of the same plex, so it is one sample.");
+            Assert.That(SourceName(2, "TMT127N"), Is.EqualTo(SourceName(1, "TMT127N")));
+            AssertEachSourceNameIsOneSample(rows);
+
+            Assert.That(warnings.Any(w => w.Contains("'Plex1 126' is written 'Plex1 126 (2)'")), Is.True,
+                "The numbering is announced: " + string.Join(" | ", warnings));
+        }
+
+        /// <summary>
+        /// Every kind of made-up source name is checked, not only an unnamed channel's: a name scoped to its
+        /// plex because another plex uses it for a different sample ("Plex2 S1"), a name scoped to its channel
+        /// because one plex gives it to several samples ("Plex1 HeLa 128N"), and the stem a file described
+        /// once is named after ("Ref"). Names are compared ignoring case, as mzLib's BySourceName compares them.
+        /// </summary>
+        [Test]
+        public static void EveryKindOfMadeUpSourceNameIsCheckedAgainstTheDesign()
+        {
+            var rows = IsobaricSdrfRows(nameof(EveryKindOfMadeUpSourceNameIsCheckedAgainstTheDesign),
+                new[] { "p1.mzML", "p2.mzML", "Ref.mzML" }, folder => new[]
+                {
+                    TmtDesignRow(folder, "p1.mzML", "Plex1", "S1", "126", "Ctrl", 1, 1),
+                    TmtDesignRow(folder, "p1.mzML", "Plex1", "plex2 s1", "127N", "Ctrl", 2, 1),
+                    TmtDesignRow(folder, "p1.mzML", "Plex1", "HeLa", "128N", "Ctrl", 3, 1),
+                    TmtDesignRow(folder, "p1.mzML", "Plex1", "HeLa", "128C", "Drug", 4, 1),
+                    TmtDesignRow(folder, "p2.mzML", "Plex2", "S1", "126", "Drug", 5, 1),
+                    TmtDesignRow(folder, "p2.mzML", "Plex2", "Plex1 HeLa 128N", "127N", "Drug", 6, 1),
+                    TmtDesignRow(folder, "p2.mzML", "Plex2", "Ref", "127C", "Pool", 1, 1),
+                    // A plex nobody annotated, so its file is described once, under its stem.
+                    Path.Combine(folder, "Ref.mzML") + "\tPlex3" + new string('\t', 7)
+                }, out _);
+
+            string SourceName(string file, string label) => rows
+                .Single(r => r.Assay.DataFileName == file && r.Sample.Label?.Name == label)
+                .Sample.SourceName;
+
+            Assert.That(SourceName("p1.mzML", "TMT126"), Is.EqualTo("Plex1 S1"));
+            Assert.That(SourceName("p1.mzML", "TMT127N"), Is.EqualTo("plex2 s1"));
+            Assert.That(SourceName("p2.mzML", "TMT126"), Is.EqualTo("Plex2 S1 (2)"), "Not the user's 'plex2 s1'.");
+            Assert.That(SourceName("p2.mzML", "TMT127N"), Is.EqualTo("Plex1 HeLa 128N"));
+            Assert.That(SourceName("p1.mzML", "TMT128N"), Is.EqualTo("Plex1 HeLa 128N (2)"));
+            Assert.That(SourceName("p1.mzML", "TMT128C"), Is.EqualTo("Plex1 HeLa 128C"));
+            Assert.That(SourceName("p2.mzML", "TMT127C"), Is.EqualTo("Ref"));
+            Assert.That(rows.Single(r => r.Assay.DataFileName == "Ref.mzML").Sample.SourceName, Is.EqualTo("Ref (2)"),
+                "A file described once is not the sample the design calls Ref.");
+            AssertEachSourceNameIsOneSample(rows);
+        }
+
+        /// <summary>The numbering is named before the search too, when the user can still choose the names.</summary>
+        [Test]
+        public static void AMadeUpSourceNameTheDesignAlreadyUsesIsWarnedBeforeTheSearch()
+        {
+            var warnings = WarningsBeforeAnIsobaricSearch(nameof(AMadeUpSourceNameTheDesignAlreadyUsesIsWarnedBeforeTheSearch),
+                "TMT11", spectra => new[]
+                {
+                    $"{spectra}\tPlex1\t\t126\tCtrl\t1\t1\t1\tstudy sample",
+                    $"{spectra}\tPlex1\tPlex1 126\t127N\tDrug\t2\t1\t1\tstudy sample"
+                });
+
+            Assert.That(warnings, Has.Count.EqualTo(1), string.Join(" | ", warnings));
+            Assert.That(warnings.Single(), Does.Contain("'Plex1 126' is written 'Plex1 126 (2)'")
+                .And.Contain(GlobalVariables.TmtExperimentalDesignFileName));
         }
 
         /// <summary>
@@ -1583,13 +1671,23 @@ namespace Test
                 .GetMethod("ChannelRowsUnusableReason", BindingFlags.NonPublic | BindingFlags.Static)!
                 .Invoke(null, new object[] { file, tagType });
 
+        /// <summary>
+        /// The channel rows of <paramref name="file"/>, with source names resolved over
+        /// <paramref name="document"/>: every file of the search's channel rows, or just this one.
+        /// </summary>
         private static List<SdrfRowInput> InvokeChannelRows(TmtFileInfo file, IsobaricMassTagType tagType,
-            ISet<string> reusedSampleNames = null) =>
-            ((IEnumerable<SdrfRowInput>)typeof(PostSearchAnalysisTask)
-                .GetMethod("BuildChannelRows", BindingFlags.NonPublic | BindingFlags.Static)!
-                .Invoke(null, new object[] { file, tagType, null, new SdrfAssay { DataFileName = "run1.raw", AssayName = "run run1" },
-                    reusedSampleNames ?? new HashSet<string>() }))
-            .ToList();
+            params TmtFileInfo[] document)
+        {
+            var args = new object[] { document.Length > 0 ? document : new[] { file }, new List<string>(), null };
+            var sourceNames = typeof(PostSearchAnalysisTask)
+                .GetMethod("IsobaricSourceNames", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, args);
+            return ((IEnumerable<SdrfRowInput>)typeof(PostSearchAnalysisTask)
+                    .GetMethod("BuildChannelRows", BindingFlags.NonPublic | BindingFlags.Static)!
+                    .Invoke(null, new[] { file, tagType, null, new SdrfAssay { DataFileName = "run1.raw", AssayName = "run run1" },
+                        sourceNames }))
+                .ToList();
+        }
 
         private static HashSet<string> InvokeSampleNamesRepeatedWithinAPlex(params TmtFileInfo[] files) =>
             (HashSet<string>)typeof(PostSearchAnalysisTask)
