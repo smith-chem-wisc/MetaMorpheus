@@ -656,7 +656,10 @@ namespace EngineLayer
             ProteinGroup subsetPg = new ProteinGroup(Proteins, allPeptidesForThisFile, allUniquePeptidesForThisFile)
             {
                 AllPsmsBelowOnePercentFDR = allPsmsForThisFile,
-                DisplayModsOnPeptides = DisplayModsOnPeptides
+                DisplayModsOnPeptides = DisplayModsOnPeptides,
+                // the sites seen modified anywhere in the search, not just in this file, so a site this file
+                // covers but never saw modified is reported as 0/N rather than left out
+                OccupancySitesToReport = OccupancySitesToReport
             };
 
             // Both adapters rebuild their collection on every read, so snapshot each one.
