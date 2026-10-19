@@ -430,6 +430,16 @@ namespace Test
                 new DigestionParams(maxMissedCleavages: 3));
 
         /// <summary>
+        /// mzLib's cleavage-blocking flag (mzLib #1119) changes which peptides digestion emits, and reaches the key
+        /// only through the <c>digestionParams:</c> line.
+        /// </summary>
+        [Test]
+        public static void IndexFingerprint_ChangesWhenRespectCleavageBlockingModificationsChanges() =>
+            AssertFingerprintDistinguishes(
+                new DigestionParams(respectCleavageBlockingModifications: false),
+                new DigestionParams(respectCleavageBlockingModifications: true));
+
+        /// <summary>
         /// The <c>digestionParams:</c> line is the parameters as a saved task writes them. A setting that
         /// is not in a task's TOML cannot be saved and reloaded, so tying the key to that TOML is what keeps
         /// every user-settable option in the key without anyone remembering to add it. Both are written with
@@ -452,6 +462,58 @@ namespace Test
                 string expected = string.Join("; ", savedTaskToml.Split('\r', '\n').Where(line => line.Length > 0));
 
                 Assert.That(IndexingEngine.DescribeDigestionParams(digestionParams), Is.EqualTo(expected), digestionParams.GetType().Name);
+            }
+        }
+
+        /// <summary>
+        /// Every digestion setting is written to a saved task, comes back from it unchanged, and is in the key.
+        /// </summary>
+        /// <remarks>
+        /// The settings are read off the types by reflection, so one that mzLib adds later is checked without editing
+        /// this test. A public property is a setting unless the configuration deliberately leaves it out, and the ones
+        /// left out (listed here) are derived from or alias another setting. A setting needs a setter, private or not,
+        /// for a saved task to load it back.
+        /// </remarks>
+        [Test]
+        public static void IndexFingerprint_AndSavedTask_CarryEveryDigestionSetting()
+        {
+            var protein = new DigestionParams("Asp-N", maxMissedCleavages: 4,
+                initiatorMethionineBehavior: InitiatorMethionineBehavior.Cleave, minPeptideLength: 5, maxPeptideLength: 33,
+                maxModificationIsoforms: 77, maxModsForPeptides: 3, searchModeType: Omics.Digestion.CleavageSpecificity.Semi,
+                fragmentationTerminus: Omics.Fragmentation.FragmentationTerminus.N, generateUnlabeledProteinsForSilac: false,
+                keepNGlycopeptide: true, keepOGlycopeptide: true, respectCleavageBlockingModifications: true);
+            var rna = new RnaDigestionParams("RNase T1", 3, 4, 20, 9, 2);
+
+            var leftOut = new Dictionary<Type, string[]>
+            {
+                [typeof(DigestionParams)] = new[] { "DigestionAgent", "SpecificDigestionAgent", "MaxMods", "MaxLength", "MinLength" },
+                [typeof(RnaDigestionParams)] = new[] { "DigestionAgent", "SpecificDigestionAgent" },
+            };
+
+            foreach (Omics.Digestion.IDigestionParams original in new Omics.Digestion.IDigestionParams[] { protein, rna })
+            {
+                Type type = original.GetType();
+                string savedTask = Nett.Toml.WriteString((object)original, MetaMorpheusTask.tomlConfig);
+                Nett.TomlTable table = Nett.Toml.ReadString(savedTask, MetaMorpheusTask.tomlConfig);
+                object reloaded = original is DigestionParams
+                    ? Nett.Toml.ReadString<DigestionParams>(savedTask, MetaMorpheusTask.tomlConfig)
+                    : Nett.Toml.ReadString<RnaDigestionParams>(savedTask, MetaMorpheusTask.tomlConfig);
+                string[] keyEntries = IndexingEngine.DescribeDigestionParams(original).Split("; ");
+
+                foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                {
+                    string name = type.Name + "." + property.Name;
+                    if (leftOut[type].Contains(property.Name))
+                    {
+                        Assert.That(table.ContainsKey(property.Name), Is.False, name + " is meant to be left out of a saved task");
+                        continue;
+                    }
+
+                    Assert.That(table.ContainsKey(property.Name), Is.True, name + " is not saved with the task");
+                    Assert.That(property.GetSetMethod(nonPublic: true), Is.Not.Null, name + " is saved but has no setter to load it with");
+                    Assert.That(property.GetValue(reloaded), Is.EqualTo(property.GetValue(original)), name + " changes when a saved task is loaded");
+                    Assert.That(keyEntries.Any(entry => entry.StartsWith(property.Name + " = ")), Is.True, name + " is not in the index cache key");
+                }
             }
         }
 
