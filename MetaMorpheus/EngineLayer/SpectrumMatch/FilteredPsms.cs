@@ -66,6 +66,17 @@ namespace EngineLayer.SpectrumMatch
         }
 
         /// <summary>
+        /// Drops each PSM whose full sequence did not resolve (two or more full sequences match the scan) unless
+        /// <paramref name="keep"/> accepts it, returning how many were dropped. PSMs with a resolved full sequence are
+        /// never dropped. For callers that filtered with ambiguous modifications included and decide afterwards which
+        /// of those matches they can use.
+        /// </summary>
+        public int RemoveAmbiguousFullSequences(Func<SpectralMatch, bool> keep)
+        {
+            return FilteredPsmsList.RemoveAll(psm => psm.FullSequence == null && !keep(psm));
+        }
+
+        /// <summary>
         /// Returns the number of PSMs that passed the filtering criteria
         /// </summary>
         public int TargetPsmsAboveThreshold => FilteredPsmsList.Count(psm => !psm.IsDecoy && !psm.IsContaminant && AboveThreshold(psm));
