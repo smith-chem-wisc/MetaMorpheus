@@ -809,17 +809,6 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Names the ProteomeXchange accession before the run whenever one is set, not only when it is
-        /// malformed. The accession names ONE dataset but lives in task settings, which are reused (saved
-        /// Task Settings TOMLs, the GUI's defaults), and the GUI has no field for it. A well-formed
-        /// accession left over from another dataset would otherwise tie these files to the wrong
-        /// experiment without a word. Warned, not refused: the accession is still written as supplied.
-        ///
-        /// The form check accepts PXD or RPXD (PRIDE's reprocessed datasets) followed by six or more
-        /// digits, in any case. The specification's value type is PXD\d+, so seven-digit accessions
-        /// are valid once they exist.
-        /// </summary>
-        /// <summary>
         /// The input SDRF half of <see cref="WarnAboutSdrfGaps"/> (sdrf D50). The writer copies each searched file's
         /// sample columns from the input SDRF, and writes no SDRF when it cannot: the input is unreadable, a searched
         /// file has no row in it, or a row to be copied has a blank sample fact, which mzLib's builder refuses. Each is
@@ -869,6 +858,17 @@ namespace TaskLayer
                 .Select(c => $"{row["comment[searched data file]"]} ('{copy.SourceName}'): {c.Key}");
         }
 
+        /// <summary>
+        /// Names the ProteomeXchange accession before the run whenever one is set, not only when it is
+        /// malformed. The accession names ONE dataset but lives in task settings, which are reused (saved
+        /// Task Settings TOMLs, the GUI's defaults), and the GUI has no field for it. A well-formed
+        /// accession left over from another dataset would otherwise tie these files to the wrong
+        /// experiment without a word. Warned, not refused: the accession is still written as supplied.
+        ///
+        /// The form check accepts PXD or RPXD (PRIDE's reprocessed datasets) followed by six or more
+        /// digits, in any case. The specification's value type is PXD\d+, so seven-digit accessions
+        /// are valid once they exist.
+        /// </summary>
         private void WarnAboutProteomeXchangeAccession()
         {
             string accession = SearchParameters.ProteomeXchangeAccession?.Trim();
