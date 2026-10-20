@@ -110,10 +110,12 @@ namespace Test
         }
 
         /// <summary>Parsimony, protein scoring, then label-free quantification, as a search runs them.</summary>
-        private static PostSearchAnalysisParameters Quantify(string outputFolder, string mzmlPath, List<SpectralMatch> psms) =>
-            Quantify(outputFolder, new List<string> { mzmlPath }, psms);
+        private static PostSearchAnalysisParameters Quantify(string outputFolder, string mzmlPath, List<SpectralMatch> psms,
+            System.Action<SearchParameters> configure = null, bool scrubContaminants = false) =>
+            Quantify(outputFolder, new List<string> { mzmlPath }, psms, configure, scrubContaminants);
 
-        private static PostSearchAnalysisParameters Quantify(string outputFolder, List<string> mzmlPaths, List<SpectralMatch> psms)
+        private static PostSearchAnalysisParameters Quantify(string outputFolder, List<string> mzmlPaths, List<SpectralMatch> psms,
+            System.Action<SearchParameters> configure = null, bool scrubContaminants = false)
         {
             var common = new CommonParameters(digestionParams: Digestion);
             PostSearchAnalysisParameters parameters = new()
@@ -144,7 +146,13 @@ namespace Test
                 CommonParameters = common,
                 FileSpecificParameters = mzmlPaths.Select(path => (path, common)).ToList(),
             };
-            foreach (string step in new[] { "ProteinAnalysis", "QuantificationAnalysis" })
+            configure?.Invoke(parameters.SearchParameters);
+            var steps = new List<string> { "ProteinAnalysis", "QuantificationAnalysis" };
+            if (scrubContaminants)
+            {
+                steps.Add("RemoveContaminantsFromQuantificationTables");
+            }
+            foreach (string step in steps)
             {
                 typeof(PostSearchAnalysisTask).GetMethod(step, BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(task, null);
             }
@@ -373,6 +381,95 @@ namespace Test
             }
         }
 
+        /// <summary>
+        /// A modification with no chemical formula (a mass-only one, as some database annotations are) is compared by its
+        /// mass, so the same mass-only modification at two sites is still one peptide whose site is open.
+        /// </summary>
+        [Test]
+        public static void AMassOnlyModificationAtTwoSitesIsLocalizationAmbiguous()
+        {
+            ModificationMotif.TryGetMotif("M", out var motif);
+            var massOnly = new Modification(_originalId: "MassShift", _modificationType: "Test", _target: motif,
+                _locationRestriction: "Anywhere.", _monoisotopicMass: 21.9819);
+            Assume.That(massOnly.ChemicalFormula, Is.Null);
+            var protein = Protein("ACMDMEKGGGR", "P1");
+
+            var psm = Psm("f", 1, Peptide(protein, 1, 7, (3, massOnly)), Peptide(protein, 1, 7, (5, massOnly)));
+
+            Assert.That(psm.IsLocalizationAmbiguous, Is.True);
+            Assert.That(psm.GetSiteFreeIdentity(), Does.EndWith("21.98190"));
+        }
+
+        /// <summary>
+        /// With contaminants not written, a peptide only contaminants identify is withheld from the quantification
+        /// tables, and that holds for a localization-ambiguous one under its sites' name. A match ambiguous between two
+        /// peptides has no such name and is passed over.
+        /// </summary>
+        [Test]
+        public static void AContaminantOnlyAmbiguousRowIsWithheldWhenContaminantsAreNotWritten()
+        {
+            string outputFolder = NewOutputFolder("LocalizationAmbiguousQuant_Contaminant");
+            string mzmlPath = Path.Combine(outputFolder, "file.mzML");
+            var contaminant = new Protein("ACMDMEKGGGR", "CONTAMINANT_P1", null, new List<System.Tuple<string, string>>(),
+                new Dictionary<int, List<Modification>>(), isContaminant: true);
+            var target = Protein("WWWWWKAAAAR", "P2");
+            var at3 = Peptide(contaminant, 1, 7, (3, OxidationOnM));
+            var at5 = Peptide(contaminant, 1, 7, (5, OxidationOnM));
+            var targetPeptide = Peptide(target, 1, 6);
+            WriteMs1Fixture(mzmlPath, at3, targetPeptide);
+
+            try
+            {
+                var results = Quantify(outputFolder, mzmlPath, new List<SpectralMatch>
+                    {
+                        Psm(mzmlPath, 1, at3, at5),
+                        Psm(mzmlPath, 2, targetPeptide),
+                        Psm(mzmlPath, 3, Peptide(target, 1, 6), Peptide(target, 7, 11)),
+                    },
+                    configure: search => search.WriteContaminants = false, scrubContaminants: true).FlashLfqResults;
+
+                Assert.That(results.PeptideModifiedSequences.Keys, Is.EquivalentTo(new[] { targetPeptide.FullSequence }),
+                    "the contaminant's ambiguous row is withheld; the target peptide is kept");
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// A match whose protein forms no group (here the two-peptide rule removes P1's group, which has one peptide) has
+        /// no group to count for, so a localization-ambiguous one stays out rather than being quantified under UNDEFINED.
+        /// </summary>
+        [Test]
+        public static void AnAmbiguousMatchWhoseProteinFormsNoGroupIsLeftOut()
+        {
+            string outputFolder = NewOutputFolder("LocalizationAmbiguousQuant_NoGroup");
+            string mzmlPath = Path.Combine(outputFolder, "file.mzML");
+            var p1 = Protein("ACMDMEKGGGR", "P1");
+            var p2 = Protein("WWWWWKAAAAR", "P2");
+            var first = Peptide(p2, 1, 6);
+            var second = Peptide(p2, 7, 11);
+            WriteMs1Fixture(mzmlPath, Peptide(p1, 1, 7, (3, OxidationOnM)), first, second);
+
+            try
+            {
+                var results = Quantify(outputFolder, mzmlPath, new List<SpectralMatch>
+                    {
+                        Psm(mzmlPath, 1, Peptide(p1, 1, 7, (3, OxidationOnM)), Peptide(p1, 1, 7, (5, OxidationOnM))),
+                        Psm(mzmlPath, 2, first),
+                        Psm(mzmlPath, 3, second),
+                    },
+                    configure: search => search.NoOneHitWonders = true).FlashLfqResults;
+
+                Assert.That(results.PeptideModifiedSequences.Keys, Is.EquivalentTo(new[] { first.FullSequence, second.FullSequence }));
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+            }
+        }
+
         /// <summary>The sites are the candidates' full sequences, each once, in ordinal order, whatever order they were found in.</summary>
         [Test]
         public static void TheSitesDoNotDependOnTheOrderTheCandidatesWereFound()
@@ -407,10 +504,12 @@ namespace Test
 
             Assume.That(twoOxidationsOrOneDioxidation.BioPolymerWithSetModsMonoisotopicMass, Is.Not.Null, "one mass, one total formula");
             Assert.That(unambiguous.IsLocalizationAmbiguous, Is.False, "one full sequence: quantified under it, as before");
+            Assert.That(unambiguous.GetLocalizationCandidates(), Is.Empty);
             Assert.That(oxygenOnMOrD.IsLocalizationAmbiguous, Is.True);
             Assert.That(oxygenOnMOrD.GetSiteFreeIdentity(), Is.EqualTo(unambiguous.GetSiteFreeIdentity()), "an isomer of the localized match");
             Assert.That(twoOxidationsOrOneDioxidation.IsLocalizationAmbiguous, Is.False);
             Assert.That(twoPeptides.IsLocalizationAmbiguous, Is.False, "two base sequences");
+            Assert.That(twoPeptides.GetSiteFreeIdentity(), Is.Null);
         }
     }
 }
