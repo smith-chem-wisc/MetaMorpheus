@@ -35,7 +35,7 @@ namespace Test
         public static void PooledPartitionCuts_SelectTheSameCandidatesAsOnePartition()
         {
             var random = new Random(20260915);
-            var countsByScore = new int[byte.MaxValue + 1];
+            var sorter = new EngineLayer.Util.DescendingScoreSorter();
             int[] topNs = { 0, 1, 3, 5, 50 };
             int trialsWithMoreCandidatesThanTopN = 0;
 
@@ -56,7 +56,7 @@ namespace Test
                 List<int> observed = Enumerable.Range(0, peptideCount).OrderBy(_ => random.Next()).ToList();
 
                 var singlePartition = new List<int>();
-                GlycoSearchEngine.SelectTopCandidates(observed, scores, cutoff, topN, countsByScore, singlePartition);
+                sorter.SelectTop(observed, new EngineLayer.Util.ScanScoringTable(scores), cutoff, topN, singlePartition);
                 if (topN > 0 && observed.Count(id => scores[id] >= cutoff) > topN)
                 {
                     trialsWithMoreCandidatesThanTopN++;
@@ -71,7 +71,7 @@ namespace Test
                     List<int> observedHere = observed.Where(id => id >= start && id < end).ToList();
 
                     var cutHere = new List<int>();
-                    GlycoSearchEngine.SelectTopCandidates(observedHere, scores, cutoff, topN, countsByScore, cutHere);
+                    sorter.SelectTop(observedHere, new EngineLayer.Util.ScanScoringTable(scores), cutoff, topN, cutHere);
                     if (cutHere.Count == 0)
                     {
                         continue;

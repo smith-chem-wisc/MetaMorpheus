@@ -42,7 +42,8 @@ namespace TaskLayer
         Calibrate,
         XLSearch,
         GlycoSearch,
-        Average
+        Average,
+        Truncation
     }
 
     public abstract class MetaMorpheusTask
@@ -241,7 +242,9 @@ namespace TaskLayer
             .ConfigureType<Protease>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.ToString())
-                    .FromToml(tmlString => ProteaseDictionary.Dictionary[tmlString.Value])))
+                    // GetProtease, not the raw indexer: it maps the names older releases wrote, such as
+                    // "chymotrypsin (don't cleave before proline)", onto the enzyme they meant.
+                    .FromToml(tmlString => ProteaseDictionary.GetProtease(tmlString.Value))))
             .ConfigureType<List<string>>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => string.Join("\t", custom))
@@ -375,6 +378,33 @@ namespace TaskLayer
 
         [TomlIgnore]
         public virtual string OutputFolder { get; private set; }
+
+        /// <summary>
+        /// In-memory hand-off shared across the tasks in a run list (docs/Truncation-Search.md decision #1).
+        /// Assigned by <see cref="EverythingRunnerEngine"/> before each task runs; a finishing task can
+        /// deposit results that a later task retrieves, avoiding a file round-trip. Null for tasks run
+        /// outside the runner (e.g. directly in tests), in which case consumers fall back to disk.
+        /// </summary>
+        [TomlIgnore]
+        public TaskChainContext TaskChainContext { get; set; }
+
+        /// <summary>
+        /// True for tasks that read results out of the <see cref="TaskChainContext"/>. The runner wires the
+        /// context up only when a run list contains at least one such task, and clears it once one has run —
+        /// so a task that deposits into the context does not pin its results through run lists that will
+        /// never read them.
+        /// </summary>
+        [TomlIgnore]
+        public virtual bool ConsumesTaskChainContext => false;
+
+        /// <summary>
+        /// Called at the start of <see cref="RunTask"/>, before the task TOML is written and before file-specific
+        /// parameters are resolved, so a task can settle its <see cref="CommonParameters"/> (e.g. adopt an upstream
+        /// task's from the <see cref="TaskChainContext"/>) and have the written TOML record what actually ran.
+        /// </summary>
+        protected virtual void ResolveParametersBeforeRun()
+        {
+        }
 
         /// <summary>
         /// The spectra files the whole run started from, before a Calibrate or Average task replaced them with
@@ -815,10 +845,12 @@ namespace TaskLayer
                 totalPartitions: commonParams.TotalPartitions,
                 qValueThreshold: commonParams.QValueThreshold,
                 pepQValueThreshold: commonParams.PepQValueThreshold,
+                qValueCutoffForPepCalculation: commonParams.QValueCutoffForPepCalculation,
                 scoreCutoff: commonParams.ScoreCutoff,
                 numberOfPeaksToKeepPerWindow: commonParams.NumberOfPeaksToKeepPerWindow,
                 minimumAllowedIntensityRatioToBasePeak: commonParams.MinimumAllowedIntensityRatioToBasePeak,
                 windowWidthThomsons: commonParams.WindowWidthThomsons,
+                numberOfWindows: commonParams.NumberOfWindows,
                 trimMs1Peaks: commonParams.TrimMs1Peaks,
                 trimMsMsPeaks: commonParams.TrimMsMsPeaks,
                 normalizePeaksAccrossAllWindows: commonParams.NormalizePeaksAccrossAllWindows,
@@ -834,6 +866,7 @@ namespace TaskLayer
                 precursorDeconParams: precursorDeconParams,
                 productDeconParams: productDeconParams,
                 useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
+                diaParameters: commonParams.DIAparameters,
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
                 rtPredictorName: commonParams.RTPredictorName,
@@ -845,6 +878,7 @@ namespace TaskLayer
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName)
         {
             this.OutputFolder = output_folder;
+            ResolveParametersBeforeRun();
             MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
             StartingSingleTask(displayName);
 

@@ -31,6 +31,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
+        private GlycanSelectionViewModel GlycanSelectionViewModel;
         private CustomFragmentationWindow CustomFragmentationWindow;
         private DeconHostViewModel DeconHostViewModel;
 
@@ -272,8 +273,53 @@ namespace MetaMorpheusGUI
             {
                 ye.VerifyCheckState();
             }
+
+            // The tree is built here, not in PopulateChoices, because it needs the saved selection.
+            // GlobalVariables is read on this side of the boundary; the view model takes the glycans
+            // as an argument so a test can hand it its own.
+            GlycanSelectionViewModel = new GlycanSelectionViewModel(
+                GlobalVariables.OGlycansByDatabase.Concat(GlobalVariables.NGlycansByDatabase),
+                task._glycoSearchParameters.SelectedGlycans);
+            UpdateActiveGlycanDatabases();
+            glycanTreeView.DataContext = GlycanSelectionViewModel.Displayed;
+            GlycanSelectionSummary.DataContext = GlycanSelectionViewModel;
+
+            // Registered only now, so setting the fields above does not rebuild a tree that is not there yet.
+            CmbOGlycanDatabase.SelectionChanged += (_, _) => UpdateActiveGlycanDatabases();
+            CmbNGlycanDatabase.SelectionChanged += (_, _) => UpdateActiveGlycanDatabases();
+            RbtOGlycoSearch.Checked += (_, _) => UpdateActiveGlycanDatabases();
+            RbtNGlycoSearch.Checked += (_, _) => UpdateActiveGlycanDatabases();
+            Rbt_N_O_GlycoSearch.Checked += (_, _) => UpdateActiveGlycanDatabases();
+
             WritePrunedDBCheckBox.IsChecked = task._glycoSearchParameters.WritePrunedDataBase;
             UpdateModSelectionGrid();
+        }
+
+        /// <summary>
+        /// Shows only the glycan groups the search will use: the O-glycan database for an O search, the
+        /// N-glycan database for an N search, both for N-O. The engine narrows only those, so a tick in
+        /// any other group would be saved and then ignored.
+        /// </summary>
+        private void UpdateActiveGlycanDatabases()
+        {
+            if (GlycanSelectionViewModel == null)
+            {
+                return;
+            }
+
+            var active = new List<string>();
+            bool nSearch = RbtNGlycoSearch.IsChecked == true;
+            bool noSearch = Rbt_N_O_GlycoSearch.IsChecked == true;
+            if (!nSearch)
+            {
+                active.Add(CmbOGlycanDatabase.SelectedItem?.ToString());
+            }
+            if (nSearch || noSearch)
+            {
+                active.Add(CmbNGlycanDatabase.SelectedItem?.ToString());
+            }
+
+            GlycanSelectionViewModel.SetActiveDatabases(active);
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -319,6 +365,8 @@ namespace MetaMorpheusGUI
 
             TheTask._glycoSearchParameters.OGlycanDatabasefile = CmbOGlycanDatabase.SelectedItem.ToString();
             TheTask._glycoSearchParameters.NGlycanDatabasefile = CmbNGlycanDatabase.SelectedItem.ToString();
+
+            TheTask._glycoSearchParameters.SelectedGlycans = GlycanSelectionViewModel.ToSelectedGlycans();
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumGlycanBoxMass = double.Parse(TbMaxGlycanBoxMass.Text, CultureInfo.InvariantCulture);
@@ -525,6 +573,12 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void TextChanged_Glycan(object sender, TextChangedEventArgs args)
+        {
+            SearchModifications.SetTimer();
+            SearchModifications.GlycanSearch = true;
+        }
+
         private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
             SearchModifications.SetTimer();
@@ -549,6 +603,13 @@ namespace MetaMorpheusGUI
             {
                 SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
                 SearchModifications.VariableSearch = false;
+            }
+
+            if (SearchModifications.GlycanSearch)
+            {
+                // The view model filters, so it can keep the filtered group checkboxes in step with their rows.
+                GlycanSelectionViewModel.Filter(SearchGlycan.Text);
+                SearchModifications.GlycanSearch = false;
             }
         }
 

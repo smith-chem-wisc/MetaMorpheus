@@ -232,6 +232,11 @@ namespace EngineLayer.Calibration
             if (ms2DataScan.TheScan.MassSpectrum.Size == 0)
                 return result;
 
+            // LowCID deconvolutes no fragments (Ms2ScanWithSpecificMass), and CalibrationEngine does not
+            // calibrate MS2 scans in that mode, so there are no MS2 datapoints to collect.
+            if (ms2DataScan.ExperimentalFragments == null)
+                return result;
+
 
             //deconvolute
             var isotopicEnvelopes = ms2DataScan.ExperimentalFragments;

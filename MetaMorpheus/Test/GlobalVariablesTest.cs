@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Test
@@ -8,6 +9,93 @@ namespace Test
     [TestFixture]
     public static class GlobalVariablesTest
     {
+        /// <summary>
+        /// The UniProt proteome catalogue is a convenience for one GUI window, not a prerequisite for
+        /// searching, so MetaMorpheus must still start without it. SetUpGlobalVariables runs in the
+        /// MainWindow constructor and in Program.Main outside any try/catch, so an exception escaping
+        /// LoadAvailableProteomes is an unhandled crash at launch — and mzLib now reports a missing
+        /// catalogue by throwing rather than returning null (smith-chem-wisc/mzLib#1126).
+        ///
+        /// The file is shipped beside the executable, but DataDir can resolve to %LOCALAPPDATA%\MetaMorpheus
+        /// for a Program Files install, or to a data directory the user already created and passed with
+        /// --mmsettings, and in those cases
+        /// it may simply be absent. This hides it to reproduce that.
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        public static void TestStartUpSurvivesAMissingProteomeCatalogue()
+        {
+            string proteomesDirectory = Path.Combine(GlobalVariables.DataDir, "Proteomes");
+            string hiddenDirectory = proteomesDirectory + ".hidden-for-test";
+
+            // A run that died between the Move below and its finally block — a crash, a cancellation, a
+            // killed test host — leaves the only copy of the real directory here. Put it back rather than
+            // deleting it, or this run destroys the thing the test is meant to be protecting.
+            if (Directory.Exists(hiddenDirectory))
+            {
+                if (Directory.Exists(proteomesDirectory))
+                    Directory.Delete(hiddenDirectory, true);
+                else
+                    Directory.Move(hiddenDirectory, proteomesDirectory);
+            }
+
+            bool wasPresent = Directory.Exists(proteomesDirectory);
+            if (wasPresent)
+                Directory.Move(proteomesDirectory, hiddenDirectory);
+
+            // The failure must reach WarnHandler, the startup channel both front ends subscribe to;
+            // a Console write would be invisible in the GUI and ignore the CLI's -v none.
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> recordWarning = (sender, e) => warnings.Add(e.S);
+            GlobalVariables.WarnHandler += recordWarning;
+
+            try
+            {
+                Assert.DoesNotThrow(() => GlobalVariables.SetUpGlobalVariables(),
+                    "a missing proteome catalogue must not stop MetaMorpheus starting");
+
+                // Empty, never null: DownloadUniProtDatabaseWindow enumerates this property and calls
+                // FirstOrDefault on it with no null check, so null would be a latent NullReferenceException.
+                Assert.That(GlobalVariables.AvailableUniProtProteomes, Is.Not.Null);
+                Assert.That(GlobalVariables.AvailableUniProtProteomes, Is.Empty);
+
+                Assert.That(warnings, Has.Some.Contains("available UniProt proteomes"),
+                    "the missing catalogue must be reported through GlobalVariables.WarnHandler");
+            }
+            finally
+            {
+                GlobalVariables.WarnHandler -= recordWarning;
+
+                if (wasPresent)
+                {
+                    if (Directory.Exists(proteomesDirectory))
+                        Directory.Delete(proteomesDirectory, true);
+                    Directory.Move(hiddenDirectory, proteomesDirectory);
+                }
+
+                // Leave the globals as the rest of the suite expects to find them.
+                GlobalVariables.SetUpGlobalVariables();
+            }
+        }
+
+        /// <summary>
+        /// With the catalogue present it is read, and the human proteome is in it. The directory is
+        /// asserted rather than tested for: the catalogue ships beside the executable, so if it is not
+        /// there the fixture is broken (or the sibling test above left it hidden), and this test passing
+        /// vacuously would hide that.
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        public static void TestProteomeCatalogueIsReadWhenPresent()
+        {
+            Assert.That(Directory.Exists(Path.Combine(GlobalVariables.DataDir, "Proteomes")), Is.True,
+                "the shipped Proteomes directory is missing from the data directory");
+
+            Assert.That(GlobalVariables.AvailableUniProtProteomes, Is.Not.Null);
+            Assert.That(GlobalVariables.AvailableUniProtProteomes.ContainsKey("UP000005640"));
+            Assert.That(GlobalVariables.AvailableUniProtProteomes["UP000005640"], Is.EqualTo("Homo sapiens (Human)"));
+        }
+
         [Test]
         public static void TestCustomDataDirectory()
         {

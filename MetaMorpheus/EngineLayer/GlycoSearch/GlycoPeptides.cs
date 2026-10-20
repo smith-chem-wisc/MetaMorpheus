@@ -513,74 +513,7 @@ namespace EngineLayer.GlycoSearch
             //A spectrum needs to have 204.0867 to be considered as a glycopeptide.
             //Ratio of 138.055 to 144.0655 can seperate O/N glycan.
             // use some other oxonium ions to determine the glycan type.
-
-            // Strict custom-oxonium filter. Reuses the per-monosaccharide diagnostic ions registered
-            // from MonosaccharidesCustom.tsv (column 4). Each custom ion was probed into
-            // oxoniumIonsintensities at the offset after the built-ins, in Glycan.CustomOxoniumIons order.
-            // Strict semantics: a custom ion observed while its monosaccharide is absent from the
-            // candidate -- or its monosaccharide present while the ion is absent -- rejects the spectrum.
-            // "Observed" is the same relative-intensity test the built-in rules use (above the
-            // OxoniumRelativeIntensityThreshold fraction of the HexNAc 138.055 ion), not bare presence,
-            // so one noise peak at a custom ion's m/z cannot wipe out a scan. A spectrum with no
-            // 138.055 reference at all has no basis for either verdict and the strict rule is skipped.
-            // Custom ions that duplicate a built-in oxonium m/z are rejected at registration in
-            // Glycan.RegisterCustomMonosaccharide.
-            // Gated on HasCustomOxoniumIons so the default (no customs) path is unchanged.
-            if (Glycan.HasCustomOxoniumIons)
-            {
-                var customOxoniumIons = Glycan.CustomOxoniumIons;
-                int builtInCount = Glycan.AllOxoniumIons.Length;
-                int requiredIntensitySlots = builtInCount + customOxoniumIons.Count;
-                if (oxoniumIonsintensities.Length < requiredIntensitySlots)
-                {
-                    // Not a data condition: the only producer of this array sizes it from the same
-                    // Glycan.AllOxoniumIonsIncludingCustoms this loop indexes into. Reading a missing
-                    // slot as "absent" would make the strict rule reject every candidate carrying a
-                    // custom monosaccharide, silently emptying the results, so fail loudly instead.
-                    throw new ArgumentException(
-                        $"Oxonium intensity array has {oxoniumIonsintensities.Length} slots but {requiredIntensitySlots} are required " +
-                        $"({builtInCount} built-in + {customOxoniumIons.Count} custom). It must be produced by " +
-                        $"{nameof(ScanOxoniumIonFilter)} after the custom monosaccharides were registered.",
-                        nameof(oxoniumIonsintensities));
-                }
-
-                // The relative-intensity test divides by the 138.055 HexNAc ion. With no 138.055 in the
-                // spectrum there is no denominator and so no evidence either way, and under the strict
-                // rule "no evidence" must mean "say nothing" rather than "not observed": hasSignal ==
-                // hasMono makes an unobserved ion a rejection for every candidate that carries the
-                // monosaccharide. Skipping the branch is the neutral outcome; returning not-observed
-                // only looks neutral because the built-in rules treat false that way. This is reachable,
-                // not theoretical -- 138.055 is a secondary fragment of 204.087 and is favoured at
-                // higher collision energy, so a low-energy HCD spectrum with a strong 204 and no 138 is
-                // ordinary.
-                bool hexNAcReferenceObserved = HexNAc_diagnostic > 0;
-
-                for (int j = 0; j < customOxoniumIons.Count; j++)
-                {
-                    int kindIndex = customOxoniumIons[j].KindIndex;
-                    if (kindIndex >= glycanBox.Kind.Length)
-                    {
-                        throw new ArgumentException(
-                            $"Glycan box Kind[] has {glycanBox.Kind.Length} slots but custom monosaccharide index {kindIndex} was registered. " +
-                            $"Kind[] must be sized to {nameof(Glycan)}.{nameof(Glycan.KindCapacity)}.",
-                            nameof(glycanBox));
-                    }
-
-                    if (!hexNAcReferenceObserved)
-                    {
-                        continue;
-                    }
-
-                    bool hasSignal = CheckOxoniumPresence(oxoniumIonsintensities, builtInCount + j, HexNAc_diagnostic);
-                    bool hasMono = glycanBox.Kind[kindIndex] >= 1;
-                    if (!ApplyStrictMonoFilter(hasSignal, hasMono))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
+            return CustomOxoniumFilter(oxoniumIonsintensities, glycanBox.Kind);
         }
 
         /// <summary>
@@ -600,7 +533,7 @@ namespace EngineLayer.GlycoSearch
         /// A missing 138.055 reference is reported as "not observed" rather than dividing by zero, which
         /// diverges from the built-in comparisons -- they see +Infinity there and call the ion observed.
         /// Neither verdict is neutral under the strict rule, so callers applying it must not use this
-        /// result when the reference is absent; <see cref="DiagonsticFilter"/> skips the custom branch
+        /// result when the reference is absent; <see cref="CustomOxoniumFilter"/> skips the custom branch
         /// in that case rather than letting either answer become a rejection.
         /// </summary>
         internal static bool CheckOxoniumPresence(double[] oxoniumIonsintensities, int index, double hexNAcReferenceIntensity)
@@ -619,6 +552,83 @@ namespace EngineLayer.GlycoSearch
         internal static bool ApplyStrictMonoFilter(bool hasSignal, bool hasMono)
         {
             return hasSignal == hasMono;
+        }
+
+        /// <summary>
+        /// Strict custom-oxonium filter, for a glycan box (O and N+O search, via <see cref="DiagonsticFilter"/>) or a single
+        /// N-glycan (N search). Reuses the per-monosaccharide diagnostic ions registered from MonosaccharidesCustom.tsv
+        /// (column 4). Each custom ion was probed into oxoniumIonsintensities at the offset after the built-ins, in
+        /// Glycan.CustomOxoniumIons order.
+        /// </summary>
+        /// <remarks>
+        /// Strict semantics: a custom ion observed while its monosaccharide is absent from the candidate -- or its
+        /// monosaccharide present while the ion is absent -- rejects the candidate. "Observed" is the same
+        /// relative-intensity test the built-in rules use (above the OxoniumRelativeIntensityThreshold fraction of the
+        /// HexNAc 138.055 ion), not bare presence, so one noise peak at a custom ion's m/z cannot wipe out a scan. A
+        /// spectrum with no 138.055 reference at all has no basis for either verdict and the strict rule is skipped.
+        /// Custom ions that duplicate a built-in oxonium m/z are rejected at registration in
+        /// Glycan.RegisterCustomMonosaccharide. Gated on HasCustomOxoniumIons so the default (no customs) path is unchanged.
+        /// </remarks>
+        /// <param name="oxoniumIonsintensities"> From <see cref="ScanOxoniumIonFilter"/>. </param>
+        /// <param name="kind"> The candidate's summed composition: a glycan box's Kind, or one glycan's Kind. </param>
+        /// <returns> True when every custom ion's observed state matches the candidate's possession of its monosaccharide. </returns>
+        public static bool CustomOxoniumFilter(double[] oxoniumIonsintensities, byte[] kind)
+        {
+            if (!Glycan.HasCustomOxoniumIons)
+            {
+                return true;
+            }
+
+            var customOxoniumIons = Glycan.CustomOxoniumIons;
+            int builtInCount = Glycan.AllOxoniumIons.Length;
+            int requiredIntensitySlots = builtInCount + customOxoniumIons.Count;
+            if (oxoniumIonsintensities.Length < requiredIntensitySlots)
+            {
+                // Not a data condition: the only producer of this array sizes it from the same
+                // Glycan.AllOxoniumIonsIncludingCustoms this loop indexes into. Reading a missing
+                // slot as "absent" would make the strict rule reject every candidate carrying a
+                // custom monosaccharide, silently emptying the results, so fail loudly instead.
+                throw new ArgumentException(
+                    $"Oxonium intensity array has {oxoniumIonsintensities.Length} slots but {requiredIntensitySlots} are required " +
+                    $"({builtInCount} built-in + {customOxoniumIons.Count} custom). It must be produced by " +
+                    $"{nameof(ScanOxoniumIonFilter)} after the custom monosaccharides were registered.",
+                    nameof(oxoniumIonsintensities));
+            }
+            // The relative-intensity test divides by the 138.055 HexNAc ion. With no 138.055 in the
+            // spectrum there is no denominator and so no evidence either way, and under the strict
+            // rule "no evidence" must mean "say nothing" rather than "not observed": hasSignal ==
+            // hasMono makes an unobserved ion a rejection for every candidate that carries the
+            // monosaccharide. Skipping is the neutral outcome. This is reachable, not theoretical --
+            // 138.055 is a secondary fragment of 204.087 and is favoured at higher collision energy,
+            // so a low-energy HCD spectrum with a strong 204 and no 138 is ordinary.
+            double hexNAcReference = oxoniumIonsintensities[OxoniumIonReservedIndices.R138];
+            bool hexNAcReferenceObserved = hexNAcReference > 0;
+
+            for (int j = 0; j < customOxoniumIons.Count; j++)
+            {
+                int kindIndex = customOxoniumIons[j].KindIndex;
+                if (kindIndex >= kind.Length)
+                {
+                    throw new ArgumentException(
+                        $"Glycan Kind[] has {kind.Length} slots but custom monosaccharide index {kindIndex} was registered. " +
+                        $"Kind[] must be sized to {nameof(Glycan)}.{nameof(Glycan.KindCapacity)}.",
+                        nameof(kind));
+                }
+
+                if (!hexNAcReferenceObserved)
+                {
+                    continue;
+                }
+
+                bool hasSignal = CheckOxoniumPresence(oxoniumIonsintensities, builtInCount + j, hexNAcReference);
+                bool hasMono = kind[kindIndex] >= 1;
+                if (!ApplyStrictMonoFilter(hasSignal, hasMono))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         #endregion

@@ -49,6 +49,24 @@ namespace MetaMorpheusCommandLine
         [Option("auditData", HelpText = "[Optional] Folder of downloaded data files to check the SDRF's comment[data file] entries against, reported as found or missing. Only meaningful with --auditSdrf.")]
         public string AuditDataDirectory { get; set; }
 
+        [Option("sdrfDesign", HelpText = "[Optional] Path to a label-free SDRF file to turn into an ExperimentalDesign.tsv, which is written beside the first spectra file given with -s, where a run looks for it. Every spectra file must be named exactly by one SDRF row; rows for other files are dropped and reported. Biological replicates are renumbered within each condition and the renumbering is printed; fractions are copied as they are. If the SDRF describes a design MetaMorpheus would reject, nothing is written and every reason is printed. An existing design file is never overwritten. Runs on its own: give -s, but no task or database. -o is ignored, with a warning, because a run reads the design only from beside its first spectra file. With --sdrfTag, a TMT, iTRAQ or DiLeu SDRF is read instead and TmtDesign.txt is written, its biological replicates copied as given. Exits 0 when the design was written, 2 for a settings error, 4 when the SDRF could not be read and 5 when the design was refused or a design file is already there.")]
+        public string SdrfDesign { get; set; }
+
+        [Option("sdrfCondition", HelpText = "[Optional] The SDRF factor value columns the condition is built from, in order; space-delimited. A bare name such as 'genotype' means 'factor value[genotype]'; the 'factor value[' prefix may be given in any case. Values are joined with '_'. Needed when the SDRF has more than one factor value column. Only meaningful with --sdrfDesign.")]
+        public IEnumerable<string> SdrfConditionColumns { get; set; }
+
+        [Option("sdrfTag", HelpText = "[Optional] The isobaric kit the search uses, which makes --sdrfDesign read a TMT, iTRAQ or DiLeu SDRF and write TmtDesign.txt instead of ExperimentalDesign.tsv. Give the kit as the search names it: TMT6, TMT10, TMT11, TMT16, TMT18, iTRAQ4, iTRAQ8, diLeu4, diLeu12, or the search's multiplex modification (e.g. 'TMT11 on K'). TMTpro 16-plex may be given as TMT16, which checks the SDRF against its sixteen channels; MetaMorpheus searches it with its TMT18 label, and the design written reads as is under that. The kit is never guessed from the SDRF's labels: one kit's labels can be a subset of another's. Needs exactly one of --sdrfPlexColumn, --sdrfPlexPattern, --sdrfSinglePlex.")]
+        public string SdrfTag { get; set; }
+
+        [Option("sdrfPlexColumn", HelpText = "[Optional] The SDRF column each row's plex is read from, by its exact name. With --sdrfTag.")]
+        public string SdrfPlexColumn { get; set; }
+
+        [Option("sdrfPlexPattern", HelpText = "[Optional] A regular expression matched against each row's file name; the plex is its group named 'plex', else its first group. With --sdrfTag.")]
+        public string SdrfPlexPattern { get; set; }
+
+        [Option("sdrfSinglePlex", HelpText = "[Optional] The name of the one plex every file belongs to. With --sdrfTag.")]
+        public string SdrfSinglePlex { get; set; }
+
         public enum VerbosityType { none, minimal, normal };
 
         public void ValidateCommandLineSettings()
@@ -74,6 +92,7 @@ namespace MetaMorpheusCommandLine
                 if (GenerateDefaultTomls) { asksForWorkAsWell.Add("-g"); }
                 if (RunMicroVignette) { asksForWorkAsWell.Add("--test"); }
                 if (AcceptThermoLicence) { asksForWorkAsWell.Add("--acceptThermoLicence"); }
+                if (SdrfDesign != null) { asksForWorkAsWell.Add("--sdrfDesign"); }
 
                 if (asksForWorkAsWell.Count > 0)
                 {
@@ -91,6 +110,33 @@ namespace MetaMorpheusCommandLine
             {
                 throw new MetaMorpheusException("--auditData is only meaningful with --auditSdrf.");
             }
+
+            // --sdrfDesign writes one design file and runs nothing, for the same reasons as --auditSdrf
+            // above: a search given alongside it would be dropped or run design-less, and either looks
+            // like success. -s is not work here: it names the files the design is for.
+            if (SdrfDesign != null)
+            {
+                List<string> asksForWorkAsWell = new List<string>();
+
+                if (Tasks.Count > 0) { asksForWorkAsWell.Add("-t"); }
+                if (Databases.Count > 0) { asksForWorkAsWell.Add("-d"); }
+                if (GenerateDefaultTomls) { asksForWorkAsWell.Add("-g"); }
+                if (RunMicroVignette) { asksForWorkAsWell.Add("--test"); }
+                if (AcceptThermoLicence) { asksForWorkAsWell.Add("--acceptThermoLicence"); }
+
+                if (asksForWorkAsWell.Count > 0)
+                {
+                    throw new MetaMorpheusException("--sdrfDesign writes a design file and runs nothing else, so it cannot be given with "
+                        + string.Join(", ", asksForWorkAsWell) + ". Write the design, then run the search.");
+                }
+            }
+
+            if (SdrfConditionColumns != null && SdrfConditionColumns.Any() && SdrfDesign == null)
+            {
+                throw new MetaMorpheusException("--sdrfCondition is only meaningful with --sdrfDesign.");
+            }
+
+            ValidateIsobaricSdrfDesignOptions();
 
             if ((GenerateDefaultTomls || RunMicroVignette) && OutputFolder == null)
             {
@@ -116,6 +162,31 @@ namespace MetaMorpheusCommandLine
                 if (AuditDataDirectory != null && !Directory.Exists(AuditDataDirectory))
                 {
                     throw new MetaMorpheusException("The data folder to audit against was not found: " + AuditDataDirectory);
+                }
+
+                return;
+            }
+
+            // The design is checked against the files a run given the same -s would search, expanded the
+            // same way, so that run reads it without error. No output folder: the file goes where the run
+            // looks for it, beside the first spectra file.
+            if (SdrfDesign != null)
+            {
+                if (!File.Exists(SdrfDesign))
+                {
+                    throw new MetaMorpheusException("The SDRF file was not found: " + SdrfDesign);
+                }
+
+                if (Spectra.Count < 1)
+                {
+                    throw new MetaMorpheusException("--sdrfDesign needs -s: the spectra files, or the folder of them, that the design is for.");
+                }
+
+                ExpandSpectraFolders();
+
+                if (Spectra.Count < 1)
+                {
+                    throw new MetaMorpheusException("No spectra files were found in: " + string.Join(", ", _spectra));
                 }
 
                 return;
@@ -155,38 +226,7 @@ namespace MetaMorpheusCommandLine
                 throw new MetaMorpheusException("At least one spectra file must be specified.");
             }
 
-            // add spectra files from specified directories
-            List<string> spectraFromDirectories = new List<string>();
-            foreach (string item in Spectra)
-            {
-                if (Directory.Exists(item))
-                {
-                    FindSpectraFilesRecursive(item, spectraFromDirectories, Verbosity);
-                }
-                else if (!File.Exists(item))
-                {
-                    throw new MetaMorpheusException("The following is not a known file or directory: " + item);
-                }
-            }
-
-            Spectra.AddRange(spectraFromDirectories);
-
-            // Correct Bruker inner-file paths (analysis.baf, analysis.tdf/.tdf_bin, analysis.tsf/.tsf_bin) to their
-            // parent .d directory. This handles the case where a user provides a path to one of these files directly.
-            for (int i = 0; i < Spectra.Count; i++)
-            {
-                if (BrukerDataDirectory.TryGetParentDotDFolder(Spectra[i], out string dotDFolder))
-                {
-                    Spectra[i] = dotDFolder;
-                }
-            }
-
-            // Remove duplicate spectra entries (can occur if both .tdf and .tdf_bin were specified)
-            Spectra = Spectra.Distinct().ToList();
-
-            // remove spectra directories, after their spectra files have been added
-            // but keep .d directories as they are valid Bruker spectra folders
-            Spectra.RemoveAll(p => Directory.Exists(p) && !BrukerDataDirectory.IsDotDPath(p));
+            ExpandSpectraFolders();
 
             IEnumerable<string> fileNames = Tasks.Concat(Databases).Concat(Spectra);
 
@@ -261,11 +301,96 @@ namespace MetaMorpheusCommandLine
                 // ("Task{N}AveragingTask"), keeping it consistent with the five above.
                 SpectralAveragingTask averaging = new SpectralAveragingTask();
                 Toml.WriteFile(averaging, Path.Combine(folderLocation, @"AveragingTask.toml"), MetaMorpheusTask.tomlConfig);
+
+                TruncationSearchTask truncation = new TruncationSearchTask();
+                Toml.WriteFile(truncation, Path.Combine(folderLocation, @"TruncationSearchTask.toml"), MetaMorpheusTask.tomlConfig);
             }
             catch (Exception e)
             {
                 throw new MetaMorpheusException("Default tomls could not be written: " + e.Message);
             }
+        }
+
+        /// <summary>
+        /// The options that make --sdrfDesign read an isobaric SDRF: each only with what it modifies, a kit
+        /// MetaMorpheus knows, and exactly one place to read the plex from, because the plex is never guessed.
+        /// </summary>
+        private void ValidateIsobaricSdrfDesignOptions()
+        {
+            var plexOptions = new List<string>();
+            if (SdrfPlexColumn != null) { plexOptions.Add("--sdrfPlexColumn"); }
+            if (SdrfPlexPattern != null) { plexOptions.Add("--sdrfPlexPattern"); }
+            if (SdrfSinglePlex != null) { plexOptions.Add("--sdrfSinglePlex"); }
+
+            if (SdrfTag == null)
+            {
+                if (plexOptions.Count > 0)
+                {
+                    throw new MetaMorpheusException(string.Join(", ", plexOptions) + " " + (plexOptions.Count == 1 ? "is" : "are")
+                        + " only meaningful with --sdrfTag, which names the isobaric kit.");
+                }
+                return;
+            }
+
+            if (SdrfDesign == null)
+            {
+                throw new MetaMorpheusException("--sdrfTag is only meaningful with --sdrfDesign.");
+            }
+
+            if (!Omics.Modifications.IsobaricMassTag.TryGetTagType(SdrfTag, out _))
+            {
+                throw new MetaMorpheusException("--sdrfTag '" + SdrfTag + "' is not an isobaric kit MetaMorpheus knows. Give one of "
+                    + string.Join(", ", Enum.GetNames(typeof(Omics.Modifications.IsobaricMassTagType)))
+                    + ", or the search's multiplex modification.");
+            }
+
+            if (plexOptions.Count != 1)
+            {
+                throw new MetaMorpheusException("--sdrfTag needs exactly one of --sdrfPlexColumn, --sdrfPlexPattern and --sdrfSinglePlex, "
+                    + "to say where each file's plex is written"
+                    + (plexOptions.Count == 0 ? "; none was given." : "; " + string.Join(" and ", plexOptions) + " were given."));
+            }
+        }
+
+        /// <summary>
+        /// Replaces each folder in <see cref="Spectra"/> with the spectra files found in it, the way a run
+        /// finds them. Shared by a run and by --sdrfDesign, so a design is written for exactly the files a
+        /// run given the same -s will search.
+        /// </summary>
+        private void ExpandSpectraFolders()
+        {
+            // add spectra files from specified directories
+            List<string> spectraFromDirectories = new List<string>();
+            foreach (string item in Spectra)
+            {
+                if (Directory.Exists(item))
+                {
+                    FindSpectraFilesRecursive(item, spectraFromDirectories, Verbosity);
+                }
+                else if (!File.Exists(item))
+                {
+                    throw new MetaMorpheusException("The following is not a known file or directory: " + item);
+                }
+            }
+
+            Spectra.AddRange(spectraFromDirectories);
+
+            // Correct Bruker inner-file paths (analysis.baf, analysis.tdf/.tdf_bin, analysis.tsf/.tsf_bin) to their
+            // parent .d directory. This handles the case where a user provides a path to one of these files directly.
+            for (int i = 0; i < Spectra.Count; i++)
+            {
+                if (BrukerDataDirectory.TryGetParentDotDFolder(Spectra[i], out string dotDFolder))
+                {
+                    Spectra[i] = dotDFolder;
+                }
+            }
+
+            // Remove duplicate spectra entries (can occur if both .tdf and .tdf_bin were specified)
+            Spectra = Spectra.Distinct().ToList();
+
+            // remove spectra directories, after their spectra files have been added
+            // but keep .d directories as they are valid Bruker spectra folders
+            Spectra.RemoveAll(p => Directory.Exists(p) && !BrukerDataDirectory.IsDotDPath(p));
         }
 
         /// <summary>

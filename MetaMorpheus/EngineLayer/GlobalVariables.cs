@@ -150,6 +150,28 @@ namespace EngineLayer
         public static List<string> OGlycanDatabasePaths { get; private set; }
         public static List<string> NGlycanDatabasePaths { get; private set; }
 
+        /// <summary>
+        /// The O-glycans of every database in <see cref="OGlycanDatabasePaths"/>, keyed by file name and
+        /// ordered by mass.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="AllModsKnown"/> also holds every glycan, but flattens all databases together and so
+        /// cannot say which file a glycan came from. The task window groups its glycan tree by database, so
+        /// it needs the provenance this keeps. Keyed by file name -- not full path -- because that is what
+        /// the task parameters persist and what the database combo boxes already display.
+        ///
+        /// Loaded with ToGenerateIons:false, exactly like the AllModsKnown population below, so these are
+        /// for DISPLAY ONLY: their Ions are null, which also makes Glycan.Equals throw on them. The search
+        /// re-loads its glycans with ions; see GlycoSearchEngine.
+        /// </remarks>
+        public static Dictionary<string, List<Glycan>> OGlycansByDatabase { get; private set; }
+
+        /// <summary>
+        /// The N-glycans of every database in <see cref="NGlycanDatabasePaths"/>, keyed by file name and
+        /// ordered by mass. Display-only, for the same reasons as <see cref="OGlycansByDatabase"/>.
+        /// </summary>
+        public static Dictionary<string, List<Glycan>> NGlycansByDatabase { get; private set; }
+
         public static void SetUpGlobalVariables()
         {
             AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp", ".msl" };
@@ -222,7 +244,7 @@ namespace EngineLayer
                         allMods.Add(mod);
                         modTypes.Add(mod.ModificationType);
                     }
-                    else if (!mod.ModificationType.Equals("Unimod"))
+                    else if (!mod.ModificationType.Equals("Unimod") && !mod.ModificationType.Equals("Modomics"))
                     {
                         ErrorsReadingMods.Add("Duplicate mod IDs! Skipping " + mod.ModificationType + ":" + mod.IdWithMotif);
                     }
@@ -737,24 +759,41 @@ namespace EngineLayer
 
             //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
             //The reason why not include Glycan into modification database is for users to apply their own database.
+            OGlycansByDatabase = new Dictionary<string, List<Glycan>>();
+            NGlycansByDatabase = new Dictionary<string, List<Glycan>>();
+
             // Read through LoadGlycansOrWarn rather than LoadGlycan directly: this runs inside
             // SetUpGlobalVariables, so a typo in a user's own database would otherwise stop MetaMorpheus
-            // opening -- and with it the only window that could fix the file.
-            foreach (var glycan in GlycanDatabase.LoadGlycansOrWarn(OGlycanDatabasePaths, true, Warn))
+            // opening -- and with it the only window that could fix the file. One path at a time, so each
+            // database's glycans are recorded under it; a database that cannot be read is recorded empty.
+            foreach (var path in OGlycanDatabasePaths)
             {
-                if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
+                var oGlycans = GlycanDatabase.LoadGlycansOrWarn(new[] { path }, true, Warn);
+                // Recorded per database, because the flattening below loses which file each glycan came from.
+                // Enumerate the LOADED OBJECTS, not the file's lines: a structure-format database can yield
+                // several Glycan objects from one line (Glycan.Struct2Glycan).
+                OGlycansByDatabase[Path.GetFileName(path)] = oGlycans.OrderBy(g => g.Mass).ToList();
+                foreach (var glycan in oGlycans)
                 {
-                    AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
+                    if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
+                    {
+                        AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
+                    }
+                    _AllModsKnown.Add(glycan);
                 }
-                _AllModsKnown.Add(glycan);
             }
-            foreach (var glycan in GlycanDatabase.LoadGlycansOrWarn(NGlycanDatabasePaths, false, Warn))
+            foreach (var path in NGlycanDatabasePaths)
             {
-                if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
+                var nGlycans = GlycanDatabase.LoadGlycansOrWarn(new[] { path }, false, Warn);
+                NGlycansByDatabase[Path.GetFileName(path)] = nGlycans.OrderBy(g => g.Mass).ToList();
+                foreach (var glycan in nGlycans)
                 {
-                    AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
+                    if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
+                    {
+                        AllModsKnownDictionary.Add(glycan.IdWithMotif, glycan);
+                    }
+                    _AllModsKnown.Add(glycan);
                 }
-                _AllModsKnown.Add(glycan);
             }
             LoadTxtGlycan();
         }
@@ -776,9 +815,48 @@ namespace EngineLayer
             };
         }
 
+        /// <summary>
+        /// Loads the catalogue of UniProt proteomes offered by the "Download UniProt Database" window.
+        /// </summary>
+        /// <remarks>
+        /// The catalogue is a convenience, not a prerequisite: MetaMorpheus searches perfectly well without
+        /// it, so failing to read it must never stop the program starting. It is normally shipped beside the
+        /// executable, but <see cref="DataDir"/> can resolve elsewhere — to %LOCALAPPDATA%\MetaMorpheus for a
+        /// Program Files install, or to a data directory the user has already created and passed with
+        /// --mmsettings — and in those cases
+        /// the file may simply not be there. This method is called from <see cref="SetUpGlobalVariables"/>,
+        /// which runs in the MainWindow constructor and in Program.Main outside any try/catch, so an escaping
+        /// exception is an unhandled crash at launch rather than a degraded feature.
+        /// <para>
+        /// The failure is reported through <see cref="WarnHandler"/>, not the console: the GUI has no
+        /// console, and the CLI's handler honours -v none. Both front ends subscribe before startup.
+        /// </para>
+        /// <para>
+        /// An empty dictionary is the safe degraded value, not null: DownloadUniProtDatabaseWindow enumerates
+        /// this property and calls FirstOrDefault on it without a null check, so a null here has always been
+        /// a latent NullReferenceException the moment that window is opened.
+        /// </para>
+        /// </remarks>
         private static void LoadAvailableProteomes()
         {
-            AvailableUniProtProteomes = ProteinDbRetriever.UniprotProteomesList(Path.Combine(DataDir,@"Proteomes",@"availableUniProtProteomes.txt.gz"));
+            string proteomeListPath = Path.Combine(DataDir, @"Proteomes", @"availableUniProtProteomes.txt.gz");
+
+            try
+            {
+                // mzLib reports a missing or unreadable catalogue by exception and never returns null
+                // (smith-chem-wisc/mzLib#1126, first released in 1.0.584).
+                AvailableUniProtProteomes = ProteinDbRetriever.UniprotProteomesList(proteomeListPath);
+            }
+            catch (Exception e)
+            {
+                // Deliberately broad: every way reading a local file can fail — absent, wrong extension,
+                // truncated, locked, unreadable — has the same consequence for this optional catalogue, and
+                // none of them is worth refusing to start over.
+                AvailableUniProtProteomes = new Dictionary<string, string>();
+
+                Warn($"Could not read the list of available UniProt proteomes from '{proteomeListPath}'. " +
+                     $"Downloading a proteome by name will be unavailable. {e.Message}");
+            }
         }
         private static void SetUpGlobalSettings()
         {
@@ -804,10 +882,9 @@ namespace EngineLayer
             var glycoMods = ModificationLoader.ReadModsFromFile(glycoFile, out var errorMods);
             foreach (var glycoMod in glycoMods)
             {
-                var kind = GlycanDatabase.String2Kind(glycoMod.OriginalId);
+                byte[] kind = GlycoModComposition(glycoMod.OriginalId, glycoFile);
 
-                // If we cannot parse the glycan string, we add the glycoMod as a normal modification.
-                if (kind.Sum(p => p) == 0)
+                if (kind == null || kind.Sum(p => p) == 0)
                 {
                     _AllModsKnown.Add(glycoMod);
                     continue;
@@ -826,6 +903,44 @@ namespace EngineLayer
                 }
                 _AllModsKnown.Add(glycan);
             }
+        }
+
+        /// <summary>
+        /// The composition a glyco.txt modification ID names, or null when it names none. An ID with no '('
+        /// -- Hex, dHex, Galactosyl on N-term -- names a single residue, not a composition, and is kept as an
+        /// ordinary modification. One that has a '(' but is not a composition is kept the same way, but said:
+        /// this runs at startup, outside any try, so it must not throw, and it must not quietly become a
+        /// different glycan either. The ID is cut the way a glycan database line is (GlycanDatabase.CompositionPart),
+        /// so text after the last ')' -- HexNAc(1)Hex(1) on S -- is ignored, as the old String2Kind ignored it,
+        /// and said, as the database loader says it.
+        /// </summary>
+        internal static byte[] GlycoModComposition(string originalId, string glycoFile)
+        {
+            if (originalId.IndexOf('(') < 0)
+            {
+                return null;
+            }
+
+            string composition = GlycanDatabase.CompositionPart(originalId, out string ignored);
+            byte[] kind;
+            try
+            {
+                kind = GlycanDatabase.ParseComposition(composition);
+            }
+            catch (FormatException ex)
+            {
+                Warn($"The glyco modification '{originalId}' in {glycoFile} is not a glycan composition, so it is " +
+                    $"kept as an ordinary modification. {ex.Message}");
+                return null;
+            }
+
+            if (ignored != null)
+            {
+                Warn($"Read the glyco modification '{originalId}' in {glycoFile} as the glycan \"{composition}\", " +
+                    $"ignoring \"{ignored}\" after it. If that was meant to be part of the glycan, fix the ID: " +
+                    "a composition is a name and a count repeated, e.g. HexNAc(2)Hex(5)NeuAc(1).");
+            }
+            return kind;
         }
 
         private static void LoadDigestionAgents()

@@ -29,6 +29,17 @@ namespace Test
     [TestFixture]
     public static class FdrTest
     {
+        /// <summary>
+        /// QValueNotch_IsSet_OnlyOnUnambiguousPSMs_BeforeDisambiguation_Inverted forces the process-wide
+        /// FdrAnalysisEngine.QvalueThresholdOverride on and turns it off on its last line, which a failing assertion
+        /// skips. See SearchEngineTests.ResetQvalueThresholdOverride for what a leak does.
+        /// </summary>
+        [TearDown]
+        public static void ResetQvalueThresholdOverride()
+        {
+            typeof(FdrAnalysisEngine).GetProperty("QvalueThresholdOverride").SetValue(null, false);
+        }
+
         [Test]
         public static void TestSeeModsThatShiftMobility()
         {
@@ -287,6 +298,20 @@ namespace Test
             }
             var unpredictableData = unpredictableEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
             Assert.That(unpredictableData.HasHydrophobicity, Is.EqualTo(0));
+
+            // A bin whose reference is NaN makes the z-score NaN. It saturates like a missing value, so it must be
+            // flagged like one, not marked available.
+            var nanReference = new Dictionary<string, Dictionary<int, Tuple<double, double>>>
+            {
+                { "TaGe_SA_HeLa_04_subset_longestSeq.mzML", new Dictionary<int, Tuple<double, double>> { { 154, new Tuple<double, double>(double.NaN, 1.0) } } }
+            };
+            pepEngine.GetType().GetProperty("FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified").SetValue(pepEngine, nanReference);
+            pepEngine.GetType().GetProperty("FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified").SetValue(pepEngine, nanReference);
+            PsmData lcNanZScore = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
+            Assert.That(lcNanZScore.HasHydrophobicity, Is.EqualTo(0));
+            Assert.That(lcNanZScore.HydrophobicityZScore, Is.EqualTo(100));
+            pepEngine.GetType().GetProperty("FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified").SetValue(pepEngine, fileSpecificRetTimeHI_behavior);
+            pepEngine.GetType().GetProperty("FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified").SetValue(pepEngine, fileSpecificRetTimeHI_behavior);
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
@@ -410,6 +435,42 @@ namespace Test
             metrics = pepEngine.ComputePEPValuesForAllPSMs();
             Assert.That(32 >= trueCount);
 
+            // CZE: HasHydrophobicity means what it means for LC. It is 1 only when the mobility z-score was actually
+            // computed, and 0 when this file and retention-time bin have no reference distribution, so that the
+            // z-score is just the saturated maximum standing in for a missing value.
+            var czeReference = pepEngine.GetType().GetProperty("FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE");
+            czeReference.SetValue(pepEngine, new Dictionary<string, Dictionary<int, Tuple<double, double>>>
+            {
+                { Path.GetFileName(maxScorePsm.FullFilePath), new Dictionary<int, Tuple<double, double>> { { (int)(2 * Math.Round(maxScorePsm.ScanRetentionTime / 2d, 0)), at } } }
+            });
+            Assert.That(pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy).HasHydrophobicity, Is.EqualTo(1));
+
+            // Missing bin: the file has a reference distribution, but not for this PSM's retention-time bin. This
+            // is the state ComputeMobilityValues builds when no confident target landed in that bin.
+            int otherBin = (int)(2 * Math.Round(maxScorePsm.ScanRetentionTime / 2d, 0)) + 2;
+            czeReference.SetValue(pepEngine, new Dictionary<string, Dictionary<int, Tuple<double, double>>>
+            {
+                { Path.GetFileName(maxScorePsm.FullFilePath), new Dictionary<int, Tuple<double, double>> { { otherBin, at } } }
+            });
+            PsmData czeWithoutBin = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
+            Assert.That(czeWithoutBin.HasHydrophobicity, Is.EqualTo(0));
+            Assert.That(czeWithoutBin.HydrophobicityZScore, Is.EqualTo(100));
+
+            // NaN reference in the PSM's bin: the z-score is NaN and saturates, so the flag must be 0, as for LC.
+            czeReference.SetValue(pepEngine, new Dictionary<string, Dictionary<int, Tuple<double, double>>>
+            {
+                { Path.GetFileName(maxScorePsm.FullFilePath), new Dictionary<int, Tuple<double, double>> { { (int)(2 * Math.Round(maxScorePsm.ScanRetentionTime / 2d, 0)), new Tuple<double, double>(double.NaN, 1.0) } } }
+            });
+            PsmData czeNanZScore = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
+            Assert.That(czeNanZScore.HasHydrophobicity, Is.EqualTo(0));
+            Assert.That(czeNanZScore.HydrophobicityZScore, Is.EqualTo(100));
+
+            // Missing file: no reference distribution for this file at all.
+            czeReference.SetValue(pepEngine, new Dictionary<string, Dictionary<int, Tuple<double, double>>>());
+            PsmData czeWithoutReference = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
+            Assert.That(czeWithoutReference.HasHydrophobicity, Is.EqualTo(0));
+            Assert.That(czeWithoutReference.HydrophobicityZScore, Is.EqualTo(100));
+
             //TEST PEP calculation failure
             psmCopyForPEPFailure.RemoveAll(x => x.IsDecoy);
             pepEngine = new PepAnalysisEngine(psmCopyForPEPFailure, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
@@ -424,12 +485,12 @@ namespace Test
         }
 
         /// <summary>
-        /// A full PEP run with pruning on, as glyco, crosslink and nonspecific searches do. Within one run, pruning must
-        /// not change any PEP (it never drops a match's best hypothesis), and the results block must report the count
-        /// of hypotheses it removed. With pruning off, the block must not carry that line.
+        /// A full PEP run, then disambiguation by PEP, as glyco, crosslink and nonspecific searches run them. PEP records
+        /// a PEP on every hypothesis and removes none. Disambiguation must not change any match's PEP (it never drops a
+        /// match's best hypothesis), and its results must report the count of hypotheses it removed.
         /// </summary>
         [Test]
-        public static void ComputePEPValues_Pruning_RemovesHypothesesButChangesNoPep()
+        public static void DisambiguationByPep_RemovesHypothesesButChangesNoPep()
         {
             List<SpectralMatch> Search(out List<(string fileName, CommonParameters fileSpecificParameters)> fsp)
             {
@@ -457,17 +518,115 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\");
 
             var keptPsms = Search(out var fsp);
-            string keptMetrics = new PepAnalysisEngine(keptPsms, "standard", fsp, outputFolder).ComputePEPValuesForAllPSMs();
+            int hypothesesBefore = keptPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count());
+            new PepAnalysisEngine(keptPsms, "standard", fsp, outputFolder).ComputePEPValuesForAllPSMs();
+
+            // PEP removes nothing, and each match's PEP is its best hypothesis's
+            Assert.That(keptPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count()), Is.EqualTo(hypothesesBefore));
+            Assert.That(keptPsms.SelectMany(p => p.BestMatchingBioPolymersWithSetMods).All(h => h.PEP.HasValue));
+            Assert.That(keptPsms.Select(p => p.BestMatchingBioPolymersWithSetMods.Min(h => h.PEP!.Value)),
+                Is.EqualTo(keptPsms.Select(p => p.PsmFdrInfo.PEP)));
 
             var prunedPsms = Search(out fsp);
-            int hypothesesBefore = prunedPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count());
-            string prunedMetrics = new PepAnalysisEngine(prunedPsms, "standard", fsp, outputFolder, pruneAmbiguousHypotheses: true).ComputePEPValuesForAllPSMs();
+            new PepAnalysisEngine(prunedPsms, "standard", fsp, outputFolder).ComputePEPValuesForAllPSMs();
+            var results = (DisambiguationEngineResults)new DisambiguationEngine(prunedPsms, fsp.First().fileSpecificParameters, fsp, new List<string>(),
+                AbsolutePepGapRule.PepEngineRule).Run();
             int removed = hypothesesBefore - prunedPsms.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count());
 
-            Assert.That(removed, Is.GreaterThan(0), "the fixture must have hypotheses to prune");
-            Assert.That(keptMetrics, Does.Not.Contain("Count of Ambiguous"));
-            Assert.That(prunedMetrics, Does.Contain($"Count of Ambiguous Peptides Removed:  {removed}"));
+            Assert.That(removed, Is.GreaterThan(0), "the fixture must have hypotheses to remove");
+            Assert.That(results.RemovedByPEP, Is.EqualTo(removed));
+            Assert.That(results.ToString(), Does.Contain($"removed by PEP: {removed}"));
             Assert.That(prunedPsms.Select(p => p.PsmFdrInfo.PEP), Is.EqualTo(keptPsms.Select(p => p.PsmFdrInfo.PEP)));
+        }
+
+        /// <summary>
+        /// With no PEP rule, the engine removes nothing by PEP and its results carry no PEP line, so a search that does
+        /// not ask for it writes what it wrote before.
+        /// </summary>
+        [Test]
+        public static void DisambiguationEngine_WithoutPepRule_RemovesNothingByPep()
+        {
+            var (psm, hypotheses) = PsmWithFourSameNotchHypotheses(0, 0.2, 0.01, 0.3);
+            var results = (DisambiguationEngineResults)new DisambiguationEngine(new List<SpectralMatch> { psm }, new CommonParameters(),
+                new List<(string, CommonParameters)>(), new List<string>()).Run();
+
+            Assert.That(results.RemovedByPEP, Is.Null);
+            Assert.That(results.ToString(), Does.Not.Contain("by PEP"));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods, Is.EquivalentTo(hypotheses));
+        }
+
+        /// <summary>
+        /// Removes exactly the hypotheses the rule names, when more than one goes from one match. The PEP engine's own
+        /// removal indexed an unchanging copy of the hypotheses as if it shrank, so with two removals it removed the
+        /// wrong one and still counted two.
+        /// </summary>
+        [Test]
+        public static void DisambiguationByPep_RemovesEveryHypothesisTheRuleNames()
+        {
+            var (psm, hypotheses) = PsmWithFourSameNotchHypotheses(0, 0.2, 0.01, 0.3);
+            var results = (DisambiguationEngineResults)new DisambiguationEngine(new List<SpectralMatch> { psm }, new CommonParameters(),
+                new List<(string, CommonParameters)>(), new List<string>(), AbsolutePepGapRule.PepEngineRule).Run();
+
+            Assert.That(results.RemovedByPEP, Is.EqualTo(2));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods, Is.EquivalentTo(new[] { hypotheses[0], hypotheses[2] }));
+        }
+
+        /// <summary>
+        /// A match whose hypotheses do not all carry a PEP was not scored by PEP, and is left alone.
+        /// </summary>
+        [Test]
+        public static void DisambiguationByPep_SkipsAMatchWithoutPeps()
+        {
+            var (psm, hypotheses) = PsmWithFourSameNotchHypotheses(0, 0.2, 0.01, 0.3);
+            hypotheses[3].PEP = null;
+            var results = (DisambiguationEngineResults)new DisambiguationEngine(new List<SpectralMatch> { psm }, new CommonParameters(),
+                new List<(string, CommonParameters)>(), new List<string>(), AbsolutePepGapRule.PepEngineRule).Run();
+
+            Assert.That(results.RemovedByPEP, Is.EqualTo(0));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(4));
+        }
+
+        [Test]
+        public static void AbsolutePepGapRule_RemovesOnlyHypothesesMoreThanTheGapAboveTheBest()
+        {
+            var (_, hypotheses) = PsmWithFourSameNotchHypotheses(0.1, 0.14, 0.16, 0.4);
+            var removed = new AbsolutePepGapRule(0.05).HypothesesToRemove(hypotheses).ToList();
+
+            // the best is never removed
+            Assert.That(removed, Is.EquivalentTo(new[] { hypotheses[2], hypotheses[3] }));
+        }
+
+        /// <summary>
+        /// One match with four equal-score hypotheses at the same notch (four peptides of one protein), each given the
+        /// PEP at its position, as the PEP engine would record them. Same notch, so disambiguation by notch q-value
+        /// does not touch them.
+        /// </summary>
+        private static (SpectralMatch Psm, List<SpectralMatchHypothesis> Hypotheses) PsmWithFourSameNotchHypotheses(params double[] peps)
+        {
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(
+                    new MzSpectrum(new double[] { }, new double[] { }, false),
+                    2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
+                100, 1, null, new CommonParameters(), null);
+
+            var protein = new Protein("PEPTIDEK", "ACCESSION", "ORGANISM");
+            var peptides = Enumerable.Range(2, 4).Select(end => new PeptideWithSetModifications(protein, new DigestionParams(), 1, end,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0)).ToList();
+
+            SpectralMatch psm = new PeptideSpectralMatch(peptides[0], 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            foreach (var peptide in peptides.Skip(1))
+            {
+                psm.AddOrReplace(peptide, 1, 0, true, new List<MatchedFragmentIon>());
+            }
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 1, 0);
+            psm.PeptideFdrInfo = new FdrInfo();
+
+            var hypotheses = psm.BestMatchingBioPolymersWithSetMods.ToList();
+            for (int i = 0; i < hypotheses.Count; i++)
+            {
+                hypotheses[i].PEP = peps[i];
+            }
+            return (psm, hypotheses);
         }
 
         [Test]
@@ -577,42 +736,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestPEP_peptideRemoval()
-        {
-            int ambiguousPeptidesRemovedCount = 0;
-
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(
-                new MsDataScan(
-                    new MzSpectrum(new double[] { }, new double[] { }, false),
-                    2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
-                100, 1, null, new CommonParameters(), null);
-
-            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
-
-            SpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
-            psm.AddOrReplace(pwsm, 1, 1, true, new List<MatchedFragmentIon>());
-            psm.AddOrReplace(pwsm, 1, 2, true, new List<MatchedFragmentIon>());
-            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 1, 0);
-            psm.PeptideFdrInfo = new FdrInfo();
-
-            List<int> indicesOfPeptidesToRemove = new List<int>();
-            List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
-            List<double> pepValuePredictions = new List<double> { 1.0d, 0.99d, 0.9d };
-
-            PepAnalysisEngine.GetIndicesOfPeptidesToRemove(indicesOfPeptidesToRemove, pepValuePredictions);
-            Assert.That(indicesOfPeptidesToRemove.Count, Is.EqualTo(1));
-            Assert.That(indicesOfPeptidesToRemove.FirstOrDefault(), Is.EqualTo(2));
-            Assert.That(pepValuePredictions.Count, Is.EqualTo(2));
-
-            PepAnalysisEngine.RemoveBestMatchingPeptidesWithLowPEP(psm, indicesOfPeptidesToRemove, psm.BestMatchingBioPolymersWithSetMods.ToList(), ref ambiguousPeptidesRemovedCount);
-            Assert.That(ambiguousPeptidesRemovedCount, Is.EqualTo(1));
-            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Select(b => b.Notch).ToList().Count, Is.EqualTo(2));
-        }
-
-        [Test]
-        [TestCase(false, 3, 0)]
-        [TestCase(true, 2, 1)]
-        public static void AssignPep_PrunesAmbiguousHypothesesOnlyWhenAsked(bool prune, int expectedHypotheses, int expectedRemoved)
+        public static void AssignPep_TakesTheBestPredictionAndRemovesNothing()
         {
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(
                 new MsDataScan(
@@ -628,13 +752,12 @@ namespace Test
             psm.SetFdrValues(1, 0, 0, 1, 0, 0, 1, 0);
             psm.PeptideFdrInfo = new FdrInfo();
 
-            // the third hypothesis sits more than 0.05 below the best
+            // the third hypothesis sits well below the best
             List<double> pepValuePredictions = new List<double> { 1.0d, 0.99d, 0.9d };
-            int removed = PepAnalysisEngine.AssignPep(psm, psm.BestMatchingBioPolymersWithSetMods.ToList(), pepValuePredictions, prune);
+            PepAnalysisEngine.AssignPep(psm, pepValuePredictions);
 
-            Assert.That(removed, Is.EqualTo(expectedRemoved));
-            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(expectedHypotheses));
-            // PEP comes from the best hypothesis, so pruning never changes it
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(3));
+            // PEP comes from the best hypothesis
             Assert.That(psm.PsmFdrInfo.PEP, Is.EqualTo(0).Within(1e-12));
             Assert.That(psm.PeptideFdrInfo.PEP, Is.EqualTo(0).Within(1e-12));
         }

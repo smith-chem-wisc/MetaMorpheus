@@ -1,11 +1,13 @@
 ﻿using Chemistry;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.ModernSearch;
+using EngineLayer.SpectrumMatch;
 using Proteomics;
 using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
+using EngineLayer.Util;
 using MassSpectrometry;
 using System.Collections.Generic;
 using System.Linq;
@@ -68,7 +70,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
             Parallel.ForEach(threads, (i) =>
             {
-                byte[] scoringTable = new byte[PeptideIndex.Count];
+                // Never stamped. SnesIndexedScoring increments every peptide in each matching bin with no precursor filter,
+                // so how much of the index a scan touches has nothing to do with the mass-diff acceptor, and nothing has
+                // measured it to be small enough for stamping to win.
+                var scoringTable = new ScanScoringTable(PeptideIndex.Count, stamped: false);
 
                 List<Product> peptideTheorProducts = new List<Product>();
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
@@ -79,7 +84,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     if (GlobalVariables.StopLoops) { return; }
 
                     // empty the scoring table to score the new scan (conserves memory compared to allocating a new array)
-                    Array.Clear(scoringTable, 0, scoringTable.Length);
+                    scoringTable.BeginScan();
                     idsOfPeptidesPossiblyObserved.Clear();
                     List<int> coisolatedIndexes = CoisolationIndex[i];
                     Ms2ScanWithSpecificMass scan = ListOfSortedMs2Scans[coisolatedIndexes[(coisolatedIndexes.Count - 1) / 2]]; //get first scan; all scans should be identical
@@ -177,7 +182,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             return new MetaMorpheusEngineResults(this);
         }
 
-        private void SnesIndexedScoring(Ms2ScanWithSpecificMass scan, Indexing.FragmentIndex FragmentIndex, byte[] scoringTable, List<PeptideWithSetModifications> peptideIndex, DissociationType dissociationType)
+        private void SnesIndexedScoring(Ms2ScanWithSpecificMass scan, Indexing.FragmentIndex FragmentIndex, ScanScoringTable scoringTable, List<PeptideWithSetModifications> peptideIndex, DissociationType dissociationType)
         {
             int obsPreviousFragmentCeilingMz = 0;
 
@@ -197,7 +202,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     {
                         for (int pep = 0; pep < bin.Length; pep++)
                         {
-                            scoringTable[bin[pep]]++;
+                            scoringTable.Increment(bin[pep]);
                         }
                     }
 
@@ -221,7 +226,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     {
                                         for (int pep = 0; pep < bin.Length; pep++)
                                         {
-                                            scoringTable[bin[pep]]++;
+                                            scoringTable.Increment(bin[pep]);
                                         }
                                     }
                                 }
@@ -273,7 +278,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             {
                                 for (int pep = 0; pep < bin.Length; pep++)
                                 {
-                                    scoringTable[bin[pep]]++;
+                                    scoringTable.Increment(bin[pep]);
                                 }
                             }
                         }
@@ -314,7 +319,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         {
                                             for (int pep = 0; pep < bin.Length; pep++)
                                             {
-                                                scoringTable[bin[pep]]++;
+                                                scoringTable.Increment(bin[pep]);
                                             }
                                         }
                                     }
@@ -466,8 +471,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                        .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
 
                     // Nonspecific searches skip PostSearchAnalysisTask's FDR pass and its DisambiguationEngine, so this PEP is
-                    // final and nothing downstream resolves ambiguity: keep PEP's pruning, as glyco and crosslink do.
-                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }, pruneAmbiguousHypotheses: true).Run();
+                    // final: disambiguate here, before the q-values below rank the categories.
+                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }).Run();
+                    new DisambiguationEngine(cleanedPsmsArray, commonParameters, fileSpecificParameters, new List<string> { taskId }, AbsolutePepGapRule.PepEngineRule).Run();
 
                     for (int i = 0; i < psmsArray.Count; i++)
                     {
@@ -596,7 +602,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                        .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.GetObservedMonoisotopicMass(b.BioPolymerWithSetModsMonoisotopicMass.Value, commonParameters) - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
                        .ToList();
 
-                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }, pruneAmbiguousHypotheses: true).Run();
+                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }).Run();
+                    new DisambiguationEngine(cleanedPsmsArray, commonParameters, fileSpecificParameters, new List<string> { taskId }, AbsolutePepGapRule.PepEngineRule).Run();
                 }
             }
 
