@@ -163,7 +163,12 @@ namespace TaskLayer
 
             if (Parameters.BioPolymerList.Any((p => p.AppliedSequenceVariations.Count > 0)))
             {
-                WriteVariantResults();
+                // The variant tables re-run FDR on the variant matches alone. Their values must not outlive them:
+                // a chained TruncationSearchTask reads the whole-search FDR from these matches.
+                using (FdrInfoSnapshot.Take(Parameters.AllSpectralMatches))
+                {
+                    WriteVariantResults();
+                }
             }
 
             CompressIndividualFileResults();

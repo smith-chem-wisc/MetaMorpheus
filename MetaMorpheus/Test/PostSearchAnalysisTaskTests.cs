@@ -1,10 +1,12 @@
 ﻿using Easy.Common.Extensions;
 using Chemistry;
 using EngineLayer;
+using EngineLayer.FdrAnalysis;
 using EngineLayer.SpectrumMatch;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
+using Omics.BioPolymer;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
@@ -1239,6 +1241,149 @@ namespace Test
                 .Select(line => line.Split('\t'))
                 .GroupBy(cells => (cells[file], cells[scan]))
                 .ToDictionary(g => g.Key, g => double.Parse(g.First()[qValue], System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        /// <summary>
+        /// The variant tables re-run FDR on the variant matches alone, on purpose: VariantPSMs.psmtsv and
+        /// VariantPeptides.psmtsv report the variant subset's own q-values. That pass must not leave them on the
+        /// shared spectral matches either. SearchTask hands those matches to a chained TruncationSearchTask, whose
+        /// parent filter reads their FdrInfo (PEP q-value, else notch q-value, at most 0.10). When one of the variant
+        /// matches has a PEP above 0, the variant pass recomputes the PEP q-values, and a subset of N variant targets
+        /// with no decoys gets (0 + 1) / N. So with fewer than ten variant peptides every one of them failed that
+        /// filter, however confident it was in the whole search.
+        ///
+        /// Six peptides the TaGe_SA_A549_3_snip search identifies are made variant peptides (see
+        /// <see cref="WriteDatabaseWithVariantPeptides"/>); LLEGEESR is the one with a PEP above 0. The whole-search
+        /// FDR state of every match is recorded when WriteVariantResults starts (its status message) and compared
+        /// with the matches SearchTask hands on.
+        /// </summary>
+        [Test]
+        public static void VariantResultsDoNotChangeTheWholeSearchFdr()
+        {
+            string testDirectory = TestContext.CurrentContext.TestDirectory;
+            string root = Path.Combine(testDirectory, "VariantResultsKeepWholeSearchFdr");
+            if (Directory.Exists(root))
+                Directory.Delete(root, true);
+            Directory.CreateDirectory(root);
+
+            string[] variantPeptides = { "EAEYEESVAK", "EWYQETHEK", "YEDQELTGK", "EHTAYYIK", "ALYEAGER", "LLEGEESR" };
+            string database = WriteDatabaseWithVariantPeptides(Path.Combine(testDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta"),
+                variantPeptides, Path.Combine(root, "TaGe_SA_A549_3_snip_variants.xml"));
+
+            var task = Nett.Toml.ReadFile<SearchTask>(Path.Combine(testDirectory, @"TestData\Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            task.CommonParameters.QValueCutoffForPepCalculation = 0.01;
+            task.TaskChainContext = new TaskChainContext(); // as when a TruncationSearchTask follows the search
+            double parentThreshold = new TruncationSearchParameters().ParentQValueThreshold;
+
+            Dictionary<SpectralMatch, string> wholeSearchFdr = null;
+            List<string> parentsInWholeSearch = null;
+            EventHandler<StringEventArgs> recordWholeSearchFdr = (sender, e) =>
+            {
+                if (e.S == "Writing variant peptide results..." && sender is PostSearchAnalysisTask postSearch)
+                {
+                    var matches = postSearch.Parameters.AllSpectralMatches.Where(m => m != null).ToList();
+                    wholeSearchFdr = matches.ToDictionary(m => m, FdrState);
+                    parentsInWholeSearch = VariantParents(matches, parentThreshold);
+                }
+            };
+
+            string output = Path.Combine(root, "search");
+            Directory.CreateDirectory(output);
+            var qValueOverride = typeof(FdrAnalysisEngine).GetProperty("QvalueThresholdOverride");
+            lock (EverythingRunnerEngineTestCase.myLock)
+            {
+                MetaMorpheusTask.OutLabelStatusHandler += recordWholeSearchFdr;
+                try
+                {
+                    qValueOverride.SetValue(null, true);
+                    task.RunTask(output, new List<DbForTask> { new DbForTask(database, false) },
+                        new List<string> { Path.Combine(testDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML") }, "search");
+                }
+                finally
+                {
+                    qValueOverride.SetValue(null, false);
+                    MetaMorpheusTask.OutLabelStatusHandler -= recordWholeSearchFdr;
+                }
+            }
+
+            Assert.That(wholeSearchFdr, Is.Not.Null, "WriteVariantResults did not run");
+            Assert.That(task.TaskChainContext.TryGet("search", out List<SpectralMatch> handedOn), Is.True);
+            var handedOnMatches = handedOn.Where(m => m != null).ToList();
+            Assert.That(handedOnMatches, Has.Count.EqualTo(wholeSearchFdr.Count));
+
+            // Fewer than ten variant peptides, all of them parents by the whole search's FDR, and one with a PEP above 0.
+            var targetVariantPeptides = handedOnMatches.Where(m => !m.IsDecoy && IsVariant(m)).Select(m => m.BaseSequence).Distinct().ToList();
+            Assert.That(targetVariantPeptides, Is.SupersetOf(variantPeptides));
+            Assert.That(targetVariantPeptides, Has.Count.LessThan(10));
+            Assert.That(parentsInWholeSearch.Select(p => p.Split(' ')[0]).Distinct(), Is.SupersetOf(variantPeptides));
+            Assert.That(handedOnMatches.Where(IsVariant).Any(m => m.FdrInfo.PEP > 0), Is.True,
+                "no variant match has a PEP above 0, so the variant pass would leave the PEP q-values alone");
+
+            Assert.Multiple(() =>
+            {
+                // Every value FdrAnalysisEngine writes is the whole search's again once Run() returns.
+                var changed = handedOnMatches.Where(m => FdrState(m) != wholeSearchFdr[m])
+                    .Select(m => $"{m.FullSequence} scan {m.ScanNumber}: {wholeSearchFdr[m]} became {FdrState(m)}").ToList();
+                Assert.That(changed, Is.Empty, "the variant tables' FDR outlived them");
+
+                // So the truncation search keeps the variant proteoforms the whole search found as parents.
+                Assert.That(VariantParents(handedOnMatches, parentThreshold), Is.EqualTo(parentsInWholeSearch),
+                    "variant matches handed to TruncationSearchTask must pass its parent filter as they did in the whole search");
+            });
+
+            // The variant table itself keeps the variant subset's own q-values.
+            var wholeSearchQ = QValuesByScan(Path.Combine(output, "AllPSMs.psmtsv"));
+            var variantTableQ = QValuesByScan(Path.Combine(output, "VariantPSMs.psmtsv"));
+            Assert.That(variantTableQ.Count(kv => wholeSearchQ.TryGetValue(kv.Key, out double q) && q != kv.Value), Is.GreaterThan(0),
+                "VariantPSMs.psmtsv must report the variant subset's q-values, not the whole-search ones");
+
+            Directory.Delete(root, true);
+        }
+
+        /// <summary>
+        /// Writes the FASTA's proteins to an XML database in which each of <paramref name="peptides"/> is a variant
+        /// peptide: its protein's canonical sequence carries a W (an A in place of a W) at the peptide's third residue,
+        /// and a homozygous sequence variant puts the observed residue back. Each peptide must occur once in the FASTA.
+        /// </summary>
+        private static string WriteDatabaseWithVariantPeptides(string fasta, string[] peptides, string xml)
+        {
+            const string homozygous = @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30";
+            List<Protein> proteins = ProteinDbLoader.LoadProteinFasta(fasta, true, DecoyType.None, false, out _);
+            foreach (string peptide in peptides)
+            {
+                var holders = proteins.Where(p => p.BaseSequence.Contains(peptide)).ToList();
+                Assert.That(holders, Has.Count.EqualTo(1), $"{peptide} must be in one protein");
+                Protein protein = holders[0];
+                int start = protein.BaseSequence.IndexOf(peptide, StringComparison.Ordinal);
+                Assert.That(protein.BaseSequence.IndexOf(peptide, start + 1, StringComparison.Ordinal), Is.EqualTo(-1), $"{peptide} must occur once");
+
+                int site = start + 3; // one-based position of the peptide's third residue
+                string observed = protein.BaseSequence[site - 1].ToString();
+                string canonical = observed == "W" ? "A" : "W";
+                proteins[proteins.IndexOf(protein)] = new Protein(protein.BaseSequence.Remove(site - 1, 1).Insert(site - 1, canonical),
+                    protein.Accession, protein.Organism, protein.GeneNames.ToList(), name: protein.Name, fullName: protein.FullName,
+                    sequenceVariations: new List<SequenceVariation> { new SequenceVariation(site, site, canonical, observed, homozygous, null) });
+            }
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteins, xml);
+            return xml;
+        }
+
+        private static bool IsVariant(SpectralMatch match) => match.BestMatchingBioPolymersWithSetMods
+            .Any(h => h.SpecificBioPolymer is PeptideWithSetModifications peptide && peptide.IsVariantPeptide());
+
+        /// <summary>The variant matches TruncationSearchTask's parent filter keeps, as "full sequence scan".</summary>
+        private static List<string> VariantParents(IEnumerable<SpectralMatch> matches, double threshold) => matches
+            .Where(m => IsVariant(m) && TruncationSearchTask.PassesParentFilter(m, threshold))
+            .Select(m => $"{m.FullSequence} {m.ScanNumber}").OrderBy(s => s, StringComparer.Ordinal).ToList();
+
+        /// <summary>Every FDR value FdrAnalysisEngine writes onto a match, as text ("R" keeps each double exact).</summary>
+        private static string FdrState(SpectralMatch match)
+        {
+            static string Of(FdrInfo f) => f == null ? "none" : FormattableString.Invariant(
+                $"q {f.QValue:R}, notch q {f.QValueNotch:R}, PEP {f.PEP:R}, PEP q {f.PEP_QValue:R}, T {f.CumulativeTarget:R}, D {f.CumulativeDecoy:R}, notch T {f.CumulativeTargetNotch:R}, notch D {f.CumulativeDecoyNotch:R}");
+            string hypotheses = string.Join("; ", match.BestMatchingBioPolymersWithSetMods.Select(h => FormattableString.Invariant(
+                $"{h.QValueNotch:R} {h.CumulativeTargetNotch:R} {h.CumulativeDecoyNotch:R} {h.PeptideQValueNotch:R} {h.PeptideCumulativeTargetNotch:R} {h.PeptideCumulativeDecoyNotch:R}")));
+            return $"PSM [{Of(match.PsmFdrInfo)}] peptide [{Of(match.PeptideFdrInfo)}] PSM count {match.PsmCount} hypotheses [{hypotheses}]";
         }
 
         /// <summary>
