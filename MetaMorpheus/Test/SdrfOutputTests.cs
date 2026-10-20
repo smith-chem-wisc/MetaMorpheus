@@ -1287,10 +1287,11 @@ namespace Test
         /// <summary>
         /// The rows BuildSdrfRows gives for a TMT11 search of <paramref name="fileNames"/>, with a TmtDesign.txt
         /// of <paramref name="designRows"/> (given the folder) beside them, and the warnings it raised. No
-        /// search is run and the spectra files need not exist: only the design is read.
+        /// search is run and the spectra files need not exist: only the design is read. With
+        /// <paramref name="inputSdrf"/>, its rows are the search's input SDRF.
         /// </summary>
         private static List<SdrfRowInput> IsobaricSdrfRows(string testName, string[] fileNames,
-            Func<string, IEnumerable<string>> designRows, out List<string> warnings)
+            Func<string, IEnumerable<string>> designRows, out List<string> warnings, IEnumerable<string[]> inputSdrf = null)
         {
             string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "SdrfOutput_" + testName);
             if (Directory.Exists(folder)) Directory.Delete(folder, true);
@@ -1308,16 +1309,25 @@ namespace Test
                 }
             };
 
+            // BuildSdrfRows's one argument is the input SDRF, scoped to the searched files as WriteSdrf scopes it.
+            SdrfSearchScoping scopedInput = null;
+            if (inputSdrf is not null)
+            {
+                string inputPath = Path.Combine(folder, "input.sdrf.tsv");
+                File.WriteAllLines(inputPath, inputSdrf.Select(cells => string.Join("\t", cells)));
+                task.Parameters.SearchParameters.InputSdrfPath = inputPath;
+                scopedInput = SdrfSearchScope.Restrict(new SdrfDocument(inputPath), task.Parameters.CurrentRawFileList);
+            }
+
             var captured = new List<string>();
             warnings = captured;
             EventHandler<StringEventArgs> handler = (o, e) => captured.Add(e.S);
             MetaMorpheusTask.WarnHandler += handler;
             try
             {
-                // The one argument is the input SDRF: none, so the rows are built from the design.
                 return ((IEnumerable<SdrfRowInput>)typeof(PostSearchAnalysisTask)
                         .GetMethod("BuildSdrfRows", BindingFlags.NonPublic | BindingFlags.Instance)!
-                        .Invoke(task, new object[] { null }))
+                        .Invoke(task, new object[] { scopedInput }))
                     .ToList();
             }
             finally
@@ -1376,7 +1386,15 @@ namespace Test
         /// TmtDesign.txt of <paramref name="designRows"/> (given the spectra path) beside the spectra.
         /// </summary>
         private static List<string> WarningsBeforeAnIsobaricSearch(string testName, string multiplexModId,
-            Func<string, string[]> designRows, params string[] otherSpectraFileNames)
+            Func<string, string[]> designRows, params string[] otherSpectraFileNames) =>
+            WarningsBeforeAnIsobaricSearch(testName, multiplexModId, designRows, null, otherSpectraFileNames);
+
+        /// <summary>
+        /// As above, and with <paramref name="inputSdrf"/>, its rows are the search's input SDRF. The spectra file is
+        /// PrunedDbSpectra.mzml, so an input row for it names PrunedDbSpectra.raw, say.
+        /// </summary>
+        private static List<string> WarningsBeforeAnIsobaricSearch(string testName, string multiplexModId,
+            Func<string, string[]> designRows, IEnumerable<string[]> inputSdrf, params string[] otherSpectraFileNames)
         {
             string folder = SetUpIsolatedRun(testName, out string spectraPath, out _);
             var spectraPaths = new List<string> { spectraPath }
@@ -1393,6 +1411,12 @@ namespace Test
                     MultiplexModId = multiplexModId
                 }
             };
+            if (inputSdrf is not null)
+            {
+                string inputPath = Path.Combine(folder, "input.sdrf.tsv");
+                File.WriteAllLines(inputPath, inputSdrf.Select(cells => string.Join("\t", cells)));
+                task.SearchParameters.InputSdrfPath = inputPath;
+            }
 
             var warnings = new List<string>();
             EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
@@ -1886,6 +1910,108 @@ namespace Test
             }
 
             Directory.Delete(root, true);
+        }
+
+        /// <summary>
+        /// An isobaric input SDRF with one row per (data file, label, source name), each a different individual.
+        /// </summary>
+        private static List<string[]> TmtInputSdrf(params (string DataFile, string Label, string SourceName)[] channels)
+        {
+            var rows = new List<string[]>
+            {
+                new[]
+                {
+                    "source name", "characteristics[organism]", "characteristics[individual]",
+                    "characteristics[biological replicate]", "assay name", "technology type", "comment[data file]",
+                    "comment[label]", "factor value[treatment]"
+                }
+            };
+            rows.AddRange(channels.Select((c, i) => new[]
+            {
+                c.SourceName, "NT=Mus musculus;AC=NCBITaxon:10090", "D" + (i + 1), (i + 1).ToString(),
+                "run " + Path.GetFileNameWithoutExtension(c.DataFile), "proteomic profiling by mass spectrometry",
+                c.DataFile, c.Label, i % 2 == 0 ? "drug" : "vehicle"
+            }));
+            return rows;
+        }
+
+        /// <summary>
+        /// One plex whose TmtDesign.txt makes #2817 make up source names: channel 126 is unnamed, so it would be
+        /// "Plex1 126", which the design gives 127N; and "HeLa" (Ctrl) and "hela" (Drug), one name when case is
+        /// ignored, name two samples, so each would be scoped to its channel.
+        /// </summary>
+        private static readonly (string Name, string Channel, string Condition)[] DesignThatMakesUpSourceNames =
+        {
+            ("", "126", "Ctrl"), ("Plex1 126", "127N", "Drug"), ("HeLa", "128N", "Ctrl"), ("hela", "128C", "Drug")
+        };
+
+        /// <summary>
+        /// With an input SDRF every source name is the input's (sdrf D50), so the SDRF makes none up from TmtDesign.txt,
+        /// and neither of #2817's warnings about made-up names is true: no name is scoped to its plex or channel, and
+        /// none is numbered because another sample has it. Without an input SDRF the same design gives both warnings,
+        /// which is what makes their absence mean something.
+        /// </summary>
+        [TestCase(false)]
+        [TestCase(true)]
+        public static void WithAnInputSdrfNoSourceNameIsMadeUpSoNoneIsScopedOrNumbered(bool withInputSdrf)
+        {
+            var rows = IsobaricSdrfRows(nameof(WithAnInputSdrfNoSourceNameIsMadeUpSoNoneIsScopedOrNumbered) + withInputSdrf,
+                new[] { "p1.mzML" },
+                folder => DesignThatMakesUpSourceNames.Select((d, i) =>
+                    TmtDesignRow(folder, "p1.mzML", "Plex1", d.Name, d.Channel, d.Condition, i + 1, 1)),
+                out var warnings,
+                withInputSdrf
+                    ? TmtInputSdrf(DesignThatMakesUpSourceNames.Select((d, i) => ("p1.raw", "TMT" + d.Channel, "donor " + (i + 1))).ToArray())
+                    : null);
+
+            string SourceName(string channel) => rows.Single(r => r.Sample.Label?.Name == "TMT" + channel).Sample.SourceName;
+            string allWarnings = string.Join(" | ", warnings);
+            bool scoped = warnings.Any(w => w.Contains("more than one channel of the same plex"));
+            bool numbered = warnings.Any(w => w.Contains("'Plex1 126' is written 'Plex1 126 (2)'"));
+
+            if (!withInputSdrf)
+            {
+                Assert.That(SourceName("126"), Is.EqualTo("Plex1 126 (2)"));
+                Assert.That(SourceName("128C"), Is.EqualTo("Plex1 hela 128C"));
+                Assert.That(scoped && numbered, Is.True, "The design alone makes names up: " + allWarnings);
+                return;
+            }
+
+            Assert.That(DesignThatMakesUpSourceNames.Select(d => SourceName(d.Channel)),
+                Is.EqualTo(new[] { "donor 1", "donor 2", "donor 3", "donor 4" }), "Every source name is the input's.");
+            Assert.That(scoped, Is.False, "No name is scoped to its channel: " + allWarnings);
+            Assert.That(numbered, Is.False, "No made-up name is written, so none is numbered: " + allWarnings);
+        }
+
+        /// <summary>The same two warnings are not given before the search either, when an input SDRF gives the names.</summary>
+        [TestCase(false)]
+        [TestCase(true)]
+        public static void WithAnInputSdrfNoSourceNameIsWarnedAsScopedOrNumberedBeforeTheSearch(bool withInputSdrf)
+        {
+            var warnings = WarningsBeforeAnIsobaricSearch(
+                nameof(WithAnInputSdrfNoSourceNameIsWarnedAsScopedOrNumberedBeforeTheSearch) + withInputSdrf, "TMT11",
+                spectra => DesignThatMakesUpSourceNames
+                    .Select((d, i) => $"{spectra}\tPlex1\t{d.Name}\t{d.Channel}\t{d.Condition}\t{i + 1}\t1\t1\tstudy sample")
+                    .ToArray(),
+                withInputSdrf
+                    ? TmtInputSdrf(DesignThatMakesUpSourceNames
+                        .Select((d, i) => ("PrunedDbSpectra.raw", "TMT" + d.Channel, "donor " + (i + 1))).ToArray())
+                    : null);
+
+            string allWarnings = string.Join(" | ", warnings);
+            bool scoped = warnings.Any(w => w.Contains("more than one channel of the same plex"));
+            bool numbered = warnings.Any(w => w.Contains("'Plex1 126' is written 'Plex1 126 (2)'"));
+
+            if (!withInputSdrf)
+            {
+                Assert.That(scoped && numbered, Is.True, "The design alone makes names up: " + allWarnings);
+                return;
+            }
+
+            Assert.That(scoped, Is.False, "No name is scoped to its channel: " + allWarnings);
+            Assert.That(numbered, Is.False, "No made-up name is written, so none is numbered: " + allWarnings);
+            Assert.That(warnings.Any(w => w.Contains("input SDRF")), Is.False,
+                "The input describes every channel, so it gives no warning of its own: " + allWarnings);
         }
 
         /// <summary>A pipeline sets the input SDRF in the task file (B1, B6.8), so it survives a TOML round trip.</summary>

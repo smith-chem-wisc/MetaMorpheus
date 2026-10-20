@@ -125,14 +125,16 @@ namespace TaskLayer
             if (reusedSampleNames.Any() && inputSdrf is null)
                 Warn(ReusedSampleNamesWarning(reusedSampleNames, SampleNamesRepeatedWithinAPlex(channelFiles)));
 
-            // Every source name of an isobaric SDRF, the ones it makes up checked against the whole document.
+            // Every source name of an isobaric SDRF, the ones it makes up checked against the whole document. With an
+            // input SDRF they are still built, because the channel rows are, but each row's is replaced by the input's,
+            // so no made-up name is written and the numbering is not warned about.
             Dictionary<(string File, string Tag), string> isobaricSourceNames = null;
             if (isobaric is not null)
             {
                 var filesDescribedOnce = Parameters.CurrentRawFileList.Where(p =>
                     !(isobaric.TryGetValue(Path.GetFullPath(p), out var f) && ChannelRowsUnusableReason(f, tagType!.Value) is null));
                 isobaricSourceNames = IsobaricSourceNames(channelFiles, filesDescribedOnce.ToList(), out var numbered);
-                if (numbered.Any())
+                if (numbered.Any() && inputSdrf is null)
                     Warn(NumberedSourceNamesWarning(numbered));
             }
 

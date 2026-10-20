@@ -794,15 +794,17 @@ namespace TaskLayer
             var usableFiles = files
                 .Where(f => PostSearchAnalysisTask.ChannelRowsUnusableReason(f, tagType.Value) is null)
                 .ToList();
+            // Not with an input SDRF: its source names are copied, not built from the design's sample names, so no
+            // name is scoped to its plex or channel and no made-up name is numbered.
+            bool sourceNamesCopied = !string.IsNullOrWhiteSpace(SearchParameters.InputSdrfPath);
             var reusedSampleNames = PostSearchAnalysisTask.SampleNamesReusedForDifferentSamples(usableFiles);
-            // Not with an input SDRF: its source names are copied, not built from the design's sample names.
-            if (reusedSampleNames.Any() && string.IsNullOrWhiteSpace(SearchParameters.InputSdrfPath))
+            if (reusedSampleNames.Any() && !sourceNamesCopied)
                 Warn("SDRF output is on. " + PostSearchAnalysisTask.ReusedSampleNamesWarning(reusedSampleNames,
                     PostSearchAnalysisTask.SampleNamesRepeatedWithinAPlex(usableFiles)));
 
             PostSearchAnalysisTask.IsobaricSourceNames(usableFiles,
                 files.Except(usableFiles).Select(f => f.FullFilePathWithExtension).ToList(), out var numbered);
-            if (numbered.Any())
+            if (numbered.Any() && !sourceNamesCopied)
                 Warn("SDRF output is on. " + PostSearchAnalysisTask.NumberedSourceNamesWarning(numbered));
         }
 
