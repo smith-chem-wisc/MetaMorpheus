@@ -809,12 +809,16 @@ namespace TaskLayer
                 WriteProteinInformation = true
             };
 
+            // Every group of the search, written or not, decides whether a peptide is unique: a peptide that a group
+            // above the q-value threshold also lists is shared, though only the written groups are quantified. A group
+            // left out of the table must not make a peptide it shares look unique to the group that is shown.
             var engine = new QuantificationEngine(
                 quantParameters,
                 experimentalDesign,
                 quantifiablePsms.Cast<ISpectralMatch>().ToList(),
                 peptides,
-                quantifiableProteinGroups.Cast<IBioPolymerGroup>().ToList());
+                quantifiableProteinGroups.Cast<IBioPolymerGroup>().ToList(),
+                ProteinGroups.Cast<IBioPolymerGroup>().ToList());
 
             var results = engine.Run();
 
