@@ -10,8 +10,6 @@ using Omics.Modifications;
 using Proteomics;
 using Readers;
 using UsefulProteomicsDatabases;
-using IsobaricMassTag = EngineLayer.IsobaricMassTag;
-using IsobaricMassTagType = EngineLayer.IsobaricMassTagType;
 
 namespace TaskLayer
 {
@@ -119,14 +117,24 @@ namespace TaskLayer
 
             // A sample name reused across plexes for different material (#2817 review): only those names
             // are scoped to their plex. A bridge, which agrees on condition and replicate, keeps its name.
-            var reusedSampleNames = isobaric is null
-                ? new HashSet<string>()
-                : SampleNamesReusedForDifferentSamples(isobaric.Values
-                    .Where(f => ChannelRowsUnusableReason(f, tagType!.Value) is null));
+            var channelFiles = isobaric?.Values
+                .Where(f => ChannelRowsUnusableReason(f, tagType!.Value) is null)
+                .ToList() ?? new List<TmtFileInfo>();
+            var reusedSampleNames = SampleNamesReusedForDifferentSamples(channelFiles);
             // Not with an input SDRF: the source names are then the input's, not built from the design's sample names.
             if (reusedSampleNames.Any() && inputSdrf is null)
-                Warn(ReusedSampleNamesWarning(reusedSampleNames, SampleNamesRepeatedWithinAPlex(isobaric!.Values
-                    .Where(f => ChannelRowsUnusableReason(f, tagType!.Value) is null))));
+                Warn(ReusedSampleNamesWarning(reusedSampleNames, SampleNamesRepeatedWithinAPlex(channelFiles)));
+
+            // Every source name of an isobaric SDRF, the ones it makes up checked against the whole document.
+            Dictionary<(string File, string Tag), string> isobaricSourceNames = null;
+            if (isobaric is not null)
+            {
+                var filesDescribedOnce = Parameters.CurrentRawFileList.Where(p =>
+                    !(isobaric.TryGetValue(Path.GetFullPath(p), out var f) && ChannelRowsUnusableReason(f, tagType!.Value) is null));
+                isobaricSourceNames = IsobaricSourceNames(channelFiles, filesDescribedOnce.ToList(), out var numbered);
+                if (numbered.Any())
+                    Warn(NumberedSourceNamesWarning(numbered));
+            }
 
             var organism = ResolveOrganismFromSearchDatabase();
 
@@ -159,7 +167,7 @@ namespace TaskLayer
                     {
                         foreach (var row in BuildChannelRows(tmtFile, tagType.Value, organism,
                                      BuildAssay(rawFilePath, common, tmtFile.TechnicalReplicate, tmtFile.Fraction),
-                                     reusedSampleNames))
+                                     isobaricSourceNames))
                         {
                             if (inputSdrf is null)
                                 yield return row;
@@ -183,6 +191,12 @@ namespace TaskLayer
                     continue;
                 }
 
+                // An isobaric file described once is named beside the channels, so its stem is checked too.
+                string isobaricFileName = isobaricSourceNames is not null
+                    && isobaricSourceNames.TryGetValue((rawFilePath, null), out var fileName)
+                        ? fileName
+                        : null;
+
                 var sample = new SdrfSample
                 {
                     // Written, as `not available` when unknown: the specification requires both columns, and a
@@ -192,9 +206,9 @@ namespace TaskLayer
                         ["characteristics[disease]"] = null,
                         ["characteristics[cell type]"] = null
                     },
-                    SourceName = sampleInfo?.Condition is { Length: > 0 } condition
+                    SourceName = isobaricFileName ?? (sampleInfo?.Condition is { Length: > 0 } condition
                         ? condition + " " + (sampleInfo.BiologicalReplicate + 1)
-                        : stem,
+                        : stem),
                     Organism = organism,
                     // SDRF is 1-based; SpectraFileInfo stores these 0-based. With no design nobody established
                     // the numbers, so null, which mzLib writes as `not available`, rather than a claimed 1.
@@ -365,7 +379,7 @@ namespace TaskLayer
             if (file.Annotations is not { Count: > 0 })
                 return $"{fileName} has no annotated channels in {GlobalVariables.TmtExperimentalDesignFileName}";
 
-            var channels = IsobaricMassTag.GetReporterIonLabels(tagType) ?? new List<string>();
+            var channels = IsobaricMassTag.GetReporterIonLabels(tagType);
             var offPlex = file.Annotations
                 .Select(a => a.Tag?.Trim() ?? "")
                 .Where(tag => !channels.Contains(tag, StringComparer.OrdinalIgnoreCase))
@@ -385,16 +399,20 @@ namespace TaskLayer
         /// (REQ-2, MAP-01) would merge two samples. A name that agrees everywhere is a bridge and is not
         /// returned. Blank names are not returned: they are already scoped to their plex.
         ///
+        /// Names are compared ignoring case, as mzLib's SdrfSampleBlock.BySourceName compares source names and
+        /// as Read compares a channel's two descriptions: "Liver" in one plex and "liver" in another are one
+        /// source name downstream, so for different samples they are a reused name.
+        ///
         /// Shared with SearchTask's pre-run warning, so a search is told before it runs.
         /// </summary>
         internal static HashSet<string> SampleNamesReusedForDifferentSamples(IEnumerable<TmtFileInfo> files) =>
             files
                 .SelectMany(f => f.Annotations)
                 .Where(a => !string.IsNullOrWhiteSpace(a.SampleName))
-                .GroupBy(a => a.SampleName, StringComparer.Ordinal)
+                .GroupBy(a => a.SampleName, StringComparer.OrdinalIgnoreCase)
                 .Where(g => g.Select(a => ((a.Condition ?? "").Trim(), a.BiologicalReplicate)).Distinct().Count() > 1)
                 .Select(g => g.Key)
-                .ToHashSet(StringComparer.Ordinal);
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// The sample names one plex gives to more than one channel, with a different (condition, biological
@@ -408,12 +426,12 @@ namespace TaskLayer
         internal static HashSet<string> SampleNamesRepeatedWithinAPlex(IEnumerable<TmtFileInfo> files) =>
             files
                 .SelectMany(f => RepeatedWithin(f.Annotations))
-                .ToHashSet(StringComparer.Ordinal);
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         private static IEnumerable<string> RepeatedWithin(IEnumerable<TmtPlexAnnotation> annotations) =>
             annotations
                 .Where(a => !string.IsNullOrWhiteSpace(a.SampleName))
-                .GroupBy(a => a.SampleName, StringComparer.Ordinal)
+                .GroupBy(a => a.SampleName, StringComparer.OrdinalIgnoreCase)
                 .Where(g => g.Select(a => ((a.Condition ?? "").Trim(), a.BiologicalReplicate)).Distinct().Count() > 1)
                 .Select(g => g.Key);
 
@@ -427,7 +445,7 @@ namespace TaskLayer
                 string.Join(", ", list.OrderBy(n => n, StringComparer.Ordinal).Select(n => "'" + n + "'"));
 
             var withinPlex = names.Where(n => repeatedWithinAPlex?.Contains(n) == true).ToList();
-            var acrossPlexes = names.Except(withinPlex, StringComparer.Ordinal).ToList();
+            var acrossPlexes = names.Except(withinPlex, StringComparer.OrdinalIgnoreCase).ToList();
             var parts = new List<string>();
             if (acrossPlexes.Any())
                 parts.Add("The design uses these sample names in more than one plex with a different condition or " +
@@ -442,6 +460,98 @@ namespace TaskLayer
                       " to choose the names yourself.");
             return string.Join(" ", parts);
         }
+
+        /// <summary>
+        /// The source name of every row of an isobaric search's SDRF, keyed by (data file, channel): each
+        /// channel of <paramref name="channelFiles"/>, and each file of <paramref name="filesDescribedOnce"/>
+        /// under a null channel. <paramref name="numbered"/> says which made-up names had to be numbered.
+        ///
+        /// A sample name the design gives is written as given. Every other name is made up: '&lt;plex&gt;
+        /// &lt;channel&gt;' for a channel with no sample name, '&lt;plex&gt; &lt;name&gt;' for a name other plexes
+        /// use for different samples, '&lt;plex&gt; &lt;name&gt; &lt;channel&gt;' for a name one plex gives to
+        /// several samples, and the stem for a file described once. Nothing stops the design giving another
+        /// sample one of those names (Alexander-Sol, #2817 review: an unnamed 126 in Plex1 beside a channel
+        /// named "Plex1 126"), and two samples under one source name are one sample to anything keyed on it
+        /// (REQ-2, MAP-01). So a made-up name is checked against every other name in the document, ignoring
+        /// case as mzLib's SdrfSampleBlock.BySourceName does, and if it is taken it gets the first free
+        /// suffix of " (2)", " (3)" and so on. The design's own names are never changed: the user chose them.
+        ///
+        /// A name belongs to a sample, not to a row. A channel of a plex is one sample in every fraction of the
+        /// plex, and a name the design gives is one sample wherever it is given (two spellings of one sample
+        /// are written in the first). Made-up names are numbered in name order, not file order, so every
+        /// fraction gets the same name whichever file comes first.
+        ///
+        /// Shared with SearchTask's pre-run warning, so a search is told before it runs.
+        /// </summary>
+        internal static Dictionary<(string File, string Tag), string> IsobaricSourceNames(
+            IReadOnlyCollection<TmtFileInfo> channelFiles, IReadOnlyCollection<string> filesDescribedOnce,
+            out List<string> numbered)
+        {
+            var reused = SampleNamesReusedForDifferentSamples(channelFiles);
+
+            // Each sample once, under a key saying what it is: a given name, or a made-up one and its scope.
+            var samples = new Dictionary<string, (string Name, bool Given)>(StringComparer.OrdinalIgnoreCase);
+            var sampleOfRow = new Dictionary<(string File, string Tag), string>();
+            void Add(string file, string tag, string key, string name, bool given)
+            {
+                samples.TryAdd(key, (name, given));
+                sampleOfRow[(file, tag)] = key;
+            }
+
+            foreach (var file in channelFiles)
+            {
+                string path = file.FullFilePathWithExtension;
+                bool plexIsNamed = !string.IsNullOrWhiteSpace(file.Plex);
+                string scope = plexIsNamed ? file.Plex.Trim() : Path.GetFileNameWithoutExtension(path);
+                string scopeKey = (plexIsNamed ? "plex\t" : "file\t") + scope;
+                var repeatedInThisPlex = RepeatedWithin(file.Annotations).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var annotation in file.Annotations)
+                {
+                    string tag = annotation.Tag.Trim();
+                    string name = annotation.SampleName;
+                    if (string.IsNullOrWhiteSpace(name))
+                        Add(path, annotation.Tag, scopeKey + "\t\t" + tag, scope + " " + tag, false);
+                    else if (repeatedInThisPlex.Contains(name))
+                        Add(path, annotation.Tag, scopeKey + "\t" + name + "\t" + tag, scope + " " + name + " " + tag, false);
+                    else if (reused.Contains(name))
+                        Add(path, annotation.Tag, scopeKey + "\t" + name, scope + " " + name, false);
+                    else
+                        Add(path, annotation.Tag, "name\t" + name, name, true);
+                }
+            }
+
+            foreach (string path in filesDescribedOnce)
+                Add(path, null, "row\t" + path, Path.GetFileNameWithoutExtension(path), false);
+
+            var taken = new HashSet<string>(samples.Values.Where(s => s.Given).Select(s => s.Name),
+                StringComparer.OrdinalIgnoreCase);
+            var written = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            numbered = new List<string>();
+            foreach (var (key, (name, given)) in samples
+                         .OrderBy(s => s.Value.Name, StringComparer.Ordinal)
+                         .ThenBy(s => s.Key, StringComparer.Ordinal))
+            {
+                string unique = name;
+                if (!given)
+                {
+                    for (int n = 2; !taken.Add(unique); n++)
+                        unique = $"{name} ({n})";
+                    if (unique != name)
+                        numbered.Add($"'{name}' is written '{unique}'");
+                }
+                written[key] = unique;
+            }
+
+            return sampleOfRow.ToDictionary(row => row.Key, row => written[row.Value]);
+        }
+
+        /// <summary>The warning for made-up source names that are numbered because another sample already has them.</summary>
+        internal static string NumberedSourceNamesWarning(IEnumerable<string> numbered) =>
+            "The SDRF makes up a source name for a channel with no sample name, for a sample name that names more " +
+            "than one sample, and for a file it describes once. These made-up names are already another sample's " +
+            "name, so they are numbered: " + string.Join("; ", numbered) + ". Give the samples distinct names in " +
+            GlobalVariables.TmtExperimentalDesignFileName + " to choose the names yourself.";
 
         /// <summary>
         /// The assay half of a row: everything the search itself knows about one data file. Shared by
@@ -502,18 +612,14 @@ namespace TaskLayer
         /// in the file asserting a replicate nobody stated.
         /// </summary>
         private static IEnumerable<SdrfRowInput> BuildChannelRows(TmtFileInfo tmtFile, IsobaricMassTagType tagType,
-            CvParam organism, SdrfAssay assay, ISet<string> reusedSampleNames)
+            CvParam organism, SdrfAssay assay, IReadOnlyDictionary<(string File, string Tag), string> sourceNames)
         {
-            var channelOrder = IsobaricMassTag.GetReporterIonLabels(tagType) ?? new List<string>();
+            var channelOrder = IsobaricMassTag.GetReporterIonLabels(tagType).ToList();
             int OrderOf(string tag)
             {
                 int index = channelOrder.FindIndex(l => string.Equals(l, tag?.Trim(), StringComparison.OrdinalIgnoreCase));
                 return index < 0 ? int.MaxValue : index;
             }
-
-            string stem = Path.GetFileNameWithoutExtension(tmtFile.FullFilePathWithExtension);
-            string plexScope = string.IsNullOrWhiteSpace(tmtFile.Plex) ? stem : tmtFile.Plex.Trim();
-            var repeatedInThisPlex = RepeatedWithin(tmtFile.Annotations).ToHashSet(StringComparer.Ordinal);
 
             foreach (var annotation in tmtFile.Annotations.OrderBy(a => OrderOf(a.Tag)))
             {
@@ -539,13 +645,10 @@ namespace TaskLayer
                     // (SampleNamesReusedForDifferentSamples); a bridge keeps its shared name. A name this
                     // plex gives to several channels for different samples also takes the channel, since
                     // the plex alone would still be one source name (SampleNamesRepeatedWithinAPlex).
-                    SourceName = string.IsNullOrWhiteSpace(annotation.SampleName)
-                        ? plexScope + " " + annotation.Tag.Trim()
-                        : repeatedInThisPlex.Contains(annotation.SampleName)
-                            ? plexScope + " " + annotation.SampleName + " " + annotation.Tag.Trim()
-                            : reusedSampleNames?.Contains(annotation.SampleName) == true
-                                ? plexScope + " " + annotation.SampleName
-                                : annotation.SampleName,
+                    //
+                    // Every such made-up name is checked against the whole document, and numbered when the
+                    // design gives it to another sample (IsobaricSourceNames).
+                    SourceName = sourceNames[(tmtFile.FullFilePathWithExtension, annotation.Tag)],
                     Organism = organism,
                     BiologicalReplicate = annotation.BiologicalReplicate,
                     Label = ResolveChannelLabel(tagType, annotation.Tag),
@@ -574,9 +677,9 @@ namespace TaskLayer
             if (!Parameters.SearchParameters.DoMultiplexQuantification || Parameters.CurrentRawFileList.Count == 0)
                 return null;
 
-            tagType = IsobaricMassTag.GetTagTypeFromModificationId(Parameters.SearchParameters.MultiplexModId);
-            if (tagType is null)
+            if (!IsobaricMassTag.TryGetTagType(Parameters.SearchParameters.MultiplexModId, out var type))
                 return null;
+            tagType = type;
 
             string designPath = Path.Combine(
                 Path.GetDirectoryName(Parameters.CurrentRawFileList.First()) ?? "",
@@ -629,7 +732,7 @@ namespace TaskLayer
         private static string PrideLabelFamily(IsobaricMassTagType tagType) => tagType switch
         {
             IsobaricMassTagType.TMT6 or IsobaricMassTagType.TMT10 or IsobaricMassTagType.TMT11
-                or IsobaricMassTagType.TMT18 => "TMT",
+                or IsobaricMassTagType.TMT16 or IsobaricMassTagType.TMT18 => "TMT",
             IsobaricMassTagType.iTRAQ4 or IsobaricMassTagType.iTRAQ8 => "ITRAQ",
             _ => null
         };

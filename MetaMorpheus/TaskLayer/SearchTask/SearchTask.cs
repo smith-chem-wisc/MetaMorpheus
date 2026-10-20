@@ -13,7 +13,6 @@ using Omics;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
-using IsobaricMassTag = EngineLayer.IsobaricMassTag;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Readers;
@@ -374,8 +373,7 @@ namespace TaskLayer
 
                 if (SearchParameters.DoMultiplexQuantification)
                 {
-                    IsobaricMassTag massTag = IsobaricMassTag.GetIsobaricMassTag(SearchParameters.MultiplexModId);
-                    if (massTag == null) // Should probably warn/update results if null
+                    if (!IsobaricMassTag.TryGetIsobaricMassTag(SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var massTag))
                     {
                         throw new MetaMorpheusException("Could not find isobaric mass tag with the name " + SearchParameters.MultiplexModId);
                     }
@@ -771,7 +769,9 @@ namespace TaskLayer
                 return;
             }
 
-            var tagType = IsobaricMassTag.GetTagTypeFromModificationId(SearchParameters.MultiplexModId);
+            IsobaricMassTagType? tagType = IsobaricMassTag.TryGetTagType(SearchParameters.MultiplexModId, out var type)
+                ? type
+                : null;
             if (tagType is null)
             {
                 Warn("SDRF output is on, but the multiplex label '" + SearchParameters.MultiplexModId + "' is not " +
@@ -799,6 +799,11 @@ namespace TaskLayer
             if (reusedSampleNames.Any() && string.IsNullOrWhiteSpace(SearchParameters.InputSdrfPath))
                 Warn("SDRF output is on. " + PostSearchAnalysisTask.ReusedSampleNamesWarning(reusedSampleNames,
                     PostSearchAnalysisTask.SampleNamesRepeatedWithinAPlex(usableFiles)));
+
+            PostSearchAnalysisTask.IsobaricSourceNames(usableFiles,
+                files.Except(usableFiles).Select(f => f.FullFilePathWithExtension).ToList(), out var numbered);
+            if (numbered.Any())
+                Warn("SDRF output is on. " + PostSearchAnalysisTask.NumberedSourceNamesWarning(numbered));
         }
 
         /// <summary>
