@@ -785,9 +785,10 @@ namespace Test
         /// </summary>
         /// <remarks>
         /// The match names one candidate per protein. Until smith-chem-wisc/mzLib#1463, mzLib compared those as
-        /// objects and dropped the match as ambiguous, and it read "unique" from this group's unique set, which
-        /// parsimony fills per protein and so leaves empty here. The group got no value, and this test pinned the
-        /// warning that said so. Now the sequence is one peptide and unique to the group it sits in.
+        /// objects and dropped the match as ambiguous, and it read "unique" from the group's own unique set, which is
+        /// left empty here: that set was parsimony's database-level list, empty for every group of indistinguishable
+        /// proteins. The group got no value, and this test pinned the warning that said so. Now the sequence is one
+        /// peptide, unique to the one group that lists it, which is how the protein table labels it too.
         /// </remarks>
         [Test]
         public static void PeptideInTwoIndistinguishableProteins_QuantifiesTheirGroup()
@@ -829,7 +830,52 @@ namespace Test
                 Assert.That(results.PeptideIntensities.Keys.Select(p => p.FullSequence), Is.EqualTo(new[] { fromA.FullSequence }),
                     "one peptide row for the sequence, not one per protein");
                 Assert.That(results.ProteinIntensities[group].Values, Has.Some.GreaterThan(0),
-                    "the group's unique set is empty, so only a group-level reading of unique reaches it");
+                    "the group's own unique set is empty, so only a group-level reading of unique reaches it");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// PEPTIDEK is in two proteins that form two groups. One group is written; the other is above the
+        /// q-value threshold and is not. Uniqueness is judged among every group of the search, written or not,
+        /// so PEPTIDEK is shared, and with shared peptides off it gives the written group nothing. Judged among
+        /// the written groups alone it would look unique to the one that is shown, because the group it shares
+        /// with is hidden. The protein table's Unique Peptides column is judged among every group too, so the
+        /// column and the values agree.
+        /// </summary>
+        [Test]
+        public static void PeptideAlsoListedByAnUnwrittenGroup_IsSharedNotUnique()
+        {
+            string folder = StageFolder("TmtGuardSharedWithUnwrittenGroup");
+            try
+            {
+                string rawPath = RawPathIn(folder);
+                WriteDesign(folder, ValidDesignRows(rawPath));
+
+                var proteinA = new Protein("PEPTIDEKPEPTIDER", "PROTEINA", "ORGANISM");
+                var proteinB = new Protein("PEPTIDEKWWWWR", "PROTEINB", "ORGANISM");
+                var fromA = FirstPeptideOf(proteinA);
+                var fromB = FirstPeptideOf(proteinB);
+                Assume.That(fromB.FullSequence, Is.EqualTo(fromA.FullSequence));
+                var psm = SharedPeptidePsm(rawPath, fromA, fromB);
+
+                var written = GroupOf(proteinA, new[] { fromA }, new[] { psm }, qValue: 0);
+                var unwritten = GroupOf(proteinB, new[] { fromB }, new[] { psm }, qValue: 0.5);
+
+                var (_, parameters) = RunMultiplexAnalysis(
+                    new List<string> { rawPath }, StageOutput(folder),
+                    allSpectralMatches: new List<SpectralMatch> { psm },
+                    proteinGroups: new List<ProteinGroup> { written, unwritten },
+                    writeHighQValuePsms: false);
+
+                var results = parameters.MultiplexQuantificationResults;
+                Assert.That(results, Is.Not.Null);
+                Assert.That(results.ProteinIntensities.Keys, Is.EquivalentTo(new[] { written }), "only the written group is quantified");
+                Assert.That(results.ProteinIntensities[written].Values, Has.None.GreaterThan(0),
+                    "PEPTIDEK is shared with the unwritten group, so it does not count toward the written one");
             }
             finally
             {
