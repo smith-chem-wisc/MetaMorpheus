@@ -97,7 +97,7 @@ namespace Test
             var search = new SearchTask
             {
                 CommonParameters = new CommonParameters(),
-                SearchParameters = new SearchParameters { DoParsimony = true, SearchTarget = true, SearchType = SearchType.Classic }
+                SearchParameters = new SearchParameters { DoParsimony = true, SearchTarget = true, SearchType = SearchType.Classic, WriteIndividualFiles = true }
             };
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("gptmd", gptmd), ("search", search) },
                 spectra, new List<DbForTask> { new DbForTask(fasta, false) }, outputFolder).Run();
