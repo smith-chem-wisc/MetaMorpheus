@@ -923,7 +923,8 @@ namespace Test
             {
                 SearchParameters = new SearchParameters
                 {
-                    DoLabelFreeQuantification = false // quant disabled just to save some time
+                    DoLabelFreeQuantification = false, // quant disabled just to save some time
+                    WriteIndividualFiles = true // the per-file counts are checked below
                 },
 
                 // Use pepQvalue filtering with fewer than 100 psms
