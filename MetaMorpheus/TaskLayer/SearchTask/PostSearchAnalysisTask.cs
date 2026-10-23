@@ -124,8 +124,13 @@ namespace TaskLayer
                 Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
                 if (Parameters.SearchParameters.WriteIndividualFiles)
                 {
-                    WriteIndividualPsmResults();
-                    WriteIndividualPeptideResults();
+                    // The individual tables re-run FDR file by file on the shared spectral matches. Their
+                    // per-file values must not outlive them: every later stage reads the whole-search FDR.
+                    using (FdrInfoSnapshot.Take(Parameters.AllSpectralMatches))
+                    {
+                        WriteIndividualPsmResults();
+                        WriteIndividualPeptideResults();
+                    }
                 }
             }
             WriteProteinResults();
@@ -158,7 +163,12 @@ namespace TaskLayer
 
             if (Parameters.BioPolymerList.Any((p => p.AppliedSequenceVariations.Count > 0)))
             {
-                WriteVariantResults();
+                // The variant tables re-run FDR on the variant matches alone. Their values must not outlive them:
+                // a chained TruncationSearchTask reads the whole-search FDR from these matches.
+                using (FdrInfoSnapshot.Take(Parameters.AllSpectralMatches))
+                {
+                    WriteVariantResults();
+                }
             }
 
             CompressIndividualFileResults();
