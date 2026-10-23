@@ -22,5 +22,11 @@
             PEP_QValue = 2;
             QValueNotch = 2;
         }
+
+        /// <summary>
+        /// A new FdrInfo holding the same values. Writing to the copy leaves this one unchanged. Every property is a
+        /// number, so a member-wise copy is a full copy, and a property added later is copied without a change here.
+        /// </summary>
+        public FdrInfo Clone() => (FdrInfo)MemberwiseClone();
     }
 }
