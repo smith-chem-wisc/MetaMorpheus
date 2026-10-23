@@ -567,6 +567,118 @@ namespace Test
             Directory.Delete(outputFolder, true);
         }
 
+        // The PEX14 case: QFPPSPSAPK carries UniProt's Phosphoserine at S5, and the spectra say S7.
+        [Test]
+        public static void TestGptmdAddsANeighbourThatExplainsTheSpectrumBetterThanTheDatabaseSite()
+        {
+            var res = RunGptmdOnPhosphoPsm(PsmToDatabasePhosphosite("QFPPSPSAPK", databaseSite: 5, trueSite: 7));
+
+            Assert.That(res.Mods["accession"].Select(m => (m.Item1, m.Item2.IdWithMotif)),
+                Is.EquivalentTo(new[] { (7, "Phosphorylation on S") }));
+        }
+
+        [Test]
+        public static void TestGptmdAddsNothingWhenTheDatabaseSiteExplainsTheSpectrumBest()
+        {
+            var res = RunGptmdOnPhosphoPsm(PsmToDatabasePhosphosite("QFPPSPSAPK", databaseSite: 5, trueSite: 5));
+
+            Assert.That(res.Mods.ContainsKey("accession"), Is.False);
+        }
+
+        // Without b5, b6, y4 and y5 nothing in the spectrum separates S5 from S7, so both go to the search.
+        [Test]
+        public static void TestGptmdAddsANeighbourTheSpectrumCannotTellFromTheDatabaseSite()
+        {
+            var res = RunGptmdOnPhosphoPsm(PsmToDatabasePhosphosite("QFPPSPSAPK", databaseSite: 5, trueSite: 7, keepFragment: NotSiteDetermining));
+
+            Assert.That(res.Mods["accession"].Select(m => (m.Item1, m.Item2.IdWithMotif)),
+                Is.EquivalentTo(new[] { (7, "Phosphorylation on S") }));
+        }
+
+        [Test]
+        public static void TestGptmdMovesADatabasePhosphoserineToAThreonine()
+        {
+            var res = RunGptmdOnPhosphoPsm(PsmToDatabasePhosphosite("QFPPSPTAPK", databaseSite: 5, trueSite: 7));
+
+            Assert.That(res.Mods["accession"].Select(m => (m.Item1, m.Item2.IdWithMotif)),
+                Is.EquivalentTo(new[] { (7, "Phosphorylation on T") }));
+        }
+
+        [Test]
+        public static void TestGptmdLeavesDatabaseModsWhereTheyAreWhenAlternativeSitesAreOff()
+        {
+            var res = RunGptmdOnPhosphoPsm(PsmToDatabasePhosphosite("QFPPSPSAPK", databaseSite: 5, trueSite: 7), addAlternativeSites: false);
+
+            Assert.That(res.Mods.ContainsKey("accession"), Is.False);
+        }
+
+        // An alternative site passes the same filters as any GPTMD candidate. ImprovedScoreFilter is strict, so it
+        // drops a tie with the database site; the flanking filter needs ions on both sides of S7, which go with the
+        // site-determining ions.
+        [Test]
+        [TestCase(typeof(ImprovedScoreFilter), true, true)]
+        [TestCase(typeof(ImprovedScoreFilter), false, false)]
+        [TestCase(typeof(FlankingIonCoverageFilter), true, true)]
+        [TestCase(typeof(FlankingIonCoverageFilter), false, false)]
+        [TestCase(typeof(DualDirectionalIonCoverageFilter), false, true)]
+        [TestCase(typeof(UniDirectionalIonCoverageFilter), false, true)]
+        public static void TestGptmdFiltersApplyToAlternativeSitesForDatabaseMods(Type filterType, bool siteDeterminingIonsInSpectrum, bool expectAdded)
+        {
+            var psms = PsmToDatabasePhosphosite("QFPPSPSAPK", databaseSite: 5, trueSite: 7,
+                keepFragment: siteDeterminingIonsInSpectrum ? null : NotSiteDetermining);
+            var res = RunGptmdOnPhosphoPsm(psms, new List<IGptmdFilter> { (IGptmdFilter)Activator.CreateInstance(filterType) });
+
+            Assert.That(res.Mods.ContainsKey("accession") && res.Mods["accession"].Any(m => m.Item1 == 7), Is.EqualTo(expectAdded));
+        }
+
+        // b5, b6, y4 and y5 of a ten-residue peptide are the ions that tell a modification on residue 5 from one on 7.
+        private static bool NotSiteDetermining(Product product) =>
+            !(product.ProductType == ProductType.b && product.FragmentNumber is 5 or 6
+              || product.ProductType == ProductType.y && product.FragmentNumber is 4 or 5);
+
+        // A one-peptide protein with UniProt's Phosphoserine at databaseSite, and a PSM to that phosphoform whose spectrum
+        // holds the unit-intensity b and y ions of the same peptide phosphorylated at trueSite instead.
+        private static List<SpectralMatch> PsmToDatabasePhosphosite(string sequence, int databaseSite, int trueSite, Func<Product, bool> keepFragment = null)
+        {
+            Modification uniProtPhosphoserine = GlobalVariables.AllModsKnown.First(p => p.ModificationType == "UniProt" && p.IdWithMotif.Contains("Phosphoserine"));
+            Modification truePhospho = GlobalVariables.AllModsKnown.First(p => p.ModificationType == "Common Biological" && p.IdWithMotif == $"Phosphorylation on {sequence[trueSite - 1]}");
+            var commonParameters = new CommonParameters();
+
+            var protein = new Protein(sequence, "accession",
+                oneBasedModifications: new Dictionary<int, List<Modification>> { { databaseSite, new List<Modification> { uniProtPhosphoserine } } });
+            var matched = protein.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>())
+                .First(p => p.AllModsOneIsNterminus.Count == 1);
+
+            var source = new Protein(sequence, "source",
+                    oneBasedModifications: new Dictionary<int, List<Modification>> { { trueSite, new List<Modification> { truePhospho } } })
+                .Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>())
+                .First(p => p.AllModsOneIsNterminus.Count == 1);
+            var products = new List<Product>();
+            source.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+            double[] mzs = products
+                .Where(p => p.NeutralLoss == 0 && (p.ProductType == ProductType.b || p.ProductType == ProductType.y) && (keepFragment?.Invoke(p) ?? true))
+                .Select(p => p.NeutralMass.ToMz(1)).OrderBy(mz => mz).ToArray();
+
+            double precursorMz = matched.MonoisotopicMass.ToMz(1);
+            var scan = new MsDataScan(new MzSpectrum(mzs, mzs.Select(_ => 1.0).ToArray(), false), 1, 2, true, Polarity.Positive, 1,
+                new MzRange(50, 2000), null, MZAnalyzerType.Orbitrap, mzs.Length, null, null, "scan=1", precursorMz, 1, 1, precursorMz, 2,
+                DissociationType.HCD, 0, precursorMz);
+            var psm = new PeptideSpectralMatch(matched, 0, 0, 0, new Ms2ScanWithSpecificMass(scan, precursorMz, 1, "filepath", commonParameters),
+                commonParameters, new List<MatchedFragmentIon>());
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
+            psm.SetMs2Scan(scan);
+            return new List<SpectralMatch> { psm };
+        }
+
+        private static GptmdResults RunGptmdOnPhosphoPsm(List<SpectralMatch> psms, List<IGptmdFilter> filters = null, bool addAlternativeSites = true)
+        {
+            var phosphoMods = GlobalVariables.AllModsKnown
+                .Where(p => p.ModificationType == "Common Biological" && p.IdWithMotif.StartsWith("Phosphorylation on ")).ToList();
+            return (GptmdResults)new GptmdEngine(psms, phosphoMods, new List<Tuple<double, double>>(),
+                new Dictionary<string, Tolerance> { { "filepath", new PpmTolerance(10) } }, new CommonParameters(), null, new List<string>(), null,
+                filters, addAlternativeSites).Run();
+        }
+
         private sealed class RecordingGptmdFilter : IGptmdFilter
         {
             public List<int> Sites { get; } = new();
