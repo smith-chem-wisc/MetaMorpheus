@@ -1054,7 +1054,7 @@ namespace TaskLayer
         {
             Status("Loading spectral libraries...", new List<string> { taskId });
 
-            var paths = dbFilenameList.Where(p => p.IsSpectralLibrary).Select(p => p.FilePath).ToList();
+            var paths = dbFilenameList.SpectralLibraries().Select(p => p.FilePath).ToList();
 
             if (!paths.Any())
             {
@@ -1428,7 +1428,7 @@ namespace TaskLayer
         protected static void WriteSpectrumLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
         {
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
-            string spectrumFilePath = outputFolder + "\\SpectralLibrary" + "_" + startTimeForAllFilenames + ".msp";
+            string spectrumFilePath = Path.Combine(outputFolder, "SpectralLibrary_" + startTimeForAllFilenames + ".msp");
             using (StreamWriter output = new StreamWriter(spectrumFilePath))
             {
                 foreach (var x in spectrumLibrary)
@@ -1442,7 +1442,7 @@ namespace TaskLayer
         protected string UpdateSpectralLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
         {
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
-            string spectrumFilePath = outputFolder + "\\updateSpectralLibrary" +"_" + startTimeForAllFilenames + ".msp";
+            string spectrumFilePath = Path.Combine(outputFolder, "updateSpectralLibrary_" + startTimeForAllFilenames + ".msp");
             using (StreamWriter output = new StreamWriter(spectrumFilePath))
             {
 
