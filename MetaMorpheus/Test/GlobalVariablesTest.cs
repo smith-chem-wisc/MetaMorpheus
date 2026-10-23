@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -213,5 +213,6 @@ namespace Test
             Assert.That(AnalyteType.Proteoform.GetDigestionAgentLabel(), Is.EqualTo("Protease"));
             Assert.That(AnalyteType.Oligo.GetDigestionAgentLabel(), Is.EqualTo("RNase"));
         }
+
     }
 }
