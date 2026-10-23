@@ -151,6 +151,8 @@ namespace Test
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TestData\TaGe_SA_A549_3_snip.fasta");
             searchTaskLoaded.CommonParameters.QValueCutoffForPepCalculation = 0.01;
+            // These cases check the per-file tables and counts, which are off by default; the toml leaves the key out.
+            searchTaskLoaded.SearchParameters.WriteIndividualFiles = true;
 
             // Bottom-up Q-value Test Case
             _cases.Add(EverythingRunnerEngineTestCases.BottomUpQValue,
@@ -200,6 +202,7 @@ namespace Test
                 @"TestData\Task2-SearchTaskconfig.toml");
             searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             searchTaskLoaded.CommonParameters.QValueCutoffForPepCalculation = 0.01;
+            searchTaskLoaded.SearchParameters.WriteIndividualFiles = true;
             _cases.Add(EverythingRunnerEngineTestCases.BottomUpPepQValue,
                 new EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases.BottomUpPepQValue,
                     new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
