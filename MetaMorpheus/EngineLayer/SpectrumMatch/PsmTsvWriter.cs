@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using Chemistry;
 using Omics;
+using Omics.BioPolymer;
 using Omics.Fragmentation;
 using Omics.Modifications;
 using Proteomics;
@@ -264,7 +265,7 @@ namespace EngineLayer
 
             string theoreticalsSearched = " ";
             s[SpectrumMatchFromTsvHeader.TheoreticalsSearched] = theoreticalsSearched;
-            s[SpectrumMatchFromTsvHeader.DecoyContaminantTarget] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.IsDecoy ? "D" : b.Parent.IsContaminant ? "C" : "T")).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.DecoyContaminantTarget] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => DecoyContaminantTargetLabel.For(b.Parent))).ResolvedString;
         }
 
         /// <summary>

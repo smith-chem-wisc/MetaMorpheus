@@ -7,6 +7,7 @@ using System.Text;
 using MassSpectrometry;
 using Omics.Modifications;
 using Omics;
+using Omics.BioPolymer;
 using Omics.BioPolymerGroup;
 using Omics.SpectralMatch;
 using Transcriptomics.Digestion;
@@ -427,13 +428,8 @@ namespace EngineLayer
             sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
             sb.Append("\t");
 
-            // isDecoy
-            if (IsDecoy)
-                sb.Append("D");
-            else if (IsContaminant)
-                sb.Append("C");
-            else
-                sb.Append("T");
+            // decoy / contaminant / target, with entrapment written ET or ED
+            sb.Append(DecoyContaminantTargetLabel.For(IsDecoy, IsContaminant, IsEntrapment));
             sb.Append("\t");
 
             // cumulative target
