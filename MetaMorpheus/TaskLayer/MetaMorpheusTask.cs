@@ -241,12 +241,6 @@ namespace TaskLayer
                         ? $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};MaxValue"
                         : $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};{range.Maximum.ToString("R", CultureInfo.InvariantCulture)}")
                     .FromToml(tomlString => ParseRetentionTimeRange(tomlString.Value))))
-            .ConfigureType<Protease>(type => type
-                .WithConversionFor<TomlString>(convert => convert
-                    .ToToml(custom => custom.ToString())
-                    // GetProtease, not the raw indexer: it maps the names older releases wrote, such as
-                    // "chymotrypsin (don't cleave before proline)", onto the enzyme they meant.
-                    .FromToml(tmlString => ProteaseDictionary.GetProtease(tmlString.Value))))
             .ConfigureType<List<string>>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => string.Join("\t", custom))
@@ -268,19 +262,9 @@ namespace TaskLayer
                         tmlTable.ContainsKey("Protease")
                             ? ReadProteinDigestionParams(tmlTable)
                             : tmlTable.Get<RnaDigestionParams>())))
-            .ConfigureType<DigestionParams>(type => type
-                .IgnoreProperty(p => p.DigestionAgent)
-                .IgnoreProperty(p => p.SpecificDigestionAgent)
-                .IgnoreProperty(p => p.MaxMods)
-                .IgnoreProperty(p => p.MaxLength)
-                .IgnoreProperty(p => p.MinLength))
-            .ConfigureType<RnaDigestionParams>(type => type
-                .IgnoreProperty(p => p.DigestionAgent)
-                .IgnoreProperty(p => p.SpecificDigestionAgent))
-            .ConfigureType<Rnase>(type => type
-                .WithConversionFor<TomlString>(convert => convert
-                    .ToToml(custom => custom.Name)
-                    .FromToml(tmlString => RnaseDictionary.Dictionary[tmlString.Value])))
+            // Protease, Rnase, DigestionParams and RnaDigestionParams. Defined in EngineLayer, because the index
+            // cache key writes digestion parameters with the same configuration; see DigestionTomlSettings.
+            .ConfigureDigestionTypes()
             // Switch on DeconvolutionParameters
             .ConfigureType<DeconvolutionParameters>(type => type
                 .WithConversionFor<TomlTable>(c => c
