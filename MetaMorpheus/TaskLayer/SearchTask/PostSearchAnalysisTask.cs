@@ -25,7 +25,6 @@ using MzLibUtil;
 using Omics.Digestion;
 using Omics.BioPolymer;
 using Omics.Modifications;
-using IsobaricMassTag = EngineLayer.IsobaricMassTag;
 using Omics.SpectrumMatch;
 using EngineLayer.SpectrumMatch;
 using Omics.Fragmentation;
@@ -598,10 +597,9 @@ namespace TaskLayer
                          spectraFileIndex < Parameters.CurrentRawFileList.Count;
                          spectraFileIndex++)
                     {
-                        CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters,
-                            Parameters.FileSettingsList[spectraFileIndex]);
-
                         var origDataFile = Parameters.CurrentRawFileList[spectraFileIndex];
+                        CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters,
+                            Parameters.FileSettingsList[spectraFileIndex], origDataFile);
                         Status("Running mass-difference localization analysis...",
                             new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile });
                         MsDataFile myMsDataFile = Parameters.MyFileManager.LoadFile(origDataFile, combinedParams);
@@ -691,7 +689,7 @@ namespace TaskLayer
                      ". That's ok, the search will continue");
             }
 
-            var tag = IsobaricMassTag.GetIsobaricMassTag(Parameters.SearchParameters.MultiplexModId);
+            IsobaricMassTag.TryGetIsobaricMassTag(Parameters.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag);
             var experimentalDesign = TmtExperimentalDesign.ToMzLibDesign(tmtFiles, tag, out var projectionErrors, out var projectionWarnings);
             if (experimentalDesign == null || projectionErrors.Any())
             {
@@ -1852,8 +1850,12 @@ namespace TaskLayer
                 // mzLib groups its PSMs by source file and reports the counts, which is exactly what an
                 // individual-file table wants. Groups that DO carry files are unaffected, so the
                 // label-free path behaves as before.
+                // The Unique and Shared Peptides cells too: the combined groups get their text just before they are
+                // written, and a subset is a new object that never did, so the per-file table left both cells empty
+                // while its Number of Unique Peptides was filled.
                 foreach (var subsetProteinGroup in subsetProteinGroupsForThisFile)
                 {
+                    subsetProteinGroup.GetIdentifiedPeptidesOutput(Parameters.SearchParameters.SilacLabels);
                     subsetProteinGroup.PopulateSampleGroupResults();
                 }
 
@@ -2045,7 +2047,9 @@ namespace TaskLayer
         {
             using (StreamWriter output = new StreamWriter(filePath))
             {
-                var reporterIonLabels = IsobaricMassTag.GetReporterIonLabels(Parameters.SearchParameters.MultiplexModId);
+                var reporterIonLabels = IsobaricMassTag.TryGetTagType(Parameters.SearchParameters.MultiplexModId, out var tagType)
+                    ? IsobaricMassTag.GetReporterIonLabels(tagType)
+                    : Array.Empty<string>();
                 string headerWithReporterIons = SpectralMatch.GetTabSeparatedHeader().Trim() + '\t' +
                                                 string.Join('\t', reporterIonLabels);
                 output.WriteLine(headerWithReporterIons);

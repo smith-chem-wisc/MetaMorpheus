@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace MetaMorpheusGUI
@@ -29,6 +30,37 @@ namespace MetaMorpheusGUI
         {
             get => (bool)GetValue(ShowMs2SectionProperty);
             set => SetValue(ShowMs2SectionProperty, value);
+        }
+
+        public static readonly DependencyProperty ShowGlobalPrecursorControlsProperty =
+            DependencyProperty.Register(nameof(ShowGlobalPrecursorControls), typeof(bool), typeof(HostDeconParamControl), new PropertyMetadata(true));
+
+        public bool ShowGlobalPrecursorControls
+        {
+            get => (bool)GetValue(ShowGlobalPrecursorControlsProperty);
+            set => SetValue(ShowGlobalPrecursorControlsProperty, value);
+        }
+
+        public static readonly DependencyProperty FilePickerOverrideProperty =
+            DependencyProperty.Register(nameof(FilePickerOverride), typeof(Func<string>), typeof(HostDeconParamControl),
+                new PropertyMetadata(null, OnFilePickerOverrideChanged));
+
+        public Func<string?>? FilePickerOverride
+        {
+            get => (Func<string?>?)GetValue(FilePickerOverrideProperty);
+            set => SetValue(FilePickerOverrideProperty, value);
+        }
+
+        public FromFileDeconParamsControl? FromFilePrecursorControl =>
+            PrecursorSpecificParams.Content as FromFileDeconParamsControl;
+
+        private static void OnFilePickerOverrideChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
+            ((HostDeconParamControl)d).PropagateFilePickerOverride();
+
+        private void PropagateFilePickerOverride()
+        {
+            if (PrecursorSpecificParams?.Content is FromFileDeconParamsControl child)
+                child.FilePickerOverride = FilePickerOverride;
         }
     }
 }
