@@ -33,6 +33,7 @@ using EngineLayer.Util;
 using EngineLayer.DIA;
 using Omics.Fragmentation;
 using EngineLayer.Deconvolution;
+using TaskLayer.Util;
 
 namespace TaskLayer
 {
@@ -836,6 +837,35 @@ namespace TaskLayer
             string separationType = fileSpecificParams?.SeparationType ?? commonParams.SeparationType;
 
             DeconvolutionParameters precursorDeconParams = fileSpecificParams?.PrecursorDeconvolutionParameters ?? commonParams.PrecursorDeconvolutionParameters;
+
+            // mzLib loads a native FromFile feature file lazily on first use. Force that load here, before
+            // scan processing, so a missing/unreadable/unrecognized/malformed/empty source is diagnosed once
+            // and isolated to its own raw file; the memoized verdict keeps the 4-5 later calls for this raw
+            // from retrying a transiently-loadable file and contradicting the fallback already warned about.
+            // Deliberately not applied to the task-wide embedded map resolved below: that route must keep
+            // surfacing its own resolution errors.
+            if (fileSpecificParams?.PrecursorDeconvolutionParameters is FromFileDeconvolutionParameters fileSpecificFromFile)
+            {
+                FileSpecificDeconvolutionPreflight.PreflightDecision preflight =
+                    FileSpecificDeconvolutionPreflight.Resolve(fileSpecificParams, fileSpecificFromFile, rawFilePath);
+
+                if (!preflight.Succeeded)
+                {
+                    string rawPathForWarning = rawFilePath ?? "<unknown raw file>";
+                    if (preflight.TryConsumeWarning())
+                    {
+                        string featurePath = string.IsNullOrWhiteSpace(fileSpecificFromFile.FilePath)
+                            ? "<not set>"
+                            : fileSpecificFromFile.FilePath;
+                        Warn($"File-specific precursor deconvolution for '{rawPathForWarning}' cannot use " +
+                             $"feature file '{featurePath}': {preflight.FailureReason}. Falling back to the task-wide precursor " +
+                             $"deconvolution parameters ({commonParams.PrecursorDeconvolutionParameters?.GetType().Name ?? "none"}).");
+                    }
+
+                    precursorDeconParams = commonParams.PrecursorDeconvolutionParameters;
+                }
+            }
+
             if (precursorDeconParams is FeatureMappedFromFileDeconvolutionParameters mapped)
             {
                 if (rawFilePath == null)

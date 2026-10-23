@@ -10,7 +10,13 @@ This folder contains FlashDeconv output for three small MetaMorpheus search fixt
 
 The matching `*_ms2.feature` outputs and other FlashDeconv exports are retained as reference data, but the search test maps each raw file to its MS1 feature file. Paths are assembled from NUnit's test directory so the test does not depend on a developer-specific checkout location.
 
-`FromFileDeconvolutionSearchTests.SearchTask_UsesFlashDeconvFeaturesForThreeRawFiles` constructs the mapped deconvolution parameters directly and verifies that each feature file loads. It runs the search once, loads the task TOML written by that run into a second `SearchTask`, reruns the same inputs, and requires the two `AllPSMs.psmtsv` files to be byte-identical. This covers the backend TOML round trip without requiring GUI-generated settings.
+`FromFileDeconvolutionSearchTests.SearchTask_UsesFlashDeconvFeaturesForThreeRawFiles` constructs the task-map deconvolution parameters directly and verifies that each feature file loads. It runs the search once, loads the task TOML written by that run into a second `SearchTask`, reruns the same inputs, and requires the two `AllPSMs.psmtsv` files to be byte-identical. This covers the backend TOML round trip without requiring GUI-generated settings.
+
+`FromFileDeconvolutionSearchTests.SearchTask_FileSpecificFromFile_UsesFlashDeconvFeaturesForThreeRawFiles` copies the three raw fixtures into an isolated temporary input directory and writes one companion TOML per raw (a native `FromFile` precursor deconvolution with the absolute MS1 feature path) next to each copied raw. It asserts every companion feature collection loads non-empty and that the search writes at least one PSM row.
+
+`FromFileDeconvolutionSearchTests.SearchTask_FileSpecificFromFile_MatchesTaskMapOutputBytes` runs the task-map route and the per-file companion-TOML route against the same copied raw files, FASTA, raw order, common/search settings, charge bounds, polarity, `UseGenericScore` and feature pairings, then requires the two `AllPSMs.psmtsv` outputs to be byte-identical. Only the PSM files are compared; metadata and log files are ignored.
+
+Replaying the file-specific route requires the task TOML **plus** the adjacent per-raw companion `<raw basename>.toml` files: the task TOML carries the shared search settings, while each companion TOML carries that raw file's native FromFile `FilePath`, charge range, polarity and `UseGenericScore`. The tests never create or modify TOMLs next to the repository fixtures; all companion TOMLs live under temporary test directories and are deleted afterward.
 
 The generated TOML stores each raw-file basename and the corresponding feature-file path relative to that raw file's directory, rather than writing machine-specific absolute paths. For example:
 

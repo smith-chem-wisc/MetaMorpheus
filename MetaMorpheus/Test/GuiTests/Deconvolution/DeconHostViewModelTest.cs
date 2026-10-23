@@ -4,6 +4,7 @@ using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
 using NUnit.Framework;
+using Readers;
 using TaskLayer;
 
 namespace Test.GuiTests.Deconvolution;
@@ -420,5 +421,122 @@ public class DeconHostViewModelTests
         Assert.That(multipleVm.MaxAssumedChargeState, Is.EqualTo(7));
         foreach (var sub in multipleVm.SubParameters)
             Assert.That(sub.MaxAssumedChargeState, Is.EqualTo(7));
+    }
+
+    [Test]
+    public void Constructor_NoFromFileInPrecursorList_ByDefault()
+    {
+        var vm = new DeconHostViewModel();
+        Assert.That(
+            vm.PrecursorDeconvolutionParametersList.Any(x => x.DeconvolutionType == DeconvolutionType.FromFile),
+            Is.False);
+    }
+
+    [Test]
+    public void Constructor_NoFromFileInProductList_ByDefault()
+    {
+        var vm = new DeconHostViewModel();
+        Assert.That(
+            vm.ProductDeconvolutionParametersList.Any(x => x.DeconvolutionType == DeconvolutionType.FromFile),
+            Is.False);
+    }
+
+    [Test]
+    public void Constructor_WithFromFileInitialPrecursor_ExcludesFromFile_SelectsClassic()
+    {
+        var fromFileParams = new FromFileDeconvolutionParameters("", 1, 12);
+        var vm = new DeconHostViewModel(initialPrecursorParameters: fromFileParams);
+
+        Assert.That(
+            vm.PrecursorDeconvolutionParametersList.Any(x => x.DeconvolutionType == DeconvolutionType.FromFile),
+            Is.False,
+            "FromFile must not be in the precursor list from the constructor");
+        Assert.That(vm.PrecursorDeconvolutionParameters.DeconvolutionType,
+            Is.EqualTo(DeconvolutionType.ClassicDeconvolution),
+            "Selection must fall back to Classic when initial params are FromFile");
+    }
+
+    [Test]
+    public void EnableFromFilePrecursorDeconvolution_AddsFromFileToPrecursorList()
+    {
+        var vm = new DeconHostViewModel();
+        vm.EnableFromFilePrecursorDeconvolution();
+
+        var fromFileVm = vm.PrecursorDeconvolutionParametersList
+            .FirstOrDefault(x => x.DeconvolutionType == DeconvolutionType.FromFile);
+
+        Assert.That(fromFileVm, Is.Not.Null);
+        Assert.That(fromFileVm, Is.InstanceOf<FromFileDeconParamsViewModel>());
+    }
+
+    [Test]
+    public void EnableFromFilePrecursorDeconvolution_DoesNotAddToProductList()
+    {
+        var vm = new DeconHostViewModel();
+        vm.EnableFromFilePrecursorDeconvolution();
+
+        Assert.That(
+            vm.ProductDeconvolutionParametersList.Any(x => x.DeconvolutionType == DeconvolutionType.FromFile),
+            Is.False);
+    }
+
+    [Test]
+    public void EnableFromFilePrecursorDeconvolution_CalledTwice_AddsExactlyOne()
+    {
+        var vm = new DeconHostViewModel();
+        vm.EnableFromFilePrecursorDeconvolution();
+        vm.EnableFromFilePrecursorDeconvolution();
+
+        var count = vm.PrecursorDeconvolutionParametersList
+            .Count(x => x.DeconvolutionType == DeconvolutionType.FromFile);
+        Assert.That(count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void EnableFromFilePrecursorDeconvolution_WithoutParams_DoesNotChangeCurrentSelection()
+    {
+        var vm = new DeconHostViewModel();
+        var originalSelection = vm.PrecursorDeconvolutionParameters;
+
+        vm.EnableFromFilePrecursorDeconvolution();
+
+        Assert.That(vm.PrecursorDeconvolutionParameters, Is.SameAs(originalSelection));
+    }
+
+    [Test]
+    public void EnableFromFilePrecursorDeconvolution_WithFromFileParams_SelectsFromFile()
+    {
+        var fromFileParams = new FromFileDeconvolutionParameters("", 1, 12);
+        var vm = new DeconHostViewModel();
+
+        vm.EnableFromFilePrecursorDeconvolution(fromFileParams);
+
+        Assert.That(vm.PrecursorDeconvolutionParameters.DeconvolutionType,
+            Is.EqualTo(DeconvolutionType.FromFile));
+    }
+
+    [Test]
+    public void EnableFromFilePrecursorDeconvolution_WithFromFileParams_WrapsProvidedParameters()
+    {
+        var fromFileParams = new FromFileDeconvolutionParameters("", 1, 12);
+        fromFileParams.UseGenericScore = true;
+        var vm = new DeconHostViewModel();
+
+        vm.EnableFromFilePrecursorDeconvolution(fromFileParams);
+
+        var selected = (FromFileDeconParamsViewModel)vm.PrecursorDeconvolutionParameters;
+        Assert.That(selected.Parameters, Is.SameAs(fromFileParams));
+        Assert.That(selected.UseGenericScore, Is.True);
+    }
+
+    [Test]
+    public void EnableFromFilePrecursorDeconvolution_ProductListUnchangedAfterOptIn()
+    {
+        var vm = new DeconHostViewModel();
+        var productCountBefore = vm.ProductDeconvolutionParametersList.Count;
+
+        vm.EnableFromFilePrecursorDeconvolution(new FromFileDeconvolutionParameters("", 1, 12));
+
+        Assert.That(vm.ProductDeconvolutionParametersList.Count, Is.EqualTo(productCountBefore));
     }
 }
