@@ -555,6 +555,69 @@ namespace Test
         }
 
         /// <summary>
+        /// The per-file protein tables list each group's unique and shared peptides, as the combined table does. They
+        /// left both cells empty: the per-file subsets were never given their peptide text, while "Number of Unique
+        /// Peptides" (counted from the same peptides) was filled. So a row could say 5 unique peptides and list none.
+        /// </summary>
+        [Test]
+        public static void PostSearchIndividualFileProteinGroupsListTheirPeptides()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    Normalize = false,
+                    DoParsimony = true,
+                    WriteIndividualFiles = true
+                },
+                CommonParameters = new(precursorDeconParams: new IsoDecDeconvolutionParameters())
+            };
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestIndividualPgPeptideCells");
+            string inputFolder = Path.Combine(outputFolder, "inputs");
+            Directory.CreateDirectory(inputFolder);
+            string fastaPath = Path.Combine(inputFolder, "DbForPrunedDb.fasta");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta"), fastaPath, true);
+            string mzml1 = Path.Combine(inputFolder, "PrunedDbSpectra1.mzml");
+            string mzml2 = Path.Combine(inputFolder, "PrunedDbSpectra2.mzml");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml"), mzml1, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml"), mzml2, true);
+
+            try
+            {
+                searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(fastaPath, false) },
+                    new List<string> { mzml1, mzml2 }, "normal");
+
+                var individualPgFiles = Directory.GetFiles(Path.Combine(outputFolder, "Individual File Results"), "*_ProteinGroups.tsv");
+                Assert.That(individualPgFiles.Length, Is.EqualTo(2));
+
+                foreach (var pgFile in individualPgFiles)
+                {
+                    var lines = File.ReadAllLines(pgFile);
+                    var header = lines[0].Split('\t').ToList();
+                    int unique = header.IndexOf("Unique Peptides");
+                    int shared = header.IndexOf("Shared Peptides");
+                    int numberUnique = header.IndexOf("Number of Unique Peptides");
+                    var rows = lines.Skip(1).Select(l => l.Split('\t')).ToList();
+
+                    Assert.That(rows.Count(r => r[unique].Length > 0), Is.GreaterThan(0), $"{pgFile} lists no unique peptide at all");
+                    foreach (var row in rows)
+                    {
+                        int listedUnique = row[unique].Split('|', StringSplitOptions.RemoveEmptyEntries).Length;
+                        Assert.That(listedUnique, Is.EqualTo(int.Parse(row[numberUnique])),
+                            $"{pgFile} {row[0]}: the Unique Peptides cell and Number of Unique Peptides disagree");
+                        Assert.That(row[unique].Length + row[shared].Length, Is.GreaterThan(0),
+                            $"{pgFile} {row[0]}: a group with peptides lists none");
+                    }
+                }
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
         /// Test that we don't get a crash if protein groups are not constructed
         /// </summary>
         [Test]
