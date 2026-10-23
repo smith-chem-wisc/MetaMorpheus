@@ -14,12 +14,15 @@ using System.Linq;
 namespace Test
 {
     /// <summary>
-    /// Which peptides protein parsimony calls unique to a protein. A peptide is unique when only one protein in the
-    /// database contains it (among the proteins with an observed peptide); "shared" means another protein contains it
-    /// too. These tests pin that a peptide found in only ONE protein is unique however many times that protein is
-    /// listed for it: once per modified form of the peptide; once per full sequence of an ambiguous match (two or more
-    /// different full sequences matching the same MS2 scan within the score tolerance); or once per position when the
-    /// same sequence occurs twice in the protein.
+    /// Which peptides a protein group reports as unique. A peptide is unique to a protein group when no other protein
+    /// group of the run lists its sequence, however many proteins in the database contain it; "shared" means another
+    /// group lists it too. These tests pin that a peptide found in only ONE protein is unique however many times that
+    /// protein is listed for it: once per modified form of the peptide; once per full sequence of an ambiguous match
+    /// (two or more different full sequences matching the same MS2 scan within the score tolerance); or once per
+    /// position when the same sequence occurs twice in the protein. They also pin the group-level meaning: a peptide of
+    /// several indistinguishable proteins is unique to the one group they form, and a peptide whose other protein
+    /// parsimony did not need is unique to the group that explains it. Parsimony itself still decides which proteins
+    /// to keep from database-level uniqueness; only the reported labels are judged among the groups.
     /// </summary>
     [TestFixture]
     public static class ParsimonyUniquePeptideTests
@@ -186,11 +189,12 @@ namespace Test
         }
 
         /// <summary>
-        /// Control, and the meaning this fix keeps: two proteins with the same peptides merge into one group, and a
-        /// peptide both contain is not unique to either protein, so the merged group lists it as shared.
+        /// Two proteins with the same peptides merge into one group (calmodulin: three genes, one sequence). No other
+        /// group lists ACDMEK, so it is unique to that group in every form, though two database proteins contain it.
         /// </summary>
-        [Test]
-        public static void IndistinguishableProteinsStillShareTheirPeptides()
+        [TestCase(false, "ACDMEK", TestName = "IndistinguishableProteinsShareOneGroupAndItsPeptidesAreUnique")]
+        [TestCase(true, "ACDM[Test:Oxidation on M]EK|ACDMEK", TestName = "IndistinguishableProteinsShareOneGroupAndItsPeptidesAreUnique_ModifiedPeptidesDifferent")]
+        public static void IndistinguishableProteinsShareOneGroupAndItsPeptidesAreUnique(bool modPeptidesAreDifferent, string uniqueCell)
         {
             var p1 = Protein("ACDMEKGGGR", "P1");
             var p2 = Protein("ACDMEKGGGR", "P2");
@@ -200,11 +204,56 @@ namespace Test
                 Psm(Peptide(p1, 1, 6, 4), Peptide(p2, 1, 6, 4)),
             };
 
-            var group = InferProteins(psms).Single();
+            var group = InferProteins(psms, modPeptidesAreDifferent).Single();
 
             Assert.That(group.ProteinGroupName, Is.EqualTo("P1|P2"));
-            Assert.That(group.UniquePeptides, Is.Empty);
-            Assert.That(Columns(group), Is.EqualTo(("", "ACDMEK", "0")));
+            Assert.That(group.UniquePeptides, Is.EquivalentTo(group.AllPeptides), "no other group lists ACDMEK");
+            Assert.That(group.AllPeptides, Has.Count.EqualTo(4), "both forms, from both proteins");
+            var columns = Columns(group);
+            Assert.That(columns.Unique.Split('|').OrderBy(s => s), Is.EqualTo(uniqueCell.Split('|').OrderBy(s => s)));
+            Assert.That(columns.Shared, Is.Empty);
+            Assert.That(columns.NumberUnique, Is.EqualTo(modPeptidesAreDifferent ? "2" : "1"));
+        }
+
+        /// <summary>
+        /// ACDMEK is in P1 and P2, but parsimony keeps only P1: P1 has GGGR of its own and explains ACDMEK too, so P2 is
+        /// not needed and forms no group. ACDMEK is then listed by one group only, P1's, and is unique to it. Parsimony is
+        /// unchanged: it still kept P1 for GGGR and dropped P2.
+        /// </summary>
+        [Test]
+        public static void APeptideWhoseOtherProteinParsimonyDidNotNeedIsUniqueToTheGroupThatKeptIt()
+        {
+            var p1 = Protein("ACDMEKGGGR", "P1");
+            var p2 = Protein("ACDMEKWWWR", "P2");
+            var psms = new List<SpectralMatch>
+            {
+                Psm(Peptide(p1, 1, 6), Peptide(p2, 1, 6)),
+                Psm(Peptide(p1, 7, 10)),
+            };
+
+            var group = InferProteins(psms).Single();
+
+            Assert.That(group.ProteinGroupName, Is.EqualTo("P1"), "parsimony keeps P1 and drops P2, as before");
+            Assert.That(BaseSequences(group.UniquePeptides), Is.EqualTo(new[] { "ACDMEK", "GGGR" }));
+            Assert.That(Columns(group), Is.EqualTo(("ACDMEK|GGGR", "", "2")));
+        }
+
+        /// <summary>
+        /// The per-file protein table is a subset of the run's group (<see cref="ProteinGroup.ConstructSubsetProteinGroup"/>),
+        /// so it reports the run's labels: the indistinguishable pair's peptide is unique in each file's table too.
+        /// </summary>
+        [Test]
+        public static void APerFileProteinGroupKeepsTheGroupLevelLabels()
+        {
+            var p1 = Protein("ACDMEKGGGR", "P1");
+            var p2 = Protein("ACDMEKGGGR", "P2");
+            var psms = new List<SpectralMatch> { Psm(Peptide(p1, 1, 6), Peptide(p2, 1, 6)) };
+
+            var group = InferProteins(psms).Single();
+            var subset = group.ConstructSubsetProteinGroup(psms[0].FullFilePath);
+
+            Assert.That(subset.UniquePeptides, Is.EquivalentTo(group.AllPeptides));
+            Assert.That(Columns(subset), Is.EqualTo(("ACDMEK", "", "1")));
         }
     }
 }

@@ -44,7 +44,54 @@ namespace EngineLayer
             ScoreProteinGroups(ProteinGroups, _FilteredPsms);
             myAnalysisResults.SortedAndScoredProteinGroups = DoProteinFdr(ProteinGroups);
 
+            // Merging is what makes this the run's own set of groups. A per-file call (which does not merge) works on
+            // subsets of those groups, and each subset already carries the run's labels, intersected with the file's
+            // peptides by ConstructSubsetProteinGroup, so the per-file tables agree with the combined one.
+            if (MergeIndistinguishableProteinGroups)
+            {
+                LabelPeptidesUniqueToOneGroup(myAnalysisResults.SortedAndScoredProteinGroups, TreatModPeptidesAsDifferentPeptides);
+            }
+
             return myAnalysisResults;
+        }
+
+        /// <summary>
+        /// Sets each group's <see cref="ProteinGroup.UniquePeptides"/> to its peptides whose sequence no other group
+        /// lists, so a peptide is unique to a protein group when that group is the only one containing it, however many
+        /// proteins in the database carry it. Calmodulin (three genes, one sequence) forms one group, and its peptides
+        /// are unique to that group.
+        /// </summary>
+        /// <remarks>
+        /// Parsimony chose the proteins from database-level uniqueness, and that is untouched: this runs after the
+        /// groups are formed and changes only what they report (the Unique and Shared Peptides columns, their counts,
+        /// the per-file tables and the mzIdentML count). It is the meaning
+        /// <see cref="Omics.BioPolymerGroup.IBioPolymerGroup.UniqueBioPolymersWithSetMods"/> documents ("not found in any
+        /// other biopolymer group"), and the one quantification uses: FlashLFQ counts a peptide toward a group when its
+        /// spectra belong to that group alone, and mzLib's isobaric quantification (from smith-chem-wisc/mzLib#1463) when that group alone lists it.
+        /// Judged among every group passed, whatever its q-value or decoy status, so a peptide is not called unique
+        /// because the group it shares with is above the threshold. The sequence is the one parsimony compares: the full
+        /// sequence when modified peptides are treated as different, the base sequence otherwise, and, as in parsimony,
+        /// per protease: a sequence another group lists only from a different protease does not make it shared.
+        /// </remarks>
+        private static void LabelPeptidesUniqueToOneGroup(List<ProteinGroup> proteinGroups, bool treatModPeptidesAsDifferentPeptides)
+        {
+            (string, object) Sequence(IBioPolymerWithSetMods peptide) =>
+                (treatModPeptidesAsDifferentPeptides ? peptide.FullSequence : peptide.BaseSequence, peptide.DigestionParams?.DigestionAgent);
+
+            var groupsListingSequence = new Dictionary<(string, object), int>();
+            foreach (var proteinGroup in proteinGroups)
+            {
+                foreach (var sequence in proteinGroup.AllPeptides.Select(Sequence).Distinct())
+                {
+                    groupsListingSequence[sequence] = groupsListingSequence.GetValueOrDefault(sequence) + 1;
+                }
+            }
+
+            foreach (var proteinGroup in proteinGroups)
+            {
+                proteinGroup.UniquePeptides = new HashSet<IBioPolymerWithSetMods>(
+                    proteinGroup.AllPeptides.Where(peptide => groupsListingSequence[Sequence(peptide)] == 1));
+            }
         }
 
         private static string StripDecoyIdentifier(string proteinGroupName, HashSet<string> decoyIdentifiers) //we're keeping only the better scoring protein group for each target/decoy pair. to do that we need to strip decoy from the name temporarily. this is the "top-picked" method
