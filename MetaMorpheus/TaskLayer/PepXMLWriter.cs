@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using EngineLayer.SpectrumMatch;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -15,7 +16,8 @@ namespace TaskLayer
 {
     public static class PepXMLWriter
     {
-        public static void WritePepXml(List<SpectralMatch> psms, List<DbForTask> database, List<Modification> variableModifications, List<Modification> fixedModifications, CommonParameters CommonParameters, string outputPath)
+        public static void WritePepXml(List<SpectralMatch> psms, List<DbForTask> database, List<Modification> variableModifications, List<Modification> fixedModifications, CommonParameters CommonParameters, string outputPath,
+            FilteredPsms identificationFilter = null)
         {
             if (!psms.Any())
             {
@@ -50,6 +52,11 @@ namespace TaskLayer
                 // TODO: check this
                 para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = string.Join(", ", DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType]) });
                 para.Add(new pepXML.Generated.nameValueType { name = "Q-value Filter", value = CommonParameters.QValueThreshold.ToString() });
+                if (identificationFilter?.Tier != null)
+                {
+                    // The filter actually applied under the tiered identification filter, e.g. "pep q-value < 0.01".
+                    para.Add(new pepXML.Generated.nameValueType { name = "Identification Filter", value = identificationFilter.Tier.DescribeWithReason() });
+                }
                 foreach (var item in fixedModifications)
                 {
                     para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.IdWithMotif, value = item.MonoisotopicMass.ToString() });

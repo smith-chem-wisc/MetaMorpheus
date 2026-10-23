@@ -1,6 +1,7 @@
 using Easy.Common.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace EngineLayer.SpectrumMatch
@@ -19,6 +20,11 @@ namespace EngineLayer.SpectrumMatch
         public double FilterThreshold { get; init; }
         public bool FilteringNotPerformed { get; init; }
         public bool PeptideLevelFiltering { get; init; }
+        /// <summary>
+        /// The tier the tiered identification filter chose (<see cref="IdentificationFilter"/>), or null when the
+        /// legacy filter was used (tiered mode off).
+        /// </summary>
+        public IdentificationTier Tier { get; init; }
         private FilteredPsms(List<SpectralMatch> filteredPsms, FilterType filterType, double filterThreshold, bool filteringNotPerformed, bool peptideLevelFiltering)
         {
             FilteredPsmsList = filteredPsms;
@@ -31,6 +37,7 @@ namespace EngineLayer.SpectrumMatch
         private bool AboveThreshold(SpectralMatch psm)
         {
             if (psm.GetFdrInfo(PeptideLevelFiltering) == null) return false;
+            if (Tier != null) return Tier.Passes(psm);
 
             switch (FilterType)
             {
@@ -43,7 +50,45 @@ namespace EngineLayer.SpectrumMatch
 
         public string GetFilterTypeString()
         {
-            return FilterType == FilterType.PepQValue ? "pep q-value" : "q-value";
+            return GetFilterTypeString(FilterType);
+        }
+
+        public static string GetFilterTypeString(FilterType filterType) => filterType switch
+        {
+            FilterType.PepQValue => "pep q-value",
+            FilterType.QValueNotch => "q-value notch",
+            _ => "q-value"
+        };
+
+        /// <summary>
+        /// The comparison and threshold for summary text: "&lt;= 0.01" for the legacy filter (unchanged),
+        /// "&lt; 0.01" for the tiered filter, whose comparison is strict.
+        /// </summary>
+        public string GetThresholdString()
+        {
+            return Tier != null
+                ? "< " + FilterThreshold.ToString(CultureInfo.InvariantCulture)
+                : "<= " + Math.Round(FilterThreshold, 2);
+        }
+
+        /// <summary>
+        /// Applies this filter's comparison (strict in tiered mode, inclusive in legacy mode) to a value already
+        /// reduced to a q-value, e.g. a protein group's q-value.
+        /// </summary>
+        public bool PassesThreshold(double value)
+        {
+            return Tier != null ? value < FilterThreshold : value <= FilterThreshold;
+        }
+
+        /// <summary>
+        /// The value this filter decided on for a PSM: the tier's value in tiered mode; in legacy mode the
+        /// q-value under q-value filtering, else the PEP q-value (as before). Used, e.g., for the q-value
+        /// handed to FlashLFQ.
+        /// </summary>
+        public double GetFilterValue(SpectralMatch psm)
+        {
+            if (Tier != null) return Tier.GetValue(psm);
+            return FilterType == FilterType.QValue ? psm.FdrInfo.QValue : psm.FdrInfo.PEP_QValue;
         }
 
         /// <summary>
@@ -102,6 +147,28 @@ namespace EngineLayer.SpectrumMatch
 
             qValueThreshold ??= commonParams.QValueThreshold;
             pepQValueThreshold ??= commonParams.PepQValueThreshold;
+
+            // Tiered mode (opt-in): one identification filter, chosen by what was computed, never by counts.
+            if (IdentificationFilter.IsTieredMode(qValueThreshold.Value, pepQValueThreshold.Value))
+            {
+                var candidates = psms as IList<SpectralMatch> ?? psms.ToList();
+                IdentificationTier tier = IdentificationFilter.Resolve(candidates, filterAtPeptideLevel,
+                    IdentificationFilter.Threshold(qValueThreshold.Value, pepQValueThreshold.Value));
+
+                var tieredPsms = candidates.Where(psm =>
+                        (includeDecoys || !psm.IsDecoy)
+                        && (includeContaminants || !psm.IsContaminant)
+                        && (includeAmbiguous || !psm.BaseSequence.IsNullOrEmpty())
+                        && (includeAmbiguousMods || !psm.FullSequence.IsNullOrEmpty())
+                        && (includeHighQValuePsms || tier.Passes(psm)))
+                    .CollapseToPeptides(filterAtPeptideLevel)
+                    .ToList();
+
+                return new FilteredPsms(tieredPsms, tier.FilterType, tier.Threshold, false, filterAtPeptideLevel)
+                {
+                    Tier = tier
+                };
+            }
             double filterThreshold = Math.Min((double)qValueThreshold, (double)pepQValueThreshold);
             bool filteringNotPerformed = false;
             List<SpectralMatch> filteredPsms = new List<SpectralMatch>();
