@@ -77,6 +77,12 @@ namespace EngineLayer.SpectrumMatch
         }
 
         /// <summary>
+        /// Whether <paramref name="psm"/> passes this filter's threshold, at this filter's level (PSM or peptide), by the
+        /// rule the PSMs it holds passed. For a match the filter was not given.
+        /// </summary>
+        public bool PassesThreshold(SpectralMatch psm) => AboveThreshold(psm);
+
+        /// <summary>
         /// Returns the number of PSMs that passed the filtering criteria
         /// </summary>
         public int TargetPsmsAboveThreshold => FilteredPsmsList.Count(psm => !psm.IsDecoy && !psm.IsContaminant && AboveThreshold(psm));

@@ -72,13 +72,17 @@ namespace Test
         }
 
         /// <summary>One confident match; several peptides make it ambiguous, each matching the scan with the same score.</summary>
-        private static SpectralMatch Psm(string filePath, int scanNumber, params PeptideWithSetModifications[] peptides)
+        private static SpectralMatch Psm(string filePath, int scanNumber, params PeptideWithSetModifications[] peptides) =>
+            ScoredPsm(10, filePath, scanNumber, peptides);
+
+        /// <summary>As <see cref="Psm"/>, with the score given: peptide-level q-values are computed in score order.</summary>
+        private static SpectralMatch ScoredPsm(double score, string filePath, int scanNumber, params PeptideWithSetModifications[] peptides)
         {
             var common = new CommonParameters(digestionParams: Digestion);
-            SpectralMatch psm = new PeptideSpectralMatch(peptides[0], 0, 10, scanNumber, Scan(filePath, scanNumber), common, new List<MatchedFragmentIon>());
+            SpectralMatch psm = new PeptideSpectralMatch(peptides[0], 0, score, scanNumber, Scan(filePath, scanNumber), common, new List<MatchedFragmentIon>());
             foreach (var peptide in peptides.Skip(1))
             {
-                psm.AddOrReplace(peptide, 10, 0, true, new List<MatchedFragmentIon>());
+                psm.AddOrReplace(peptide, score, 0, true, new List<MatchedFragmentIon>());
             }
             psm.ResolveAllAmbiguities();
             psm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
@@ -714,9 +718,10 @@ namespace Test
 
             try
             {
+                // The target outscores the decoy, so its row passes the peptide-level q-value.
                 var results = Quantify(outputFolder, new List<string> { first, second }, new List<SpectralMatch>
                     {
-                        Psm(first, 1, targetAt3, targetAt5),
+                        ScoredPsm(20, first, 1, targetAt3, targetAt5),
                         Psm(first, 2, decoyAt3, decoyAt5),
                     },
                     configure: search => search.MatchBetweenRuns = true).FlashLfqResults;
@@ -728,6 +733,62 @@ namespace Test
                 Assert.That(results.PeptideModifiedSequences[name].GetIntensity(files["first.mzML"]), Is.GreaterThan(0));
                 Assert.That(results.Peaks[files["first.mzML"]].SelectMany(peak => peak.Identifications).Select(id => id.ModifiedSequence),
                     Does.Contain(decoyName), "the decoy's ambiguous match reaches FlashLFQ, under its sites' name");
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// A row of a localization-ambiguous peptide is held to the peptide-level q-value, as a localized peptide is
+        /// (user, 2026-10-25). Each set of such matches counts as one peptide beside the full-sequence peptides, targets
+        /// and decoys alike. Three decoy peptides score 20. ACMDMEK's set scores 25 and YMDMEK's 22, both above them, so
+        /// their peptide-level q-values are 0 and both are reported: each set is its own peptide, not one entry for every
+        /// ambiguous match. WMDMEK's set scores 5, below the decoys: its match passed the PSM-level q-value, but as a
+        /// peptide it ranks under three decoys (q-value 1), so it is not reported, as a localized peptide there would not be.
+        /// </summary>
+        [Test]
+        public static void AnAmbiguousRowIsReportedOnlyWhenItPassesThePeptideLevelQValue()
+        {
+            string outputFolder = NewOutputFolder("LocalizationAmbiguousQuant_PeptideQValue");
+            string mzmlPath = Path.Combine(outputFolder, "file.mzML");
+            var strongProtein = Protein("ACMDMEKGGGR", "P1");
+            var secondProtein = Protein("YMDMEKR", "P3");
+            var weakProtein = Protein("WMDMEKR", "P2");
+            var decoy = new Protein("FFFFRLLLLKHHHHR", "DECOY_P9", null, new List<System.Tuple<string, string>>(),
+                new Dictionary<int, List<Modification>>(), isDecoy: true);
+            var strongAt3 = Peptide(strongProtein, 1, 7, (3, OxidationOnM));
+            var strongAt5 = Peptide(strongProtein, 1, 7, (5, OxidationOnM));
+            var secondAt2 = Peptide(secondProtein, 1, 6, (2, OxidationOnM));
+            var secondAt4 = Peptide(secondProtein, 1, 6, (4, OxidationOnM));
+            var weakAt2 = Peptide(weakProtein, 1, 6, (2, OxidationOnM));
+            var weakAt4 = Peptide(weakProtein, 1, 6, (4, OxidationOnM));
+            var gggr = Peptide(strongProtein, 8, 11);
+            WriteMs1Fixture(mzmlPath, strongAt3, secondAt2, weakAt2, gggr);
+
+            try
+            {
+                var weak = ScoredPsm(5, mzmlPath, 2, weakAt2, weakAt4);
+                Assume.That(weak.PsmFdrInfo.QValue, Is.Zero, "the weak match passes at the PSM level");
+
+                var results = Quantify(outputFolder, mzmlPath, new List<SpectralMatch>
+                {
+                    ScoredPsm(25, mzmlPath, 1, strongAt3, strongAt5),
+                    weak,
+                    ScoredPsm(30, mzmlPath, 3, gggr),
+                    ScoredPsm(20, mzmlPath, 4, Peptide(decoy, 1, 5)),
+                    ScoredPsm(20, mzmlPath, 5, Peptide(decoy, 6, 10)),
+                    ScoredPsm(20, mzmlPath, 6, Peptide(decoy, 11, 15)),
+                    ScoredPsm(22, mzmlPath, 7, secondAt2, secondAt4),
+                }).FlashLfqResults;
+
+                string strongName = string.Join("|", new[] { strongAt3.FullSequence, strongAt5.FullSequence }.OrderBy(s => s, System.StringComparer.Ordinal));
+                string secondName = string.Join("|", new[] { secondAt2.FullSequence, secondAt4.FullSequence }.OrderBy(s => s, System.StringComparer.Ordinal));
+                Assert.That(results.PeptideModifiedSequences.Keys, Is.EquivalentTo(new[] { strongName, secondName, gggr.FullSequence }),
+                    "WMDMEK's set fails the peptide-level q-value");
+                Assert.That(results.PeptideModifiedSequences[strongName].GetIntensity(results.SpectraFiles.Single()), Is.GreaterThan(0));
+                Assert.That(weak.PeptideFdrInfo.QValue, Is.Zero, "the stored peptide-level values are left as they were");
             }
             finally
             {

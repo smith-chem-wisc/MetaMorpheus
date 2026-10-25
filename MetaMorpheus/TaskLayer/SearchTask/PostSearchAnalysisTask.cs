@@ -1003,14 +1003,15 @@ namespace TaskLayer
                 }
 
                 // Only these peptides will be written to the AllQuantifiedPeptides.tsv output file
-                var peptideSequencesForQuantification = FilteredPsms.Filter(Parameters.AllSpectralMatches,
+                var peptidesForQuantification = FilteredPsms.Filter(Parameters.AllSpectralMatches,
                     CommonParameters,
                     includeDecoys: false,
                     includeContaminants: true,
                     includeAmbiguous: false,
                     includeAmbiguousMods: false,
                     includeHighQValuePsms: false,
-                    filterAtPeptideLevel: true).Select(p => p.FullSequence).ToList();
+                    filterAtPeptideLevel: true);
+                var peptideSequencesForQuantification = peptidesForQuantification.Select(p => p.FullSequence).ToList();
 
                 // pass protein group info for each PSM
                 var psmToProteinGroups = new Dictionary<SpectralMatch, List<ProteinGroup>>();
@@ -1087,8 +1088,7 @@ namespace TaskLayer
 
                 // Each is quantified as one peptide per base sequence and set of modifications, named by every site its
                 // matches leave open, so no site is claimed that the spectra did not settle and two ambiguous matches
-                // of one feature are one peptide, not a conflict. Peptide-level q-values are computed per full
-                // sequence, which such a match does not have, so it is held to the PSM-level threshold it passed above.
+                // of one feature are one peptide, not a conflict.
                 _localizationAmbiguousNames = psmsForQuantification
                     .Where(psm => psm.FullSequence == null)
                     .GroupBy(psm => psm.GetSiteFreeIdentity())
@@ -1096,8 +1096,26 @@ namespace TaskLayer
                         .SelectMany(psm => psm.GetLocalizationCandidates())
                         .Distinct()
                         .OrderBy(sequence => sequence, StringComparer.Ordinal)));
+
+                // Such a peptide is reported only when it passes the peptide-level q-value, as a localized peptide is.
+                // The search's peptide-level FDR keys peptides by full sequence, so it gave these none; here each set
+                // counts as one peptide beside the full-sequence peptides, and is held to the same cut as the peptides
+                // above. The stored FDR values, which the result files are written from, are put back afterwards. As
+                // for a localized peptide, a match whose peptide fails still reaches FlashLFQ, which does not report it.
+                var siteAmbiguousPeptidesPassing = new HashSet<string>();
+                if (_localizationAmbiguousNames.Count > 0)
+                {
+                    using (FdrInfoSnapshot.Take(Parameters.AllSpectralMatches))
+                    {
+                        siteAmbiguousPeptidesPassing.UnionWith(FdrAnalysisEngine
+                            .CalculateLocalizationAmbiguousPeptideQValues(Parameters.AllSpectralMatches)
+                            .Where(peptidesForQuantification.PassesThreshold)
+                            .Select(psm => psm.GetSiteFreeIdentity()));
+                    }
+                }
+
                 peptideSequencesForQuantification.AddRange(psmsForQuantification
-                    .Where(psm => psm.FullSequence == null && !psm.IsDecoy)
+                    .Where(psm => psm.FullSequence == null && !psm.IsDecoy && siteAmbiguousPeptidesPassing.Contains(psm.GetSiteFreeIdentity()))
                     .Select(QuantifiedSequence)
                     .Distinct()
                     .OrderBy(sequence => sequence, StringComparer.Ordinal));
