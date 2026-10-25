@@ -241,12 +241,6 @@ namespace TaskLayer
                         ? $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};MaxValue"
                         : $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};{range.Maximum.ToString("R", CultureInfo.InvariantCulture)}")
                     .FromToml(tomlString => ParseRetentionTimeRange(tomlString.Value))))
-            .ConfigureType<Protease>(type => type
-                .WithConversionFor<TomlString>(convert => convert
-                    .ToToml(custom => custom.ToString())
-                    // GetProtease, not the raw indexer: it maps the names older releases wrote, such as
-                    // "chymotrypsin (don't cleave before proline)", onto the enzyme they meant.
-                    .FromToml(tmlString => ProteaseDictionary.GetProtease(tmlString.Value))))
             .ConfigureType<List<string>>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => string.Join("\t", custom))
@@ -268,19 +262,9 @@ namespace TaskLayer
                         tmlTable.ContainsKey("Protease")
                             ? ReadProteinDigestionParams(tmlTable)
                             : tmlTable.Get<RnaDigestionParams>())))
-            .ConfigureType<DigestionParams>(type => type
-                .IgnoreProperty(p => p.DigestionAgent)
-                .IgnoreProperty(p => p.SpecificDigestionAgent)
-                .IgnoreProperty(p => p.MaxMods)
-                .IgnoreProperty(p => p.MaxLength)
-                .IgnoreProperty(p => p.MinLength))
-            .ConfigureType<RnaDigestionParams>(type => type
-                .IgnoreProperty(p => p.DigestionAgent)
-                .IgnoreProperty(p => p.SpecificDigestionAgent))
-            .ConfigureType<Rnase>(type => type
-                .WithConversionFor<TomlString>(convert => convert
-                    .ToToml(custom => custom.Name)
-                    .FromToml(tmlString => RnaseDictionary.Dictionary[tmlString.Value])))
+            // Protease, Rnase, DigestionParams and RnaDigestionParams. Defined in EngineLayer, because the index
+            // cache key writes digestion parameters with the same configuration; see DigestionTomlSettings.
+            .ConfigureDigestionTypes()
             // Switch on DeconvolutionParameters
             .ConfigureType<DeconvolutionParameters>(type => type
                 .WithConversionFor<TomlTable>(c => c
@@ -1032,16 +1016,16 @@ namespace TaskLayer
                 file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilepathList.Select(b => '\t' + b)));
                 file.WriteLine("Databases:");
 
+                // One line per database (they used to run together on one line), each naming the file's content
+                // as well as its path: the same path can hold a different database from one run to the next.
                 foreach (var proteinDb in currentProteinDbFilenameList)
                 {
-                    if (proteinDb.IsContaminant)
-                    {
-                        file.Write(string.Join(Environment.NewLine, '\t' + "Contaminants " + proteinDb.FilePath + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()));
-                    }
-                    else
-                    {
-                        file.Write(string.Join(Environment.NewLine, '\t' + proteinDb.FilePath + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()));
-                    }
+                    string line = '\t' + (proteinDb.IsContaminant ? "Contaminants " : "") + proteinDb.FilePath
+                        + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()
+                        + " (" + proteinDb.IdentityText() + ")";
+                    if (proteinDb.DerivedFromText() is { } derivedFrom)
+                        line += "; " + derivedFrom;
+                    file.WriteLine(line);
                 }
             }
             FinishedWritingFile(proseFilePath, new List<string> { displayName });
@@ -1628,6 +1612,14 @@ namespace TaskLayer
 
         private static void WritePeptideIndex(List<PeptideWithSetModifications> peptideIndex, string peptideIndexFileName)
         {
+            // The full sequence is the only part of a peptide's modifications that is written: ReadPeptideIndex rebuilds
+            // them from it. Digestion may leave it to be built when first read (mzLib builds it lazily for the many
+            // peptides a search never reports), so read it for every peptide before writing any.
+            foreach (PeptideWithSetModifications peptide in peptideIndex)
+            {
+                _ = peptide.FullSequence;
+            }
+
             var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
             var ser = new NetSerializer.Serializer(messageTypes);
 
