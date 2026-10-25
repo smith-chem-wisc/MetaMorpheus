@@ -87,12 +87,15 @@ namespace TaskLayer
         public static bool SetReporterIonIntensitiesFromStoredScans(string filePath, MsDataFile loaded,
             IReadOnlyCollection<Ms2ScanWithSpecificMass> scans, IsobaricMassTag massTag, int maxThreads)
         {
-            if (TrySetReporterIonIntensitiesScanByScan(filePath, scans, massTag))
+            // One reader for both ways: an mzML reader holds the whole file's XML from the moment it is made, so a second one
+            // for the whole-file read would hold it twice.
+            MsDataFile stored = MsDataFileReader.GetDataFile(filePath);
+            if (TrySetReporterIonIntensitiesScanByScan(stored, scans, massTag))
             {
                 return true;
             }
 
-            var storedScanFor = PairWithStoredScans(loaded, MsDataFileReader.GetDataFile(filePath).LoadAllStaticData(null, maxThreads));
+            var storedScanFor = PairWithStoredScans(loaded, stored.LoadAllStaticData(null, maxThreads));
             foreach (var scan in scans)
             {
                 scan.SetIsobaricMassTagReporterIonIntensities(massTag, storedScanFor);
@@ -103,11 +106,12 @@ namespace TaskLayer
         /// <summary>
         /// Reads each reporter ion scan by its scan number and keeps it only if it is the loaded scan: the same scan number,
         /// MS order, native ID and retention time. At the first one that is not, it stops and returns false, and the caller
-        /// reads the file whole, which sets every scan again.
+        /// reads the file whole, which sets every scan again. The lowest- and highest-numbered are checked first: in a file
+        /// numbered otherwise than by position (a slice of a run, or native IDs with gaps) one of them is not the loaded scan,
+        /// so such a file is read whole without first being read in part.
         /// </summary>
-        private static bool TrySetReporterIonIntensitiesScanByScan(string filePath, IEnumerable<Ms2ScanWithSpecificMass> scans, IsobaricMassTag massTag)
+        private static bool TrySetReporterIonIntensitiesScanByScan(MsDataFile stored, IEnumerable<Ms2ScanWithSpecificMass> scans, IsobaricMassTag massTag)
         {
-            MsDataFile stored = MsDataFileReader.GetDataFile(filePath);
             if (stored is not (ThermoRawFileReader or Mzml or Mgf))
             {
                 return false;
@@ -124,12 +128,23 @@ namespace TaskLayer
 
             try
             {
+                var bySpectrum = scans.GroupBy(scan => scan.ReporterIonScan, ReferenceEqualityComparer.Instance).ToList();
+                if (bySpectrum.Count == 0)
+                {
+                    return true;
+                }
+                MsDataScan lowest = bySpectrum.Select(group => (MsDataScan)group.Key).MinBy(scan => scan.OneBasedScanNumber);
+                MsDataScan highest = bySpectrum.Select(group => (MsDataScan)group.Key).MaxBy(scan => scan.OneBasedScanNumber);
+                if (!IsTheLoadedScan(stored, lowest, out _) || !IsTheLoadedScan(stored, highest, out _))
+                {
+                    return false;
+                }
+
                 var storedScanFor = new Dictionary<MsDataScan, MsDataScan>(ReferenceEqualityComparer.Instance);
-                foreach (var scansOfOneSpectrum in scans.GroupBy(scan => scan.ReporterIonScan, ReferenceEqualityComparer.Instance))
+                foreach (var scansOfOneSpectrum in bySpectrum)
                 {
                     MsDataScan loadedScan = (MsDataScan)scansOfOneSpectrum.Key;
-                    MsDataScan storedScan = stored.GetOneBasedScanFromDynamicConnection(loadedScan.OneBasedScanNumber);
-                    if (storedScan == null || !Identity(storedScan).Equals(Identity(loadedScan)))
+                    if (!IsTheLoadedScan(stored, loadedScan, out MsDataScan storedScan))
                     {
                         return false;
                     }
@@ -152,6 +167,12 @@ namespace TaskLayer
             {
                 stored.CloseDynamicConnection();
             }
+        }
+
+        private static bool IsTheLoadedScan(MsDataFile stored, MsDataScan loadedScan, out MsDataScan storedScan)
+        {
+            storedScan = stored.GetOneBasedScanFromDynamicConnection(loadedScan.OneBasedScanNumber);
+            return storedScan != null && Identity(storedScan).Equals(Identity(loadedScan));
         }
 
         private static (int ScanNumber, int MsnOrder, string NativeId, double RetentionTime) Identity(MsDataScan scan) =>
