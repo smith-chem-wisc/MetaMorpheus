@@ -535,7 +535,9 @@
                                             <LineBreak/>
                                             also try that modification at the peptide's other residues, scored and filtered like any
                                             <LineBreak/>
-                                            G-PTM-D candidate, and add every site that scores at least as well. The database's own site is kept.
+                                            G-PTM-D candidate, and add every site that scores at least as well (on another amino acid, every site
+                                            <LineBreak/>
+                                            that scores better). The database's own site is kept.
                                         </TextBlock>
                                     </ToolTipService.ToolTip>
                                 </CheckBox>
