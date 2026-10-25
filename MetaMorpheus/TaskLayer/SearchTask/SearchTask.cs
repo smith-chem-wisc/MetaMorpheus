@@ -380,13 +380,11 @@ namespace TaskLayer
 
                     // Reporter ions come from the scans as the file stores them, read again here. The loaded copy is
                     // trimmed (MS2 when TrimMsMsPeaks is on, MS3 always) and a LowCID search bins its MS2 spectra in
-                    // place; either can remove a reporter ion, which would then be quantified as 0.
-                    var storedScanFor = MyFileManager.PairWithStoredScans(myMsDataFile, MsDataFileReader.GetDataFile(origDataFile)
-                        .LoadAllStaticData(null, combinedParams.MaxThreadsToUsePerFile));
-                    foreach (var scan in arrayOfMs2ScansSortedByMass)
-                    {
-                        scan.SetIsobaricMassTagReporterIonIntensities(massTag, storedScanFor);
-                    }
+                    // place; either can remove a reporter ion, which would then be quantified as 0. Only the scans they
+                    // are read from are read again, one at a time where the file allows it, so that no second copy of the
+                    // whole file is held while the next one loads.
+                    MyFileManager.SetReporterIonIntensitiesFromStoredScans(origDataFile, myMsDataFile, arrayOfMs2ScansSortedByMass,
+                        massTag, combinedParams.MaxThreadsToUsePerFile);
                 }
 
                 // modern search

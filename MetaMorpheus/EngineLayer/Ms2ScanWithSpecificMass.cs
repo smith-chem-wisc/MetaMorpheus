@@ -185,6 +185,14 @@ namespace EngineLayer
         }
 
         /// <summary>
+        /// The scan reporter ions are read from, as both overloads above read it: the most intense child scan when there is
+        /// one, otherwise this scan.
+        /// </summary>
+        public MsDataScan ReporterIonScan => UseChildScansForIsobaricQuant(out var mostIntenseChildScan)
+            ? mostIntenseChildScan.TheScan
+            : TheScan;
+
+        /// <summary>
         /// Helper method to determine if child scans contain isobaric mass tag (e.g., TMT) reporter ions
         /// In most cases, if MS3 scans exist, there will only be one MS3 scan per MS2 scan, and the ChildScans list will contain that one MS3 scan
         /// If there are methods that generate multiple child scans, then this method will return the most intense child scan
