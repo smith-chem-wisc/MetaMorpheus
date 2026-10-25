@@ -1228,6 +1228,71 @@ namespace Test
             Directory.Delete(outputFolder, true);
         }
 
+        /// <summary>
+        /// The glyco protein tables, combined and per file, list each group's unique and shared peptides. Both cells were
+        /// empty in every row: only the search task gave its groups their peptide text, so a glyco row could say
+        /// "Number of Unique Peptides" 3 and list none.
+        /// </summary>
+        [Test]
+        public static void GlycoSearchProteinGroupsListTheirPeptides()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoPeptideCells");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\FourMucins_NoSigPeps_FASTA.fasta");
+            string spectraFileDirctory = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific");
+            List<string> rawFilePaths = Directory.GetFiles(spectraFileDirctory).Where(p => p.Contains("mzML")).ToList();
+
+            Directory.CreateDirectory(outputFolder);
+            var glycoSearchTask = new GlycoSearchTask()
+            {
+                CommonParameters = new(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD),
+                _glycoSearchParameters = new GlycoSearchParameters()
+                {
+                    OGlycanDatabasefile = "OGlycan.gdb",
+                    NGlycanDatabasefile = "NGlycan.gdb",
+                    GlycoSearchType = GlycoSearchType.OGlycanSearch,
+                    OxoniumIonFilt = true,
+                    DecoyType = DecoyType.Reverse,
+                    GlycoSearchTopNum = 50,
+                    MaximumOGlycanAllowed = 4,
+                    DoParsimony = true,
+                    WriteIndividualFiles = true,
+                    WritePrunedDataBase = false,
+                }
+            };
+
+            try
+            {
+                glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, rawFilePaths, "");
+
+                var proteinTables = Directory.GetFiles(outputFolder, "*_AllProteinGroups.tsv", SearchOption.AllDirectories);
+                Assert.That(proteinTables.Length, Is.EqualTo(1 + rawFilePaths.Count), "one combined table and one per file");
+
+                foreach (var table in proteinTables)
+                {
+                    var lines = File.ReadAllLines(table);
+                    var header = lines[0].Split('\t').ToList();
+                    int unique = header.IndexOf("Unique Peptides");
+                    int shared = header.IndexOf("Shared Peptides");
+                    int numberUnique = header.IndexOf("Number of Unique Peptides");
+                    var rows = lines.Skip(1).Select(l => l.Split('\t')).ToList();
+
+                    Assert.That(rows, Is.Not.Empty, $"{table} has no rows");
+                    foreach (var row in rows)
+                    {
+                        int listedUnique = row[unique].Split('|', StringSplitOptions.RemoveEmptyEntries).Length;
+                        Assert.That(listedUnique, Is.EqualTo(int.Parse(row[numberUnique])),
+                            $"{table} {row[0]}: Unique Peptides '{row[unique]}' and Number of Unique Peptides {row[numberUnique]} disagree");
+                        Assert.That(row[unique].Length + row[shared].Length, Is.GreaterThan(0),
+                            $"{table} {row[0]}: a group with peptides lists none");
+                    }
+                }
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
+            }
+        }
+
         [Test]
         public static void N_GlycoSearchIndividualFileFolderOutputTest()
         {
