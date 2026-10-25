@@ -68,8 +68,8 @@ namespace EngineLayer.SpectrumMatch
         /// <summary>
         /// Drops each PSM whose full sequence did not resolve (two or more full sequences match the scan) unless
         /// <paramref name="keep"/> accepts it, returning how many were dropped. PSMs with a resolved full sequence are
-        /// never dropped. For callers that filtered with ambiguous modifications included and decide afterwards which
-        /// of those matches they can use.
+        /// never dropped. For decisions <see cref="Filter"/> cannot make because they need more than the PSM, such as
+        /// its protein groups, or what else was identified in its file.
         /// </summary>
         public int RemoveAmbiguousFullSequences(Func<SpectralMatch, bool> keep)
         {
@@ -98,6 +98,11 @@ namespace EngineLayer.SpectrumMatch
         /// <param name="commonParams">Common parameters containing default filter thresholds. In multiprotease scenarios, 
         /// consider using explicit threshold parameters instead.</param>
         /// <param name="filterAtPeptideLevel">Filter results at the peptide level (defaults to false) </param>
+        /// <param name="includeAmbiguousMods">Keep PSMs whose full sequence did not resolve (two or more full sequences
+        /// match the scan)</param>
+        /// <param name="includeLocalizationAmbiguousMods">Keep PSMs ambiguous only in where their modifications sit
+        /// (<see cref="SpectralMatch.IsLocalizationAmbiguous"/>), whatever <paramref name="includeAmbiguousMods"/> says
+        /// about the others. Null, the default, follows <paramref name="includeAmbiguousMods"/>.</param>
         /// <returns> A FilteredPsms object</returns>
         public static FilteredPsms Filter(IEnumerable<SpectralMatch> psms,
             CommonParameters commonParams,
@@ -108,8 +113,17 @@ namespace EngineLayer.SpectrumMatch
             bool includeHighQValuePsms = false,
             double? qValueThreshold = null,
             double? pepQValueThreshold = null,
-            bool filterAtPeptideLevel = false)
+            bool filterAtPeptideLevel = false,
+            bool? includeLocalizationAmbiguousMods = null)
         {
+            bool includeLocalizationAmbiguous = includeLocalizationAmbiguousMods ?? includeAmbiguousMods;
+
+            // Whether a PSM whose full sequence did not resolve is kept. It is asked whether it is ambiguous only in its
+            // modification sites only when the two settings disagree.
+            bool KeepUnresolvedFullSequence(SpectralMatch psm) =>
+                includeAmbiguousMods == includeLocalizationAmbiguous
+                    ? includeAmbiguousMods
+                    : psm.IsLocalizationAmbiguous ? includeLocalizationAmbiguous : includeAmbiguousMods;
 
             qValueThreshold ??= commonParams.QValueThreshold;
             pepQValueThreshold ??= commonParams.PepQValueThreshold;
@@ -136,7 +150,7 @@ namespace EngineLayer.SpectrumMatch
                     (includeDecoys || !psm.IsDecoy) 
                     && (includeContaminants || !psm.IsContaminant)
                     && (includeAmbiguous || !psm.BaseSequence.IsNullOrEmpty())
-                    && (includeAmbiguousMods || !psm.FullSequence.IsNullOrEmpty()))
+                    && (!psm.FullSequence.IsNullOrEmpty() || KeepUnresolvedFullSequence(psm)))
                 .FilterByQValue(includeHighQValuePsms, filterThreshold, filterAtPeptideLevel, filterType, true)
                 .CollapseToPeptides(filterAtPeptideLevel)
                 .ToList();

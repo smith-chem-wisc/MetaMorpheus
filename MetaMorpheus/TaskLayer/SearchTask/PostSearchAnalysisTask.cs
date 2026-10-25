@@ -971,21 +971,18 @@ namespace TaskLayer
                     spectraFileInfo = BuildUndefinedExperimentalDesign();
                 }
 
-                // get PSMs to pass to FlashLFQ. A match ambiguous in its full sequence is kept for now: it is quantified
-                // when it is ambiguous only in where its modifications sit and belongs to one protein group, which is
-                // decided once the groups are known, below.
+                // get PSMs to pass to FlashLFQ. A match ambiguous only in where its modifications sit is kept for now: it
+                // is quantified when it belongs to one protein group, which is decided once the groups are known, below.
+                // SILAC rebuilds each match from its first candidate, which would give such a match one site it never
+                // had, so SILAC keeps quantifying unambiguous matches only.
                 var psmsForQuantification = FilteredPsms.Filter(Parameters.AllSpectralMatches,
                     CommonParameters,
                     includeDecoys: Parameters.SearchParameters.MatchBetweenRuns, // Decoys are required for PIP-ECHO, but are not written to the output file
                     includeContaminants: true,
                     includeAmbiguous: false,
-                    includeAmbiguousMods: true,
-                    includeHighQValuePsms: false);
-
-                // SILAC rebuilds each match from its first candidate, which would give a localization-ambiguous match
-                // one site it never had, so SILAC keeps quantifying unambiguous matches only.
-                psmsForQuantification.RemoveAmbiguousFullSequences(psm =>
-                    Parameters.SearchParameters.SilacLabels == null && psm.IsLocalizationAmbiguous);
+                    includeAmbiguousMods: false,
+                    includeHighQValuePsms: false,
+                    includeLocalizationAmbiguousMods: Parameters.SearchParameters.SilacLabels == null);
 
                 // FlashLFQ needs a mass. The filter above screens on sequence, which does not imply a
                 // resolved mass: a NaN residue mass, or two best matches whose mods share an IdWithMotif
@@ -1068,9 +1065,13 @@ namespace TaskLayer
                 // In a file where a positional isomer was identified with its site, that match already measures the
                 // feature, and an ambiguous one beside it would make FlashLFQ see two peptides on one peak and zero
                 // both (measured on the islet set: 206 values of 153 localized peptides lost). So the ambiguous match is
-                // quantified only in files where no isomer was localized.
+                // quantified only in files where no isomer was localized. Only an isomer that will be reported counts:
+                // one that fails the peptide-level q-value measures nothing in the tables, so the ambiguous match beside
+                // it is kept (FlashLFQ gives a shared peak to the peptide it was asked to report). Decoys are never
+                // reported, so for them every localized isomer counts, as it does for targets that pass.
+                var reportedSequences = new HashSet<string>(peptideSequencesForQuantification);
                 var localizedIsomersByFile = new HashSet<(string, string)>(psmsForQuantification
-                    .Where(psm => psm.FullSequence != null)
+                    .Where(psm => psm.FullSequence != null && (psm.IsDecoy || reportedSequences.Contains(psm.FullSequence)))
                     .Select(psm => (psm.FullFilePath, psm.GetSiteFreeIdentity())));
                 psmsForQuantification.RemoveAmbiguousFullSequences(psm =>
                     !localizedIsomersByFile.Contains((psm.FullFilePath, psm.GetSiteFreeIdentity())));

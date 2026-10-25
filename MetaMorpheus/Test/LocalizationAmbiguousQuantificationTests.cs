@@ -43,6 +43,8 @@ namespace Test
         private static readonly Modification OxidationOnM = Mod("Oxidation", "M", "O");
         private static readonly Modification HydroxylationOnD = Mod("Hydroxylation", "D", "O");
         private static readonly Modification DioxidationOnM = Mod("Dioxidation", "M", "O2");
+        private static readonly Modification PhosphorylationOnS = Mod("Phosphorylation", "S", "HO3P");
+        private static readonly Modification PhosphorylationOnT = Mod("Phosphorylation", "T", "HO3P");
 
         private static Protein Protein(string sequence, string accession) =>
             new(sequence, accession, null, new List<System.Tuple<string, string>>(), new Dictionary<int, List<Modification>>());
@@ -488,28 +490,249 @@ namespace Test
         }
 
         /// <summary>
-        /// Which matches are ambiguous only in where their modifications sit. The same modification is judged by
-        /// chemical formula, one per modification: an oxygen on M or on D qualifies (one formula, two residues), two
-        /// oxidations against one dioxidation do not (one total formula, different modifications).
+        /// Which matches are ambiguous only in where their modifications sit. A modification is judged by what it is
+        /// (type, name without its residue, formula), not by its formula alone: Phosphorylation on S or on T qualifies (one
+        /// modification, two residues); Oxidation on M against Hydroxylation on D does not (one oxygen, but two
+        /// modifications, so the match is ambiguous in which one it carries); nor do two oxidations against one
+        /// dioxidation (one total formula, different modifications).
         /// </summary>
         [Test]
         public static void OnlyAMatchWhoseCandidatesCarryTheSameModificationsIsLocalizationAmbiguous()
         {
             var protein = Protein("ACMDMEKGGGR", "P1");
+            var phosphoProtein = Protein("ASDTEKGGGR", "P2");
             var unambiguous = Psm("f", 1, Peptide(protein, 1, 7, (3, OxidationOnM)));
-            var oxygenOnMOrD = Psm("f", 2, Peptide(protein, 1, 7, (3, OxidationOnM)), Peptide(protein, 1, 7, (4, HydroxylationOnD)));
+            var oxidationOrHydroxylation = Psm("f", 2, Peptide(protein, 1, 7, (3, OxidationOnM)), Peptide(protein, 1, 7, (4, HydroxylationOnD)));
             var twoOxidationsOrOneDioxidation = Psm("f", 3,
                 Peptide(protein, 1, 7, (3, OxidationOnM), (5, OxidationOnM)), Peptide(protein, 1, 7, (3, DioxidationOnM)));
             var twoPeptides = Psm("f", 4, Peptide(protein, 1, 7), Peptide(protein, 8, 11));
+            var phosphoOnSOrT = Psm("f", 5, Peptide(phosphoProtein, 1, 6, (2, PhosphorylationOnS)), Peptide(phosphoProtein, 1, 6, (4, PhosphorylationOnT)));
+            var localizedPhospho = Psm("f", 6, Peptide(phosphoProtein, 1, 6, (4, PhosphorylationOnT)));
 
+            Assume.That(oxidationOrHydroxylation.FullSequence, Is.Null);
+            Assume.That(oxidationOrHydroxylation.BioPolymerWithSetModsMonoisotopicMass, Is.Not.Null, "one mass: both are one oxygen");
             Assume.That(twoOxidationsOrOneDioxidation.BioPolymerWithSetModsMonoisotopicMass, Is.Not.Null, "one mass, one total formula");
             Assert.That(unambiguous.IsLocalizationAmbiguous, Is.False, "one full sequence: quantified under it, as before");
             Assert.That(unambiguous.GetLocalizationCandidates(), Is.Empty);
-            Assert.That(oxygenOnMOrD.IsLocalizationAmbiguous, Is.True);
-            Assert.That(oxygenOnMOrD.GetSiteFreeIdentity(), Is.EqualTo(unambiguous.GetSiteFreeIdentity()), "an isomer of the localized match");
+            Assert.That(oxidationOrHydroxylation.IsLocalizationAmbiguous, Is.False, "ambiguous in which modification, not only where");
+            Assert.That(oxidationOrHydroxylation.GetSiteFreeIdentity(), Is.Null);
             Assert.That(twoOxidationsOrOneDioxidation.IsLocalizationAmbiguous, Is.False);
             Assert.That(twoPeptides.IsLocalizationAmbiguous, Is.False, "two base sequences");
             Assert.That(twoPeptides.GetSiteFreeIdentity(), Is.Null);
+            Assert.That(phosphoOnSOrT.IsLocalizationAmbiguous, Is.True, "one modification on S or on T");
+            Assert.That(phosphoOnSOrT.GetSiteFreeIdentity(), Is.EqualTo(localizedPhospho.GetSiteFreeIdentity()), "an isomer of the localized match");
+        }
+
+        /// <summary>
+        /// The filter's includeLocalizationAmbiguousMods decides for matches ambiguous only in their sites, and
+        /// includeAmbiguousMods for the other unresolved ones. Left null, it follows includeAmbiguousMods, so callers that
+        /// do not pass it filter as before.
+        /// </summary>
+        [Test]
+        public static void TheFilterKeepsLocalizationAmbiguousMatchesOnlyWhenAsked()
+        {
+            var protein = Protein("ACMDMEKGGGR", "P1");
+            var resolved = Psm("f", 1, Peptide(protein, 1, 7, (3, OxidationOnM)));
+            var siteOnly = Psm("f", 2, Peptide(protein, 1, 7, (3, OxidationOnM)), Peptide(protein, 1, 7, (5, OxidationOnM)));
+            var whichModification = Psm("f", 3, Peptide(protein, 1, 7, (3, OxidationOnM)), Peptide(protein, 1, 7, (4, HydroxylationOnD)));
+            var psms = new List<SpectralMatch> { resolved, siteOnly, whichModification };
+            var common = new CommonParameters(digestionParams: Digestion);
+
+            List<SpectralMatch> Kept(bool includeAmbiguousMods, bool? includeLocalizationAmbiguousMods) =>
+                EngineLayer.SpectrumMatch.FilteredPsms.Filter(psms, common, includeAmbiguousMods: includeAmbiguousMods,
+                    includeLocalizationAmbiguousMods: includeLocalizationAmbiguousMods).ToList();
+
+            Assert.That(Kept(true, null), Is.EquivalentTo(psms), "null follows includeAmbiguousMods: true");
+            Assert.That(Kept(false, null), Is.EquivalentTo(new[] { resolved }), "null follows includeAmbiguousMods: false");
+            Assert.That(Kept(false, true), Is.EquivalentTo(new[] { resolved, siteOnly }));
+            Assert.That(Kept(true, false), Is.EquivalentTo(new[] { resolved, whichModification }));
+        }
+
+        /// <summary>
+        /// End to end: a match that cannot tell Oxidation on M from Hydroxylation on D (one oxygen either way) is ambiguous
+        /// in which modification it carries, so it stays out of quantification, as every ambiguous match did before.
+        /// </summary>
+        [Test]
+        public static void AMatchAmbiguousInWhichModificationItCarriesIsLeftOut()
+        {
+            string outputFolder = NewOutputFolder("LocalizationAmbiguousQuant_TwoModifications");
+            string mzmlPath = Path.Combine(outputFolder, "file.mzML");
+            var protein = Protein("ACMDMEKGGGR", "P1");
+            var oxidized = Peptide(protein, 1, 7, (3, OxidationOnM));
+            var hydroxylated = Peptide(protein, 1, 7, (4, HydroxylationOnD));
+            var gggr = Peptide(protein, 8, 11);
+            WriteMs1Fixture(mzmlPath, oxidized, gggr);
+
+            try
+            {
+                var results = Quantify(outputFolder, mzmlPath, new List<SpectralMatch>
+                {
+                    Psm(mzmlPath, 1, oxidized, hydroxylated),
+                    Psm(mzmlPath, 2, gggr),
+                }).FlashLfqResults;
+
+                Assert.That(results.PeptideModifiedSequences.Keys, Is.EquivalentTo(new[] { gggr.FullSequence }));
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// The localized isomer is identified in the file, but its peptide fails the peptide-level q-value, so it is not
+        /// reported. It then cannot stand for the feature, so the ambiguous match beside it is quantified there under the
+        /// sites' name. (GGGR passes, so the list of peptides to report is not empty: an empty list means "report every
+        /// peptide".)
+        /// </summary>
+        [Test]
+        public static void AnAmbiguousMatchBesideAnUnreportedIsomerIsQuantifiedInItsFile()
+        {
+            string outputFolder = NewOutputFolder("LocalizationAmbiguousQuant_BesideUnreportedIsomer");
+            string mzmlPath = Path.Combine(outputFolder, "file.mzML");
+            var protein = Protein("ACMDMEKGGGR", "P1");
+            var oxidizedAt3 = Peptide(protein, 1, 7, (3, OxidationOnM));
+            var oxidizedAt5 = Peptide(protein, 1, 7, (5, OxidationOnM));
+            var gggr = Peptide(protein, 8, 11);
+            WriteMs1Fixture(mzmlPath, oxidizedAt3, gggr);
+            var weakLocalized = Psm(mzmlPath, 1, oxidizedAt3);
+            weakLocalized.PeptideFdrInfo = new FdrInfo { QValue = 0.5, QValueNotch = 0.5, PEP = 0.5, PEP_QValue = 0.5 };
+
+            try
+            {
+                var results = Quantify(outputFolder, mzmlPath, new List<SpectralMatch>
+                {
+                    weakLocalized,
+                    Psm(mzmlPath, 2, oxidizedAt3, oxidizedAt5),
+                    Psm(mzmlPath, 3, gggr),
+                }).FlashLfqResults;
+
+                string name = string.Join("|", new[] { oxidizedAt3.FullSequence, oxidizedAt5.FullSequence }.OrderBy(s => s, System.StringComparer.Ordinal));
+                var file = results.SpectraFiles.Single();
+                Assert.That(results.PeptideModifiedSequences.Keys, Is.EquivalentTo(new[] { name, gggr.FullSequence }),
+                    "the isomer fails the peptide-level q-value, so it is not reported");
+                Assert.That(results.PeptideModifiedSequences[name].GetIntensity(file), Is.GreaterThan(0),
+                    "the ambiguous match measures the feature in this file");
+                Assert.That(results.PeptideModifiedSequences[name].GetDetectionType(file), Is.EqualTo(FlashLFQ.DetectionType.MSMS));
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// SILAC rebuilds each match from its first candidate, which would give a localization-ambiguous match one site it
+        /// never had. So with SILAC labels the ambiguous match stays out, and no row claims M3 or M5.
+        /// </summary>
+        [Test]
+        public static void WithSilacLabelsALocalizationAmbiguousMatchIsLeftOut()
+        {
+            string outputFolder = NewOutputFolder("LocalizationAmbiguousQuant_Silac");
+            string mzmlPath = Path.Combine(outputFolder, "file.mzML");
+            var protein = Protein("ACMDMEKGGGR", "P1");
+            var oxidizedAt3 = Peptide(protein, 1, 7, (3, OxidationOnM));
+            var oxidizedAt5 = Peptide(protein, 1, 7, (5, OxidationOnM));
+            var gggr = Peptide(protein, 8, 11);
+            WriteMs1Fixture(mzmlPath, oxidizedAt3, gggr);
+
+            try
+            {
+                var results = Quantify(outputFolder, mzmlPath, new List<SpectralMatch>
+                    {
+                        Psm(mzmlPath, 1, oxidizedAt3, oxidizedAt5),
+                        Psm(mzmlPath, 2, gggr),
+                    },
+                    configure: search => search.SilacLabels = new List<SilacLabel> { new('K', 'a', "C{13}6", 6.020129) }).FlashLfqResults;
+
+                Assert.That(results.PeptideModifiedSequences.Keys, Is.Not.Empty, "GGGR is quantified");
+                Assert.That(results.PeptideModifiedSequences.Keys, Has.None.Contains("Oxidation"),
+                    "no row carries a site the ambiguous match left open");
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// Without parsimony each protein is its own group. A localization-ambiguous match whose candidates all come from
+        /// P1 counts for P1; one whose candidates come from P1 and P2 (the same sequence in both) spans two groups and
+        /// stays out, so the row names P1 alone.
+        /// </summary>
+        [Test]
+        public static void WithoutParsimonyAnAmbiguousMatchCountsForItsOneProteinOnly()
+        {
+            string outputFolder = NewOutputFolder("LocalizationAmbiguousQuant_NoParsimony");
+            string mzmlPath = Path.Combine(outputFolder, "file.mzML");
+            var p1 = Protein("ACMDMEKGGGR", "P1");
+            var p2 = Protein("ACMDMEKWWWR", "P2");
+            WriteMs1Fixture(mzmlPath, Peptide(p1, 1, 7, (3, OxidationOnM)));
+
+            try
+            {
+                var results = Quantify(outputFolder, mzmlPath, new List<SpectralMatch>
+                    {
+                        Psm(mzmlPath, 1, Peptide(p1, 1, 7, (3, OxidationOnM)), Peptide(p1, 1, 7, (5, OxidationOnM))),
+                        Psm(mzmlPath, 2, Peptide(p1, 1, 7, (3, OxidationOnM)), Peptide(p1, 1, 7, (5, OxidationOnM)),
+                            Peptide(p2, 1, 7, (3, OxidationOnM)), Peptide(p2, 1, 7, (5, OxidationOnM))),
+                    },
+                    configure: search => search.DoParsimony = false).FlashLfqResults;
+
+                var peptide = results.PeptideModifiedSequences.Values.Single();
+                Assert.That(peptide.Sequence.Split('|'), Has.Length.EqualTo(2));
+                Assert.That(peptide.ProteinGroups.Select(g => g.ProteinGroupName), Is.EqualTo(new[] { "P1" }),
+                    "the match spanning P1 and P2 is left out");
+                Assert.That(peptide.GetIntensity(results.SpectraFiles.Single()), Is.GreaterThan(0));
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// With match-between-runs on, decoys reach FlashLFQ (it needs them to score transfers), and a decoy's ambiguous
+        /// match does too, under its sites' name, as a target's does. Only targets are reported, so the table holds the
+        /// target's row alone.
+        /// </summary>
+        [Test]
+        public static void WithMatchBetweenRunsADecoysAmbiguousMatchReachesFlashLfqButIsNotReported()
+        {
+            string outputFolder = NewOutputFolder("LocalizationAmbiguousQuant_Mbr");
+            string first = Path.Combine(outputFolder, "first.mzML");
+            string second = Path.Combine(outputFolder, "second.mzML");
+            var target = Protein("ACMDMEKGGGR", "P1");
+            var decoy = new Protein("WCMEMAKGGGR", "DECOY_P9", null, new List<System.Tuple<string, string>>(),
+                new Dictionary<int, List<Modification>>(), isDecoy: true);
+            var targetAt3 = Peptide(target, 1, 7, (3, OxidationOnM));
+            var targetAt5 = Peptide(target, 1, 7, (5, OxidationOnM));
+            var decoyAt3 = Peptide(decoy, 1, 7, (3, OxidationOnM));
+            var decoyAt5 = Peptide(decoy, 1, 7, (5, OxidationOnM));
+            WriteMs1Fixture(first, targetAt3, decoyAt3);
+            WriteMs1Fixture(second, targetAt3, decoyAt3);
+
+            try
+            {
+                var results = Quantify(outputFolder, new List<string> { first, second }, new List<SpectralMatch>
+                    {
+                        Psm(first, 1, targetAt3, targetAt5),
+                        Psm(first, 2, decoyAt3, decoyAt5),
+                    },
+                    configure: search => search.MatchBetweenRuns = true).FlashLfqResults;
+
+                string name = string.Join("|", new[] { targetAt3.FullSequence, targetAt5.FullSequence }.OrderBy(s => s, System.StringComparer.Ordinal));
+                string decoyName = string.Join("|", new[] { decoyAt3.FullSequence, decoyAt5.FullSequence }.OrderBy(s => s, System.StringComparer.Ordinal));
+                var files = results.SpectraFiles.ToDictionary(f => Path.GetFileName(f.FullFilePathWithExtension));
+                Assert.That(results.PeptideModifiedSequences.Keys, Is.EquivalentTo(new[] { name }), "the decoy's row is not reported");
+                Assert.That(results.PeptideModifiedSequences[name].GetIntensity(files["first.mzML"]), Is.GreaterThan(0));
+                Assert.That(results.Peaks[files["first.mzML"]].SelectMany(peak => peak.Identifications).Select(id => id.ModifiedSequence),
+                    Does.Contain(decoyName), "the decoy's ambiguous match reaches FlashLFQ, under its sites' name");
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+            }
         }
     }
 }
