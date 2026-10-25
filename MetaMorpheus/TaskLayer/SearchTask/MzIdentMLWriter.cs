@@ -348,7 +348,9 @@ namespace TaskLayer
                             Modification = new mzIdentML110.Generated.ModificationType[peptide.NumMods]
                         };
                         int mod_id = 0;
-                        foreach (KeyValuePair<int, Modification> mod in peptide.AllModsOneIsNterminus)
+                        // in position order: the dictionary's own order depends on how the peptide was built (digested
+                        // here, or read back from the Modern search's peptide-index cache), and the file should not
+                        foreach (KeyValuePair<int, Modification> mod in peptide.AllModsOneIsNterminus.OrderBy(kv => kv.Key))
                         {
                             _mzid.SequenceCollection.Peptide[peptide_id.Item1].Modification[mod_id] = new mzIdentML110.Generated.ModificationType()
                             {
