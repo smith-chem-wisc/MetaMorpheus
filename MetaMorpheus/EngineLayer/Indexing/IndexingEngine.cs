@@ -16,6 +16,9 @@ using System.Threading.Tasks;
 using Omics;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
+using Omics.Digestion;
+using Nett;
+using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 
 namespace EngineLayer.Indexing
@@ -97,10 +100,50 @@ namespace EngineLayer.Indexing
             sb.AppendLine("cleavageSpecificity: " + CommonParameters.DigestionParams.SearchModeType);
             if (CommonParameters.DigestionParams is DigestionParams digestionParam)
                 sb.AppendLine("specificProtease: " + digestionParam.SpecificProtease);
+
+            // The lines above name digestion settings ONE AT A TIME, which silently makes this method a
+            // second place every new DigestionParams option has to be remembered. Anything not named
+            // here is invisible to the fingerprint, and because SameSettings compares this text
+            // verbatim, an index built under one value of a forgotten option is reused for a run that
+            // set a different one -- a wrong-answers bug with no error and no failing test.
+            //
+            // Three options were already in that state: KeepNGlycopeptide, KeepOGlycopeptide and
+            // GeneratehUnlabeledProteinsForSilac have never appeared above. Rather than adding a line
+            // per option forever, append the parameters as MetaMorpheus saves them in a task's TOML:
+            // every user-settable option has to be in that TOML or a saved task could not reload it, so
+            // every present and future option is covered here from the moment it exists, with no further
+            // change to this method. See DescribeDigestionParams.
+            //
+            // The repetition of fields already named above is deliberate and harmless -- this text is
+            // only ever compared whole, never parsed.
+            sb.AppendLine("digestionParams: " + DescribeDigestionParams(CommonParameters.DigestionParams));
+
             sb.AppendLine("maximumFragmentSize" + (int)Math.Round(MaxFragmentSize));
 
             sb.Append("Localizeable mods: " + BioPolymerList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// The digestion parameters for the index cache key: their TOML, one setting per entry, on one line.
+        /// </summary>
+        /// <remarks>
+        /// TOML rather than <c>DigestionParams.ToString()</c>, which covers only what mzLib remembers to
+        /// append to it, and nothing at all for <see cref="RnaDigestionParams"/>, which has no override.
+        /// The TOML is written by reflection over the runtime type, so it names every setting by key and
+        /// covers protein and RNA parameters alike. It is written with <see cref="DigestionTomlSettings"/>,
+        /// the configuration <c>MetaMorpheusTask.tomlConfig</c> saves tasks with, so the key carries exactly
+        /// the digestion settings a saved task carries. Write-only: nothing reads this text back.
+        /// </remarks>
+        internal static string DescribeDigestionParams(IDigestionParams digestionParams)
+        {
+            if (digestionParams == null)
+            {
+                return "none";
+            }
+
+            string toml = Toml.WriteString((object)digestionParams, DigestionTomlSettings.Settings);
+            return string.Join("; ", toml.Split('\r', '\n').Where(line => line.Length > 0));
         }
 
         /// <summary>
