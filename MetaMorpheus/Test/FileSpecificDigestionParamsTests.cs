@@ -110,7 +110,7 @@ namespace Test
             var task = new CommonParameters(digestionParams: new DigestionParams("trypsin",
                 respectCleavageBlockingModifications: respectCleavageBlockingModifications));
 
-            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { MaxMissedCleavages = 5 });
+            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { MaxMissedCleavages = 5 }, null);
 
             var digestionParams = (DigestionParams)combined.DigestionParams;
             Assert.That(digestionParams.MaxMissedCleavages, Is.EqualTo(5), "the file-specific override still applies");
