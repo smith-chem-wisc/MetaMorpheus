@@ -400,25 +400,69 @@ namespace EngineLayer
             using var sw = new StreamWriter(path);
             sw.WriteLine(Header);
 
-            foreach (var file in files.OrderBy(f => f.Fraction).ThenBy(f => f.TechnicalReplicate))
+            foreach (var row in Rows(files, Header.Split('\t')))
             {
-                var plex = file.Plex ?? "";
-                var anns = file.Annotations ?? Array.Empty<TmtPlexAnnotation>();
-
-                if (anns.Count > 0)
-                {
-                    foreach (var a in anns)
-                    {
-                        sw.WriteLine($"{file.FullFilePathWithExtension}\t{plex}\t{a.SampleName}\t{a.Tag}\t{a.Condition}\t{a.BiologicalReplicate}\t{file.Fraction}\t{file.TechnicalReplicate}\t{ToDesignFileValue(a.SampleType)}");
-                    }
-                }
-                else
-                {
-                    sw.WriteLine($"{file.FullFilePathWithExtension}\t{plex}\t\t\t\t\t{file.Fraction}\t{file.TechnicalReplicate}\t");
-                }
+                sw.WriteLine(row);
             }
 
             return path;
+        }
+
+        /// <summary>
+        /// Adds <paramref name="files"/> to the design at <paramref name="designPath"/> and keeps every line it already has,
+        /// except the rows naming one of <paramref name="files"/>, which are replaced. The new rows follow the file's own
+        /// header, so a design whose columns are in another order, or which predates Sample Type, still reads them.
+        /// </summary>
+        public static string AddRows(string designPath, List<TmtFileInfo> files)
+        {
+            if (files == null || files.Count == 0)
+                throw new InvalidOperationException("No TMT files to write.");
+
+            string[] lines = File.ReadAllLines(designPath);
+            if (lines.Length == 0 || !IsHeaderValid(lines[0]))
+                throw new InvalidOperationException("TMT design file header is invalid.");
+
+            string[] headers = lines[0].Split('\t');
+            int idxFile = Array.FindIndex(headers, h => string.Equals(h.Trim(), "File", StringComparison.OrdinalIgnoreCase));
+            string designDirectory = Path.GetDirectoryName(Path.GetFullPath(designPath));
+            var replaced = new HashSet<string>(files.Select(f => NormalizePath(f.FullFilePathWithExtension)), StringComparer.OrdinalIgnoreCase);
+
+            var kept = lines.Skip(1).Where(line =>
+            {
+                var cols = line.Split('\t');
+                return cols.Length <= idxFile || !replaced.Contains(NormalizePath(ResolveAgainstDesignFile(cols[idxFile].Trim(), designDirectory)));
+            });
+            File.WriteAllLines(designPath, new[] { lines[0] }.Concat(kept).Concat(Rows(files, headers)).ToList());
+
+            return designPath;
+        }
+
+        /// <summary>
+        /// One row per channel of each file, a placeholder row for a file with no channels yet, with the cells in the order
+        /// <paramref name="headers"/> names them. A column this class does not write is left blank.
+        /// </summary>
+        private static IEnumerable<string> Rows(List<TmtFileInfo> files, string[] headers)
+        {
+            foreach (var file in files.OrderBy(f => f.Fraction).ThenBy(f => f.TechnicalReplicate))
+            {
+                var anns = file.Annotations ?? Array.Empty<TmtPlexAnnotation>();
+                foreach (var a in anns.Count > 0 ? anns : new TmtPlexAnnotation[] { null })
+                {
+                    yield return string.Join("\t", headers.Select(header => header.Trim().ToLowerInvariant() switch
+                    {
+                        "file" => file.FullFilePathWithExtension,
+                        "plex" => file.Plex ?? "",
+                        "sample name" => a?.SampleName ?? "",
+                        "tmt channel" => a?.Tag ?? "",
+                        "condition" => a?.Condition ?? "",
+                        "biological replicate" => a == null ? "" : a.BiologicalReplicate.ToString(),
+                        "fraction" => file.Fraction.ToString(),
+                        "technical replicate" => file.TechnicalReplicate.ToString(),
+                        "sample type" => a == null ? "" : ToDesignFileValue(a.SampleType),
+                        _ => ""
+                    }));
+                }
+            }
         }
 
         #region Projection to mzLib

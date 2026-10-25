@@ -579,6 +579,101 @@ namespace Test
         }
 
         /// <summary>
+        /// When the output folder is the input folder, the TmtDesign.txt there is the input design. Calibration re-wrote it
+        /// for the -calib names only, so it no longer named the input files, which are still there. It now keeps every line
+        /// the input design had and adds the calibrated file's rows below them; a second run replaces those rows rather than
+        /// adding them again.
+        /// </summary>
+        [Test]
+        public static void TmtDesignKeepsItsInputRows_WhenTheOutputFolderIsTheInputFolder()
+        {
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtDesignCalibrationSameFolderRewriteTest");
+            if (Directory.Exists(unitTestFolder)) Directory.Delete(unitTestFolder, true);
+            Directory.CreateDirectory(unitTestFolder);
+            string spectraFile = Path.Combine(unitTestFolder, "filename1.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), spectraFile, true);
+            WriteTmtDesignBeside(spectraFile);
+            string inputDesign = Path.Combine(unitTestFolder, GlobalVariables.TmtExperimentalDesignFileName);
+            string[] inputLines = File.ReadAllLines(inputDesign);
+            void Calibrate() => new CalibrationTask().RunTask(unitTestFolder,
+                new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta"), false) },
+                new List<string> { spectraFile }, "test");
+
+            try
+            {
+                Calibrate();
+                string calibratedFile = Path.Combine(unitTestFolder, "filename1-calib.mzML");
+                Assert.That(File.Exists(calibratedFile), "the fixture only means anything if calibration succeeds");
+                Assert.That(File.ReadAllLines(inputDesign).Take(inputLines.Length), Is.EqualTo(inputLines), "every line of the input design is kept");
+
+                var forInput = TmtExperimentalDesign.Read(inputDesign, new List<string> { spectraFile }, out var inputErrors);
+                var forCalibrated = TmtExperimentalDesign.Read(inputDesign, new List<string> { calibratedFile }, out var calibratedErrors);
+                Assert.Multiple(() =>
+                {
+                    Assert.That(inputErrors, Is.Empty);
+                    Assert.That(calibratedErrors, Is.Empty);
+                    Assert.That(Path.GetFullPath(forCalibrated.Single().FullFilePathWithExtension), Is.EqualTo(Path.GetFullPath(calibratedFile)).IgnoreCase);
+                    Assert.That(forCalibrated.Single().Annotations.Select(a => (a.Tag, a.SampleName, a.Condition, a.BiologicalReplicate, a.SampleType)),
+                        Is.EqualTo(forInput.Single().Annotations.Select(a => (a.Tag, a.SampleName, a.Condition, a.BiologicalReplicate, a.SampleType))));
+                });
+
+                Calibrate();
+                Assert.That(File.ReadAllLines(inputDesign), Has.Length.EqualTo(inputLines.Length + Tmt11Channels.Length),
+                    "a second run replaces the calibrated file's rows");
+            }
+            finally
+            {
+                Directory.Delete(unitTestFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// A run cancelled after its first file named the files it never reached as -calib files that were never written.
+        /// EverythingRunnerEngine passes on the original of every file calibration wrote nothing for, so the search would get
+        /// files the design did not name. The design now names a -calib file only if this run wrote it.
+        /// </summary>
+        [Test]
+        [NonParallelizable] // writes the process-wide StopLoops flag
+        public static void TmtDesignNamesTheOriginalOfAFileACancelledRunNeverReached()
+        {
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtDesignCalibrationCancelTest");
+            string outputFolder = Path.Combine(unitTestFolder, "TaskOutput");
+            if (Directory.Exists(unitTestFolder)) Directory.Delete(unitTestFolder, true);
+            Directory.CreateDirectory(outputFolder);
+            string first = Path.Combine(unitTestFolder, "filename1.mzML");
+            string second = Path.Combine(unitTestFolder, "filename2.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), first, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), second, true);
+            WriteTmtDesignBeside(first, second);
+
+            bool stopLoops = GlobalVariables.StopLoops;
+            EventHandler<StringEventArgs> stopAfterTheFirstFile = (_, _) => GlobalVariables.StopLoops = true;
+            MetaMorpheusTask.FinishedDataFileHandler += stopAfterTheFirstFile;
+            try
+            {
+                new CalibrationTask().RunTask(outputFolder,
+                    new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta"), false) },
+                    new List<string> { first, second }, "test");
+
+                string calibratedFirst = Path.Combine(outputFolder, "filename1-calib.mzML");
+                Assert.That(File.Exists(calibratedFirst), "the fixture only means anything if the first file calibrates");
+                Assert.That(File.Exists(Path.Combine(outputFolder, "filename2-calib.mzML")), Is.False, "and the run stops before the second");
+
+                var rewritten = TmtExperimentalDesign.Read(Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName),
+                    new List<string> { calibratedFirst, second }, out var errors);
+                Assert.That(errors, Is.Empty);
+                Assert.That(rewritten.Select(file => Path.GetFullPath(file.FullFilePathWithExtension)),
+                    Is.EquivalentTo(new[] { Path.GetFullPath(calibratedFirst), Path.GetFullPath(second) }));
+            }
+            finally
+            {
+                MetaMorpheusTask.FinishedDataFileHandler -= stopAfterTheFirstFile;
+                GlobalVariables.StopLoops = stopLoops;
+                Directory.Delete(unitTestFolder, true);
+            }
+        }
+
+        /// <summary>
         /// The run loop names the calibrated file through ToSafeOutputPath, so a -calib path over the path cap is written
         /// trimmed. The rewritten TMT design has to name that trimmed file, or the search after calibration finds a design
         /// that does not name the file it searches. The input path stays under the cap; only the -calib path is over it.
