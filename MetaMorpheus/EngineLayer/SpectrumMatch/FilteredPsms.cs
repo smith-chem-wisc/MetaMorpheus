@@ -13,12 +13,18 @@ namespace EngineLayer.SpectrumMatch
     {
         public List<SpectralMatch> FilteredPsmsList { get; private set; }
         /// <summary>
-        /// Filter type can have only two values: "q-value" or "pep q-value"
+        /// The value the matches were filtered on: "q-value", "pep q-value" or, only when a caller asked for it,
+        /// "q-value notch"
         /// </summary>
         public FilterType FilterType { get; init; }
         public double FilterThreshold { get; init; }
         public bool FilteringNotPerformed { get; init; }
         public bool PeptideLevelFiltering { get; init; }
+        /// <summary>
+        /// When PEP filtering was requested (a PEP q-value threshold below the q-value threshold) but not done, the
+        /// sentence saying what was done instead, for results.txt and the user; null otherwise.
+        /// </summary>
+        public string PepFilteringNotDone { get; init; }
         private FilteredPsms(List<SpectralMatch> filteredPsms, FilterType filterType, double filterThreshold, bool filteringNotPerformed, bool peptideLevelFiltering)
         {
             FilteredPsmsList = filteredPsms;
@@ -36,15 +42,29 @@ namespace EngineLayer.SpectrumMatch
             {
                 case FilterType.PepQValue:
                     return psm.GetFdrInfo(PeptideLevelFiltering).PEP_QValue <= FilterThreshold;
+                case FilterType.QValueNotch:
+                    return psm.GetFdrInfo(PeptideLevelFiltering).QValueNotch <= FilterThreshold;
                 default:
                     return psm.GetFdrInfo(PeptideLevelFiltering).QValue <= FilterThreshold && psm.GetFdrInfo(PeptideLevelFiltering).QValueNotch <= FilterThreshold;
             }
         }
 
-        public string GetFilterTypeString()
+        public string GetFilterTypeString() => FilterType switch
         {
-            return FilterType == FilterType.PepQValue ? "pep q-value" : "q-value";
-        }
+            FilterType.PepQValue => "pep q-value",
+            FilterType.QValueNotch => "q-value notch",
+            _ => "q-value"
+        };
+
+        /// <summary>
+        /// The FDR value this filter decided on for a match, e.g. the q-value handed to quantification.
+        /// </summary>
+        public double GetFilterValue(SpectralMatch psm) => FilterType switch
+        {
+            FilterType.PepQValue => psm.FdrInfo.PEP_QValue,
+            FilterType.QValueNotch => psm.FdrInfo.QValueNotch,
+            _ => psm.FdrInfo.QValue
+        };
 
         /// <summary>
         /// This method should only be called when filtered PSMs are modified for the purpose of SILAC analysis
@@ -87,6 +107,11 @@ namespace EngineLayer.SpectrumMatch
         /// <param name="commonParams">Common parameters containing default filter thresholds. In multiprotease scenarios, 
         /// consider using explicit threshold parameters instead.</param>
         /// <param name="filterAtPeptideLevel">Filter results at the peptide level (defaults to false) </param>
+        /// <param name="filterType">The value to filter on, chosen by the caller. Null (the default) infers it from the
+        /// thresholds, as MetaMorpheus always has. Given, it is used as asked: <see cref="FilterType.PepQValue"/> at the
+        /// PEP q-value threshold, <see cref="FilterType.QValue"/> and <see cref="FilterType.QValueNotch"/> at the q-value
+        /// threshold, with no count rule and no fallback. A PEP q-value filter on matches that carry no PEP q-value
+        /// throws instead of returning nothing.</param>
         /// <returns> A FilteredPsms object</returns>
         public static FilteredPsms Filter(IEnumerable<SpectralMatch> psms,
             CommonParameters commonParams,
@@ -97,41 +122,70 @@ namespace EngineLayer.SpectrumMatch
             bool includeHighQValuePsms = false,
             double? qValueThreshold = null,
             double? pepQValueThreshold = null,
-            bool filterAtPeptideLevel = false)
+            bool filterAtPeptideLevel = false,
+            FilterType? filterType = null)
         {
 
             qValueThreshold ??= commonParams.QValueThreshold;
             pepQValueThreshold ??= commonParams.PepQValueThreshold;
             double filterThreshold = Math.Min((double)qValueThreshold, (double)pepQValueThreshold);
             bool filteringNotPerformed = false;
-            List<SpectralMatch> filteredPsms = new List<SpectralMatch>();
+            string pepFilteringNotDone = null;
 
-            // set the filter type
-            FilterType filterType = FilterType.QValue;
-            if (pepQValueThreshold < qValueThreshold)
-            {
-                if (psms.Count() < 100)
-                {
-                    filteringNotPerformed = true;
-                    filterThreshold = 1;
-                }
-                else
-                {
-                    filterType = FilterType.PepQValue;
-                }
-            }
-
-            filteredPsms = psms.Where(psm => 
-                    (includeDecoys || !psm.IsDecoy) 
+            List<SpectralMatch> candidates = psms.Where(psm =>
+                    (includeDecoys || !psm.IsDecoy)
                     && (includeContaminants || !psm.IsContaminant)
                     && (includeAmbiguous || !psm.BaseSequence.IsNullOrEmpty())
                     && (includeAmbiguousMods || !psm.FullSequence.IsNullOrEmpty()))
-                .FilterByQValue(includeHighQValuePsms, filterThreshold, filterAtPeptideLevel, filterType, true)
+                .ToList();
+            string label = GlobalVariables.AnalyteType.GetSpectralMatchLabel();
+
+            // set the filter type
+            FilterType type = FilterType.QValue;
+            if (filterType is { } requested)
+            {
+                type = requested;
+                filterThreshold = requested == FilterType.PepQValue ? (double)pepQValueThreshold : (double)qValueThreshold;
+                if (requested == FilterType.PepQValue && !includeHighQValuePsms && candidates.Count > 0 && NoPepQValues(candidates, filterAtPeptideLevel))
+                    throw new MetaMorpheusException($"PEP q-value filtering was requested, but none of these {candidates.Count} {label}s has a PEP q-value: PEP was not computed for them.");
+            }
+            else if (pepQValueThreshold < qValueThreshold)
+            {
+                int inputCount = psms.Count();
+                if (inputCount < 100)
+                {
+                    filteringNotPerformed = true;
+                    filterThreshold = 1;
+                    pepFilteringNotDone = $"PEP filtering was requested, but there were fewer than 100 {label}s ({inputCount}), so results were not filtered.";
+                }
+                else if (candidates.Count > 0 && NoPepQValues(candidates, filterAtPeptideLevel))
+                {
+                    // PEP is trained only when a digestion agent has more than 1000 matches (FdrAnalysisEngine), so every
+                    // PEP q-value here is still the initial 2. A PEP q-value filter would drop every match.
+                    pepFilteringNotDone = $"PEP filtering was requested, but PEP was not computed for these {candidates.Count} {label}s, so results were filtered by q-value.";
+                }
+                else
+                {
+                    type = FilterType.PepQValue;
+                }
+            }
+
+            List<SpectralMatch> filteredPsms = candidates
+                .FilterByQValue(includeHighQValuePsms, filterThreshold, filterAtPeptideLevel, type, true)
                 .CollapseToPeptides(filterAtPeptideLevel)
                 .ToList();
 
-            return new FilteredPsms(filteredPsms, filterType, filterThreshold, filteringNotPerformed, filterAtPeptideLevel);
+            return new FilteredPsms(filteredPsms, type, filterThreshold, filteringNotPerformed, filterAtPeptideLevel)
+            {
+                PepFilteringNotDone = pepFilteringNotDone
+            };
         }
+
+        /// <summary>
+        /// True when no match carries a computed PEP q-value at this level: each is still FdrInfo's initial 2.
+        /// </summary>
+        private static bool NoPepQValues(List<SpectralMatch> psms, bool filterAtPeptideLevel) =>
+            psms.All(p => p.GetFdrInfo(filterAtPeptideLevel) != null && Math.Abs(p.GetFdrInfo(filterAtPeptideLevel).PEP_QValue - 2) < 0.1);
 
         public IEnumerator<SpectralMatch> GetEnumerator()
         {
@@ -183,6 +237,12 @@ namespace EngineLayer.SpectrumMatch
                     {
                         case FilterType.PepQValue:
                             if (psm.GetFdrInfo(filterAtPeptideLevel).PEP_QValue <= qValueThreshold)
+                            {
+                                yield return psm;
+                            }
+                            break;
+                        case FilterType.QValueNotch:
+                            if (psm.GetFdrInfo(filterAtPeptideLevel).QValueNotch <= qValueThreshold)
                             {
                                 yield return psm;
                             }
