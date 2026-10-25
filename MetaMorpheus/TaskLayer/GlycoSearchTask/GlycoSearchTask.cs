@@ -91,7 +91,7 @@ namespace TaskLayer
             List<Protein> proteinList = loadingResults!.BioPolymers.Cast<Protein>().ToList();
 
             MyFileManager myFileManager = new (_glycoSearchParameters.DisposeOfFileWhenDone);
-            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
+            var fileSpecificCommonParams = fileSettingsList.Select((b, i) => SetAllFileSpecificCommonParams(CommonParameters, b, currentRawFileList[i]));
 
             int completedFiles = 0;
 
@@ -132,7 +132,8 @@ namespace TaskLayer
             var indexParamsPerFile = new CommonParameters[fileCount];
             for (int spectraFileIndex = 0; spectraFileIndex < fileCount; spectraFileIndex++)
             {
-                combinedParamsPerFile[spectraFileIndex] = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                var origDataFile = currentRawFileList[spectraFileIndex];
+                combinedParamsPerFile[spectraFileIndex] = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex], origDataFile);
 
                 // scoped to indexing/searching only, so the settings the task reports stay as configured.
                 // every TotalPartitions read below comes from indexParams, including the loop bound and the
