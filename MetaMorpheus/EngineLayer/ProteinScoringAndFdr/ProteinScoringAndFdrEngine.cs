@@ -11,19 +11,27 @@ namespace EngineLayer
         private readonly bool NoOneHitWonders;
         private readonly bool TreatModPeptidesAsDifferentPeptides;
         private readonly bool MergeIndistinguishableProteinGroups;
+        private readonly bool LabelPeptidesUniqueToOneGroupAfterFdr;
         private readonly List<ProteinGroup> ProteinGroups;
         private readonly HashSet<string> _decoyIdentifiers;
         private readonly FilterType _filterType;
         private readonly double _filterThreshold;
 
-        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, IList<SpectralMatch> filteredPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, 
-            CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
+        /// <param name="labelPeptidesUniqueToOneGroup">
+        /// True for the search's own call: after FDR, label each group's peptides unique or shared among the groups it
+        /// returns. False for a per-file call, whose groups are subsets of the search's and already carry its labels
+        /// (see <see cref="ProteinGroup.ConstructSubsetProteinGroup"/>), so the per-file tables agree with the combined one.
+        /// </param>
+        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, IList<SpectralMatch> filteredPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups,
+            CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds,
+            bool labelPeptidesUniqueToOneGroup = true) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             _FilteredPsms = filteredPsms;
             ProteinGroups = proteinGroups;
             NoOneHitWonders = noOneHitWonders;
             TreatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
             MergeIndistinguishableProteinGroups = mergeIndistinguishableProteinGroups;
+            LabelPeptidesUniqueToOneGroupAfterFdr = labelPeptidesUniqueToOneGroup;
             _decoyIdentifiers = proteinGroups.SelectMany(p => p.Proteins.Where(b => b.IsDecoy).Select(b => b.Accession.Split('_')[0])).ToHashSet();
 
             if (CommonParameters.PepQValueThreshold < CommonParameters.QValueThreshold)
@@ -44,10 +52,7 @@ namespace EngineLayer
             ScoreProteinGroups(ProteinGroups, _FilteredPsms);
             myAnalysisResults.SortedAndScoredProteinGroups = DoProteinFdr(ProteinGroups);
 
-            // Merging is what makes this the run's own set of groups. A per-file call (which does not merge) works on
-            // subsets of those groups, and each subset already carries the run's labels, intersected with the file's
-            // peptides by ConstructSubsetProteinGroup, so the per-file tables agree with the combined one.
-            if (MergeIndistinguishableProteinGroups)
+            if (LabelPeptidesUniqueToOneGroupAfterFdr)
             {
                 LabelPeptidesUniqueToOneGroup(myAnalysisResults.SortedAndScoredProteinGroups, TreatModPeptidesAsDifferentPeptides);
             }
@@ -68,10 +73,14 @@ namespace EngineLayer
         /// <see cref="Omics.BioPolymerGroup.IBioPolymerGroup.UniqueBioPolymersWithSetMods"/> documents ("not found in any
         /// other biopolymer group"), and the one quantification uses: FlashLFQ counts a peptide toward a group when its
         /// spectra belong to that group alone, and mzLib's isobaric quantification (from smith-chem-wisc/mzLib#1463) when that group alone lists it.
-        /// Judged among every group passed, whatever its q-value or decoy status, so a peptide is not called unique
-        /// because the group it shares with is above the threshold. The sequence is the one parsimony compares: the full
-        /// sequence when modified peptides are treated as different, the base sequence otherwise, and, as in parsimony,
-        /// per protease: a sequence another group lists only from a different protease does not make it shared.
+        /// Judged among every group scoring keeps, whatever its q-value, decoy or contaminant status, so a peptide is not
+        /// called unique because the group it shares with is above the threshold. Those are the groups FlashLFQ and the
+        /// isobaric engine quantify against: a group the two-peptide rule or the picked FDR drops does not count. Each
+        /// group counts once, though the picked FDR can list a rescued group once per accession. The sequence is the one
+        /// parsimony compares: the full sequence when modified peptides are treated as different, the base sequence
+        /// otherwise, and, as in parsimony, per protease: a sequence another group lists only from a different protease
+        /// does not make it shared. So with several proteases one sequence can be unique to two groups, one per protease,
+        /// and the tables, which do not name the protease, show it unique in both.
         /// </remarks>
         private static void LabelPeptidesUniqueToOneGroup(List<ProteinGroup> proteinGroups, bool treatModPeptidesAsDifferentPeptides)
         {
@@ -79,7 +88,7 @@ namespace EngineLayer
                 (treatModPeptidesAsDifferentPeptides ? peptide.FullSequence : peptide.BaseSequence, peptide.DigestionParams?.DigestionAgent);
 
             var groupsListingSequence = new Dictionary<(string, object), int>();
-            foreach (var proteinGroup in proteinGroups)
+            foreach (var proteinGroup in proteinGroups.Distinct<ProteinGroup>(ReferenceEqualityComparer.Instance))
             {
                 foreach (var sequence in proteinGroup.AllPeptides.Select(Sequence).Distinct())
                 {
