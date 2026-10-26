@@ -251,6 +251,52 @@ namespace Test
         }
 
         /// <summary>
+        /// Pairing is by position, so it is checked: a position whose two scans have different scan numbers is left out, and
+        /// a scan with no pair is read from its loaded spectrum, as master read every scan. Here the second read is the mzML
+        /// the MGF was written from, which holds the repeated scan once, so every position after the repeat disagrees.
+        /// </summary>
+        [Test]
+        public static void ScansWhoseTwoReadsDisagree_AreLeftUnpaired_AndReadFromTheLoadedSpectrum()
+        {
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsUnpairedScans");
+
+            try
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+                Directory.CreateDirectory(folder);
+                string mzml = TestFile("VA084TQ_6.mzML");
+                string mgf = WriteMgfWithRepeatedScan(mzml, Path.Combine(folder, "VA084TQ_6.mgf"));
+                var loaded = new MyFileManager(true).LoadFile(mgf, searchTask.CommonParameters);
+                List<MsDataScan> loadedScans = loaded.GetAllScansList();
+                var storedScanFor = MyFileManager.PairWithStoredScans(loaded, MsDataFileReader.GetDataFile(mzml).LoadAllStaticData());
+
+                int firstRepeat = loadedScans.FindIndex(s => s.OneBasedScanNumber == RepeatedScan);
+                Assert.That(storedScanFor.Keys, Is.EquivalentTo(loadedScans.Take(firstRepeat + 1)));
+
+                var unpaired = MetaMorpheusTask.GetMs2Scans(loaded, mgf, searchTask.CommonParameters)
+                    .Where(s => s.OneBasedScanNumber > RepeatedScan)
+                    .ToList();
+                Assert.That(unpaired, Is.Not.Empty);
+                Assert.Multiple(() =>
+                {
+                    foreach (var scan in unpaired)
+                    {
+                        scan.SetIsobaricMassTagReporterIonIntensities(tag);
+                        string[] fromLoaded = Formatted(scan.IsobaricMassTagReporterIonIntensities);
+                        scan.SetIsobaricMassTagReporterIonIntensities(tag, storedScanFor);
+                        Assert.That(Formatted(scan.IsobaricMassTagReporterIonIntensities), Is.EqualTo(fromLoaded), $"scan {scan.OneBasedScanNumber}");
+                    }
+                });
+            }
+            finally
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
         /// Writes <paramref name="mzml"/> unindexed, with its native IDs renumbered to number its spectra from
         /// <paramref name="firstScan"/>. VA084TQ_6.mzML is a slice of a run (scan=31006 to scan=31014), so a read by scan
         /// number does not find the loaded scan in it; a whole run converted from .raw numbers its spectra from 1. Numbered
@@ -300,14 +346,13 @@ namespace Test
         }
 
         /// <summary>
-        /// A LowCID search loads without a filter, so nothing is trimmed, but GetMs2Scans bins each MS2 spectrum in place for
-        /// XCorr, and the search read its reporter ions from the binned spectrum. They are read from the stored scans, whether
-        /// the file is read whole (the mzML) or one scan at a time (the other two).
+        /// A LowCID search bins each MS2 spectrum in place for XCorr, so reporter ions read from the loaded spectrum are wrong.
+        /// Read one scan at a time from the file, they are the stored scan's: here an mzML numbered from scan 1 and an MGF,
+        /// both read that way (see the test below).
         /// </summary>
-        [TestCase("mzML")]
         [TestCase("mzMLNumberedFromOne")]
         [TestCase("mgf")]
-        public static void LowCidReporterIons_AreReadFromTheStoredScan_NotTheBinnedOne(string fixture)
+        public static void LowCidReporterIons_ReadOneScanAtATime_AreTheStoredScans(string fixture)
         {
             var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT11_LowCID_SearchTask.toml"), MetaMorpheusTask.tomlConfig);
             Assert.That(searchTask.CommonParameters.DissociationType, Is.EqualTo(DissociationType.LowCID));
@@ -405,50 +450,5 @@ namespace Test
             }
         }
 
-        /// <summary>
-        /// Pairing is by position, so it is checked: a position whose two scans have different scan numbers is left out, and
-        /// a scan with no pair is read from its loaded spectrum, as master read every scan. Here the second read is the mzML
-        /// the MGF was written from, which holds the repeated scan once, so every position after the repeat disagrees.
-        /// </summary>
-        [Test]
-        public static void ScansWhoseTwoReadsDisagree_AreLeftUnpaired_AndReadFromTheLoadedSpectrum()
-        {
-            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
-            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
-            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsUnpairedScans");
-
-            try
-            {
-                if (Directory.Exists(folder)) Directory.Delete(folder, true);
-                Directory.CreateDirectory(folder);
-                string mzml = TestFile("VA084TQ_6.mzML");
-                string mgf = WriteMgfWithRepeatedScan(mzml, Path.Combine(folder, "VA084TQ_6.mgf"));
-                var loaded = new MyFileManager(true).LoadFile(mgf, searchTask.CommonParameters);
-                List<MsDataScan> loadedScans = loaded.GetAllScansList();
-                var storedScanFor = MyFileManager.PairWithStoredScans(loaded, MsDataFileReader.GetDataFile(mzml).LoadAllStaticData());
-
-                int firstRepeat = loadedScans.FindIndex(s => s.OneBasedScanNumber == RepeatedScan);
-                Assert.That(storedScanFor.Keys, Is.EquivalentTo(loadedScans.Take(firstRepeat + 1)));
-
-                var unpaired = MetaMorpheusTask.GetMs2Scans(loaded, mgf, searchTask.CommonParameters)
-                    .Where(s => s.OneBasedScanNumber > RepeatedScan)
-                    .ToList();
-                Assert.That(unpaired, Is.Not.Empty);
-                Assert.Multiple(() =>
-                {
-                    foreach (var scan in unpaired)
-                    {
-                        scan.SetIsobaricMassTagReporterIonIntensities(tag);
-                        string[] fromLoaded = Formatted(scan.IsobaricMassTagReporterIonIntensities);
-                        scan.SetIsobaricMassTagReporterIonIntensities(tag, storedScanFor);
-                        Assert.That(Formatted(scan.IsobaricMassTagReporterIonIntensities), Is.EqualTo(fromLoaded), $"scan {scan.OneBasedScanNumber}");
-                    }
-                });
-            }
-            finally
-            {
-                if (Directory.Exists(folder)) Directory.Delete(folder, true);
-            }
-        }
     }
 }
