@@ -208,7 +208,8 @@ namespace EngineLayer
             // because lots of decoys (which are out-competed in the Picked TDS) will be written with high(ish) scores
             // so really, we're only outputting targets for a cleanliness of output (but the decoys are still there for the classic TDS)
             // TL;DR 99% of the protein output is from the Picked TDS, but a small fraction is from the Classic TDS.
-            sortedProteinGroups.AddRange(rescuedProteins.Where(x => !x.IsDecoy));
+            // A group that lost under several of its accessions was saved once per loss; add each one back once.
+            sortedProteinGroups.AddRange(rescuedProteins.Where(x => !x.IsDecoy).Distinct<ProteinGroup>(ReferenceEqualityComparer.Instance));
 
             return sortedProteinGroups.OrderBy(b => b.QValue).ToList();
         }
