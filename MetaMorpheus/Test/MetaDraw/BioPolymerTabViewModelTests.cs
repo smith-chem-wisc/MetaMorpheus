@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Media;
 using GuiFunctions;
 using GuiFunctions.MetaDraw;
@@ -35,11 +37,84 @@ namespace Test.MetaDraw
             Assert.That(vm.FilteredGroups, Is.Not.Null);
             Assert.That(vm.CoverageMapViewModel, Is.Not.Null);
             Assert.That(vm.ExportDirectory, Is.EqualTo("C:\\Export"));
-            Assert.That(vm.LoadDatabaseCommand, Is.Not.Null);
-            Assert.That(vm.ResetDatabaseCommand, Is.Not.Null);
+            Assert.That(vm.LoadDataCommand, Is.Not.Null);
+            Assert.That(vm.ResetDataCommand, Is.Not.Null);
+            Assert.That(vm.ResetProteinGroupsCommand, Is.Not.Null);
             Assert.That(vm.ExportImageCommand, Is.Not.Null);
             Assert.That(vm.DatabaseName, Is.EqualTo("Add Database Files..."));
             Assert.That(vm.DatabasePathsTooltip, Is.Null);
+        }
+
+        [Test]
+        public void ResetProteinGroupsCommand_ClearsFileAndLoadedGroups()
+        {
+            var vm = new BioPolymerTabViewModel(new DummyMetaDrawLogic())
+            {
+                ProteinGroupsFilePath = "C:\\groups.tsv",
+                Groups = new List<ProteinGroupFromTsv> { new() },
+                IsProteinGroupsLoaded = true
+            };
+
+            vm.ResetProteinGroupsCommand.Execute(null);
+
+            Assert.That(vm.ProteinGroupsFilePath, Is.Null);
+            Assert.That(vm.ProteinGroupName, Is.EqualTo("Add Protein Groups File..."));
+            Assert.That(vm.HasProteinGroupsFile, Is.False);
+            Assert.That(vm.Groups, Is.Empty);
+            Assert.That(vm.IsProteinGroupsLoaded, Is.False);
+        }
+
+        [Test]
+        public void ProteinGroupsFilePath_NotifiesFileStateAndName()
+        {
+            var vm = new BioPolymerTabViewModel(new DummyMetaDrawLogic());
+            var changedProperties = new List<string>();
+            vm.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName!);
+
+            vm.ProteinGroupsFilePath = "C:\\groups.tsv";
+
+            Assert.That(vm.HasProteinGroupsFile, Is.True);
+            Assert.That(vm.ProteinGroupName, Is.EqualTo("groups"));
+            Assert.That(changedProperties, Does.Contain(nameof(vm.ProteinGroupsFilePath)));
+            Assert.That(changedProperties, Does.Contain(nameof(vm.ProteinGroupName)));
+            Assert.That(changedProperties, Does.Contain(nameof(vm.HasProteinGroupsFile)));
+        }
+
+        [TestCase("AllProteinGroups.tsv")]
+        [TestCase("AllQuantifiedProteinGroups.tsv")]
+        [TestCase("AllTranscriptGroups.tsv")]
+        [TestCase("AllQuantifiedTranscriptGroups.tsv")]
+        public void LoadProteinGroups_LoadsSupportedProteinAndTranscriptFiles(string fileName)
+        {
+            string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            string filePath = Path.Combine(directory, fileName);
+
+            try
+            {
+                Directory.CreateDirectory(directory);
+                File.WriteAllText(filePath,
+                    "Protein Accession\tProtein Decoy/Contaminant/Target\tProtein QValue\n" +
+                    "ACC\tT\t0.004\n");
+
+                var vm = new BioPolymerTabViewModel(new DummyMetaDrawLogic())
+                {
+                    ProteinGroupsFilePath = filePath
+                };
+                var method = typeof(BioPolymerTabViewModel)
+                    .GetMethod("LoadProteinGroups", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+                method!.Invoke(vm, null);
+                Task.Delay(500).Wait();
+
+                Assert.That(vm.IsProteinGroupsLoaded, Is.True);
+                Assert.That(vm.Groups, Has.Count.EqualTo(1));
+                Assert.That(vm.Groups[0].ProteinGroupName, Is.EqualTo("ACC"));
+            }
+            finally
+            {
+                if (Directory.Exists(directory))
+                    Directory.Delete(directory, true);
+            }
         }
 
         [Test]

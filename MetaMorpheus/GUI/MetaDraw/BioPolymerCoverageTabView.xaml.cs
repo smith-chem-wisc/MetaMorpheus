@@ -1,8 +1,10 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using EngineLayer;
 using System.Windows;
 using System.Windows.Controls;
 using GuiFunctions.MetaDraw;
+using Readers;
 
 namespace MetaMorpheusGUI;
 
@@ -53,6 +55,47 @@ public partial class BioPolymerCoverageTabView : UserControl
             
             dataContext.OnPropertyChanged(nameof(dataContext.DatabaseName));
             dataContext.OnPropertyChanged(nameof(dataContext.DatabasePathsTooltip));
+        }
+    }
+
+    private void SelectProteinGroupsButton_OnClick(object sender, RoutedEventArgs e)
+    {
+
+        // ==================================================
+        // TODO: Change this behavior once Mzlib supports all of our protein/transcript group files (Working on that PR)
+        // ==================================================
+
+
+
+        var dataContext = DataContext as BioPolymerTabViewModel;
+        if (sender == null || dataContext == null)
+            return;
+
+        var openFileDialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Filter = "Protein Group Files|*.tsv|All Files|*.*",
+            FilterIndex = 1,
+            RestoreDirectory = true,
+            Multiselect = false
+        };
+
+        if (openFileDialog.ShowDialog() != true)
+            return;
+
+        string filePath = openFileDialog.FileName;
+        try
+        {
+            if (!BioPolymerTabViewModel.SupportedProteinGroupFileTypes.Contains(filePath.ParseFileType()))
+            {
+                MessageBox.Show("Cannot read file type: " + GlobalVariables.GetFileExtension(filePath).ToLowerInvariant());
+                return;
+            }
+
+            dataContext.ProteinGroupsFilePath = filePath;
+        }
+        catch (Exception)
+        {
+            MessageBox.Show("Cannot read file type: " + GlobalVariables.GetFileExtension(filePath).ToLowerInvariant());
         }
     }
 

@@ -338,4 +338,121 @@ DissociationType = ""HCD""
             logic.SpectralMatchResultFilePaths.Clear();
         }
     }
+
+    [Test]
+    public async Task TryLoadProseAndSearchToml_FindsProteinGroupsInResultDirectory()
+    {
+        string resultDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        string psmPath = Path.Combine(resultDirectory, "AllPSMs.psmtsv");
+        string proteinGroupsPath = Path.Combine(resultDirectory, "AllQuantifiedProteinGroups.tsv");
+
+        try
+        {
+            Directory.CreateDirectory(resultDirectory);
+            File.WriteAllText(psmPath, string.Empty);
+            File.WriteAllText(proteinGroupsPath, string.Empty);
+            logic.SpectralMatchResultFilePaths.Add(psmPath);
+
+            var bioPolymerTab = new BioPolymerTabViewModel(logic);
+            await loader.TryLoadProseAndSearchToml(bioPolymerTab, null, null);
+
+            Assert.That(bioPolymerTab.ProteinGroupsFilePath, Is.EqualTo(proteinGroupsPath));
+            Assert.That(bioPolymerTab.ProteinGroupName, Is.EqualTo("AllQuantifiedProteinGroups"));
+        }
+        finally
+        {
+            logic.SpectralMatchResultFilePaths.Clear();
+            if (Directory.Exists(resultDirectory))
+                Directory.Delete(resultDirectory, true);
+        }
+    }
+
+    [Test]
+    public async Task TryLoadProseAndSearchToml_FallsBackFromIndividualResultsToTaskDirectory()
+    {
+        string taskDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        string individualDirectory = Path.Combine(taskDirectory, "Individual File Results");
+        string psmPath = Path.Combine(individualDirectory, "Sample_PSMs.psmtsv");
+        string proteinGroupsPath = Path.Combine(taskDirectory, "AllProteinGroups.tsv");
+
+        try
+        {
+            Directory.CreateDirectory(individualDirectory);
+            File.WriteAllText(psmPath, string.Empty);
+            File.WriteAllText(proteinGroupsPath, string.Empty);
+            logic.SpectralMatchResultFilePaths.Add(psmPath);
+
+            var bioPolymerTab = new BioPolymerTabViewModel(logic);
+            await loader.TryLoadProseAndSearchToml(bioPolymerTab, null, null);
+
+            Assert.That(bioPolymerTab.ProteinGroupsFilePath, Is.EqualTo(proteinGroupsPath));
+        }
+        finally
+        {
+            logic.SpectralMatchResultFilePaths.Clear();
+            if (Directory.Exists(taskDirectory))
+                Directory.Delete(taskDirectory, true);
+        }
+    }
+
+    [Test]
+    public async Task TryLoadProseAndSearchToml_PrefersProteinGroupsInIndividualResults()
+    {
+        string taskDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        string individualDirectory = Path.Combine(taskDirectory, "Individual File Results");
+        string psmPath = Path.Combine(individualDirectory, "Sample_PSMs.psmtsv");
+        string individualProteinGroupsPath = Path.Combine(individualDirectory, "Sample_ProteinGroups.tsv");
+        string globalProteinGroupsPath = Path.Combine(taskDirectory, "AllProteinGroups.tsv");
+
+        try
+        {
+            Directory.CreateDirectory(individualDirectory);
+            File.WriteAllText(psmPath, string.Empty);
+            File.WriteAllText(individualProteinGroupsPath, string.Empty);
+            File.WriteAllText(globalProteinGroupsPath, string.Empty);
+            logic.SpectralMatchResultFilePaths.Add(psmPath);
+
+            var bioPolymerTab = new BioPolymerTabViewModel(logic);
+            await loader.TryLoadProseAndSearchToml(bioPolymerTab, null, null);
+
+            Assert.That(bioPolymerTab.ProteinGroupsFilePath, Is.EqualTo(individualProteinGroupsPath));
+        }
+        finally
+        {
+            logic.SpectralMatchResultFilePaths.Clear();
+            if (Directory.Exists(taskDirectory))
+                Directory.Delete(taskDirectory, true);
+        }
+    }
+
+    [Test]
+    public async Task TryLoadProseAndSearchToml_DoesNotSearchOtherTaskDirectories()
+    {
+        string taskDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        string otherTaskDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        string psmPath = Path.Combine(taskDirectory, "AllPSMs.psmtsv");
+        string otherProteinGroupsPath = Path.Combine(otherTaskDirectory, "AllProteinGroups.tsv");
+
+        try
+        {
+            Directory.CreateDirectory(taskDirectory);
+            Directory.CreateDirectory(otherTaskDirectory);
+            File.WriteAllText(psmPath, string.Empty);
+            File.WriteAllText(otherProteinGroupsPath, string.Empty);
+            logic.SpectralMatchResultFilePaths.Add(psmPath);
+
+            var bioPolymerTab = new BioPolymerTabViewModel(logic);
+            await loader.TryLoadProseAndSearchToml(bioPolymerTab, null, null);
+
+            Assert.That(bioPolymerTab.ProteinGroupsFilePath, Is.Null);
+        }
+        finally
+        {
+            logic.SpectralMatchResultFilePaths.Clear();
+            if (Directory.Exists(taskDirectory))
+                Directory.Delete(taskDirectory, true);
+            if (Directory.Exists(otherTaskDirectory))
+                Directory.Delete(otherTaskDirectory, true);
+        }
+    }
 }
