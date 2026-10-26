@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Chemistry;
 
@@ -155,6 +156,11 @@ namespace TaskLayer
             SearchParameters.MassDiffAcceptorType = LegacyMostAbundantEquivalent;
         }
 
+        // Compiled optimized from the start. This method runs once per search, so the runtime would otherwise run it as
+        // unoptimized code, which keeps every local alive until it is overwritten: each searched file's scans, matches and
+        // search engine then stayed reachable through the rest of the run, about 0.6 GB per file on a TMT11 .raw file. It
+        // left that code only when one of its own loops ran hot, which the reporter ion loop used to do.
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId,
             FileSpecificParameters[] fileSettingsList)
         {
