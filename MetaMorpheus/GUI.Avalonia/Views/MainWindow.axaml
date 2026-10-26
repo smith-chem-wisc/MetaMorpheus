@@ -1,0 +1,126 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MetaMorpheusAvalonia.ViewModels"
+        x:Class="MetaMorpheusAvalonia.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="MetaMorpheus" Width="1100" Height="650">
+
+  <Window.Styles>
+    <Style Selector="HeaderedContentControl">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                  BorderThickness="1" CornerRadius="4" Margin="4" Padding="6">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="{TemplateBinding Header}"
+                         FontWeight="SemiBold" Margin="0,0,0,6" />
+              <ContentPresenter Content="{TemplateBinding Content}" />
+            </DockPanel>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="Margin" Value="3,0" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel>
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="_Help">
+        <MenuItem Header="Wiki" Click="OnWikiClick" />
+        <MenuItem Header="Report an issue" Click="OnIssuesClick" />
+      </MenuItem>
+    </Menu>
+
+    <Border DockPanel.Dock="Bottom" Padding="8,4"
+            Background="{DynamicResource SystemControlBackgroundListLowBrush}">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Grid.Column="0" Text="{Binding Status}" VerticalAlignment="Center" />
+        <ProgressBar Grid.Column="1" Width="220" Height="14"
+                     Value="{Binding Progress}" Maximum="100" />
+      </Grid>
+    </Border>
+
+    <Grid ColumnDefinitions="*,Auto,*">
+      <Grid Grid.Column="0" RowDefinitions="*,Auto,*">
+        <HeaderedContentControl Grid.Row="0" Header="Spectra files">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0">
+              <Button Content="Add spectra..." Click="OnAddSpectraClick" />
+            </StackPanel>
+            <DataGrid ItemsSource="{Binding SpectraFiles}" IsReadOnly="True" AutoGenerateColumns="False">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="*" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </DockPanel>
+        </HeaderedContentControl>
+
+        <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" />
+
+        <HeaderedContentControl Grid.Row="2" Header="Protein databases">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0">
+              <Button Content="Add databases..." Click="OnAddDatabaseClick" />
+              <Button Content="Add default contaminants"
+                      Command="{Binding AddDefaultContaminantsCommand}"
+                      ToolTip.Tip="Loads the contaminant databases shipped with MetaMorpheus" />
+            </StackPanel>
+            <!-- The contaminant flag is a filename guess, so the column is editable. AutoGenerate is
+                 off and only this column is writable, which is why the grid is not IsReadOnly. -->
+            <DataGrid ItemsSource="{Binding Databases}" AutoGenerateColumns="False">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="*" IsReadOnly="True" />
+                <DataGridCheckBoxColumn Header="Contaminant" Binding="{Binding IsContaminant, Mode=TwoWay}" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </DockPanel>
+        </HeaderedContentControl>
+      </Grid>
+
+      <GridSplitter Grid.Column="1" Width="5" VerticalAlignment="Stretch" />
+
+      <Grid Grid.Column="2" RowDefinitions="*,Auto,*">
+        <HeaderedContentControl Grid.Row="0" Header="Tasks">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,6">
+              <Button Content="Calibrate" Command="{Binding AddCalibrationTaskCommand}" />
+              <Button Content="GPTMD" Command="{Binding AddGptmdTaskCommand}" />
+              <Button Content="Search" Command="{Binding AddSearchTaskCommand}" />
+              <Button Content="XLSearch" Command="{Binding AddXlSearchTaskCommand}" />
+              <Button Content="Glyco" Command="{Binding AddGlycoSearchTaskCommand}" />
+              <Button Content="Average" Command="{Binding AddAveragingTaskCommand}" />
+              <Button Content="Clear" Command="{Binding ClearTasksCommand}" />
+              <Button Content="Edit settings..." Click="OnEditTaskClick" />
+            </StackPanel>
+            <DockPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
+              <TextBlock Text="Output:" VerticalAlignment="Center" Margin="0,0,6,0" />
+              <Button DockPanel.Dock="Right" Content="Browse..." Click="OnBrowseOutputClick" />
+              <TextBox Text="{Binding OutputFolder}"
+                       ToolTip.Tip="$DATETIME is replaced with the current date and time when the run starts" />
+            </DockPanel>
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center">
+              <Button Content="Run all tasks" Command="{Binding RunCommand}" IsEnabled="{Binding !IsRunning}" />
+              <Button Content="Cancel" Command="{Binding CancelCommand}" IsEnabled="{Binding IsRunning}" />
+            </StackPanel>
+            <ListBox x:Name="TaskList" ItemsSource="{Binding Tasks}" DoubleTapped="OnEditTaskClick">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding DisplayName}" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </HeaderedContentControl>
+
+        <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" />
+
+        <HeaderedContentControl Grid.Row="2" Header="Log">
+          <TextBox Text="{Binding Log}" IsReadOnly="True" AcceptsReturn="True"
+                   TextWrapping="NoWrap" FontFamily="monospace" VerticalContentAlignment="Top" />
+        </HeaderedContentControl>
+      </Grid>
+    </Grid>
+  </DockPanel>
+</Window>
