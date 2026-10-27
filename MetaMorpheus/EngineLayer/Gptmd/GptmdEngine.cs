@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Omics;
 using Omics.Modifications;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using MassSpectrometry;
@@ -140,6 +142,8 @@ namespace EngineLayer.Gptmd
                                 int indexInProtein = pepWithSetMods.OneBasedStartResidue + pepSeqIndex;
                                 if (!ModFits(mod, pepWithSetMods.Parent, pepSeqIndex + 1, pepWithSetMods.Length, indexInProtein))
                                     continue;
+                                if (BlocksTheCleavageThatEndsThePeptide(mod, pepWithSetMods, pepSeqIndex, indexInProtein))
+                                    continue;
 
                                 var newPep = pepWithSetMods.Localize(pepSeqIndex, mod.MonoisotopicMass.Value);
                                 peptideTheorProducts.Clear();
@@ -224,6 +228,24 @@ namespace EngineLayer.Gptmd
                 ModDictionary.MergeOrCreate(kvp.Key, new HashSet<Tuple<int, Modification>>(kvp.Value));
             return new GptmdResults(this, ModDictionary, modsAdded);
         }
+
+        /// <summary>
+        /// True when <paramref name="mod"/>, placed on the peptide's last residue, would block the cleavage that made
+        /// the peptide's C-terminus -- trypsin does not cut after an acetylated lysine, so a tryptic peptide cannot end
+        /// in one. GPTMD then must not localize it there, and tries the peptide's other residues instead.
+        /// </summary>
+        /// <remarks>
+        /// The search's digestion drops exactly these peptidoforms when RespectCleavageBlockingModifications is on, and
+        /// this asks mzLib's CleavageBlockingPolicy the same question, read from the digestion settings the peptide was
+        /// produced under (the file-specific ones). So GPTMD never writes a site the search would refuse to identify,
+        /// and it is inert wherever the search is: flag off, a semi- or non-specific search, the protein's own
+        /// C-terminus, a protease that does not cut after the residue, a site a wildcard motif also cuts, and RNA.
+        /// </remarks>
+        private static bool BlocksTheCleavageThatEndsThePeptide(Modification mod, IBioPolymerWithSetMods peptide, int pepSeqIndex, int indexInProtein) =>
+            pepSeqIndex == peptide.Length - 1
+            && peptide.DigestionParams is DigestionParams digestionParams
+            && peptide.Parent is Protein protein
+            && CleavageBlockingPolicy.For(digestionParams, new[] { mod }, protein).Blocks(mod, indexInProtein);
 
         private static void AddIndexedMod(ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>> modDict, string proteinAccession, Tuple<int, Modification> indexedMod)
         {

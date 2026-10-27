@@ -20,6 +20,7 @@ using System.Reflection;
 using EngineLayer.DatabaseLoading;
 using Omics.BioPolymer;
 using Omics;
+using Omics.Digestion;
 using Readers;
 
 namespace Test
@@ -565,6 +566,54 @@ namespace Test
             }
 
             Directory.Delete(outputFolder, true);
+        }
+
+        /// <summary>
+        /// A modification that blocks the protease's cleavage cannot sit on a residue the protease cut after: trypsin
+        /// does not cleave after an acetylated lysine, so a tryptic peptide cannot END in one. With the search's
+        /// RespectCleavageBlockingModifications on, GPTMD must not localize such a modification there -- the same rule the
+        /// search's digestion applies -- and must still try the peptide's other residues.
+        ///
+        /// The peptide is AAAKAAAAK (residues 1-9): K4 is internal, K9 is the residue trypsin cut after, unless the protein
+        /// ends there. The spectrum is a stub, so every placement scores the same and GPTMD writes every site it allows.
+        /// </summary>
+        [Test]
+        [TestCase("AAAKAAAAKAAAAR", "Acetylation", true, CleavageSpecificity.Full, "4", TestName = "BlockingModOnTheCutResidue_IsRefused")]
+        [TestCase("AAAKAAAAKAAAAR", "Acetylation", false, CleavageSpecificity.Full, "4,9", TestName = "BlockingModOnTheCutResidue_IsKeptWithTheFlagOff")]
+        [TestCase("AAAKAAAAK", "Acetylation", true, CleavageSpecificity.Full, "4,9", TestName = "BlockingModOnTheProteinCTerminus_IsKept")]
+        [TestCase("AAAKAAAAKAAAAR", "Acetylation", true, CleavageSpecificity.Semi, "4,9", TestName = "BlockingModOnTheCutResidue_IsKeptInASemiSpecificSearch")]
+        [TestCase("AAAKAAAAKAAAAR", "Methylation", true, CleavageSpecificity.Full, "4,9", TestName = "NonBlockingModOnTheCutResidue_IsKept")]
+        public static void GptmdRefusesACleavageBlockingModificationOnTheResidueTheProteaseCutAfter(string proteinSequence,
+            string modificationName, bool respectCleavageBlockingModifications, CleavageSpecificity searchMode, string expectedSites)
+        {
+            ModificationMotif.TryGetMotif("K", out ModificationMotif motifK);
+            double modificationMass = modificationName == "Acetylation" ? 42.010565 : 14.015650;
+            var modification = new Modification(_originalId: modificationName, _modificationType: "Common Biological", _target: motifK,
+                _locationRestriction: "Anywhere.", _monoisotopicMass: modificationMass);
+            Assert.That(CleavageBlockingModifications.BlocksCleavageBy(modification, ProteaseDictionary.Dictionary["trypsin"]),
+                Is.EqualTo(modificationName == "Acetylation"), "the test's premise: only acetyl blocks trypsin");
+
+            var protein = new Protein(proteinSequence, "accession");
+            var digestionParams = new DigestionParams(minPeptideLength: 5, searchModeType: searchMode,
+                respectCleavageBlockingModifications: respectCleavageBlockingModifications);
+            var commonParameters = new CommonParameters(digestionParams: digestionParams);
+            var peptide = protein.Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .First(p => p.BaseSequence == "AAAKAAAAK" && p.OneBasedStartResidue == 1);
+
+            MsDataScan stubScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null,
+                MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
+            var scan = new Ms2ScanWithSpecificMass(stubScan,
+                (new Proteomics.AminoAcidPolymer.Peptide(peptide.BaseSequence).MonoisotopicMass + modificationMass).ToMz(1), 1, "filepath", new CommonParameters());
+            SpectralMatch psm = new PeptideSpectralMatch(peptide, 0, 0, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
+            psm.SetMs2Scan(scan.TheScan);
+
+            var engine = new GptmdEngine(new List<SpectralMatch> { psm }, new List<Modification> { modification }, new List<Tuple<double, double>>(),
+                new Dictionary<string, Tolerance> { { "filepath", new PpmTolerance(10) } }, commonParameters, null, new List<string>(), null);
+            var result = (GptmdResults)engine.Run();
+
+            Assert.That(result.Mods["accession"].Select(site => site.Item1).OrderBy(site => site).ToArray(),
+                Is.EqualTo(expectedSites.Split(',').Select(int.Parse).ToArray()));
         }
 
         private sealed class RecordingGptmdFilter : IGptmdFilter
