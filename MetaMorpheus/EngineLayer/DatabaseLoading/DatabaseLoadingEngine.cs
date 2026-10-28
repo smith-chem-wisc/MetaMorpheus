@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Omics.Digestion;
 using Transcriptomics;
 using UsefulProteomicsDatabases;
@@ -85,6 +86,16 @@ public class DatabaseLoadingEngine(
         int emptyEntries = 0;
         errors = new();
         List<IBioPolymer> bioPolymerList = new();
+        // Every database the task was given, spectral libraries included, is identified by its content as it is
+        // loaded, so results.txt and the manuscript prose say exactly which files were searched. The hashes are
+        // taken on their own thread while the databases are parsed, not before. Hashed first, a file's whole read
+        // sits in front of the parse (about 1 s per GB from the OS cache, 10-15 s per GB from a busy disk); beside
+        // the parse, the hash reads the file once for both and the load takes as long as the parse alone.
+        var identities = Task.Run(() =>
+        {
+            foreach (var db in dbFilenameList)
+                db.RecordIdentity();
+        });
         foreach (var db in dbFilenameList.Where(p => !p.IsSpectralLibrary))
         {
             IEnumerable<IBioPolymer> dbBioPolymers;
@@ -123,6 +134,7 @@ public class DatabaseLoadingEngine(
             errors.Add("Warning: " + emptyEntries + $" empty {GlobalVariables.AnalyteType.GetBioPolymerLabel()} entries ignored");
         }
 
+        identities.GetAwaiter().GetResult();
         return bioPolymerList;
     }
 
@@ -350,6 +362,11 @@ public class DatabaseLoadingEngineResults(DatabaseLoadingEngine engine, List<DbF
             sb.AppendLine(
                 $"\t{Path.GetFileName(db.FilePath)}: {db.BioPolymerCount} {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s");
             sb.AppendLine($"\t\t{db.TargetCount} Target {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s \t {db.DecoyCount} Decoy {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s");
+            // Appended under the two lines above, which keep their format for anything that already reads them.
+            sb.AppendLine($"\t\tPath: {db.FilePath}");
+            sb.AppendLine($"\t\t{db.IdentityText()}");
+            if (db.DerivedFromText() is { } derivedFrom)
+                sb.AppendLine($"\t\t{derivedFrom}");
         }
         sb.AppendLine($"Total {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s loaded: {BioPolymers.Count + BioPolymersRemovedBySanitization}");
         sb.AppendLine($"Total {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s removed by sanitization: {BioPolymersRemovedBySanitization}");
