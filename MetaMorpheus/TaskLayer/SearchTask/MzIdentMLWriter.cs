@@ -738,7 +738,7 @@ namespace TaskLayer
                                 accession = "MS:1001097",
                                 name = "distinct peptide sequences",
                                 cvRef = "PSI-MS",
-                                value = proteinGroup.UniquePeptides.Count.ToString()
+                                value = proteinGroup.NumberOfUniquePeptides.ToString()
                             }
                             }
                         });

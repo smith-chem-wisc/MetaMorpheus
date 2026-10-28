@@ -89,6 +89,23 @@ namespace EngineLayer.SpectrumMatch
         }
 
         /// <summary>
+        /// Drops each PSM whose full sequence did not resolve (two or more full sequences match the scan) unless
+        /// <paramref name="keep"/> accepts it, returning how many were dropped. PSMs with a resolved full sequence are
+        /// never dropped. For decisions <see cref="Filter"/> cannot make because they need more than the PSM, such as
+        /// its protein groups, or what else was identified in its file.
+        /// </summary>
+        public int RemoveAmbiguousFullSequences(Func<SpectralMatch, bool> keep)
+        {
+            return FilteredPsmsList.RemoveAll(psm => psm.FullSequence == null && !keep(psm));
+        }
+
+        /// <summary>
+        /// Whether <paramref name="psm"/> passes this filter's threshold, at this filter's level (PSM or peptide), by the
+        /// rule the PSMs it holds passed. For a match the filter was not given.
+        /// </summary>
+        public bool PassesThreshold(SpectralMatch psm) => AboveThreshold(psm);
+
+        /// <summary>
         /// Returns the number of PSMs that passed the filtering criteria
         /// </summary>
         public int TargetPsmsAboveThreshold => FilteredPsmsList.Count(psm => !psm.IsDecoy && !psm.IsContaminant && AboveThreshold(psm));
@@ -110,6 +127,11 @@ namespace EngineLayer.SpectrumMatch
         /// <param name="commonParams">Common parameters containing default filter thresholds. In multiprotease scenarios, 
         /// consider using explicit threshold parameters instead.</param>
         /// <param name="filterAtPeptideLevel">Filter results at the peptide level (defaults to false) </param>
+        /// <param name="includeAmbiguousMods">Keep PSMs whose full sequence did not resolve (two or more full sequences
+        /// match the scan)</param>
+        /// <param name="includeLocalizationAmbiguousMods">Keep PSMs ambiguous only in where their modifications sit
+        /// (<see cref="SpectralMatch.IsLocalizationAmbiguous"/>), whatever <paramref name="includeAmbiguousMods"/> says
+        /// about the others. Null, the default, follows <paramref name="includeAmbiguousMods"/>.</param>
         /// <param name="filterType">The value to filter on, chosen by the caller. Null (the default) infers it from the
         /// thresholds, as MetaMorpheus always has. Given, it is used as asked: <see cref="FilterType.PepQValue"/> at the
         /// PEP q-value threshold, <see cref="FilterType.QValue"/> and <see cref="FilterType.QValueNotch"/> at the q-value
@@ -127,8 +149,17 @@ namespace EngineLayer.SpectrumMatch
             double? qValueThreshold = null,
             double? pepQValueThreshold = null,
             bool filterAtPeptideLevel = false,
+            bool? includeLocalizationAmbiguousMods = null,
             FilterType? filterType = null)
         {
+            bool includeLocalizationAmbiguous = includeLocalizationAmbiguousMods ?? includeAmbiguousMods;
+
+            // Whether a PSM whose full sequence did not resolve is kept. It is asked whether it is ambiguous only in its
+            // modification sites only when the two settings disagree.
+            bool KeepUnresolvedFullSequence(SpectralMatch psm) =>
+                includeAmbiguousMods == includeLocalizationAmbiguous
+                    ? includeAmbiguousMods
+                    : psm.IsLocalizationAmbiguous ? includeLocalizationAmbiguous : includeAmbiguousMods;
 
             qValueThreshold ??= commonParams.QValueThreshold;
             pepQValueThreshold ??= commonParams.PepQValueThreshold;
@@ -140,7 +171,7 @@ namespace EngineLayer.SpectrumMatch
                     (includeDecoys || !psm.IsDecoy)
                     && (includeContaminants || !psm.IsContaminant)
                     && (includeAmbiguous || !psm.BaseSequence.IsNullOrEmpty())
-                    && (includeAmbiguousMods || !psm.FullSequence.IsNullOrEmpty()))
+                    && (!psm.FullSequence.IsNullOrEmpty() || KeepUnresolvedFullSequence(psm)))
                 .ToList();
             string label = GlobalVariables.AnalyteType.GetSpectralMatchLabel();
 

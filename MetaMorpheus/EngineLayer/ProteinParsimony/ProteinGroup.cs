@@ -183,6 +183,16 @@ namespace EngineLayer
         #region Peptide Output
 
         /// <summary>
+        /// The number of distinct unique peptides: distinct full sequences when modified peptides are displayed as
+        /// different, distinct base sequences otherwise. This is the "Number of Unique Peptides" column and mzIdentML's
+        /// MS:1001097. <see cref="UniquePeptides"/> holds one peptide per protein, so a group of N indistinguishable
+        /// proteins holds each of its peptides N times; count it through here, not by its size.
+        /// </summary>
+        public int NumberOfUniquePeptides => DisplayModsOnPeptides
+            ? UniquePeptides.Select(p => p.FullSequence).Distinct().Count()
+            : UniquePeptides.Select(p => p.BaseSequence).Distinct().Count();
+
+        /// <summary>
         /// Populates unique and shared peptide output strings, converting to light SILAC sequences if needed.
         /// </summary>
         public void GetIdentifiedPeptidesOutput(List<SilacLabel> labels)
@@ -358,10 +368,7 @@ namespace EngineLayer
             sb.Append("\t");
 
             // number of unique peptides
-            if (!DisplayModsOnPeptides)
-                sb.Append("" + UniquePeptides.Select(p => p.BaseSequence).Distinct().Count());
-            else
-                sb.Append("" + UniquePeptides.Select(p => p.FullSequence).Distinct().Count());
+            sb.Append("" + NumberOfUniquePeptides);
             sb.Append("\t");
 
             // sequence coverage percent

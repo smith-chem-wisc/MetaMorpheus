@@ -816,6 +816,7 @@ namespace Test
                 NullMassTestScan(mzmlPath, commonParameters, 1), commonParameters, new List<MatchedFragmentIon>());
             quantifiablePsm.ResolveAllAmbiguities();
             quantifiablePsm.SetFdrValues(1, 0, 0.0, 1, 0, 0.0, 0, 0.0);
+            quantifiablePsm.PeptideFdrInfo = new FdrInfo { QValue = 0, QValueNotch = 0, PEP = 0, PEP_QValue = 0 }; // passes at the peptide level too: FlashLFQ reports only peptides that do
 
             var (light, heavy) = TwoPeptidesSharingAFullSequence();
             SpectralMatch masslessPsm = new PeptideSpectralMatch(light, 0, 10, 1,
@@ -937,6 +938,7 @@ namespace Test
                 NullMassTestScan(mzmlPath, commonParameters, 1), commonParameters, new List<MatchedFragmentIon>());
             psm.ResolveAllAmbiguities();
             psm.SetFdrValues(1, 0, 0.0, 1, 0, 0.0, 0, 0.0);
+            psm.PeptideFdrInfo = new FdrInfo { QValue = 0, QValueNotch = 0, PEP = 0, PEP_QValue = 0 }; // passes at the peptide level too: FlashLFQ reports only peptides that do
 
             // Without a matching MS1 peak FlashLFQ builds no ChromatographicPeak at all, and the
             // assertions below would pass over an empty sequence.

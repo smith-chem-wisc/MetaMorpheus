@@ -903,6 +903,21 @@ namespace TaskLayer
             && (Parameters.SearchParameters.WriteContaminants || !proteinGroup.IsContaminant)
             && (Parameters.SearchParameters.WriteHighQValuePsms || proteinGroup.QValue <= qValueThreshold);
 
+        /// <summary>
+        /// The peptide name each localization-ambiguous identity was quantified under this run (site-free identity, see
+        /// <see cref="SpectralMatch.GetSiteFreeIdentity"/>, to the candidates' full sequences joined by '|'). Empty until
+        /// label-free quantification has run.
+        /// </summary>
+        private Dictionary<string, string> _localizationAmbiguousNames = new();
+
+        /// <summary>
+        /// The sequence label-free quantification knows a match by: its full sequence, or for a localization-ambiguous
+        /// match the name of the sites it leaves open. Null for a match that was not quantified.
+        /// </summary>
+        private string QuantifiedSequence(SpectralMatch psm) =>
+            psm.FullSequence
+            ?? (psm.IsLocalizationAmbiguous && _localizationAmbiguousNames.TryGetValue(psm.GetSiteFreeIdentity(), out var name) ? name : null);
+
         private void QuantificationAnalysis()
         {
             try
@@ -984,14 +999,18 @@ namespace TaskLayer
                     spectraFileInfo = BuildUndefinedExperimentalDesign();
                 }
 
-                // get PSMs to pass to FlashLFQ
+                // get PSMs to pass to FlashLFQ. A match ambiguous only in where its modifications sit is kept for now: it
+                // is quantified when it belongs to one protein group, which is decided once the groups are known, below.
+                // SILAC rebuilds each match from its first candidate, which would give such a match one site it never
+                // had, so SILAC keeps quantifying unambiguous matches only.
                 var psmsForQuantification = FilteredPsms.Filter(Parameters.AllSpectralMatches,
                     CommonParameters,
                     includeDecoys: Parameters.SearchParameters.MatchBetweenRuns, // Decoys are required for PIP-ECHO, but are not written to the output file
                     includeContaminants: true,
                     includeAmbiguous: false,
                     includeAmbiguousMods: false,
-                    includeHighQValuePsms: false);
+                    includeHighQValuePsms: false,
+                    includeLocalizationAmbiguousMods: Parameters.SearchParameters.SilacLabels == null);
 
                 // FlashLFQ needs a mass. The filter above screens on sequence, which does not imply a
                 // resolved mass: a NaN residue mass, or two best matches whose mods share an IdWithMotif
@@ -1003,14 +1022,15 @@ namespace TaskLayer
                 }
 
                 // Only these peptides will be written to the AllQuantifiedPeptides.tsv output file
-                var peptideSequencesForQuantification = FilteredPsms.Filter(Parameters.AllSpectralMatches,
+                var peptidesForQuantification = FilteredPsms.Filter(Parameters.AllSpectralMatches,
                     CommonParameters,
                     includeDecoys: false,
                     includeContaminants: true,
                     includeAmbiguous: false,
                     includeAmbiguousMods: false,
                     includeHighQValuePsms: false,
-                    filterAtPeptideLevel: true).Select(p => p.FullSequence).ToList();
+                    filterAtPeptideLevel: true);
+                var peptideSequencesForQuantification = peptidesForQuantification.Select(p => p.FullSequence).ToList();
 
                 // pass protein group info for each PSM
                 var psmToProteinGroups = new Dictionary<SpectralMatch, List<ProteinGroup>>();
@@ -1025,7 +1045,7 @@ namespace TaskLayer
                             string.Join("|", proteinsOrderedByAccession.Select(p => p.Organism).Distinct()));
 
                         foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>()
-                            .Where(v => v.FullSequence != null))
+                            .Where(v => v.FullSequence != null || v.IsLocalizationAmbiguous))
                         {
                             if (psmToProteinGroups.TryGetValue(psm, out var flashLfqProteinGroups))
                             {
@@ -1064,6 +1084,64 @@ namespace TaskLayer
                         }
                     }
                 }
+
+                // A localization-ambiguous match is unique to the one protein group its candidates belong to, and counts
+                // for it, as an unambiguous one does. One whose candidates span groups, or belong to none, could be
+                // credited only by guessing which group it measured, so it is left out of quantification. Groups are
+                // counted by name: a rescued group listed twice (#2921) gives the match two copies of one group.
+                // With "treat modified peptides as different", parsimony builds peptides by full sequence, so such a
+                // match joins no group and is always left out there.
+                psmsForQuantification.RemoveAmbiguousFullSequences(psm =>
+                    psmToProteinGroups.TryGetValue(psm, out var groupsOfThisPsm)
+                    && groupsOfThisPsm.Select(group => group.ProteinGroupName).Distinct().Count() == 1);
+
+                // In a file where a positional isomer was identified with its site, that match already measures the
+                // feature, and an ambiguous one beside it would make FlashLFQ see two peptides on one peak and zero
+                // both (measured on the islet set: 206 values of 153 localized peptides lost). So the ambiguous match is
+                // quantified only in files where no isomer was localized. Only an isomer that will be reported counts:
+                // one that fails the peptide-level q-value measures nothing in the tables, so the ambiguous match beside
+                // it is kept (FlashLFQ gives a shared peak to the peptide it was asked to report). Decoys are never
+                // reported, so for them every localized isomer counts, as it does for targets that pass.
+                var reportedSequences = new HashSet<string>(peptideSequencesForQuantification);
+                var localizedIsomersByFile = new HashSet<(string, string)>(psmsForQuantification
+                    .Where(psm => psm.FullSequence != null && (psm.IsDecoy || reportedSequences.Contains(psm.FullSequence)))
+                    .Select(psm => (psm.FullFilePath, psm.GetSiteFreeIdentity())));
+                psmsForQuantification.RemoveAmbiguousFullSequences(psm =>
+                    !localizedIsomersByFile.Contains((psm.FullFilePath, psm.GetSiteFreeIdentity())));
+
+                // Each is quantified as one peptide per base sequence and set of modifications, named by every site its
+                // matches leave open, so no site is claimed that the spectra did not settle and two ambiguous matches
+                // of one feature are one peptide, not a conflict.
+                _localizationAmbiguousNames = psmsForQuantification
+                    .Where(psm => psm.FullSequence == null)
+                    .GroupBy(psm => psm.GetSiteFreeIdentity())
+                    .ToDictionary(isomers => isomers.Key, isomers => string.Join("|", isomers
+                        .SelectMany(psm => psm.GetLocalizationCandidates())
+                        .Distinct()
+                        .OrderBy(sequence => sequence, StringComparer.Ordinal)));
+
+                // Such a peptide is reported only when it passes the peptide-level q-value, as a localized peptide is.
+                // The search's peptide-level FDR keys peptides by full sequence, so it gave these none; here each set
+                // counts as one peptide beside the full-sequence peptides, and is held to the same cut as the peptides
+                // above. The stored FDR values, which the result files are written from, are put back afterwards. As
+                // for a localized peptide, a match whose peptide fails still reaches FlashLFQ, which does not report it.
+                var siteAmbiguousPeptidesPassing = new HashSet<string>();
+                if (_localizationAmbiguousNames.Count > 0)
+                {
+                    using (FdrInfoSnapshot.Take(Parameters.AllSpectralMatches))
+                    {
+                        siteAmbiguousPeptidesPassing.UnionWith(FdrAnalysisEngine
+                            .CalculateLocalizationAmbiguousPeptideQValues(Parameters.AllSpectralMatches)
+                            .Where(peptidesForQuantification.PassesThreshold)
+                            .Select(psm => psm.GetSiteFreeIdentity()));
+                    }
+                }
+
+                peptideSequencesForQuantification.AddRange(psmsForQuantification
+                    .Where(psm => psm.FullSequence == null && !psm.IsDecoy && siteAmbiguousPeptidesPassing.Contains(psm.GetSiteFreeIdentity()))
+                    .Select(QuantifiedSequence)
+                    .Distinct()
+                    .OrderBy(sequence => sequence, StringComparer.Ordinal));
 
                 //If SILAC (Pre-Quantification) preparation
                 //Setup variables
@@ -1228,7 +1306,7 @@ namespace TaskLayer
                             new Identification(
                                 fileInfo: rawfileinfo,
                                 psm.BaseSequence,
-                                psm.FullSequence,
+                                QuantifiedSequence(psm),
                                 psm.BioPolymerWithSetModsMonoisotopicMass.Value,
                                 psm.ScanRetentionTime,
                                 psm.ScanPrecursorCharge,
@@ -1257,7 +1335,15 @@ namespace TaskLayer
                     silent: true,
                     maxThreads: CommonParameters.MaxThreadsToUsePerFile);
 
-                if (flashLFQIdentifications.Any())
+                // FlashLFQ reads an empty list of peptides to report as "report every identified peptide". When no peptide
+                // passes the peptide-level q-value there is nothing to report, so FlashLFQ is not run, as when nothing
+                // was identified; otherwise every peptide that failed would be reported. SILAC passes no list.
+                bool noPeptidePasses = Parameters.SearchParameters.SilacLabels == null && peptideSequencesForQuantification.Count == 0;
+                if (noPeptidePasses && flashLFQIdentifications.Any())
+                {
+                    Warn("No peptide passed the peptide-level q-value, so none was quantified.");
+                }
+                else if (flashLFQIdentifications.Any())
                 {
                     Parameters.FlashLfqResults = flashLfqEngine.Run();
                 }
@@ -1869,7 +1955,8 @@ namespace TaskLayer
                     false,
                     CommonParameters,
                     this.FileSpecificParameters,
-                    new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }
+                    new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath },
+                    labelPeptidesUniqueToOneGroup: false // each subset keeps the search's labels
                     ).Run();
 
                 subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
@@ -1994,13 +2081,14 @@ namespace TaskLayer
                 return;
             }
 
+            // A localization-ambiguous match is quantified under the name of its sites, so that name is its sequence here.
             var sequencesWithATargetMatch = new HashSet<string>(Parameters.AllSpectralMatches
-                .Where(psm => !psm.IsContaminant && psm.FullSequence != null)
-                .Select(psm => UnlabeledSequence(psm.FullSequence)));
+                .Where(psm => !psm.IsContaminant && QuantifiedSequence(psm) != null)
+                .Select(psm => UnlabeledSequence(QuantifiedSequence(psm))));
 
             var contaminantOnlySequences = new HashSet<string>(Parameters.AllSpectralMatches
-                .Where(psm => psm.IsContaminant && psm.FullSequence != null)
-                .Select(psm => UnlabeledSequence(psm.FullSequence))
+                .Where(psm => psm.IsContaminant && QuantifiedSequence(psm) != null)
+                .Select(psm => UnlabeledSequence(QuantifiedSequence(psm)))
                 .Where(sequence => !sequencesWithATargetMatch.Contains(sequence)));
 
             if (contaminantOnlySequences.Count == 0)
