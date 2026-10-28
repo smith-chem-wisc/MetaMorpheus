@@ -170,6 +170,43 @@ namespace EngineLayer.FdrAnalysis
         }
 
         /// <summary>
+        /// Peptide-level q-values for the matches ambiguous only in where their modifications sit
+        /// (<see cref="SpectralMatch.IsLocalizationAmbiguous"/>), which <see cref="DoFalseDiscoveryRateAnalysis"/> cannot
+        /// give them: it keys a peptide by its full sequence, which such a match does not have, so all of them share one
+        /// entry with every other ambiguous match. Here each set of them with one site-free identity
+        /// (<see cref="SpectralMatch.GetSiteFreeIdentity"/>) is one more peptide beside the full-sequence peptides, and the
+        /// final peptide-level passes are re-run as that method runs them: per digestion agent, the best match of each
+        /// peptide by PEP and then score, targets and decoys alike, PEP q-values when PEPs exist, then q-values.
+        /// Returns each set's best match, carrying its q-values in <see cref="SpectralMatch.PeptideFdrInfo"/>.
+        /// It writes onto the matches it is given, the full-sequence peptides' best matches included, so a caller that
+        /// must keep the stored values takes an <see cref="FdrInfoSnapshot"/> first.
+        /// </summary>
+        public static List<SpectralMatch> CalculateLocalizationAmbiguousPeptideQValues(IEnumerable<SpectralMatch> psms)
+        {
+            var bestMatchOfEachSet = new List<SpectralMatch>();
+            foreach (var proteasePsms in psms.GroupBy(p => p.DigestionParams.DigestionAgent))
+            {
+                var peptides = proteasePsms
+                    .OrderBy(p => p.FdrInfo.PEP)
+                    .ThenByDescending(p => p)
+                    .GroupBy(p => (p.FullSequence, SiteFreeIdentity: p.FullSequence == null && p.IsLocalizationAmbiguous ? p.GetSiteFreeIdentity() : null))
+                    .Select(p => p.First())
+                    .ToList();
+
+                if (proteasePsms.Any(p => p.FdrInfo.PEP > 0))
+                {
+                    CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
+                }
+
+                peptides = peptides.OrderByDescending(p => p).ToList();
+                CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
+                bestMatchOfEachSet.AddRange(peptides.Where(p => p.FullSequence == null && p.IsLocalizationAmbiguous));
+            }
+
+            return bestMatchOfEachSet;
+        }
+
+        /// <summary>
         /// This methods assumes that PSMs are already sorted appropriately for downstream usage
         /// Then, it counts the number of targets and (fractional) decoys, writes those values to the 
         /// appropriate FdrInfo (PSM or Peptide level), and calculates q-values

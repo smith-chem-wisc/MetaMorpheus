@@ -484,6 +484,55 @@ namespace EngineLayer
 
         #endregion
 
+        #region Quantification
+
+        /// <summary>
+        /// What this match identifies with the modification sites left out: the base sequence, and each modification by
+        /// what it is, sorted. Two positional isomers (oxidation on M3, or on M5) give the same string. Null when the
+        /// candidates differ in base sequence or in their modifications. A modification is what it is by its type, its
+        /// name without the residue (<see cref="Modification.OriginalId"/>, so Phosphorylation on S and on T are one
+        /// modification) and its chemical formula. A formula alone does not say what a modification is: Hydroxylation on
+        /// P and Oxidation on M are both one oxygen, and a match that cannot tell them apart is ambiguous in which
+        /// modification it carries, not only in where. A modification with no formula is compared by its mass, which
+        /// every modification on a scored peptide has: the peptide's mass is the sum of them.
+        /// </summary>
+        public string GetSiteFreeIdentity()
+        {
+            if (BaseSequence == null)
+            {
+                return null;
+            }
+
+            var modificationsOfEachCandidate = _BestMatchingBioPolymersWithSetMods
+                .Select(b => string.Join(";", b.SpecificBioPolymer.AllModsOneIsNterminus.Values
+                    .Select(m => m.ModificationType + ":" + (m.OriginalId ?? m.IdWithMotif) + " "
+                        + (m.ChemicalFormula?.Formula ?? m.MonoisotopicMass.Value.ToString("F5", CultureInfo.InvariantCulture)))
+                    .OrderBy(key => key, StringComparer.Ordinal)))
+                .Distinct()
+                .Take(2)
+                .ToList();
+
+            return modificationsOfEachCandidate.Count == 1 ? BaseSequence + " " + modificationsOfEachCandidate[0] : null;
+        }
+
+        /// <summary>
+        /// True when the match is ambiguous ONLY in where its modifications sit: two or more full sequences, one base
+        /// sequence, one resolved mass, and the same modifications on every candidate (<see cref="GetSiteFreeIdentity"/>).
+        /// A match ambiguous in which modifications it carries is not.
+        /// </summary>
+        public bool IsLocalizationAmbiguous =>
+            FullSequence == null && BioPolymerWithSetModsMonoisotopicMass.HasValue && GetSiteFreeIdentity() != null;
+
+        /// <summary>
+        /// The candidates' full sequences, each once, in ordinal order: the sites a localization-ambiguous match leaves
+        /// open. Empty unless <see cref="IsLocalizationAmbiguous"/>.
+        /// </summary>
+        public IEnumerable<string> GetLocalizationCandidates() => IsLocalizationAmbiguous
+            ? _BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.FullSequence).Distinct().OrderBy(s => s, StringComparer.Ordinal)
+            : Enumerable.Empty<string>();
+
+        #endregion
+
         #region Silac
 
         protected SpectralMatch(SpectralMatch psm, List<SpectralMatchHypothesis> bestMatchingPeptides)
