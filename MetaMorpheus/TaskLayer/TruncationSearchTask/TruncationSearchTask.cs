@@ -113,7 +113,7 @@ namespace TaskLayer
             {
                 // Load one file's MS2 scans at a time, so only the file being searched is held in memory.
                 string rawFilePath = currentRawFileList[i];
-                CommonParameters fileParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i]);
+                CommonParameters fileParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i], currentRawFileList[i]);
 
                 MsDataFile dataFile = myFileManager.LoadFile(rawFilePath, fileParams);
                 Ms2ScanWithSpecificMass[] scans = GetMs2Scans(dataFile, rawFilePath, fileParams)

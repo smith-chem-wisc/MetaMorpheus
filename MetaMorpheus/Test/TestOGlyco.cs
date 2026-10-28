@@ -306,12 +306,12 @@ namespace Test
 
             //The following code is to test the glycan with complex structure, only to pass the converage.
 
-            var testKind = GlycanDatabase.String2Kind("HexNAc(2)Hex(4)Fuc(2)NeuAc(1)Xylose(1)");
+            var testKind = GlycanDatabase.ParseComposition("HexNAc(2)Hex(4)Fuc(2)NeuAc(1)Xylose(1)");
             
             var testGlycanIons = GlycanDatabase.OGlycanCompositionFragments(testKind);
 
 
-            var testKind_smallGlycan = GlycanDatabase.String2Kind("HexNAc(1)");
+            var testKind_smallGlycan = GlycanDatabase.ParseComposition("HexNAc(1)");
 
             var testGlycanIons_smallGlycan = GlycanDatabase.OGlycanCompositionFragments(testKind_smallGlycan);
 
@@ -348,7 +348,7 @@ namespace Test
             string kdnGlycan = "HexNAc(2)Hex(2)Kdn(1)";
             string kdnGlycan2 = "N(H)H(N)K";
             var expectedKind = new byte[] { 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
-            Assert.That(GlycanDatabase.String2Kind(kdnGlycan), Is.EqualTo(expectedKind));
+            Assert.That(GlycanDatabase.ParseComposition(kdnGlycan), Is.EqualTo(expectedKind));
             Assert.That(Glycan.GetKind(kdnGlycan2), Is.EqualTo(expectedKind));
         }
 
@@ -958,9 +958,10 @@ namespace Test
 
             List<SpectraFileInfo> spectraFiles = new List<SpectraFileInfo>();
 
-            //These conditions are such that the experimental design file is bad.
-            spectraFiles.Add(new SpectraFileInfo(spectraFile1, "condition1", 0, 9, 0));
-            spectraFiles.Add(new SpectraFileInfo(spectraFile2, "condition2", 5, 0, 4));
+            //These conditions are such that the experimental design file is bad: two files at one
+            //condition, biorep, fraction and techrep. (A gap in the numbers is only a warning.)
+            spectraFiles.Add(new SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile2, "condition1", 0, 0, 0));
 
             ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
 
@@ -973,7 +974,7 @@ namespace Test
                 out var errors);
 
             Assert.That(errors.Count == 1);
-            Assert.That(errors[0].Contains("Condition \"condition1\" biorep 1 fraction 1 techrep 1 is missing!"));
+            Assert.That(errors[0], Is.EqualTo("Duplicates are not allowed:\nCondition \"condition1\" biorep 1 fraction 1 techrep 1"));
             Assert.That(readIn.Count == 2);
 
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
