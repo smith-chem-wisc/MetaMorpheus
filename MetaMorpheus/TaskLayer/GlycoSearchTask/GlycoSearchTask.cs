@@ -241,6 +241,7 @@ namespace TaskLayer
                     new GlycoSearchEngine(gsms, scans, peptideIndex, fragmentIndex, null, 0, searchParamsPerFile[spectraFileIndex], this.FileSpecificParameters, glycanSearchSpace,
                         _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisIds[spectraFileIndex])
                     {
+                        CustomOxoniumRelativeIntensityThreshold = _glycoSearchParameters.CustomOxoniumRelativeIntensityThreshold,
                         ThreadBudget = searchThreads
                     }.Run();
                     gsmsPerFile[spectraFileIndex] = gsms;
@@ -289,7 +290,10 @@ namespace TaskLayer
                         FragmentIndex secondFragmentIndex = null;
 
                         return new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, indexParams, this.FileSpecificParameters, glycanSearchSpace,
-                            _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisId, candidates);
+                            _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisId, candidates)
+                        {
+                            CustomOxoniumRelativeIntensityThreshold = _glycoSearchParameters.CustomOxoniumRelativeIntensityThreshold
+                        };
                     }
 
                     // The TopN candidate cut has to be taken over the whole database, or which glycopeptides are reported

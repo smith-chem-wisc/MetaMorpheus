@@ -49,7 +49,10 @@ namespace Test
         /// </summary>
         /// <param name="oxoniumIonFilter"> The task's OxoniumIonFilt setting. </param>
         /// <param name="customIonObserved"> Whether the oxonium intensities report the registered custom ion (if any). </param>
-        private static List<GlycoSpectralMatch> FindNGlycanForKnownGlycopeptide(bool oxoniumIonFilter, bool customIonObserved)
+        /// <param name="customIonIntensity"> The custom ion's intensity when reported, against a 138.055 reference of 100. </param>
+        /// <param name="customOxoniumThreshold"> The engine's CustomOxoniumRelativeIntensityThreshold. </param>
+        private static List<GlycoSpectralMatch> FindNGlycanForKnownGlycopeptide(bool oxoniumIonFilter, bool customIonObserved,
+            double customIonIntensity = 500, double customOxoniumThreshold = GlycoPeptides.DefaultCustomOxoniumRelativeIntensityThreshold)
         {
             var commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, trimMsMsPeaks: false,
                 precursorMassTolerance: new PpmTolerance(10));
@@ -67,14 +70,17 @@ namespace Test
             // Built after any custom monosaccharide is registered, so the loaded N-glycans' Kind[] has its slot.
             var engine = new GlycoSearchEngine(new List<GlycoSpectralMatch>[scans.Length], scans, new List<PeptideWithSetModifications> { peptide },
                 null, null, 0, commonParameters, null, "OGlycan.gdb", NGlycanDatabase, GlycoSearchType.NGlycanSearch,
-                glycoSearchTopNum: 30, maxOGlycanNum: 3, oxoniumIonFilter: oxoniumIonFilter, nestedIds: null);
+                glycoSearchTopNum: 30, maxOGlycanNum: 3, oxoniumIonFilter: oxoniumIonFilter, nestedIds: null)
+            {
+                CustomOxoniumRelativeIntensityThreshold = customOxoniumThreshold
+            };
 
             double[] oxoniumIonIntensities = new double[Glycan.AllOxoniumIonsIncludingCustoms.Length];
             oxoniumIonIntensities[OxoniumIndex_R138] = 100;      // the reference the custom-ion test divides by
             oxoniumIonIntensities[OxoniumIndex_HexNAc204] = 1000;
             if (customIonObserved && Glycan.HasCustomOxoniumIons)
             {
-                oxoniumIonIntensities[Glycan.AllOxoniumIons.Length] = 500; // first custom slot, ratio 5.0
+                oxoniumIonIntensities[Glycan.AllOxoniumIons.Length] = customIonIntensity; // first custom slot, ratio customIonIntensity / 100
             }
 
             double possibleGlycanMassLow = commonParameters.PrecursorMassTolerance.GetMinimumValue(scan.PrecursorMass) - peptide.MonoisotopicMass;
@@ -168,6 +174,34 @@ namespace Test
                 var matches = FindNGlycanForKnownGlycopeptide(oxoniumIonFilter: false, customIonObserved: true);
 
                 Assert.That(matches.Any(IsKnownGlycan), Is.True);
+            }
+            finally
+            {
+                RestoreStartupMonosaccharides();
+            }
+        }
+
+        [TestCase(0.02, false)] // ratio 0.05 is above 2%: the ion is observed, and every glycan lacking it is cut
+        [TestCase(0.1, true)]   // ratio 0.05 is below 10%: the ion counts as absent, so the glycopeptide is kept
+        public void FindNGlycan_CustomIonAtFivePercent_EngineThresholdDecidesTheGate(double threshold, bool expectKnownGlycan)
+        {
+            // The engine's CustomOxoniumRelativeIntensityThreshold must reach the N-search gate: the same spectrum gives
+            // opposite verdicts at two thresholds.
+            try
+            {
+                RegisterCustomMonosaccharideWithIon();
+
+                var matches = FindNGlycanForKnownGlycopeptide(oxoniumIonFilter: true, customIonObserved: true,
+                    customIonIntensity: 5, customOxoniumThreshold: threshold);
+
+                if (expectKnownGlycan)
+                {
+                    Assert.That(matches.Any(IsKnownGlycan), Is.True);
+                }
+                else
+                {
+                    Assert.That(matches, Is.Empty);
+                }
             }
             finally
             {
