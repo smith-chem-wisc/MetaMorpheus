@@ -469,6 +469,52 @@ namespace Test
         }
 
         /// <summary>
+        /// MS3 reporter scans read one at a time: MS3_TMT11_Mouse_snip.mzML is a slice (scan=28207 on), so it is read whole;
+        /// renumbered from scan 1, a read by scan number finds each loaded MS3 child, and the values are the whole-file read's.
+        /// The load keeps 10 peaks in each of 10 windows, as in the MS3 test above, so trimming removes reporters.
+        /// </summary>
+        [Test]
+        public static void Ms3ReporterIons_AreReadOneAtATime_FromTheStoredChildScans()
+        {
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag("TMT11", GlobalVariables.AllModsKnown, out var tag), Is.True);
+            var commonParameters = new CommonParameters(dissociationType: DissociationType.CID,
+                ms3childScanDissociationType: DissociationType.HCD, trimMsMsPeaks: false,
+                numberOfPeaksToKeepPerWindow: 10, numberOfWindows: 10);
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsOneAtATime_Ms3");
+
+            try
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+                Directory.CreateDirectory(folder);
+                string mzml = WriteMzmlNumberedFrom(TestFile("MS3_TMT11_Mouse_snip.mzML"), Path.Combine(folder, "MS3_TMT11_Mouse_snip.mzML"), 1);
+                var loaded = new MyFileManager(true).LoadFile(mzml, commonParameters);
+                var ms2Scans = MetaMorpheusTask.GetMs2Scans(loaded, mzml, commonParameters).ToList();
+                Assert.That(ms2Scans.Any(s => s.ReporterIonScan.MsnOrder == 3), Is.True);
+
+                Assert.That(MyFileManager.SetReporterIonIntensitiesFromStoredScans(mzml, loaded, ms2Scans, tag, 1), Is.True);
+                var read = ms2Scans.Select(s => Formatted(s.IsobaricMassTagReporterIonIntensities)).ToList();
+
+                var storedScanFor = MyFileManager.PairWithStoredScans(loaded, MsDataFileReader.GetDataFile(mzml).LoadAllStaticData());
+                var fromLoaded = new List<string[]>();
+                var fromWholeFile = new List<string[]>();
+                foreach (var scan in ms2Scans)
+                {
+                    scan.SetIsobaricMassTagReporterIonIntensities(tag);
+                    fromLoaded.Add(Formatted(scan.IsobaricMassTagReporterIonIntensities));
+                    scan.SetIsobaricMassTagReporterIonIntensities(tag, storedScanFor);
+                    fromWholeFile.Add(Formatted(scan.IsobaricMassTagReporterIonIntensities));
+                }
+
+                Assert.That(fromWholeFile, Is.Not.EqualTo(fromLoaded), "the fixture only means anything if trimming removes a reporter");
+                Assert.That(read, Is.EqualTo(fromWholeFile));
+            }
+            finally
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
         /// A file with no scans to set has nothing to read: it counts as read one at a time, and nothing is read whole.
         /// </summary>
         [Test]
