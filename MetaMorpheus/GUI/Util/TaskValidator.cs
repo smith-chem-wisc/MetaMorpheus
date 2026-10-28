@@ -91,11 +91,12 @@ namespace MetaMorpheusGUI
         /// <summary>
         /// Checks, before a run, that a task's digestion settings do not ask for seed peptides the task cannot use (see
         /// <see cref="MetaMorpheusTask.GetSeedDigestionRefusal"/>). Unlike the checks above, this takes the task itself: a task
-        /// loaded from a settings file never passes through a task window.
+        /// loaded from a settings file never passes through a task window. Each spectra file's file-specific digestion is
+        /// checked as well.
         /// </summary>
-        public static bool CheckDigestionSearchMode(MetaMorpheusTask task, string taskName)
+        public static bool CheckDigestionSearchMode(MetaMorpheusTask task, string taskName, IReadOnlyList<string> spectraFilePaths)
         {
-            string refusal = task.GetSeedDigestionRefusal(taskName);
+            string refusal = task.GetSeedDigestionRefusal(taskName, spectraFilePaths);
             if (refusal != null)
             {
                 MessageBox.Show(refusal);

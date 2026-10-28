@@ -67,6 +67,28 @@ namespace TaskLayer
             || (digestionParams.SearchModeType == CleavageSpecificity.Semi && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C);
 
         /// <summary>
+        /// Whether these settings make digestion return seed oligos rather than oligos: the rnase singleN or singleC,
+        /// SearchModeType None with any terminus, or Semi (from SearchModeType or the rnase's own specificity) with a single
+        /// terminus.
+        /// </summary>
+        /// <remarks>
+        /// Since mzLib 1.0.592 (#1318) nucleic acid digestion follows <c>SearchModeType</c> as protein digestion does.
+        /// With None, <c>RnaDigestionParams</c> swaps the rnase for singleN (terminus N or FivePrime) or singleC and keeps the
+        /// named one as <c>SpecificRnase</c>, so the rnase's specificity covers None and a named singleN or singleC alike.
+        /// Semi with FivePrime or ThreePrime gives the longest oligo from each cleavage site, fixed at that end. mzLib's
+        /// <c>Rnase.GetUnmodifiedOligos</c> takes Semi from SearchModeType or, failing that, from the rnase, so an rnase
+        /// defined as semi (rnase_custom.tsv allows it) does the same under SearchModeType Full. Each leaves the other end
+        /// to a search engine that decides it from the precursor mass. Semi with Both asks for semi-specific oligos, not
+        /// seeds; mzLib 1.0.595 does not digest it for nucleic acids yet, so <see cref="GetSeedDigestionRefusal"/> refuses it
+        /// separately.
+        /// </remarks>
+        public static bool AsksForSeeds(RnaDigestionParams digestionParams) =>
+            digestionParams.Rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
+            || ((digestionParams.SearchModeType == CleavageSpecificity.Semi || digestionParams.Rnase.CleavageSpecificity == CleavageSpecificity.Semi)
+                && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C
+                    or FragmentationTerminus.FivePrime or FragmentationTerminus.ThreePrime);
+
+        /// <summary>
         /// Why this task cannot run with its digestion settings, or null when it can. The GUI's Run button and the command
         /// line check it for every task before a run starts; the task itself assumes its settings are valid.
         /// </summary>
@@ -75,20 +97,102 @@ namespace TaskLayer
         /// (it makes its own N and C passes). Classic and Modern search, Glyco, crosslink, GPTMD and calibration score digestion
         /// products as they are, so given seeds they finish normally and report far fewer, wrong identifications. A spectral
         /// averaging task digests nothing, so its digestion settings are never used and are not checked, as it is already
-        /// exempt from needing a protein database.
+        /// exempt from needing a protein database. Nucleic acid digestion with Semi and FragmentationTerminus Both is refused
+        /// too: mzLib does not digest it for nucleic acids yet, and throws from inside the task.
+        /// <para>Each spectra file is digested with what <see cref="GetFileSpecificDigestionParams"/> builds from its
+        /// file-specific toml, and for nucleic acids that takes the rnase from the file. So when the spectra files are given,
+        /// each file's digestion is checked as well, and the message names the file. A toml that cannot be read is left to the
+        /// run, which warns about it and digests that file with the task's settings.</para>
         /// </remarks>
         /// <param name="taskName">The name the user knows the task by, included in the message when given.</param>
-        public string GetSeedDigestionRefusal(string taskName = null)
+        /// <param name="spectraFilePaths">The spectra files the task will run on, whose file-specific tomls are checked.</param>
+        public string GetSeedDigestionRefusal(string taskName = null, IReadOnlyList<string> spectraFilePaths = null)
         {
-            if (CommonParameters?.DigestionParams is not DigestionParams digestionParams // RNA digestion has no protein seed request
-                || TaskType == MyTask.Average // averaging does not digest, so its digestion settings are never used
+            if (TaskType == MyTask.Average // averaging does not digest, so its digestion settings are never used
                 || this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific } // the non-specific search engine trims seeds
-                || !AsksForSeeds(digestionParams))
+                || CommonParameters == null) // nothing to check
             {
                 return null;
             }
 
             string which = taskName == null ? "This task" : $"Task \"{taskName}\"";
+            string refusal = DescribeSeedDigestionRefusal(CommonParameters.DigestionParams, which);
+            if (refusal != null || spectraFilePaths == null)
+            {
+                return refusal;
+            }
+
+            foreach (string spectraFilePath in spectraFilePaths)
+            {
+                string fileSpecificTomlPath = Path.Combine(Directory.GetParent(spectraFilePath).ToString(), Path.GetFileNameWithoutExtension(spectraFilePath)) + ".toml";
+                if (!File.Exists(fileSpecificTomlPath))
+                {
+                    continue;
+                }
+
+                IDigestionParams fileDigestion;
+                try
+                {
+                    var fileSpecificParameters = new FileSpecificParameters(Toml.ReadFile(fileSpecificTomlPath, tomlConfig));
+                    fileDigestion = GetFileSpecificDigestionParams(CommonParameters, fileSpecificParameters);
+                }
+                catch (Exception e) when (e is MetaMorpheusException or KeyNotFoundException)
+                {
+                    continue; // RunTask warns about this toml and digests the file with the task's settings
+                }
+
+                refusal = DescribeSeedDigestionRefusal(fileDigestion, $"{which}, with the file-specific parameters of {Path.GetFileName(spectraFilePath)},");
+                if (refusal != null)
+                {
+                    return refusal;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// The refusal for one set of digestion settings, or null when a task that cannot use seeds can run with them.
+        /// </summary>
+        /// <param name="which">Whose settings these are, as the subject of the message.</param>
+        private static string DescribeSeedDigestionRefusal(IDigestionParams digestion, string which)
+        {
+            if (digestion is RnaDigestionParams rnaDigestionParams)
+            {
+                Rnase rnase = rnaDigestionParams.Rnase;
+                string terminus = $"FragmentationTerminus {rnaDigestionParams.FragmentationTerminus}";
+                if (!AsksForSeeds(rnaDigestionParams))
+                {
+                    // Semi with Both asks for semi-specific oligos, which mzLib's Rnase.GetUnmodifiedOligos throws on
+                    bool semi = rnaDigestionParams.SearchModeType == CleavageSpecificity.Semi || rnase.CleavageSpecificity == CleavageSpecificity.Semi;
+                    if (!semi || rnaDigestionParams.FragmentationTerminus != FragmentationTerminus.Both)
+                    {
+                        return null;
+                    }
+                    string semiSetting = rnaDigestionParams.SearchModeType == CleavageSpecificity.Semi
+                        ? $"has SearchModeType Semi with {terminus}"
+                        : $"uses the semi-specific rnase {rnase.Name} with {terminus}";
+                    return $"Cannot proceed. {which} {semiSetting}, and semi-specific digestion is not yet supported for nucleic acids. " +
+                           "Choose a fully specific rnase with SearchModeType Full.";
+                }
+
+                // Name what AsksForSeeds decided on. Rnase, not SpecificRnase: a task file saved before mzLib 1.0.592 has no
+                // SpecificRnase, so it reads back as top-down there while Rnase is singleN or singleC.
+                string setting = rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
+                    ? rnaDigestionParams.SearchModeType == CleavageSpecificity.None
+                        ? "has SearchModeType None (non-specific)"
+                        : $"uses the rnase {rnase.Name}"
+                    : rnaDigestionParams.SearchModeType == CleavageSpecificity.Semi
+                        ? $"has SearchModeType Semi with {terminus}"
+                        : $"uses the semi-specific rnase {rnase.Name} with {terminus}";
+                return $"Cannot proceed. {which} {setting}, which gives seed oligos that only a non-specific search could use, " +
+                       "and non-specific search is not yet implemented for nucleic acids. Choose a fully specific rnase with SearchModeType Full.";
+            }
+
+            if (digestion is not DigestionParams digestionParams || !AsksForSeeds(digestionParams))
+            {
+                return null;
+            }
+
             return digestionParams.SearchModeType == CleavageSpecificity.None
                 ? $"Cannot proceed. {which} has SearchModeType None (non-specific), which gives seed peptides that only the non-specific search can use. " +
                   "Use a Search task with the non-specific search type, or choose fully or semi-specific digestion."
@@ -755,21 +859,13 @@ namespace TaskLayer
         #endregion
 
         /// <summary>
-        /// Sets all file-specific common parameters for a given raw file path, using the provided common parameters and file-specific parameters. Any non-null file specific parameter will override the value in the common params. 
+        /// The digestion a spectra file gets: the task's, with whatever the file's own toml overrides. This is the digestion
+        /// part of <see cref="SetAllFileSpecificCommonParams"/>, which the seed-digestion refusal also checks before a run,
+        /// without resolving the rest of the file's settings (deconvolution may load a feature file).
         /// </summary>
-        /// <param name="commonParams">The template to override</param>
-        /// <param name="fileSpecificParams">Specific parameters to override common paramms. Null when no file specific toml is next to the raw file.</param>
-        /// <param name="rawFilePath"></param>
-        /// <returns></returns>
-        /// <exception cref="MetaMorpheusException"></exception>
-        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams, string rawFilePath)
+        /// <param name="fileSpecificParams">The file's own settings, or null when it has no toml.</param>
+        public static IDigestionParams GetFileSpecificDigestionParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
         {
-            // If no toml next to raw files and we are not doing file specific decon 
-            if (fileSpecificParams == null && commonParams.PrecursorDeconvolutionParameters is not FeatureMappedFromFileDeconvolutionParameters)
-            {
-                return commonParams;
-            }
-
             // set file-specific digestion parameters
             int minPeptideLength = fileSpecificParams?.MinPeptideLength ?? commonParams.DigestionParams.MinLength;
             int maxPeptideLength = fileSpecificParams?.MaxPeptideLength ?? commonParams.DigestionParams.MaxLength;
@@ -807,8 +903,28 @@ namespace TaskLayer
                     break;
                 default:
                     throw new MetaMorpheusException(
-                        $"Unrecognized digestion parameters of type {commonParams.DigestionParams.GetType().FullName} in MetaMorpheusTask.SetAllFileSpecificCommonParams");
+                        $"Unrecognized digestion parameters of type {commonParams.DigestionParams.GetType().FullName} in MetaMorpheusTask.GetFileSpecificDigestionParams");
             }
+            return fileSpecificDigestionParams;
+        }
+
+        /// <summary>
+        /// Sets all file-specific common parameters for a given raw file path, using the provided common parameters and file-specific parameters. Any non-null file specific parameter will override the value in the common params. 
+        /// </summary>
+        /// <param name="commonParams">The template to override</param>
+        /// <param name="fileSpecificParams">Specific parameters to override common paramms. Null when no file specific toml is next to the raw file.</param>
+        /// <param name="rawFilePath"></param>
+        /// <returns></returns>
+        /// <exception cref="MetaMorpheusException"></exception>
+        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams, string rawFilePath)
+        {
+            // If no toml next to raw files and we are not doing file specific decon 
+            if (fileSpecificParams == null && commonParams.PrecursorDeconvolutionParameters is not FeatureMappedFromFileDeconvolutionParameters)
+            {
+                return commonParams;
+            }
+
+            IDigestionParams fileSpecificDigestionParams = GetFileSpecificDigestionParams(commonParams, fileSpecificParams);
 
             // must be set in this manner as CommonParameters constructor will pull from this dictionary, then clear dictionary
             fileSpecificDigestionParams.ProductsFromDissociationType()[DissociationType.Custom] =
