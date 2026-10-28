@@ -1068,9 +1068,13 @@ namespace TaskLayer
 
                 // A localization-ambiguous match is unique to the one protein group its candidates belong to, and counts
                 // for it, as an unambiguous one does. One whose candidates span groups, or belong to none, could be
-                // credited only by guessing which group it measured, so it is left out of quantification.
+                // credited only by guessing which group it measured, so it is left out of quantification. Groups are
+                // counted by name: a rescued group listed twice (#2921) gives the match two copies of one group.
+                // With "treat modified peptides as different", parsimony builds peptides by full sequence, so such a
+                // match joins no group and is always left out there.
                 psmsForQuantification.RemoveAmbiguousFullSequences(psm =>
-                    psmToProteinGroups.TryGetValue(psm, out var groupsOfThisPsm) && groupsOfThisPsm.Count == 1);
+                    psmToProteinGroups.TryGetValue(psm, out var groupsOfThisPsm)
+                    && groupsOfThisPsm.Select(group => group.ProteinGroupName).Distinct().Count() == 1);
 
                 // In a file where a positional isomer was identified with its site, that match already measures the
                 // feature, and an ambiguous one beside it would make FlashLFQ see two peptides on one peak and zero

@@ -117,11 +117,13 @@ namespace Test
 
         /// <summary>Parsimony, protein scoring, then label-free quantification, as a search runs them.</summary>
         private static PostSearchAnalysisParameters Quantify(string outputFolder, string mzmlPath, List<SpectralMatch> psms,
-            System.Action<SearchParameters> configure = null, bool scrubContaminants = false) =>
-            Quantify(outputFolder, new List<string> { mzmlPath }, psms, configure, scrubContaminants);
+            System.Action<SearchParameters> configure = null, bool scrubContaminants = false,
+            System.Action<List<EngineLayer.ProteinGroup>> afterProteinAnalysis = null) =>
+            Quantify(outputFolder, new List<string> { mzmlPath }, psms, configure, scrubContaminants, afterProteinAnalysis);
 
         private static PostSearchAnalysisParameters Quantify(string outputFolder, List<string> mzmlPaths, List<SpectralMatch> psms,
-            System.Action<SearchParameters> configure = null, bool scrubContaminants = false)
+            System.Action<SearchParameters> configure = null, bool scrubContaminants = false,
+            System.Action<List<EngineLayer.ProteinGroup>> afterProteinAnalysis = null)
         {
             var common = new CommonParameters(digestionParams: Digestion);
             PostSearchAnalysisParameters parameters = new()
@@ -161,6 +163,11 @@ namespace Test
             foreach (string step in steps)
             {
                 typeof(PostSearchAnalysisTask).GetMethod(step, BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(task, null);
+                if (step == "ProteinAnalysis" && afterProteinAnalysis != null)
+                {
+                    afterProteinAnalysis((List<EngineLayer.ProteinGroup>)typeof(PostSearchAnalysisTask)
+                        .GetProperty("ProteinGroups", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(task));
+                }
             }
             Assert.That(File.Exists(Path.Combine(outputFolder, "Quantification_crash.txt")), Is.False);
             return parameters;
@@ -210,6 +217,67 @@ namespace Test
                 Assert.That(results.PeptideModifiedSequences[name].ProteinGroups.Select(g => g.ProteinGroupName), Is.EqualTo(new[] { "P1" }));
                 Assert.That(results.ProteinGroups["P1"].GetIntensity(file), Is.GreaterThan(0),
                     "unique to P1's group, so it counts toward P1 with shared peptides off");
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// A rescued protein group can appear in the search's list more than once, as one object (#2921, fixed by #2923).
+        /// Each entry gave the match another copy of the group, so the one-group check counted two groups and left the
+        /// match out. The check counts distinct group names, so the match is still quantified for its one group.
+        /// </summary>
+        [Test]
+        public static void AMatchOfAGroupListedTwiceIsStillQuantifiedForThatGroup()
+        {
+            string outputFolder = NewOutputFolder("LocalizationAmbiguousQuant_GroupListedTwice");
+            string mzmlPath = Path.Combine(outputFolder, "file.mzML");
+            var protein = Protein("ACMDMEKGGGR", "P1");
+            var oxidizedAt3 = Peptide(protein, 1, 7, (3, OxidationOnM));
+            var oxidizedAt5 = Peptide(protein, 1, 7, (5, OxidationOnM));
+            WriteMs1Fixture(mzmlPath, oxidizedAt3);
+
+            try
+            {
+                var results = Quantify(outputFolder, mzmlPath, new List<SpectralMatch> { Psm(mzmlPath, 1, oxidizedAt3, oxidizedAt5) },
+                    afterProteinAnalysis: groups => groups.Add(groups.Single())).FlashLfqResults;
+
+                string name = string.Join("|", new[] { oxidizedAt3.FullSequence, oxidizedAt5.FullSequence }.OrderBy(s => s, System.StringComparer.Ordinal));
+                Assert.That(results.PeptideModifiedSequences.Keys, Is.EquivalentTo(new[] { name }));
+                Assert.That(results.ProteinGroups["P1"].GetIntensity(results.SpectraFiles.Single()), Is.GreaterThan(0));
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// With "treat modified peptides as different", parsimony builds peptides by full sequence, so a match with none
+        /// joins no protein group. It is left out of quantification, as on master: the feature does not apply there.
+        /// </summary>
+        [Test]
+        public static void WithModifiedPeptidesTreatedAsDifferentAnAmbiguousMatchIsLeftOut()
+        {
+            string outputFolder = NewOutputFolder("LocalizationAmbiguousQuant_ModPeptidesAreDifferent");
+            string mzmlPath = Path.Combine(outputFolder, "file.mzML");
+            var protein = Protein("ACMDMEKGGGR", "P1");
+            var oxidizedAt3 = Peptide(protein, 1, 7, (3, OxidationOnM));
+            var oxidizedAt5 = Peptide(protein, 1, 7, (5, OxidationOnM));
+            var gggr = Peptide(protein, 8, 11);
+            WriteMs1Fixture(mzmlPath, oxidizedAt3, gggr);
+
+            try
+            {
+                var results = Quantify(outputFolder, mzmlPath, new List<SpectralMatch>
+                {
+                    Psm(mzmlPath, 1, oxidizedAt3, oxidizedAt5),
+                    Psm(mzmlPath, 2, gggr),
+                }, configure: search => search.ModPeptidesAreDifferent = true).FlashLfqResults;
+
+                Assert.That(results.PeptideModifiedSequences.Keys, Is.EquivalentTo(new[] { gggr.FullSequence }));
             }
             finally
             {
