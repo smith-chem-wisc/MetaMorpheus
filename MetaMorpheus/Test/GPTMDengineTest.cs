@@ -574,8 +574,11 @@ namespace Test
         /// RespectCleavageBlockingModifications on, GPTMD must not localize such a modification there -- the same rule the
         /// search's digestion applies -- and must still try the peptide's other residues.
         ///
-        /// The peptide is AAAKAAAAK (residues 1-9): K4 is internal, K9 is the residue trypsin cut after, unless the protein
-        /// ends there. The spectrum is a stub, so every placement scores the same and GPTMD writes every site it allows.
+        /// The peptide is the protein's first nine residues: K4 is internal, K9 is the residue trypsin cut after, unless the
+        /// protein ends there. Lys-N cuts BEFORE K, so its peptide ends at K9 only because K10 follows, and K9 is free.
+        /// trypsin (K|) cuts before P too, so a K before P is refused like any other cut K; trypsin|P (K[P]|) never cuts
+        /// there, so its K4 before P5 is no cleavage site. The spectrum is a stub, so every placement scores the same and
+        /// GPTMD writes every site it allows.
         /// </summary>
         [Test]
         [TestCase("AAAKAAAAKAAAAR", "Acetylation", true, CleavageSpecificity.Full, "4", TestName = "BlockingModOnTheCutResidue_IsRefused")]
@@ -583,8 +586,12 @@ namespace Test
         [TestCase("AAAKAAAAK", "Acetylation", true, CleavageSpecificity.Full, "4,9", TestName = "BlockingModOnTheProteinCTerminus_IsKept")]
         [TestCase("AAAKAAAAKAAAAR", "Acetylation", true, CleavageSpecificity.Semi, "4,9", TestName = "BlockingModOnTheCutResidue_IsKeptInASemiSpecificSearch")]
         [TestCase("AAAKAAAAKAAAAR", "Methylation", true, CleavageSpecificity.Full, "4,9", TestName = "NonBlockingModOnTheCutResidue_IsKept")]
+        [TestCase("AAAKAAAAKKAAAAR", "Acetylation", true, CleavageSpecificity.Full, "4,9", "Lys-N", TestName = "BlockingModOnTheLastResidue_IsKeptForAProteaseThatCutsBeforeIt")]
+        [TestCase("AAAKAAAAKPAAAAR", "Acetylation", true, CleavageSpecificity.Full, "4", "trypsin", TestName = "BlockingModOnACutKBeforeP_IsRefused")]
+        [TestCase("AAAKPAAAKAAAAR", "Acetylation", true, CleavageSpecificity.Full, "4", "trypsin|P", TestName = "BlockingModOnAKBeforePTheProteaseSkips_IsKept")]
         public static void GptmdRefusesACleavageBlockingModificationOnTheResidueTheProteaseCutAfter(string proteinSequence,
-            string modificationName, bool respectCleavageBlockingModifications, CleavageSpecificity searchMode, string expectedSites)
+            string modificationName, bool respectCleavageBlockingModifications, CleavageSpecificity searchMode, string expectedSites,
+            string protease = "trypsin")
         {
             ModificationMotif.TryGetMotif("K", out ModificationMotif motifK);
             double modificationMass = modificationName == "Acetylation" ? 42.010565 : 14.015650;
@@ -594,11 +601,11 @@ namespace Test
                 Is.EqualTo(modificationName == "Acetylation"), "the test's premise: only acetyl blocks trypsin");
 
             var protein = new Protein(proteinSequence, "accession");
-            var digestionParams = new DigestionParams(minPeptideLength: 5, searchModeType: searchMode,
+            var digestionParams = new DigestionParams(protease, minPeptideLength: 5, searchModeType: searchMode,
                 respectCleavageBlockingModifications: respectCleavageBlockingModifications);
             var commonParameters = new CommonParameters(digestionParams: digestionParams);
             var peptide = protein.Digest(digestionParams, new List<Modification>(), new List<Modification>())
-                .First(p => p.BaseSequence == "AAAKAAAAK" && p.OneBasedStartResidue == 1);
+                .First(p => p.BaseSequence == proteinSequence.Substring(0, 9) && p.OneBasedStartResidue == 1);
 
             MsDataScan stubScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null,
                 MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
@@ -609,6 +616,45 @@ namespace Test
             psm.SetMs2Scan(scan.TheScan);
 
             var engine = new GptmdEngine(new List<SpectralMatch> { psm }, new List<Modification> { modification }, new List<Tuple<double, double>>(),
+                new Dictionary<string, Tolerance> { { "filepath", new PpmTolerance(10) } }, commonParameters, null, new List<string>(), null);
+            var result = (GptmdResults)engine.Run();
+
+            Assert.That(result.Mods["accession"].Select(site => site.Item1).OrderBy(site => site).ToArray(),
+                Is.EqualTo(expectedSites.Split(',').Select(int.Parse).ToArray()));
+        }
+
+        /// <summary>
+        /// What the stub spectrum above cannot show: an internal site written ONLY because the best-scoring residue was
+        /// refused. Mods.txt's own Acetylation on K, and a spectrum of the b and y ions of AAAKAAAAK with the acetyl on
+        /// K9, so K9 matches all 16 ions and K4 matches 6. Flag off, GPTMD writes K9 alone; flag on, K9 is refused and
+        /// K4 is the best placement left.
+        /// </summary>
+        [Test]
+        [TestCase(true, "4", TestName = "RealAcetylLysine_GoesToTheNextBestSiteWhenTheBestBlocksTheCut")]
+        [TestCase(false, "9", TestName = "RealAcetylLysine_GoesToTheSpectrumsBestSiteWithTheFlagOff")]
+        public static void GptmdWritesTheNextBestSiteWhenTheBestOneBlocksTheCleavage(bool respectCleavageBlockingModifications, string expectedSites)
+        {
+            Modification acetylK = GlobalVariables.AllModsKnown.Single(m => m.ModificationType == "Common Biological" && m.IdWithMotif == "Acetylation on K");
+            Assert.That(CleavageBlockingModifications.BlocksCleavageBy(acetylK, ProteaseDictionary.Dictionary["trypsin"]), Is.True);
+
+            var protein = new Protein("AAAKAAAAKAAAAR", "accession");
+            var digestionParams = new DigestionParams(minPeptideLength: 5, respectCleavageBlockingModifications: respectCleavageBlockingModifications);
+            var commonParameters = new CommonParameters(digestionParams: digestionParams);
+            var peptide = protein.Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .First(p => p.BaseSequence == "AAAKAAAAK" && p.OneBasedStartResidue == 1);
+
+            var acetylOnK9 = peptide.Localize(8, acetylK.MonoisotopicMass.Value);
+            var products = new List<Product>();
+            acetylOnK9.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+            double[] mzs = products.Select(p => p.NeutralMass.ToMz(1)).OrderBy(mz => mz).ToArray();
+            MsDataScan spectrum = new MsDataScan(new MzSpectrum(mzs, mzs.Select(_ => 1.0).ToArray(), false), 0, 1, true, Polarity.Positive, double.NaN, null, null,
+                MZAnalyzerType.Orbitrap, mzs.Length, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.HCD, 0, null);
+            var scan = new Ms2ScanWithSpecificMass(spectrum, acetylOnK9.MonoisotopicMass.ToMz(1), 1, "filepath", new CommonParameters());
+            SpectralMatch psm = new PeptideSpectralMatch(peptide, 0, 0, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
+            psm.SetMs2Scan(scan.TheScan);
+
+            var engine = new GptmdEngine(new List<SpectralMatch> { psm }, new List<Modification> { acetylK }, new List<Tuple<double, double>>(),
                 new Dictionary<string, Tolerance> { { "filepath", new PpmTolerance(10) } }, commonParameters, null, new List<string>(), null);
             var result = (GptmdResults)engine.Run();
 
