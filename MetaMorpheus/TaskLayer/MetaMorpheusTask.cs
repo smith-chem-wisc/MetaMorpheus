@@ -908,7 +908,8 @@ namespace TaskLayer
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
                 rtPredictorName: commonParams.RTPredictorName,
-                retentionTimeRange: commonParams.RetentionTimeRange
+                retentionTimeRange: commonParams.RetentionTimeRange,
+                identificationFilter: commonParams.IdentificationFilter
                 );
 
             return returnParams;

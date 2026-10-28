@@ -686,7 +686,9 @@ namespace MetaMorpheusGUI
                 precursorMassMatchMode: _massDifferenceAcceptorViewModel.PrecursorMassMatchMode,
                 fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams(),
                 retentionTimeRange: new DoubleRange(minRetentionTime, maxRetentionTime),
-                rtPredictorName: rtPredictorModelName);
+                rtPredictorName: rtPredictorModelName,
+                // no control yet: keep what the task was loaded with, so saving from this window never resets it
+                identificationFilter: TheTask.CommonParameters.IdentificationFilter);
 
             if (ClassicSearchRadioButton.IsChecked.Value)
             {

@@ -66,6 +66,12 @@ namespace EngineLayer
         public int MaxTrainingRounds { get; set; } = 1;
 
         /// <summary>
+        /// True when <see cref="ComputePEPValuesForAllPSMs"/> gave up before training (a training group lacked
+        /// positive or negative examples). No PEP was assigned then: every PEP keeps the value it had.
+        /// </summary>
+        public bool TrainingFailed { get; private set; }
+
+        /// <summary>
         /// Stop when a round grows the accepted target count by less than this fraction. 0.001 = 0.1%.
         /// </summary>
         public double TrainingImprovementTolerance { get; set; } = 0.001;
@@ -321,6 +327,7 @@ namespace EngineLayer
             // It also guarantees that each held-out fold, which is evaluated against these same labels, has both classes.
             if (!allGroupsHavePositiveAndNegativeTrainingExamples)
             {
+                TrainingFailed = true;
                 return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.";
             }
             Progress($"round 0 features built  ({roundClock.Elapsed.TotalSeconds:F1} s)");

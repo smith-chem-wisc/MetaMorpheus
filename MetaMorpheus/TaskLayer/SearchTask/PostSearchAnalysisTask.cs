@@ -106,6 +106,10 @@ namespace TaskLayer
                 // there is no point at which a predicted angle could still reach PEP.
                 SkipPredictedSpectralAngles("semi- and non-specific searches compute FDR before post-search analysis");
             }
+            // A search that named the PEP q-value as its identification filter cannot be filtered as asked when PEP
+            // was not trained for one of its digestion agents: fail now, naming them, before anything is written.
+            IdentificationRule.ThrowIfPepNotTrained(Parameters.AllSpectralMatches, peptideLevel: false, CommonParameters);
+            IdentificationRule.ThrowIfPepNotTrained(Parameters.AllSpectralMatches, peptideLevel: true, CommonParameters);
             ConstructResultsDictionary();
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
@@ -884,10 +888,12 @@ namespace TaskLayer
         /// The q-value threshold a protein group is held to for output, which follows whichever filter
         /// type the PSMs were filtered under. When PEP filtering was requested but the PSMs fell back to the
         /// q-value, protein groups are held to the same threshold the PSMs were (the smaller of the two), not to
-        /// the q-value threshold, which the GUI sets to 1 when its PEP box is ticked.
+        /// the q-value threshold, which the GUI sets to 1 when its PEP box is ticked. Under a named identification
+        /// filter, the filter's own threshold.
         /// </summary>
         private double ProteinGroupQValueThreshold(FilteredPsms filteredPsms) => filteredPsms.FilterType switch
         {
+            _ when filteredPsms.IdentificationFilter != IdentificationFilterMode.Thresholds => filteredPsms.FilterThreshold,
             FilterType.PepQValue => CommonParameters.PepQValueThreshold,
             _ when filteredPsms.PepFilteringNotDone != null && !filteredPsms.FilteringNotPerformed => filteredPsms.FilterThreshold,
             _ => CommonParameters.QValueThreshold
@@ -896,12 +902,14 @@ namespace TaskLayer
         /// <summary>
         /// True when a protein group will be written to AllProteinGroups.tsv under the current search
         /// parameters. Shared with <see cref="WriteProteinGroupsToTsv"/>, so quantification cannot end up
-        /// covering a different set of groups than the protein table shows.
+        /// covering a different set of groups than the protein table shows. Under a named identification
+        /// filter the comparison is strict, as it is for the PSMs.
         /// </summary>
         private bool ProteinGroupIsWritten(EngineLayer.ProteinGroup proteinGroup, double qValueThreshold) =>
             (Parameters.SearchParameters.WriteDecoys || !proteinGroup.IsDecoy)
             && (Parameters.SearchParameters.WriteContaminants || !proteinGroup.IsContaminant)
-            && (Parameters.SearchParameters.WriteHighQValuePsms || proteinGroup.QValue <= qValueThreshold);
+            && (Parameters.SearchParameters.WriteHighQValuePsms
+                || (IdentificationRule.IsExplicit(CommonParameters) ? proteinGroup.QValue < qValueThreshold : proteinGroup.QValue <= qValueThreshold));
 
         private void QuantificationAnalysis()
         {
@@ -1532,7 +1540,8 @@ namespace TaskLayer
 
             // write summary text
             ReportPepFilteringNotDone(psmsForPsmResults);
-            string psmResultsText = $"All target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsForPsmResults.GetFilterTypeString() + " <= " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " + psmsForPsmResults.TargetPsmsAboveThreshold;
+            ReportIdentificationFilter(psmsForPsmResults);
+            string psmResultsText = $"All target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsForPsmResults.GetFilterTypeString() + " " + psmsForPsmResults.GetThresholdString() + ": " + psmsForPsmResults.TargetPsmsAboveThreshold;
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = psmResultsText;
             string precursorResultsText = $"All {GlobalVariables.AnalyteType.GetPrecursorLabel()}: " + Parameters.NumMs2SpectraPerFile.Select(f=>f.Value[1]).Sum();
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetPrecursorLabel()}")] = precursorResultsText;
@@ -1558,7 +1567,8 @@ namespace TaskLayer
 
             // write summary text
             ReportPepFilteringNotDone(peptidesForPeptideResults);
-            string peptideResultsText = $"All target {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()}s with " + peptidesForPeptideResults.GetFilterTypeString() + " <= " + Math.Round(peptidesForPeptideResults.FilterThreshold, 2) + ": " +
+            ReportIdentificationFilter(peptidesForPeptideResults);
+            string peptideResultsText = $"All target {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()}s with " + peptidesForPeptideResults.GetFilterTypeString() + " " + peptidesForPeptideResults.GetThresholdString() + ": " +
                 peptidesForPeptideResults.TargetPsmsAboveThreshold;
             ResultsDictionary[("All", GlobalVariables.AnalyteType.GetUniqueFormLabel())] = peptideResultsText;
         }
@@ -1573,6 +1583,38 @@ namespace TaskLayer
             Warn(filtered.PepFilteringNotDone);
             Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(filtered.PepFilteringNotDone + Environment.NewLine);
         }
+
+        /// <summary>
+        /// Under a named identification filter, says in results.txt which value decided at this level and, for each
+        /// digestion agent that fell back from the PEP q-value to the notch, why. A fallback is also a warning.
+        /// </summary>
+        private void ReportIdentificationFilter(FilteredPsms filtered)
+        {
+            if (filtered.IdentificationFilter == IdentificationFilterMode.Thresholds) return;
+            bool peptideLevel = filtered.PeptideLevelFiltering;
+            string level = peptideLevel
+                ? GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower() + "s"
+                : GlobalVariables.AnalyteType.GetSpectralMatchLabel() + "s";
+            string description = IdentificationRule.Describe(Parameters.AllSpectralMatches, peptideLevel, CommonParameters);
+            string line = $"Identification filter for {level}: {description}";
+            if (IdentificationRule.FellBack(Parameters.AllSpectralMatches, peptideLevel, CommonParameters))
+            {
+                Warn(line);
+            }
+            Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(line + Environment.NewLine);
+            _identificationFilterProse.Add($"{level} at {description}");
+        }
+
+        private readonly List<string> _identificationFilterProse = new();
+
+        /// <summary>
+        /// The sentence naming the identification filter, for AutoGeneratedManuscriptProse.txt; null when the filter
+        /// was inferred from the thresholds. SearchTask appends it after post-search analysis.
+        /// </summary>
+        internal string IdentificationFilterProse => _identificationFilterProse.Count == 0
+            ? null
+            : $"Identifications were filtered on one value throughout ({CommonParameters.IdentificationFilter}): "
+              + string.Join("; ", _identificationFilterProse) + ". ";
 
         private void WriteIndividualPsmResults()
         {
@@ -1606,7 +1648,7 @@ namespace TaskLayer
                 FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", psmFileGroup.Key });
 
                 // write summary text
-                string psmResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsToWrite.GetFilterTypeString() + " <= " + Math.Round(psmsToWrite.FilterThreshold, 2) + ": " + psmsToWrite.TargetPsmsAboveThreshold;
+                string psmResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsToWrite.GetFilterTypeString() + " " + psmsToWrite.GetThresholdString() + ": " + psmsToWrite.TargetPsmsAboveThreshold;
                 ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = psmResultsText;
                 string precursorResultsText = strippedFileName + $" - {GlobalVariables.AnalyteType.GetPrecursorLabel()}: " + Parameters.NumMs2SpectraPerFile[strippedFileName][1];
                 ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetPrecursorLabel()}")] = precursorResultsText;
@@ -1645,7 +1687,7 @@ namespace TaskLayer
                 FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", psmFileGroup.Key });
 
                 // write summary text
-                string peptideResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()}s with " + peptidesToWrite.GetFilterTypeString() + " <= " + Math.Round(peptidesToWrite.FilterThreshold, 2) + ": " +
+                string peptideResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()}s with " + peptidesToWrite.GetFilterTypeString() + " " + peptidesToWrite.GetThresholdString() + ": " +
                                         peptidesToWrite.TargetPsmsAboveThreshold;
                 ResultsDictionary[(strippedFileName, GlobalVariables.AnalyteType.GetUniqueFormLabel())] = peptideResultsText;
             }
@@ -1804,8 +1846,8 @@ namespace TaskLayer
             
             // Count protein groups that pass the configured filter threshold
             // This uses the same threshold that was used for PSM and peptide filtering to ensure consistency
-            int proteinGroupCount = ProteinGroups.Count(b => b.QValue <= filteredPsms.FilterThreshold && !b.IsDecoy);
-            string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " <= " + Math.Round(filteredPsms.FilterThreshold, 2) + fdrSuffix + ": " + proteinGroupCount;
+            int proteinGroupCount = ProteinGroups.Count(b => filteredPsms.PassesThreshold(b.QValue) && !b.IsDecoy);
+            string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " " + filteredPsms.GetThresholdString() + fdrSuffix + ": " + proteinGroupCount;
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = proteinResultsText;
 
 
@@ -1892,8 +1934,8 @@ namespace TaskLayer
                 if (Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
                 {
                     // write summary text
-                    string fileProteinResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsmsByFile.GetFilterTypeString() + " <= " 
-                        + Math.Round(filteredPsmsByFile.FilterThreshold, 2) + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= filteredPsmsByFile.FilterThreshold && !b.IsDecoy);
+                    string fileProteinResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsmsByFile.GetFilterTypeString() + " " 
+                        + filteredPsmsByFile.GetThresholdString() + ": " + subsetProteinGroupsForThisFile.Count(b => filteredPsmsByFile.PassesThreshold(b.QValue) && !b.IsDecoy);
                     ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = fileProteinResultsText;
 
                     // write result files
@@ -1924,7 +1966,8 @@ namespace TaskLayer
                         CommonParameters.DigestionParams.MaxMissedCleavages,
                         mzidFilePath,
                         Parameters.SearchParameters.IncludeModMotifInMzid,
-                        IsSemiSpecificForMzIdentMl(CommonParameters.DigestionParams));
+                        IsSemiSpecificForMzIdentMl(CommonParameters.DigestionParams),
+                        identificationFilter: filteredPsmsByFile);
 
                     FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                 }
@@ -1944,7 +1987,8 @@ namespace TaskLayer
                         Parameters.DatabaseFilenameList,
                         Parameters.VariableModifications,
                         Parameters.FixedModifications,
-                        CommonParameters, pepXMLFilePath);
+                        CommonParameters, pepXMLFilePath,
+                        identificationFilter: filteredPsmsByFile);
 
                     FinishedWritingFile(pepXMLFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                 }

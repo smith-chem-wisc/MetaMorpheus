@@ -1,4 +1,5 @@
 ﻿using Chemistry;
+using EngineLayer.SpectrumMatch;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -19,7 +20,10 @@ namespace EngineLayer.ModificationAnalysis
 
             ModificationAnalysisResults myAnalysisResults = new ModificationAnalysisResults(this);
 
-            var confidentTargetPsms = NewPsms.Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy).ToList();
+            // A named identification filter decides here as everywhere else; otherwise q-value <= 0.01, as before.
+            var confidentTargetPsms = IdentificationRule.IsExplicit(CommonParameters)
+                ? NewPsms.Where(b => !b.IsDecoy && IdentificationRule.Passes(b, peptideLevel: false, CommonParameters.IdentificationFilter, IdentificationRule.Threshold(CommonParameters))).ToList()
+                : NewPsms.Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy).ToList();
 
             // For the database ones, only need un-ambiguous protein and location in protein
             var forObserved = confidentTargetPsms

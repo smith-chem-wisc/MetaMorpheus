@@ -1,6 +1,7 @@
 using Easy.Common.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace EngineLayer.SpectrumMatch
@@ -25,6 +26,20 @@ namespace EngineLayer.SpectrumMatch
         /// sentence saying what was done instead, for results.txt and the user; null otherwise.
         /// </summary>
         public string PepFilteringNotDone { get; init; }
+        /// <summary>
+        /// The identification filter the search named (<see cref="CommonParameters.IdentificationFilter"/>), or
+        /// <see cref="IdentificationFilterMode.Thresholds"/> when the filter was inferred from the thresholds or the
+        /// caller named a <see cref="SpectrumMatch.FilterType"/>. When named, <see cref="IdentificationRule"/> judges
+        /// every match, strictly below <see cref="FilterThreshold"/>, and <see cref="FilterType"/> is the value the
+        /// matches were judged on (the notch when digestion agents differ).
+        /// </summary>
+        public IdentificationFilterMode IdentificationFilter { get; init; }
+        /// <summary>
+        /// Under a named identification filter, the values the matches were judged on, e.g. "pep q-value", or
+        /// "pep q-value or q-value notch" when digestion agents differ; null otherwise.
+        /// </summary>
+        private string JudgedOn { get; init; }
+        private bool IsExplicit => IdentificationFilter != IdentificationFilterMode.Thresholds;
         private FilteredPsms(List<SpectralMatch> filteredPsms, FilterType filterType, double filterThreshold, bool filteringNotPerformed, bool peptideLevelFiltering)
         {
             FilteredPsmsList = filteredPsms;
@@ -37,6 +52,7 @@ namespace EngineLayer.SpectrumMatch
         private bool AboveThreshold(SpectralMatch psm)
         {
             if (psm.GetFdrInfo(PeptideLevelFiltering) == null) return false;
+            if (IsExplicit) return IdentificationRule.Passes(psm, PeptideLevelFiltering, IdentificationFilter, FilterThreshold);
 
             switch (FilterType)
             {
@@ -49,7 +65,12 @@ namespace EngineLayer.SpectrumMatch
             }
         }
 
-        public string GetFilterTypeString() => FilterType switch
+        /// <summary>True when the match passes this filter, e.g. the mzIdentML passThreshold.</summary>
+        public bool Passes(SpectralMatch psm) => AboveThreshold(psm);
+
+        public string GetFilterTypeString() => JudgedOn ?? GetFilterTypeString(FilterType);
+
+        public static string GetFilterTypeString(FilterType filterType) => filterType switch
         {
             FilterType.PepQValue => "pep q-value",
             FilterType.QValueNotch => "q-value notch",
@@ -57,15 +78,31 @@ namespace EngineLayer.SpectrumMatch
         };
 
         /// <summary>
+        /// The comparison and threshold for summary text: "&lt;= 0.01" when the filter was inferred from the
+        /// thresholds (unchanged), "&lt; 0.01" under a named identification filter, whose comparison is strict.
+        /// </summary>
+        public string GetThresholdString() => IsExplicit
+            ? "< " + FilterThreshold.ToString(CultureInfo.InvariantCulture)
+            : "<= " + Math.Round(FilterThreshold, 2);
+
+        /// <summary>
+        /// Applies this filter's comparison to a value already reduced to a q-value, e.g. a protein group's: strict
+        /// under a named identification filter, inclusive otherwise.
+        /// </summary>
+        public bool PassesThreshold(double value) => IsExplicit ? value < FilterThreshold : value <= FilterThreshold;
+
+        /// <summary>
         /// The FDR value this filter decided on for a match, at the level it filtered (as <see cref="AboveThreshold"/>),
         /// e.g. the q-value handed to quantification.
         /// </summary>
-        public double GetFilterValue(SpectralMatch psm) => FilterType switch
-        {
-            FilterType.PepQValue => psm.GetFdrInfo(PeptideLevelFiltering).PEP_QValue,
-            FilterType.QValueNotch => psm.GetFdrInfo(PeptideLevelFiltering).QValueNotch,
-            _ => psm.GetFdrInfo(PeptideLevelFiltering).QValue
-        };
+        public double GetFilterValue(SpectralMatch psm) => IsExplicit
+            ? IdentificationRule.GetValue(psm, PeptideLevelFiltering, IdentificationFilter)
+            : FilterType switch
+            {
+                FilterType.PepQValue => psm.GetFdrInfo(PeptideLevelFiltering).PEP_QValue,
+                FilterType.QValueNotch => psm.GetFdrInfo(PeptideLevelFiltering).QValueNotch,
+                _ => psm.GetFdrInfo(PeptideLevelFiltering).QValue
+            };
 
         /// <summary>
         /// This method should only be called when filtered PSMs are modified for the purpose of SILAC analysis
@@ -113,6 +150,11 @@ namespace EngineLayer.SpectrumMatch
         /// PEP q-value threshold, <see cref="FilterType.QValue"/> and <see cref="FilterType.QValueNotch"/> at the q-value
         /// threshold, with no count rule and no fallback. A PEP q-value filter on matches that carry no PEP q-value
         /// throws instead of returning nothing.</param>
+        /// <remarks>When <paramref name="commonParams"/> names an identification filter
+        /// (<see cref="CommonParameters.IdentificationFilter"/>) and no <paramref name="filterType"/> is given, that filter
+        /// decides, through <see cref="IdentificationRule"/>, at its threshold (computed from the two thresholds above).
+        /// Under <see cref="IdentificationFilterMode.PepQValue"/>, matches of a digestion agent PEP was not trained for
+        /// throw, unless <paramref name="includeHighQValuePsms"/> keeps every match anyway.</remarks>
         /// <returns> A FilteredPsms object</returns>
         public static FilteredPsms Filter(IEnumerable<SpectralMatch> psms,
             CommonParameters commonParams,
@@ -140,6 +182,11 @@ namespace EngineLayer.SpectrumMatch
                     && (includeAmbiguousMods || !psm.FullSequence.IsNullOrEmpty()))
                 .ToList();
             string label = GlobalVariables.AnalyteType.GetSpectralMatchLabel();
+
+            if (filterType == null && IdentificationRule.IsExplicit(commonParams))
+            {
+                return FilterByName(candidates, commonParams, includeHighQValuePsms, (double)qValueThreshold, (double)pepQValueThreshold, filterAtPeptideLevel);
+            }
 
             // set the filter type
             FilterType type = FilterType.QValue;
@@ -179,6 +226,46 @@ namespace EngineLayer.SpectrumMatch
             return new FilteredPsms(filteredPsms, type, filterThreshold, filteringNotPerformed, filterAtPeptideLevel)
             {
                 PepFilteringNotDone = pepFilteringNotDone
+            };
+        }
+
+        /// <summary>
+        /// The filter the search named: each match judged by <see cref="IdentificationRule"/> on the value its own
+        /// FDR values say (the PEP q-value only where PEP was trained for its digestion agent), strictly below the
+        /// threshold. No count rule and no silent fallback.
+        /// </summary>
+        private static FilteredPsms FilterByName(List<SpectralMatch> candidates, CommonParameters commonParams, bool includeHighQValuePsms,
+            double qValueThreshold, double pepQValueThreshold, bool filterAtPeptideLevel)
+        {
+            IdentificationFilterMode mode = commonParams.IdentificationFilter;
+            double threshold = IdentificationRule.Threshold(mode, qValueThreshold, pepQValueThreshold);
+            if (!includeHighQValuePsms)
+            {
+                IdentificationRule.ThrowIfPepNotTrained(candidates, filterAtPeptideLevel, commonParams);
+            }
+
+            var judgedOn = candidates
+                .Where(psm => psm.GetFdrInfo(filterAtPeptideLevel) != null)
+                .Select(psm => IdentificationRule.ValueFor(psm.GetFdrInfo(filterAtPeptideLevel), mode))
+                .Distinct()
+                .OrderBy(v => v)
+                .ToList();
+            FilterType filterType = judgedOn.Count switch
+            {
+                0 => IdentificationRule.ValueFor(null, mode),
+                1 => judgedOn[0],
+                _ => FilterType.QValueNotch
+            };
+
+            List<SpectralMatch> filtered = candidates
+                .Where(psm => includeHighQValuePsms || IdentificationRule.Passes(psm, filterAtPeptideLevel, mode, threshold))
+                .CollapseToPeptides(filterAtPeptideLevel)
+                .ToList();
+
+            return new FilteredPsms(filtered, filterType, threshold, false, filterAtPeptideLevel)
+            {
+                IdentificationFilter = mode,
+                JudgedOn = string.Join(" or ", (judgedOn.Count == 0 ? new List<FilterType> { filterType } : judgedOn).Select(GetFilterTypeString))
             };
         }
 
