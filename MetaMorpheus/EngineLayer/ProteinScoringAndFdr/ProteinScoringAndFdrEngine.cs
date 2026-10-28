@@ -80,7 +80,9 @@ namespace EngineLayer
         /// parsimony compares: the full sequence when modified peptides are treated as different, the base sequence
         /// otherwise, and, as in parsimony, per protease: a sequence another group lists only from a different protease
         /// does not make it shared. So with several proteases one sequence can be unique to two groups, one per protease,
-        /// and the tables, which do not name the protease, show it unique in both.
+        /// and the tables, which do not name the protease, show it unique in both. Quantification does not split by
+        /// protease: FlashLFQ and the isobaric engine key a peptide on its sequence alone, so they treat that sequence as
+        /// shared between the two groups.
         /// </remarks>
         internal static void LabelPeptidesUniqueToOneGroup(List<ProteinGroup> proteinGroups, bool treatModPeptidesAsDifferentPeptides)
         {
