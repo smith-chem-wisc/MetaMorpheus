@@ -538,6 +538,69 @@ namespace Test
         {
             Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.Write(null));
             Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.Write(new List<TmtFileInfo>()));
+            Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.Write(null, TestContext.CurrentContext.TestDirectory));
+            Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.Write(new List<TmtFileInfo>(), TestContext.CurrentContext.TestDirectory));
+        }
+
+        /// <summary>
+        /// Adding rows needs rows to add and a design to add them to: no files, an empty design file, or a header missing
+        /// a required column is refused, and the design file is left as it was.
+        /// </summary>
+        [Test]
+        public static void AddRowsRefusesNoFilesAndADesignWithoutAValidHeader()
+        {
+            string folder = NewFolder("TmtDesignAddRowsRefusals");
+            string designPath = Path.Combine(folder, "TmtDesign.txt");
+            var files = new List<TmtFileInfo> { new TmtFileInfo(Path.Combine(folder, "file.1.raw"), "PlexA", 1, 1, null) };
+
+            File.WriteAllLines(designPath, new[] { TmtExperimentalDesign.Header });
+            Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.AddRows(designPath, null));
+            Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.AddRows(designPath, new List<TmtFileInfo>()));
+
+            File.WriteAllText(designPath, "");
+            Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.AddRows(designPath, files));
+
+            File.WriteAllLines(designPath, new[] { "File\tPlex\tCondition" });
+            Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.AddRows(designPath, files));
+            Assert.That(File.ReadAllText(designPath) == "File\tPlex\tCondition" + Environment.NewLine);
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// Rows are added in the design's own column order, a column this class does not write is left blank, and a line
+        /// too short to reach the File column is kept as it is. Only the row naming an added file is replaced.
+        /// </summary>
+        [Test]
+        public static void AddRowsFollowsTheDesignsOwnColumns_AndKeepsLinesThatNameNoFile()
+        {
+            string folder = NewFolder("TmtDesignAddRowsOwnColumns");
+            string designPath = Path.Combine(folder, "TmtDesign.txt");
+            string kept = Path.Combine(folder, "file.1.raw");
+            string replaced = Path.Combine(folder, "file.2.raw");
+            File.WriteAllLines(designPath, new[]
+            {
+                "Plex\tFile\tSample Name\tTMT Channel\tCondition\tBiological Replicate\tFraction\tTechnical Replicate\tNotes",
+                $"PlexA\t{kept}\tS1\t126\tC1\t1\t1\t1\tkeep me",
+                "PlexA",
+                $"PlexA\t{replaced}\tOld\t126\tC1\t1\t2\t1\tstale"
+            });
+            var anns = new List<TmtPlexAnnotation>
+            {
+                new TmtPlexAnnotation { Tag = "126", SampleName = "S2", Condition = "C2", BiologicalReplicate = 2 }
+            };
+
+            TmtExperimentalDesign.AddRows(designPath, new List<TmtFileInfo> { new TmtFileInfo(replaced, "PlexA", 2, 1, anns) });
+
+            Assert.That(File.ReadAllLines(designPath).SequenceEqual(new[]
+            {
+                "Plex\tFile\tSample Name\tTMT Channel\tCondition\tBiological Replicate\tFraction\tTechnical Replicate\tNotes",
+                $"PlexA\t{kept}\tS1\t126\tC1\t1\t1\t1\tkeep me",
+                "PlexA",
+                $"PlexA\t{replaced}\tS2\t126\tC2\t2\t2\t1\t"
+            }));
+
+            Directory.Delete(folder, true);
         }
 
         /// <summary>
@@ -804,5 +867,56 @@ namespace Test
 
         #endregion
 
+        #region Design rules lifted from the window (#2793)
+
+        private static TmtFileInfo PlexFile(string name, string plex, int fraction, int techrep) =>
+            new TmtFileInfo(name + ".raw", plex, fraction, techrep, null);
+
+        /// <summary>
+        /// The window's refusals, now in EngineLayer: a file with no plex, a number below 1, and two
+        /// files at one (fraction, technical replicate) of a plex. Two plexes may each have their own
+        /// (1, 1).
+        /// </summary>
+        [Test]
+        public static void TmtDesignErrorsAreTheWindowRules()
+        {
+            Assert.That(TmtExperimentalDesign.GetErrorsInDesign(new[] { PlexFile("a", "", 1, 1) }),
+                Is.EqualTo("Every file must be assigned a Plex. Missing for: a.raw"));
+            Assert.That(TmtExperimentalDesign.GetErrorsInDesign(new[] { PlexFile("a", "P1", 1, 0) }),
+                Is.EqualTo("Technical Replicate values must be >= 1."));
+            Assert.That(TmtExperimentalDesign.GetErrorsInDesign(new[] { PlexFile("a", "P1", 0, 1) }),
+                Is.EqualTo("Fraction values must be >= 1."));
+            Assert.That(TmtExperimentalDesign.GetErrorsInDesign(new[] { PlexFile("a", "P1", 2, 1), PlexFile("b", "p1", 2, 1) }),
+                Is.EqualTo("Plex P1: duplicate Fraction/Technical Replicate combination: Fraction 2, Technical Replicate 1."));
+            Assert.That(TmtExperimentalDesign.GetErrorsInDesign(new[] { PlexFile("a", "P1", 1, 1), PlexFile("b", "P2", 1, 1) }),
+                Is.Null);
+        }
+
+        /// <summary>
+        /// A gap in a plex's fractions, or in a fraction's technical replicates, was refused by the window
+        /// and is now a warning naming the missing numbers. Each plex is judged on its own numbers.
+        /// </summary>
+        [Test]
+        public static void TmtDesignGapsAreWarningsNotErrors()
+        {
+            var gapped = new[]
+            {
+                PlexFile("a", "P1", 1, 1), PlexFile("b", "P1", 3, 1), PlexFile("c", "P1", 3, 3),
+                PlexFile("d", "P2", 2, 1)
+            };
+
+            Assert.That(TmtExperimentalDesign.GetErrorsInDesign(gapped), Is.Null);
+            Assert.That(TmtExperimentalDesign.GetWarningsInDesign(gapped), Is.EqualTo(new[]
+            {
+                "Plex P1: fractions 1, 3, quantified as numbered; fraction 2 is not in the design. A missing number may be a file that was lost or not searched.",
+                "Plex P1 fraction 3: technical replicates 1, 3, quantified as numbered; technical replicate 2 is not in the design. A missing number may be a file that was lost or not searched.",
+                "Plex P2: fractions 2, quantified as numbered; fraction 1 is not in the design. A missing number may be a file that was lost or not searched."
+            }));
+
+            var contiguous = new[] { PlexFile("a", "P1", 1, 1), PlexFile("b", "P1", 2, 1), PlexFile("c", "P1", 2, 2) };
+            Assert.That(TmtExperimentalDesign.GetWarningsInDesign(contiguous), Is.Empty);
+        }
+
+        #endregion
     }
 }
