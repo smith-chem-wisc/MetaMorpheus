@@ -325,8 +325,22 @@ namespace Test
             "mzMLWithTwoIdsSwapped" => SwapSpectrumIds(WriteMzmlNumberedFrom(TestFile("VA084TQ_6.mzML"), Path.Combine(folder, "VA084TQ_6.mzML"), 1), 3, 4),
             "mgf" => WriteMgf(TestFile("VA084TQ_6.mzML"), Path.Combine(folder, "VA084TQ_6.mgf")),
             "mgfWithRepeatedScan" => WriteMgfWithRepeatedScan(TestFile("VA084TQ_6.mzML"), Path.Combine(folder, "VA084TQ_6.mgf")),
+            "mzMLWithARepeatedScanNumber" => ReplaceSpectrumId(WriteMzmlNumberedFrom(TestFile("VA084TQ_6.mzML"), Path.Combine(folder, "VA084TQ_6.mzML"), 1), 9, "function=2 process=0 scan=8"),
+            "mzMLWithANonNumericScanNumber" => ReplaceSpectrumId(WriteMzmlNumberedFrom(TestFile("VA084TQ_6.mzML"), Path.Combine(folder, "VA084TQ_6.mzML"), 1), 9, "controllerType=0 controllerNumber=1 scan=x9"),
             _ => throw new System.ArgumentException(fixture)
         };
+
+        /// <summary>
+        /// Gives the spectrum numbered <paramref name="scan"/> the native ID <paramref name="id"/>. The whole-file read numbers
+        /// spectra by position and loads either file below; the dynamic connection's scan index reads the number from the
+        /// native ID and throws: on a repeated scan= number, as a Waters conversion writes (function=1 ... scan=1 and
+        /// function=2 ... scan=1), an ArgumentException; on a non-numeric one, a FormatException.
+        /// </summary>
+        private static string ReplaceSpectrumId(string mzml, int scan, string id)
+        {
+            File.WriteAllText(mzml, File.ReadAllText(mzml).Replace($"id=\"controllerType=0 controllerNumber=1 scan={scan}\"", $"id=\"{id}\""));
+            return mzml;
+        }
 
         /// <summary>
         /// Swaps the native IDs of two spectra, so every scan number is found by a read by scan number, two of them in the
@@ -404,7 +418,9 @@ namespace Test
         /// next file loaded. It now reads only the scans reporter ions come from, one at a time, where a read by scan number
         /// returns the loaded scan, and the file whole where it does not: VA084TQ_6.mzML (a slice, numbered from scan=31006),
         /// the same numbered from scan=0 or with two spectra's native IDs swapped (a read by scan number returns another
-        /// spectrum), and an MGF that repeats a SCANS= value. Either way the values are the ones the whole-file read gives.
+        /// spectrum), an MGF that repeats a SCANS= value, and an mzML whose scan index the dynamic connection cannot build (a
+        /// repeated or non-numeric scan= number; the folder's deletion also shows the file was closed). Either way the values
+        /// are the ones the whole-file read gives.
         /// </summary>
         [TestCase("mzMLNumberedFromOne", true)]
         [TestCase("mgf", true)]
@@ -412,6 +428,8 @@ namespace Test
         [TestCase("mzMLNumberedFromZero", false)]
         [TestCase("mzMLWithTwoIdsSwapped", false)]
         [TestCase("mgfWithRepeatedScan", false)]
+        [TestCase("mzMLWithARepeatedScanNumber", false)]
+        [TestCase("mzMLWithANonNumericScanNumber", false)]
         public static void StoredScans_AreReadOneAtATime_WhereAReadByScanNumberFindsTheLoadedScan(string fixture, bool oneAtATime)
         {
             var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);

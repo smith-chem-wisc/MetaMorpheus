@@ -80,7 +80,8 @@ namespace TaskLayer
         /// as <paramref name="filePath"/> stores it. Those scans are read one at a time through the reader's dynamic connection,
         /// so no second copy of the whole file is held beside <paramref name="loaded"/>. A file that cannot be read so is read
         /// whole and paired by position (<see cref="PairWithStoredScans"/>): a format other than .raw, .mzML and .mgf; an MGF
-        /// that repeats a SCANS= value, which its scan index refuses; and a file whose read by scan number returns another scan
+        /// that repeats a SCANS= value, or an mzML whose native IDs repeat a scan= number (a Waters conversion), which their
+        /// scan index refuses; and a file whose read by scan number returns another scan
         /// than the loaded one, as an mzML does whose native IDs do not number its spectra from 1.
         /// </summary>
         /// <returns>True when the scans were read one at a time, false when the file was read whole.</returns>
@@ -117,13 +118,19 @@ namespace TaskLayer
                 return false;
             }
 
+            // Any failure falls back to the whole-file read, which is how master read every file. The reader's dynamic
+            // connection builds its own scan index, apart from the whole-file read, and throws more than MzLibException:
+            // an MGF that repeats a SCANS= value (MzLibException); an mzML whose native IDs repeat a scan= number, as a
+            // Waters conversion's function=1 ... scan=1 and function=2 ... scan=1 do (ArgumentException); a non-numeric
+            // scan= (FormatException); XML the index reader cannot parse (XmlException).
             try
             {
                 stored.InitiateDynamicConnection();
             }
-            catch (MzLibException)
+            catch (Exception)
             {
-                return false; // an MGF that repeats a SCANS= value
+                CloseQuietly(stored); // it may have opened the file before it threw
+                return false;
             }
 
             try
@@ -159,13 +166,25 @@ namespace TaskLayer
                 }
                 return true;
             }
-            catch (MzLibException)
+            catch (Exception)
             {
-                return false; // an MGF asked for a scan number its index does not hold
+                return false; // e.g. an MGF asked for a scan number its index does not hold
             }
             finally
             {
                 stored.CloseDynamicConnection();
+            }
+        }
+
+        private static void CloseQuietly(MsDataFile stored)
+        {
+            try
+            {
+                stored.CloseDynamicConnection();
+            }
+            catch (Exception)
+            {
+                // nothing was opened to close
             }
         }
 
