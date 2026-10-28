@@ -733,6 +733,31 @@ namespace Test
             Assert.That(res.Mods.ContainsKey("accession"), Is.False);
         }
 
+        // The ordinary pass's cleavage-blocking rule holds for moves too. UniProt's acetyl-K at K4 of AAAKAAAAK, and a
+        // spectrum that cannot tell K4 from K9: with the search respecting cleavage-blocking modifications, the tie is not
+        // moved onto K9, the residue trypsin cut after; with it off, K9 is added.
+        [Test]
+        [TestCase(true, new int[0])]
+        [TestCase(false, new[] { 9 })]
+        public static void TestGptmdDoesNotMoveACleavageBlockingDatabaseModOntoTheResidueTheProteaseCutAfter(bool respectCleavageBlockingModifications,
+            int[] expectedSites)
+        {
+            var protein = new Protein("AAAKAAAAKAAAAR", "accession",
+                oneBasedModifications: new Dictionary<int, List<Modification>> { { 4, new List<Modification> { UniProtMod("N6-acetyllysine on K") } } });
+            var digestionParams = new DigestionParams(minPeptideLength: 5, respectCleavageBlockingModifications: respectCleavageBlockingModifications);
+            var matched = protein.Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .First(p => p.BaseSequence == "AAAKAAAAK" && p.AllModsOneIsNterminus.ContainsKey(5));
+            var source = new Protein("AAAKAAAAK", "source",
+                    oneBasedModifications: new Dictionary<int, List<Modification>> { { 9, new List<Modification> { GptmdMod("Acetylation on K") } } })
+                .Digest(new CommonParameters().DigestionParams, new List<Modification>(), new List<Modification>())
+                .First(p => p.AllModsOneIsNterminus.Count == 1);
+
+            var res = RunGptmd(new List<SpectralMatch> { PsmWithSpectrum(matched, SpectrumOf(source, p => NotDeterminingBetween(p, 4, 9, 9))) },
+                new List<Modification> { GptmdMod("Acetylation on K") });
+
+            Assert.That(res.Mods.TryGetValue("accession", out var added) ? added.Select(m => m.Item1) : [], Is.EquivalentTo(expectedSites));
+        }
+
         // A database site under a GPTMD name may come from an earlier round or from an annotation written with
         // MetaMorpheus's names, and the database cannot say which, so it is moved like any other when the spectrum
         // prefers another residue. Rounds still do not compound: see the next test.

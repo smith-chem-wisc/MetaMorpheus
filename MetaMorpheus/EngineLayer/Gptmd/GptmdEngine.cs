@@ -232,7 +232,9 @@ namespace EngineLayer.Gptmd
         /// </para>
         /// <para>
         /// A modification on a residue a fixed modification targets is not moved: the search puts the fixed modification
-        /// back there, so the moved form would no longer match this precursor.
+        /// back there, so the moved form would no longer match this precursor. Nor is one moved onto the peptide's last
+        /// residue when it would block the cleavage that ends the peptide (<see cref="CleavageBlockingFor"/>), a
+        /// placement the search refuses.
         /// </para>
         /// </summary>
         private List<(int site, Modification mod, string proteinAccession)> FindAlternativeSitesForDatabaseMods(SpectralMatch psm,
@@ -242,6 +244,7 @@ namespace EngineLayer.Gptmd
             var alternatives = new List<(int site, Modification mod, string proteinAccession)>();
             if (!psm.MatchesCandidateMass(peptide.MonoisotopicMass, precursorTolerance, CommonParameters))
                 return alternatives;
+            CleavageBlockingPolicy? cleavageBlocking = null; // built on first use, once per peptide
 
             foreach (var (key, databaseMod) in peptide.AllModsOneIsNterminus)
             {
@@ -278,6 +281,12 @@ namespace EngineLayer.Gptmd
                     var fitting = offered ? new List<Modification>()
                         : !otherAminoAcid && ModFits(databaseMod, peptide.Parent, toIndex + 1, peptide.Length, indexInProtein) ? new List<Modification> { databaseMod }
                         : sameChemistry.Where(m => ModFits(m, peptide.Parent, toIndex + 1, peptide.Length, indexInProtein)).ToList();
+                    // as in the ordinary pass: nothing that blocks the cleavage ending the peptide goes on its last residue
+                    if (toIndex == peptide.Length - 1 && fitting.Count > 0)
+                    {
+                        var policy = cleavageBlocking ??= CleavageBlockingFor(peptide, GptmdModifications);
+                        fitting = fitting.Where(m => !policy.Blocks(m, indexInProtein)).ToList();
+                    }
                     if (!offered && fitting.Count == 0)
                         continue;
 
