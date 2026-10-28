@@ -82,7 +82,7 @@ namespace EngineLayer
         /// does not make it shared. So with several proteases one sequence can be unique to two groups, one per protease,
         /// and the tables, which do not name the protease, show it unique in both.
         /// </remarks>
-        private static void LabelPeptidesUniqueToOneGroup(List<ProteinGroup> proteinGroups, bool treatModPeptidesAsDifferentPeptides)
+        internal static void LabelPeptidesUniqueToOneGroup(List<ProteinGroup> proteinGroups, bool treatModPeptidesAsDifferentPeptides)
         {
             (string, object) Sequence(IBioPolymerWithSetMods peptide) =>
                 (treatModPeptidesAsDifferentPeptides ? peptide.FullSequence : peptide.BaseSequence, peptide.DigestionParams?.DigestionAgent);

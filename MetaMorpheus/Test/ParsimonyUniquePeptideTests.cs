@@ -396,6 +396,27 @@ namespace Test
         }
 
         /// <summary>
+        /// The labeler counts each group once, however often the list holds it, without relying on the picked FDR to
+        /// produce the repeat (#2923 stops it doing so). P1's group is listed twice by hand; its peptides stay unique,
+        /// and the one P2 also lists stays shared.
+        /// </summary>
+        [Test]
+        public static void TheLabelerCountsAGroupListedTwiceOnce()
+        {
+            var p1 = Protein("ACDMEKGGGR", "P1");
+            var p2 = Protein("ACDMEKWWWR", "P2");
+            ProteinGroup Group(Protein protein, params PeptideWithSetModifications[] peptides) =>
+                new(new HashSet<IBioPolymer> { protein }, new HashSet<IBioPolymerWithSetMods>(peptides), new HashSet<IBioPolymerWithSetMods>());
+            var g1 = Group(p1, Peptide(p1, 1, 6), Peptide(p1, 7, 10));
+            var g2 = Group(p2, Peptide(p2, 1, 6), Peptide(p2, 7, 10));
+
+            ProteinScoringAndFdrEngine.LabelPeptidesUniqueToOneGroup(new List<ProteinGroup> { g1, g1, g2 }, false);
+
+            Assert.That(BaseSequences(g1.UniquePeptides), Is.EqualTo(new[] { "GGGR" }));
+            Assert.That(BaseSequences(g2.UniquePeptides), Is.EqualTo(new[] { "WWWR" }));
+        }
+
+        /// <summary>
         /// A per-file scoring call works on subsets of the search's groups and keeps the search's labels, even where its
         /// own two-peptide rule drops a subset. ACDMEK is shared by P1 and P2 in the search; in file A, P2's subset has
         /// ACDMEK only and is dropped, but P1's subset still reports ACDMEK as shared.
