@@ -795,5 +795,73 @@ namespace Test
                 Directory.Delete(outputFolder, true);
             }
         }
+
+        /// <summary>
+        /// Alexander-Sol's case: no target peptide passes the peptide-level q-value. WMDMEK's set passes at the PSM level
+        /// but scores below three decoys, so its peptide fails. FlashLFQ reads an empty list of peptides to report as
+        /// "report every identified peptide", so before the fix the failed set was reported, with a value, whenever no
+        /// unrelated peptide passed beside it.
+        /// </summary>
+        [Test]
+        public static void AnAmbiguousRowFailingThePeptideLevelQValueIsNotReportedWhenNoPeptidePasses()
+        {
+            string outputFolder = NewOutputFolder("LocalizationAmbiguousQuant_NoPeptidePasses");
+            string mzmlPath = Path.Combine(outputFolder, "file.mzML");
+            var weakProtein = Protein("WMDMEKR", "P2");
+            var decoy = new Protein("FFFFRLLLLKHHHHR", "DECOY_P9", null, new List<System.Tuple<string, string>>(),
+                new Dictionary<int, List<Modification>>(), isDecoy: true);
+            var weakAt2 = Peptide(weakProtein, 1, 6, (2, OxidationOnM));
+            var weakAt4 = Peptide(weakProtein, 1, 6, (4, OxidationOnM));
+            WriteMs1Fixture(mzmlPath, weakAt2);
+
+            try
+            {
+                var weak = ScoredPsm(5, mzmlPath, 1, weakAt2, weakAt4);
+                Assume.That(weak.PsmFdrInfo.QValue, Is.Zero, "the match passes at the PSM level");
+
+                var parameters = Quantify(outputFolder, mzmlPath, new List<SpectralMatch>
+                {
+                    weak,
+                    ScoredPsm(20, mzmlPath, 2, Peptide(decoy, 1, 5)),
+                    ScoredPsm(20, mzmlPath, 3, Peptide(decoy, 6, 10)),
+                    ScoredPsm(20, mzmlPath, 4, Peptide(decoy, 11, 15)),
+                });
+
+                Assert.That(parameters.FlashLfqResults?.PeptideModifiedSequences.Keys ?? Enumerable.Empty<string>(), Is.Empty,
+                    "no peptide passes the peptide-level q-value, so none is reported");
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// The same hole without an ambiguous match: one localized peptide passes at the PSM level and fails at the
+        /// peptide level, and nothing else passes. It is not reported, as it would not be beside a peptide that passes.
+        /// </summary>
+        [Test]
+        public static void ALocalizedPeptideFailingThePeptideLevelQValueIsNotReportedWhenNoPeptidePasses()
+        {
+            string outputFolder = NewOutputFolder("LocalizationAmbiguousQuant_NoLocalizedPeptidePasses");
+            string mzmlPath = Path.Combine(outputFolder, "file.mzML");
+            var protein = Protein("WMDMEKR", "P2");
+            var oxidizedAt2 = Peptide(protein, 1, 6, (2, OxidationOnM));
+            WriteMs1Fixture(mzmlPath, oxidizedAt2);
+            var weakLocalized = Psm(mzmlPath, 1, oxidizedAt2);
+            weakLocalized.PeptideFdrInfo = new FdrInfo { QValue = 0.5, QValueNotch = 0.5, PEP = 0.5, PEP_QValue = 0.5 };
+
+            try
+            {
+                var parameters = Quantify(outputFolder, mzmlPath, new List<SpectralMatch> { weakLocalized });
+
+                Assert.That(parameters.FlashLfqResults?.PeptideModifiedSequences.Keys ?? Enumerable.Empty<string>(), Is.Empty,
+                    "the peptide fails the peptide-level q-value, so it is not reported");
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+            }
+        }
     }
 }

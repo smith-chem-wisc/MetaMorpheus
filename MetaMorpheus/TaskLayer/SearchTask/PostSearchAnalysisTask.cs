@@ -1312,7 +1312,15 @@ namespace TaskLayer
                     silent: true,
                     maxThreads: CommonParameters.MaxThreadsToUsePerFile);
 
-                if (flashLFQIdentifications.Any())
+                // FlashLFQ reads an empty list of peptides to report as "report every identified peptide". When no peptide
+                // passes the peptide-level q-value there is nothing to report, so FlashLFQ is not run, as when nothing
+                // was identified; otherwise every peptide that failed would be reported. SILAC passes no list.
+                bool noPeptidePasses = Parameters.SearchParameters.SilacLabels == null && peptideSequencesForQuantification.Count == 0;
+                if (noPeptidePasses && flashLFQIdentifications.Any())
+                {
+                    Warn("No peptide passed the peptide-level q-value, so none was quantified.");
+                }
+                else if (flashLFQIdentifications.Any())
                 {
                     Parameters.FlashLfqResults = flashLfqEngine.Run();
                 }
