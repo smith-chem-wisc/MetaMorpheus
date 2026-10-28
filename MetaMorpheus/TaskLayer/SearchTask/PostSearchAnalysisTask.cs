@@ -770,7 +770,7 @@ namespace TaskLayer
             // ProteinGroupQuantification.tsv -- decoy groups, and groups above the q-value threshold --
             // that the protein table suppresses, so the two files disagreed about which groups exist.
             // The predicate is the writer's own, so the two cannot drift apart.
-            double proteinQValueThreshold = ProteinGroupQValueThreshold(filteredPsms.FilterType);
+            double proteinQValueThreshold = ProteinGroupQValueThreshold(filteredPsms);
             var quantifiableProteinGroups = ProteinGroups
                 .Where(proteinGroup => ProteinGroupIsWritten(proteinGroup, proteinQValueThreshold))
                 .ToList();
@@ -882,11 +882,14 @@ namespace TaskLayer
 
         /// <summary>
         /// The q-value threshold a protein group is held to for output, which follows whichever filter
-        /// type the PSMs were filtered under.
+        /// type the PSMs were filtered under. When PEP filtering was requested but the PSMs fell back to the
+        /// q-value, protein groups are held to the same threshold the PSMs were (the smaller of the two), not to
+        /// the q-value threshold, which the GUI sets to 1 when its PEP box is ticked.
         /// </summary>
-        private double ProteinGroupQValueThreshold(FilterType filterType) => filterType switch
+        private double ProteinGroupQValueThreshold(FilteredPsms filteredPsms) => filteredPsms.FilterType switch
         {
             FilterType.PepQValue => CommonParameters.PepQValueThreshold,
+            _ when filteredPsms.PepFilteringNotDone != null && !filteredPsms.FilteringNotPerformed => filteredPsms.FilterThreshold,
             _ => CommonParameters.QValueThreshold
         };
 
@@ -1310,7 +1313,7 @@ namespace TaskLayer
                                 psmToProteinGroups[psm],
                                 optionalChemicalFormula: GlobalVariables.AnalyteType == AnalyteType.Oligo ? psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.ThisChemicalFormula : null,
                                 psmScore: psm.Score,
-                                qValue: psmsForQuantification.FilterType == FilterType.QValue ? psm.FdrInfo.QValue : psm.FdrInfo.PEP_QValue,
+                                qValue: psmsForQuantification.GetFilterValue(psm),
                                 decoy: psm.IsDecoy,
                                 // lets FlashLFQ keep match-between-runs within a digestion agent, while
                                 // normalization and protein quantification still span every file
@@ -1614,15 +1617,8 @@ namespace TaskLayer
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
-            if (psmsForPsmResults.FilteringNotPerformed)
-            {
-                
-                Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
-                    $"PEP could not be calculated due to an insufficient number of {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s. Results were filtered by q-value." +
-                    Environment.NewLine);
-            }
             string psmResultsText = $"All target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsForPsmResults.GetFilterTypeString() + " <= " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " + psmsForPsmResults.TargetPsmsAboveThreshold;
-            ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = psmResultsText;
+            ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = WithPepFilteringNotDone(psmsForPsmResults, psmResultsText);
             string precursorResultsText = $"All {GlobalVariables.AnalyteType.GetPrecursorLabel()}: " + Parameters.NumMs2SpectraPerFile.Select(f=>f.Value[1]).Sum();
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetPrecursorLabel()}")] = precursorResultsText;
             string ms2ScanCountResultsText = $"All {GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}: " + Parameters.NumMs2SpectraPerFile.Select(f => f.Value[0]).Sum();
@@ -1646,14 +1642,26 @@ namespace TaskLayer
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
-            if (peptidesForPeptideResults.FilteringNotPerformed)
-            {
-                Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
-                    $"PEP could not be calculated due to an insufficient number of {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s. Results were filtered by q-value." + Environment.NewLine);
-            }
             string peptideResultsText = $"All target {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()}s with " + peptidesForPeptideResults.GetFilterTypeString() + " <= " + Math.Round(peptidesForPeptideResults.FilterThreshold, 2) + ": " +
                 peptidesForPeptideResults.TargetPsmsAboveThreshold;
-            ResultsDictionary[("All", GlobalVariables.AnalyteType.GetUniqueFormLabel())] = peptideResultsText;
+            ResultsDictionary[("All", GlobalVariables.AnalyteType.GetUniqueFormLabel())] = WithPepFilteringNotDone(peptidesForPeptideResults, peptideResultsText);
+        }
+
+        private bool _pepFilteringNotDoneWarned;
+
+        /// <summary>
+        /// PEP filtering was requested but not done: the count line for results.txt, with the sentence saying what was
+        /// done instead just above it. The first such sentence is also a warning, once per search.
+        /// </summary>
+        private string WithPepFilteringNotDone(FilteredPsms filtered, string countLine)
+        {
+            if (filtered.PepFilteringNotDone == null) return countLine;
+            if (!_pepFilteringNotDoneWarned)
+            {
+                Warn(filtered.PepFilteringNotDone);
+                _pepFilteringNotDoneWarned = true;
+            }
+            return filtered.PepFilteringNotDone + Environment.NewLine + countLine;
         }
 
         private void WriteIndividualPsmResults()
@@ -1873,7 +1881,7 @@ namespace TaskLayer
 
             // write protein groups to tsv, passing the filter type
             string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
-            WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, filteredPsms.FilterType);
+            WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, filteredPsms);
 
 
 
@@ -1981,7 +1989,7 @@ namespace TaskLayer
 
                     // write result files
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + $"_{GlobalVariables.AnalyteType.GetBioPolymerLabel()}Groups.tsv");
-                    WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, filteredPsmsByFile.FilterType);
+                    WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, filteredPsmsByFile);
                 }
 
                 // Filter psms in place before writing mzID
@@ -2564,12 +2572,12 @@ namespace TaskLayer
             }
         }
 
-        private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> proteinGroups, string filePath, List<string> nestedIds, FilterType filterType = FilterType.QValue)
+        private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> proteinGroups, string filePath, List<string> nestedIds, FilteredPsms filteredPsms)
         {
             if (proteinGroups != null && proteinGroups.Any())
             {
                 // Set threshold based on the filter type being used
-                double qValueThreshold = ProteinGroupQValueThreshold(filterType);
+                double qValueThreshold = ProteinGroupQValueThreshold(filteredPsms);
 
                 using (StreamWriter output = new StreamWriter(filePath))
                 {

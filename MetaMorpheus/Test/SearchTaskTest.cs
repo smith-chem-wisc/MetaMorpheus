@@ -1040,8 +1040,13 @@ namespace Test
 
             string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
             string[] results = File.ReadAllLines(resultsFile);
-            Assert.That(results[6], Is.EqualTo("PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value."));
-            Assert.That(results[7], Is.EqualTo("All target PSMs with q-value <= 1: 84"));
+            // Each sentence sits just above the count it qualifies; the old text ("Results were filtered by q-value.")
+            // said a filter ran.
+            const string notFiltered = "PEP filtering was requested, but there were fewer than 100 PSMs (85, counting decoys), so results were not filtered.";
+            Assert.That(results[5], Is.EqualTo(notFiltered));
+            Assert.That(results[6], Is.EqualTo("All target PSMs with q-value <= 1: 84"));
+            Assert.That(results[7], Is.EqualTo(notFiltered));
+            Assert.That(results[8], Does.StartWith("All target peptides with q-value <= 1: "));
 
             // clean up
             Directory.Delete(folderPath, true);
@@ -1101,7 +1106,10 @@ namespace Test
             string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
             string[] results = File.ReadAllLines(resultsFile);
 
-            Assert.That(results[7], Is.EqualTo("All target PSMs with q-value <= 1: 46"));
+            // Lines 5 and 7 say PEP filtering was not done, each just above the count it qualifies.
+            Assert.That(results[5], Does.StartWith("PEP filtering was requested, but there were fewer than 100 PSMs ("));
+            Assert.That(results[6], Is.EqualTo("All target PSMs with q-value <= 1: 46"));
+            Assert.That(results[7], Is.EqualTo(results[5]));
             Assert.That(results[8], Is.EqualTo("All target peptides with q-value <= 1: 14"));
             Assert.That(results[9], Is.EqualTo("All target protein groups with q-value <= 1: 14"));
             Assert.That(results[10], Is.EqualTo("All Precursors: 123"));
