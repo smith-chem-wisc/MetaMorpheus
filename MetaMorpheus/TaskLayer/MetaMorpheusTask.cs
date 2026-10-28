@@ -1520,6 +1520,22 @@ namespace TaskLayer
                 : parameters.CloneWithNewTotalPartitions(decidedPartitions.Value);
         }
 
+        /// <summary>
+        /// True, after a warning, when a spectral library must not be written because the searched
+        /// databases hold entrapment. Entrapment is searched as a target, so a library from that search
+        /// would carry entrapment spectra; build the library from a search without entrapment instead.
+        /// Only the library is skipped: the search and every other output are unchanged.
+        /// </summary>
+        protected static bool RefuseSpectralLibraryForEntrapment(IEnumerable<IBioPolymer> searchedBioPolymers)
+        {
+            if (!searchedBioPolymers.Any(p => p.IsEntrapment))
+                return false;
+
+            Warn("No spectral library was written: the database contains entrapment proteins, and a library " +
+                 "from this search would include entrapment spectra. Build the spectral library from a search without entrapment.");
+            return true;
+        }
+
         protected static void Warn(string v)
         {
             WarnHandler?.Invoke(null, new StringEventArgs(v, null));

@@ -138,14 +138,18 @@ namespace TaskLayer
             if (Parameters.SearchParameters.WritePrunedDatabase)
                 WritePrunedDatabase(Parameters.AllSpectralMatches, Parameters.BioPolymerList, Parameters.SearchParameters.ModsToWriteSelection, Parameters.DatabaseFilenameList, Parameters.OutputFolder, Parameters.SearchTaskId);
 
-            if (Parameters.SearchParameters.WriteSpectralLibrary)
+            if ((Parameters.SearchParameters.WriteSpectralLibrary || Parameters.SearchParameters.UpdateSpectralLibrary)
+                && !RefuseSpectralLibraryForEntrapment(Parameters.BioPolymerList))
             {
-                SpectralLibraryGeneration();
-            }
+                if (Parameters.SearchParameters.WriteSpectralLibrary)
+                {
+                    SpectralLibraryGeneration();
+                }
 
-            if(Parameters.SearchParameters.UpdateSpectralLibrary)
-            {
-                UpdateSpectralLibrary();
+                if (Parameters.SearchParameters.UpdateSpectralLibrary)
+                {
+                    UpdateSpectralLibrary();
+                }
             }
           
             if (Parameters.SearchParameters.WriteDigestionProductCountFile)
@@ -1651,16 +1655,12 @@ namespace TaskLayer
         {
             try
             {
-                // Entrapment is searched as a target, so excluding decoys and contaminants leaves it in. A
-                // library built from a database with entrapment must not carry spectra of peptides that exist
-                // only in the entrapment proteins.
                 var peptidesForSpectralLibrary = FilteredPsms.Filter(Parameters.AllSpectralMatches,
                     CommonParameters,
                     includeDecoys: false,
                     includeContaminants: false,
                     includeAmbiguous: false,
-                    includeHighQValuePsms: false,
-                    includeEntrapment: false);
+                    includeHighQValuePsms: false);
 
 
             //group psms by peptide and charge, then write highest scoring PSM to dictionary
@@ -1735,16 +1735,12 @@ namespace TaskLayer
         {
             try
             {
-                // Entrapment is searched as a target, so excluding decoys and contaminants leaves it in. A
-                // library built from a database with entrapment must not carry spectra of peptides that exist
-                // only in the entrapment proteins.
                 var peptidesForSpectralLibrary = FilteredPsms.Filter(Parameters.AllSpectralMatches,
                     CommonParameters,
                     includeDecoys: false,
                     includeContaminants: false,
                     includeAmbiguous: false,
-                    includeHighQValuePsms: false,
-                    includeEntrapment: false);
+                    includeHighQValuePsms: false);
 
                 //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
                 var fullSeqChargeGrouping = peptidesForSpectralLibrary.GroupBy(p => (p.FullSequence, p.ScanPrecursorCharge));

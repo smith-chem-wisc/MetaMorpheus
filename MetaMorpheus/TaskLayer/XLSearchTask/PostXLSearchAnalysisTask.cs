@@ -70,7 +70,7 @@ namespace TaskLayer
                 }
             }
 
-            if(xlSearchParameters.WriteSpectralLibrary)
+            if (xlSearchParameters.WriteSpectralLibrary && !RefuseSpectralLibraryForEntrapment(proteinList))
             {
                 WriteXlSpectralLibrary(interCsms, intraCsms, singlePsms, outputFolder);
             }
