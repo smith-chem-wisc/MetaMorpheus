@@ -361,11 +361,11 @@ namespace Test
 
         /// <summary>
         /// A LowCID search bins each MS2 spectrum in place for XCorr, so reporter ions read from the loaded spectrum are wrong.
-        /// Read one scan at a time from the file, they are the stored scan's: here an mzML numbered from scan 1 and an MGF,
-        /// both read that way (see the test below).
+        /// Read one scan at a time from the file, they are the stored scan's: here an mzML numbered from scan 1, read that way
+        /// (see the test below). #2922's LowCidReporterIons_AreReadFromTheStoredScan_NotTheBinnedOne covers the MGF, which is
+        /// read that way too, and the slice mzML, which is read whole.
         /// </summary>
         [TestCase("mzMLNumberedFromOne")]
-        [TestCase("mgf")]
         public static void LowCidReporterIons_ReadOneScanAtATime_AreTheStoredScans(string fixture)
         {
             var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT11_LowCID_SearchTask.toml"), MetaMorpheusTask.tomlConfig);
