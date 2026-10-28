@@ -138,18 +138,14 @@ namespace TaskLayer
             if (Parameters.SearchParameters.WritePrunedDatabase)
                 WritePrunedDatabase(Parameters.AllSpectralMatches, Parameters.BioPolymerList, Parameters.SearchParameters.ModsToWriteSelection, Parameters.DatabaseFilenameList, Parameters.OutputFolder, Parameters.SearchTaskId);
 
-            if ((Parameters.SearchParameters.WriteSpectralLibrary || Parameters.SearchParameters.UpdateSpectralLibrary)
-                && !RefuseSpectralLibraryForEntrapment(Parameters.BioPolymerList))
+            if (Parameters.SearchParameters.WriteSpectralLibrary)
             {
-                if (Parameters.SearchParameters.WriteSpectralLibrary)
-                {
-                    SpectralLibraryGeneration();
-                }
+                SpectralLibraryGeneration();
+            }
 
-                if (Parameters.SearchParameters.UpdateSpectralLibrary)
-                {
-                    UpdateSpectralLibrary();
-                }
+            if(Parameters.SearchParameters.UpdateSpectralLibrary)
+            {
+                UpdateSpectralLibrary();
             }
           
             if (Parameters.SearchParameters.WriteDigestionProductCountFile)

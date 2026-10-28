@@ -373,11 +373,6 @@ namespace TaskLayer
                         break;
                 }
 
-                if (spectraFileIndex == 0)
-                {
-                    WarnIfSpectralLibraryRefusedForEntrapment(SearchParameters.WriteSpectralLibrary || SearchParameters.UpdateSpectralLibrary, bioPolymerList);
-                }
-
                 if (SearchParameters.DoMultiplexQuantification)
                 {
                     if (!IsobaricMassTag.TryGetIsobaricMassTag(SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var massTag))

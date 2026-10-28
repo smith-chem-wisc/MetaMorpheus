@@ -53,7 +53,6 @@ namespace TaskLayer
             var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, XlSearchParameters.DecoyType, true, localizeableModificationTypes);
             var loadingResults = dbLoader.Run() as DatabaseLoadingEngineResults;
             List<Protein> proteinList = loadingResults!.BioPolymers.Cast<Protein>().ToList();
-            WarnIfSpectralLibraryRefusedForEntrapment(XlSearchParameters.WriteSpectralLibrary, proteinList);
             CommonParameters.TotalPartitions = proteinList.Count() / 250;
             if (CommonParameters.TotalPartitions == 0) { CommonParameters.TotalPartitions = 1; }
 
