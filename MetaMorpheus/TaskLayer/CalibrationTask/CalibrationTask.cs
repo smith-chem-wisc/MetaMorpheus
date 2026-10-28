@@ -181,6 +181,7 @@ namespace TaskLayer
 
             // re-write experimental design (if it has been defined) with new calibrated file names
             UpdateExperimentalDesignFile(currentRawFileList, outputFolder);
+            UpdateTmtDesignFile(currentRawFileList, outputFolder);
 
             // finished calibrating all files for the task
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
@@ -196,6 +197,84 @@ namespace TaskLayer
             {
                 WriteNewExperimentalDesignFile(assumedPathToExperDesign, outputFolder, currentRawFileList, _unsuccessfullyCalibratedFilePaths);
             }
+        }
+
+        /// <summary>
+        /// Re-writes TmtDesign.txt, if there is one beside the spectra files, for the files calibration wrote. The search
+        /// looks for it beside the files it searches, so without this a TMT search after calibration quantified no channel.
+        /// </summary>
+        private void UpdateTmtDesignFile(List<string> currentRawFileList, string outputFolder)
+        {
+            string designPath = Path.Combine(Directory.GetParent(currentRawFileList.First()).FullName, GlobalVariables.TmtExperimentalDesignFileName);
+            if (!File.Exists(designPath))
+            {
+                DeleteEarlierTmtDesign(designPath, outputFolder);
+                return;
+            }
+
+            List<TmtFileInfo> originalDesign = TmtExperimentalDesign.Read(designPath, currentRawFileList, out var errors);
+            if (errors.Any())
+            {
+                Warn($"{GlobalVariables.TmtExperimentalDesignFileName} was not re-written for the calibrated files: " + string.Join(" ", errors));
+                DeleteEarlierTmtDesign(designPath, outputFolder);
+                return;
+            }
+
+            List<TmtFileInfo> calibratedDesign = originalDesign
+                .Select(file => new TmtFileInfo(CalibratedFilePath(file.FullFilePathWithExtension, outputFolder),
+                    file.Plex, file.Fraction, file.TechnicalReplicate, file.Annotations))
+                .ToList();
+
+            if (!SamePath(Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName), designPath))
+            {
+                // Into the output folder by name: a file calibration wrote nothing for keeps its original path, so the first
+                // file's folder can be the input folder, and the input design must not be overwritten.
+                _ = TmtExperimentalDesign.Write(calibratedDesign, outputFolder);
+                return;
+            }
+
+            // The output folder holds the input design. Its rows describe the input files, which are still there, so they
+            // are kept and the calibrated files' rows are added below them.
+            List<TmtFileInfo> calibratedFiles = calibratedDesign
+                .Where((file, i) => !SamePath(file.FullFilePathWithExtension, originalDesign[i].FullFilePathWithExtension))
+                .ToList();
+            if (calibratedFiles.Any())
+            {
+                _ = TmtExperimentalDesign.AddRows(designPath, calibratedFiles);
+            }
+        }
+
+        private static bool SamePath(string a, string b) =>
+            string.Equals(Path.GetFullPath(a), Path.GetFullPath(b), StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Deletes a TmtDesign.txt an earlier run wrote into <paramref name="outputFolder"/>, for a run that writes none.
+        /// Nothing empties a task folder before a run, so the search after calibration would read it as describing this
+        /// run's files. The input design <paramref name="inputDesignPath"/> is never deleted, even when the output folder
+        /// is the input folder.
+        /// </summary>
+        private static void DeleteEarlierTmtDesign(string inputDesignPath, string outputFolder)
+        {
+            string earlierDesign = Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName);
+            if (!SamePath(earlierDesign, inputDesignPath))
+            {
+                File.Delete(earlierDesign);
+            }
+        }
+
+        /// <summary>
+        /// The file the next task searches in place of <paramref name="originalFilePath"/>: the -calib mzML this run wrote
+        /// for it, or the original itself for a file it wrote none for. EverythingRunnerEngine passes the original on for a
+        /// file that could not be calibrated (not the copy this task writes to its output folder), for a type calibration
+        /// skips, and for a file a cancelled run never reached. The -calib name goes through ToSafeOutputPath, as the run
+        /// loop's does, so a name trimmed to fit the path cap is named trimmed.
+        /// </summary>
+        private string CalibratedFilePath(string originalFilePath, string outputFolder)
+        {
+            string calibrated = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(originalFilePath) + CalibSuffix + ".mzML")
+                .ToSafeOutputPath(CalibSuffix + ".mzML");
+            // ignoring case, as TmtExperimentalDesign.Read matches the design's File column to the spectra files
+            return MyTaskResults.NewSpectra.FirstOrDefault(written => SamePath(written, calibrated)) ?? originalFilePath;
         }
 
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters, string originalDataFile)
