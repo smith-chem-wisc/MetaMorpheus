@@ -61,6 +61,88 @@ namespace EngineLayer
             return string.Join(Environment.NewLine, msgs);
         }
 
+        /// <summary>
+        /// The per-file rules of a TMT design, scoped to a plex because a plex is its own labelling
+        /// experiment: every file has a plex, fractions and technical replicates are >= 1, and no plex
+        /// holds two files at one (fraction, technical replicate). Null when there is no error. A gap in
+        /// fraction or technical replicate numbers is not an error; see <see cref="GetWarningsInDesign"/>.
+        /// Lifted from the TMT design window (#2793), so the window and a test check the same rules.
+        /// </summary>
+        public static string GetErrorsInDesign(IEnumerable<TmtFileInfo> files)
+        {
+            var fileList = files.ToList();
+
+            // A file with no plex passes every per-plex check, and then does not appear in the written
+            // design at all, because the design is built by grouping on plex.
+            var unplexed = fileList.Where(f => string.IsNullOrWhiteSpace(f.Plex)).ToList();
+            if (unplexed.Any())
+            {
+                return "Every file must be assigned a Plex. Missing for: "
+                    + string.Join(", ", unplexed.Select(f => Path.GetFileName(f.FullFilePathWithExtension)));
+            }
+
+            if (fileList.Any(f => f.TechnicalReplicate < 1))
+                return "Technical Replicate values must be >= 1.";
+
+            if (fileList.Any(f => f.Fraction < 1))
+                return "Fraction values must be >= 1.";
+
+            // Scoped to one plex: two files in different plexes both at (Fraction 1, Technical Replicate 1)
+            // is the correct design for a two-plex run with one fraction and one technical replicate.
+            foreach (var plexGroup in fileList.GroupBy(f => f.Plex.Trim(), StringComparer.OrdinalIgnoreCase))
+            {
+                var duplicatePair = plexGroup.GroupBy(f => (f.Fraction, f.TechnicalReplicate))
+                                             .FirstOrDefault(g => g.Count() > 1);
+                if (duplicatePair != null)
+                    return $"Plex {plexGroup.Key}: duplicate Fraction/Technical Replicate combination: Fraction {duplicatePair.Key.Fraction}, Technical Replicate {duplicatePair.Key.TechnicalReplicate}.";
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// One warning for each place a plex's numbering has a gap, naming the missing numbers: its
+        /// fractions, and each fraction's technical replicates, each expected to run 1..N. Such a design
+        /// is quantified as numbered; the warning is there because a missing number may be a file that
+        /// was lost or not searched. Empty when there is nothing to say.
+        /// </summary>
+        public static List<string> GetWarningsInDesign(IEnumerable<TmtFileInfo> files)
+        {
+            var warnings = new List<string>();
+
+            foreach (var plexGroup in files.Where(f => !string.IsNullOrWhiteSpace(f.Plex))
+                         .GroupBy(f => f.Plex.Trim(), StringComparer.OrdinalIgnoreCase)
+                         .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                string plexLabel = $"Plex {plexGroup.Key}";
+                AddGapWarning(warnings, plexLabel, "fraction", plexGroup.Select(f => f.Fraction));
+
+                foreach (var fraction in plexGroup.GroupBy(f => f.Fraction).OrderBy(g => g.Key))
+                {
+                    AddGapWarning(warnings, $"{plexLabel} fraction {fraction.Key}", "technical replicate",
+                        fraction.Select(f => f.TechnicalReplicate));
+                }
+            }
+
+            return warnings;
+        }
+
+        /// <summary>
+        /// Adds a warning when the given one-based numbers are not 1..N.
+        /// </summary>
+        private static void AddGapWarning(List<string> warnings, string owner, string level, IEnumerable<int> oneBasedNumbers)
+        {
+            var present = oneBasedNumbers.Distinct().OrderBy(n => n).ToList();
+            var missing = Enumerable.Range(1, Math.Max(0, present.Max())).Except(present).ToList();
+
+            if (missing.Any())
+            {
+                warnings.Add($"{owner}: {level}s {string.Join(", ", present)}, quantified as numbered; " +
+                    $"{level}{(missing.Count == 1 ? "" : "s")} {string.Join(", ", missing)} {(missing.Count == 1 ? "is" : "are")} not in the design. " +
+                    "A missing number may be a file that was lost or not searched.");
+            }
+        }
+
         // RETURN: files where each file carries its plex annotations
         /// <param name="fullFilePathsWithExtension">
         /// The files this run actually searched, used to ignore design rows naming anything else.
@@ -383,31 +465,86 @@ namespace EngineLayer
             if (files == null || files.Count == 0)
                 throw new InvalidOperationException("No TMT files to write.");
 
-            var dir = Directory.GetParent(files.First().FullFilePathWithExtension)!.FullName;
-            var path = Path.Combine(dir, GlobalVariables.TmtExperimentalDesignFileName);
+            return Write(files, Directory.GetParent(files.First().FullFilePathWithExtension)!.FullName);
+        }
+
+        /// <summary>
+        /// Writes the design into <paramref name="directory"/> rather than beside its first file, for a design whose files
+        /// are not all in one folder.
+        /// </summary>
+        public static string Write(List<TmtFileInfo> files, string directory)
+        {
+            if (files == null || files.Count == 0)
+                throw new InvalidOperationException("No TMT files to write.");
+
+            var path = Path.Combine(directory, GlobalVariables.TmtExperimentalDesignFileName);
 
             using var sw = new StreamWriter(path);
             sw.WriteLine(Header);
 
-            foreach (var file in files.OrderBy(f => f.Fraction).ThenBy(f => f.TechnicalReplicate))
+            foreach (var row in Rows(files, Header.Split('\t')))
             {
-                var plex = file.Plex ?? "";
-                var anns = file.Annotations ?? Array.Empty<TmtPlexAnnotation>();
-
-                if (anns.Count > 0)
-                {
-                    foreach (var a in anns)
-                    {
-                        sw.WriteLine($"{file.FullFilePathWithExtension}\t{plex}\t{a.SampleName}\t{a.Tag}\t{a.Condition}\t{a.BiologicalReplicate}\t{file.Fraction}\t{file.TechnicalReplicate}\t{ToDesignFileValue(a.SampleType)}");
-                    }
-                }
-                else
-                {
-                    sw.WriteLine($"{file.FullFilePathWithExtension}\t{plex}\t\t\t\t\t{file.Fraction}\t{file.TechnicalReplicate}\t");
-                }
+                sw.WriteLine(row);
             }
 
             return path;
+        }
+
+        /// <summary>
+        /// Adds <paramref name="files"/> to the design at <paramref name="designPath"/> and keeps every line it already has,
+        /// except the rows naming one of <paramref name="files"/>, which are replaced. The new rows follow the file's own
+        /// header, so a design whose columns are in another order, or which predates Sample Type, still reads them.
+        /// </summary>
+        public static string AddRows(string designPath, List<TmtFileInfo> files)
+        {
+            if (files == null || files.Count == 0)
+                throw new InvalidOperationException("No TMT files to write.");
+
+            string[] lines = File.ReadAllLines(designPath);
+            if (lines.Length == 0 || !IsHeaderValid(lines[0]))
+                throw new InvalidOperationException("TMT design file header is invalid.");
+
+            string[] headers = lines[0].Split('\t');
+            int idxFile = Array.FindIndex(headers, h => string.Equals(h.Trim(), "File", StringComparison.OrdinalIgnoreCase));
+            string designDirectory = Path.GetDirectoryName(Path.GetFullPath(designPath));
+            var replaced = new HashSet<string>(files.Select(f => NormalizePath(f.FullFilePathWithExtension)), StringComparer.OrdinalIgnoreCase);
+
+            var kept = lines.Skip(1).Where(line =>
+            {
+                var cols = line.Split('\t');
+                return cols.Length <= idxFile || !replaced.Contains(NormalizePath(ResolveAgainstDesignFile(cols[idxFile].Trim(), designDirectory)));
+            });
+            File.WriteAllLines(designPath, new[] { lines[0] }.Concat(kept).Concat(Rows(files, headers)).ToList());
+
+            return designPath;
+        }
+
+        /// <summary>
+        /// One row per channel of each file, a placeholder row for a file with no channels yet, with the cells in the order
+        /// <paramref name="headers"/> names them. A column this class does not write is left blank.
+        /// </summary>
+        private static IEnumerable<string> Rows(List<TmtFileInfo> files, string[] headers)
+        {
+            foreach (var file in files.OrderBy(f => f.Fraction).ThenBy(f => f.TechnicalReplicate))
+            {
+                var anns = file.Annotations ?? Array.Empty<TmtPlexAnnotation>();
+                foreach (var a in anns.Count > 0 ? anns : new TmtPlexAnnotation[] { null })
+                {
+                    yield return string.Join("\t", headers.Select(header => header.Trim().ToLowerInvariant() switch
+                    {
+                        "file" => file.FullFilePathWithExtension,
+                        "plex" => file.Plex,
+                        "sample name" => a?.SampleName ?? "",
+                        "tmt channel" => a?.Tag ?? "",
+                        "condition" => a?.Condition ?? "",
+                        "biological replicate" => a == null ? "" : a.BiologicalReplicate.ToString(),
+                        "fraction" => file.Fraction.ToString(),
+                        "technical replicate" => file.TechnicalReplicate.ToString(),
+                        "sample type" => a == null ? "" : ToDesignFileValue(a.SampleType),
+                        _ => ""
+                    }));
+                }
+            }
         }
 
         #region Projection to mzLib
