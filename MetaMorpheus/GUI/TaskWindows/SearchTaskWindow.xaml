@@ -101,6 +101,7 @@
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
+                                    <RowDefinition Height="1*"/>
                                 </Grid.RowDefinitions>
 
                                 <!-- Precursor Mass Tolerance -->
@@ -329,6 +330,26 @@
                                             </TextBlock>
                                         </TextBox.ToolTip>
                                     </local:IntegerTexBoxControl>
+                                </StackPanel>
+
+                                <!-- Identification Filter -->
+                                <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="7" Orientation="Horizontal" Margin="5 5 5 0">
+                                    <Label Content="Identification Filter:" Width="150" />
+                                    <ComboBox x:Name="IdentificationFilterComboBox" Width="200" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <ComboBox.ToolTip>
+                                            <TextBlock>
+                                                Which FDR value decides identification everywhere: tables, protein groups, quantification, the pruned database, the spectral library, mzID and pepXML.
+                                                <LineBreak />
+                                                Thresholds (default): inferred from the two thresholds above, as before.
+                                                <LineBreak />
+                                                QValueNotch: the q-value notch, below the q-value threshold.
+                                                <LineBreak />
+                                                PepQValue: the PEP q-value, below the PEP q-value threshold. The search fails if PEP was not trained for a protease.
+                                                <LineBreak />
+                                                PepQValueElseQValueNotch: the PEP q-value where PEP was trained for a protease, otherwise the q-value notch, below the smaller threshold. Each fallback is reported.
+                                            </TextBlock>
+                                        </ComboBox.ToolTip>
+                                    </ComboBox>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>

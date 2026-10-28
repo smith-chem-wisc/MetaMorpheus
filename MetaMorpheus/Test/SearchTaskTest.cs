@@ -950,7 +950,9 @@ namespace Test
 
             string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
             string[] results = File.ReadAllLines(resultsFile);
-            Assert.That(results[6], Is.EqualTo("PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value."));
+            // The PSM-level and peptide-level lines; the old text ("Results were filtered by q-value.") said a filter ran.
+            Assert.That(results[5], Is.EqualTo("PEP filtering was requested, but there were fewer than 100 PSMs (85), so results were not filtered."));
+            Assert.That(results[6], Is.EqualTo("PEP filtering was requested, but there were fewer than 100 PSMs (85), so results were not filtered."));
             Assert.That(results[7], Is.EqualTo("All target PSMs with q-value <= 1: 84"));
 
             // clean up

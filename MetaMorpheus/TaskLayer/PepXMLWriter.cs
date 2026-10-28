@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
+using EngineLayer.SpectrumMatch;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using Omics.Fragmentation;
@@ -22,7 +23,8 @@ namespace TaskLayer
         private static readonly double UnmodifiedCTerminusMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass
             + PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
 
-        public static void WritePepXml(List<SpectralMatch> psms, List<DbForTask> database, List<Modification> variableModifications, List<Modification> fixedModifications, CommonParameters CommonParameters, string outputPath)
+        public static void WritePepXml(List<SpectralMatch> psms, List<DbForTask> database, List<Modification> variableModifications, List<Modification> fixedModifications, CommonParameters CommonParameters, string outputPath,
+            FilteredPsms identificationFilter = null)
         {
             if (!psms.Any())
             {
@@ -57,6 +59,11 @@ namespace TaskLayer
                 // TODO: check this
                 para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = string.Join(", ", DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType]) });
                 para.Add(new pepXML.Generated.nameValueType { name = "Q-value Filter", value = CommonParameters.QValueThreshold.ToString() });
+                if (identificationFilter != null && identificationFilter.IdentificationFilter != IdentificationFilterMode.Thresholds)
+                {
+                    // The filter a named identification filter applied to these matches, e.g. "pep q-value < 0.01".
+                    para.Add(new pepXML.Generated.nameValueType { name = "Identification Filter", value = identificationFilter.GetFilterTypeString() + " " + identificationFilter.GetThresholdString() });
+                }
                 foreach (var item in fixedModifications)
                 {
                     para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.IdWithMotif, value = item.MonoisotopicMass.ToString() });

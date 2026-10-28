@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
+using EngineLayer.SpectrumMatch;
 using MzLibUtil;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
@@ -19,8 +20,13 @@ namespace TaskLayer
     {
         public static void WriteMzIdentMl(IEnumerable<SpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<Modification> variableMods, 
             List<Modification> fixedMods, List<SilacLabel> silacLabels, List<DigestionAgent> proteases, Tolerance productTolerance, 
-            Tolerance parentTolerance, int missedCleavages, string outputPath, bool appendMotifToModNames, bool? semiSpecific = null)
+            Tolerance parentTolerance, int missedCleavages, string outputPath, bool appendMotifToModNames, bool? semiSpecific = null,
+            FilteredPsms identificationFilter = null)
         {
+            // Under a named identification filter, passThreshold and the FDR thresholds follow that filter. Otherwise (no
+            // filter passed, or the filter inferred from the thresholds) they stay hard-coded at q-value <= 0.01, as before.
+            FilteredPsms namedFilter = identificationFilter?.IdentificationFilter is null or IdentificationFilterMode.Thresholds ? null : identificationFilter;
+            string fdrThreshold = namedFilter != null ? namedFilter.FilterThreshold.ToString(System.Globalization.CultureInfo.InvariantCulture) : "0.01";
 
             //if SILAC, remove the silac labels, because the base/full sequences reported for output are not the same as the peptides in the best peptides list for the psm
             if (silacLabels != null)
@@ -427,7 +433,7 @@ namespace TaskLayer
                     chargeState = psm.ScanPrecursorCharge,
                     id = "SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2,
                     experimentalMassToCharge = Math.Round(psm.ScanPrecursorMonoisotopicPeakMz, 5),
-                    passThreshold = psm.FdrInfo.QValue <= 0.01,
+                    passThreshold = namedFilter != null ? namedFilter.Passes(psm) : psm.FdrInfo.QValue <= 0.01,
                     //NOTE:ONLY CAN HAVE ONE PEPTIDE REF PER SPECTRUM IDENTIFICATION ITEM
                     peptide_ref = "P_" + peptide_ids[psm.FullSequence].Item1,
                     PeptideEvidenceRef = new mzIdentML110.Generated.PeptideEvidenceRefType[psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).Distinct().Count()],
@@ -563,7 +569,7 @@ namespace TaskLayer
                                     accession = "MS:1001448",
                                     name = "pep:FDR threshold",
                                     cvRef = "PSI-MS",
-                                    value = "0.01"
+                                    value = fdrThreshold
                                 }
                             }
                         }
@@ -647,7 +653,7 @@ namespace TaskLayer
                             accession = "MS:1001447",
                             name = "prot:FDR threshold",
                             cvRef = "PSI-MS",
-                            value = "0.01"
+                            value = fdrThreshold
                         }
                     }
                 }
@@ -708,7 +714,7 @@ namespace TaskLayer
                         {
                             id = "PDH_" + this_protein_id,
                             dBSequence_ref = "DBS_" + protein.Accession,
-                            passThreshold = proteinGroup.QValue <= 0.01, // hardcoded as 1% FDR but we could change this to the provided threshold
+                            passThreshold = namedFilter != null ? namedFilter.PassesThreshold(proteinGroup.QValue) : proteinGroup.QValue <= 0.01, // otherwise hardcoded as 1% FDR
                             PeptideHypothesis = peptideHypotheses.ToArray(),
                             cvParam = new mzIdentML110.Generated.CVParamType[4]
                             {

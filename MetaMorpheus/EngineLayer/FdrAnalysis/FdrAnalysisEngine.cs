@@ -74,10 +74,19 @@ namespace EngineLayer.FdrAnalysis
             Status("Running FDR analysis...");
             DoFalseDiscoveryRateAnalysis(myAnalysisResults);
             Status("Done.");
-            myAnalysisResults.PsmsWithin1PercentFdr = AllPsms.Count(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy);
+            myAnalysisResults.PsmsWithin1PercentFdr = CountWithin1PercentFdr(AllPsms, CommonParameters);
 
             return myAnalysisResults;
         }
+
+        /// <summary>
+        /// The target matches "within 1% FDR" (<see cref="FdrAnalysisResults.PsmsWithin1PercentFdr"/>): those that pass a
+        /// named identification filter at 0.01, otherwise those with q-value &lt;= 0.01, as before.
+        /// </summary>
+        internal static int CountWithin1PercentFdr(IEnumerable<SpectralMatch> psms, CommonParameters commonParameters) =>
+            IdentificationRule.IsExplicit(commonParameters)
+                ? psms.Count(b => !b.IsDecoy && IdentificationRule.Passes(b, peptideLevel: false, commonParameters.IdentificationFilter, threshold: 0.01))
+                : psms.Count(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy);
 
         private void DoFalseDiscoveryRateAnalysis(FdrAnalysisResults myAnalysisResults) => DoFalseDiscoveryRateAnalysis(AllPsms, DoPEP, FileSpecificParameters, OutputFolder, myAnalysisResults, CommonParameters, IterativePepTraining);
 
@@ -100,6 +109,9 @@ namespace EngineLayer.FdrAnalysis
                     includeHighQValuePsms: true,
                     filterAtPeptideLevel: true).FilteredPsmsList;
 
+                // Whether this pass leaves PEP q-values from a trained model at each level, for FdrInfo.PepTrained.
+                // Null: this pass trains nothing and reuses PEPs an earlier pass computed, so that pass's record stands.
+                bool? pepTrainedPsmLevel = false, pepTrainedPeptideLevel = false;
                 if ((psms.Count > PsmCountThresholdForInvertedQvalue || QvalueThresholdOverride) & doPep)
                 {
                     CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: false);
@@ -108,7 +120,9 @@ namespace EngineLayer.FdrAnalysis
                         CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
 
                         //PEP will model will be developed using peptides and then applied to all PSMs. 
-                        Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, iterativePepTraining);
+                        bool trained = Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, iterativePepTraining);
+                        pepTrainedPsmLevel = trained;
+                        pepTrainedPeptideLevel = trained;
 
                         // peptides are ordered by PEP score from good to bad in order to select the best PSM for each peptide
                         peptides = psms
@@ -126,7 +140,8 @@ namespace EngineLayer.FdrAnalysis
                     else //we have more than 100 psms but less than 100 peptides so
                     {
                         //this will be done using PSMs because we dont' have enough peptides
-                        Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, iterativePepTraining);
+                        // Peptide-level PEP q-values are not computed here, so only the PSM level can be trained.
+                        pepTrainedPsmLevel = Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, iterativePepTraining);
                         psms = psms.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
                         CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
                     }
@@ -137,6 +152,8 @@ namespace EngineLayer.FdrAnalysis
                     // but we do want to calculate pep q-values
                     // really, in this case, we only need to run one or the other (i.e., only peptides or psms are passed in)
                     // but there's no mechanism to pass that info to the FDR analysis engine, so we'll do this for now
+                    pepTrainedPsmLevel = null;
+                    pepTrainedPeptideLevel = null;
                     peptides = psms
                             .OrderBy(p => p.FdrInfo.PEP)
                             .ThenByDescending(p => p)
@@ -164,8 +181,17 @@ namespace EngineLayer.FdrAnalysis
 
                 psms = psms.OrderByDescending(p => p).ToList();
                 CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: false);
-                
-                CountPsm(psms);
+
+                if (pepTrainedPsmLevel.HasValue)
+                {
+                    foreach (var psm in psms)
+                    {
+                        if (psm.PsmFdrInfo != null) psm.PsmFdrInfo.PepTrained = pepTrainedPsmLevel.Value;
+                        if (psm.PeptideFdrInfo != null) psm.PeptideFdrInfo.PepTrained = pepTrainedPeptideLevel.Value;
+                    }
+                }
+
+                CountPsm(psms, commonParameters);
             }
         }
 
@@ -403,7 +429,11 @@ namespace EngineLayer.FdrAnalysis
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
 
-        public static void Compute_PEPValue(FdrAnalysisResults myAnalysisResults, List<SpectralMatch> psms, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, bool iterativePepTraining = false)
+        /// <summary>
+        /// Trains PEP on <paramref name="psms"/> and assigns each its PEP. Returns false when training failed (no PEP
+        /// was assigned), true otherwise.
+        /// </summary>
+        public static bool Compute_PEPValue(FdrAnalysisResults myAnalysisResults, List<SpectralMatch> psms, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, bool iterativePepTraining = false)
         {
             // Currently, searches of mixed data (bottom-up + top-down) are not supported
             // PEP will be calculated based on the search type of the first file/PSM in the list, which isn't ideal
@@ -426,6 +456,7 @@ namespace EngineLayer.FdrAnalysis
                 MaxTrainingRounds = iterativePepTraining ? PepAnalysisEngine.IterativeTrainingRoundCap : 1
             };
             myAnalysisResults.BinarySearchTreeMetrics = pepEngine.ComputePEPValuesForAllPSMs();
+            return !pepEngine.TrainingFailed;
         }
 
         private static IRetentionTimePredictor GetRTPredictor(string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
@@ -487,14 +518,17 @@ namespace EngineLayer.FdrAnalysis
         /// <summary>
         /// This method gets the count of PSMs with the same full sequence (with q-value < 0.01) to include in the psmtsv output
         /// </summary>
-        public static void CountPsm(List<SpectralMatch> proteasePsms)
+        /// <param name="commonParameters">when these name an explicit identification filter, a PSM counts when it passes
+        /// that filter at 0.01; otherwise (or when null) when its q-value and q-value notch are &lt;= 0.01, as before</param>
+        public static void CountPsm(List<SpectralMatch> proteasePsms, CommonParameters commonParameters = null)
         {
             // exclude ambiguous psms and has a fdr cutoff = 0.01
             var allUnambiguousPsms = proteasePsms.Where(psm => psm.FullSequence != null).ToList();
 
-            var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
-                    psm.FdrInfo.QValue <= 0.01
-                    && psm.FdrInfo.QValueNotch <= 0.01)
+            Func<SpectralMatch, bool> withinOnePercentFdr = IdentificationRule.IsExplicit(commonParameters)
+                ? psm => IdentificationRule.Passes(psm, peptideLevel: false, commonParameters.IdentificationFilter, threshold: 0.01)
+                : psm => psm.FdrInfo.QValue <= 0.01 && psm.FdrInfo.QValueNotch <= 0.01;
+            var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(withinOnePercentFdr)
                 .GroupBy(p => p.FullSequence);
 
             Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();

@@ -11,6 +11,7 @@ using Transcriptomics.Digestion;
 using EngineLayer.DIA;
 using Transcriptomics;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 
 namespace EngineLayer
 {
@@ -66,7 +67,8 @@ namespace EngineLayer
             IFragmentationParams fragmentationParams = null,
             PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic,
                 string rtPredictorName = RTPredictorNames.Chronologer,
-            DoubleRange retentionTimeRange = null)
+            DoubleRange retentionTimeRange = null,
+            IdentificationFilterMode identificationFilter = IdentificationFilterMode.Thresholds)
 
         {
             retentionTimeRange ??= new DoubleRange(0, double.MaxValue);
@@ -85,6 +87,7 @@ namespace EngineLayer
             TotalPartitions = totalPartitions;
             QValueThreshold = qValueThreshold;
             PepQValueThreshold = pepQValueThreshold;
+            IdentificationFilter = identificationFilter;
             QValueCutoffForPepCalculation = qValueCutoffForPepCalculation;
             ScoreCutoff = scoreCutoff;
             NumberOfPeaksToKeepPerWindow = numberOfPeaksToKeepPerWindow;
@@ -192,6 +195,11 @@ namespace EngineLayer
         /// peptides/PSMs with PEP Q-Value below this threshold are included in .psmtsv results files.
         /// </summary>
         public double PepQValueThreshold { get; private set; }
+        /// <summary>
+        /// Which FDR value decides identification everywhere in the search. The default,
+        /// <see cref="IdentificationFilterMode.Thresholds"/>, infers it from the two thresholds as before.
+        /// </summary>
+        public IdentificationFilterMode IdentificationFilter { get; private set; }
         public double ScoreCutoff { get; private set; }
         /// <summary>
         /// This parameter determines which PSMs/Peptides will be used as postive training examples
@@ -304,7 +312,8 @@ namespace EngineLayer
                                 FragmentationParameters,
                                 PrecursorMassMatchMode,
                                 RTPredictorName,
-                                 RetentionTimeRange);
+                                 RetentionTimeRange,
+                                 IdentificationFilter);
         }
 
         /// <summary>
@@ -358,7 +367,8 @@ namespace EngineLayer
                                 FragmentationParameters,
                                 PrecursorMassMatchMode,
                                 RTPredictorName,
-                                 RetentionTimeRange);
+                                 RetentionTimeRange,
+                                 IdentificationFilter);
 
             // CustomIons is not a constructor parameter — the constructor reads it from the global
             // dissociation-type dictionary — so copy it across explicitly. GlycoSearchEngine branches on

@@ -867,7 +867,8 @@ namespace Test
                 fragmentationParams: new FragmentationParams(),
                 precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant,
                 rtPredictorName: "SSRCalc3",
-                retentionTimeRange: new DoubleRange(12, 14));
+                retentionTimeRange: new DoubleRange(12, 14),
+                identificationFilter: EngineLayer.SpectrumMatch.IdentificationFilterMode.PepQValueElseQValueNotch);
 
             // CustomIons is not a constructor parameter — the constructor reads it from a global dictionary,
             // so give the original a distinctive value. Without this, a clone that simply re-read the global
