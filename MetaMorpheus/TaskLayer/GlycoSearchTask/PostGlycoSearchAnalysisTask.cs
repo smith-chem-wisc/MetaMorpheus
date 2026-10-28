@@ -370,6 +370,9 @@ namespace TaskLayer
             
             string fileName = "AllProteinGroups.tsv";
             string writtenFile = Path.Combine(outputFolder, individualFileFolder + "_"+ fileName);
+            // set peptide output values, as the search task does before it writes its protein table; without them the
+            // Unique and Shared Peptides cells are empty while Number of Unique Peptides is filled. Glyco has no SILAC labels.
+            ProteinGroups.ForEach(p => p.GetIdentifiedPeptidesOutput(null)); // set just before, by GlycoProteinAnalysis
             WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, qValueCutoff_FORDEBUGONLY);
            
 
