@@ -153,11 +153,12 @@ namespace Test
         }
 
         [Test]
-        public static void PepQValue_ByName_WithoutPepQValues_Throws()
+        public static void PepQValue_ByName_WithoutPepQValues_FiltersByQValueAndSaysSo()
         {
-            var ex = Assert.Throws<MetaMorpheusException>(() =>
-                FilteredPsms.Filter(Matches(300, 200, pepComputed: false), GuiPepBox, filterType: FilterType.PepQValue));
-            Assert.That(ex!.Message, Does.Contain("none of these 300 PSMs has a PEP q-value"));
+            // Not a throw: a search would run to the end and then fail before writing anything.
+            var fellBack = FilteredPsms.Filter(Matches(300, 200, pepComputed: false), GuiPepBox, filterType: FilterType.PepQValue);
+            Assert.That((fellBack.FilterType, fellBack.FilterThreshold, fellBack.FilteredPsmsList.Count), Is.EqualTo((FilterType.QValue, 0.01, 200)));
+            Assert.That(fellBack.PepFilteringNotDone, Is.EqualTo("PEP filtering was requested, but PEP was not computed for these PSMs, so results were filtered by q-value."));
 
             // With PEP q-values it filters on them, at the PEP q-value threshold.
             var filtered = FilteredPsms.Filter(Matches(300, 150, pepComputed: true), GuiPepBox, filterType: FilterType.PepQValue);
@@ -238,6 +239,17 @@ namespace Test
             Assert.That(FilteredPsms.Filter(new[] { psm }, new CommonParameters(), filterType: FilterType.QValue).GetFilterValue(psm), Is.EqualTo(0.3));
             Assert.That(FilteredPsms.Filter(new[] { psm }, new CommonParameters(), filterType: FilterType.QValueNotch).GetFilterValue(psm), Is.EqualTo(0.2));
             Assert.That(FilteredPsms.Filter(new[] { psm }, new CommonParameters(), filterType: FilterType.PepQValue).GetFilterValue(psm), Is.EqualTo(0.1));
+        }
+
+        [Test]
+        public static void AFilterTypeWithNoCase_Throws()
+        {
+            // A FilterType added later without its case here must fail loudly, not be read as the q-value.
+            var psm = Matches(1, 0, pepComputed: false)[0];
+            var unknown = FilteredPsms.Filter(new[] { psm }, new CommonParameters(), filterType: (FilterType)99);
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => unknown.GetFilterValue(psm));
+            Assert.Throws<ArgumentOutOfRangeException>(() => unknown.GetFilterTypeString());
         }
     }
 }

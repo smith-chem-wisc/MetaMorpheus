@@ -53,7 +53,8 @@ namespace EngineLayer.SpectrumMatch
         {
             FilterType.PepQValue => "pep q-value",
             FilterType.QValueNotch => "q-value notch",
-            _ => "q-value"
+            FilterType.QValue => "q-value",
+            _ => throw new ArgumentOutOfRangeException(nameof(FilterType), FilterType, null)
         };
 
         /// <summary>
@@ -64,7 +65,8 @@ namespace EngineLayer.SpectrumMatch
         {
             FilterType.PepQValue => psm.GetFdrInfo(PeptideLevelFiltering).PEP_QValue,
             FilterType.QValueNotch => psm.GetFdrInfo(PeptideLevelFiltering).QValueNotch,
-            _ => psm.GetFdrInfo(PeptideLevelFiltering).QValue
+            FilterType.QValue => psm.GetFdrInfo(PeptideLevelFiltering).QValue,
+            _ => throw new ArgumentOutOfRangeException(nameof(FilterType), FilterType, null)
         };
 
         /// <summary>
@@ -111,8 +113,9 @@ namespace EngineLayer.SpectrumMatch
         /// <param name="filterType">The value to filter on, chosen by the caller. Null (the default) infers it from the
         /// thresholds, as MetaMorpheus always has. Given, it is used as asked: <see cref="FilterType.PepQValue"/> at the
         /// PEP q-value threshold, <see cref="FilterType.QValue"/> and <see cref="FilterType.QValueNotch"/> at the q-value
-        /// threshold, with no count rule and no fallback. A PEP q-value filter on matches that carry no PEP q-value
-        /// throws instead of returning nothing.</param>
+        /// threshold, with no count rule. A PEP q-value filter on matches that carry no PEP q-value filters by q-value
+        /// at the PEP q-value threshold instead of dropping every match, and says so in
+        /// <see cref="PepFilteringNotDone"/>, so a search still writes its results.</param>
         /// <returns> A FilteredPsms object</returns>
         public static FilteredPsms Filter(IEnumerable<SpectralMatch> psms,
             CommonParameters commonParams,
@@ -147,8 +150,11 @@ namespace EngineLayer.SpectrumMatch
             {
                 type = requested;
                 filterThreshold = requested == FilterType.PepQValue ? (double)pepQValueThreshold : (double)qValueThreshold;
-                if (requested == FilterType.PepQValue && !includeHighQValuePsms && candidates.Count > 0 && NoPepQValues(candidates, filterAtPeptideLevel))
-                    throw new MetaMorpheusException($"PEP q-value filtering was requested, but none of these {candidates.Count} {label}s has a PEP q-value: PEP was not computed for them.");
+                if (requested == FilterType.PepQValue && candidates.Count > 0 && NoPepQValues(candidates, filterAtPeptideLevel))
+                {
+                    type = FilterType.QValue;
+                    pepFilteringNotDone = PepNotComputedSentence(filterAtPeptideLevel, label);
+                }
             }
             else if (pepQValueThreshold < qValueThreshold)
             {
@@ -165,9 +171,7 @@ namespace EngineLayer.SpectrumMatch
                     // PEP is trained only when a digestion agent has more than 1000 matches (FdrAnalysisEngine), so every
                     // PEP q-value here is still the initial 2. A PEP q-value filter would drop every match. At the peptide
                     // level this also happens with PSM-level PEP trained: more than 1000 PSMs but at most 1000 peptides.
-                    pepFilteringNotDone = filterAtPeptideLevel
-                        ? "PEP filtering was requested, but PEP q-values were not computed at the peptide level, so results were filtered by q-value."
-                        : $"PEP filtering was requested, but PEP was not computed for these {label}s, so results were filtered by q-value.";
+                    pepFilteringNotDone = PepNotComputedSentence(filterAtPeptideLevel, label);
                 }
                 else
                 {
@@ -191,6 +195,14 @@ namespace EngineLayer.SpectrumMatch
         /// </summary>
         private static bool NoPepQValues(List<SpectralMatch> psms, bool filterAtPeptideLevel) =>
             psms.All(p => p.GetFdrInfo(filterAtPeptideLevel) != null && Math.Abs(p.GetFdrInfo(filterAtPeptideLevel).PEP_QValue - 2) < 0.1);
+
+        /// <summary>
+        /// What was done when PEP q-values were missing. At the peptide level PEP may still have been trained on the
+        /// PSMs, so the sentence names the level, not PEP itself.
+        /// </summary>
+        private static string PepNotComputedSentence(bool filterAtPeptideLevel, string label) => filterAtPeptideLevel
+            ? "PEP filtering was requested, but PEP q-values were not computed at the peptide level, so results were filtered by q-value."
+            : $"PEP filtering was requested, but PEP was not computed for these {label}s, so results were filtered by q-value.";
 
         public IEnumerator<SpectralMatch> GetEnumerator()
         {
