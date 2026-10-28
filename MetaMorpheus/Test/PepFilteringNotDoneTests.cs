@@ -6,8 +6,13 @@ using Omics.Fragmentation;
 using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using EngineLayer.DatabaseLoading;
+using EngineLayer.FdrAnalysis;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using TaskLayer;
 
 namespace Test
 {
@@ -134,6 +139,70 @@ namespace Test
             // With PEP q-values it filters on them, at the PEP q-value threshold.
             var filtered = FilteredPsms.Filter(Matches(300, 150, pepComputed: true), GuiPepBox, filterType: FilterType.PepQValue);
             Assert.That((filtered.FilterType, filtered.FilterThreshold, filtered.FilteredPsmsList.Count), Is.EqualTo((FilterType.PepQValue, 0.01, 150)));
+        }
+
+        /// <summary>
+        /// The whole search, with the GUI's PEP box ticked: the two TaGe snips give between 100 and 1000 matches, so
+        /// FdrAnalysisEngine never trains PEP. On master every match, peptide and protein group was dropped. Now the
+        /// matches are filtered by q-value at 0.01, results.txt and the warning say so, and protein groups are held
+        /// to the same 0.01, not to the q-value threshold of 1.
+        /// </summary>
+        [Test]
+        public static void SearchTask_PepNotComputed_WritesQValueFilteredResultsAndSaysSo()
+        {
+            string testDirectory = TestContext.CurrentContext.TestDirectory;
+            string outputFolder = Path.Combine(testDirectory, "PepFilteringNotDone_SearchTask");
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
+
+            var task = new SearchTask { CommonParameters = GuiPepBox };
+            var spectraFiles = new List<string>
+            {
+                Path.Combine(testDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML"),
+                Path.Combine(testDirectory, @"TestData\TaGe_SA_A549_3_snip_2.mzML")
+            };
+            var databases = new List<DbForTask> { new DbForTask(Path.Combine(testDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta"), false) };
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> onWarn = (_, e) => warnings.Add(e.S);
+
+            // QvalueThresholdOverride is process-wide and would make the FDR engine train PEP on any count.
+            lock (EverythingRunnerEngineTestCase.myLock)
+            {
+                MetaMorpheusTask.WarnHandler += onWarn;
+                try
+                {
+                    typeof(FdrAnalysisEngine).GetProperty("QvalueThresholdOverride")!.SetValue(null, false);
+                    new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", task) }, spectraFiles, databases, outputFolder).Run();
+                }
+                finally
+                {
+                    MetaMorpheusTask.WarnHandler -= onWarn;
+                }
+            }
+
+            string searchFolder = Path.Combine(outputFolder, "search");
+            string[] results = File.ReadAllLines(Path.Combine(searchFolder, "results.txt"));
+            const string said = "PEP filtering was requested, but PEP was not computed for these 258 PSMs, so results were filtered by q-value.";
+            // On master these four lines were "pep q-value <= 0.01: 0" for PSMs, peptides and protein groups.
+            Assert.That(results.Skip(5).Take(5), Is.EqualTo(new[]
+            {
+                said, // above the PSM count
+                said, // above the peptide count
+                "All target PSMs with q-value <= 0.01: 258",
+                "All target peptides with q-value <= 0.01: 88",
+                "All target protein groups with q-value <= 0.01 (1% FDR): 84",
+            }));
+            Assert.That(warnings, Has.Some.EqualTo(said));
+
+            // Protein groups: held to the matches' 0.01, not to the q-value threshold of 1.
+            string[] groups = File.ReadAllLines(Directory.GetFiles(searchFolder, "All*ProteinGroups.tsv").Single());
+            int qColumn = groups[0].Split('\t').ToList().IndexOf("Protein QValue");
+            Assert.That(qColumn, Is.Not.EqualTo(-1));
+            var groupQValues = groups.Skip(1).Select(l => double.Parse(l.Split('\t')[qColumn], System.Globalization.CultureInfo.InvariantCulture)).ToList();
+            Assert.That(groupQValues, Has.Count.EqualTo(84));
+            Assert.That(groupQValues, Has.All.LessThanOrEqualTo(0.01));
+
+            Directory.Delete(outputFolder, true);
         }
 
         [Test]

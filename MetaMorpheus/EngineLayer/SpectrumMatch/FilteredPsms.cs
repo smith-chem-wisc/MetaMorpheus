@@ -57,13 +57,14 @@ namespace EngineLayer.SpectrumMatch
         };
 
         /// <summary>
-        /// The FDR value this filter decided on for a match, e.g. the q-value handed to quantification.
+        /// The FDR value this filter decided on for a match, at the level it filtered (as <see cref="AboveThreshold"/>),
+        /// e.g. the q-value handed to quantification.
         /// </summary>
         public double GetFilterValue(SpectralMatch psm) => FilterType switch
         {
-            FilterType.PepQValue => psm.FdrInfo.PEP_QValue,
-            FilterType.QValueNotch => psm.FdrInfo.QValueNotch,
-            _ => psm.FdrInfo.QValue
+            FilterType.PepQValue => psm.GetFdrInfo(PeptideLevelFiltering).PEP_QValue,
+            FilterType.QValueNotch => psm.GetFdrInfo(PeptideLevelFiltering).QValueNotch,
+            _ => psm.GetFdrInfo(PeptideLevelFiltering).QValue
         };
 
         /// <summary>
