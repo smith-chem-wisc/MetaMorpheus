@@ -14,13 +14,14 @@ namespace Test
     /// Entrapment is searched as a target, so a spectral library written from a search with entrapment
     /// would carry entrapment spectra. MetaMorpheus writes no library from such a search and says why;
     /// the search itself still runs. Each case also runs the same search without entrapment, so a missing
-    /// library is the refusal and not a search that found nothing.
+    /// library is the refusal and not a search that found nothing. The warning comes when the databases
+    /// load, before any result is written, so nobody waits out a long search to learn there is no library.
     /// </summary>
     [TestFixture]
     [NonParallelizable]
     public static class EntrapmentSpectralLibraryTests
     {
-        private const string RefusalWarning = "No spectral library was written: the database contains entrapment proteins";
+        private const string RefusalWarning = "No spectral library will be written: the database contains entrapment proteins";
 
         [TestCase(false)]
         [TestCase(true)]
@@ -33,7 +34,7 @@ namespace Test
             task.SearchParameters.WriteSpectralLibrary = true;
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
 
-            List<string> warnings = RunCapturingWarnings(() => new EverythingRunnerEngine(
+            List<(string Warning, bool ResultsWritten)> warnings = RunCapturingWarnings(outputFolder, () => new EverythingRunnerEngine(
                 new List<(string, MetaMorpheusTask)> { ("Search", task) }, new List<string> { raw },
                 new List<DbForTask> { new(database, false) }, outputFolder).Run());
 
@@ -54,7 +55,7 @@ namespace Test
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
             string library = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralLibrary.msp");
 
-            List<string> warnings = RunCapturingWarnings(() => new EverythingRunnerEngine(
+            List<(string Warning, bool ResultsWritten)> warnings = RunCapturingWarnings(outputFolder, () => new EverythingRunnerEngine(
                 new List<(string, MetaMorpheusTask)> { ("Search", task) }, new List<string> { raw },
                 new List<DbForTask> { new(library, false), new(database, false) }, outputFolder).Run());
 
@@ -74,7 +75,7 @@ namespace Test
             };
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\2017-11-21_XL_DSSO_Ribosome_RT60min_28800-28898.mzML");
 
-            List<string> warnings = RunCapturingWarnings(() =>
+            List<(string Warning, bool ResultsWritten)> warnings = RunCapturingWarnings(outputFolder, () =>
                 task.RunTask(outputFolder, new List<DbForTask> { new(database, false) }, new List<string> { raw }, "test"));
 
             AssertLibraryRefusedExactlyWhenEntrapment(outputFolder, "SpectralLibrary", withEntrapment, warnings);
@@ -82,14 +83,16 @@ namespace Test
         }
 
         private static void AssertLibraryRefusedExactlyWhenEntrapment(string outputFolder, string libraryPrefix,
-            bool withEntrapment, List<string> warnings)
+            bool withEntrapment, List<(string Warning, bool ResultsWritten)> warnings)
         {
             string[] libraries = Directory.GetFiles(outputFolder, libraryPrefix + "_*.msp", SearchOption.AllDirectories);
-            bool warned = warnings.Any(w => w.Contains(RefusalWarning));
+            var refusals = warnings.Where(w => w.Warning.Contains(RefusalWarning)).ToList();
+            bool warned = refusals.Any();
             if (withEntrapment)
             {
                 Assert.That(libraries, Is.Empty);
-                Assert.That(warned, "the refusal must say why no library was written");
+                Assert.That(refusals, Has.Count.EqualTo(1), "the refusal must say, once, why no library will be written");
+                Assert.That(refusals[0].ResultsWritten, Is.False, "the refusal must come before the search writes any result");
             }
             else
             {
@@ -123,10 +126,19 @@ namespace Test
             return folder;
         }
 
-        private static List<string> RunCapturingWarnings(Action run)
+        /// <summary>
+        /// Runs <paramref name="run"/> and returns each warning it raised, with whether any search result
+        /// (.psmtsv or .tsv) was already in <paramref name="outputFolder"/> when the warning came.
+        /// </summary>
+        private static List<(string Warning, bool ResultsWritten)> RunCapturingWarnings(string outputFolder, Action run)
         {
-            var warnings = new List<string>();
-            EventHandler<StringEventArgs> handler = (_, e) => { lock (warnings) warnings.Add(e.S); };
+            var warnings = new List<(string Warning, bool ResultsWritten)>();
+            EventHandler<StringEventArgs> handler = (_, e) =>
+            {
+                bool resultsWritten = Directory.EnumerateFiles(outputFolder, "*.*", SearchOption.AllDirectories)
+                    .Any(f => f.EndsWith(".psmtsv", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".tsv", StringComparison.OrdinalIgnoreCase));
+                lock (warnings) warnings.Add((e.S, resultsWritten));
+            };
             MetaMorpheusTask.WarnHandler += handler;
             try
             {
