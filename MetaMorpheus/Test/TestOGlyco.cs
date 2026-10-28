@@ -958,9 +958,10 @@ namespace Test
 
             List<SpectraFileInfo> spectraFiles = new List<SpectraFileInfo>();
 
-            //These conditions are such that the experimental design file is bad.
-            spectraFiles.Add(new SpectraFileInfo(spectraFile1, "condition1", 0, 9, 0));
-            spectraFiles.Add(new SpectraFileInfo(spectraFile2, "condition2", 5, 0, 4));
+            //These conditions are such that the experimental design file is bad: two files at one
+            //condition, biorep, fraction and techrep. (A gap in the numbers is only a warning.)
+            spectraFiles.Add(new SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
+            spectraFiles.Add(new SpectraFileInfo(spectraFile2, "condition1", 0, 0, 0));
 
             ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
 
@@ -973,7 +974,7 @@ namespace Test
                 out var errors);
 
             Assert.That(errors.Count == 1);
-            Assert.That(errors[0].Contains("Condition \"condition1\" biorep 1 fraction 1 techrep 1 is missing!"));
+            Assert.That(errors[0], Is.EqualTo("Duplicates are not allowed:\nCondition \"condition1\" biorep 1 fraction 1 techrep 1"));
             Assert.That(readIn.Count == 2);
 
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
