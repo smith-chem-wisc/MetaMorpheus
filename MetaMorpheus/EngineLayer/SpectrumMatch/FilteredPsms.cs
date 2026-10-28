@@ -157,13 +157,17 @@ namespace EngineLayer.SpectrumMatch
                 {
                     filteringNotPerformed = true;
                     filterThreshold = 1;
-                    pepFilteringNotDone = $"PEP filtering was requested, but there were fewer than 100 {label}s ({inputCount}), so results were not filtered.";
+                    // The count rule counts the input, decoys included, as it always has.
+                    pepFilteringNotDone = $"PEP filtering was requested, but there were fewer than 100 {label}s ({inputCount}, counting decoys), so results were not filtered.";
                 }
                 else if (candidates.Count > 0 && NoPepQValues(candidates, filterAtPeptideLevel))
                 {
                     // PEP is trained only when a digestion agent has more than 1000 matches (FdrAnalysisEngine), so every
-                    // PEP q-value here is still the initial 2. A PEP q-value filter would drop every match.
-                    pepFilteringNotDone = $"PEP filtering was requested, but PEP was not computed for these {candidates.Count} {label}s, so results were filtered by q-value.";
+                    // PEP q-value here is still the initial 2. A PEP q-value filter would drop every match. At the peptide
+                    // level this also happens with PSM-level PEP trained: more than 1000 PSMs but at most 1000 peptides.
+                    pepFilteringNotDone = filterAtPeptideLevel
+                        ? "PEP filtering was requested, but PEP q-values were not computed at the peptide level, so results were filtered by q-value."
+                        : $"PEP filtering was requested, but PEP was not computed for these {label}s, so results were filtered by q-value.";
                 }
                 else
                 {

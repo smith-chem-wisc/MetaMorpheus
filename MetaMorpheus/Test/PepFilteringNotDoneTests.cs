@@ -65,7 +65,30 @@ namespace Test
             Assert.That(filtered.FilteringNotPerformed, Is.False);
             Assert.That(filtered.FilteredPsmsList, Has.Count.EqualTo(200));
             Assert.That(filtered.PepFilteringNotDone,
-                Is.EqualTo("PEP filtering was requested, but PEP was not computed for these 300 PSMs, so results were filtered by q-value."));
+                Is.EqualTo("PEP filtering was requested, but PEP was not computed for these PSMs, so results were filtered by q-value."));
+        }
+
+        [Test]
+        public static void PepComputedForPsmsButNotPeptides_SaysPeptideLevel()
+        {
+            // More than 1000 PSMs but at most 1000 peptides: FdrAnalysisEngine trains PEP on the PSMs, and the
+            // peptide-level PEP q-values stay 2. The PSM table filters on PEP; the peptide table falls back to the
+            // q-value and must not say PEP was not computed for the PSMs.
+            var psms = Matches(300, 200, pepComputed: true);
+            foreach (var psm in psms)
+            {
+                var psmFdr = psm.GetFdrInfo(false);
+                psm.PeptideFdrInfo = new FdrInfo { QValue = psmFdr.QValue, QValueNotch = psmFdr.QValueNotch, PEP = 0, PEP_QValue = 2 };
+            }
+
+            var psmLevel = FilteredPsms.Filter(psms, GuiPepBox);
+            var peptideLevel = FilteredPsms.Filter(psms, GuiPepBox, filterAtPeptideLevel: true);
+
+            Assert.That((psmLevel.FilterType, psmLevel.PepFilteringNotDone), Is.EqualTo((FilterType.PepQValue, (string)null)));
+            Assert.That((peptideLevel.FilterType, peptideLevel.FilterThreshold, peptideLevel.FilteringNotPerformed), Is.EqualTo((FilterType.QValue, 0.01, false)));
+            Assert.That(peptideLevel.FilteredPsmsList, Is.Not.Empty, "the peptide is kept on its q-value, not dropped on PEP q = 2");
+            Assert.That(peptideLevel.PepFilteringNotDone,
+                Is.EqualTo("PEP filtering was requested, but PEP q-values were not computed at the peptide level, so results were filtered by q-value."));
         }
 
         [Test]
@@ -77,7 +100,7 @@ namespace Test
             Assert.That(filtered.FilterThreshold, Is.EqualTo(1));
             Assert.That(filtered.FilteredPsmsList, Has.Count.EqualTo(50), "behaviour unchanged: nothing is filtered");
             Assert.That(filtered.PepFilteringNotDone,
-                Is.EqualTo("PEP filtering was requested, but there were fewer than 100 PSMs (50), so results were not filtered."));
+                Is.EqualTo("PEP filtering was requested, but there were fewer than 100 PSMs (50, counting decoys), so results were not filtered."));
         }
 
         [Test]
@@ -182,17 +205,18 @@ namespace Test
 
             string searchFolder = Path.Combine(outputFolder, "search");
             string[] results = File.ReadAllLines(Path.Combine(searchFolder, "results.txt"));
-            const string said = "PEP filtering was requested, but PEP was not computed for these 258 PSMs, so results were filtered by q-value.";
-            // On master these four lines were "pep q-value <= 0.01: 0" for PSMs, peptides and protein groups.
+            const string said = "PEP filtering was requested, but PEP was not computed for these PSMs, so results were filtered by q-value.";
+            const string saidForPeptides = "PEP filtering was requested, but PEP q-values were not computed at the peptide level, so results were filtered by q-value.";
+            // On master the three counts were "pep q-value <= 0.01: 0" for PSMs, peptides and protein groups.
             Assert.That(results.Skip(5).Take(5), Is.EqualTo(new[]
             {
-                said, // above the PSM count
-                said, // above the peptide count
+                said, // just above the PSM count it qualifies
                 "All target PSMs with q-value <= 0.01: 258",
+                saidForPeptides, // just above the peptide count
                 "All target peptides with q-value <= 0.01: 88",
                 "All target protein groups with q-value <= 0.01 (1% FDR): 84",
             }));
-            Assert.That(warnings, Has.Some.EqualTo(said));
+            Assert.That(warnings.Where(w => w.StartsWith("PEP filtering was requested")), Is.EqualTo(new[] { said }), "one warning per search");
 
             // Protein groups: held to the matches' 0.01, not to the q-value threshold of 1.
             string[] groups = File.ReadAllLines(Directory.GetFiles(searchFolder, "All*ProteinGroups.tsv").Single());

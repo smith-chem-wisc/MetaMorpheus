@@ -1531,9 +1531,8 @@ namespace TaskLayer
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
-            ReportPepFilteringNotDone(psmsForPsmResults);
             string psmResultsText = $"All target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsForPsmResults.GetFilterTypeString() + " <= " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " + psmsForPsmResults.TargetPsmsAboveThreshold;
-            ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = psmResultsText;
+            ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = WithPepFilteringNotDone(psmsForPsmResults, psmResultsText);
             string precursorResultsText = $"All {GlobalVariables.AnalyteType.GetPrecursorLabel()}: " + Parameters.NumMs2SpectraPerFile.Select(f=>f.Value[1]).Sum();
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetPrecursorLabel()}")] = precursorResultsText;
             string ms2ScanCountResultsText = $"All {GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}: " + Parameters.NumMs2SpectraPerFile.Select(f => f.Value[0]).Sum();
@@ -1557,21 +1556,26 @@ namespace TaskLayer
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
-            ReportPepFilteringNotDone(peptidesForPeptideResults);
             string peptideResultsText = $"All target {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()}s with " + peptidesForPeptideResults.GetFilterTypeString() + " <= " + Math.Round(peptidesForPeptideResults.FilterThreshold, 2) + ": " +
                 peptidesForPeptideResults.TargetPsmsAboveThreshold;
-            ResultsDictionary[("All", GlobalVariables.AnalyteType.GetUniqueFormLabel())] = peptideResultsText;
+            ResultsDictionary[("All", GlobalVariables.AnalyteType.GetUniqueFormLabel())] = WithPepFilteringNotDone(peptidesForPeptideResults, peptideResultsText);
         }
 
+        private bool _pepFilteringNotDoneWarned;
+
         /// <summary>
-        /// PEP filtering was requested but not done: say what was done instead, both now and in results.txt, where the
-        /// line sits just above the count it qualifies.
+        /// PEP filtering was requested but not done: the count line for results.txt, with the sentence saying what was
+        /// done instead just above it. The first such sentence is also a warning, once per search.
         /// </summary>
-        private void ReportPepFilteringNotDone(FilteredPsms filtered)
+        private string WithPepFilteringNotDone(FilteredPsms filtered, string countLine)
         {
-            if (filtered.PepFilteringNotDone == null) return;
-            Warn(filtered.PepFilteringNotDone);
-            Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(filtered.PepFilteringNotDone + Environment.NewLine);
+            if (filtered.PepFilteringNotDone == null) return countLine;
+            if (!_pepFilteringNotDoneWarned)
+            {
+                Warn(filtered.PepFilteringNotDone);
+                _pepFilteringNotDoneWarned = true;
+            }
+            return filtered.PepFilteringNotDone + Environment.NewLine + countLine;
         }
 
         private void WriteIndividualPsmResults()
