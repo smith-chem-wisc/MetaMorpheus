@@ -574,7 +574,7 @@ namespace Test
             var res = RunGptmdOnPhosphoPsm(PsmToDatabasePhosphosite("QFPPSPSAPK", databaseSite: 5, trueSite: 7));
 
             Assert.That(res.Mods["accession"].Select(m => (m.Item1, m.Item2.IdWithMotif)),
-                Is.EquivalentTo(new[] { (7, "Phosphorylation on S") }));
+                Is.EquivalentTo(new[] { (7, "Phosphoserine on S") }));
         }
 
         [Test]
@@ -592,7 +592,35 @@ namespace Test
             var res = RunGptmdOnPhosphoPsm(PsmToDatabasePhosphosite("QFPPSPSAPK", databaseSite: 5, trueSite: 7, keepFragment: NotSiteDetermining));
 
             Assert.That(res.Mods["accession"].Select(m => (m.Item1, m.Item2.IdWithMotif)),
-                Is.EquivalentTo(new[] { (7, "Phosphorylation on S") }));
+                Is.EquivalentTo(new[] { (7, "Phosphoserine on S") }));
+        }
+
+        // UniProt's Phosphoserine carries no neutral loss; GPTMD's Phosphorylation on S carries H3PO4. The S7 that ties
+        // UniProt's S5 is written as Phosphoserine, so in the search the two placements score alike on a spectrum whose
+        // neutral-loss ions all hold both serines, and the site can be reported as ambiguous. Written under the GPTMD
+        // name, S7 would collect those neutral losses alone and be called on its own.
+        [Test]
+        public static void TestGptmdWritesAMoveToTheSameAminoAcidAsTheDatabaseModSoTheSearchScoresBothPlacementsAlike()
+        {
+            var psms = PsmToDatabaseSites("QFPPSPSAPK", new() { { 5, UniProtMod("Phosphoserine on S") } }, new() { { 7, GptmdMod("Phosphorylation on S") } },
+                keepFragment: NotSiteDetermining, neutralLosses: true);
+
+            var res = RunGptmdOnPhosphoPsm(psms);
+            Assert.That(res.Mods["accession"].Select(m => (m.Item1, m.Item2.IdWithMotif)), Is.EquivalentTo(new[] { (7, "Phosphoserine on S") }));
+
+            var protein = (Protein)psms[0].BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.Parent;
+            var reloaded = WriteAndReload(res.Mods, protein, nameof(TestGptmdWritesAMoveToTheSameAminoAcidAsTheDatabaseModSoTheSearchScoresBothPlacementsAlike)).Single();
+            var placements = reloaded.Digest(new CommonParameters().DigestionParams, new List<Modification>(), new List<Modification>())
+                .Where(p => p.AllModsOneIsNterminus.Count == 1).ToList();
+            Assert.That(placements.Select(p => p.AllModsOneIsNterminus.Single().Key), Is.EquivalentTo(new[] { 6, 8 }));
+
+            var scores = placements.Select(p => SearchScore(p, psms[0].Ms2Scan)).ToList();
+            Assert.That(scores[0], Is.EqualTo(scores[1]).Within(1e-9));
+
+            var underGptmdName = new Protein("QFPPSPSAPK", "gptmdName", oneBasedModifications: new Dictionary<int, List<Modification>> { { 7, new List<Modification> { GptmdMod("Phosphorylation on S") } } })
+                .Digest(new CommonParameters().DigestionParams, new List<Modification>(), new List<Modification>())
+                .First(p => p.AllModsOneIsNterminus.Count == 1);
+            Assert.That(SearchScore(underGptmdName, psms[0].Ms2Scan), Is.GreaterThan(scores[0] + 1), "control: the spectrum's neutral losses favour the GPTMD name");
         }
 
         [Test]
@@ -678,7 +706,7 @@ namespace Test
 
             var res = RunGptmd(psms, PhosphoMods());
 
-            Assert.That(res.Mods["accession"].Select(m => (m.Item1, m.Item2.IdWithMotif)), Is.EquivalentTo(new[] { (7, "Phosphorylation on S") }));
+            Assert.That(res.Mods["accession"].Select(m => (m.Item1, m.Item2.IdWithMotif)), Is.EquivalentTo(new[] { (7, "Phosphoserine on S") }));
         }
 
         // When a fixed modification targets the residue a database modification sits on, the search puts the fixed
@@ -805,6 +833,8 @@ namespace Test
         [TestCase("NNNPPP", 4, "P", "A", "accession_P4A", new[] { 1, 2, 3 }, "NNNAPP")]
         // after an insertion: N7 of the variant protein, which is N5 of the consensus
         [TestCase("PEPTNPEP", 2, "E", "EGG", "accession_E2EGG", new[] { 7 }, "PEGGPTNPEP")]
+        // a deletion edits no residue it keeps: NNNINNNK's I-N junction exists only with ID4I, so all six sites go to it
+        [TestCase("NNNIDNNNK", 4, "ID", "I", "accession_ID4I", new[] { 1, 2, 3, 5, 6, 7 }, "NNNINNNK")]
         public static void TestGptmdWritesASiteSeenOnlyOnAVariantPeptideToThatVariant(string sequence, int variantSite, string original, string variant,
             string expectedAccession, int[] expectedSites, string variantSequence)
         {
@@ -880,7 +910,7 @@ namespace Test
             var res = RunGptmdOnPhosphoPsm(new List<SpectralMatch> { PsmWithSpectrum(matched, SpectrumOf(source, null)) });
 
             Assert.That(res.Mods.Keys, Is.EquivalentTo(new[] { "accession_A7S" }));
-            Assert.That(res.Mods["accession_A7S"].Select(m => (m.Item1, m.Item2.IdWithMotif)), Is.EquivalentTo(new[] { (7, "Phosphorylation on S") }));
+            Assert.That(res.Mods["accession_A7S"].Select(m => (m.Item1, m.Item2.IdWithMotif)), Is.EquivalentTo(new[] { (7, "Phosphoserine on S") }));
 
             var reloaded = WriteAndReloadVariant(res.Mods, protein, nameof(TestGptmdMovesADatabaseModOntoAResidueAVariantCreates));
             Assert.That(reloaded.OneBasedPossibleLocalizedModifications.Keys, Is.EquivalentTo(new[] { 5, 7 }));
@@ -940,9 +970,10 @@ namespace Test
 
         // A one-peptide protein carrying databaseMods (one-based residue -> modification), and a PSM to the peptidoform
         // carrying all of them (digested with the search's fixedMods), whose spectrum holds the unit-intensity b and y ions
-        // of the same peptide carrying trueMods instead, with nothing fixed.
+        // of the same peptide carrying trueMods instead, with nothing fixed (and their neutral-loss ions, if asked).
         private static List<SpectralMatch> PsmToDatabaseSites(string sequence, Dictionary<int, Modification> databaseMods,
-            Dictionary<int, Modification> trueMods, Func<Product, bool> keepFragment = null, List<Modification> fixedMods = null)
+            Dictionary<int, Modification> trueMods, Func<Product, bool> keepFragment = null, List<Modification> fixedMods = null,
+            bool neutralLosses = false)
         {
             var digestionParams = new CommonParameters().DigestionParams;
             var protein = new Protein(sequence, "accession",
@@ -956,16 +987,16 @@ namespace Test
                 .Digest(digestionParams, new List<Modification>(), new List<Modification>())
                 .First(p => p.Length == sequence.Length && p.AllModsOneIsNterminus.Count == trueMods.Count);
 
-            return new List<SpectralMatch> { PsmWithSpectrum(matched, SpectrumOf(source, keepFragment)) };
+            return new List<SpectralMatch> { PsmWithSpectrum(matched, SpectrumOf(source, keepFragment, neutralLosses)) };
         }
 
         // The unit-intensity singly charged b and y ions of a peptidoform, keeping those keepFragment allows.
-        private static MsDataScan SpectrumOf(IBioPolymerWithSetMods source, Func<Product, bool> keepFragment)
+        private static MsDataScan SpectrumOf(IBioPolymerWithSetMods source, Func<Product, bool> keepFragment, bool neutralLosses = false)
         {
             var products = new List<Product>();
             source.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
             double[] mzs = products
-                .Where(p => p.NeutralLoss == 0 && (p.ProductType == ProductType.b || p.ProductType == ProductType.y) && (keepFragment?.Invoke(p) ?? true))
+                .Where(p => (neutralLosses || p.NeutralLoss == 0) && (p.ProductType == ProductType.b || p.ProductType == ProductType.y) && (keepFragment?.Invoke(p) ?? true))
                 .Select(p => p.NeutralMass.ToMz(1)).OrderBy(mz => mz).ToArray();
             return new MsDataScan(new MzSpectrum(mzs, mzs.Select(_ => 1.0).ToArray(), false), 1, 2, true, Polarity.Positive, 1,
                 new MzRange(50, 2000), null, MZAnalyzerType.Orbitrap, mzs.Length, null, null, "scan=1", double.NaN, 1, 1, double.NaN, 2,
@@ -985,6 +1016,16 @@ namespace Test
             psm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
             psm.SetMs2Scan(scan);
             return psm;
+        }
+
+        // The score the search gives a peptidoform on a spectrum: its HCD fragments, neutral losses included.
+        private static double SearchScore(IBioPolymerWithSetMods peptidoform, MsDataScan spectrum)
+        {
+            var commonParameters = new CommonParameters();
+            var products = new List<Product>();
+            peptidoform.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+            var scan = new Ms2ScanWithSpecificMass(spectrum, peptidoform.MonoisotopicMass.ToMz(1), 1, "filepath", commonParameters);
+            return MetaMorpheusEngine.CalculatePeptideScore(spectrum, MetaMorpheusEngine.MatchFragmentIons(scan, products, commonParameters));
         }
 
         private static Modification UniProtMod(string idWithMotif) =>

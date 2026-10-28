@@ -210,7 +210,9 @@ namespace EngineLayer.Gptmd
         /// <para>
         /// Here, when the precursor matches the peptide with its database modifications as they are, each one is moved
         /// (not duplicated) to every other residue where a GPTMD modification of the same chemistry fits. Each move is
-        /// scored and filtered as an ordinary GPTMD candidate is.
+        /// scored and filtered as an ordinary GPTMD candidate is. A move to the same amino acid is written as the
+        /// database's own modification, so the two placements carry the same neutral losses and diagnostic ions in the
+        /// search; a move to another amino acid is written as the GPTMD modification that fits there.
         /// </para>
         /// <para>
         /// The bar is the best placement the database already offers: the original, and any other residue of the
@@ -262,8 +264,13 @@ namespace EngineLayer.Gptmd
                         continue;
 
                     int indexInProtein = peptide.OneBasedStartResidue + toIndex;
+                    bool otherAminoAcid = peptide.BaseSequence[toIndex] != peptide.BaseSequence[fromIndex];
                     bool offered = HasSameChemistryAt(peptide.Parent, indexInProtein, databaseMod);
+                    // On the same amino acid the database's own modification is written, so the search scores both
+                    // placements with the same fragments: UniProt's Phosphoserine carries no neutral loss, GPTMD's
+                    // Phosphorylation on S carries H3PO4, and those losses would outvote the ions that place the site.
                     var fitting = offered ? new List<Modification>()
+                        : !otherAminoAcid && ModFits(databaseMod, peptide.Parent, toIndex + 1, peptide.Length, indexInProtein) ? new List<Modification> { databaseMod }
                         : sameChemistry.Where(m => ModFits(m, peptide.Parent, toIndex + 1, peptide.Length, indexInProtein)).ToList();
                     if (!offered && fitting.Count == 0)
                         continue;
@@ -277,7 +284,6 @@ namespace EngineLayer.Gptmd
                         continue;
                     }
 
-                    bool otherAminoAcid = peptide.BaseSequence[toIndex] != peptide.BaseSequence[fromIndex];
                     var (site, accession) = ResolveSiteInDatabase(peptide, indexInProtein);
                     foreach (var mod in fitting.Where(m => !Filters.Any(f => !f.Passes(moved, psm, score, originalPlacementScore, matchedIons, toIndex + 1, peptide.Length, m))))
                         moves.Add((site, mod, accession, score, otherAminoAcid));
@@ -350,7 +356,8 @@ namespace EngineLayer.Gptmd
         /// A sequence variant carries its own modifications (<see cref="SequenceVariation.OneBasedModifications"/>, keyed
         /// by position in the protein with that variant applied), which ProteinDbWriter writes from the entry under the
         /// single-variant accession. A site goes there when the variant edits its residue, or when the peptide spans that
-        /// variant's edited residues and no other variant's: the site was then seen only with the variant. Any other
+        /// variant's edited residues (for a deletion, the junction it leaves) and no other variant's: the site was then
+        /// seen only with the variant. Any other
         /// site goes to the consensus protein at its consensus position. A peptide spanning two variants' edits needs
         /// both, which neither variant's modifications can say, so its sites off the edits go to the consensus.
         /// </para>
@@ -365,15 +372,14 @@ namespace EngineLayer.Gptmd
             var variant = protein.AppliedSequenceVariations.FirstOrDefault(v => VariantApplication.IsSequenceVariantModification(v, indexInProtein));
             if (variant == null)
             {
-                var spanned = protein.AppliedSequenceVariations
-                    .Where(v => EditedResidues(v).Any(r => peptide.OneBasedStartResidue <= r && r <= peptide.OneBasedEndResidue)).ToList();
+                var spanned = protein.AppliedSequenceVariations.Where(v => PeptideHoldsVariant(peptide, v)).ToList();
                 if (spanned.Count != 1)
                     return (consensusSite, protein.ConsensusVariant.Accession);
                 variant = spanned[0];
             }
 
             // the variant's own position: every other applied variant's length change undone, this one's kept
-            int siteInVariant = indexInProtein > EditedResidues(variant).Max()
+            int siteInVariant = indexInProtein > LastEditedResidue(variant)
                 ? consensusSite + variant.VariantSequence.Length - variant.OriginalSequence.Length
                 : consensusSite;
 
@@ -392,6 +398,40 @@ namespace EngineLayer.Gptmd
         {
             return Enumerable.Range(appliedVariant.OneBasedBeginPosition, appliedVariant.OneBasedEndPosition - appliedVariant.OneBasedBeginPosition + 1)
                 .Where(r => VariantApplication.IsSequenceVariantModification(appliedVariant, r));
+        }
+
+        /// <summary>
+        /// The last residue, in the variant-applied protein, an applied variant edits. A deletion that keeps every
+        /// residue it leaves (ID -> I) edits none, and for it this is the residue just before the deleted ones were.
+        /// Residues after it are downstream of the variant.
+        /// </summary>
+        private static int LastEditedResidue(SequenceVariation appliedVariant)
+        {
+            var edited = EditedResidues(appliedVariant).ToList();
+            if (edited.Count > 0)
+                return edited.Max();
+
+            // mzLib counts a deletion's kept residues from its start first (ID -> I keeps the I, DI -> I keeps none there)
+            int keptPrefix = 0;
+            while (keptPrefix < appliedVariant.VariantSequence.Length
+                   && appliedVariant.OriginalSequence[keptPrefix] == appliedVariant.VariantSequence[keptPrefix])
+                keptPrefix++;
+            return appliedVariant.OneBasedBeginPosition + keptPrefix - 1;
+        }
+
+        /// <summary>
+        /// Whether the peptide's sequence exists only with this applied variant: it covers a residue the variant edits,
+        /// or, for a deletion, the residues either side of where the deleted ones were (or the protein end they reach).
+        /// </summary>
+        private static bool PeptideHoldsVariant(IBioPolymerWithSetMods peptide, SequenceVariation appliedVariant)
+        {
+            var edited = EditedResidues(appliedVariant).ToList();
+            if (edited.Count > 0)
+                return edited.Any(r => peptide.OneBasedStartResidue <= r && r <= peptide.OneBasedEndResidue);
+
+            int beforeJunction = LastEditedResidue(appliedVariant);
+            return peptide.OneBasedStartResidue <= Math.Max(beforeJunction, 1)
+                && Math.Min(beforeJunction + 1, peptide.Parent.Length) <= peptide.OneBasedEndResidue;
         }
 
         /// <summary>
