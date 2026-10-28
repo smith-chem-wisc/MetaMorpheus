@@ -804,5 +804,56 @@ namespace Test
 
         #endregion
 
+        #region Design rules lifted from the window (#2793)
+
+        private static TmtFileInfo PlexFile(string name, string plex, int fraction, int techrep) =>
+            new TmtFileInfo(name + ".raw", plex, fraction, techrep, null);
+
+        /// <summary>
+        /// The window's refusals, now in EngineLayer: a file with no plex, a number below 1, and two
+        /// files at one (fraction, technical replicate) of a plex. Two plexes may each have their own
+        /// (1, 1).
+        /// </summary>
+        [Test]
+        public static void TmtDesignErrorsAreTheWindowRules()
+        {
+            Assert.That(TmtExperimentalDesign.GetErrorsInDesign(new[] { PlexFile("a", "", 1, 1) }),
+                Is.EqualTo("Every file must be assigned a Plex. Missing for: a.raw"));
+            Assert.That(TmtExperimentalDesign.GetErrorsInDesign(new[] { PlexFile("a", "P1", 1, 0) }),
+                Is.EqualTo("Technical Replicate values must be >= 1."));
+            Assert.That(TmtExperimentalDesign.GetErrorsInDesign(new[] { PlexFile("a", "P1", 0, 1) }),
+                Is.EqualTo("Fraction values must be >= 1."));
+            Assert.That(TmtExperimentalDesign.GetErrorsInDesign(new[] { PlexFile("a", "P1", 2, 1), PlexFile("b", "p1", 2, 1) }),
+                Is.EqualTo("Plex P1: duplicate Fraction/Technical Replicate combination: Fraction 2, Technical Replicate 1."));
+            Assert.That(TmtExperimentalDesign.GetErrorsInDesign(new[] { PlexFile("a", "P1", 1, 1), PlexFile("b", "P2", 1, 1) }),
+                Is.Null);
+        }
+
+        /// <summary>
+        /// A gap in a plex's fractions, or in a fraction's technical replicates, was refused by the window
+        /// and is now a warning naming the missing numbers. Each plex is judged on its own numbers.
+        /// </summary>
+        [Test]
+        public static void TmtDesignGapsAreWarningsNotErrors()
+        {
+            var gapped = new[]
+            {
+                PlexFile("a", "P1", 1, 1), PlexFile("b", "P1", 3, 1), PlexFile("c", "P1", 3, 3),
+                PlexFile("d", "P2", 2, 1)
+            };
+
+            Assert.That(TmtExperimentalDesign.GetErrorsInDesign(gapped), Is.Null);
+            Assert.That(TmtExperimentalDesign.GetWarningsInDesign(gapped), Is.EqualTo(new[]
+            {
+                "Plex P1: fractions 1, 3, quantified as numbered; fraction 2 is not in the design. A missing number may be a file that was lost or not searched.",
+                "Plex P1 fraction 3: technical replicates 1, 3, quantified as numbered; technical replicate 2 is not in the design. A missing number may be a file that was lost or not searched.",
+                "Plex P2: fractions 2, quantified as numbered; fraction 1 is not in the design. A missing number may be a file that was lost or not searched."
+            }));
+
+            var contiguous = new[] { PlexFile("a", "P1", 1, 1), PlexFile("b", "P1", 2, 1), PlexFile("c", "P1", 2, 2) };
+            Assert.That(TmtExperimentalDesign.GetWarningsInDesign(contiguous), Is.Empty);
+        }
+
+        #endregion
     }
 }
