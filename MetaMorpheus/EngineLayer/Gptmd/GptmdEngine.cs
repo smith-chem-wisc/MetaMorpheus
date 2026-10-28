@@ -5,6 +5,8 @@ using System.Linq;
 using Omics;
 using Omics.BioPolymer;
 using Omics.Modifications;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using MassSpectrometry;
@@ -138,6 +140,7 @@ namespace EngineLayer.Gptmd
                             FilePathToPrecursorMassTolerance[fileName], pepWithSetMods, CommonParameters);
 
                         double bestScore = 0;
+                        CleavageBlockingPolicy? cleavageBlocking = null; // built on first use, once per peptide
 
                         foreach (var mod in possibleModifications)
                         {
@@ -148,6 +151,9 @@ namespace EngineLayer.Gptmd
                             {
                                 int indexInProtein = pepWithSetMods.OneBasedStartResidue + pepSeqIndex;
                                 if (!ModFits(mod, pepWithSetMods.Parent, pepSeqIndex + 1, pepWithSetMods.Length, indexInProtein))
+                                    continue;
+                                if (pepSeqIndex == pepWithSetMods.Length - 1
+                                    && (cleavageBlocking ??= CleavageBlockingFor(pepWithSetMods, GptmdModifications)).Blocks(mod, indexInProtein))
                                     continue;
 
                                 var newPep = pepWithSetMods.Localize(pepSeqIndex, mod.MonoisotopicMass.Value);
@@ -445,6 +451,27 @@ namespace EngineLayer.Gptmd
             double best = all.Select(s => s.Score).Append(baselineScore).Max();
             return all.Where(s => s.Score >= best - tolerance).Select(s => s.Candidate).ToList();
         }
+
+        /// <summary>
+        /// The cleavage-blocking policy the search's digestion applied to <paramref name="peptide"/>. Its
+        /// Blocks(mod, residue) on the peptide's last residue is true when the modification there would block the
+        /// cleavage that made the peptide's C-terminus -- trypsin does not cut after an acetylated lysine, so a tryptic
+        /// peptide cannot end in one. GPTMD then must not localize it there, and tries the peptide's other residues instead.
+        /// </summary>
+        /// <remarks>
+        /// The search's digestion drops exactly these peptidoforms when RespectCleavageBlockingModifications is on, and
+        /// this asks mzLib's CleavageBlockingPolicy the same question, read from the digestion settings the peptide was
+        /// produced under (the file-specific ones). So GPTMD never writes a site the search would refuse to identify,
+        /// and it is inert wherever the search is: flag off, a semi- or non-specific search, the protein's own
+        /// C-terminus, a protease that does not cut after the residue, a site a wildcard motif also cuts, and RNA.
+        ///
+        /// One policy serves every candidate on the peptide. Built from all GPTMD modifications, it is active whenever
+        /// a policy built from the one candidate would be, and Blocks still asks whether that candidate blocks.
+        /// </remarks>
+        private static CleavageBlockingPolicy CleavageBlockingFor(IBioPolymerWithSetMods peptide, List<Modification> gptmdModifications) =>
+            peptide.DigestionParams is DigestionParams digestionParams && peptide.Parent is Protein protein
+                ? CleavageBlockingPolicy.For(digestionParams, gptmdModifications, protein)
+                : default;
 
         private static void AddIndexedMod(ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>> modDict, string proteinAccession, Tuple<int, Modification> indexedMod)
         {

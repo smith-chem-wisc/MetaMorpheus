@@ -1861,7 +1861,8 @@ namespace TaskLayer
                     false,
                     CommonParameters,
                     this.FileSpecificParameters,
-                    new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }
+                    new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath },
+                    labelPeptidesUniqueToOneGroup: false // each subset keeps the search's labels
                     ).Run();
 
                 subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
