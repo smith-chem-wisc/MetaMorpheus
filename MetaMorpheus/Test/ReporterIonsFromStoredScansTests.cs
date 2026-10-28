@@ -450,5 +450,58 @@ namespace Test
             }
         }
 
+        /// <summary>
+        /// A file with no scans to set has nothing to read: it counts as read one at a time, and nothing is read whole.
+        /// </summary>
+        [Test]
+        public static void NoScans_NothingIsRead_AndItCountsAsOneAtATime()
+        {
+            string mzml = TestFile("VA084TQ_6.mzML");
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag("TMT11", GlobalVariables.AllModsKnown, out var tag), Is.True);
+            var loaded = MsDataFileReader.GetDataFile(mzml).LoadAllStaticData();
+
+            Assert.That(MyFileManager.SetReporterIonIntensitiesFromStoredScans(mzml, loaded, new List<Ms2ScanWithSpecificMass>(), tag, 1), Is.True);
+        }
+
+        /// <summary>
+        /// An MGF's read by scan number throws for a number its SCANS= index does not hold. That is caught, and the file is
+        /// read whole: here the highest-numbered loaded scan is renumbered past every SCANS= value, so it is left unpaired and
+        /// read from its loaded spectrum, and every other scan from its stored block.
+        /// </summary>
+        [Test]
+        public static void Mgf_AskedForAScanNumberItDoesNotHold_IsReadWhole()
+        {
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsMgfMissingScan");
+
+            try
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+                Directory.CreateDirectory(folder);
+                string mgf = Fixture("mgf", folder);
+                var loaded = new MyFileManager(true).LoadFile(mgf, searchTask.CommonParameters);
+                var ms2Scans = MetaMorpheusTask.GetMs2Scans(loaded, mgf, searchTask.CommonParameters).ToList();
+                Assert.That(ms2Scans, Is.Not.Empty);
+                ms2Scans.Select(s => s.ReporterIonScan).MaxBy(s => s.OneBasedScanNumber).SetOneBasedScanNumber(999999);
+
+                Assert.That(MyFileManager.SetReporterIonIntensitiesFromStoredScans(mgf, loaded, ms2Scans, tag, 1), Is.False);
+                var read = ms2Scans.Select(s => Formatted(s.IsobaricMassTagReporterIonIntensities)).ToList();
+
+                var storedScanFor = MyFileManager.PairWithStoredScans(loaded, MsDataFileReader.GetDataFile(mgf).LoadAllStaticData());
+                var fromWholeFile = new List<string[]>();
+                foreach (var scan in ms2Scans)
+                {
+                    scan.SetIsobaricMassTagReporterIonIntensities(tag, storedScanFor);
+                    fromWholeFile.Add(Formatted(scan.IsobaricMassTagReporterIonIntensities));
+                }
+                Assert.That(read, Is.EqualTo(fromWholeFile));
+            }
+            finally
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+
     }
 }
