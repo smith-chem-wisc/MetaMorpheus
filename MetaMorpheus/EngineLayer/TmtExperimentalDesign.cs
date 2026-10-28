@@ -533,7 +533,7 @@ namespace EngineLayer
                     yield return string.Join("\t", headers.Select(header => header.Trim().ToLowerInvariant() switch
                     {
                         "file" => file.FullFilePathWithExtension,
-                        "plex" => file.Plex ?? "",
+                        "plex" => file.Plex,
                         "sample name" => a?.SampleName ?? "",
                         "tmt channel" => a?.Tag ?? "",
                         "condition" => a?.Condition ?? "",
