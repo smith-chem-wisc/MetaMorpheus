@@ -303,6 +303,91 @@ namespace Test
             }
         }
 
+        /// <summary>
+        /// Writes a file-specific toml next to a spectra file in its own folder and returns the spectra file's path. The
+        /// spectra file itself need not exist: only the toml beside it is read before a run.
+        /// </summary>
+        private static string SpectraFileWithToml(string testName, string toml)
+        {
+            string folder = Path.Combine(TestContext.CurrentContext.WorkDirectory, testName);
+            Directory.CreateDirectory(folder);
+            string spectraFile = Path.Combine(folder, "sample.mzML");
+            File.WriteAllText(Path.Combine(folder, "sample.toml"), toml);
+            return spectraFile;
+        }
+
+        /// <summary>
+        /// Each spectra file is digested with what <see cref="MetaMorpheusTask.SetAllFileSpecificCommonParams"/> builds from
+        /// its file-specific toml, and for nucleic acids that takes the rnase from the file. A file that names singleN or
+        /// singleC is therefore searched as seed oligos even when the task's own rnase is fully specific, so the refusal must
+        /// check every file's digestion, and name the file.
+        /// </summary>
+        [Test]
+        [TestCase("Gptmd", "DigestionAgent = \"singleC\"", "uses the rnase singleC")]
+        [TestCase("Calibration", "DigestionAgent = \"singleN\"", "uses the rnase singleN")]
+        [TestCase("ClassicSearch", "Rnase = \"singleC\"", "uses the rnase singleC")]
+        [TestCase("ModernSearch", "DigestionAgent = \"singleN\"", "uses the rnase singleN")]
+        [TestCase("ClassicSearch", "DigestionAgent = \"RNase T1\"", null)]
+        [TestCase("ClassicSearch", "DigestionAgent = \"no such rnase\"", null)] // unreadable: the run warns about it, as before
+        [TestCase("NonSpecificSearch", "DigestionAgent = \"singleC\"", null)]
+        public static void GetSeedDigestionRefusal_WithAFileSpecificRnaseThatAsksForSeeds_RefusesAndNamesTheFile(string taskKind, string toml, string expectedSetting)
+        {
+            string spectraFile = SpectraFileWithToml($"{nameof(GetSeedDigestionRefusal_WithAFileSpecificRnaseThatAsksForSeeds_RefusesAndNamesTheFile)}_{TestContext.CurrentContext.Test.ID}", toml);
+            MetaMorpheusTask task = MakeRnaTask(taskKind, "RNase T1");
+            Assert.That(task.GetSeedDigestionRefusal("MyTask"), Is.Null, "premise: the task's own rnase is fully specific");
+
+            string refusal = task.GetSeedDigestionRefusal("MyTask", new List<string> { spectraFile });
+            if (expectedSetting == null)
+            {
+                Assert.That(refusal, Is.Null);
+                return;
+            }
+            Assert.That(refusal, Does.StartWith("Cannot proceed."));
+            Assert.That(refusal, Does.Contain("\"MyTask\""));
+            Assert.That(refusal, Does.Contain("file-specific parameters of sample.mzML"), "the message must name the file");
+            Assert.That(refusal, Does.Contain(expectedSetting));
+            Assert.That(refusal, Does.Contain("seed oligos"));
+        }
+
+        /// <summary>
+        /// A custom semi rnase named in a file-specific toml gives seed oligos when the task's terminus is FivePrime or
+        /// ThreePrime, as it does when the task names it.
+        /// </summary>
+        [Test]
+        public static void GetSeedDigestionRefusal_WithAFileSpecificSemiRnaseAndOneTerminus_Refuses()
+        {
+            const string semiRnase = "semi G| per file (DigestionSearchModeRefusalTests)";
+            string tsv = Path.Combine(TestContext.CurrentContext.WorkDirectory, $"{nameof(GetSeedDigestionRefusal_WithAFileSpecificSemiRnaseAndOneTerminus_Refuses)}.tsv");
+            File.WriteAllLines(tsv, new[] { "Name\tMotif\tSpecificity", $"{semiRnase}\tG|\tsemi" });
+            try
+            {
+                Assert.That(RnaseDictionary.LoadAndMergeCustomRnases(tsv).Added, Is.EqualTo(new[] { semiRnase }));
+                string spectraFile = SpectraFileWithToml(nameof(GetSeedDigestionRefusal_WithAFileSpecificSemiRnaseAndOneTerminus_Refuses), $"DigestionAgent = \"{semiRnase}\"");
+                MetaMorpheusTask task = MakeRnaTask("ClassicSearch", "RNase T1", CleavageSpecificity.Full, FragmentationTerminus.FivePrime);
+                Assert.That(task.GetSeedDigestionRefusal("MyTask"), Is.Null, "premise");
+
+                string refusal = task.GetSeedDigestionRefusal("MyTask", new List<string> { spectraFile });
+                Assert.That(refusal, Does.Contain($"uses the semi-specific rnase {semiRnase} with FragmentationTerminus FivePrime"));
+            }
+            finally
+            {
+                RnaseDictionary.Dictionary.Remove(semiRnase);
+                File.Delete(tsv);
+            }
+        }
+
+        [Test]
+        public static void CommandLine_WithAFileSpecificRnaseThatAsksForSeeds_RefusesTheRun()
+        {
+            string spectraFile = SpectraFileWithToml(nameof(CommandLine_WithAFileSpecificRnaseThatAsksForSeeds_RefusesTheRun), "DigestionAgent = \"singleC\"");
+            var tasks = new List<(string, MetaMorpheusTask)> { ("Task1SearchTask", MakeRnaTask("ClassicSearch", "RNase T1")) };
+            var output = new StringWriter();
+
+            Assert.That(Program.RefuseSeedDigestion(tasks, output, true), Is.EqualTo(0), "premise: without the spectra files it carries on");
+            Assert.That(Program.RefuseSeedDigestion(tasks, output, true, new List<string> { spectraFile }), Is.EqualTo(6));
+            Assert.That(output.ToString().Trim(), Is.EqualTo(tasks[0].Item2.GetSeedDigestionRefusal("Task1SearchTask", new List<string> { spectraFile })));
+        }
+
         [Test]
         public static void CommandLine_WithANucleicAcidTaskThatAsksForSeeds_RefusesTheRun()
         {

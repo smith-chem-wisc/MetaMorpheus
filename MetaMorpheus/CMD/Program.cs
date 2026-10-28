@@ -310,7 +310,8 @@ namespace MetaMorpheusCommandLine
             // a task whose digestion gives seed peptides it cannot use would finish with far fewer, wrong identifications
             int digestionExitCode = RefuseSeedDigestion(taskList, Console.Out,
                 settings.Verbosity == CommandLineSettings.VerbosityType.minimal
-                    || settings.Verbosity == CommandLineSettings.VerbosityType.normal);
+                    || settings.Verbosity == CommandLineSettings.VerbosityType.normal,
+                startingRawFilenameList);
             if (digestionExitCode != 0)
             {
                 return digestionExitCode;
@@ -347,11 +348,12 @@ namespace MetaMorpheusCommandLine
         /// button does, and returns the process exit code: 0 to carry on, 6 to stop.
         /// </summary>
         /// <param name="print">Whether to write the reason to <paramref name="output"/>; the run is refused either way.</param>
-        public static int RefuseSeedDigestion(List<(string, MetaMorpheusTask)> taskList, TextWriter output, bool print)
+        /// <param name="spectraFilePaths">The spectra files of the run, whose file-specific digestion is checked too.</param>
+        public static int RefuseSeedDigestion(List<(string, MetaMorpheusTask)> taskList, TextWriter output, bool print, IReadOnlyList<string> spectraFilePaths = null)
         {
             foreach (var (taskName, task) in taskList)
             {
-                string refusal = task.GetSeedDigestionRefusal(taskName);
+                string refusal = task.GetSeedDigestionRefusal(taskName, spectraFilePaths);
                 if (refusal != null)
                 {
                     if (print)

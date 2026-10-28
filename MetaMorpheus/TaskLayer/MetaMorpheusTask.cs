@@ -95,20 +95,67 @@ namespace TaskLayer
         /// products as they are, so given seeds they finish normally and report far fewer, wrong identifications. A spectral
         /// averaging task digests nothing, so its digestion settings are never used and are not checked, as it is already
         /// exempt from needing a protein database.
+        /// <para>Each spectra file is digested with what <see cref="SetAllFileSpecificCommonParams"/> builds from its
+        /// file-specific toml, and for nucleic acids that takes the rnase from the file. So when the spectra files are given,
+        /// each file's digestion is checked as well, and the message names the file. A toml that cannot be read is left to the
+        /// run, which warns about it and digests that file with the task's settings.</para>
         /// </remarks>
         /// <param name="taskName">The name the user knows the task by, included in the message when given.</param>
-        public string GetSeedDigestionRefusal(string taskName = null)
+        /// <param name="spectraFilePaths">The spectra files the task will run on, whose file-specific tomls are checked.</param>
+        public string GetSeedDigestionRefusal(string taskName = null, IReadOnlyList<string> spectraFilePaths = null)
         {
             if (TaskType == MyTask.Average // averaging does not digest, so its digestion settings are never used
-                || this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific }) // the non-specific search engine trims seeds
+                || this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific } // the non-specific search engine trims seeds
+                || CommonParameters == null) // nothing to check
             {
                 return null;
             }
 
             string which = taskName == null ? "This task" : $"Task \"{taskName}\"";
-            IDigestionParams digestion = CommonParameters?.DigestionParams; // null CommonParameters: nothing to check
+            string refusal = DescribeSeedDigestionRefusal(CommonParameters.DigestionParams, which);
+            if (refusal != null || spectraFilePaths == null)
+            {
+                return refusal;
+            }
+
+            foreach (string spectraFilePath in spectraFilePaths)
+            {
+                string fileSpecificTomlPath = Path.Combine(Directory.GetParent(spectraFilePath).ToString(), Path.GetFileNameWithoutExtension(spectraFilePath)) + ".toml";
+                if (!File.Exists(fileSpecificTomlPath))
+                {
+                    continue;
+                }
+
+                IDigestionParams fileDigestion;
+                try
+                {
+                    var fileSpecificParameters = new FileSpecificParameters(Toml.ReadFile(fileSpecificTomlPath, tomlConfig));
+                    fileDigestion = SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParameters).DigestionParams;
+                }
+                catch (Exception e) when (e is MetaMorpheusException or KeyNotFoundException)
+                {
+                    continue; // RunTask warns about this toml and digests the file with the task's settings
+                }
+
+                refusal = DescribeSeedDigestionRefusal(fileDigestion, $"{which}, with the file-specific parameters of {Path.GetFileName(spectraFilePath)},");
+                if (refusal != null)
+                {
+                    return refusal;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// The refusal for one set of digestion settings, or null when a task that cannot use seeds can run with them.
+        /// </summary>
+        /// <param name="which">Whose settings these are, as the subject of the message.</param>
+        private static string DescribeSeedDigestionRefusal(IDigestionParams digestion, string which)
+        {
             if (digestion is RnaDigestionParams rnaDigestionParams)
             {
+                Rnase rnase = rnaDigestionParams.Rnase;
+                string terminus = $"FragmentationTerminus {rnaDigestionParams.FragmentationTerminus}";
                 if (!AsksForSeeds(rnaDigestionParams))
                 {
                     return null;
@@ -116,8 +163,6 @@ namespace TaskLayer
 
                 // Name what AsksForSeeds decided on. Rnase, not SpecificRnase: a task file saved before mzLib 1.0.592 has no
                 // SpecificRnase, so it reads back as top-down there while Rnase is singleN or singleC.
-                Rnase rnase = rnaDigestionParams.Rnase;
-                string terminus = $"FragmentationTerminus {rnaDigestionParams.FragmentationTerminus}";
                 string setting = rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
                     ? rnaDigestionParams.SearchModeType == CleavageSpecificity.None
                         ? "has SearchModeType None (non-specific)"
