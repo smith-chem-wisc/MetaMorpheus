@@ -86,12 +86,14 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
+            // one view of each database for every index key this task builds; see SnapshotDatabases
+            List<FileInfo> databaseFileInfos = IndexingEngine.SnapshotDatabases(dbFilenameList);
             var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, _glycoSearchParameters.DecoyType, true, localizeableModificationTypes);
             var loadingResults = dbLoader.Run() as DatabaseLoadingEngineResults;
             List<Protein> proteinList = loadingResults!.BioPolymers.Cast<Protein>().ToList();
 
             MyFileManager myFileManager = new (_glycoSearchParameters.DisposeOfFileWhenDone);
-            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
+            var fileSpecificCommonParams = fileSettingsList.Select((b, i) => SetAllFileSpecificCommonParams(CommonParameters, b, currentRawFileList[i]));
 
             int completedFiles = 0;
 
@@ -132,7 +134,8 @@ namespace TaskLayer
             var indexParamsPerFile = new CommonParameters[fileCount];
             for (int spectraFileIndex = 0; spectraFileIndex < fileCount; spectraFileIndex++)
             {
-                combinedParamsPerFile[spectraFileIndex] = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                var origDataFile = currentRawFileList[spectraFileIndex];
+                combinedParamsPerFile[spectraFileIndex] = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex], origDataFile);
 
                 // scoped to indexing/searching only, so the settings the task reports stay as configured.
                 // every TotalPartitions read below comes from indexParams, including the loop bound and the
@@ -147,7 +150,6 @@ namespace TaskLayer
                 _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.MaximumGlycanBoxMass, _glycoSearchParameters.SelectedGlycans);
 
             var thisIds = currentRawFileList.Select(file => new List<string> { taskId, "Individual Spectra Files", file }).ToList();
-            var databaseFileInfos = dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList();
 
             Ms2ScanWithSpecificMass[] LoadMs2Scans(int spectraFileIndex, CommonParameters loadParams)
             {

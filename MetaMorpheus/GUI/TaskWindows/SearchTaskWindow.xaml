@@ -699,7 +699,16 @@
                                                  ConverterParameter="Write PSMs &amp; peptides with q-value above threshold"/>
                                     </CheckBox.Content>
                                 </CheckBox>
-                                <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />
+                                <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <CheckBox.ToolTip>
+                                        <ToolTip>
+                                            <ToolTip.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                         ConverterParameter="When more than one spectra file is searched, also write PSM, peptide, protein group and quantified peak tables for each file to 'Individual File Results', with PSM and peptide FDR recalculated for that file alone. Off by default. Per-file .mzID files are written whenever Write .mzID is checked."/>
+                                            </ToolTip.Content>
+                                        </ToolTip>
+                                    </CheckBox.ToolTip>
+                                </CheckBox>
                                 <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" />
                                 <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update spectral library" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}" />
                                 <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress individual file results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
@@ -722,6 +731,9 @@
                                             records which sample each file came from, and nothing in a search knows that. Without
                                             it the search still runs, a warning names what is missing, and those columns say
                                             "not available".
+                                            <LineBreak/>
+                                            A TMT or iTRAQ search reads TmtDesign.txt instead, and writes one row for each sample
+                                            in each channel.
                                         </TextBlock>
                                     </CheckBox.ToolTip>
                                 </CheckBox>

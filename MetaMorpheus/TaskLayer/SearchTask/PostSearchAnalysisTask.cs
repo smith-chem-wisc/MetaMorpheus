@@ -124,8 +124,13 @@ namespace TaskLayer
                 Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
                 if (Parameters.SearchParameters.WriteIndividualFiles)
                 {
-                    WriteIndividualPsmResults();
-                    WriteIndividualPeptideResults();
+                    // The individual tables re-run FDR file by file on the shared spectral matches. Their
+                    // per-file values must not outlive them: every later stage reads the whole-search FDR.
+                    using (FdrInfoSnapshot.Take(Parameters.AllSpectralMatches))
+                    {
+                        WriteIndividualPsmResults();
+                        WriteIndividualPeptideResults();
+                    }
                 }
             }
             WriteProteinResults();
@@ -158,7 +163,12 @@ namespace TaskLayer
 
             if (Parameters.BioPolymerList.Any((p => p.AppliedSequenceVariations.Count > 0)))
             {
-                WriteVariantResults();
+                // The variant tables re-run FDR on the variant matches alone. Their values must not outlive them:
+                // a chained TruncationSearchTask reads the whole-search FDR from these matches.
+                using (FdrInfoSnapshot.Take(Parameters.AllSpectralMatches))
+                {
+                    WriteVariantResults();
+                }
             }
 
             CompressIndividualFileResults();
@@ -597,10 +607,9 @@ namespace TaskLayer
                          spectraFileIndex < Parameters.CurrentRawFileList.Count;
                          spectraFileIndex++)
                     {
-                        CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters,
-                            Parameters.FileSettingsList[spectraFileIndex]);
-
                         var origDataFile = Parameters.CurrentRawFileList[spectraFileIndex];
+                        CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters,
+                            Parameters.FileSettingsList[spectraFileIndex], origDataFile);
                         Status("Running mass-difference localization analysis...",
                             new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile });
                         MsDataFile myMsDataFile = Parameters.MyFileManager.LoadFile(origDataFile, combinedParams);
@@ -669,6 +678,13 @@ namespace TaskLayer
             {
                 Warn("Error reading TMT design file: " + designErrors.First() + ". Skipping multiplex quantification");
                 return;
+            }
+
+            // quantified as numbered; said now and in results.txt
+            foreach (string warning in TmtExperimentalDesign.GetWarningsInDesign(tmtFiles))
+            {
+                Warn(warning);
+                Parameters.SearchTaskResults.AddTaskSummaryText(warning);
             }
 
             // Copy the design into the output folder, as the label-free path does for ExperimentalDesign,
@@ -800,12 +816,16 @@ namespace TaskLayer
                 WriteProteinInformation = true
             };
 
+            // Every group of the search, written or not, decides whether a peptide is unique: a peptide that a group
+            // above the q-value threshold also lists is shared, though only the written groups are quantified. A group
+            // left out of the table must not make a peptide it shares look unique to the group that is shown.
             var engine = new QuantificationEngine(
                 quantParameters,
                 experimentalDesign,
                 quantifiablePsms.Cast<ISpectralMatch>().ToList(),
                 peptides,
-                quantifiableProteinGroups.Cast<IBioPolymerGroup>().ToList());
+                quantifiableProteinGroups.Cast<IBioPolymerGroup>().ToList(),
+                ProteinGroups.Cast<IBioPolymerGroup>().ToList());
 
             var results = engine.Run();
 
@@ -817,19 +837,17 @@ namespace TaskLayer
 
             Parameters.MultiplexQuantificationResults = results;
 
-            // The engine drops any match it cannot attribute to exactly one biopolymer, and counts them
+            // The engine drops any match it cannot attribute to exactly one full sequence, and counts them
             // rather than throwing. Reported here because the loss is otherwise invisible: the peptide and
-            // protein tables simply total less than the per-PSM reporter columns, and in the worst case --
-            // every peptide in the search shared between two groups -- they total zero while the raw
-            // table looks perfectly healthy. The exclusion itself is mzLib's: one sequence found in two
-            // proteins is two unequal PeptideWithSetModifications, so the engine's unambiguous filter
-            // drops it. Tracked as smith-chem-wisc/mzLib#1280; this warning stands whatever comes of it.
+            // protein tables simply total less than the per-PSM reporter columns while the raw table looks
+            // perfectly healthy. One sequence found in several proteins is one peptide to the engine
+            // (smith-chem-wisc/mzLib#1463), and the filter above already removes matches with two different
+            // sequences, so this count is expected to be zero; the warning stays as a guard.
             if (results.AmbiguousSpectralMatchesExcluded > 0)
             {
                 Warn($"{results.AmbiguousSpectralMatchesExcluded} spectral match(es) were left out of " +
-                     "multiplex quantification because they did not identify exactly one biopolymer, so the " +
-                     "peptide and protein tables total less than the reporter ion columns in the .psmtsv. A " +
-                     "peptide shared between two protein groups is the usual cause");
+                     "multiplex quantification because they did not identify exactly one full sequence, so the " +
+                     "peptide and protein tables total less than the reporter ion columns in the .psmtsv");
             }
 
             // Rebuild the per-group column schema the engine's write-back invalidated: assigning
@@ -944,6 +962,13 @@ namespace TaskLayer
                     {
                         Warn("Error reading experimental design file: " + errors.First() + ". Skipping quantification");
                         return;
+                    }
+
+                    // quantified as numbered; said now and in results.txt
+                    foreach (string warning in ExperimentalDesign.GetWarningsInExperimentalDesign(spectraFileInfo))
+                    {
+                        Warn(warning);
+                        Parameters.SearchTaskResults.AddTaskSummaryText(warning);
                     }
                 }
                 else if (Parameters.SearchParameters.Normalize)
@@ -1851,8 +1876,12 @@ namespace TaskLayer
                 // mzLib groups its PSMs by source file and reports the counts, which is exactly what an
                 // individual-file table wants. Groups that DO carry files are unaffected, so the
                 // label-free path behaves as before.
+                // The Unique and Shared Peptides cells too: the combined groups get their text just before they are
+                // written, and a subset is a new object that never did, so the per-file table left both cells empty
+                // while its Number of Unique Peptides was filled.
                 foreach (var subsetProteinGroup in subsetProteinGroupsForThisFile)
                 {
+                    subsetProteinGroup.GetIdentifiedPeptidesOutput(Parameters.SearchParameters.SilacLabels);
                     subsetProteinGroup.PopulateSampleGroupResults();
                 }
 
