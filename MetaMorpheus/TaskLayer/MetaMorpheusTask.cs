@@ -99,7 +99,7 @@ namespace TaskLayer
         /// averaging task digests nothing, so its digestion settings are never used and are not checked, as it is already
         /// exempt from needing a protein database. Nucleic acid digestion with Semi and FragmentationTerminus Both is refused
         /// too: mzLib does not digest it for nucleic acids yet, and throws from inside the task.
-        /// <para>Each spectra file is digested with what <see cref="SetAllFileSpecificCommonParams"/> builds from its
+        /// <para>Each spectra file is digested with what <see cref="GetFileSpecificDigestionParams"/> builds from its
         /// file-specific toml, and for nucleic acids that takes the rnase from the file. So when the spectra files are given,
         /// each file's digestion is checked as well, and the message names the file. A toml that cannot be read is left to the
         /// run, which warns about it and digests that file with the task's settings.</para>
@@ -134,7 +134,7 @@ namespace TaskLayer
                 try
                 {
                     var fileSpecificParameters = new FileSpecificParameters(Toml.ReadFile(fileSpecificTomlPath, tomlConfig));
-                    fileDigestion = SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParameters).DigestionParams;
+                    fileDigestion = GetFileSpecificDigestionParams(CommonParameters, fileSpecificParameters);
                 }
                 catch (Exception e) when (e is MetaMorpheusException or KeyNotFoundException)
                 {
@@ -859,21 +859,13 @@ namespace TaskLayer
         #endregion
 
         /// <summary>
-        /// Sets all file-specific common parameters for a given raw file path, using the provided common parameters and file-specific parameters. Any non-null file specific parameter will override the value in the common params. 
+        /// The digestion a spectra file gets: the task's, with whatever the file's own toml overrides. This is the digestion
+        /// part of <see cref="SetAllFileSpecificCommonParams"/>, which the seed-digestion refusal also checks before a run,
+        /// without resolving the rest of the file's settings (deconvolution may load a feature file).
         /// </summary>
-        /// <param name="commonParams">The template to override</param>
-        /// <param name="fileSpecificParams">Specific parameters to override common paramms. Null when no file specific toml is next to the raw file.</param>
-        /// <param name="rawFilePath"></param>
-        /// <returns></returns>
-        /// <exception cref="MetaMorpheusException"></exception>
-        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams, string rawFilePath)
+        /// <param name="fileSpecificParams">The file's own settings, or null when it has no toml.</param>
+        public static IDigestionParams GetFileSpecificDigestionParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
         {
-            // If no toml next to raw files and we are not doing file specific decon 
-            if (fileSpecificParams == null && commonParams.PrecursorDeconvolutionParameters is not FeatureMappedFromFileDeconvolutionParameters)
-            {
-                return commonParams;
-            }
-
             // set file-specific digestion parameters
             int minPeptideLength = fileSpecificParams?.MinPeptideLength ?? commonParams.DigestionParams.MinLength;
             int maxPeptideLength = fileSpecificParams?.MaxPeptideLength ?? commonParams.DigestionParams.MaxLength;
@@ -911,8 +903,28 @@ namespace TaskLayer
                     break;
                 default:
                     throw new MetaMorpheusException(
-                        $"Unrecognized digestion parameters of type {commonParams.DigestionParams.GetType().FullName} in MetaMorpheusTask.SetAllFileSpecificCommonParams");
+                        $"Unrecognized digestion parameters of type {commonParams.DigestionParams.GetType().FullName} in MetaMorpheusTask.GetFileSpecificDigestionParams");
             }
+            return fileSpecificDigestionParams;
+        }
+
+        /// <summary>
+        /// Sets all file-specific common parameters for a given raw file path, using the provided common parameters and file-specific parameters. Any non-null file specific parameter will override the value in the common params. 
+        /// </summary>
+        /// <param name="commonParams">The template to override</param>
+        /// <param name="fileSpecificParams">Specific parameters to override common paramms. Null when no file specific toml is next to the raw file.</param>
+        /// <param name="rawFilePath"></param>
+        /// <returns></returns>
+        /// <exception cref="MetaMorpheusException"></exception>
+        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams, string rawFilePath)
+        {
+            // If no toml next to raw files and we are not doing file specific decon 
+            if (fileSpecificParams == null && commonParams.PrecursorDeconvolutionParameters is not FeatureMappedFromFileDeconvolutionParameters)
+            {
+                return commonParams;
+            }
+
+            IDigestionParams fileSpecificDigestionParams = GetFileSpecificDigestionParams(commonParams, fileSpecificParams);
 
             // must be set in this manner as CommonParameters constructor will pull from this dictionary, then clear dictionary
             fileSpecificDigestionParams.ProductsFromDissociationType()[DissociationType.Custom] =
