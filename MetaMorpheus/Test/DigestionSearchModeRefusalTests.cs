@@ -230,8 +230,8 @@ namespace Test
         /// <summary>
         /// mzLib takes Semi from the rnase's own specificity as well as from SearchModeType, so an rnase defined as semi (a
         /// user can add one in rnase_custom.tsv) gives seed oligos with a single terminus even under SearchModeType Full. Such
-        /// a task is refused like RNase T1 with SearchModeType Semi, and the message names the rnase. With Both it is left
-        /// alone, as SearchModeType Semi with Both is.
+        /// a task is refused like RNase T1 with SearchModeType Semi, and the message names the rnase. With Both it does not
+        /// ask for seeds, but is refused as SearchModeType Semi with Both is: mzLib does not digest it for nucleic acids yet.
         /// </summary>
         [Test]
         [TestCase(FragmentationTerminus.FivePrime)]
@@ -261,6 +261,9 @@ namespace Test
                 }
 
                 Assert.That(MetaMorpheusTask.AsksForSeeds(new RnaDigestionParams(semiRnase)), Is.False, "with Both it is semi-specific, not seeds");
+                Assert.That(MakeRnaTask("ClassicSearch", semiRnase).GetSeedDigestionRefusal("MyTask"),
+                    Does.Contain($"uses the semi-specific rnase {semiRnase} with FragmentationTerminus Both, and semi-specific digestion is not yet supported"),
+                    "which mzLib does not digest for nucleic acids yet");
             }
             finally
             {
@@ -374,6 +377,29 @@ namespace Test
                 RnaseDictionary.Dictionary.Remove(semiRnase);
                 File.Delete(tsv);
             }
+        }
+
+        /// <summary>
+        /// Semi with FragmentationTerminus Both asks for semi-specific oligos, which mzLib does not digest for nucleic acids
+        /// yet: it throws an ArgumentException from inside the task. That is refused before the run, with a message that
+        /// says so, for SearchModeType Semi and for an rnase that is itself semi-specific.
+        /// </summary>
+        [Test]
+        [TestCase("ClassicSearch")]
+        [TestCase("ModernSearch")]
+        [TestCase("Gptmd")]
+        [TestCase("Calibration")]
+        public static void GetSeedDigestionRefusal_ForNucleicAcidsWithSemiAndBoth_RefusesInsteadOfCrashing(string taskKind)
+        {
+            var semiBoth = new RnaDigestionParams("RNase T1", searchModeType: CleavageSpecificity.Semi, fragmentationTerminus: FragmentationTerminus.Both);
+            Assert.That(() => new RNA("AAGUACUGCCGAUUGAGGCAU").Digest(semiBoth, new List<Modification>(), new List<Modification>()).ToList(),
+                Throws.ArgumentException, "premise: mzLib does not digest Semi with Both for nucleic acids");
+
+            string refusal = MakeRnaTask(taskKind, "RNase T1", CleavageSpecificity.Semi, FragmentationTerminus.Both).GetSeedDigestionRefusal("MyTask");
+            Assert.That(refusal, Does.StartWith("Cannot proceed."));
+            Assert.That(refusal, Does.Contain("\"MyTask\""));
+            Assert.That(refusal, Does.Contain("SearchModeType Semi with FragmentationTerminus Both"));
+            Assert.That(refusal, Does.Contain("semi-specific digestion is not yet supported for nucleic acids"));
         }
 
         [Test]

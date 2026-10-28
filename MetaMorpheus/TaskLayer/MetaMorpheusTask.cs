@@ -77,7 +77,8 @@ namespace TaskLayer
         /// <c>Rnase.GetUnmodifiedOligos</c> takes Semi from SearchModeType or, failing that, from the rnase, so an rnase
         /// defined as semi (rnase_custom.tsv allows it) does the same under SearchModeType Full. Each leaves the other end
         /// to a search engine that decides it from the precursor mass. Semi with Both asks for semi-specific oligos, not
-        /// seeds; mzLib 1.0.595 does not digest it for nucleic acids yet, and this rule does not refuse it.
+        /// seeds; mzLib 1.0.595 does not digest it for nucleic acids yet, so <see cref="GetSeedDigestionRefusal"/> refuses it
+        /// separately.
         /// </remarks>
         public static bool AsksForSeeds(RnaDigestionParams digestionParams) =>
             digestionParams.Rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
@@ -94,7 +95,8 @@ namespace TaskLayer
         /// (it makes its own N and C passes). Classic and Modern search, Glyco, crosslink, GPTMD and calibration score digestion
         /// products as they are, so given seeds they finish normally and report far fewer, wrong identifications. A spectral
         /// averaging task digests nothing, so its digestion settings are never used and are not checked, as it is already
-        /// exempt from needing a protein database.
+        /// exempt from needing a protein database. Nucleic acid digestion with Semi and FragmentationTerminus Both is refused
+        /// too: mzLib does not digest it for nucleic acids yet, and throws from inside the task.
         /// <para>Each spectra file is digested with what <see cref="SetAllFileSpecificCommonParams"/> builds from its
         /// file-specific toml, and for nucleic acids that takes the rnase from the file. So when the spectra files are given,
         /// each file's digestion is checked as well, and the message names the file. A toml that cannot be read is left to the
@@ -158,7 +160,17 @@ namespace TaskLayer
                 string terminus = $"FragmentationTerminus {rnaDigestionParams.FragmentationTerminus}";
                 if (!AsksForSeeds(rnaDigestionParams))
                 {
-                    return null;
+                    // Semi with Both asks for semi-specific oligos, which mzLib's Rnase.GetUnmodifiedOligos throws on
+                    bool semi = rnaDigestionParams.SearchModeType == CleavageSpecificity.Semi || rnase.CleavageSpecificity == CleavageSpecificity.Semi;
+                    if (!semi || rnaDigestionParams.FragmentationTerminus != FragmentationTerminus.Both)
+                    {
+                        return null;
+                    }
+                    string semiSetting = rnaDigestionParams.SearchModeType == CleavageSpecificity.Semi
+                        ? $"has SearchModeType Semi with {terminus}"
+                        : $"uses the semi-specific rnase {rnase.Name} with {terminus}";
+                    return $"Cannot proceed. {which} {semiSetting}, and semi-specific digestion is not yet supported for nucleic acids. " +
+                           "Choose a fully specific rnase with SearchModeType Full.";
                 }
 
                 // Name what AsksForSeeds decided on. Rnase, not SpecificRnase: a task file saved before mzLib 1.0.592 has no
