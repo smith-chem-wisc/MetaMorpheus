@@ -7,6 +7,7 @@ using System.Text;
 using MassSpectrometry;
 using Omics.Modifications;
 using Omics;
+using Omics.BioPolymer;
 using Omics.BioPolymerGroup;
 using Omics.SpectralMatch;
 using Transcriptomics.Digestion;
@@ -434,13 +435,11 @@ namespace EngineLayer
             sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
             sb.Append("\t");
 
-            // isDecoy
-            if (IsDecoy)
-                sb.Append("D");
-            else if (IsContaminant)
-                sb.Append("C");
-            else
-                sb.Append("T");
+            // decoy / contaminant / target, with entrapment written ET or ED. Entrapment is read from the
+            // members, not IsEntrapment: mzLib's MergeWith keeps the surviving group's flags, so a real
+            // protein merged with its entrapment partner would otherwise read T here and ET in the per-file
+            // tables, which rebuild the group through the constructor.
+            sb.Append(DecoyContaminantTargetLabel.For(IsDecoy, IsContaminant, Proteins.Any(p => p.IsEntrapment)));
             sb.Append("\t");
 
             // cumulative target
