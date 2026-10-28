@@ -1,5 +1,6 @@
 using EngineLayer;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 using GuiFunctions;
 using MassSpectrometry;
 using MzLibUtil;
@@ -115,6 +116,12 @@ namespace MetaMorpheusGUI
                 SeparationTypeComboBox.Items.Add(separationType);
             }
             SeparationTypeComboBox.SelectedItem = "HPLC";
+
+            foreach (IdentificationFilterMode identificationFilter in Enum.GetValues<IdentificationFilterMode>())
+            {
+                IdentificationFilterComboBox.Items.Add(identificationFilter);
+            }
+            IdentificationFilterComboBox.SelectedItem = IdentificationFilterMode.Thresholds;
 
 
             ProductMassToleranceComboBox.Items.Add("Da");
@@ -367,6 +374,7 @@ namespace MetaMorpheusGUI
             {
                 PepQValueThresholdTextBox.Text = "0.01";
             }
+            IdentificationFilterComboBox.SelectedItem = task.CommonParameters.IdentificationFilter;
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             CkbMzId.IsChecked = task.SearchParameters.WriteMzId;
@@ -687,8 +695,7 @@ namespace MetaMorpheusGUI
                 fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams(),
                 retentionTimeRange: new DoubleRange(minRetentionTime, maxRetentionTime),
                 rtPredictorName: rtPredictorModelName,
-                // no control yet: keep what the task was loaded with, so saving from this window never resets it
-                identificationFilter: TheTask.CommonParameters.IdentificationFilter);
+                identificationFilter: (IdentificationFilterMode)IdentificationFilterComboBox.SelectedItem);
 
             if (ClassicSearchRadioButton.IsChecked.Value)
             {

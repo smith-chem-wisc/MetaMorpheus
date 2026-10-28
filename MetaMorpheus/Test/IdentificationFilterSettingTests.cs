@@ -150,6 +150,51 @@ namespace Test
         }
 
         [Test]
+        public static void PsmsWithin1PercentFdr_FollowsTheNamedFilter()
+        {
+            // 120 trypsin matches fail the q-value but pass the notch; Arg-C has no PEP and 100 confident matches.
+            var matches = TwoProteases();
+            foreach (var psm in matches.Where(m => m.BaseSequence == "PEPTIDEK").Take(120))
+            {
+                psm.SetFdrValues(1, 0, 0.5, 1, 0, 0.001, 0, 0.5);
+                psm.PsmFdrInfo.PepTrained = true; // SetFdrValues makes a new FdrInfo; trypsin's PEP was trained
+            }
+
+            Assert.That(FdrAnalysisEngine.CountWithin1PercentFdr(matches, new CommonParameters()), Is.EqualTo(30 + 100),
+                "q-value <= 0.01, as before: the 120 with a q-value of 0.5 are out");
+            Assert.That(FdrAnalysisEngine.CountWithin1PercentFdr(matches, Named(IdentificationFilterMode.QValueNotch, qValueThreshold: 0.01)), Is.EqualTo(150 + 100),
+                "the notch: the 120 are in");
+            Assert.That(FdrAnalysisEngine.CountWithin1PercentFdr(matches, Named(IdentificationFilterMode.PepQValueElseQValueNotch)), Is.EqualTo(30 + 100),
+                "trypsin on its PEP q-value (the 120 have 0.5), Arg-C on the notch");
+        }
+
+        [Test]
+        public static void ProteinGroupAtExactlyTheThreshold_IsWrittenOnlyUnderTheThresholds()
+        {
+            // AllProteinGroups.tsv and quantification share PostSearchAnalysisTask.ProteinGroupIsWritten.
+            var proteinGroup = new ProteinGroup(new HashSet<Omics.IBioPolymer> { new Protein("MEDEEK", "prot1") },
+                new HashSet<Omics.IBioPolymerWithSetMods>(), new HashSet<Omics.IBioPolymerWithSetMods>())
+            {
+                QValue = 0.01
+            };
+            var isWritten = typeof(PostSearchAnalysisTask).GetMethod("ProteinGroupIsWritten",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+
+            bool Written(CommonParameters commonParameters)
+            {
+                var task = new PostSearchAnalysisTask
+                {
+                    CommonParameters = commonParameters,
+                    Parameters = new PostSearchAnalysisParameters { SearchParameters = new SearchParameters { WriteHighQValuePsms = false } }
+                };
+                return (bool)isWritten.Invoke(task, new object[] { proteinGroup, 0.01 })!;
+            }
+
+            Assert.That(Written(new CommonParameters()), Is.True, "q-value <= 0.01, as before");
+            Assert.That(Written(Named(IdentificationFilterMode.QValueNotch, qValueThreshold: 0.01)), Is.False, "a named filter is strict");
+        }
+
+        [Test]
         public static void ModificationCounts_FollowTheNamedFilter()
         {
             // A match that fails the q-value but passes the notch: counted under QValueNotch, not under the thresholds.

@@ -74,12 +74,19 @@ namespace EngineLayer.FdrAnalysis
             Status("Running FDR analysis...");
             DoFalseDiscoveryRateAnalysis(myAnalysisResults);
             Status("Done.");
-            myAnalysisResults.PsmsWithin1PercentFdr = IdentificationRule.IsExplicit(CommonParameters)
-                ? AllPsms.Count(b => !b.IsDecoy && IdentificationRule.Passes(b, peptideLevel: false, CommonParameters.IdentificationFilter, threshold: 0.01))
-                : AllPsms.Count(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy);
+            myAnalysisResults.PsmsWithin1PercentFdr = CountWithin1PercentFdr(AllPsms, CommonParameters);
 
             return myAnalysisResults;
         }
+
+        /// <summary>
+        /// The target matches "within 1% FDR" (<see cref="FdrAnalysisResults.PsmsWithin1PercentFdr"/>): those that pass a
+        /// named identification filter at 0.01, otherwise those with q-value &lt;= 0.01, as before.
+        /// </summary>
+        internal static int CountWithin1PercentFdr(IEnumerable<SpectralMatch> psms, CommonParameters commonParameters) =>
+            IdentificationRule.IsExplicit(commonParameters)
+                ? psms.Count(b => !b.IsDecoy && IdentificationRule.Passes(b, peptideLevel: false, commonParameters.IdentificationFilter, threshold: 0.01))
+                : psms.Count(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy);
 
         private void DoFalseDiscoveryRateAnalysis(FdrAnalysisResults myAnalysisResults) => DoFalseDiscoveryRateAnalysis(AllPsms, DoPEP, FileSpecificParameters, OutputFolder, myAnalysisResults, CommonParameters, IterativePepTraining);
 
