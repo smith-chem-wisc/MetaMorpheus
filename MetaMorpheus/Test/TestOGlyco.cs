@@ -1242,7 +1242,6 @@ namespace Test
             string spectraFileDirctory = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific");
             List<string> rawFilePaths = Directory.GetFiles(spectraFileDirctory).Where(p => p.Contains("mzML")).ToList();
 
-            Directory.CreateDirectory(outputFolder);
             var glycoSearchTask = new GlycoSearchTask()
             {
                 CommonParameters = new(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD),
@@ -1263,6 +1262,7 @@ namespace Test
 
             try
             {
+                Directory.CreateDirectory(outputFolder);
                 glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, rawFilePaths, "");
 
                 var proteinTables = Directory.GetFiles(outputFolder, "*_AllProteinGroups.tsv", SearchOption.AllDirectories);

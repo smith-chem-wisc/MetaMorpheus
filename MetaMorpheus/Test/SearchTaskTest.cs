@@ -652,15 +652,9 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestIndividualPgOwnPeptides");
             string inputFolder = Path.Combine(outputFolder, "inputs");
-            Directory.CreateDirectory(inputFolder);
             string dbPath = Path.Combine(inputFolder, "ownPeptides.xml");
             string mzml1 = Path.Combine(inputFolder, "ownPeptides1.mzML");
             string mzml2 = Path.Combine(inputFolder, "ownPeptides2.mzML");
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protA, protB, protC }, dbPath);
-            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(new TestDataFile(
-                new[] { "AEDLNTK", "VQGLSASK", "YSLTPEGK", "LVNELTEFAK" }.Select(s => peptides[s]).ToList()), mzml1, false);
-            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(new TestDataFile(
-                new[] { "GFHWSEAR", "LVNELTEFAK", "DNWQSQR" }.Select(s => peptides[s]).ToList()), mzml2, false);
 
             // accession -> (unique peptides, shared peptides), as one protein table lists them
             static Dictionary<string, (HashSet<string> Unique, HashSet<string> Shared)> ReadPeptideCells(string path)
@@ -676,6 +670,13 @@ namespace Test
 
             try
             {
+                Directory.CreateDirectory(inputFolder);
+                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protA, protB, protC }, dbPath);
+                Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(new TestDataFile(
+                    new[] { "AEDLNTK", "VQGLSASK", "YSLTPEGK", "LVNELTEFAK" }.Select(s => peptides[s]).ToList()), mzml1, false);
+                Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(new TestDataFile(
+                    new[] { "GFHWSEAR", "LVNELTEFAK", "DNWQSQR" }.Select(s => peptides[s]).ToList()), mzml2, false);
+
                 searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(dbPath, false) },
                     new List<string> { mzml1, mzml2 }, "normal");
 
