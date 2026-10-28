@@ -5,202 +5,290 @@ using MzLibUtil;
 using Nett;
 using Omics.Digestion;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 using TaskLayer;
 using Transcriptomics.Digestion;
 
 namespace MetaMorpheusGUI
 {
-    /// <summary>
-    /// Interaction logic for ChangeParametersWindow.xaml
-    /// </summary>
     public partial class FileSpecificParametersWindow : Window
     {
+        private DeconHostViewModel _deconVm;
+        private bool _clearDeconRequested;
+        private readonly bool _isMultiFileSelection;
 
-        //Window that is opened if user wishes to change file specific settings (TOML) for 
-        //individual or multiple spectra files. Creates a toml file where settings can be
-        //viewed, loaded, and changed from it.
         public FileSpecificParametersWindow(ObservableCollection<RawDataForDataGrid> selectedSpectraFiles)
         {
             SelectedSpectra = selectedSpectraFiles;
+            _isMultiFileSelection = selectedSpectraFiles.Count > 1;
+
+            _deconVm = new DeconHostViewModel();
+            _deconVm.DoPrecursorDeconvolution = true;
+
             InitializeComponent();
+
+            DeconControl.DataContext = _deconVm;
+
             PopulateChoices();
         }
 
         internal ObservableCollection<RawDataForDataGrid> SelectedSpectra { get; private set; }
 
-        // write the toml settings file on clicking "save"
+        public DeconHostViewModel DeconViewModel => _deconVm;
+
+        public string? LastValidationMessage { get; private set; }
+
+        private Func<string?>? _featureFilePickerOverride;
+        public Func<string?>? FeatureFilePickerOverride
+        {
+            get => _featureFilePickerOverride;
+            set
+            {
+                _featureFilePickerOverride = value;
+                if (DeconControl != null)
+                    DeconControl.FilePickerOverride = value;
+            }
+        }
+
+        public Func<FileSpecificParameters, string>? CandidateSerializerOverride { get; set; }
+
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            var parametersToWrite = new FileSpecificParameters();
-            bool fileSpecificParameterExists = false;
-            // parse the file-specific parameters to text
+            if (ExecuteSave())
+                DialogResult = true;
+            else if (LastValidationMessage != null)
+                MessageBox.Show(LastValidationMessage, "Invalid Feature File",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
+        public bool BrowseForFeatureFile()
+        {
+            var child = DeconControl?.FromFilePrecursorControl;
+            if (child == null)
+                return false;
+
+            child.FilePickerOverride = FeatureFilePickerOverride;
+            bool succeeded = child.BrowseForFile();
+            if (!succeeded)
+                LastValidationMessage = child.ValidationMessage;
+            return succeeded;
+        }
+
+        public bool ExecuteSave()
+        {
+            LastValidationMessage = null;
+            var sharedParams = new FileSpecificParameters();
+            bool sharedParamExists = false;
+
             if (fileSpecificPrecursorMassTolEnabled.IsChecked.Value)
             {
-                fileSpecificParameterExists = true;
+                sharedParamExists = true;
                 if (TaskValidator.CheckPrecursorMassTolerance(precursorMassToleranceTextBox.Text))
                 {
                     double value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
-                    if (precursorMassToleranceComboBox.SelectedIndex == 0)
-                    {
-                        parametersToWrite.PrecursorMassTolerance = new AbsoluteTolerance(value);
-                    }
-                    else
-                    {
-                        parametersToWrite.PrecursorMassTolerance = new PpmTolerance(value);
-                    }
+                    sharedParams.PrecursorMassTolerance = precursorMassToleranceComboBox.SelectedIndex == 0
+                        ? (Tolerance)new AbsoluteTolerance(value)
+                        : new PpmTolerance(value);
                 }
                 else
-                {
-                    return;
-                }
+                    return false;
             }
             if (fileSpecificProductMassTolEnabled.IsChecked.Value)
             {
-                fileSpecificParameterExists = true;
+                sharedParamExists = true;
                 if (TaskValidator.CheckProductMassTolerance(productMassToleranceTextBox.Text))
                 {
                     double value = double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
-                    if (productMassToleranceComboBox.SelectedIndex == 0)
-                    {
-                        parametersToWrite.ProductMassTolerance = new AbsoluteTolerance(value);
-                    }
-                    else
-                    {
-                        parametersToWrite.ProductMassTolerance = new PpmTolerance(value);
-                    }
+                    sharedParams.ProductMassTolerance = productMassToleranceComboBox.SelectedIndex == 0
+                        ? (Tolerance)new AbsoluteTolerance(value)
+                        : new PpmTolerance(value);
                 }
                 else
-                {
-                    return;
-                }
+                    return false;
             }
             if (fileSpecificProteaseEnabled.IsChecked.Value)
             {
-                fileSpecificParameterExists = true;
-                parametersToWrite.DigestionAgent = (DigestionAgent)fileSpecificProtease.SelectedItem;
+                sharedParamExists = true;
+                sharedParams.DigestionAgent = (DigestionAgent)fileSpecificProtease.SelectedItem;
             }
             if (fileSpecificDissociationTypesEnabled.IsChecked.Value)
             {
-                fileSpecificParameterExists = true;
-                parametersToWrite.DissociationType = Enum.Parse<DissociationType>(fileSpecificDissociationType.SelectedItem.ToString());
+                sharedParamExists = true;
+                sharedParams.DissociationType = Enum.Parse<DissociationType>(fileSpecificDissociationType.SelectedItem.ToString());
             }
             if (fileSpecificSeparationTypesEnabled.IsChecked.Value)
             {
-                fileSpecificParameterExists = true;
-                parametersToWrite.SeparationType = (string)fileSpecificSeparationType.SelectedItem;
+                sharedParamExists = true;
+                sharedParams.SeparationType = (string)fileSpecificSeparationType.SelectedItem;
             }
             if (fileSpecificMinPeptideLengthEnabled.IsChecked.Value)
             {
-                fileSpecificParameterExists = true;
+                sharedParamExists = true;
                 if (int.TryParse(MinPeptideLengthTextBox.Text, out int i) && i > 0)
-                {
-                    parametersToWrite.MinPeptideLength = i;
-                }
+                    sharedParams.MinPeptideLength = i;
                 else
                 {
                     MessageBox.Show("The minimum peptide length must be a positive integer");
-                    return;
+                    return false;
                 }
             }
             if (fileSpecificMaxPeptideLengthEnabled.IsChecked.Value)
             {
-                fileSpecificParameterExists = true;
+                sharedParamExists = true;
                 string lengthMaxPeptide = TaskValidator.MaxValueConversion(MaxPeptideLengthTextBox.Text);
                 if (TaskValidator.CheckPeptideLength(MinPeptideLengthTextBox.Text, lengthMaxPeptide))
-                {
-                    parametersToWrite.MaxPeptideLength = int.Parse(lengthMaxPeptide);
-                }
+                    sharedParams.MaxPeptideLength = int.Parse(lengthMaxPeptide);
                 else
-                {
-                    return;
-                }
+                    return false;
             }
             if (fileSpecificMissedCleavagesEnabled.IsChecked.Value)
             {
-                fileSpecificParameterExists = true;
+                sharedParamExists = true;
                 string lengthCleavage = TaskValidator.MaxValueConversion(missedCleavagesTextBox.Text);
                 if (TaskValidator.CheckMaxMissedCleavages(lengthCleavage))
-                {
-                    parametersToWrite.MaxMissedCleavages = int.Parse(lengthCleavage);
-                }
+                    sharedParams.MaxMissedCleavages = int.Parse(lengthCleavage);
                 else
-                {
-                    return;
-                }
+                    return false;
             }
             if (fileSpecificMaxModNumEnabled.IsChecked.Value)
             {
-                fileSpecificParameterExists = true;
+                sharedParamExists = true;
                 if (TaskValidator.CheckMaxModsPerPeptide(MaxModNumTextBox.Text))
-                {
-                    parametersToWrite.MaxModsForPeptide = int.Parse(MaxModNumTextBox.Text);
-                }
+                    sharedParams.MaxModsForPeptide = int.Parse(MaxModNumTextBox.Text);
                 else
+                    return false;
+            }
+
+            if (!_isMultiFileSelection && !_clearDeconRequested && UseFileSpecificDeconCheckBox.IsChecked == true)
+            {
+                var selectedVm = _deconVm.PrecursorDeconvolutionParameters;
+                if (selectedVm.DeconvolutionType == DeconvolutionType.FromFile)
                 {
-                    return;
+                    var fromFileVm = (FromFileDeconParamsViewModel)selectedVm;
+                    if (!FromFileDeconParamsViewModel.TryValidateFilePath(fromFileVm.FilePath, out string msg))
+                    {
+                        LastValidationMessage = $"MS1 feature file validation failed:\n{msg}";
+                        return false;
+                    }
                 }
             }
 
-            // write parameters to toml files for the selected spectra files
+            // Phase 1 — build and serialize every candidate in memory; surface any error
+            var candidates = new List<(string dir, string filename, string tomlPath,
+                                       string? serializedToml, bool hasParams)>();
 
             foreach (var spectra in SelectedSpectra)
             {
-                string directoryForThisMsFile = Directory.GetParent(spectra.FilePath).ToString();
+                string dir = Directory.GetParent(spectra.FilePath)!.ToString();
                 string filename = Path.GetFileNameWithoutExtension(spectra.FileName) + ".toml";
-                string tomlToWrite = Path.Combine(directoryForThisMsFile, filename);
+                string tomlPath = Path.Combine(dir, filename);
 
-                //check if a toml file already exists
-                if (File.Exists(tomlToWrite))
+                DeconvolutionParameters? existingDecon = null;
+                if (File.Exists(tomlPath))
                 {
-                    //store the previous file-specific tomls (if any) in a folder for reproducibility
-                    AccomodateNewFileSpecificToml(directoryForThisMsFile, filename);
-                    //check that an old toml doesn't already exist. If it does, move it to another nested folder.
+                    try
+                    {
+                        var table = Toml.ReadFile(tomlPath, MetaMorpheusTask.tomlConfig);
+                        existingDecon = new FileSpecificParameters(table).PrecursorDeconvolutionParameters;
+                    }
+                    catch (Exception ex)
+                    {
+                        LastValidationMessage =
+                            $"Cannot read existing settings for '{spectra.FileName}': {ex.Message}\n" +
+                            "Fix or remove the companion TOML before saving.";
+                        return false;
+                    }
                 }
 
-                if (fileSpecificParameterExists)
-                {
-                    Toml.WriteFile(parametersToWrite, tomlToWrite, MetaMorpheusTask.tomlConfig);
-
-                    // make sure the settings are able to be parsed...
-                    var tempTomlTable = Toml.ReadFile(tomlToWrite, MetaMorpheusTask.tomlConfig);
-                    FileSpecificParameters tempParams = new FileSpecificParameters(tempTomlTable);
-                }
+                DeconvolutionParameters? deconToWrite;
+                if (_isMultiFileSelection)
+                    deconToWrite = existingDecon;
+                else if (_clearDeconRequested)
+                    deconToWrite = null;
+                else if (UseFileSpecificDeconCheckBox.IsChecked == true)
+                    deconToWrite = _deconVm.PrecursorDeconvolutionParameters.Parameters;
                 else
+                    deconToWrite = existingDecon;
+
+                var merged = sharedParams.Clone();
+                merged.PrecursorDeconvolutionParameters = deconToWrite;
+                bool hasParams = sharedParamExists || deconToWrite != null;
+
+                string? serializedToml = null;
+                if (hasParams)
                 {
-                    // user has specified that no file-specific settings should be used; delete the file-specific toml if it exists
-                    File.Delete(tomlToWrite);
+                    try
+                    {
+                        serializedToml = CandidateSerializerOverride != null
+                            ? CandidateSerializerOverride(merged)
+                            : Toml.WriteString(merged, MetaMorpheusTask.tomlConfig);
+                        var roundTripTable = Toml.ReadString<TomlTable>(serializedToml,
+                                                MetaMorpheusTask.tomlConfig);
+                        _ = new FileSpecificParameters(roundTripTable);
+                    }
+                    catch (Exception ex)
+                    {
+                        LastValidationMessage =
+                            $"Cannot serialize settings for '{spectra.FileName}': {ex.Message}";
+                        return false;
+                    }
                 }
+
+                candidates.Add((dir, filename, tomlPath, serializedToml, hasParams));
             }
 
-            // done
-            DialogResult = true;
+            // Phase 2 — all candidates valid; archive existing files then commit writes
+            foreach (var (dir, filename, tomlPath, serializedToml, hasParams) in candidates)
+            {
+                if (File.Exists(tomlPath))
+                    AccomodateNewFileSpecificToml(dir, filename);
+
+                if (hasParams)
+                    File.WriteAllText(tomlPath, serializedToml!);
+                else
+                    File.Delete(tomlPath);
+            }
+
+            return true;
         }
 
-        //recursive function that ensures no tomls are deleted when new ones are generated
+        private void ClearDeconButton_Click(object sender, RoutedEventArgs e)
+        {
+            _clearDeconRequested = true;
+            UseFileSpecificDeconCheckBox.IsChecked = false;
+            ClearDeconButton.Content = "Deconvolution override will be cleared on save";
+            ClearDeconButton.IsEnabled = false;
+        }
+
+        private void UseFileSpecificDeconCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            _clearDeconRequested = false;
+            if (!_isMultiFileSelection)
+                ClearDeconButton.IsEnabled = true;
+            ClearDeconButton.Content = "Clear file-specific deconvolution override";
+        }
+
         private void AccomodateNewFileSpecificToml(string directoryForThisMsFile, string filename)
         {
-            //make a directory to store the old files. If the directory already exists, this method does not create a new directory
             string oldFileSpecificTomlDirectory = Path.Combine(directoryForThisMsFile, "OldFileSpecificTomls");
             Directory.CreateDirectory(oldFileSpecificTomlDirectory);
             string fullFilePath = Path.Combine(oldFileSpecificTomlDirectory, filename);
-            //if an old version already exists, we need to move it
-            if(File.Exists(fullFilePath))
+            if (File.Exists(fullFilePath))
             {
                 AccomodateNewFileSpecificToml(oldFileSpecificTomlDirectory, filename);
             }
-            //move the old file into the sub-directory
-            System.IO.File.Copy(Path.Combine(directoryForThisMsFile, filename), Path.Combine(oldFileSpecificTomlDirectory, filename),true);
+            System.IO.File.Copy(Path.Combine(directoryForThisMsFile, filename),
+                Path.Combine(oldFileSpecificTomlDirectory, filename), true);
         }
 
-        // exits dialog; nothing is written
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
@@ -208,7 +296,6 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            // use default settings to populate
             var defaultParams = new CommonParameters();
             IDigestionParams digestionParams = GuiGlobalParamsViewModel.Instance.IsRnaMode
                 ? new RnaDigestionParams("RNase T1")
@@ -221,14 +308,16 @@ namespace MetaMorpheusGUI
             int tempMaxModsForPeptide = digestionParams.MaxMods;
             var tempPrecursorMassTolerance = defaultParams.PrecursorMassTolerance;
             var tempProductMassTolerance = defaultParams.ProductMassTolerance;
-            DissociationType tempDissociationType = defaultParams.DissociationType; 
+            DissociationType tempDissociationType = defaultParams.DissociationType;
             string tempSeparationType = defaultParams.SeparationType;
 
-            // do any of the selected files already have file-specific parameters specified?
             var spectraFiles = SelectedSpectra.Select(p => p.FilePath);
+            DeconvolutionParameters? loadedSingleFileDecon = null;
+
             foreach (string file in spectraFiles)
             {
-                string tomlPath = Path.Combine(Directory.GetParent(file).ToString(), Path.GetFileNameWithoutExtension(file)) + ".toml";
+                string tomlPath = Path.Combine(Directory.GetParent(file)!.ToString(),
+                    Path.GetFileNameWithoutExtension(file)) + ".toml";
 
                 if (File.Exists(tomlPath))
                 {
@@ -247,64 +336,60 @@ namespace MetaMorpheusGUI
                     }
                     if (fileSpecificParams.DigestionAgent != null)
                     {
-                        tempProtease = (fileSpecificParams.DigestionAgent);
+                        tempProtease = fileSpecificParams.DigestionAgent;
                         fileSpecificProteaseEnabled.IsChecked = true;
                     }
                     if (fileSpecificParams.DissociationType != null)
                     {
-                        tempDissociationType = (fileSpecificParams.DissociationType.Value);
+                        tempDissociationType = fileSpecificParams.DissociationType.Value;
                         fileSpecificDissociationTypesEnabled.IsChecked = true;
                     }
                     if (fileSpecificParams.SeparationType != null)
                     {
-                        tempSeparationType = (fileSpecificParams.SeparationType);
+                        tempSeparationType = fileSpecificParams.SeparationType;
                         fileSpecificSeparationTypesEnabled.IsChecked = true;
                     }
                     if (fileSpecificParams.MinPeptideLength != null)
                     {
-                        tempMinPeptideLength = (fileSpecificParams.MinPeptideLength.Value);
+                        tempMinPeptideLength = fileSpecificParams.MinPeptideLength.Value;
                         fileSpecificMinPeptideLengthEnabled.IsChecked = true;
                     }
                     if (fileSpecificParams.MaxPeptideLength != null)
                     {
-                        tempMaxPeptideLength = (fileSpecificParams.MaxPeptideLength.Value);
+                        tempMaxPeptideLength = fileSpecificParams.MaxPeptideLength.Value;
                         fileSpecificMaxPeptideLengthEnabled.IsChecked = true;
                     }
                     if (fileSpecificParams.MaxMissedCleavages != null)
                     {
-                        tempMaxMissedCleavages = (fileSpecificParams.MaxMissedCleavages.Value);
+                        tempMaxMissedCleavages = fileSpecificParams.MaxMissedCleavages.Value;
                         fileSpecificMissedCleavagesEnabled.IsChecked = true;
                     }
                     if (fileSpecificParams.MaxModsForPeptide != null)
                     {
-                        tempMaxModsForPeptide = (fileSpecificParams.MaxMissedCleavages.Value);
+                        tempMaxModsForPeptide = fileSpecificParams.MaxMissedCleavages.Value;
                         fileSpecificMaxModNumEnabled.IsChecked = true;
                     }
+
+                    if (!_isMultiFileSelection && fileSpecificParams.PrecursorDeconvolutionParameters != null)
+                        loadedSingleFileDecon = fileSpecificParams.PrecursorDeconvolutionParameters;
                 }
             }
 
-            // populate the GUI
             if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
             {
                 foreach (Rnase rnase in RnaseDictionary.Dictionary.Values)
-                {
                     fileSpecificProtease.Items.Add(rnase);
-                }
             }
             else
             {
                 foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
-                {
                     fileSpecificProtease.Items.Add(protease);
-                }
             }
 
             fileSpecificProtease.SelectedItem = tempProtease;
 
             foreach (DissociationType dissociationType in Enum.GetValues(typeof(DissociationType)))
-            {
                 fileSpecificDissociationType.Items.Add(dissociationType);
-            }
 
             fileSpecificDissociationType.SelectedItem = DissociationType.HCD;
 
@@ -325,27 +410,52 @@ namespace MetaMorpheusGUI
             MinPeptideLengthTextBox.Text = tempMinPeptideLength.ToString();
 
             if (int.MaxValue != tempMaxPeptideLength)
-            {
                 MaxPeptideLengthTextBox.Text = tempMaxPeptideLength.ToString();
-            }
 
             MaxModNumTextBox.Text = tempMaxModsForPeptide.ToString();
             if (int.MaxValue != tempMaxMissedCleavages)
-            {
                 missedCleavagesTextBox.Text = tempMaxMissedCleavages.ToString();
+
+            if (_isMultiFileSelection)
+            {
+                _deconVm.EnableFromFilePrecursorDeconvolution();
+                UseFileSpecificDeconCheckBox.IsEnabled = false;
+                ClearDeconButton.IsEnabled = false;
+                MultiFileDeconNote.Visibility = Visibility.Visible;
+            }
+            else if (loadedSingleFileDecon != null)
+            {
+                ApplyExistingDeconToVm(loadedSingleFileDecon);
+                UseFileSpecificDeconCheckBox.IsChecked = true;
+                ClearDeconButton.IsEnabled = true;
+            }
+            else
+            {
+                _deconVm.EnableFromFilePrecursorDeconvolution();
+            }
+        }
+
+        private void ApplyExistingDeconToVm(DeconvolutionParameters existingDecon)
+        {
+            if (existingDecon is FromFileDeconvolutionParameters fromFileParams)
+            {
+                _deconVm.EnableFromFilePrecursorDeconvolution(fromFileParams);
+            }
+            else
+            {
+                _deconVm = new DeconHostViewModel(initialPrecursorParameters: existingDecon);
+                _deconVm.DoPrecursorDeconvolution = true;
+                _deconVm.EnableFromFilePrecursorDeconvolution();
+                DeconControl.DataContext = _deconVm;
             }
         }
 
         private void KeyPressed(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Return)
-            {
                 Save_Click(sender, e);
-            }
             else if (e.Key == Key.Escape)
-            {
                 Cancel_Click(sender, e);
-            }
         }
     }
 }

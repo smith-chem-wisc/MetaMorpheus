@@ -167,6 +167,24 @@ namespace EngineLayer
         }
 
         /// <summary>
+        /// Writes the reporter ion intensities into the IsobaricMassTagReporterIonIntensities property, reading them from
+        /// the scans as the spectra file stores them. The spectra this scan and its child scans carry may have been trimmed
+        /// at load or binned for a LowCID search since, and either can remove a reporter ion. The scan read is the same one
+        /// the overload above reads: the most intense child scan when there is one, otherwise this scan.
+        /// </summary>
+        /// <param name="storedScanFor">Each loaded scan, by reference, paired with the same scan as the file stores it.
+        /// It is keyed by the scan object, not the scan number, because an MGF can repeat a SCANS= value. A scan with no
+        /// pair is read from its loaded spectrum, as the overload above reads it.</param>
+        public void SetIsobaricMassTagReporterIonIntensities(IsobaricMassTag massTag, IReadOnlyDictionary<MsDataScan, MsDataScan> storedScanFor)
+        {
+            MsDataScan loaded = UseChildScansForIsobaricQuant(out var mostIntenseChildScan)
+                ? mostIntenseChildScan.TheScan
+                : TheScan;
+            MsDataScan source = storedScanFor.TryGetValue(loaded, out var stored) ? stored : loaded;
+            IsobaricMassTagReporterIonIntensities = massTag.GetReporterIonIntensities(source.MassSpectrum);
+        }
+
+        /// <summary>
         /// Helper method to determine if child scans contain isobaric mass tag (e.g., TMT) reporter ions
         /// In most cases, if MS3 scans exist, there will only be one MS3 scan per MS2 scan, and the ChildScans list will contain that one MS3 scan
         /// If there are methods that generate multiple child scans, then this method will return the most intense child scan

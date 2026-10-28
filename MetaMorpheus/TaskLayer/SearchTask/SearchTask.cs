@@ -168,12 +168,12 @@ namespace TaskLayer
             WarnAboutSdrfGaps(currentRawFileList);
 
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
-            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
+            var fileSpecificCommonParams = fileSettingsList.Select((b, i) => SetAllFileSpecificCommonParams(CommonParameters, b, currentRawFileList[i]));
 
             // start loading first spectra file in the background
             string fileToLoad = currentRawFileList[0];
             var instrumentModelsByFile = new Dictionary<string, CvParam>(StringComparer.OrdinalIgnoreCase);
-            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(fileToLoad, SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
+            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(fileToLoad, SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0], fileToLoad)));
             nextFileLoadingTask.Start();
 
             if (SearchParameters.DoLabelFreeQuantification)
@@ -233,6 +233,8 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // start loading proteins in the background
+            // one view of each database for every index key this task builds; see SnapshotDatabases
+            List<FileInfo> databasesAsLoaded = IndexingEngine.SnapshotDatabases(dbFilenameList);
             var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, SearchParameters.DecoyType, SearchParameters.SearchTarget, localizeableModificationTypes, SearchParameters.TCAmbiguity, SearchParameters.WriteTargetDecoyFasta, OutputFolder);
             var proteinLoadingTask = dbLoader.RunAsync();
             List<IBioPolymer> bioPolymerList = null!;
@@ -293,7 +295,7 @@ namespace TaskLayer
                 // mark the file as in-progress
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
-                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex], origDataFile);
 
                 // The theory side is governed by SearchParameters.MassDiffAcceptorType, while the observed precursor
                 // mass comes from PrecursorMassMatchMode. Keep them aligned so a most-abundant acceptor actually
@@ -338,7 +340,7 @@ namespace TaskLayer
                 if (origDataFile != currentRawFileList.Last())
                 {
                     int nextFileIndex = spectraFileIndex + 1;
-                    nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(currentRawFileList[nextFileIndex], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[nextFileIndex])));
+                    nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(currentRawFileList[nextFileIndex], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[nextFileIndex], currentRawFileList[nextFileIndex])));
                     nextFileLoadingTask.Start();
                 }
 
@@ -378,9 +380,14 @@ namespace TaskLayer
                         throw new MetaMorpheusException("Could not find isobaric mass tag with the name " + SearchParameters.MultiplexModId);
                     }
 
+                    // Reporter ions come from the scans as the file stores them, read again here. The loaded copy is
+                    // trimmed (MS2 when TrimMsMsPeaks is on, MS3 always) and a LowCID search bins its MS2 spectra in
+                    // place; either can remove a reporter ion, which would then be quantified as 0.
+                    var storedScanFor = MyFileManager.PairWithStoredScans(myMsDataFile, MsDataFileReader.GetDataFile(origDataFile)
+                        .LoadAllStaticData(null, combinedParams.MaxThreadsToUsePerFile));
                     foreach (var scan in arrayOfMs2ScansSortedByMass)
                     {
-                        scan.SetIsobaricMassTagReporterIonIntensities(massTag);
+                        scan.SetIsobaricMassTagReporterIonIntensities(massTag, storedScanFor);
                     }
                 }
 
@@ -400,7 +407,7 @@ namespace TaskLayer
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
                             SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, indexParams, FileSpecificParameters,
-                            SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), SearchParameters.TCAmbiguity, new List<string> { taskId });
+                            SearchParameters.MaxFragmentSize, false, databasesAsLoaded, SearchParameters.TCAmbiguity, new List<string> { taskId });
                         FragmentIndex fragmentIndex = null;
                         List<int>[] precursorIndex = null;
 
@@ -495,7 +502,7 @@ namespace TaskLayer
                             Status("Getting fragment dictionary...", new List<string> { taskId });
                             var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
                                 SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, indexParams, FileSpecificParameters,
-                                SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), SearchParameters.TCAmbiguity, new List<string> { taskId });
+                                SearchParameters.MaxFragmentSize, true, databasesAsLoaded, SearchParameters.TCAmbiguity, new List<string> { taskId });
                             lock (indexLock)
                             {
                                 GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
@@ -669,11 +676,27 @@ namespace TaskLayer
             // early (#2817's isobaric one did) would otherwise drop it for every TMT search.
             WarnAboutProteomeXchangeAccession();
 
-            // This check only warns, so it must never be what stops a search: a design another
+            // These checks only warn, so they must never be what stops a search: a design another
             // program holds open (Excel locks what it opens) is reported, not thrown.
-            string designPath = Path.Combine(
-                Path.GetDirectoryName(currentRawFileList.First()) ?? string.Empty,
-                GlobalVariables.ExperimentalDesignFileName);
+            string designDirectory = Path.GetDirectoryName(currentRawFileList.First()) ?? string.Empty;
+
+            // An isobaric search's samples live in TmtDesign.txt, one per channel, and the SDRF is
+            // written one row per channel from it. ExperimentalDesign.tsv is not consulted, so its
+            // absence is not a gap worth naming. No early return: a check added below this branch
+            // has to run for isobaric searches too (#2817 review: one did not).
+            if (SearchParameters.DoMultiplexQuantification)
+                WarnAboutIsobaricSdrfGaps(designDirectory, currentRawFileList);
+            else
+                WarnAboutLabelFreeSdrfGaps(designDirectory, currentRawFileList);
+        }
+
+        /// <summary>
+        /// The ExperimentalDesign.tsv and SILAC half of <see cref="WarnAboutSdrfGaps"/>, for every search
+        /// that is not isobaric.
+        /// </summary>
+        private void WarnAboutLabelFreeSdrfGaps(string designDirectory, List<string> currentRawFileList)
+        {
+            string designPath = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
 
             if (!File.Exists(designPath))
             {
@@ -700,18 +723,78 @@ namespace TaskLayer
                 }
             }
 
-            // Labelled runs do not yet express comment[label]: SDRF wants one row per sample per
-            // channel. SILAC has no channel-to-sample mapping at all; isobaric runs have one in
-            // TmtDesign.txt, but the SDRF writer does not read it yet. Guessing would invent an
+            // SILAC cannot express comment[label]: SDRF wants one row per sample per channel, and
+            // MetaMorpheus has no channel-to-sample mapping for SILAC. Guessing would invent an
             // experimental design.
             // Turnover labels are copied into SilacLabels only further down RunSpecific, after this check.
-            if (SearchParameters.DoMultiplexQuantification
-                || SearchParameters.SilacLabels?.Any() == true
+            if (SearchParameters.SilacLabels?.Any() == true
                 || SearchParameters.StartTurnoverLabel is not null
                 || SearchParameters.EndTurnoverLabel is not null)
-                Warn("SDRF output on a labelled search: comment[label] is not filled in yet, because " +
-                     "the SDRF is written one row per file, not one row per channel. Every other column " +
+                Warn("SDRF output on a SILAC search: comment[label] is not filled in, because " +
+                     "MetaMorpheus has no map of which sample carries which label. Every other column " +
                      "will be written.");
+        }
+
+        /// <summary>
+        /// The isobaric half of <see cref="WarnAboutSdrfGaps"/>. Without a usable TmtDesign.txt the
+        /// SDRF falls back to one row per file with no channel or sample, which is worth knowing
+        /// before a long TMT search rather than after it.
+        /// </summary>
+        private void WarnAboutIsobaricSdrfGaps(string designDirectory, List<string> currentRawFileList)
+        {
+            string tmtDesignPath = Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName);
+
+            if (!File.Exists(tmtDesignPath))
+            {
+                Warn("SDRF output is on for an isobaric search, but there is no " +
+                     GlobalVariables.TmtExperimentalDesignFileName + " beside the spectra files (" + tmtDesignPath +
+                     "). The SDRF will describe each file once, without its channels or samples.");
+                return;
+            }
+
+            var files = TmtExperimentalDesign.Read(tmtDesignPath, currentRawFileList, out var designErrors);
+            if (designErrors.Any())
+            {
+                Warn("SDRF output is on, but " + GlobalVariables.TmtExperimentalDesignFileName +
+                     " cannot be used as it stands, so the SDRF will describe each file once, without its " +
+                     "channels or samples: " + string.Join("; ", designErrors));
+                return;
+            }
+
+            IsobaricMassTagType? tagType = IsobaricMassTag.TryGetTagType(SearchParameters.MultiplexModId, out var type)
+                ? type
+                : null;
+            if (tagType is null)
+            {
+                Warn("SDRF output is on, but the multiplex label '" + SearchParameters.MultiplexModId + "' is not " +
+                     "an isobaric tag MetaMorpheus recognises, so the SDRF will describe each file once, without " +
+                     "its channels or samples.");
+                return;
+            }
+
+            // The gate the SDRF writer applies file by file: no PRIDE channel terms (DiLeu), a plex with no
+            // annotated channels, or a channel off the searched plex.
+            var reasons = files
+                .Select(f => PostSearchAnalysisTask.ChannelRowsUnusableReason(f, tagType.Value))
+                .Where(r => r is not null)
+                .Distinct()
+                .ToList();
+            if (reasons.Any())
+                Warn("SDRF output is on, but the SDRF will describe these files once, without their channels or " +
+                     "samples: " + string.Join("; ", reasons) + ".");
+
+            var usableFiles = files
+                .Where(f => PostSearchAnalysisTask.ChannelRowsUnusableReason(f, tagType.Value) is null)
+                .ToList();
+            var reusedSampleNames = PostSearchAnalysisTask.SampleNamesReusedForDifferentSamples(usableFiles);
+            if (reusedSampleNames.Any())
+                Warn("SDRF output is on. " + PostSearchAnalysisTask.ReusedSampleNamesWarning(reusedSampleNames,
+                    PostSearchAnalysisTask.SampleNamesRepeatedWithinAPlex(usableFiles)));
+
+            PostSearchAnalysisTask.IsobaricSourceNames(usableFiles,
+                files.Except(usableFiles).Select(f => f.FullFilePathWithExtension).ToList(), out var numbered);
+            if (numbered.Any())
+                Warn("SDRF output is on. " + PostSearchAnalysisTask.NumberedSourceNamesWarning(numbered));
         }
 
         /// <summary>
