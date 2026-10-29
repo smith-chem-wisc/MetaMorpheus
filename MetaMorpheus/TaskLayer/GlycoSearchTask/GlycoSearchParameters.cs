@@ -60,6 +60,27 @@ namespace TaskLayer
         public List<(string, string)> SelectedGlycans { get; set; }
         public GlycoSearchType GlycoSearchType { get; set; }
         public bool OxoniumIonFilt { get; set; }
+
+        /// <summary>
+        /// With <see cref="OxoniumIonFilt"/> on, a custom-monosaccharide diagnostic ion (MonosaccharidesCustom.tsv) counts as
+        /// observed only above this fraction of the HexNAc 138.055 ion. Within [0, 1]; default 0.02 (2%). The built-in NeuAc
+        /// and HexNAc(1)Hex(1) rules always use 0.02. TOMLs written before this existed omit it and get the default.
+        /// </summary>
+        public double CustomOxoniumRelativeIntensityThreshold
+        {
+            get => _customOxoniumRelativeIntensityThreshold;
+            set
+            {
+                if (!GlycoPeptides.IsValidCustomOxoniumRelativeIntensityThreshold(value))
+                {
+                    throw new EngineLayer.MetaMorpheusException(
+                        $"CustomOxoniumRelativeIntensityThreshold must be between 0 and 1 (a fraction of the 138.055 ion, e.g. 0.02 for 2%), but was {value}.");
+                }
+                _customOxoniumRelativeIntensityThreshold = value;
+            }
+        }
+        private double _customOxoniumRelativeIntensityThreshold = GlycoPeptides.DefaultCustomOxoniumRelativeIntensityThreshold;
+
         public DecoyType DecoyType { get; set; }
         public int GlycoSearchTopNum { get; set; }
         public int MaximumOGlycanAllowed { get; set; }
