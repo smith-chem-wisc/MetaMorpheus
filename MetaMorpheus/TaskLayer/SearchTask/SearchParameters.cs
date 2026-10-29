@@ -48,7 +48,7 @@ namespace TaskLayer
             WriteHighQValuePsms = true;
             WriteDecoys = true;
             WriteContaminants = true;
-            WriteIndividualFiles = true;
+            WriteIndividualFiles = false;
             LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific };
             TCAmbiguity = TargetContaminantAmbiguity.RemoveContaminant;
         }
@@ -107,6 +107,14 @@ namespace TaskLayer
         public bool WriteHighQValuePsms { get; set; }
         public bool WriteDecoys { get; set; }
         public bool WriteContaminants { get; set; }
+        /// <summary>
+        /// On a search of more than one spectra file, write a PSM, peptide, protein-group and quantified-peak
+        /// table for each file to "Individual File Results", and each file's counts to the results summary
+        /// (results.txt, allResults.txt). The per-file PSM and peptide tables re-run FDR on that file's
+        /// matches alone. Off by default; a task TOML that sets it to true still writes them. Per-file .mzID
+        /// and .pep.XML are governed by <see cref="WriteMzId"/> and <see cref="WritePepXml"/>, not by this
+        /// setting.
+        /// </summary>
         public bool WriteIndividualFiles { get; set; }
         public bool WriteSpectralLibrary { get; set; }
         /// <summary>

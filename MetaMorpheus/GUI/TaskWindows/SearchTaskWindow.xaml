@@ -699,7 +699,16 @@
                                                  ConverterParameter="Write PSMs &amp; peptides with q-value above threshold"/>
                                     </CheckBox.Content>
                                 </CheckBox>
-                                <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />
+                                <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <CheckBox.ToolTip>
+                                        <ToolTip>
+                                            <ToolTip.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                         ConverterParameter="When more than one spectra file is searched, also write PSM, peptide, protein group and quantified peak tables for each file to 'Individual File Results', with PSM and peptide FDR recalculated for that file alone. Off by default. Per-file .mzID files are written whenever Write .mzID is checked."/>
+                                            </ToolTip.Content>
+                                        </ToolTip>
+                                    </CheckBox.ToolTip>
+                                </CheckBox>
                                 <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" />
                                 <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update spectral library" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}" />
                                 <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress individual file results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
