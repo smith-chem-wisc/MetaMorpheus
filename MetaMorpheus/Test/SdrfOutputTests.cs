@@ -1288,10 +1288,11 @@ namespace Test
         /// The rows BuildSdrfRows gives for a TMT11 search of <paramref name="fileNames"/>, with a TmtDesign.txt
         /// of <paramref name="designRows"/> (given the folder) beside them, and the warnings it raised. No
         /// search is run and the spectra files need not exist: only the design is read. With
-        /// <paramref name="inputSdrf"/>, its rows are the search's input SDRF.
+        /// <paramref name="inputSdrf"/>, its rows are the search's input SDRF. <paramref name="multiplexModId"/> is the kit.
         /// </summary>
         private static List<SdrfRowInput> IsobaricSdrfRows(string testName, string[] fileNames,
-            Func<string, IEnumerable<string>> designRows, out List<string> warnings, IEnumerable<string[]> inputSdrf = null)
+            Func<string, IEnumerable<string>> designRows, out List<string> warnings, IEnumerable<string[]> inputSdrf = null,
+            string multiplexModId = "TMT11")
         {
             string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "SdrfOutput_" + testName);
             if (Directory.Exists(folder)) Directory.Delete(folder, true);
@@ -1305,7 +1306,7 @@ namespace Test
                 Parameters = new PostSearchAnalysisParameters
                 {
                     CurrentRawFileList = fileNames.Select(n => Path.Combine(folder, n)).ToList(),
-                    SearchParameters = new SearchParameters { DoMultiplexQuantification = true, MultiplexModId = "TMT11" }
+                    SearchParameters = new SearchParameters { DoMultiplexQuantification = true, MultiplexModId = multiplexModId }
                 }
             };
 
@@ -2012,6 +2013,131 @@ namespace Test
             Assert.That(numbered, Is.False, "No made-up name is written, so none is numbered: " + allWarnings);
             Assert.That(warnings.Any(w => w.Contains("input SDRF")), Is.False,
                 "The input describes every channel, so it gives no warning of its own: " + allWarnings);
+        }
+
+        /// <summary>A TmtDesign.txt row per channel for the spectra file, one study sample each, all usable.</summary>
+        private static string[] TmtDesignOf(string spectra, string[] channels, string sampleType = "study sample") =>
+            channels.Select((c, i) => $"{spectra}\tPlex1\tS{i + 1}\t{c}\tCtrl\t{i + 1}\t1\t1\t{sampleType}").ToArray();
+
+        /// <summary>
+        /// A channel's input row is found by mzLib's one channel/label rule (SdrfIsobaricLabels.TryGetChannel, sdrf D51),
+        /// not by comparing the label as written bare (QuantProject 067 R2). An accessioned cell, which 6 of the corpus's
+        /// 86 isobaric SDRFs write, and TMT10's last channel written TMT131N, as 2 of its 25 TMT10 SDRFs write it, each
+        /// find their row. The written label is still the search's own.
+        /// </summary>
+        [TestCase("accessioned126", "NT=TMT126;AC=PRIDE:0000516", "TMT131N")]
+        [TestCase("accessioned131", "tmt126", "NT=TMT131;AC=PRIDE:0000529")]
+        public static void AChannelsInputRowIsFoundWhicheverWayItsLabelIsWritten(string caseName, string label126,
+            string label131)
+        {
+            var rows = IsobaricSdrfRows(nameof(AChannelsInputRowIsFoundWhicheverWayItsLabelIsWritten) + caseName,
+                new[] { "p1.mzML" },
+                folder => new[]
+                {
+                    TmtDesignRow(folder, "p1.mzML", "Plex1", "S1", "126", "Ctrl", 1, 1),
+                    TmtDesignRow(folder, "p1.mzML", "Plex1", "S2", "131N", "Drug", 2, 1)
+                },
+                out _, TmtInputSdrf(("p1.raw", label126, "donor 1"), ("p1.raw", label131, "donor 2")), "TMT10");
+
+            Assert.That(rows.Select(r => (r.Sample.Label?.Name, r.Sample.SourceName)),
+                Is.EquivalentTo(new[] { ("TMT126", "donor 1"), ("TMT131", "donor 2") }));
+        }
+
+        /// <summary>
+        /// A row whose label names no channel of the searched kit is named in the refusal, since it, not a missing row,
+        /// is why the channel has none (QuantProject 067 R2): here a TMTpro label in a TMT10 search.
+        /// </summary>
+        [Test]
+        public static void AChannelWhoseRowIsLabelledOutsideTheKitIsRefusedNamingThatLabel()
+        {
+            var refusal = Assert.Throws<InvalidDataException>(() => IsobaricSdrfRows(
+                nameof(AChannelWhoseRowIsLabelledOutsideTheKitIsRefusedNamingThatLabel), new[] { "p1.mzML" },
+                folder => new[]
+                {
+                    TmtDesignRow(folder, "p1.mzML", "Plex1", "S1", "126", "Ctrl", 1, 1),
+                    TmtDesignRow(folder, "p1.mzML", "Plex1", "S2", "131N", "Drug", 2, 1)
+                },
+                out _, TmtInputSdrf(("p1.raw", "TMT126", "donor 1"), ("p1.raw", "TMT134N", "donor 2")), "TMT10"));
+
+            Assert.That(refusal!.Message, Does.Contain("p1.mzML channel TMT131 has no row")
+                .And.Contain("'TMT134N'").And.Contain("TMT10"));
+        }
+
+        /// <summary>
+        /// Before a TMT search whose TmtDesign.txt cannot give channel rows (QuantProject 067 R1): the SDRF can then
+        /// describe the file only once, so an input written a row per channel is refused at write time. With such an
+        /// input, a warning names the file and its rows and says no SDRF will be written, and none promises that the
+        /// SDRF will describe the file once. With one input row for the file the SDRF is written, and nothing says not.
+        /// </summary>
+        [TestCase("unusable design", true)]
+        [TestCase("unusable design", false)]
+        [TestCase("unknown tag", true)]
+        [TestCase("placeholder", true)]
+        public static void WithoutChannelRowsAnInputWithARowPerChannelIsNamedBeforeTheRun(string why, bool rowPerChannel)
+        {
+            var channels = new[] { "126", "127N" };
+            var warnings = WarningsBeforeAnIsobaricSearch(
+                nameof(WithoutChannelRowsAnInputWithARowPerChannelIsNamedBeforeTheRun) + why.Replace(" ", "") + rowPerChannel,
+                why == "unknown tag" ? "NotAnIsobaricTag" : "TMT11",
+                spectra => why == "placeholder"
+                    ? new[] { spectra + "\tPlex1" + new string('\t', 7) }
+                    : TmtDesignOf(spectra, channels, why == "unusable design" ? "not a sample type" : "study sample"),
+                TmtInputSdrf((rowPerChannel ? channels : channels.Take(1))
+                    .Select((c, i) => ("PrunedDbSpectra.raw", "TMT" + c, "donor " + (i + 1))).ToArray()));
+
+            string allWarnings = string.Join(" | ", warnings);
+            bool refusalNamed = warnings.Any(w => w.Contains("no " + SdrfFileName)
+                && w.Contains("PrunedDbSpectra.mzml has 2 rows in it", StringComparison.OrdinalIgnoreCase));
+            Assert.That(refusalNamed, Is.EqualTo(rowPerChannel), allWarnings);
+            Assert.That(warnings.Any(w => w.Contains("SDRF will describe")), Is.False,
+                "With an input SDRF the file is described by its input row, which may be refused: " + allWarnings);
+        }
+
+        /// <summary>
+        /// Before the run only the input rows the SDRF copies are checked for blank sample facts (QuantProject 067 R3). A
+        /// row for a channel TmtDesign.txt does not annotate is never written (QP-S6), so its blank is not named; a blank
+        /// in a row that is copied still is.
+        /// </summary>
+        [TestCase(false)]
+        [TestCase(true)]
+        public static void OnlyTheInputRowsTheSdrfCopiesAreCheckedForBlanksBeforeTheRun(bool blankInACopiedRow)
+        {
+            var input = TmtInputSdrf(("PrunedDbSpectra.raw", "TMT126", "donor 1"),
+                ("PrunedDbSpectra.raw", "TMT127N", "donor 2"), ("PrunedDbSpectra.raw", "TMT128N", "donor 3"));
+            // Row 2 is 127N's, which the design annotates; row 3 is 128N's, which it does not.
+            input[blankInACopiedRow ? 2 : 3][Array.IndexOf(input[0], "characteristics[individual]")] = "";
+
+            var warnings = WarningsBeforeAnIsobaricSearch(
+                nameof(OnlyTheInputRowsTheSdrfCopiesAreCheckedForBlanksBeforeTheRun) + blankInACopiedRow, "TMT11",
+                spectra => TmtDesignOf(spectra, new[] { "126", "127N" }), input);
+
+            string allWarnings = string.Join(" | ", warnings);
+            Assert.That(warnings.Any(w => w.Contains("blank")), Is.EqualTo(blankInACopiedRow), allWarnings);
+            if (blankInACopiedRow)
+                Assert.That(warnings.Single(w => w.Contains("blank")), Does.Contain("donor 2"));
+        }
+
+        /// <summary>
+        /// Before the run, the input rows the writer would refuse are named (G51), not only the files with no row: a
+        /// channel the input has no row for, and a label-free file with two.
+        /// </summary>
+        [Test]
+        public static void AChannelWithoutAnInputRowAndAFileWithTwoAreNamedBeforeTheRun()
+        {
+            var tmt = WarningsBeforeAnIsobaricSearch(nameof(AChannelWithoutAnInputRowAndAFileWithTwoAreNamedBeforeTheRun),
+                "TMT11", spectra => TmtDesignOf(spectra, new[] { "126", "127N" }),
+                TmtInputSdrf(("PrunedDbSpectra.raw", "TMT126", "donor 1")));
+            Assert.That(tmt.Any(w => w.Contains("no " + SdrfFileName) && w.Contains("channel TMT127N has no row")), Is.True,
+                string.Join(" | ", tmt));
+
+            var input = LabelFreeInputSdrf();
+            var second = (string[])input[1].Clone();
+            second[0] = "donor A again";
+            input.Add(second);
+            var labelFree = WarningsBeforeASearchWithAnInputSdrf(
+                nameof(AChannelWithoutAnInputRowAndAFileWithTwoAreNamedBeforeTheRun) + "LabelFree", input);
+            Assert.That(labelFree.Any(w => w.Contains("no " + SdrfFileName) && w.Contains("a.mzml has 2 rows in it")),
+                Is.True, string.Join(" | ", labelFree));
         }
 
         /// <summary>A pipeline sets the input SDRF in the task file (B1, B6.8), so it survives a TOML round trip.</summary>

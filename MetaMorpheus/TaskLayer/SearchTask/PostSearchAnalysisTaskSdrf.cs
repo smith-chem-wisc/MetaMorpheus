@@ -173,8 +173,9 @@ namespace TaskLayer
                         {
                             if (inputSdrf is null)
                                 yield return row;
-                            else if (CopyOfTheChannelsRow(inputSdrf, Path.GetFileName(rawFilePath), row.Sample.Label, refused) is { } channelCopy)
-                                yield return row with { Sample = CopiedSample(channelCopy, row.Sample.Label) };
+                            else if (InputRowOfChannel(inputSdrf, Path.GetFileName(rawFilePath), tagType.Value,
+                                         ChannelOf(tagType.Value, row.Sample.Label?.Name), refused) is { } channelRow)
+                                yield return row with { Sample = CopiedSample(inputSdrf, channelRow, row.Sample.Label) };
                         }
                         continue;
                     }
@@ -188,8 +189,8 @@ namespace TaskLayer
 
                 if (inputSdrf is not null)
                 {
-                    if (CopyOfTheFilesRow(inputSdrf, Path.GetFileName(rawFilePath), refused) is { } fileCopy)
-                        yield return new SdrfRowInput(CopiedSample(fileCopy, ResolveLabel(Parameters.SearchParameters)), assay);
+                    if (InputRowOfFile(inputSdrf, Path.GetFileName(rawFilePath), refused) is { } fileRow)
+                        yield return new SdrfRowInput(CopiedSample(inputSdrf, fileRow, ResolveLabel(Parameters.SearchParameters)), assay);
                     continue;
                 }
 
@@ -264,39 +265,82 @@ namespace TaskLayer
                 .ToList();
 
         /// <summary>
-        /// The copy of the one input row of a file the SDRF describes once (label-free, or isobaric without usable
-        /// channel rows), or null with the reason added to <paramref name="refused"/>.
+        /// The input rows this search copies: one per file it describes once, and one per annotated channel of each file
+        /// in <paramref name="channelFiles"/> (keyed by full path, as BuildSdrfRows keys them), with every reason it cannot
+        /// copy one added to <paramref name="refused"/> as BuildSdrfRows adds it. Shared with SearchTask's pre-run warning,
+        /// so a search is told before it runs what the writer will refuse, and only the rows it will copy are checked for
+        /// blank sample facts (QuantProject 067 R1, R3).
         /// </summary>
-        private static SdrfSampleCopy CopyOfTheFilesRow(SdrfSearchScoping inputSdrf, string fileName, List<string> refused)
+        internal static List<SdrfRow> InputRowsToCopy(SdrfSearchScoping inputSdrf, IEnumerable<string> searchedFiles,
+            IReadOnlyDictionary<string, TmtFileInfo> channelFiles, IsobaricMassTagType? tagType, List<string> refused)
+        {
+            var rows = new List<SdrfRow>();
+            foreach (string path in searchedFiles)
+            {
+                string fileName = Path.GetFileName(path);
+                if (tagType is not null && channelFiles.TryGetValue(Path.GetFullPath(path), out var tmtFile))
+                    rows.AddRange(tmtFile.Annotations
+                        .Select(a => InputRowOfChannel(inputSdrf, fileName, tagType.Value, a.Tag, refused))
+                        .Where(r => r is not null));
+                else if (InputRowOfFile(inputSdrf, fileName, refused) is { } row)
+                    rows.Add(row);
+            }
+            return rows;
+        }
+
+        /// <summary>
+        /// The one input row of a file the SDRF describes once (label-free, or isobaric without usable channel rows), or
+        /// null with the reason added to <paramref name="refused"/>.
+        /// </summary>
+        private static SdrfRow InputRowOfFile(SdrfSearchScoping inputSdrf, string fileName, List<string> refused)
         {
             var rows = InputRowsOf(inputSdrf, fileName);
             if (rows.Count == 1)
-                return SdrfSampleCopy.FromRow(inputSdrf.Document, rows[0]);
+                return rows[0];
             if (!AlreadyRefused(inputSdrf, fileName, rows))
                 refused.Add($"{fileName} has {rows.Count} rows in it, but this search describes the file as one sample");
             return null;
         }
 
         /// <summary>
-        /// The copy of the input row for one channel of a file: the file's row whose comment[label] is the channel's
-        /// label, compared trimmed and case-insensitively (QuantProject 037 B2.4), or null with the reason added to
-        /// <paramref name="refused"/>. The label is compared as written bare, so an accessioned cell
-        /// (<c>NT=TMT126;AC=PRIDE:0000516</c>) does not match until mzLib carries one channel/label rule for readers
-        /// and writers (sdrf D51); the refusal names the channel.
+        /// The input row for <paramref name="channel"/> (the kit's own spelling, as TmtDesign.txt writes it) of a file:
+        /// the file's row whose comment[label] names that channel by mzLib's one channel/label rule (sdrf D51), so a cell
+        /// bare or accessioned, with or without its family and in any case, matches, and TMT10's 131N is read from
+        /// TMT131 and TMT131N alike. Or null with the reason added to <paramref name="refused"/>; when no row matches, the
+        /// labels of the file's rows that name no channel of the kit are given, since they, not a missing row, are then
+        /// the likely cause (QuantProject 067 R2).
         /// </summary>
-        private static SdrfSampleCopy CopyOfTheChannelsRow(SdrfSearchScoping inputSdrf, string fileName, CvParam label,
-            List<string> refused)
+        private static SdrfRow InputRowOfChannel(SdrfSearchScoping inputSdrf, string fileName, IsobaricMassTagType tagType,
+            string channel, List<string> refused)
         {
             var fileRows = InputRowsOf(inputSdrf, fileName);
             var rows = fileRows
-                .Where(r => label is not null && string.Equals(r["comment[label]"]?.Trim(), label.Name, StringComparison.OrdinalIgnoreCase))
+                .Where(r => channel is not null
+                            && string.Equals(ChannelOf(tagType, r["comment[label]"]), channel.Trim(), StringComparison.OrdinalIgnoreCase))
                 .ToList();
             if (rows.Count == 1)
-                return SdrfSampleCopy.FromRow(inputSdrf.Document, rows[0]);
-            if (!AlreadyRefused(inputSdrf, fileName, fileRows))
-                refused.Add($"{fileName} channel {label?.Name} has {(rows.Count == 0 ? "no row" : rows.Count + " rows")} in it");
+                return rows[0];
+            if (AlreadyRefused(inputSdrf, fileName, fileRows))
+                return null;
+
+            string label = ResolveChannelLabel(tagType, channel)?.Name ?? channel;
+            var unread = fileRows
+                .Select(r => r["comment[label]"]?.Trim())
+                .Where(l => !string.IsNullOrEmpty(l) && ChannelOf(tagType, l) is null)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(l => "'" + l + "'")
+                .ToList();
+            refused.Add(rows.Count > 1
+                ? $"{fileName} channel {label} has {rows.Count} rows in it"
+                : $"{fileName} channel {label} has no row in it" + (unread.Any()
+                    ? $" (these labels of its rows name no channel of {tagType}: {string.Join(", ", unread)})"
+                    : ""));
             return null;
         }
+
+        /// <summary>The channel of the kit that a comment[label] cell names, in the kit's own spelling, or null.</summary>
+        private static string ChannelOf(IsobaricMassTagType tagType, string label) =>
+            SdrfIsobaricLabels.TryGetChannel(tagType, label, out var channel) ? channel : null;
 
         /// <summary>A file the join already refused (no row at all, or rows naming two acquired files) is listed once.</summary>
         private static bool AlreadyRefused(SdrfSearchScoping inputSdrf, string fileName, List<SdrfRow> fileRows) =>
@@ -310,11 +354,14 @@ namespace TaskLayer
                 .ToList();
 
         /// <summary>
-        /// A sample whose columns all come from <paramref name="copy"/>. The label is still the search's: comment[label]
-        /// is an assay column, written by the builder.
+        /// A sample whose columns all come from the input row <paramref name="row"/>. The label is still the search's:
+        /// comment[label] is an assay column, written by the builder.
         /// </summary>
-        private static SdrfSample CopiedSample(SdrfSampleCopy copy, CvParam label) =>
-            new() { SourceName = copy.SourceName, Label = label, CopiedFrom = copy };
+        private static SdrfSample CopiedSample(SdrfSearchScoping inputSdrf, SdrfRow row, CvParam label)
+        {
+            var copy = SdrfSampleCopy.FromRow(inputSdrf.Document, row);
+            return new() { SourceName = copy.SourceName, Label = label, CopiedFrom = copy };
+        }
 
         /// <summary>
         /// The accession to write: the task's own, trimmed, when it sets one; otherwise the one the input SDRF's searched
