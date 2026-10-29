@@ -445,19 +445,24 @@ namespace EngineLayer.FdrAnalysis
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
 
+        /// <summary>
+        /// The key of <see cref="PsmData.trainingInfos"/> whose features PEP trains on for this kind of match.
+        /// </summary>
+        public static string GetPepSearchType(SpectralMatch psm) => psm switch
+        {
+            OligoSpectralMatch => "RNA",
+            PeptideSpectralMatch p when p.DigestionParams.DigestionAgent is Protease { Name: "top-down" } => "top-down",
+            CrosslinkSpectralMatch => "crosslink",
+            _ => "standard"
+        };
+
         public static void Compute_PEPValue(FdrAnalysisResults myAnalysisResults, List<SpectralMatch> psms, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, bool iterativePepTraining = false)
         {
             // Currently, searches of mixed data (bottom-up + top-down) are not supported
             // PEP will be calculated based on the search type of the first file/PSM in the list, which isn't ideal
             // This will be addressed in a future release
 
-            string searchType = psms[0] switch
-            {
-                OligoSpectralMatch => "RNA",
-                PeptideSpectralMatch psm when psm.DigestionParams.DigestionAgent is Protease { Name: "top-down" } => "top-down",
-                CrosslinkSpectralMatch => "crosslink",
-                _ => "standard"
-            };
+            string searchType = GetPepSearchType(psms[0]);
 
             var rtPredictor = GetRTPredictor(searchType, fileSpecificParameters);
             // Iteration is on by default (SearchParameters.IterativePepTraining), read only by PostSearchAnalysisTask's main
