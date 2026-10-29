@@ -1142,6 +1142,8 @@ namespace EngineLayer
             float fractionalIntensity = 0;
 
             float missedCleavages = 0;
+            float charge = Math.Abs(psm.ScanPrecursorCharge);
+            float notchlessAbsoluteDeltaMass = 0;
             float longestSeq = 0;
             float complementaryIonCount = 0;
             float hydrophobicityZscore = float.NaN;
@@ -1179,6 +1181,9 @@ namespace EngineLayer
                 }
 
                 ambiguity = Math.Min((float)(psm.BestMatchingBioPolymersWithSetMods.Count() - 1), 10);
+                double theoreticalMass = tentativeSpectralMatch.SpecificBioPolymer.MonoisotopicMass;
+                double massDifference = psm.ScanPrecursorMass - theoreticalMass - tentativeSpectralMatch.Notch / MassDiffAcceptor.NotchScalar;
+                notchlessAbsoluteDeltaMass = (float)Math.Abs(massDifference);
                 //ambiguity = 10; // I'm pretty sure that you shouldn't train on ambiguity and its skewing the results
                 longestSeq = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(tentativeSpectralMatch) / normalizationFactor * multiplier, 0);
                 complementaryIonCount = (float)Math.Round(SpectralMatch.GetCountComplementaryIons(tentativeSpectralMatch) / normalizationFactor * multiplier, 0);
@@ -1285,6 +1290,8 @@ namespace EngineLayer
                 ModsCount = modCount,
                 AbsoluteAverageFragmentMassErrorFromMedian = absoluteFragmentMassError,
                 MissedCleavagesCount = missedCleavages,
+                Charge = charge,
+                NotchlessAbsoluteDeltaMass = notchlessAbsoluteDeltaMass,
                 Ambiguity = ambiguity,
                 LongestFragmentIonSeries = longestSeq,
                 ComplementaryIonCount = complementaryIonCount,
