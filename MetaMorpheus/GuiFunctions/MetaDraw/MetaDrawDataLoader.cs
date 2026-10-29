@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using EngineLayer;
 using Omics.Fragmentation;
 using Readers.SpectralLibrary;
@@ -35,6 +35,7 @@ public class MetaDrawDataLoader
         bool loadPsms,
         bool loadLibraries,
         ChimeraAnalysisTabViewModel? chimeraTabViewModel = null,
+        MirrorPlotTabViewModel? mirrorPlotTabViewModel = null,
         BioPolymerTabViewModel? bioPolymerTabViewModel = null,
         DeconExplorationTabViewModel? deconExplorationTabViewModel = null,
         FragmentationReanalysisViewModel? fragmentationReanalysisViewModel = null)
@@ -49,6 +50,8 @@ public class MetaDrawDataLoader
         PrepareProgressVisualization(loadSpectra, loadPsms, loadLibraries, _logic);
         if (chimeraTabViewModel is not null) 
             chimeraTabViewModel.IsTabEnabled = false;
+        if (mirrorPlotTabViewModel is not null) 
+            mirrorPlotTabViewModel.IsTabEnabled = false;
         if (bioPolymerTabViewModel is not null) 
             bioPolymerTabViewModel.IsTabEnabled = false;
         if (deconExplorationTabViewModel is not null) 
@@ -107,6 +110,10 @@ public class MetaDrawDataLoader
         if (chimeraTabViewModel is not null && _logic.FilteredListOfPsms.Any() && _logic.MsDataFiles.Any())
         {
             Task.Run(() => ProcessChimeraTab(chimeraTabViewModel, outputDirectory, token), token);
+        }
+        if (mirrorPlotTabViewModel is not null && _logic.FilteredListOfPsms.Any() && _logic.MsDataFiles.Any())
+        {
+            Task.Run(() => ProcessMirrorTab(mirrorPlotTabViewModel, outputDirectory, token), token);
         }
 
         return allErrors;
@@ -494,6 +501,17 @@ public class MetaDrawDataLoader
             return;
 
         tab.ProcessChimeraData(_logic.FilteredListOfPsms.ToList(), _logic.MsDataFiles, token);
+
+        tab.ExportDirectory = outDir;
+        tab.IsTabEnabled = true;
+    }
+
+    private void ProcessMirrorTab(MirrorPlotTabViewModel tab, string outDir, CancellationToken token)
+    {
+        if (token.IsCancellationRequested)
+            return;
+
+        tab.ProcessMirrorData(_logic.FilteredListOfPsms.ToList(), _logic.MsDataFiles);
 
         tab.ExportDirectory = outDir;
         tab.IsTabEnabled = true;
