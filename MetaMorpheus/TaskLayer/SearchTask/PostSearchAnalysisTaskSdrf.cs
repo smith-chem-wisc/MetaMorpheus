@@ -23,6 +23,11 @@ namespace TaskLayer
     /// </summary>
     public partial class PostSearchAnalysisTask
     {
+        /// <summary>The SDRF a search writes, in its own output folder.</summary>
+        internal const string SdrfFileName = "experiment.sdrf.tsv";
+
+        private const string SearchedDataFileColumn = "comment[searched data file]";
+
         /// <summary>
         /// Written per search, into that search's own output folder, and never merged in place.
         /// Repeated searches of one experiment therefore accumulate as separate files that pool by
@@ -37,7 +42,9 @@ namespace TaskLayer
             // already named before the run, by SearchTask.WarnAboutSdrfGaps.
             try
             {
-                var rows = BuildSdrfRows().ToList();
+                // The input SDRF, restricted to the files this search read, or null when the task names none (sdrf D50).
+                var inputSdrf = ReadInputSdrfIfGiven();
+                var rows = BuildSdrfRows(inputSdrf).ToList();
                 if (rows.Count == 0)
                 {
                     Warn("No spectra files to describe; skipping SDRF.");
@@ -50,7 +57,7 @@ namespace TaskLayer
                     SoftwareVersion = GlobalVariables.MetaMorpheusVersion,
                     // Written as supplied: a malformed accession was already named before the run,
                     // by SearchTask.WarnAboutSdrfGaps, and the user's value is still the best one.
-                    ProteomeXchangeAccession = Parameters.SearchParameters.ProteomeXchangeAccession?.Trim(),
+                    ProteomeXchangeAccession = AccessionToWrite(Parameters.SearchParameters.ProteomeXchangeAccession, inputSdrf),
                     // The sample metadata is only as complete as the input allowed. Gaps were named
                     // before the run; by here it is committed, so accept what we have and let
                     // SdrfCoverage report on it rather than throwing mid-write.
@@ -60,11 +67,13 @@ namespace TaskLayer
                     LabelForm = SdrfLabelForm.Bare
                 });
 
-                string path = Path.Combine(Parameters.OutputFolder, "experiment.sdrf.tsv");
+                string path = Path.Combine(Parameters.OutputFolder, SdrfFileName);
                 document.WriteResults(path);
                 FinishedWritingFile(path, new List<string> { Parameters.SearchTaskId });
 
-                ReportSdrfCoverage(document);
+                ReportSdrfCoverage(document, sampleColumnsCopied: inputSdrf is not null);
+                if (inputSdrf is not null)
+                    ReportInputColumnsNotCarried(inputSdrf, document);
             }
             catch (Exception e)
             {
@@ -74,11 +83,17 @@ namespace TaskLayer
 
         /// <summary>
         /// One row per spectra file, pairing the sample facts with the assay facts.
+        ///
+        /// With an input SDRF (<paramref name="inputSdrf"/>), each row's sample half is the input's row for that file,
+        /// or for that file and channel, copied cell for cell (sdrf D50, QuantProject 037 B2). The assay half is built
+        /// exactly as without one, and the design file still gives the technical replicate and fraction. A file or
+        /// channel the input cannot describe with exactly one row refuses the whole SDRF, listing every such case,
+        /// because copying from the wrong row, or from none, would misdescribe a sample.
         /// </summary>
-        private IEnumerable<SdrfRowInput> BuildSdrfRows()
+        private IEnumerable<SdrfRowInput> BuildSdrfRows(SdrfSearchScoping inputSdrf = null)
         {
-            // The sample half. ExperimentalDesign.tsv is the only place MetaMorpheus holds it, and
-            // it is OPTIONAL: when absent, PostSearchAnalysisTask fabricates a degenerate design in
+            // The sample half, when no input SDRF gives it. ExperimentalDesign.tsv is then the only place
+            // MetaMorpheus holds it, and it is OPTIONAL: when absent, PostSearchAnalysisTask fabricates a degenerate design in
             // which every file is its own biological replicate with an empty condition. That design is
             // not read here. Without a design the replicate and fraction numbers are UNKNOWN, so they
             // are passed as null and written `not available` (mzLib #1378), never a claimed 1.
@@ -98,6 +113,7 @@ namespace TaskLayer
                 ? new Dictionary<string, SpectraFileInfo>(StringComparer.OrdinalIgnoreCase)
                 : ReadExperimentalDesignIfPresent();
             var describedOnce = new List<string>();
+            var refused = inputSdrf is null ? null : InputSdrfJoinProblems(inputSdrf);
 
             // A sample name reused across plexes for different material (#2817 review): only those names
             // are scoped to their plex. A bridge, which agrees on condition and replicate, keeps its name.
@@ -105,17 +121,20 @@ namespace TaskLayer
                 .Where(f => ChannelRowsUnusableReason(f, tagType!.Value) is null)
                 .ToList() ?? new List<TmtFileInfo>();
             var reusedSampleNames = SampleNamesReusedForDifferentSamples(channelFiles);
-            if (reusedSampleNames.Any())
+            // Not with an input SDRF: the source names are then the input's, not built from the design's sample names.
+            if (reusedSampleNames.Any() && inputSdrf is null)
                 Warn(ReusedSampleNamesWarning(reusedSampleNames, SampleNamesRepeatedWithinAPlex(channelFiles)));
 
-            // Every source name of an isobaric SDRF, the ones it makes up checked against the whole document.
+            // Every source name of an isobaric SDRF, the ones it makes up checked against the whole document. With an
+            // input SDRF they are still built, because the channel rows are, but each row's is replaced by the input's,
+            // so no made-up name is written and the numbering is not warned about.
             Dictionary<(string File, string Tag), string> isobaricSourceNames = null;
             if (isobaric is not null)
             {
                 var filesDescribedOnce = Parameters.CurrentRawFileList.Where(p =>
                     !(isobaric.TryGetValue(Path.GetFullPath(p), out var f) && ChannelRowsUnusableReason(f, tagType!.Value) is null));
                 isobaricSourceNames = IsobaricSourceNames(channelFiles, filesDescribedOnce.ToList(), out var numbered);
-                if (numbered.Any())
+                if (numbered.Any() && inputSdrf is null)
                     Warn(NumberedSourceNamesWarning(numbered));
             }
 
@@ -151,12 +170,29 @@ namespace TaskLayer
                         foreach (var row in BuildChannelRows(tmtFile, tagType.Value, organism,
                                      BuildAssay(rawFilePath, common, tmtFile.TechnicalReplicate, tmtFile.Fraction),
                                      isobaricSourceNames))
-                            yield return row;
+                        {
+                            if (inputSdrf is null)
+                                yield return row;
+                            else if (InputRowOfChannel(inputSdrf, Path.GetFileName(rawFilePath), tagType.Value,
+                                         ChannelOf(tagType.Value, row.Sample.Label?.Name), refused) is { } channelRow)
+                                yield return row with { Sample = CopiedSample(inputSdrf, channelRow, row.Sample.Label) };
+                        }
                         continue;
                     }
                 }
 
                 design.TryGetValue(stem, out var sampleInfo);
+
+                var assay = BuildAssay(rawFilePath, common,
+                    technicalReplicate: tmtFile?.TechnicalReplicate ?? sampleInfo?.TechnicalReplicate + 1,
+                    fraction: tmtFile?.Fraction ?? sampleInfo?.Fraction + 1);
+
+                if (inputSdrf is not null)
+                {
+                    if (InputRowOfFile(inputSdrf, Path.GetFileName(rawFilePath), refused) is { } fileRow)
+                        yield return new SdrfRowInput(CopiedSample(inputSdrf, fileRow, ResolveLabel(Parameters.SearchParameters)), assay);
+                    continue;
+                }
 
                 // An isobaric file described once is named beside the channels, so its stem is checked too.
                 string isobaricFileName = isobaricSourceNames is not null
@@ -187,16 +223,182 @@ namespace TaskLayer
                         : "factor value[condition]"
                 };
 
-                var assay = BuildAssay(rawFilePath, common,
-                    technicalReplicate: tmtFile?.TechnicalReplicate ?? sampleInfo?.TechnicalReplicate + 1,
-                    fraction: tmtFile?.Fraction ?? sampleInfo?.Fraction + 1);
-
                 yield return new SdrfRowInput(sample, assay);
             }
 
             if (describedOnce.Any())
                 Warn("The SDRF describes these files once, without their channels or samples: " +
                      string.Join("; ", describedOnce.Distinct()) + ".");
+
+            // Thrown here, after every file, so that one crash record lists every file and channel at once.
+            if (refused is { Count: > 0 })
+                throw new InvalidDataException("The input SDRF " + Parameters.SearchParameters.InputSdrfPath.Trim() +
+                    " cannot describe this search, so no " + SdrfFileName + " was written: " + string.Join("; ", refused) + ".");
+        }
+
+        /// <summary>
+        /// The input SDRF restricted to this search's files, or null when the task names none. The join is mzLib's
+        /// (<see cref="SdrfSearchScope.Restrict"/>): by stem, case-insensitively, with -calib and -averaged removed, and
+        /// the acquired file winning where the run knows it. Input rows for files this search did not read are left
+        /// out; that is not an error, since a search may read a subset of a deposit. Throws when the input cannot be
+        /// read, which WriteSdrf records.
+        /// </summary>
+        private SdrfSearchScoping ReadInputSdrfIfGiven()
+        {
+            string path = Parameters.SearchParameters.InputSdrfPath;
+            if (string.IsNullOrWhiteSpace(path))
+                return null;
+
+            return SdrfSearchScope.Restrict(new SdrfDocument(path.Trim()), Parameters.CurrentRawFileList,
+                AcquiredFileNames(Parameters.CurrentRawFileList, Parameters.AcquiredSpectraFiles));
+        }
+
+        /// <summary>
+        /// Why the input SDRF cannot describe the searched files, one entry per case: a searched file with no row in it,
+        /// two searched files claiming one acquisition, or one searched file whose rows name two different acquired files.
+        /// Shared with SearchTask's pre-run warning, so a search is told before it runs.
+        /// </summary>
+        internal static List<string> InputSdrfJoinProblems(SdrfSearchScoping inputSdrf) =>
+            inputSdrf.SearchedWithoutRow.Select(file => file + " has no row in it")
+                .Concat(inputSdrf.Ambiguous.Select(a => "two searched files read one acquired file (" + a + ")"))
+                .Concat(inputSdrf.SharedStem.Select(s => "rows of one searched file name different acquired files (" + s + ")"))
+                .ToList();
+
+        /// <summary>
+        /// The input rows this search copies: one per file it describes once, and one per annotated channel of each file
+        /// in <paramref name="channelFiles"/> (keyed by full path, as BuildSdrfRows keys them), with every reason it cannot
+        /// copy one added to <paramref name="refused"/> as BuildSdrfRows adds it. Shared with SearchTask's pre-run warning,
+        /// so a search is told before it runs what the writer will refuse, and only the rows it will copy are checked for
+        /// blank sample facts (QuantProject 067 R1, R3).
+        /// </summary>
+        internal static List<SdrfRow> InputRowsToCopy(SdrfSearchScoping inputSdrf, IEnumerable<string> searchedFiles,
+            IReadOnlyDictionary<string, TmtFileInfo> channelFiles, IsobaricMassTagType? tagType, List<string> refused)
+        {
+            var rows = new List<SdrfRow>();
+            foreach (string path in searchedFiles)
+            {
+                string fileName = Path.GetFileName(path);
+                if (tagType is not null && channelFiles.TryGetValue(Path.GetFullPath(path), out var tmtFile))
+                    rows.AddRange(tmtFile.Annotations
+                        .Select(a => InputRowOfChannel(inputSdrf, fileName, tagType.Value, a.Tag, refused))
+                        .Where(r => r is not null));
+                else if (InputRowOfFile(inputSdrf, fileName, refused) is { } row)
+                    rows.Add(row);
+            }
+            return rows;
+        }
+
+        /// <summary>
+        /// The one input row of a file the SDRF describes once (label-free, or isobaric without usable channel rows), or
+        /// null with the reason added to <paramref name="refused"/>.
+        /// </summary>
+        private static SdrfRow InputRowOfFile(SdrfSearchScoping inputSdrf, string fileName, List<string> refused)
+        {
+            var rows = InputRowsOf(inputSdrf, fileName);
+            if (rows.Count == 1)
+                return rows[0];
+            if (!AlreadyRefused(inputSdrf, fileName, rows))
+                refused.Add($"{fileName} has {rows.Count} rows in it, but this search describes the file as one sample");
+            return null;
+        }
+
+        /// <summary>
+        /// The input row for <paramref name="channel"/> (the kit's own spelling, as TmtDesign.txt writes it) of a file:
+        /// the file's row whose comment[label] names that channel by mzLib's one channel/label rule (sdrf D51), so a cell
+        /// bare or accessioned, with or without its family and in any case, matches, and TMT10's 131N is read from
+        /// TMT131 and TMT131N alike. Or null with the reason added to <paramref name="refused"/>; when no row matches, the
+        /// labels of the file's rows that name no channel of the kit are given, since they, not a missing row, are then
+        /// the likely cause (QuantProject 067 R2).
+        /// </summary>
+        private static SdrfRow InputRowOfChannel(SdrfSearchScoping inputSdrf, string fileName, IsobaricMassTagType tagType,
+            string channel, List<string> refused)
+        {
+            var fileRows = InputRowsOf(inputSdrf, fileName);
+            var rows = fileRows
+                .Where(r => channel is not null
+                            && string.Equals(ChannelOf(tagType, r["comment[label]"]), channel.Trim(), StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (rows.Count == 1)
+                return rows[0];
+            if (AlreadyRefused(inputSdrf, fileName, fileRows))
+                return null;
+
+            string label = ResolveChannelLabel(tagType, channel)?.Name ?? channel;
+            var unread = fileRows
+                .Select(r => r["comment[label]"]?.Trim())
+                .Where(l => !string.IsNullOrEmpty(l) && ChannelOf(tagType, l) is null)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(l => "'" + l + "'")
+                .ToList();
+            refused.Add(rows.Count > 1
+                ? $"{fileName} channel {label} has {rows.Count} rows in it"
+                : $"{fileName} channel {label} has no row in it" + (unread.Any()
+                    ? $" (these labels of its rows name no channel of {tagType}: {string.Join(", ", unread)})"
+                    : ""));
+            return null;
+        }
+
+        /// <summary>The channel of the kit that a comment[label] cell names, in the kit's own spelling, or null.</summary>
+        private static string ChannelOf(IsobaricMassTagType tagType, string label) =>
+            SdrfIsobaricLabels.TryGetChannel(tagType, label, out var channel) ? channel : null;
+
+        /// <summary>A file the join already refused (no row at all, or rows naming two acquired files) is listed once.</summary>
+        private static bool AlreadyRefused(SdrfSearchScoping inputSdrf, string fileName, List<SdrfRow> fileRows) =>
+            fileRows.Count == 0
+            || inputSdrf.SharedStem.Any(s => s.StartsWith(fileName + ":", StringComparison.OrdinalIgnoreCase));
+
+        /// <summary>The input rows the join gave this searched file: Restrict names it in comment[searched data file].</summary>
+        private static List<SdrfRow> InputRowsOf(SdrfSearchScoping inputSdrf, string fileName) =>
+            inputSdrf.Document.Results
+                .Where(r => string.Equals(r[SearchedDataFileColumn], fileName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+        /// <summary>
+        /// A sample whose columns all come from the input row <paramref name="row"/>. The label is still the search's:
+        /// comment[label] is an assay column, written by the builder.
+        /// </summary>
+        private static SdrfSample CopiedSample(SdrfSearchScoping inputSdrf, SdrfRow row, CvParam label)
+        {
+            var copy = SdrfSampleCopy.FromRow(inputSdrf.Document, row);
+            return new() { SourceName = copy.SourceName, Label = label, CopiedFrom = copy };
+        }
+
+        /// <summary>
+        /// The accession to write: the task's own, trimmed, when it sets one; otherwise the one the input SDRF's searched
+        /// rows give (QuantProject 062, B8). The copy never carries comment[proteomexchange accession number], which is
+        /// one of SdrfBuilder's own columns, so without this a deposit's accession would not reach its re-analysis. Rows
+        /// that disagree give none rather than one of them, and the column is then named as not carried.
+        /// </summary>
+        private static string AccessionToWrite(string taskAccession, SdrfSearchScoping inputSdrf)
+        {
+            if (inputSdrf is null || !string.IsNullOrWhiteSpace(taskAccession))
+                return taskAccession?.Trim();
+
+            var given = inputSdrf.Document.Results
+                .Select(r => r["comment[proteomexchange accession number]"]?.Trim())
+                .Where(a => !string.IsNullOrEmpty(a))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            return given.Count == 1 ? given[0] : null;
+        }
+
+        /// <summary>
+        /// Names every input SDRF column the written SDRF lacks (QuantProject 062, B9). The copy takes only columns
+        /// named as SDRF sample columns, by their exact names, so a misspelling (characteristic[mouse line]) or a case
+        /// variant (Material Type) is otherwise lost without a word. comment[searched data file] is not named: it is this
+        /// search's own field, and an earlier search's is replaced, not lost.
+        /// </summary>
+        private void ReportInputColumnsNotCarried(SdrfSearchScoping inputSdrf, SdrfDocument written)
+        {
+            var notCarried = inputSdrf.Document.Header
+                .Where(c => c != SearchedDataFileColumn && !written.Header.Contains(c))
+                .Distinct(StringComparer.Ordinal)
+                .Select(c => "'" + c + "'")
+                .ToList();
+            if (notCarried.Any())
+                Warn("The SDRF was written, but these columns of the input SDRF are not carried into it: " +
+                     string.Join(", ", notCarried) + ". Only sample columns are copied, by their exact names: source name, " +
+                     "characteristics[...], material type, factor value[...] and comment[...].");
         }
 
         /// <summary>
@@ -584,14 +786,30 @@ namespace TaskLayer
             _ => null
         };
 
+        private string AcquiredFileNameOf(string searchedPath) => AcquiredFileNameOf(searchedPath, Parameters.AcquiredSpectraFiles);
+
+        /// <summary>
+        /// Each searched file's acquired file name, where the run knows it, keyed by the searched path as given: what
+        /// <see cref="SdrfSearchScope.Restrict"/> takes to join a derivative to its row. Shared with SearchTask's
+        /// pre-run warning.
+        /// </summary>
+        internal static Dictionary<string, string> AcquiredFileNames(IEnumerable<string> searchedPaths, List<string> acquiredFiles)
+        {
+            var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (string path in searchedPaths)
+                if (AcquiredFileNameOf(path, acquiredFiles) is { } name)
+                    names[path] = name;
+            return names;
+        }
+
         /// <summary>
         /// The acquired file a searched file came from: the run's starting file with the same stem once the
         /// -calib / -averaged suffixes are removed, or null when there is no starting list (a task run on its own)
         /// or no starting file matches.
         /// </summary>
-        private string AcquiredFileNameOf(string searchedPath)
+        private static string AcquiredFileNameOf(string searchedPath, List<string> acquiredFiles)
         {
-            if (Parameters.AcquiredSpectraFiles is not { Count: > 0 } acquired) return null;
+            if (acquiredFiles is not { Count: > 0 } acquired) return null;
             string stem = Path.GetFileNameWithoutExtension(searchedPath);
             string previous;
             do
@@ -608,10 +826,12 @@ namespace TaskLayer
 
         /// <summary>
         /// The experimental design keyed by file stem, or empty when the user did not supply one.
-        /// Never the fabricated fallback: see the remarks in <see cref="BuildSdrfRows"/>.
+        /// Never the fabricated fallback: see the remarks in <see cref="BuildSdrfRows"/>. With an input SDRF, the
+        /// design gives only the technical replicate and fraction, and its absence is reported as that.
         /// </summary>
         private Dictionary<string, SpectraFileInfo> ReadExperimentalDesignIfPresent()
         {
+            bool sampleColumnsCopied = !string.IsNullOrWhiteSpace(Parameters.SearchParameters?.InputSdrfPath);
             var byStem = new Dictionary<string, SpectraFileInfo>(StringComparer.OrdinalIgnoreCase);
             if (Parameters.CurrentRawFileList.Count == 0) return byStem;
 
@@ -621,10 +841,14 @@ namespace TaskLayer
 
             if (!File.Exists(designPath))
             {
-                Warn($"No {GlobalVariables.ExperimentalDesignFileName} beside the spectra files, so the " +
-                     "SDRF cannot describe conditions, replicates or fractions. It will record the " +
-                     "search parameters and what can be read from the files themselves; replicate and " +
-                     "fraction are written as 'not available'.");
+                Warn(sampleColumnsCopied
+                    ? $"No {GlobalVariables.ExperimentalDesignFileName} beside the spectra files, so the SDRF's " +
+                      "technical replicate and fraction are written as 'not available'. Its sample columns are copied " +
+                      "from the input SDRF."
+                    : $"No {GlobalVariables.ExperimentalDesignFileName} beside the spectra files, so the " +
+                      "SDRF cannot describe conditions, replicates or fractions. It will record the " +
+                      "search parameters and what can be read from the files themselves; replicate and " +
+                      "fraction are written as 'not available'.");
                 return byStem;
             }
 
@@ -639,7 +863,9 @@ namespace TaskLayer
                 // Open in Excel, say. The pre-run warning promised the SDRF would then describe the search
                 // only; failing here would lose the whole SDRF instead.
                 Warn($"{GlobalVariables.ExperimentalDesignFileName} could not be read ({e.Message}), so the SDRF " +
-                     "describes the search only: no conditions, replicates or fractions.");
+                     (sampleColumnsCopied
+                         ? "gives no technical replicates or fractions."
+                         : "describes the search only: no conditions, replicates or fractions."));
                 return byStem;
             }
             if (errors.Any())
@@ -765,8 +991,11 @@ namespace TaskLayer
         /// Without this an SDRF full of "not available" looks like a success: the validator accepts
         /// reserved words as the correct way to state an absence, and the drift lint skips them, so
         /// nothing else in the stack can see an empty corpus.
+        ///
+        /// With <paramref name="sampleColumnsCopied"/>, the sample columns came from the input SDRF, so their gaps are
+        /// the input's own and are fixed there (QuantProject 037 B5).
         /// </summary>
-        private void ReportSdrfCoverage(SdrfDocument document)
+        private void ReportSdrfCoverage(SdrfDocument document, bool sampleColumnsCopied = false)
         {
             var uninformative = SdrfCoverage
                 .Uninformative(new SdrfCollection(new[] { document }, new[] { "this run" }))
@@ -778,12 +1007,17 @@ namespace TaskLayer
                 ? GlobalVariables.TmtExperimentalDesignFileName
                 : GlobalVariables.ExperimentalDesignFileName;
 
-            if (uninformative.Any())
+            if (uninformative.Any() && sampleColumnsCopied)
+                Warn("The SDRF was written, but these columns say nothing and cannot be mined: " +
+                     string.Join(", ", uninformative) + ". Its sample columns were copied from the input SDRF, so a " +
+                     "gap among them is the input's own and is filled there. " + designFileName +
+                     " can supply technical replicates and fractions.");
+            else if (uninformative.Any())
                 Warn("The SDRF was written, but these columns say nothing and cannot be mined: " +
                      string.Join(", ", uninformative) + ". " + designFileName +
                      " can supply conditions, biological and technical replicates and fractions; everything " +
                      "else (organism part, disease, cell type and the like) has to be curated by hand in the " +
-                     "written SDRF, since MetaMorpheus reads no input SDRF.");
+                     "written SDRF, or copied from an input SDRF (InputSdrfPath).");
         }
     }
 }
