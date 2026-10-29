@@ -2527,8 +2527,12 @@ namespace TaskLayer
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
-                string searchType;
-                if (psmList.Where(p => p != null).Any() && psmList[0].DigestionParams.DigestionAgent.Name != null && psmList[0].DigestionParams.DigestionAgent.Name == "top-down")
+                // The feature set PEP trained on (RNA searches wrote the protein set before). Crosslinks keep
+                // the standard set, as before: their PEP features are not written here.
+                string searchType = psmList.FirstOrDefault(p => p != null) is SpectralMatch first
+                    ? FdrAnalysisEngine.GetPepSearchType(first)
+                    : "standard";
+                if (searchType == "crosslink")
                 {
                     searchType = "top-down";
                 }
