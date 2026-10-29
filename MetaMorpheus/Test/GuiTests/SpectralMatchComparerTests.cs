@@ -55,11 +55,46 @@ public class SpectralMatchComparerTests
         Assert.That(SpectralMatchComparer.Instance.GetHashCode(_psm), Is.EqualTo(SpectralMatchComparer.Instance.GetHashCode(psmCopy)));
     }
 
-    [Test]
-    public void Equals_ReturnsFalse_WhenAnyComparedFieldDiffers()
+    [TestCase("FullSequence")]
+    [TestCase("Ms2ScanNumber")]
+    [TestCase("FileNameWithoutExtension")]
+    [TestCase("PrecursorScanNum")]
+    public void Equals_ReturnsFalse_WhenFieldDiffers(string fieldName)
     {
-        var psmDifferent = _psm.ReplaceFullSequence(_psm.FullSequence + "_ALT", _psm.BaseSeq);
+        var basePsm = new MutablePsmFromTsv(_psm);
+        var variantPsm = new MutablePsmFromTsv(_psm);
 
-        Assert.That(SpectralMatchComparer.Instance.Equals(_psm, psmDifferent), Is.False);
+        switch (fieldName)
+        {
+            case "FullSequence":
+                variantPsm = new MutablePsmFromTsv(_psm, _psm.FullSequence + "_ALT", _psm.BaseSeq);
+                break;
+            case "Ms2ScanNumber":
+                variantPsm.SetMs2ScanNumber(_psm.Ms2ScanNumber + 1);
+                break;
+            case "FileNameWithoutExtension":
+                variantPsm.SetFileNameWithoutExtension(_psm.FileNameWithoutExtension + "_ALT");
+                break;
+            case "PrecursorScanNum":
+                variantPsm.SetPrecursorScanNum(_psm.PrecursorScanNum + 1);
+                break;
+        }
+
+        Assert.That(SpectralMatchComparer.Instance.Equals(basePsm, variantPsm), Is.False);
+    }
+
+    /// <summary>
+    /// Test helper that exposes protected setters on PsmFromTsv for field-level isolation.
+    /// </summary>
+    internal class MutablePsmFromTsv : PsmFromTsv
+    {
+        public MutablePsmFromTsv(PsmFromTsv source) : base(source, source.FullSequence) { }
+
+        public MutablePsmFromTsv(PsmFromTsv source, string fullSequence, string baseSequence = "")
+            : base(source, fullSequence, baseSequence: baseSequence) { }
+
+        public void SetMs2ScanNumber(int value) { Ms2ScanNumber = value; }
+        public void SetFileNameWithoutExtension(string value) { FileNameWithoutExtension = value; }
+        public void SetPrecursorScanNum(int value) { PrecursorScanNum = value; }
     }
 }

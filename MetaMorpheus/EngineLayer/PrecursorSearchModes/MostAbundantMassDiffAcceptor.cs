@@ -1,0 +1,150 @@
+using System;
+using System.Collections.Generic;
+using Chemistry;
+using MassSpectrometry;
+using MzLibUtil;
+
+namespace EngineLayer
+{
+    /// <summary>
+    /// Selects theoretical candidates by matching the observed most-abundant isotopic peak mass
+    /// against each candidate's theoretical most-abundant mass (Strategy B). The theoretical
+    /// most-abundant mass is the candidate's exact monoisotopic mass plus an averagine-derived,
+    /// mass-dependent offset (roughly an integer number of neutrons). Because the same physical
+    /// (most-abundant) peak is compared on both the observed and theoretical sides, this avoids the
+    /// monoisotopic off-by-N errors that arise when the true monoisotopic peak is undetectable.
+    ///
+    /// Used when <see cref="CommonParameters.PrecursorMassMatchMode"/> is
+    /// <see cref="PrecursorMassMatchMode.MostAbundant"/>.
+    /// </summary>
+    /// <remarks>
+    /// The averagine offset predicts which isotopologue is tallest, but for real proteoforms the
+    /// experimental apex can differ from the averagine prediction by ±1–2 neutrons (validated on
+    /// yeast top-down data: a single tight-ppm point at the predicted apex under-identifies badly,
+    /// because one neutron is ~67 ppm at 15 kDa). To tolerate that apex misprediction while keeping
+    /// each match at tight ppm (and FDR controlled per-notch), this acceptor emits a small set of
+    /// notches at <c>apex + k·<see cref="ExpectedIsotopeSpacing"/></c> for k in [−<see cref="MaxApexOffsetNeutrons"/> ..
+    /// +<see cref="MaxApexOffsetNeutrons"/>]. k = 0 is the confident on-apex match; nonzero k are the
+    /// apex-misprediction cases. Each k maps to a contiguous non-negative notch index (its 0-based
+    /// position in the apex-offset set), so notches are distinct per k, are always ≥ 0 (a negative
+    /// notch would be read as "not accepted" by a <c>notch >= 0</c> guard, e.g. in ModernSearch), and
+    /// never collide with the −1 "not accepted" sentinel. <see cref="MassDiffAcceptor.NumNotches"/> is
+    /// the count of these indices. Per-notch FDR groups PSMs by notch value, so any distinct encoding
+    /// works equally; the contiguous form is just the safe, sign-free choice.
+    ///
+    /// The scan-side mass is the envelope's most-abundant observed neutral mass
+    /// (<see cref="Ms2ScanWithSpecificMass.PrecursorMostAbundantMass"/>, selected by
+    /// <see cref="PrecursorMassExtensions.GetPrecursorMassForSearch(Ms2ScanWithSpecificMass, MassDiffAcceptor)"/>).
+    /// Isotopically unresolved species would instead supply an average (centroid) mass and an
+    /// averagine average offset; that path is future work (the unresolved charge-determination
+    /// algorithm), so all envelopes here are resolved and matched on the most-abundant peak.
+    /// </remarks>
+    public class MostAbundantMassDiffAcceptor : MassDiffAcceptor
+    {
+        private readonly Tolerance Tolerance;
+        private readonly AverageResidue Averagine;
+
+        /// <summary>
+        /// Mass spacing between adjacent isotopologues (the "+1 neutron" step) used to place the apex
+        /// notches. Sourced from the deconvolution's
+        /// <see cref="MassSpectrometry.DeconvolutionParameters.ExpectedIsotopeSpacing"/> so the acceptor
+        /// matches the spacing the envelope was built with — the C-13/C-12 difference for peptides/
+        /// proteoforms, but overridable for decoy runs (~0.9444 Da) or non-carbon-dominated polymers.
+        /// </summary>
+        private readonly double ExpectedIsotopeSpacing;
+
+        /// <summary>
+        /// Apex misprediction tolerated on either side of the averagine-predicted apex, in neutrons. Shared
+        /// with <see cref="PrecursorMassExtensions"/>, which must consider the same k range when it reads a
+        /// mass difference back out — the two would disagree if this default were changed in only one place.
+        /// </summary>
+        public const int DefaultMaxApexOffsetNeutrons = 2;
+
+        /// <summary>Maximum apex misprediction, in neutrons, tolerated on either side of the averagine-predicted apex.</summary>
+        public int MaxApexOffsetNeutrons { get; }
+
+        // k values ordered by ascending |k| (then sign) so the on-apex (k = 0) match is preferred.
+        private readonly int[] ApexOffsetsInNeutrons;
+
+        public MostAbundantMassDiffAcceptor(string fileNameAddition, Tolerance tol, AverageResidue averagine,
+            int maxApexOffsetNeutrons = DefaultMaxApexOffsetNeutrons,
+            double expectedIsotopeSpacing = Constants.C13MinusC12)
+            : base(fileNameAddition)
+        {
+            Tolerance = tol;
+            Averagine = averagine;
+            MaxApexOffsetNeutrons = maxApexOffsetNeutrons;
+            ExpectedIsotopeSpacing = expectedIsotopeSpacing;
+
+            var offsets = new List<int> { 0 };
+            for (int k = 1; k <= maxApexOffsetNeutrons; k++)
+            {
+                offsets.Add(-k);
+                offsets.Add(k);
+            }
+            ApexOffsetsInNeutrons = offsets.ToArray();
+            NumNotches = ApexOffsetsInNeutrons.Length;
+        }
+
+        // Contiguous, non-negative notch id for an apex offset k: its position in the ordered offset
+        // set ({0, -1, 1, -2, 2}). Distinct per k, never negative, never the -1 "not accepted" sentinel.
+        private int NotchFor(int k) => Array.IndexOf(ApexOffsetsInNeutrons, k);
+
+        /// <summary>
+        /// Averagine-predicted mass offset from a monoisotopic mass to its most-abundant isotopologue
+        /// (the "apex"). Exposed statically so candidate selection (this acceptor) and precursor
+        /// mass-error reporting (<see cref="SpectralMatch.MostAbundantMassErrorPpm"/>) share the exact
+        /// same apex model. Returns 0 for non-positive masses, where the averagine model is undefined.
+        /// </summary>
+        public static double AveragineApexOffset(AverageResidue averagine, double monoisotopicMass)
+            => monoisotopicMass <= 0 ? 0 : averagine.GetDiffToMonoisotopic(averagine.GetMostIntenseMassIndex(monoisotopicMass));
+
+        public override int Accepts(double scanPrecursorMass, double peptideMass)
+        {
+            double apex = peptideMass + Averagine.ApexOffset(peptideMass);
+            foreach (int k in ApexOffsetsInNeutrons) // ordered to prefer k = 0
+            {
+                if (Tolerance.Within(scanPrecursorMass, apex + k * ExpectedIsotopeSpacing))
+                {
+                    return NotchFor(k);
+                }
+            }
+            return -1;
+        }
+
+        public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromTheoreticalMass(double peptideMonoisotopicMass)
+        {
+            double apex = peptideMonoisotopicMass + +Averagine.ApexOffset(peptideMonoisotopicMass);
+            foreach (int k in ApexOffsetsInNeutrons)
+            {
+                double mass = apex + k * ExpectedIsotopeSpacing;
+                yield return new AllowedIntervalWithNotch(Tolerance.GetMinimumValue(mass), Tolerance.GetMaximumValue(mass), NotchFor(k));
+            }
+        }
+
+        public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromObservedMass(double observedMostAbundantMass)
+        {
+            // Indexed (ModernSearch) path: convert the observed most-abundant mass back to candidate
+            // monoisotopic windows by subtracting the offset evaluated near the observed mass, for each
+            // apex-offset notch. Top-down uses the exact theory-driven ClassicSearch path; this
+            // observed-side conversion carries a small near-boundary ambiguity and is only exercised by
+            // indexed bottom-up search, which this mode does not target.
+            double monoApprox = observedMostAbundantMass - Averagine.ApexOffset(observedMostAbundantMass);
+            foreach (int k in ApexOffsetsInNeutrons)
+            {
+                double mass = monoApprox - k * ExpectedIsotopeSpacing;
+                yield return new AllowedIntervalWithNotch(Tolerance.GetMinimumValue(mass), Tolerance.GetMaximumValue(mass), NotchFor(k));
+            }
+        }
+
+        public override string ToString()
+        {
+            return FileNameAddition + " mostAbundant ±" + MaxApexOffsetNeutrons + " apex " + Tolerance;
+        }
+
+        public override string ToProseString()
+        {
+            return Tolerance + " around the most abundant isotopic peak (±" + MaxApexOffsetNeutrons + " isotope apex tolerance)";
+        }
+    }
+}

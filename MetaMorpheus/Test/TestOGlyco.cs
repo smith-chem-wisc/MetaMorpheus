@@ -43,6 +43,39 @@ namespace Test
             Assert.That(OGlycanBoxes.Count(), Is.EqualTo(2924));
         }
 
+        /// <summary>
+        /// A peptide whose candidate sites cannot accommodate every modification in the box leaves the
+        /// graph's terminal node unreachable. GlycoSearchEngine screens that out with GraphCheck, so this
+        /// only arises when the graph is driven directly, and it should say so rather than throwing a bare
+        /// NullReferenceException.
+        /// </summary>
+        [Test]
+        public static void OGlycoTest_LocalizeOGlycan_TooFewSitesForBox_ThrowsDescriptive()
+        {
+            // One candidate site, a box carrying two glycans: the terminal node can never be reached.
+            var glycanBox = OGlycanBoxes.First(p => p.NumberOfMods == 2);
+            var childBoxes = GlycanBox.BuildChildOGlycanBoxes(glycanBox.NumberOfMods, glycanBox.ModIds).ToArray();
+
+            var protein = new Protein("AAASAAAK", "onesite");
+            var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+            var products = new List<Product>();
+            peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
+
+            var modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" });
+            Assert.That(modPos.Count, Is.EqualTo(1), "Test peptide should offer exactly one candidate site.");
+
+            var commonParameters = new CommonParameters(dissociationType: DissociationType.ETD, trimMsMsPeaks: false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
+            var scan = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).First();
+
+            var localizationGraph = new LocalizationGraph(modPos, glycanBox, childBoxes, -1);
+
+            var exception = Assert.Throws<MetaMorpheusException>(() =>
+                LocalizationGraph.LocalizeOGlycan(localizationGraph, scan, commonParameters.ProductMassTolerance, products));
+            Assert.That(exception.Message, Does.Contain("GraphCheck"));
+        }
+
         [Test]
         public static void GlycoTest_GlycanLoading()
         {
@@ -395,7 +428,7 @@ namespace Test
             var fragments_etd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, new List<ProductType>(), peptide, peptideWithMod);
 
 
-            Assert.That(fragments_etd.Count == 22);
+            Assert.That(fragments_etd.Count, Is.EqualTo(15)); // 7 c + 8 zDot (incl. the full-length zDot8); ETD no longer produces a y series
             Assert.That(fragments_etd.Last().Annotation == "zDot8");
             Assert.That(fragments_etd.Last().NeutralMass > 1824);
 
@@ -407,7 +440,7 @@ namespace Test
         }
 
         [Test]
-        public static void OGlycoTest_FragmentIonsHash()
+        public static void OGlycoTest_ModifiedFragmentsIncludeNeutralLosses()
         {
             //Get glycanBox
             var glycanBox = OGlycanBoxes[22]; // GlycanBox : [N1A1 on T], [N1 on S]
@@ -425,30 +458,7 @@ namespace Test
             var fragmentsMod_hcd = new List<Product>();
                 peptideWithMod.Fragment(DissociationType.HCD, FragmentationTerminus.Both, fragmentsMod_hcd); 
             Assert.That(fragments_hcd.Count() == 20);
-            Assert.That(fragmentsMod_hcd.Count() == 61); //The Fragments also contain neutral loss ions. 
-
-            var frag_ments_etd = new List<Product>();
-                peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, frag_ments_etd);
-            var fragmentsMod_etd = new List<Product>();
-                peptideWithMod.Fragment(DissociationType.ETD, FragmentationTerminus.Both, fragmentsMod_etd);
-
-            //Tuple<int, int[]> keyValuePair represents: <glycanBoxId, glycanModPositions> 
-            Tuple<int, int[]> keyValuePairs = new Tuple<int, int[]>(22, modPos.ToArray());
-
-            var fragments_etd_origin = GlycoPeptides.GetFragmentHash(frag_ments_etd, new Tuple<int, int[]>(0, null), OGlycanBoxes, 1000);
-
-            var fragmentsHash_etd = GlycoPeptides.GetFragmentHash(frag_ments_etd, keyValuePairs, OGlycanBoxes, 1000);
-
-            var fragmentsMod_etd_origin = GlycoPeptides.GetFragmentHash(fragmentsMod_etd, new Tuple<int, int[]>(0, null), OGlycanBoxes, 1000);
-
-            var overlap = fragmentsHash_etd.Intersect(fragments_etd_origin).Count();
-
-            Assert.That(overlap == 14);
-
-            var overlap2 = fragmentsHash_etd.Intersect(fragmentsMod_etd_origin).Count();
-
-            //ETD didn't change y ions.
-            Assert.That(overlap2 == 23);
+            Assert.That(fragmentsMod_hcd.Count() == 61); //The Fragments also contain neutral loss ions.
         }
 
         [Test]
@@ -1817,6 +1827,68 @@ namespace Test
             Directory.Delete(outputFolder, true);
             Directory.Delete(outputFolder_new, true);
 
+        }
+
+
+        // Glyco searches with quantification off returned before any spectral count was populated, and
+        // the individual-file protein reports are written before quantification would run at all - so
+        // both lost the occupancy columns master wrote unconditionally.
+        [Test]
+        public static void GlycoCountBasedOccupancySurvivesQuantificationOff()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestGlycoCountOnly");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"),
+                MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.DoQuantification = false;
+
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
+            string spectraFile1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_1.mzML");
+            string spectraFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_2.mzML");
+
+            try
+            {
+                new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) },
+                    new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
+
+                string taskFolder = Path.Combine(outputFolder, "Task");
+
+                var combined = File.ReadAllLines(Path.Combine(taskFolder, "_AllProteinGroups.tsv"));
+                Assert.That(combined.Length, Is.GreaterThan(1));
+
+                // One pair of count columns per spectra file, and nothing intensity-derived: quantification
+                // never ran, so there is no intensity to report.
+                var combinedHeader = combined[0].Split('\t');
+                Assert.That(combinedHeader.Count(h => h.StartsWith("SpectralCount_")), Is.EqualTo(2));
+                Assert.That(combinedHeader.Count(h => h.StartsWith("CountOccupancy_")), Is.EqualTo(2));
+                Assert.That(combinedHeader.Any(h => h.StartsWith("Intensity_")), Is.False);
+                Assert.That(combinedHeader.Any(h => h.StartsWith("IntensityOccupancy_")), Is.False);
+                Assert.That(combined.Select(l => l.Split('\t').Length).AllSame(), Is.True);
+
+                var individualReports = Directory
+                    .GetFiles(taskFolder, "*_AllProteinGroups.tsv", SearchOption.AllDirectories)
+                    .Where(f => Path.GetDirectoryName(f) != taskFolder)
+                    .ToList();
+                Assert.That(individualReports.Count, Is.EqualTo(2));
+
+                foreach (var report in individualReports)
+                {
+                    var lines = File.ReadAllLines(report);
+                    Assert.That(lines.Length, Is.GreaterThan(1), report);
+
+                    // One file per report, so one pair of columns.
+                    var header = lines[0].Split('\t');
+                    Assert.That(header.Count(h => h.StartsWith("SpectralCount_")), Is.EqualTo(1), report);
+                    Assert.That(header.Count(h => h.StartsWith("CountOccupancy_")), Is.EqualTo(1), report);
+                    Assert.That(lines.Select(l => l.Split('\t').Length).AllSame(), Is.True, report);
+                }
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
+            }
         }
 
     }

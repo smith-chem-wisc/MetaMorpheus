@@ -64,10 +64,13 @@ namespace Test
             newPsm.SetMs2Scan(scan.TheScan);
             allResultingIdentifications.Add(newPsm);
 
-            engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>(), null);
+            var recordingFilter = new RecordingGptmdFilter();
+            engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>(), null, new List<IGptmdFilter> { recordingFilter });
             res = (GptmdResults)engine.Run();
             Assert.That(res.Mods.Count, Is.EqualTo(1));
             Assert.That(res.Mods["accession"].Count, Is.EqualTo(numModifiedResidues));
+            Assert.That(recordingFilter.Sites, Is.Not.Empty);
+            Assert.That(recordingFilter.Sites.All(site => site >= 1 && site <= modPep.Length), Is.True);
         }
 
         [Test]
@@ -264,13 +267,13 @@ namespace Test
 
             Assert.That(variantProteins.Count, Is.EqualTo(2)); // target & decoy
             Assert.That(variantProteins[0].OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(2));
-            List<int> foundResidueIndicies = variantProtein.OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
+            List<int> foundResidueIndices = variantProtein.OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
             List<int> expectedResidueIndices = new List<int>() { 1, 3 };
-            Assert.That(foundResidueIndicies, Is.EquivalentTo(expectedResidueIndices));
+            Assert.That(foundResidueIndices, Is.EquivalentTo(expectedResidueIndices));
             Assert.That(variantDecoy.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(2));
-            foundResidueIndicies = variantDecoy.OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
+            foundResidueIndices = variantDecoy.OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
             expectedResidueIndices = new List<int>() { 4, 6 }; //originally modified residues are now at the end in the decoy
-            Assert.That(foundResidueIndicies, Is.EquivalentTo(expectedResidueIndices));
+            Assert.That(foundResidueIndices, Is.EquivalentTo(expectedResidueIndices));
 
             var thisOk = unknownModifications;//for debugging
             var commonParamsAtThisPoint = task1.CommonParameters.DigestionParams; //for debugging
@@ -562,6 +565,25 @@ namespace Test
             }
 
             Directory.Delete(outputFolder, true);
+        }
+
+        private sealed class RecordingGptmdFilter : IGptmdFilter
+        {
+            public List<int> Sites { get; } = new();
+
+            public bool Passes(
+                IBioPolymerWithSetMods candidatePeptide,
+                SpectralMatch psm,
+                double newScore,
+                double originalScore,
+                List<MatchedFragmentIon> matchedIons,
+                int peptideOneBasedModSite,
+                int peptideLength,
+                Modification modAttemptingToAdd)
+            {
+                Sites.Add(peptideOneBasedModSite);
+                return true;
+            }
         }
     }
 }

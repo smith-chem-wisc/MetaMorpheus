@@ -113,7 +113,8 @@ namespace EngineLayer.Calibration
                 numMs1MassChargeCombinationsConsidered,
                 numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
                 numMs2MassChargeCombinationsConsidered,
-                numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks
+                numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
+                CommonParameters
             );
         }
 
@@ -229,6 +230,11 @@ namespace EngineLayer.Calibration
             List<LabeledDataPoint> result = new List<LabeledDataPoint>();
 
             if (ms2DataScan.TheScan.MassSpectrum.Size == 0)
+                return result;
+
+            // LowCID deconvolutes no fragments (Ms2ScanWithSpecificMass), and CalibrationEngine does not
+            // calibrate MS2 scans in that mode, so there are no MS2 datapoints to collect.
+            if (ms2DataScan.ExperimentalFragments == null)
                 return result;
 
 

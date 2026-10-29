@@ -61,7 +61,7 @@ namespace GuiFunctions
         /// <param name="canvas"></param>
         /// <param name="match"></param>
         public void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons, SpectrumMatchFromTsv match, 
-            bool stationary = false, int annotationRow = 0, int chunkPositionInRow = 0)
+            bool stationary = false, int annotationRow = 0, int chunkPositionInRow = 0, int? fullSequenceLength = null)
         {
             // We clear the canvas for all cases except when plotting the annotation or crosslinked peptide alpha call. 
             // This is so that we can add the XL sequence to the same canvas by one call with the alpha sequence and one call with the beta sequence. 
@@ -80,6 +80,7 @@ namespace GuiFunctions
 
             double canvasWidth = SequenceDrawingCanvas.Width;
             int spacing = 12;
+            int sequenceLength = fullSequenceLength ?? baseSequence.Split('|')[0].Length;
 
             int psmStartResidue;
             if (match.StartAndEndResiduesInParentSequence is null or "")
@@ -170,17 +171,18 @@ namespace GuiFunctions
                         }
 
                         int residue;
+                        int cleavagePosition = GetCleavagePosition(ion.NeutralTheoreticalProduct, sequenceLength);
                         if (Stationary)
                         {
-                            residue = ion.NeutralTheoreticalProduct.ResiduePosition - MetaDrawSettings.FirstAAonScreenIndex;
+                            residue = cleavagePosition - MetaDrawSettings.FirstAAonScreenIndex;
                         }
                         else if (Annotation)
                         {
-                            residue = ion.NeutralTheoreticalProduct.ResiduePosition + (chunkPositionInRow) - (MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment * MetaDrawSettings.SequenceAnnotationSegmentPerRow * annotationRow);
+                            residue = cleavagePosition + chunkPositionInRow - (MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment * MetaDrawSettings.SequenceAnnotationSegmentPerRow * annotationRow);
                         }
                         else
                         {
-                            residue = ion.NeutralTheoreticalProduct.ResiduePosition;
+                            residue = cleavagePosition;
                         }
                         
                         double x = residue * MetaDrawSettings.AnnotatedSequenceTextSpacing + 11 + MetaDrawSettings.ProductTypeToXOffset[ion.NeutralTheoreticalProduct.ProductType];
@@ -200,6 +202,13 @@ namespace GuiFunctions
                 }
             }
             AnnotateModifications(match, SequenceDrawingCanvas, fullSequence, yLoc, chunkPositionInRow: chunkPositionInRow, annotationRow: annotationRow, annotation: Annotation);
+        }
+
+        internal static int GetCleavagePosition(Product product, int sequenceLength)
+        {
+            return product.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime
+                ? sequenceLength - product.FragmentNumber
+                : product.FragmentNumber;
         }
 
         /// <summary>
@@ -275,9 +284,14 @@ namespace GuiFunctions
                 fullSequence = fullSequence.Insert(mod.Key - 1 - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
             }
 
-            List<MatchedFragmentIon> matchedIons = sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
-                                                   p.NeutralTheoreticalProduct.ResiduePosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
-            stationarySequence.AnnotateBaseSequence(baseSequence, fullSequence, yLoc, matchedIons, sm, true);
+            List<MatchedFragmentIon> matchedIons = sm.MatchedIons.Where(p =>
+            {
+                int cleavagePosition = GetCleavagePosition(p.NeutralTheoreticalProduct, sm.BaseSeq.Split('|')[0].Length);
+                return cleavagePosition > MetaDrawSettings.FirstAAonScreenIndex
+                       && cleavagePosition < MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen;
+            }).ToList();
+            stationarySequence.AnnotateBaseSequence(baseSequence, fullSequence, yLoc, matchedIons, sm, true,
+                fullSequenceLength: sm.BaseSeq.Split('|')[0].Length);
         }
 
         /// <summary>
@@ -317,17 +331,25 @@ namespace GuiFunctions
                 if (i + residuesPerSegment < sm.BaseSeq.Length)
                 {
                     baseSequence = sm.BaseSeq.Substring(i, residuesPerSegment);
-                    ions = sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > i && p.NeutralTheoreticalProduct.ResiduePosition < (i + residuesPerSegment)).ToList();
-                    ions.AddRange(sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition == i && p.NeutralTheoreticalProduct.Annotation.Contains('y')));
-                    ions.AddRange(sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition == (i + residuesPerSegment) && p.NeutralTheoreticalProduct.Annotation.Contains('b')));
+                    ions = sm.MatchedIons.Where(p =>
+                    {
+                        int cleavagePosition = DrawnSequence.GetCleavagePosition(p.NeutralTheoreticalProduct, sm.BaseSeq.Length);
+                        return cleavagePosition > i && cleavagePosition < i + residuesPerSegment;
+                    }).ToList();
+                    ions.AddRange(sm.MatchedIons.Where(p => DrawnSequence.GetCleavagePosition(p.NeutralTheoreticalProduct, sm.BaseSeq.Length) == i && p.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime));
+                    ions.AddRange(sm.MatchedIons.Where(p => DrawnSequence.GetCleavagePosition(p.NeutralTheoreticalProduct, sm.BaseSeq.Length) == i + residuesPerSegment && p.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime));
                     remaining -= residuesPerSegment;
                 }
                 else
                 {
                     baseSequence = sm.BaseSeq.Substring(i, remaining);
-                    ions = sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > i && p.NeutralTheoreticalProduct.ResiduePosition < (i + remaining)).ToList();
-                    ions.AddRange(sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition == i && p.NeutralTheoreticalProduct.Annotation.Contains('y')));
-                    ions.AddRange(sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition == (i + residuesPerSegment) && p.NeutralTheoreticalProduct.Annotation.Contains('b')));
+                    ions = sm.MatchedIons.Where(p =>
+                    {
+                        int cleavagePosition = DrawnSequence.GetCleavagePosition(p.NeutralTheoreticalProduct, sm.BaseSeq.Length);
+                        return cleavagePosition > i && cleavagePosition < i + remaining;
+                    }).ToList();
+                    ions.AddRange(sm.MatchedIons.Where(p => DrawnSequence.GetCleavagePosition(p.NeutralTheoreticalProduct, sm.BaseSeq.Length) == i && p.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime));
+                    ions.AddRange(sm.MatchedIons.Where(p => DrawnSequence.GetCleavagePosition(p.NeutralTheoreticalProduct, sm.BaseSeq.Length) == i + residuesPerSegment && p.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime));
                     remaining -= remaining;
                 }
 
@@ -360,7 +382,7 @@ namespace GuiFunctions
                 int yLoc = 10 + (currentRowZeroIndexed * 42);
                 int chunkPositionInRow = (i % segmentsPerRow);
 
-                sequence.AnnotateBaseSequence(segments[i].BaseSeq, segments[i].FullSequence, yLoc, matchedIonSegments[i], segments[i], false, currentRowZeroIndexed, chunkPositionInRow);
+                sequence.AnnotateBaseSequence(segments[i].BaseSeq, segments[i].FullSequence, yLoc, matchedIonSegments[i], segments[i], false, currentRowZeroIndexed, chunkPositionInRow, sm.BaseSeq.Length);
             }
         }
 
@@ -371,7 +393,9 @@ namespace GuiFunctions
             if (spectrumMatch is null)
                 return;
 
-            this.AnnotateBaseSequence(spectrumMatch.BetaPeptideBaseSequence, spectrumMatch.BetaPeptideFullSequence, 100, spectrumMatch.BetaPeptideMatchedIons, spectrumMatch);
+            this.AnnotateBaseSequence(spectrumMatch.BetaPeptideBaseSequence, spectrumMatch.BetaPeptideFullSequence, 100,
+                spectrumMatch.BetaPeptideMatchedIons, spectrumMatch,
+                fullSequenceLength: spectrumMatch.BetaPeptideBaseSequence.Length);
             // annotate crosslinker
             int alphaSite = int.Parse(Regex.Match(spectrumMatch.FullSequence, @"\d+").Value);
             int betaSite = int.Parse(Regex.Match(spectrumMatch.BetaPeptideFullSequence, @"\d+").Value);

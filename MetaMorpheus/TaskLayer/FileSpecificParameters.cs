@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using EngineLayer;
 using MzLibUtil;
 using Nett;
@@ -14,6 +14,9 @@ namespace TaskLayer
     {
         public FileSpecificParameters(TomlTable tomlTable)
         {
+            if (tomlTable == null)
+                throw new MetaMorpheusException("File-specific parameters TOML table cannot be null");
+
             foreach (var keyValuePair in tomlTable)
             {
                 switch (keyValuePair.Key)
@@ -70,6 +73,10 @@ namespace TaskLayer
                     case nameof(CustomIons):
                         CustomIons = keyValuePair.Value.Get<List<ProductType>>(); break;
 
+                    case nameof(PrecursorDeconvolutionParameters):
+                        PrecursorDeconvolutionParameters = keyValuePair.Value.Get<DeconvolutionParameters>(); break;
+                    case nameof(ProductDeconvolutionParameters):
+                        ProductDeconvolutionParameters = keyValuePair.Value.Get<DeconvolutionParameters>(); break;
 
                     default:
                         throw new MetaMorpheusException("Unrecognized parameter \"" + keyValuePair.Key + "\" in file-specific parameters toml");
@@ -95,9 +102,27 @@ namespace TaskLayer
 
         public List<ProductType> CustomIons { get; set; }
 
+        public DeconvolutionParameters PrecursorDeconvolutionParameters { get; set; }
+        public DeconvolutionParameters ProductDeconvolutionParameters { get; set; }
+
         public FileSpecificParameters Clone()
         {
-            return (FileSpecificParameters)this.MemberwiseClone();
+            return new FileSpecificParameters
+            {
+                PrecursorMassTolerance = this.PrecursorMassTolerance,
+                ProductMassTolerance = this.ProductMassTolerance,
+                ProductMassTolerance_LowRes = this.ProductMassTolerance_LowRes,
+                DigestionAgent = this.DigestionAgent,
+                MinPeptideLength = this.MinPeptideLength,
+                MaxPeptideLength = this.MaxPeptideLength,
+                MaxMissedCleavages = this.MaxMissedCleavages,
+                MaxModsForPeptide = this.MaxModsForPeptide,
+                DissociationType = this.DissociationType,
+                SeparationType = this.SeparationType,
+                CustomIons = this.CustomIons != null ? new List<ProductType>(this.CustomIons) : null,
+                PrecursorDeconvolutionParameters = this.PrecursorDeconvolutionParameters,
+                ProductDeconvolutionParameters = this.ProductDeconvolutionParameters
+            };
         }
     }
 }

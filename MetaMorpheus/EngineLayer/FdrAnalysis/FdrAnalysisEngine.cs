@@ -1,19 +1,34 @@
-﻿using EngineLayer.CrosslinkSearch;
+﻿using Chromatography.RetentionTimePrediction;
+using Chromatography.RetentionTimePrediction.Chronologer;
+using Chromatography.RetentionTimePrediction.SSRCalc;
+using EngineLayer.CrosslinkSearch;
 using EngineLayer.SpectrumMatch;
+using PredictionClients.Koina.SupportedModels.RetentionTimeModels;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace EngineLayer.FdrAnalysis
 {
     public class FdrAnalysisEngine : MetaMorpheusEngine
     {
+        private static readonly Lazy<ChronologerRetentionTimePredictor> _chronologerInstance =
+            new Lazy<ChronologerRetentionTimePredictor>(
+                () => new ChronologerRetentionTimePredictor(),
+                System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
+
+        // When non-null, GetChronologer() calls this factory instead of the real Lazy<>.
+        // Used exclusively by unit tests to inject a throwing factory without touching the readonly field.
+        internal static Func<ChronologerRetentionTimePredictor> _chronologerFactoryOverride = null;
+
         private List<SpectralMatch> AllPsms;
         private readonly int MassDiffAcceptorNumNotches;
         private readonly string AnalysisType;
         private readonly string OutputFolder; // used for storing PEP training models  
         private readonly bool DoPEP;
+        private readonly bool IterativePepTraining;
         private static readonly int PsmCountThresholdForInvertedQvalue = 1000;
         /// <summary>
         /// This is to be used only for unit testing. Threshold for q-value calculation is set to 1000
@@ -26,13 +41,14 @@ namespace EngineLayer.FdrAnalysis
         }
         public FdrAnalysisEngine(List<SpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM", 
-            bool doPEP = true, string outputFolder = null) : base(commonParameters, fileSpecificParameters, nestedIds)
+            bool doPEP = true, string outputFolder = null, bool iterativePepTraining = false) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllPsms = psms.OrderByDescending(p => p).ToList();
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
             AnalysisType = analysisType;
             OutputFolder = outputFolder;
             DoPEP = doPEP;
+            IterativePepTraining = iterativePepTraining;
             if (AllPsms.Any())
                 AddPsmAndPeptideFdrInfoIfNotPresent();
             if (fileSpecificParameters == null) throw new ArgumentNullException("file specific parameters cannot be null");
@@ -63,9 +79,9 @@ namespace EngineLayer.FdrAnalysis
             return myAnalysisResults;
         }
 
-        private void DoFalseDiscoveryRateAnalysis(FdrAnalysisResults myAnalysisResults) => DoFalseDiscoveryRateAnalysis(AllPsms, DoPEP, FileSpecificParameters, OutputFolder, myAnalysisResults, CommonParameters);
+        private void DoFalseDiscoveryRateAnalysis(FdrAnalysisResults myAnalysisResults) => DoFalseDiscoveryRateAnalysis(AllPsms, DoPEP, FileSpecificParameters, OutputFolder, myAnalysisResults, CommonParameters, IterativePepTraining);
 
-        internal static void DoFalseDiscoveryRateAnalysis(List<SpectralMatch> allPsms, bool doPep, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, FdrAnalysisResults myAnalysisResults, CommonParameters commonParameters)
+        internal static void DoFalseDiscoveryRateAnalysis(List<SpectralMatch> allPsms, bool doPep, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, FdrAnalysisResults myAnalysisResults, CommonParameters commonParameters, bool iterativePepTraining = false)
         {
             // Stop if canceled
             if (GlobalVariables.StopLoops) { return; }
@@ -92,7 +108,7 @@ namespace EngineLayer.FdrAnalysis
                         CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
 
                         //PEP will model will be developed using peptides and then applied to all PSMs. 
-                        Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder);
+                        Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, iterativePepTraining);
 
                         // peptides are ordered by PEP score from good to bad in order to select the best PSM for each peptide
                         peptides = psms
@@ -110,7 +126,7 @@ namespace EngineLayer.FdrAnalysis
                     else //we have more than 100 psms but less than 100 peptides so
                     {
                         //this will be done using PSMs because we dont' have enough peptides
-                        Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder);
+                        Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, iterativePepTraining);
                         psms = psms.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
                         CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
                     }
@@ -387,7 +403,7 @@ namespace EngineLayer.FdrAnalysis
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
 
-        public static void Compute_PEPValue(FdrAnalysisResults myAnalysisResults, List<SpectralMatch> psms, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder)
+        public static void Compute_PEPValue(FdrAnalysisResults myAnalysisResults, List<SpectralMatch> psms, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, bool iterativePepTraining = false)
         {
             // Currently, searches of mixed data (bottom-up + top-down) are not supported
             // PEP will be calculated based on the search type of the first file/PSM in the list, which isn't ideal
@@ -401,7 +417,71 @@ namespace EngineLayer.FdrAnalysis
                 _ => "standard"
             };
 
-            myAnalysisResults.BinarySearchTreeMetrics = new PepAnalysisEngine(psms, searchType, fileSpecificParameters, outputFolder).ComputePEPValuesForAllPSMs();
+            var rtPredictor = GetRTPredictor(searchType, fileSpecificParameters);
+            // Iteration is on by default (SearchParameters.IterativePepTraining), read only by PostSearchAnalysisTask's main
+            // FDR pass. Every other caller trains once, as before iteration existed: glyco, crosslink and nonspecific
+            // searches, and the variant-peptide passes.
+            var pepEngine = new PepAnalysisEngine(psms, searchType, fileSpecificParameters, outputFolder, rtPredictor)
+            {
+                MaxTrainingRounds = iterativePepTraining ? PepAnalysisEngine.IterativeTrainingRoundCap : 1
+            };
+            myAnalysisResults.BinarySearchTreeMetrics = pepEngine.ComputePEPValuesForAllPSMs();
+        }
+
+        private static IRetentionTimePredictor GetRTPredictor(string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
+        {
+            if (searchType != "standard")
+                return null;
+
+            // Get predictor name from the first file's parameters
+            var predictorName = fileSpecificParameters.FirstOrDefault().fileSpecificParameters?.RTPredictorName;
+
+            return predictorName switch
+            {
+                RTPredictorNames.Chronologer => GetChronologer(),
+                RTPredictorNames.SSRCalc => new SSRCalc3RetentionTimePredictor(),
+                RTPredictorNames.Prosit2019iRT => new Prosit2019iRT(),
+                RTPredictorNames.Prosit2020iRTTMT => new Prosit2020iRTTMT(),
+                _ => null
+            };
+        }
+
+        private static bool _alreadyWarnedAboutChronologer = false;
+
+        /// <summary>
+        /// Chronologer runs on TorchSharp, whose native libraries aren't present in every installation.
+        /// When they're missing, we return null (as GetRTPredictor already does for unrecognized predictors) so that
+        /// PEP falls back to the default retention time predictor. A missing predictor should cost PEP accuracy,
+        /// not the entire search.
+        /// </summary>
+        internal static IRetentionTimePredictor GetChronologer()
+        {
+            try
+            {
+                return _chronologerFactoryOverride != null
+                    ? _chronologerFactoryOverride()
+                    : _chronologerInstance.Value;
+            }
+            catch (Exception e)
+            {
+                if (_alreadyWarnedAboutChronologer)
+                {
+                    return null;
+                }
+                _alreadyWarnedAboutChronologer = true;
+                if (e is DllNotFoundException || e.InnerException is DllNotFoundException)
+                {
+                    WarnStatic("Chronologer retention time prediction was skipped because its native libraries could not be loaded (" + e.Message.Trim() +
+                        "). PEP will be calculated using the SSRCalc3 retention time predictor instead, and will be less accurate. " +
+                        "Uninstalling, then reinstalling MetaMorpheus should restore the missing files.");
+                }
+                else
+                {
+                    WarnStatic("Chronologer retention time prediction was skipped due to an exception (" + e.Message.Trim() +
+                        "). PEP will be calculated using the SSRCalc3 retention time predictor instead, and will be less accurate." );
+                }
+                return null;
+            }
         }
 
         /// <summary>

@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using EngineLayer;
+using System.Linq;
+using Transcriptomics;
+using Omics;
 using EngineLayer.Indexing;
 using NUnit.Framework;
 using Omics.Digestion;
@@ -43,12 +46,19 @@ public class RnaSpecificTypeSwitches
     }
 
     [Test]
-    public static void IndexingEngine_ThrowsOnRNA()
+    public static void IndexingEngine_IndexesRNA()
     {
-        var indexEngine = new IndexingEngine([], [], [], null, null, null,
-            1, DecoyType.Reverse, new CommonParameters(digestionParams: new RnaDigestionParams()), [], 14, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+        // Used to assert IndexingEngine_ThrowsOnRNA: the engine refused RnaDigestionParams outright with
+        // "Not yet implemented for Rna Digestion". It now digests nucleic acids like any other biopolymer.
+        List<IBioPolymer> rna = [new RNA("GUACUG")];
 
-        Assert.Throws<MetaMorpheusException>(() => indexEngine.Run());
+        var indexEngine = new IndexingEngine(rna, [], [], null, null, null,
+            1, DecoyType.None, new CommonParameters(digestionParams: new RnaDigestionParams()), [], 14, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+
+        var results = (IndexingResults)indexEngine.Run();
+
+        Assert.That(results.PeptideIndex, Is.Not.Empty);
+        Assert.That(results.PeptideIndex.First(), Is.InstanceOf<OligoWithSetMods>());
     }
 
     [Test]

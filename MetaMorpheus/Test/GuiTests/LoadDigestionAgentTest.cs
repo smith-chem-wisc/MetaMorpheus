@@ -408,7 +408,10 @@ namespace Test.GuiTests
 
                 var ex = Assert.Throws<MetaMorpheusException>(() => InvokeLoadDigestionAgents());
 
-                Assert.That(ex!.Message, Does.Contain("Error creating default custom protease file with error message:"));
+                // Seeding moved to CustomDataFile.EnsureExists, which names the file it could not create.
+                // The old message said only "custom protease file", which did not tell the user where to look.
+                Assert.That(ex!.Message, Does.Contain("custom protease"));
+                Assert.That(ex.Message, Does.Contain(customPath), "the message has to name the file that failed");
                 Assert.That(ex.InnerException, Is.Not.Null);
             }
             finally
@@ -453,7 +456,10 @@ namespace Test.GuiTests
 
                 var ex = Assert.Throws<MetaMorpheusException>(() => InvokeLoadDigestionAgents());
 
-                Assert.That(ex!.Message, Does.Contain("Error creating default custom rnase file with error message:"));
+                // Seeding moved to CustomDataFile.EnsureExists, which names the file it could not create.
+                // The old message said only "custom rnase file", which did not tell the user where to look.
+                Assert.That(ex!.Message, Does.Contain("custom rnase"));
+                Assert.That(ex.Message, Does.Contain(customPath), "the message has to name the file that failed");
                 Assert.That(ex.InnerException, Is.Not.Null);
             }
             finally

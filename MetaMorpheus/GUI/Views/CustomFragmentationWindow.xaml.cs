@@ -16,16 +16,11 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class CustomFragmentationWindow : Window
     {
-        private bool isRna;
+        private readonly PropertyChangedEventHandler _modeChanged;
         private ObservableCollection<BoolStringClass> TheList { get; set; }
 
-        public CustomFragmentationWindow() : this(null)
+        public CustomFragmentationWindow(List<ProductType> list)
         {
-        }
-
-        public CustomFragmentationWindow(List<ProductType> list, bool isRna = false)
-        {
-            this.isRna = isRna;
             InitializeComponent();
             PopulateChoices();
 
@@ -38,6 +33,16 @@ namespace MetaMorpheusGUI
                     r.IsSelected = true;
                 }
             }
+
+            // Update options on mode change
+            _modeChanged = (sender, args) =>
+            {
+                if (args.PropertyName == nameof(GuiGlobalParamsViewModel.IsRnaMode))
+                {
+                    PopulateChoices();
+                }
+            };
+            GuiGlobalParamsViewModel.Instance.PropertyChanged += _modeChanged;
 
             base.Closing += this.OnClosing;
         }
@@ -54,7 +59,7 @@ namespace MetaMorpheusGUI
             knownProductTypes.Remove(ProductType.Ycore);
             knownProductTypes.Remove(ProductType.Y);
 
-            if (isRna)
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
             {
                 knownProductTypes.Remove(ProductType.aStar);
                 knownProductTypes.Remove(ProductType.aDegree);
@@ -87,7 +92,7 @@ namespace MetaMorpheusGUI
 
             foreach (ProductType productType in knownProductTypes)
             {
-                var tooltip = isRna
+                var tooltip = GuiGlobalParamsViewModel.Instance.IsRnaMode
                     ? Omics.Fragmentation.Oligo.DissociationTypeCollection
                         .GetRnaMassShiftFromProductType(productType).ToString("F4") + " Da; "
                     : DissociationTypeCollection.GetMassShiftFromProductType(productType).ToString("F4") +
@@ -110,7 +115,7 @@ namespace MetaMorpheusGUI
         private void Save_Click(object sender, RoutedEventArgs e)
         {
             var selectedIons = TheList.Where(p => p.IsSelected).Select(p => p.Type);
-            if (isRna)
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
                 Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = selectedIons.ToList();
             else
                 DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = selectedIons.ToList();
@@ -130,6 +135,8 @@ namespace MetaMorpheusGUI
                 this.Visibility = Visibility.Hidden;
                 e.Cancel = true;
             }
+
+            GuiGlobalParamsViewModel.Instance.PropertyChanged -= _modeChanged;
         }
 
         private void SelectAll_OnClick(object sender, RoutedEventArgs e)

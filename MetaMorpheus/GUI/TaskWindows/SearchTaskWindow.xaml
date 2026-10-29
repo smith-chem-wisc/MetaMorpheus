@@ -11,12 +11,12 @@
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <local:BooleanInverter x:Key="InvertedBooleanConverter" />
-        
+
         <!-- used in Quantifications -->
         <local:BooleanOrConverter x:Key="boolOrConverter"/>
         <local:BooleanOrToVisibilityConverter x:Key="boolOr2VisConverter"/>
 
-            <!-- Style GroupBoxes -->
+        <!-- Style GroupBoxes -->
         <Style TargetType="GroupBox">
             <Setter Property="BorderThickness" Value="3 1 1 1"/>
             <Setter Property="Padding" Value="5"/>
@@ -310,7 +310,7 @@
                                         </TextBox.ToolTip>
                                     </local:IntegerTexBoxControl>
                                 </StackPanel>
-                                
+
                                 <!-- Min Score -->
                                 <StackPanel Grid.Column="0" Grid.Row="6"  Orientation="Horizontal"  Margin="5 5 5 0">
                                     <Label x:Name="minScoreAllowedLabel" Width="150" Content="Minimum score allowed:" HorizontalContentAlignment="Left"/>
@@ -496,7 +496,7 @@
                     </GroupBox>
 
                     <!-- Quantification options -->
-                    <GroupBox Header="Quantification" DockPanel.Dock="Top" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
+                    <GroupBox Header="Quantification" DockPanel.Dock="Top">
                         <!-- Radio Buttons for Quant Method -->
                         <StackPanel Margin="5">
                             <RadioButton x:Name="CheckBoxNoQuant" Content="No quantification" GroupName="QuantType">
@@ -675,9 +675,9 @@
 
                                 <!-- Writing Options  -->
                                 <ColumnDefinition Width="*" />
-                                
+
                             </Grid.ColumnDefinitions>
-                            
+
                             <!-- writing options -->
                             <StackPanel Orientation="Vertical" Margin="5" Grid.Column="0">
                                 <CheckBox x:Name="CkbMzId" Content="Write .mzID" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}" ToolTipService.ShowOnDisabled="True">
@@ -712,11 +712,24 @@
                                         </TextBlock>
                                     </CheckBox.ToolTip>
                                 </CheckBox>
-                                
+                                <CheckBox x:Name="WriteSdrfCheckBox" Content="Write SDRF experimental-design file">
+                                    <CheckBox.ToolTip>
+                                        <TextBlock>
+                                            Writes an SDRF-Proteomics file describing this experiment alongside the results,
+                                            so searches can be compared and mined across experiments.
+                                            <LineBreak/>
+                                            Reads the sample metadata from ExperimentalDesign.tsv beside the spectra files: an SDRF
+                                            records which sample each file came from, and nothing in a search knows that. Without
+                                            it the search still runs, a warning names what is missing, and those columns say
+                                            "not available".
+                                        </TextBlock>
+                                    </CheckBox.ToolTip>
+                                </CheckBox>
+
                             </StackPanel>
                         </Grid>
-                        
-                        
+
+
                         <!--</Expander>-->
                     </GroupBox>
                 </StackPanel>
@@ -765,6 +778,47 @@
                                         </StackPanel>
                                     </GroupBox>
                                     <local:HostDeconParamControl x:Name="DeisotopingControl" DataContext="{Binding}"/>
+                                    <GroupBox Header="Retention Time Filtering">
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Retention time range -->
+                                            <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0">
+                                                <Label Content="Min Retention Time (min):" Width="150" />
+                                                <local:DoubleTextBoxControl x:Name="MinRetentionTimeTextBox" Width="55" LowerBound="0"
+                                                                ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                    <TextBox.ToolTip>
+                                                        <TextBlock>
+                                                Minimum retention time to include in the search, in minutes.
+                                                <LineBreak />
+                                                Scans before this time are ignored.
+                                                        </TextBlock>
+                                                    </TextBox.ToolTip>
+                                                </local:DoubleTextBoxControl>
+                                            </StackPanel>
+
+                                            <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1">
+                                                <Label Content="Max Retention Time (min):" Width="150" />
+                                                <local:DoubleTextBoxControl x:Name="MaxRetentionTimeTextBox" Width="55" LowerBound="0"
+                                                                ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                    <TextBox.ToolTip>
+                                                        <TextBlock>
+                                                Maximum retention time to include in the search, in minutes.
+                                                <LineBreak />
+                                                Leave blank to search through the end of the file.
+                                                        </TextBlock>
+                                                    </TextBox.ToolTip>
+                                                </local:DoubleTextBoxControl>
+                                            </StackPanel>
+                                        </Grid>
+
+                                    </GroupBox>
+                                    
+                                    
                                     <GroupBox Header="Peak Trimming">
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
@@ -1057,6 +1111,47 @@
                                     </Style>
                                 </Expander.Style>
                                 <StackPanel>
+                                    <GroupBox Header="Retention Time Predictor"
+                                              Visibility="{Binding Converter={StaticResource CollapseOnRnaModeConverter}}">
+                                        <StackPanel Margin="5">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="77*" />
+                                                    <ColumnDefinition Width="92*"/>
+                                                    <ColumnDefinition Width="168*" />
+                                                    <ColumnDefinition Width="168*" />
+                                                    <ColumnDefinition Width="168*" />
+                                                </Grid.ColumnDefinitions>
+                                                <RadioButton x:Name="ChronologerRadioButton" Grid.Column="0" HorizontalAlignment="Center"
+                                                             GroupName="RTPredictorType" Content="Chronologer"  IsChecked="True"
+                                                             ToolTip="Deep-learning retention time predictor. More accurate but noticeably slower." Grid.ColumnSpan="2" />
+                                                <RadioButton x:Name="SSRCalcRadioButton" Grid.Column="2" HorizontalAlignment="Center"
+                                                             GroupName="RTPredictorType" Content="SSRCalc"
+                                                             ToolTip="Classic hydrophobicity-based retention time calculator. Much faster, slightly less accurate." />
+                                                <RadioButton x:Name="Prosit2019iRTRadioButton" Grid.Column="3" HorizontalAlignment="Center"
+                                                             GroupName="RTPredictorType" Content="Prosit 2019 (network)"
+                                                             ToolTip="Deep-learning retention time predictor served via Koina (network required). Predicts indexed RT for unmodified/oxidized peptides." />
+                                                <RadioButton x:Name="Prosit2020iRTTMTRadioButton" Grid.Column="4" HorizontalAlignment="Center"
+                                                             GroupName="RTPredictorType" Content="Prosit 2020 (network)"
+                                                             ToolTip="Deep-learning retention time predictor served via Koina (network required). Same as Prosit2019iRT but trained for TMT-labeled peptides." />
+                                            </Grid>
+                                        </StackPanel>
+                                    </GroupBox>
+                                    <GroupBox Header="Posterior Error Probability">
+                                        <StackPanel Margin="2">
+                                            <CheckBox Margin="3 0 0 0" x:Name="IterativePepTrainingCheckBox" Content="Iterative PEP training">
+                                                <ToolTipService.ToolTip>
+                                                    <ToolTip ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                        <TextBlock>
+                                                            Retrain the PEP model on its own output until the number of accepted target peptides stops growing (semi-supervised, as in Percolator and mokapot).
+                                                            <LineBreak />
+                                                            Unchecked, PEP trains once, on labels from the search-score q-value.
+                                                        </TextBlock>
+                                                    </ToolTip>
+                                                </ToolTipService.ToolTip>
+                                            </CheckBox>
+                                        </StackPanel>
+                                    </GroupBox>
                                     <GroupBox Header="Mass Difference Histogram Analysis">
                                         <StackPanel Margin="2">
                                             <CheckBox Margin="3 0 0 0"  x:Name="CheckBoxHistogramAnalysis" Content="Construct mass-difference histogram">

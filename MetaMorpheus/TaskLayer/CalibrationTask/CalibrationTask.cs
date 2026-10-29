@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
@@ -59,8 +59,8 @@ namespace TaskLayer
         private List<DbForTask> _dbFilenameList;
 
         // Modern Search indexing fields
-        private List<PeptideWithSetModifications> _peptideIndex;
-        private List<int>[] _fragmentIndex;
+        private List<IBioPolymerWithSetMods> _peptideIndex;
+        private FragmentIndex _fragmentIndex;
 
         protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
@@ -106,7 +106,7 @@ namespace TaskLayer
                 DataPointAquisitionResults acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, combinedParams, originalUncalibratedFilePath);
 
                 //not enough points on the first go so try again with a little wider tolerance
-                if (!SufficientAcquisitionResults(acquisitionResultsFirst))
+                if (!SufficientAcquisitionResults(acquisitionResultsFirst, combinedParams))
                 {
                     UpdateCombinedParameters(combinedParams,
                         combinedParams.PrecursorMassTolerance.Value * InitialSearchToleranceMultiplier,
@@ -115,7 +115,7 @@ namespace TaskLayer
                     acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, combinedParams, originalUncalibratedFilePath);
                 }
                 // If there still aren't enough points, give up
-                if (!SufficientAcquisitionResults(acquisitionResultsFirst))
+                if (!SufficientAcquisitionResults(acquisitionResultsFirst, combinedParams))
                 {
                     WriteUncalibratedFile(originalUncalibratedFilePath, uncalibratedNewFullFilePath, _unsuccessfullyCalibratedFilePaths, acquisitionResultsFirst, _taskId);
                     continue;
@@ -135,7 +135,7 @@ namespace TaskLayer
                 // and write the uncalibrated file
                 // TODO: We should check if calibration made things better, and if so keep the calibrated file
                 // this if statement only checks if things got worse
-                if (!SufficientAcquisitionResults(acquisitionResultsSecond))
+                if (!SufficientAcquisitionResults(acquisitionResultsSecond, combinedParams))
                 {
                     WriteUncalibratedFile(originalUncalibratedFilePath, uncalibratedNewFullFilePath, _unsuccessfullyCalibratedFilePaths, acquisitionResultsFirst, taskId);
                     continue;
@@ -161,6 +161,13 @@ namespace TaskLayer
                 // Update file specific params to reflect the new tolerances, then write them out
                 fileSpecificParams.PrecursorMassTolerance = combinedParams.PrecursorMassTolerance;
                 fileSpecificParams.ProductMassTolerance = combinedParams.ProductMassTolerance;
+
+                // LowCID searches XCorr-process MS2 spectra in place (MetaMorpheusTask.GetMs2Scans) and CalibrationEngine
+                // leaves MS2 scans unchanged in that mode, so write them from the file as read, not the processed copies
+                if (combinedParams.DissociationType == DissociationType.LowCID)
+                {
+                    myMsDataFile = WithUnprocessedMsnScans(myMsDataFile, originalUncalibratedFilePath, combinedParams);
+                }
 
                 // write toml settings for the calibrated file
                 string calibratedTomlFilename = Path.Combine(outputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".toml");
@@ -194,11 +201,33 @@ namespace TaskLayer
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters, string originalDataFile)
         {
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalDataFile);
-            MassDiffAcceptor searchMode = combinedParameters.PrecursorMassTolerance is PpmTolerance ?
-                new SinglePpmAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value) :
-                new SingleAbsoluteAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
+            // In most-abundant mode, find calibration PSMs with the apex acceptor. The calibration error
+            // itself is recomputed per-isotope from the identified peptide's theoretical distribution
+            // (DataPointAcquisitionEngine) and is independent of the precursor-matching convention.
+            // The apex acceptor is only usable when a most-abundant peak was actually observed, which
+            // requires precursor deconvolution. Calibration can run with deconvolution off (see ctor),
+            // and the scans then carry no most-abundant mass at all — so use the standard zero-centered
+            // (monoisotopic) acceptor there, and the scans' monoisotopic mass is what gets matched.
+            MassDiffAcceptor searchMode;
+            if (combinedParameters.UsesMostAbundantPeak()
+                && combinedParameters.DoPrecursorDeconvolution)
+            {
+                searchMode = new MostAbundantMassDiffAcceptor("mostAbundant", combinedParameters.PrecursorMassTolerance,
+                    combinedParameters.GetAverageResidue(),
+                    expectedIsotopeSpacing: combinedParameters.IsotopeSpacing());
+            }
+            else
+            {
+                searchMode = combinedParameters.PrecursorMassTolerance is PpmTolerance ?
+                    new SinglePpmAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value) :
+                    new SingleAbsoluteAroundZeroSearchMode(combinedParameters.PrecursorMassTolerance.Value);
+            }
 
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, originalDataFile, combinedParameters).OrderBy(b => b.GetPrecursorMassForSearch(combinedParameters)).ToArray();
+            // A most-abundant search falls back to the monoisotopic mass for any scan with no observed apex.
+            // That is intended, but silent — report how often it happens so it is noticed.
+            string fallbackWarning = listOfSortedms2Scans.GetMonoisotopicFallbackWarning(combinedParameters, Path.GetFileName(originalDataFile));
+            if (fallbackWarning != null) { Warn(fallbackWarning); }
             SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
 
             Log("Searching with searchMode: " + searchMode, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension });
@@ -221,7 +250,10 @@ namespace TaskLayer
             }
 
             List<SpectralMatch> allPsms = allPsmsArray.Where(b => b != null).OrderByDescending(b => b.Score)
-                .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
+                // Rank equal-scoring matches by how close the precursor is to the candidate. The isotope
+                // offset a most-abundant search allowed is not "closeness" - left in, it would rank a match
+                // with a 1-neutron apex misprediction behind an inferior one.
+                .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.GetObservedMonoisotopicMass(b.BioPolymerWithSetModsMonoisotopicMass.Value, combinedParameters) - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
                 .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
 
             _ = new FdrAnalysisEngine(allPsms, searchMode.NumNotches, CommonParameters, FileSpecificParameters, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension }, doPEP: false).Run();
@@ -384,7 +416,7 @@ namespace TaskLayer
         {
             string fileExtension = Path.GetExtension(originalUncalibratedFilePath);
             string originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
-            if (fileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".msalign", StringComparison.OrdinalIgnoreCase))
+            if (fileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".msalign", StringComparison.OrdinalIgnoreCase) || BrukerDataDirectory.IsInnerFileExtension(fileExtension))
             {
                 _unsuccessfullyCalibratedFilePaths.Add(originalUncalibratedFilePath);
                 // provide a message indicating why we couldn't calibrate
@@ -401,18 +433,34 @@ namespace TaskLayer
         /// (Precursor = 3/Product = 6)MultiplierForToml * acquisitionResults.PsmPrecursorIqrPpmError + |acquisitionResults.PsmPrecursorMedianPpmError|
         /// 
         /// Currently, this coerces the tolerance values to ppm tolerance. In the future, we should add support for absolute tolerance
+        /// Under LowCID the product tolerance is left as given, because MS2 scans are not calibrated in that mode.
         /// </summary>
         public static void UpdateCombinedParameters(CommonParameters combinedParams, DataPointAquisitionResults acquisitionResults)
         {
             double newPrecursorPpmTolerance = Math.Round(PrecursorMultiplierForToml * acquisitionResults.PsmPrecursorIqrPpmError + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError), 1);
             double newProductPpmTolerance = Math.Round(ProductMultiplierForToml * acquisitionResults.PsmProductIqrPpmError + Math.Abs(acquisitionResults.PsmProductMedianPpmError), 1);
+
+            // Guardrail (most-abundant mode only): the neutron-misassignment error distribution can be
+            // pathologically wide there, and calibration must never write a tolerance wider than the one
+            // it searched with (that would explode the candidate space and memory in downstream
+            // GPTMD/Search). In default Monoisotopic mode the tolerance is left unclamped, preserving the
+            // historical multi-round calibration behavior.
+            if (combinedParams.UsesMostAbundantPeak())
+            {
+                newPrecursorPpmTolerance = Math.Min(newPrecursorPpmTolerance, combinedParams.PrecursorMassTolerance.Value);
+                newProductPpmTolerance = Math.Min(newProductPpmTolerance, combinedParams.ProductMassTolerance.Value);
+            }
+
             UpdateCombinedParameters(combinedParams, newPrecursorPpmTolerance, newProductPpmTolerance);
         }
 
         public static void UpdateCombinedParameters(CommonParameters combinedParameters, double newPrecursorTolerance, double newProductTolerance)
         {
             combinedParameters.PrecursorMassTolerance = new PpmTolerance(newPrecursorTolerance);
-            combinedParameters.ProductMassTolerance = new PpmTolerance(newProductTolerance);
+            if (combinedParameters.DissociationType != DissociationType.LowCID)
+            {
+                combinedParameters.ProductMassTolerance = new PpmTolerance(newProductTolerance);
+            }
         }
 
         private void WriteUncalibratedFile(string originalUncalibratedFilePath, string uncalibratedNewFullFilePath, List<string> unsuccessfullyCalibratedFilePaths,
@@ -453,11 +501,29 @@ namespace TaskLayer
             return (numPsmsIncreased && numPeptidesIncreased && psmPrecursorMedianPpmErrorDecreased && psmProductMedianPpmErrorDecreased);
         }
 
-        private bool SufficientAcquisitionResults(DataPointAquisitionResults acquisitionResults)
+        /// <summary>
+        /// Returns the calibrated file with every MSn scan (n > 1) replaced by the same scan read fresh from disk.
+        /// </summary>
+        private static MsDataFile WithUnprocessedMsnScans(MsDataFile calibratedFile, string originalFilePath, CommonParameters combinedParams)
         {
+            Dictionary<int, MsDataScan> unprocessedScans = MsDataFileReader.GetDataFile(originalFilePath)
+                .LoadAllStaticData(null, combinedParams.MaxThreadsToUsePerFile)
+                .GetAllScansList()
+                .ToDictionary(scan => scan.OneBasedScanNumber);
+
+            MsDataScan[] scans = calibratedFile.GetAllScansList()
+                .Select(scan => scan.MsnOrder == 1 ? scan : unprocessedScans[scan.OneBasedScanNumber])
+                .ToArray();
+            return new GenericMsDataFile(scans, calibratedFile.SourceFile);
+        }
+
+        private bool SufficientAcquisitionResults(DataPointAquisitionResults acquisitionResults, CommonParameters combinedParams)
+        {
+            // LowCID calibrates MS1 only, so it collects no MS2 datapoints
             return acquisitionResults.Psms.Count >= NumRequiredPsms
                 && acquisitionResults.Ms1List.Count >= NumRequiredMs1Datapoints
-                && acquisitionResults.Ms2List.Count >= NumRequiredMs2Datapoints;
+                && (combinedParams.DissociationType == DissociationType.LowCID
+                    || acquisitionResults.Ms2List.Count >= NumRequiredMs2Datapoints);
         }
 
         public void WarnForWiderTolerance(double newPrecursorTolerance, double newProductTolerance)

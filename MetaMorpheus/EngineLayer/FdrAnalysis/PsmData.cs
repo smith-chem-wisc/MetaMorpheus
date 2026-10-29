@@ -18,6 +18,7 @@ namespace EngineLayer.FdrAnalysis
                     "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount",
                     "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore",
                     "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle",
+                    "HasHydrophobicity",
                     "PrecursorDeconvolutionScore",
                 }
             },
@@ -70,6 +71,7 @@ namespace EngineLayer.FdrAnalysis
             { "LongestFragmentIonSeries", 1 },
             { "ComplementaryIonCount", 1 },
             { "HydrophobicityZScore", -1 },
+            { "HasHydrophobicity", 1 },
             { "IsVariantPeptide",-1 },
             { "AlphaIntensity", 1 },
             { "BetaIntensity", 1 },
@@ -88,6 +90,23 @@ namespace EngineLayer.FdrAnalysis
             { "InternalIonCount", 1},
             { "PrecursorDeconvolutionScore", 1 },
             }.ToImmutableDictionary();
+
+        /// <summary>
+        /// A copy of this feature vector carrying a different Label.
+        /// <remarks>
+        /// Used by the PEP engine's feature cache. The features are round-invariant but the label is
+        /// not, and the same vector is handed both to training and to prediction, so callers must not
+        /// share one instance -- ML.NET reads the training set lazily, and mutating a Label in place
+        /// would reach back into a training list a later fold is about to fit on. Copying ~30 value
+        /// fields is free next to recomputing a retention-time prediction.
+        /// </remarks>
+        /// </summary>
+        public PsmData WithLabel(bool label)
+        {
+            var copy = (PsmData)MemberwiseClone();
+            copy.Label = label;
+            return copy;
+        }
 
         public string ToString(string searchType)
         {
@@ -176,6 +195,19 @@ namespace EngineLayer.FdrAnalysis
 
         [LoadColumn(23)]
         public float HasSpectralAngle { get; set; }
+
+        /// <summary>
+        /// 1 when the retention-time predictor produced a value for this peptidoform, 0 when it could not.
+        /// Chronologer declines a sequence longer than 50 residues, shorter than 7, or carrying a non-canonical
+        /// amino acid such as selenocysteine; any predictor can also fail outright.
+        ///
+        /// Companion to <see cref="HydrophobicityZScore"/> in the same way <see cref="HasSpectralAngle"/> is the
+        /// companion to <see cref="SpectralAngle"/>: it lets the model distinguish "predicted, and disagrees with
+        /// the observed retention time" from "could not be predicted at all". Without it a failed prediction is
+        /// indistinguishable from a maximally bad one.
+        /// </summary>
+        [LoadColumn(30)]
+        public float HasHydrophobicity { get; set; }
 
         [LoadColumn(24)]
         public float PeaksInPrecursorEnvelope { get; set; }

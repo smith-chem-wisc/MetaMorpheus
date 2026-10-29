@@ -1061,5 +1061,33 @@ namespace Test
 
             Directory.Delete(outputFolder, true);
         }
+
+        /// <summary>
+        /// The protein defaults are shared between the standard and glyco search parameters. They must stay
+        /// equal, and each must get its own dictionary, since callers mutate the instance they are handed
+        /// (the GUI assigns into it per modification type).
+        /// </summary>
+        [Test]
+        public static void GlycoAndStandardSearchShareTheSameModsToWriteDefaults()
+        {
+            var search = new SearchParameters();
+            var glyco = new GlycoSearchParameters();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(glyco.ModsToWriteSelection, Is.EquivalentTo(search.ModsToWriteSelection));
+                Assert.That(glyco.ModsToWriteSelection, Is.Not.SameAs(search.ModsToWriteSelection),
+                    "a shared dictionary instance would let one task's edits leak into another's");
+            });
+
+            // Mutating one must not disturb the other, which is what a cached static would break.
+            search.ModsToWriteSelection["UniProt"] = 0;
+            Assert.That(glyco.ModsToWriteSelection["UniProt"], Is.EqualTo(2));
+
+            // RNA search deliberately replaces these with an RNA-specific set rather than inheriting them.
+            Assert.That(new RnaSearchParameters().ModsToWriteSelection,
+                Is.Not.EquivalentTo(new SearchParameters().ModsToWriteSelection));
+        }
+
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -9,6 +9,7 @@ using EngineLayer.DatabaseLoading;
 using GuiFunctions;
 using MassSpectrometry;
 using MzLibUtil;
+using Omics.Fragmentation;
 using Nett;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
@@ -34,6 +35,10 @@ namespace Test.MetaDraw
             Assert.That(viewModel.FragmentationParamsViewModel.MinInternalIonLength, Is.EqualTo(0));
             Assert.That(viewModel.DissociationTypes.Count(), Is.EqualTo(7));
             Assert.That(viewModel.ProductIonMassTolerance, Is.EqualTo(20));
+            Assert.That(viewModel.SelectedToleranceUnit, Is.EqualTo("ppm"));
+            Assert.That(viewModel.PossibleToleranceUnits.Count, Is.EqualTo(2));
+            Assert.That(viewModel.PossibleToleranceUnits, Contains.Item("ppm"));
+            Assert.That(viewModel.PossibleToleranceUnits, Contains.Item("Da"));
 
             var productsToUse = viewModel.PossibleProducts.Where(p => p.Use).Select(p => p.ProductType).ToList();
             var hcdProducts = Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.HCD];
@@ -150,6 +155,49 @@ namespace Test.MetaDraw
         }
 
         [Test]
+        public static void TestFragmentationReanalysisViewModel_ToleranceUnit()
+        {
+            var viewModel = new FragmentationReanalysisViewModel();
+
+            // run a quick search
+            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestToleranceUnit");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
+            var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            engineToml.Run();
+            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
+            var dataFile = MsDataFileReader.GetDataFile(myFile);
+
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+            var psmToResearch = parsedPsms.First();
+            var scan = dataFile.GetOneBasedScan(psmToResearch.Ms2ScanNumber);
+
+            // baseline: ppm mode with moderate tolerance
+            viewModel.SelectedToleranceUnit = "ppm";
+            viewModel.ProductIonMassTolerance = 20;
+            viewModel.PossibleProducts.ForEach(p => p.Use = true);
+            var ppmMatches = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
+            Assert.That(ppmMatches.Count, Is.GreaterThan(0), "Should have some matches in ppm mode");
+
+            // switch to Da with same numeric value: 20 Da is far more permissive than 20 ppm
+            viewModel.SelectedToleranceUnit = "Da";
+            var daMatches = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
+            Assert.That(daMatches.Count, Is.GreaterThan(ppmMatches.Count),
+                "20 Da tolerance should match more ions than 20 ppm tolerance");
+
+            // switch back to ppm and verify results match the first ppm run (approx)
+            viewModel.SelectedToleranceUnit = "ppm";
+            var ppmMatchesAgain = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, true);
+            Assert.That(ppmMatchesAgain.Count, Is.EqualTo(ppmMatches.Count),
+                "Switching back to ppm should produce same match count");
+
+            // clean up
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
         [NonParallelizable]
         public static void TestFragmentationReanalysisViewModel_RematchIons_RNA()
         {
@@ -213,6 +261,50 @@ namespace Test.MetaDraw
             // clean up
             Directory.Delete(outputFolder, true);
             GlobalVariables.AnalyteType = AnalyteType.Peptide;
+        }
+
+        [Test]
+        public static void TestFragmentationReanalysisViewModel_DiagnosticIons()
+        {
+            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\TMT-Task1-SearchTaskconfig.toml");
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestRefragmentDiagnosticIons");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\VA084TQ_6.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\mouseTmt.fasta");
+
+            var engineToml = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) },
+                new List<string> { myFile },
+                new List<DbForTask> { new DbForTask(myDatabase, false) },
+                outputFolder);
+            engineToml.Run();
+
+            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
+            var dataFile = MsDataFileReader.GetDataFile(myFile);
+
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+            var psmToResearch = parsedPsms.First();
+            var scan = dataFile.GetOneBasedScan(psmToResearch.Ms2ScanNumber);
+
+            var viewModel = new FragmentationReanalysisViewModel();
+
+            viewModel.PossibleProducts.ForEach(p => p.Use = true);
+
+            var productsSnapshot = viewModel.PossibleProducts.Where(p => p.Use).Select(p => p.ProductType).ToList();
+            Assert.That(productsSnapshot.Contains(ProductType.D), "ProductType.D should be enabled for diagnostic ion testing");
+
+            viewModel.ProductIonMassTolerance = 20;
+            var newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch, false);
+
+            var diagnosticIonCount = newMatchedIons.Count(i => i.NeutralTheoreticalProduct.ProductType == ProductType.D);
+            Assert.That(diagnosticIonCount, Is.GreaterThan(0), "Should find diagnostic ions from TMT-labeled peptide reanalysis");
+
+            var nonDiagnosticIonCount = newMatchedIons.Count(i => i.NeutralTheoreticalProduct.ProductType != ProductType.D);
+            Assert.That(nonDiagnosticIonCount, Is.GreaterThan(0), "Should also find regular fragment ions");
+
+            Assert.That(newMatchedIons.Count, Is.EqualTo(diagnosticIonCount + nonDiagnosticIonCount), "All matched ions should be accounted for");
+
+            Directory.Delete(outputFolder, true);
         }
     }
 }
