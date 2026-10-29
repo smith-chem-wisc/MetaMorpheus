@@ -158,12 +158,7 @@ namespace EngineLayer
         /// <param name="massTag"></param>
         public void SetIsobaricMassTagReporterIonIntensities(IsobaricMassTag massTag)
         {
-            if (UseChildScansForIsobaricQuant(out var mostIntenseChildScan))
-            {
-                IsobaricMassTagReporterIonIntensities = massTag.GetReporterIonIntensities(mostIntenseChildScan.TheScan.MassSpectrum);
-                return;
-            }
-            IsobaricMassTagReporterIonIntensities = massTag.GetReporterIonIntensities(TheScan.MassSpectrum);
+            IsobaricMassTagReporterIonIntensities = massTag.GetReporterIonIntensities(ReporterIonScan.MassSpectrum);
         }
 
         /// <summary>
@@ -177,12 +172,18 @@ namespace EngineLayer
         /// pair is read from its loaded spectrum, as the overload above reads it.</param>
         public void SetIsobaricMassTagReporterIonIntensities(IsobaricMassTag massTag, IReadOnlyDictionary<MsDataScan, MsDataScan> storedScanFor)
         {
-            MsDataScan loaded = UseChildScansForIsobaricQuant(out var mostIntenseChildScan)
-                ? mostIntenseChildScan.TheScan
-                : TheScan;
+            MsDataScan loaded = ReporterIonScan;
             MsDataScan source = storedScanFor.TryGetValue(loaded, out var stored) ? stored : loaded;
             IsobaricMassTagReporterIonIntensities = massTag.GetReporterIonIntensities(source.MassSpectrum);
         }
+
+        /// <summary>
+        /// The scan reporter ions are read from, by both overloads above: the most intense child scan when there is one,
+        /// otherwise this scan.
+        /// </summary>
+        public MsDataScan ReporterIonScan => UseChildScansForIsobaricQuant(out var mostIntenseChildScan)
+            ? mostIntenseChildScan.TheScan
+            : TheScan;
 
         /// <summary>
         /// Helper method to determine if child scans contain isobaric mass tag (e.g., TMT) reporter ions

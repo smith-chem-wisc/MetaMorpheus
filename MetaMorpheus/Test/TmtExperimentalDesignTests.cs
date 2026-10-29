@@ -538,6 +538,69 @@ namespace Test
         {
             Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.Write(null));
             Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.Write(new List<TmtFileInfo>()));
+            Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.Write(null, TestContext.CurrentContext.TestDirectory));
+            Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.Write(new List<TmtFileInfo>(), TestContext.CurrentContext.TestDirectory));
+        }
+
+        /// <summary>
+        /// Adding rows needs rows to add and a design to add them to: no files, an empty design file, or a header missing
+        /// a required column is refused, and the design file is left as it was.
+        /// </summary>
+        [Test]
+        public static void AddRowsRefusesNoFilesAndADesignWithoutAValidHeader()
+        {
+            string folder = NewFolder("TmtDesignAddRowsRefusals");
+            string designPath = Path.Combine(folder, "TmtDesign.txt");
+            var files = new List<TmtFileInfo> { new TmtFileInfo(Path.Combine(folder, "file.1.raw"), "PlexA", 1, 1, null) };
+
+            File.WriteAllLines(designPath, new[] { TmtExperimentalDesign.Header });
+            Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.AddRows(designPath, null));
+            Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.AddRows(designPath, new List<TmtFileInfo>()));
+
+            File.WriteAllText(designPath, "");
+            Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.AddRows(designPath, files));
+
+            File.WriteAllLines(designPath, new[] { "File\tPlex\tCondition" });
+            Assert.Throws<InvalidOperationException>(() => TmtExperimentalDesign.AddRows(designPath, files));
+            Assert.That(File.ReadAllText(designPath) == "File\tPlex\tCondition" + Environment.NewLine);
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// Rows are added in the design's own column order, a column this class does not write is left blank, and a line
+        /// too short to reach the File column is kept as it is. Only the row naming an added file is replaced.
+        /// </summary>
+        [Test]
+        public static void AddRowsFollowsTheDesignsOwnColumns_AndKeepsLinesThatNameNoFile()
+        {
+            string folder = NewFolder("TmtDesignAddRowsOwnColumns");
+            string designPath = Path.Combine(folder, "TmtDesign.txt");
+            string kept = Path.Combine(folder, "file.1.raw");
+            string replaced = Path.Combine(folder, "file.2.raw");
+            File.WriteAllLines(designPath, new[]
+            {
+                "Plex\tFile\tSample Name\tTMT Channel\tCondition\tBiological Replicate\tFraction\tTechnical Replicate\tNotes",
+                $"PlexA\t{kept}\tS1\t126\tC1\t1\t1\t1\tkeep me",
+                "PlexA",
+                $"PlexA\t{replaced}\tOld\t126\tC1\t1\t2\t1\tstale"
+            });
+            var anns = new List<TmtPlexAnnotation>
+            {
+                new TmtPlexAnnotation { Tag = "126", SampleName = "S2", Condition = "C2", BiologicalReplicate = 2 }
+            };
+
+            TmtExperimentalDesign.AddRows(designPath, new List<TmtFileInfo> { new TmtFileInfo(replaced, "PlexA", 2, 1, anns) });
+
+            Assert.That(File.ReadAllLines(designPath).SequenceEqual(new[]
+            {
+                "Plex\tFile\tSample Name\tTMT Channel\tCondition\tBiological Replicate\tFraction\tTechnical Replicate\tNotes",
+                $"PlexA\t{kept}\tS1\t126\tC1\t1\t1\t1\tkeep me",
+                "PlexA",
+                $"PlexA\t{replaced}\tS2\t126\tC2\t2\t2\t1\t"
+            }));
+
+            Directory.Delete(folder, true);
         }
 
         /// <summary>

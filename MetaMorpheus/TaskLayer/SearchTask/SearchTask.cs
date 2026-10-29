@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Chemistry;
 
@@ -155,6 +156,11 @@ namespace TaskLayer
             SearchParameters.MassDiffAcceptorType = LegacyMostAbundantEquivalent;
         }
 
+        // Compiled optimized from the start. This method runs once per search, so the runtime would otherwise run it as
+        // unoptimized code, which keeps every local alive until it is overwritten: each searched file's scans, matches and
+        // search engine then stayed reachable through the rest of the run, about 0.6 GB per file on a TMT11 .raw file. It
+        // left that code only when one of its own loops ran hot, which the reporter ion loop used to do.
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId,
             FileSpecificParameters[] fileSettingsList)
         {
@@ -233,6 +239,8 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // start loading proteins in the background
+            // one view of each database for every index key this task builds; see SnapshotDatabases
+            List<FileInfo> databasesAsLoaded = IndexingEngine.SnapshotDatabases(dbFilenameList);
             var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, SearchParameters.DecoyType, SearchParameters.SearchTarget, localizeableModificationTypes, SearchParameters.TCAmbiguity, SearchParameters.WriteTargetDecoyFasta, OutputFolder);
             var proteinLoadingTask = dbLoader.RunAsync();
             List<IBioPolymer> bioPolymerList = null!;
@@ -380,13 +388,11 @@ namespace TaskLayer
 
                     // Reporter ions come from the scans as the file stores them, read again here. The loaded copy is
                     // trimmed (MS2 when TrimMsMsPeaks is on, MS3 always) and a LowCID search bins its MS2 spectra in
-                    // place; either can remove a reporter ion, which would then be quantified as 0.
-                    var storedScanFor = MyFileManager.PairWithStoredScans(myMsDataFile, MsDataFileReader.GetDataFile(origDataFile)
-                        .LoadAllStaticData(null, combinedParams.MaxThreadsToUsePerFile));
-                    foreach (var scan in arrayOfMs2ScansSortedByMass)
-                    {
-                        scan.SetIsobaricMassTagReporterIonIntensities(massTag, storedScanFor);
-                    }
+                    // place; either can remove a reporter ion, which would then be quantified as 0. Only the scans they
+                    // are read from are read again, one at a time where the file allows it, so that no second copy of the
+                    // whole file is held while the next one loads.
+                    MyFileManager.SetReporterIonIntensitiesFromStoredScans(origDataFile, myMsDataFile, arrayOfMs2ScansSortedByMass,
+                        massTag, combinedParams.MaxThreadsToUsePerFile);
                 }
 
                 // modern search
@@ -405,7 +411,7 @@ namespace TaskLayer
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
                             SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, indexParams, FileSpecificParameters,
-                            SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), SearchParameters.TCAmbiguity, new List<string> { taskId });
+                            SearchParameters.MaxFragmentSize, false, databasesAsLoaded, SearchParameters.TCAmbiguity, new List<string> { taskId });
                         FragmentIndex fragmentIndex = null;
                         List<int>[] precursorIndex = null;
 
@@ -500,7 +506,7 @@ namespace TaskLayer
                             Status("Getting fragment dictionary...", new List<string> { taskId });
                             var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
                                 SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, indexParams, FileSpecificParameters,
-                                SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), SearchParameters.TCAmbiguity, new List<string> { taskId });
+                                SearchParameters.MaxFragmentSize, true, databasesAsLoaded, SearchParameters.TCAmbiguity, new List<string> { taskId });
                             lock (indexLock)
                             {
                                 GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
