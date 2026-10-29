@@ -475,8 +475,10 @@ namespace EngineLayer.GlycoSearch
         /// </summary>
         /// <param name="oxoniumIonsintensities"> From the Scan </param>
         /// <param name="glycanBox"> The glycanBox to be tested </param>
+        /// <param name="customOxoniumThreshold"> Threshold for the custom-monosaccharide ions only; see <see cref="CustomOxoniumFilter"/>. </param>
         /// <returns >True : The Oglycan pass the filter, False : The OGl</returns>
-        public static bool DiagonsticFilter(double[] oxoniumIonsintensities, GlycanBox glycanBox)
+        public static bool DiagonsticFilter(double[] oxoniumIonsintensities, GlycanBox glycanBox,
+            double customOxoniumThreshold = DefaultCustomOxoniumThreshold)
         {
             double HexNAc_diagnostic = oxoniumIonsintensities[OxoniumIonReservedIndices.R138];
             double NeuAc_diagnostic1 = oxoniumIonsintensities[OxoniumIonReservedIndices.NeuAc274];
@@ -484,7 +486,7 @@ namespace EngineLayer.GlycoSearch
             double HexNAcPlusHex_diagnostic = oxoniumIonsintensities[OxoniumIonReservedIndices.HexHexNAc366];
 
             //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have sialic acids from the search.
-            if (NeuAc_diagnostic1 / HexNAc_diagnostic > OxoniumRelativeIntensityThreshold && NeuAc_diagnostic2 / HexNAc_diagnostic > OxoniumRelativeIntensityThreshold)
+            if (NeuAc_diagnostic1 / HexNAc_diagnostic > BuiltInOxoniumThreshold && NeuAc_diagnostic2 / HexNAc_diagnostic > BuiltInOxoniumThreshold)
             {
                 if (glycanBox.Kind[2] == 0 )
                 {
@@ -492,7 +494,7 @@ namespace EngineLayer.GlycoSearch
                 }
             }
 
-            if(NeuAc_diagnostic1 / HexNAc_diagnostic < OxoniumRelativeIntensityThreshold && NeuAc_diagnostic2 / HexNAc_diagnostic < OxoniumRelativeIntensityThreshold)
+            if(NeuAc_diagnostic1 / HexNAc_diagnostic < BuiltInOxoniumThreshold && NeuAc_diagnostic2 / HexNAc_diagnostic < BuiltInOxoniumThreshold)
             {
                 if (glycanBox.Kind[2] != 0)
                 {
@@ -501,7 +503,7 @@ namespace EngineLayer.GlycoSearch
             }
 
             //If a spectrum has 366.1395, remove glycans that do not have HexNAc(1)Hex(1) or more. Here use the total glycan of glycanBox to calculate. 
-            else if (HexNAcPlusHex_diagnostic / HexNAc_diagnostic > OxoniumRelativeIntensityThreshold)
+            else if (HexNAcPlusHex_diagnostic / HexNAc_diagnostic > BuiltInOxoniumThreshold)
             {
                 if (glycanBox.Kind[0] < 1 && glycanBox.Kind[1] < 1)
                 {
@@ -513,20 +515,60 @@ namespace EngineLayer.GlycoSearch
             //A spectrum needs to have 204.0867 to be considered as a glycopeptide.
             //Ratio of 138.055 to 144.0655 can seperate O/N glycan.
             // use some other oxonium ions to determine the glycan type.
-            return CustomOxoniumFilter(oxoniumIonsintensities, glycanBox.Kind);
+            return CustomOxoniumFilter(oxoniumIonsintensities, glycanBox.Kind, customOxoniumThreshold);
         }
 
         /// <summary>
-        /// Relative-intensity threshold an oxonium ion must clear, as a fraction of the HexNAc 138.055
-        /// diagnostic ion, to count as observed. This is the same 0.02 the built-in NeuAc and
-        /// HexHexNAc rules have always used; it is named here so the custom-ion rule can share it
-        /// rather than inventing a second, looser notion of "observed".
+        /// Relative-intensity threshold the built-in NeuAc (274/292) and HexNAc(1)Hex(1) (366) rules use: the ion
+        /// must clear this fraction of the HexNAc 138.055 diagnostic ion to count as observed. Fixed, not user-set.
         /// </summary>
-        internal const double OxoniumRelativeIntensityThreshold = 0.02;
+        internal const double BuiltInOxoniumThreshold = 0.02;
+
+        /// <summary>
+        /// Default for the user-set threshold of the custom-monosaccharide diagnostic ions (MonosaccharidesCustom.tsv),
+        /// the same 0.02 the built-in rules use.
+        /// </summary>
+        public const double DefaultCustomOxoniumThreshold = 0.02;
+
+        /// <summary>
+        /// A custom-oxonium threshold is a fraction of the 138.055 ion: finite and within [0, 1] (0% to 100%).
+        /// </summary>
+        public static bool IsValidCustomOxoniumThreshold(double threshold)
+        {
+            return threshold >= 0 && threshold <= 1;
+        }
+
+        /// <summary>
+        /// Parses a custom-oxonium threshold typed by the user, e.g. "0.02". Accepts invariant-culture decimals only, so
+        /// "2%", "0,02" and other symbols are rejected rather than misread.
+        /// </summary>
+        /// <param name="error"> Why the text was rejected, for showing to the user; null on success. </param>
+        public static bool TryParseCustomOxoniumThreshold(string text, out double threshold, out string error)
+        {
+            if (!double.TryParse(text?.Trim(), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowLeadingSign,
+                    System.Globalization.CultureInfo.InvariantCulture, out threshold)
+                || !double.IsFinite(threshold)) // TryParse accepts "NaN" and "Infinity" whatever the NumberStyles
+            {
+                error = $"The custom oxonium ion threshold \"{text}\" is not a number. Enter a decimal fraction between 0 and 1, e.g. 0.02 for 2%.";
+                return false;
+            }
+            if (threshold < 0)
+            {
+                error = $"The custom oxonium ion threshold cannot be negative ({text}). Enter a value between 0 and 1.";
+                return false;
+            }
+            if (threshold > 1)
+            {
+                error = $"The custom oxonium ion threshold cannot be above 1 (100%) ({text}). Enter a fraction, e.g. 0.02 for 2%.";
+                return false;
+            }
+            error = null;
+            return true;
+        }
 
         /// <summary>
         /// Presence test for an oxonium ion, on the same footing as the built-in rules: the ion counts
-        /// as observed only when its intensity exceeds <see cref="OxoniumRelativeIntensityThreshold"/>
+        /// as observed only when its intensity exceeds <paramref name="relativeIntensityThreshold"/>
         /// of the HexNAc 138.055 diagnostic ion. A bare "intensity &gt; 0" test would let a single noise
         /// peak at the ion's m/z reject every candidate lacking the linked monosaccharide, since
         /// ScanOxoniumIonFilter records an intensity for any envelope inside the product tolerance.
@@ -536,13 +578,14 @@ namespace EngineLayer.GlycoSearch
         /// result when the reference is absent; <see cref="CustomOxoniumFilter"/> skips the custom branch
         /// in that case rather than letting either answer become a rejection.
         /// </summary>
-        internal static bool CheckOxoniumPresence(double[] oxoniumIonsintensities, int index, double hexNAcReferenceIntensity)
+        internal static bool CheckOxoniumPresence(double[] oxoniumIonsintensities, int index, double hexNAcReferenceIntensity,
+            double relativeIntensityThreshold = DefaultCustomOxoniumThreshold)
         {
             if (hexNAcReferenceIntensity <= 0)
             {
                 return false;
             }
-            return oxoniumIonsintensities[index] / hexNAcReferenceIntensity > OxoniumRelativeIntensityThreshold;
+            return oxoniumIonsintensities[index] / hexNAcReferenceIntensity > relativeIntensityThreshold;
         }
 
         /// <summary>
@@ -563,16 +606,18 @@ namespace EngineLayer.GlycoSearch
         /// <remarks>
         /// Strict semantics: a custom ion observed while its monosaccharide is absent from the candidate -- or its
         /// monosaccharide present while the ion is absent -- rejects the candidate. "Observed" is the same
-        /// relative-intensity test the built-in rules use (above the OxoniumRelativeIntensityThreshold fraction of the
-        /// HexNAc 138.055 ion), not bare presence, so one noise peak at a custom ion's m/z cannot wipe out a scan. A
+        /// relative-intensity test the built-in rules use (above the customOxoniumThreshold fraction of the
+        /// HexNAc 138.055 ion; user-set, default 0.02), not bare presence, so one noise peak at a custom ion's m/z cannot wipe out a scan. A
         /// spectrum with no 138.055 reference at all has no basis for either verdict and the strict rule is skipped.
         /// Custom ions that duplicate a built-in oxonium m/z are rejected at registration in
         /// Glycan.RegisterCustomMonosaccharide. Gated on HasCustomOxoniumIons so the default (no customs) path is unchanged.
         /// </remarks>
         /// <param name="oxoniumIonsintensities"> From <see cref="ScanOxoniumIonFilter"/>. </param>
         /// <param name="kind"> The candidate's summed composition: a glycan box's Kind, or one glycan's Kind. </param>
+        /// <param name="customOxoniumThreshold"> Fraction of the 138.055 ion a custom ion must exceed to count as observed. </param>
         /// <returns> True when every custom ion's observed state matches the candidate's possession of its monosaccharide. </returns>
-        public static bool CustomOxoniumFilter(double[] oxoniumIonsintensities, byte[] kind)
+        public static bool CustomOxoniumFilter(double[] oxoniumIonsintensities, byte[] kind,
+            double customOxoniumThreshold = DefaultCustomOxoniumThreshold)
         {
             if (!Glycan.HasCustomOxoniumIons)
             {
@@ -620,7 +665,7 @@ namespace EngineLayer.GlycoSearch
                     continue;
                 }
 
-                bool hasSignal = CheckOxoniumPresence(oxoniumIonsintensities, builtInCount + j, hexNAcReference);
+                bool hasSignal = CheckOxoniumPresence(oxoniumIonsintensities, builtInCount + j, hexNAcReference, customOxoniumThreshold);
                 bool hasMono = kind[kindIndex] >= 1;
                 if (!ApplyStrictMonoFilter(hasSignal, hasMono))
                 {
