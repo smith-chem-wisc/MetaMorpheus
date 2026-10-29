@@ -2534,10 +2534,6 @@ namespace TaskLayer
                     : "standard";
                 if (searchType == "crosslink")
                 {
-                    searchType = "top-down";
-                }
-                else
-                {
                     searchType = "standard";
                 }
 
