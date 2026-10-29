@@ -31,7 +31,7 @@ namespace EngineLayer.GlycoSearch
         /// Fraction of the HexNAc 138.055 ion a custom-monosaccharide diagnostic ion must exceed to count as observed by the
         /// oxonium filter. Applies only to custom ions; the built-in NeuAc and HexNAc(1)Hex(1) rules keep their fixed 0.02.
         /// </summary>
-        public double CustomOxoniumRelativeIntensityThreshold { get; init; } = GlycoPeptides.DefaultCustomOxoniumRelativeIntensityThreshold;
+        public double CustomOxoniumThreshold { get; init; } = GlycoPeptides.DefaultCustomOxoniumThreshold;
 
         private GlycoSearchType GlycoSearchType;
         private readonly int TopN;              // DDA top Peak number.
@@ -737,7 +737,7 @@ namespace EngineLayer.GlycoSearch
 
             while (iDLow < GlycanBoxes.Length && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBoxes[iDLow].Mass))) // verify the glycan mass is invaild (within the range and match with mass shift)
             {
-                if (OxoniumIonFilter && !GlycoPeptides.DiagonsticFilter(oxoniumIonIntensities, GlycanBoxes[iDLow], CustomOxoniumRelativeIntensityThreshold)) // if the filter is turned on, we need to check does the oxoiums make sense.
+                if (OxoniumIonFilter && !GlycoPeptides.DiagonsticFilter(oxoniumIonIntensities, GlycanBoxes[iDLow], CustomOxoniumThreshold)) // if the filter is turned on, we need to check does the oxoiums make sense.
                 {
                     iDLow++; // if the oxonium ions don't make sense (there is no 204, or without their diagnostic ion), we can skip this glycan.
                     continue;
@@ -843,7 +843,7 @@ namespace EngineLayer.GlycoSearch
                 // The same strict custom-oxonium gate O and N+O searches apply per glycan box, applied here per N-glycan.
                 // Only the custom-ion rule: the built-in NeuAc/HexHexNAc rules of DiagonsticFilter were never part of
                 // N-search, and OxoniumIonFilt is on by default, so adding them would change every existing N-search.
-                if (OxoniumIonFilter && !GlycoPeptides.CustomOxoniumFilter(oxoniumIonIntensities, NGlycans[iDLow].Kind, CustomOxoniumRelativeIntensityThreshold))
+                if (OxoniumIonFilter && !GlycoPeptides.CustomOxoniumFilter(oxoniumIonIntensities, NGlycans[iDLow].Kind, CustomOxoniumThreshold))
                 {
                     iDLow++;
                     continue;

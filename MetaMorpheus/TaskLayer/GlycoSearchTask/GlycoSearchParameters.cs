@@ -66,20 +66,20 @@ namespace TaskLayer
         /// observed only above this fraction of the HexNAc 138.055 ion. Within [0, 1]; default 0.02 (2%). The built-in NeuAc
         /// and HexNAc(1)Hex(1) rules always use 0.02. TOMLs written before this existed omit it and get the default.
         /// </summary>
-        public double CustomOxoniumRelativeIntensityThreshold
+        public double CustomOxoniumThreshold
         {
-            get => _customOxoniumRelativeIntensityThreshold;
+            get => _customOxoniumThreshold;
             set
             {
-                if (!GlycoPeptides.IsValidCustomOxoniumRelativeIntensityThreshold(value))
+                if (!GlycoPeptides.IsValidCustomOxoniumThreshold(value))
                 {
                     throw new EngineLayer.MetaMorpheusException(
-                        $"CustomOxoniumRelativeIntensityThreshold must be between 0 and 1 (a fraction of the 138.055 ion, e.g. 0.02 for 2%), but was {value}.");
+                        $"CustomOxoniumThreshold must be between 0 and 1 (a fraction of the 138.055 ion, e.g. 0.02 for 2%), but was {value}.");
                 }
-                _customOxoniumRelativeIntensityThreshold = value;
+                _customOxoniumThreshold = value;
             }
         }
-        private double _customOxoniumRelativeIntensityThreshold = GlycoPeptides.DefaultCustomOxoniumRelativeIntensityThreshold;
+        private double _customOxoniumThreshold = GlycoPeptides.DefaultCustomOxoniumThreshold;
 
         public DecoyType DecoyType { get; set; }
         public int GlycoSearchTopNum { get; set; }

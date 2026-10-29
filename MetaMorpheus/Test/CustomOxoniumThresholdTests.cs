@@ -8,7 +8,7 @@ using TaskLayer;
 namespace Test
 {
     /// <summary>
-    /// The user-set CustomOxoniumRelativeIntensityThreshold: it decides when a custom-monosaccharide diagnostic ion counts as
+    /// The user-set CustomOxoniumThreshold: it decides when a custom-monosaccharide diagnostic ion counts as
     /// observed, leaves the built-in NeuAc and HexNAc(1)Hex(1) rules at their fixed 0.02, and rejects text and values that are
     /// not a fraction in [0, 1]. Tests that register custom monosaccharides restore startup state in a finally block.
     /// </summary>
@@ -136,7 +136,7 @@ namespace Test
         [TestCase(".05", 0.05)]
         public void TryParseCustomOxoniumThreshold_AcceptsAFractionBetweenZeroAndOne(string text, double expected)
         {
-            Assert.That(GlycoPeptides.TryParseCustomOxoniumRelativeIntensityThreshold(text, out double threshold, out string error), Is.True);
+            Assert.That(GlycoPeptides.TryParseCustomOxoniumThreshold(text, out double threshold, out string error), Is.True);
             Assert.That(threshold, Is.EqualTo(expected));
             Assert.That(error, Is.Null);
         }
@@ -155,7 +155,7 @@ namespace Test
         [TestCase("2", "cannot be above 1")]
         public void TryParseCustomOxoniumThreshold_RejectsWithAMessageTheUserCanActOn(string text, string expectedMessage)
         {
-            Assert.That(GlycoPeptides.TryParseCustomOxoniumRelativeIntensityThreshold(text, out _, out string error), Is.False);
+            Assert.That(GlycoPeptides.TryParseCustomOxoniumThreshold(text, out _, out string error), Is.False);
             Assert.That(error, Does.Contain(expectedMessage));
         }
 
@@ -163,37 +163,37 @@ namespace Test
         public void GlycoSearchParameters_ThresholdDefaultsToTwoPercentAndRejectsOutOfRange()
         {
             var parameters = new GlycoSearchParameters();
-            Assert.That(parameters.CustomOxoniumRelativeIntensityThreshold, Is.EqualTo(0.02));
+            Assert.That(parameters.CustomOxoniumThreshold, Is.EqualTo(0.02));
 
-            parameters.CustomOxoniumRelativeIntensityThreshold = 0;
-            parameters.CustomOxoniumRelativeIntensityThreshold = 1;
+            parameters.CustomOxoniumThreshold = 0;
+            parameters.CustomOxoniumThreshold = 1;
             Assert.Multiple(() =>
             {
-                Assert.Throws<MetaMorpheusException>(() => parameters.CustomOxoniumRelativeIntensityThreshold = -0.01);
-                Assert.Throws<MetaMorpheusException>(() => parameters.CustomOxoniumRelativeIntensityThreshold = 1.01);
-                Assert.Throws<MetaMorpheusException>(() => parameters.CustomOxoniumRelativeIntensityThreshold = double.NaN);
+                Assert.Throws<MetaMorpheusException>(() => parameters.CustomOxoniumThreshold = -0.01);
+                Assert.Throws<MetaMorpheusException>(() => parameters.CustomOxoniumThreshold = 1.01);
+                Assert.Throws<MetaMorpheusException>(() => parameters.CustomOxoniumThreshold = double.NaN);
             });
-            Assert.That(parameters.CustomOxoniumRelativeIntensityThreshold, Is.EqualTo(1), "a rejected value leaves the last valid one");
+            Assert.That(parameters.CustomOxoniumThreshold, Is.EqualTo(1), "a rejected value leaves the last valid one");
         }
 
         [Test]
         public void GlycoSearchTaskToml_OldFileGetsTheDefault_AndASetThresholdRoundTrips()
         {
             string oldToml = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "GlycoSnip.toml");
-            Assert.That(File.ReadAllText(oldToml), Does.Not.Contain("CustomOxoniumRelativeIntensityThreshold"));
+            Assert.That(File.ReadAllText(oldToml), Does.Not.Contain("CustomOxoniumThreshold"));
             var oldTask = Toml.ReadFile<GlycoSearchTask>(oldToml, MetaMorpheusTask.tomlConfig);
-            Assert.That(oldTask._glycoSearchParameters.CustomOxoniumRelativeIntensityThreshold, Is.EqualTo(0.02));
+            Assert.That(oldTask._glycoSearchParameters.CustomOxoniumThreshold, Is.EqualTo(0.02));
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "CustomOxoniumThresholdTomlTest");
             Directory.CreateDirectory(outputFolder);
             try
             {
                 string path = Path.Combine(outputFolder, "task.toml");
-                oldTask._glycoSearchParameters.CustomOxoniumRelativeIntensityThreshold = 0.07;
+                oldTask._glycoSearchParameters.CustomOxoniumThreshold = 0.07;
                 Toml.WriteFile(oldTask, path, MetaMorpheusTask.tomlConfig);
 
                 var reloaded = Toml.ReadFile<GlycoSearchTask>(path, MetaMorpheusTask.tomlConfig);
-                Assert.That(reloaded._glycoSearchParameters.CustomOxoniumRelativeIntensityThreshold, Is.EqualTo(0.07));
+                Assert.That(reloaded._glycoSearchParameters.CustomOxoniumThreshold, Is.EqualTo(0.07));
             }
             finally
             {

@@ -50,9 +50,9 @@ namespace Test
         /// <param name="oxoniumIonFilter"> The task's OxoniumIonFilt setting. </param>
         /// <param name="customIonObserved"> Whether the oxonium intensities report the registered custom ion (if any). </param>
         /// <param name="customIonIntensity"> The custom ion's intensity when reported, against a 138.055 reference of 100. </param>
-        /// <param name="customOxoniumThreshold"> The engine's CustomOxoniumRelativeIntensityThreshold. </param>
+        /// <param name="customOxoniumThreshold"> The engine's CustomOxoniumThreshold. </param>
         private static List<GlycoSpectralMatch> FindNGlycanForKnownGlycopeptide(bool oxoniumIonFilter, bool customIonObserved,
-            double customIonIntensity = 500, double customOxoniumThreshold = GlycoPeptides.DefaultCustomOxoniumRelativeIntensityThreshold)
+            double customIonIntensity = 500, double customOxoniumThreshold = GlycoPeptides.DefaultCustomOxoniumThreshold)
         {
             var commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, trimMsMsPeaks: false,
                 precursorMassTolerance: new PpmTolerance(10));
@@ -72,7 +72,7 @@ namespace Test
                 null, null, 0, commonParameters, null, "OGlycan.gdb", NGlycanDatabase, GlycoSearchType.NGlycanSearch,
                 glycoSearchTopNum: 30, maxOGlycanNum: 3, oxoniumIonFilter: oxoniumIonFilter, nestedIds: null)
             {
-                CustomOxoniumRelativeIntensityThreshold = customOxoniumThreshold
+                CustomOxoniumThreshold = customOxoniumThreshold
             };
 
             double[] oxoniumIonIntensities = new double[Glycan.AllOxoniumIonsIncludingCustoms.Length];
@@ -185,7 +185,7 @@ namespace Test
         [TestCase(0.1, true)]   // ratio 0.05 is below 10%: the ion counts as absent, so the glycopeptide is kept
         public void FindNGlycan_CustomIonAtFivePercent_EngineThresholdDecidesTheGate(double threshold, bool expectKnownGlycan)
         {
-            // The engine's CustomOxoniumRelativeIntensityThreshold must reach the N-search gate: the same spectrum gives
+            // The engine's CustomOxoniumThreshold must reach the N-search gate: the same spectrum gives
             // opposite verdicts at two thresholds.
             try
             {
