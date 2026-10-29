@@ -125,6 +125,49 @@ public class DeconExplorationTabViewModelTests
     }
 
     [Test, Apartment(System.Threading.ApartmentState.STA)]
+    public void RunDeconvolutionCommand_WithPrecursorFiltering_DoesNotThrow()
+    {
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
+        vm.Mode = DeconvolutionMode.FullSpectrum;
+        vm.SelectedMsDataFile = msDataFile;
+        vm.SelectedMsDataScan = msDataFile.GetMsDataScans().First();
+        vm.ApplyPrecursorFiltering = true;
+
+        Assert.DoesNotThrow(() => vm.RunDeconvolutionCommand.Execute(new PlotView()));
+
+        vm.Mode = DeconvolutionMode.IsolationRegion;
+        vm.SelectedMsDataScan = msDataFile.GetMsDataScans().First(scan => scan.MsnOrder == 2);
+
+        Assert.DoesNotThrow(() => vm.RunDeconvolutionCommand.Execute(new PlotView()));
+    }
+
+    [Test]
+    public void GetDeconvolutionParameters_UsesActiveParameterSet()
+    {
+        var precursorParameters = new ClassicDeconvolutionParameters(1, 12, 7, 0.5);
+        var productParameters = new IsoDecDeconvolutionParameters { MatchTolerance = 13 };
+        var deconHost = new DeconHostViewModel(precursorParameters, productParameters);
+        var ms1Scan = msDataFile.GetMsDataScans().First(scan => scan.MsnOrder == 1);
+        var ms2Scan = msDataFile.GetMsDataScans().First(scan => scan.MsnOrder == 2);
+
+        Assert.That(DeconExplorationTabViewModel.GetDeconvolutionParameters(deconHost, DeconvolutionMode.FullSpectrum, ms1Scan), Is.SameAs(precursorParameters));
+        Assert.That(DeconExplorationTabViewModel.GetDeconvolutionParameters(deconHost, DeconvolutionMode.FullSpectrum, ms2Scan), Is.SameAs(productParameters));
+        Assert.That(DeconExplorationTabViewModel.GetDeconvolutionParameters(deconHost, DeconvolutionMode.IsolationRegion, ms2Scan), Is.SameAs(precursorParameters));
+    }
+
+    [Test]
+    public void GetDeconvolutionTolerance_MapsSupportedParameterTypes()
+    {
+        var classicTolerance = DeconExplorationTabViewModel.GetDeconvolutionTolerance(new ClassicDeconvolutionParameters(1, 12, 9, 0.5));
+        var isoDecTolerance = DeconExplorationTabViewModel.GetDeconvolutionTolerance(new IsoDecDeconvolutionParameters { MatchTolerance = 11 });
+
+        Assert.That(classicTolerance, Is.TypeOf<PpmTolerance>());
+        Assert.That(classicTolerance.GetMaximumValue(1000), Is.EqualTo(new PpmTolerance(9).GetMaximumValue(1000)));
+        Assert.That(isoDecTolerance, Is.TypeOf<PpmTolerance>());
+        Assert.That(isoDecTolerance.GetMaximumValue(1000), Is.EqualTo(new PpmTolerance(11).GetMaximumValue(1000)));
+    }
+
+    [Test, Apartment(System.Threading.ApartmentState.STA)]
     public void RunDeconvolutionCommand_FullSpectrumMode_LimitsAxis()
     {
         var vm = new DeconExplorationTabViewModel(metaDrawLogic);
