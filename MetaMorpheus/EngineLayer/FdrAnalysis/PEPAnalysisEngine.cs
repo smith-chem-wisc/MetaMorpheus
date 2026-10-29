@@ -321,7 +321,12 @@ namespace EngineLayer
             // It also guarantees that each held-out fold, which is evaluated against these same labels, has both classes.
             if (!allGroupsHavePositiveAndNegativeTrainingExamples)
             {
-                return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.";
+                return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples." +
+                    $" Training q-value cutoff {QValueCutoff} ({(UsePeptideLevelQValueForTraining ? "peptide" : "PSM")} level); positives/negatives per group: " +
+                    string.Join(", ", roundZeroData.Select(g => $"{g.Count(p => p.Label)}/{g.Count(p => !p.Label)}")) +
+                    $"; targets with peptide q <= cutoff {AllPsms.Count(p => !p.IsDecoy && p.PeptideFdrInfo?.QValue <= QValueCutoff)}" +
+                    $", with PSM q <= cutoff {AllPsms.Count(p => !p.IsDecoy && p.PsmFdrInfo?.QValue <= QValueCutoff)}" +
+                    $", min target peptide q {AllPsms.Where(p => !p.IsDecoy).Select(p => p.PeptideFdrInfo?.QValue ?? 9).DefaultIfEmpty(9).Min()}";
             }
             Progress($"round 0 features built  ({roundClock.Elapsed.TotalSeconds:F1} s)");
             roundClock.Restart();

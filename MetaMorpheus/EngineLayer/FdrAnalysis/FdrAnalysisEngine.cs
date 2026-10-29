@@ -126,6 +126,11 @@ namespace EngineLayer.FdrAnalysis
                     else //we have more than 100 psms but less than 100 peptides so
                     {
                         //this will be done using PSMs because we dont' have enough peptides
+                        // The PEP engine still trains at the peptide level whenever there are 100 or more distinct
+                        // full sequences, and labels its positives by peptide q-value. Without this those q-values
+                        // stay at their default and no target is ever a positive, so PEP fails for every data set
+                        // with 100 to 1000 peptides.
+                        CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
                         Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, iterativePepTraining);
                         psms = psms.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
                         CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
