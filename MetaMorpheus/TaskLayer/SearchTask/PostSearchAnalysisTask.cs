@@ -2527,15 +2527,11 @@ namespace TaskLayer
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
-                // The feature set PEP trained on (RNA searches wrote the protein set before). Crosslinks keep
-                // the standard set, as before: their PEP features are not written here.
+                // The feature set PEP trained on (RNA searches wrote the protein set before). Search tasks never
+                // hold crosslink matches, so this is the standard, top-down or RNA set.
                 string searchType = psmList.FirstOrDefault(p => p != null) is SpectralMatch first
                     ? FdrAnalysisEngine.GetPepSearchType(first)
                     : "standard";
-                if (searchType == "crosslink")
-                {
-                    searchType = "standard";
-                }
 
                 string header = "SpecId\tLabel\tScanNr\t";
                 header += String.Join("\t", PsmData.trainingInfos[searchType]);

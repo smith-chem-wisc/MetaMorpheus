@@ -29,7 +29,11 @@ namespace EngineLayer.FdrAnalysis
         private readonly string OutputFolder; // used for storing PEP training models  
         private readonly bool DoPEP;
         private readonly bool IterativePepTraining;
-        private static readonly int PsmCountThresholdForInvertedQvalue = 1000;
+        /// <summary>
+        /// Above this many PSMs (and, separately, peptides) q-values use the (D+1)/T estimate and PEP is computed.
+        /// Settable only so unit tests, whose data sets are small, can reach each branch.
+        /// </summary>
+        public static int PsmCountThresholdForInvertedQvalue { get; private set; } = 1000;
         /// <summary>
         /// This is to be used only for unit testing. Threshold for q-value calculation is set to 1000
         /// However, many unit tests don't generate that many PSMs. Therefore, this property is used to override the threshold
