@@ -254,7 +254,7 @@ namespace Test
         /// A TmtDesign.txt beside the first of <paramref name="spectraFiles"/> annotating every TMT11 channel, one plex with
         /// each file a fraction of it.
         /// </summary>
-        private static void WriteTmtDesignBeside(params string[] spectraFiles) =>
+        internal static void WriteTmtDesignBeside(params string[] spectraFiles) =>
             File.WriteAllLines(
                 Path.Combine(Path.GetDirectoryName(spectraFiles[0]), GlobalVariables.TmtExperimentalDesignFileName),
                 new[] { TmtExperimentalDesign.Header }.Concat(spectraFiles.SelectMany((file, fraction) => Tmt11Channels.Select((tag, i) =>

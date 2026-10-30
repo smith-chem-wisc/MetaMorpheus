@@ -126,6 +126,9 @@ namespace TaskLayer
                 }
             }
 
+            // and TmtDesign.txt, or a TMT search after averaging finds no design beside the averaged files
+            UpdateTmtDesignFile(currentRawFileList, OutputFolder, AveragingSuffix, "averaged");
+
             // finished calibrating all files for the task
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
