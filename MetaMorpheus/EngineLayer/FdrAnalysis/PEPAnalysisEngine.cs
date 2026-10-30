@@ -27,26 +27,56 @@ namespace EngineLayer
 {
     public class PepAnalysisEngine
     {
+        #region Tree Setup
         private int _randomSeed = 42;
+
+        /// <summary>
+        /// Training sets smaller than this get <see cref="GetTreeOptions"/>'s small model. With a few thousand
+        /// examples the 400-tree model fits the training data exactly and returns PEP of only 0 or 1; RNA
+        /// searches, whose short oligonucleotides give few distinct targets and decoys, are the usual case.
+        /// </summary>
+        public const int SmallTrainingSetThreshold = 1000;
 
         /// <summary>
         /// This method contains the hyper-parameters that will be used when training the machine learning model
         /// </summary>
         /// <returns> Options object to be passed in to the FastTree constructor </returns>
-        public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options BGDTreeOptions =>
-            new Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options
+        public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options BGDTreeOptions => GetTreeOptions(int.MaxValue, _randomSeed);
+
+        /// <summary>
+        /// Hyper-parameters for a training set of <paramref name="trainingExampleCount"/> examples (all four
+        /// groups): the established 400-tree model, or a 50-tree model with larger leaves below
+        /// <see cref="SmallTrainingSetThreshold"/>.
+        /// </summary>
+        public static Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options GetTreeOptions(int trainingExampleCount, int seed)
+        {
+            bool small = trainingExampleCount < SmallTrainingSetThreshold;
+            return new Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options
             {
                 NumberOfThreads = 1,
-                NumberOfTrees = 400,
-                MinimumExampleCountPerLeaf = 10,
-                NumberOfLeaves = 20,
-                LearningRate = 0.2,
+                NumberOfTrees = small ? 50 : 400,
+                MinimumExampleCountPerLeaf = small ? 20 : 10,
+                NumberOfLeaves = small ? 8 : 20,
+                LearningRate = small ? 0.1 : 0.2,
                 LabelColumnName = "Label",
                 FeatureColumnName = "Features",
-                Seed = _randomSeed,
-                FeatureSelectionSeed = _randomSeed,
+                Seed = seed,
+                FeatureSelectionSeed = seed,
                 RandomStart = false
             };
+        }
+
+        /// <summary>
+        /// The <see cref="QValueCutoffForPepCalculation"/> the search window starts from. RNA uses 0.05 because short
+        /// oligonucleotides give few decoys, so a stricter cutoff leaves too few positives, and few long ones, to train
+        /// on. PEPAnalysisEngine still raises lower values to 0.005 (0.025 for top-down).
+        /// </summary>
+        public static double DefaultQValueCutoffForPepCalculation(bool isRna, bool isTopDown) =>
+            isRna ? 0.05 : isTopDown ? 0.025 : 0.005;
+
+        #endregion
+
+        #region Semi-Supervised Learning
 
         /// <summary>
         /// The most training rounds any caller gets. <see cref="MaxTrainingRounds"/> is clamped to it, and it is
@@ -133,6 +163,8 @@ namespace EngineLayer
 
             public int GetHashCode(SpectralMatchHypothesis obj) => RuntimeHelpers.GetHashCode(obj);
         }
+
+        #endregion
 
         //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
         //file separately. An individully measured hydrobophicty calculated for a specific PSM sequence is compared to these values by computing
@@ -334,7 +366,10 @@ namespace EngineLayer
             MLContext mlContext = new MLContext(seed: _randomSeed);
             TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[numGroups];
 
-            var trainer = mlContext.BinaryClassification.Trainers.FastTree(BGDTreeOptions);
+            int trainingExampleCount = roundZeroData.Sum(g => g.Count());
+            var treeOptions = GetTreeOptions(trainingExampleCount, _randomSeed);
+            Progress($"{trainingExampleCount} training examples: {treeOptions.NumberOfTrees} trees, {treeOptions.NumberOfLeaves} leaves");
+            var trainer = mlContext.BinaryClassification.Trainers.FastTree(treeOptions);
             var pipeline = mlContext.Transforms.Concatenate("Features", TrainingVariables)
                 .Append(trainer);
 
