@@ -48,7 +48,7 @@ namespace EngineLayer.FdrAnalysis
                 new []
                 { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", 
                     "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian","MissedCleavagesCount",
-                    "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount"
+                    "Ambiguity", "LongestFragmentIonSeries", "Charge", "NotchlessAbsoluteDeltaMass"
                 }
             }
         }.ToImmutableDictionary();
@@ -89,6 +89,8 @@ namespace EngineLayer.FdrAnalysis
             { "PrecursorFractionalIntensity", 1 },
             { "InternalIonCount", 1},
             { "PrecursorDeconvolutionScore", 1 },
+            { "Charge", 1 },
+            { "NotchlessAbsoluteDeltaMass", -1 },
             }.ToImmutableDictionary();
 
         /// <summary>
@@ -231,5 +233,20 @@ namespace EngineLayer.FdrAnalysis
 
         [LoadColumn(29)]
         public float PrecursorDeconvolutionScore { get; set; }
+
+        /// <summary>
+        /// Absolute precursor charge.
+        /// </summary>
+        [LoadColumn(31)]
+        public float Charge { get; set; }
+
+        /// <summary>
+        /// Absolute precursor mass error in tenths of a ppm after removing the nearest whole number of 13C
+        /// spacings (the notch), capped at 100. Separates a candidate one isotope off from one that differs
+        /// by a near-isobaric substitution (RNA C/U, 0.984 Da), which the notch alone cannot.
+        /// </summary>
+        [LoadColumn(32)]
+        public float NotchlessAbsoluteDeltaMass { get; set; }
+
     }
 }

@@ -2527,15 +2527,11 @@ namespace TaskLayer
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
-                string searchType;
-                if (psmList.Where(p => p != null).Any() && psmList[0].DigestionParams.DigestionAgent.Name != null && psmList[0].DigestionParams.DigestionAgent.Name == "top-down")
-                {
-                    searchType = "top-down";
-                }
-                else
-                {
-                    searchType = "standard";
-                }
+                // The feature set PEP trained on (RNA searches wrote the protein set before). Search tasks never
+                // hold crosslink matches, so this is the standard, top-down or RNA set.
+                string searchType = psmList.FirstOrDefault(p => p != null) is SpectralMatch first
+                    ? FdrAnalysisEngine.GetPepSearchType(first)
+                    : "standard";
 
                 string header = "SpecId\tLabel\tScanNr\t";
                 header += String.Join("\t", PsmData.trainingInfos[searchType]);

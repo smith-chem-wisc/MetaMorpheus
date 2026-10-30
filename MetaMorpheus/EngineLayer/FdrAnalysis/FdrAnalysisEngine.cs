@@ -29,7 +29,11 @@ namespace EngineLayer.FdrAnalysis
         private readonly string OutputFolder; // used for storing PEP training models  
         private readonly bool DoPEP;
         private readonly bool IterativePepTraining;
-        private static readonly int PsmCountThresholdForInvertedQvalue = 1000;
+        /// <summary>
+        /// Above this many PSMs (and, separately, peptides) q-values use the (D+1)/T estimate and PEP is computed.
+        /// Settable only so unit tests, whose data sets are small, can reach each branch.
+        /// </summary>
+        public static int PsmCountThresholdForInvertedQvalue { get; private set; } = 1000;
         /// <summary>
         /// This is to be used only for unit testing. Threshold for q-value calculation is set to 1000
         /// However, many unit tests don't generate that many PSMs. Therefore, this property is used to override the threshold
@@ -126,6 +130,11 @@ namespace EngineLayer.FdrAnalysis
                     else //we have more than 100 psms but less than 100 peptides so
                     {
                         //this will be done using PSMs because we dont' have enough peptides
+                        // The PEP engine still trains at the peptide level whenever there are 100 or more distinct
+                        // full sequences, and labels its positives by peptide q-value. Without this those q-values
+                        // stay at their default and no target is ever a positive, so PEP fails for every data set
+                        // with 100 to 1000 peptides.
+                        CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
                         Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, iterativePepTraining);
                         psms = psms.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
                         CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
@@ -440,19 +449,24 @@ namespace EngineLayer.FdrAnalysis
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
 
+        /// <summary>
+        /// The key of <see cref="PsmData.trainingInfos"/> whose features PEP trains on for this kind of match.
+        /// </summary>
+        public static string GetPepSearchType(SpectralMatch psm) => psm switch
+        {
+            OligoSpectralMatch => "RNA",
+            PeptideSpectralMatch p when p.DigestionParams.DigestionAgent is Protease { Name: "top-down" } => "top-down",
+            CrosslinkSpectralMatch => "crosslink",
+            _ => "standard"
+        };
+
         public static void Compute_PEPValue(FdrAnalysisResults myAnalysisResults, List<SpectralMatch> psms, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, bool iterativePepTraining = false)
         {
             // Currently, searches of mixed data (bottom-up + top-down) are not supported
             // PEP will be calculated based on the search type of the first file/PSM in the list, which isn't ideal
             // This will be addressed in a future release
 
-            string searchType = psms[0] switch
-            {
-                OligoSpectralMatch => "RNA",
-                PeptideSpectralMatch psm when psm.DigestionParams.DigestionAgent is Protease { Name: "top-down" } => "top-down",
-                CrosslinkSpectralMatch => "crosslink",
-                _ => "standard"
-            };
+            string searchType = GetPepSearchType(psms[0]);
 
             var rtPredictor = GetRTPredictor(searchType, fileSpecificParameters);
             // Iteration is on by default (SearchParameters.IterativePepTraining), read only by PostSearchAnalysisTask's main
