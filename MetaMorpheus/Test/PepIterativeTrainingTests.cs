@@ -142,10 +142,8 @@ namespace Test
             var indices = PepAnalysisEngine.GetPeptideGroupIndices(groups, 4);
             var data = Enumerable.Range(0, 4).Select(g => reference.CreatePsmData("standard", groups, indices[g])).ToArray();
             var mlContext = new MLContext(seed: 42);
-            // the engine sizes its model to the training set, so the reference does too
-            var treeOptions = PepAnalysisEngine.GetTreeOptions(data.Sum(d => d.Count()), 42);
             var pipeline = mlContext.Transforms.Concatenate("Features", reference.TrainingVariables)
-                .Append(mlContext.BinaryClassification.Trainers.FastTree(treeOptions));
+                .Append(mlContext.BinaryClassification.Trainers.FastTree(reference.BGDTreeOptions));
             for (int fold = 0; fold < 4; fold++)
             {
                 var others = Enumerable.Range(0, 4).Where(g => g != fold).ToList();

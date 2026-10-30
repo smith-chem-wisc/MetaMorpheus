@@ -31,9 +31,10 @@ namespace EngineLayer
         private int _randomSeed = 42;
 
         /// <summary>
-        /// Training sets smaller than this get <see cref="GetTreeOptions"/>'s small model. With a few thousand
-        /// examples the 400-tree model fits the training data exactly and returns PEP of only 0 or 1; RNA
-        /// searches, whose short oligonucleotides give few distinct targets and decoys, are the usual case.
+        /// RNA training sets smaller than this get <see cref="GetTreeOptions"/>'s small model. With a few hundred
+        /// examples the 400-tree model fits the training data exactly and returns PEP of only 0 or 1. Protein
+        /// searches keep the 400-tree model at any size: on small protein test sets the small model accepted
+        /// about a third fewer PSMs.
         /// </summary>
         public const int SmallTrainingSetThreshold = 1000;
 
@@ -41,16 +42,16 @@ namespace EngineLayer
         /// This method contains the hyper-parameters that will be used when training the machine learning model
         /// </summary>
         /// <returns> Options object to be passed in to the FastTree constructor </returns>
-        public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options BGDTreeOptions => GetTreeOptions(int.MaxValue, _randomSeed);
+        public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options BGDTreeOptions => GetTreeOptions(SearchType, int.MaxValue, _randomSeed);
 
         /// <summary>
         /// Hyper-parameters for a training set of <paramref name="trainingExampleCount"/> examples (all four
-        /// groups): the established 400-tree model, or a 50-tree model with larger leaves below
-        /// <see cref="SmallTrainingSetThreshold"/>.
+        /// groups): the established 400-tree model, or, for RNA below <see cref="SmallTrainingSetThreshold"/>,
+        /// a 50-tree model with larger leaves.
         /// </summary>
-        public static Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options GetTreeOptions(int trainingExampleCount, int seed)
+        public static Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options GetTreeOptions(string searchType, int trainingExampleCount, int seed)
         {
-            bool small = trainingExampleCount < SmallTrainingSetThreshold;
+            bool small = searchType == "RNA" && trainingExampleCount < SmallTrainingSetThreshold;
             return new Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options
             {
                 NumberOfThreads = 1,
@@ -367,7 +368,7 @@ namespace EngineLayer
             TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[numGroups];
 
             int trainingExampleCount = roundZeroData.Sum(g => g.Count());
-            var treeOptions = GetTreeOptions(trainingExampleCount, _randomSeed);
+            var treeOptions = GetTreeOptions(SearchType, trainingExampleCount, _randomSeed);
             Progress($"{trainingExampleCount} training examples: {treeOptions.NumberOfTrees} trees, {treeOptions.NumberOfLeaves} leaves");
             var trainer = mlContext.BinaryClassification.Trainers.FastTree(treeOptions);
             var pipeline = mlContext.Transforms.Concatenate("Features", TrainingVariables)

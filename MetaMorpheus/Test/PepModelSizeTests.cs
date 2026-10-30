@@ -1,28 +1,30 @@
-using EngineLayer;
+﻿using EngineLayer;
 using NUnit.Framework;
 
 namespace Test
 {
     /// <summary>
-    /// The PEP model is sized to its training set, and the PEP training q-value starts from a default per search type.
+    /// Small RNA training sets get a smaller PEP model, and the PEP training q-value starts from a default per search type.
     /// </summary>
     [TestFixture]
     public static class PepModelSizeTests
     {
         [Test]
-        public static void SmallTrainingSetsGetTheSmallModel()
+        public static void SmallRnaTrainingSetsGetTheSmallModel()
         {
-            var options = PepAnalysisEngine.GetTreeOptions(PepAnalysisEngine.SmallTrainingSetThreshold - 1, 42);
+            var options = PepAnalysisEngine.GetTreeOptions("RNA", PepAnalysisEngine.SmallTrainingSetThreshold - 1, 42);
             Assert.That(options.NumberOfTrees, Is.EqualTo(50));
             Assert.That(options.NumberOfLeaves, Is.EqualTo(8));
             Assert.That(options.MinimumExampleCountPerLeaf, Is.EqualTo(20));
             Assert.That(options.LearningRate, Is.EqualTo(0.1));
         }
 
-        [Test]
-        public static void LargeTrainingSetsKeepTheEstablishedModel()
+        [TestCase("RNA", PepAnalysisEngine.SmallTrainingSetThreshold)]
+        [TestCase("standard", PepAnalysisEngine.SmallTrainingSetThreshold - 1)]
+        [TestCase("top-down", PepAnalysisEngine.SmallTrainingSetThreshold - 1)]
+        public static void LargeRnaAndAllProteinTrainingSetsKeepTheEstablishedModel(string searchType, int trainingExampleCount)
         {
-            var options = PepAnalysisEngine.GetTreeOptions(PepAnalysisEngine.SmallTrainingSetThreshold, 42);
+            var options = PepAnalysisEngine.GetTreeOptions(searchType, trainingExampleCount, 42);
             Assert.That(options.NumberOfTrees, Is.EqualTo(400));
             Assert.That(options.NumberOfLeaves, Is.EqualTo(20));
             Assert.That(options.MinimumExampleCountPerLeaf, Is.EqualTo(10));
