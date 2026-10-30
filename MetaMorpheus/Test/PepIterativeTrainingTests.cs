@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using Microsoft.ML;
@@ -142,8 +142,10 @@ namespace Test
             var indices = PepAnalysisEngine.GetPeptideGroupIndices(groups, 4);
             var data = Enumerable.Range(0, 4).Select(g => reference.CreatePsmData("standard", groups, indices[g])).ToArray();
             var mlContext = new MLContext(seed: 42);
+            // the engine sizes its model to the training set, so the reference does too
+            var treeOptions = PepAnalysisEngine.GetTreeOptions(data.Sum(d => d.Count()), 42);
             var pipeline = mlContext.Transforms.Concatenate("Features", reference.TrainingVariables)
-                .Append(mlContext.BinaryClassification.Trainers.FastTree(reference.BGDTreeOptions));
+                .Append(mlContext.BinaryClassification.Trainers.FastTree(treeOptions));
             for (int fold = 0; fold < 4; fold++)
             {
                 var others = Enumerable.Range(0, 4).Where(g => g != fold).ToList();
@@ -342,7 +344,8 @@ namespace Test
 
             string result = engine.ComputePEPValuesForAllPSMs();
 
-            Assert.That(result, Is.EqualTo("Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples."));
+            // The message goes on to give the training counts behind the failure
+            Assert.That(result, Does.StartWith("Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples."));
             Assert.That(Peps(psms), Is.EqualTo(before));
         }
 

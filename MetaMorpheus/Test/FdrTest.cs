@@ -475,7 +475,8 @@ namespace Test
             psmCopyForPEPFailure.RemoveAll(x => x.IsDecoy);
             pepEngine = new PepAnalysisEngine(psmCopyForPEPFailure, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             string result = pepEngine.ComputePEPValuesForAllPSMs();
-            Assert.That(result, Is.EqualTo("Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples."));
+            // The message goes on to give the training counts behind the failure
+            Assert.That(result, Does.StartWith("Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples."));
 
             //Run PEP with no output folder;
             //There is no assertion here. We simply want to show that PEP calculation does not fail with null folder.
