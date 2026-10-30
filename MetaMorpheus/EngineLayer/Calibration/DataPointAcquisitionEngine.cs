@@ -1,10 +1,14 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
+using Omics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Transcriptomics;
+using Transcriptomics.Digestion;
 
 namespace EngineLayer.Calibration
 {
@@ -69,11 +73,12 @@ namespace EngineLayer.Calibration
                     int ms2scanNumber = identification.ScanNumber;
                     int peptideCharge = identification.ScanPrecursorCharge;
                     //skip if ambiguous
-                    if (identification.FullSequence == null || identification.BestMatchingBioPolymersWithSetMods.Any(p => p.SpecificBioPolymer.AllModsOneIsNterminus.Any(m => m.Value.ChemicalFormula == null)))
+                    if (identification.FullSequence == null)
                         continue;
 
                     var representativeSinglePeptide = identification.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
 
+                    // Fragment masses need no chemical formula, so every match gives MS2 points, whatever its modifications.
                     List<LabeledDataPoint> ms2tuple = SearchMS2Spectrum(GoodScans[matchIndex], identification, ProductMassTolerance);
 
                     lock (_ms2Lock)
@@ -82,10 +87,9 @@ namespace EngineLayer.Calibration
                     }
 
                     // Calculate theoretical isotopic distribution of the full peptide
-                    var dist = IsotopicDistribution.GetDistribution(representativeSinglePeptide.ThisChemicalFormula, FineResolutionForIsotopeDistCalculation, 0.001);
-
-                    double[] theoreticalMasses = dist.Masses.ToArray();
-                    double[] theoreticalIntensities = dist.Intensities.ToArray();
+                    var (theoreticalMasses, theoreticalIntensities) = TheoreticalIsotopicDistribution(representativeSinglePeptide);
+                    if (theoreticalMasses.Length == 0)
+                        continue;
 
                     Array.Sort(theoreticalIntensities, theoreticalMasses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
 
@@ -116,6 +120,52 @@ namespace EngineLayer.Calibration
                 numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
                 CommonParameters
             );
+        }
+
+        /// <summary>
+        /// The theoretical isotopic envelope of a match's full sequence, for finding its precursor in MS1 scans.
+        /// </summary>
+        /// <remarks>
+        /// When every modification has a chemical formula, this is the distribution of the full formula, as it always was.
+        /// A modification with a mass and no formula (the isobaric labels in Mods\TMT.txt, for one) leaves the full formula
+        /// null. Its envelope is then built from the formula that is known (the residues, termini and every modification
+        /// that has a formula), with averagine standing in for the rest of the monoisotopic mass and the envelope anchored
+        /// at that exact mass (mzLib's AveragineFormula, as FlashLFQ does). Before, such a match gave no calibration point
+        /// at all, so a search with a fixed isobaric label calibrated on its few unlabelled matches only (issue #1875).
+        /// </remarks>
+        public static (double[] Masses, double[] Intensities) TheoreticalIsotopicDistribution(IBioPolymerWithSetMods bioPolymer)
+        {
+            if (bioPolymer.ThisChemicalFormula is { } fullFormula)
+            {
+                var dist = IsotopicDistribution.GetDistribution(fullFormula, FineResolutionForIsotopeDistCalculation, 0.001);
+                return (dist.Masses.ToArray(), dist.Intensities.ToArray());
+            }
+
+            var averagine = bioPolymer is OligoWithSetMods
+                ? new OxyriboAveragine().GetAverageChemicalFormula()
+                : new Averagine().GetAverageChemicalFormula();
+            return AveragineFormula.GetAnchoredDistribution(KnownChemicalFormula(bioPolymer), bioPolymer.MonoisotopicMass,
+                averagine, FineResolutionForIsotopeDistCalculation, 0.001);
+        }
+
+        /// <summary>
+        /// The formula of the parts of <paramref name="bioPolymer"/> that have one: its residues and termini, and every
+        /// modification with a chemical formula. A type this does not know contributes nothing, so averagine fills all of it.
+        /// </summary>
+        public static ChemicalFormula KnownChemicalFormula(IBioPolymerWithSetMods bioPolymer)
+        {
+            ChemicalFormula formula = bioPolymer switch
+            {
+                PeptideWithSetModifications => new Proteomics.AminoAcidPolymer.Peptide(bioPolymer.BaseSequence).GetChemicalFormula(),
+                OligoWithSetMods oligo => new RNA(oligo.BaseSequence, fivePrimeTerm: oligo.FivePrimeTerminus, threePrimeTerm: oligo.ThreePrimeTerminus).GetChemicalFormula(),
+                _ => new ChemicalFormula(),
+            };
+            foreach (var mod in bioPolymer.AllModsOneIsNterminus.Values)
+            {
+                if (mod.ChemicalFormula != null)
+                    formula.Add(mod.ChemicalFormula);
+            }
+            return formula;
         }
 
         private (List<LabeledDataPoint>, int, int) SearchMS1Spectra(double[] theoreticalMasses, double[] theoreticalIntensities, int ms2spectrumIndex, int direction, int peptideCharge, SpectralMatch identification)
