@@ -385,6 +385,134 @@ namespace Test
         }
 
         /// <summary>
+        /// A spectra file loads with a fixed number of threads, and files finish loading while other files are searching. Loading
+        /// outside the budget let a task run the whole budget searching plus every loading file's threads on top: with a budget of
+        /// 32 and six files at once, 32 + 5 x 5 = 57 threads where the user asked for 32. A file about to load must wait for its
+        /// share from the files already searching, which give threads back after their current scan.
+        /// </summary>
+        [Test]
+        public static void AFileLoadingWaitsForItsShareFromARunAlreadySearching()
+        {
+            var budget = new SearchThreadBudget(8);
+            var loadDone = new ManualResetEventSlim();
+            int searchWorkers = 0;
+
+            var search = Task.Run(() => budget.Run(100_000, nextItem =>
+            {
+                Interlocked.Increment(ref searchWorkers);
+                try
+                {
+                    // Keeps working until the load is done, so the threads the load held came from this run. After that it drains
+                    // its remaining items without sleeping (see ARunThatStartsLaterGetsItsShareFromARunAlreadyWorking).
+                    for (int i = nextItem(); i >= 0; i = nextItem())
+                    {
+                        if (!loadDone.IsSet)
+                        {
+                            Thread.Sleep(1);
+                        }
+                    }
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref searchWorkers);
+                }
+            }));
+
+            SpinWait.SpinUntil(() => budget.ThreadsInUse == 8, TimeSpan.FromSeconds(30));
+            Assert.That(budget.ThreadsInUse, Is.EqualTo(8), "the search should have taken the whole budget");
+
+            int searchWorkersWhileLoading = -1;
+            int threadsInUseWhileLoading = -1;
+            int loaded = budget.RunHolding(4, () =>
+            {
+                searchWorkersWhileLoading = Volatile.Read(ref searchWorkers);
+                threadsInUseWhileLoading = budget.ThreadsInUse;
+                return 42;
+            });
+            loadDone.Set();
+
+            Assert.That(loaded, Is.EqualTo(42), "RunHolding returns what the work returns");
+            Assert.That(searchWorkersWhileLoading, Is.InRange(0, 4),
+                "the search kept more than the 4 threads the load left it, so loading and searching together ran more threads than the budget");
+            // At least the load's own 4, and never more than the budget. Not exactly 8: several search workers can see the request
+            // to give a thread back at the same moment and all give one, so for a moment the search can hold fewer than the 4 left
+            // to it before it takes them up again.
+            Assert.That(threadsInUseWhileLoading, Is.InRange(4, 8), "the load's 4 threads are counted in the budget, and the budget is never exceeded");
+            Assert.That(search.Wait(TimeSpan.FromMinutes(2)), Is.True);
+            Assert.That(budget.ThreadsInUse, Is.EqualTo(0));
+            Assert.That(budget.SearchingFiles, Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// The other direction: a file that starts searching while another file loads gets only the threads the load is not using.
+        /// </summary>
+        [Test]
+        public static void ARunThatStartsWhileAFileLoadsGetsOnlyTheThreadsTheLoadLeaves()
+        {
+            var budget = new SearchThreadBudget(8);
+            int workers = 0;
+            int peak = 0;
+
+            budget.RunHolding(4, () =>
+            {
+                budget.Run(400, nextItem =>
+                {
+                    int now = Interlocked.Increment(ref workers);
+                    try
+                    {
+                        int seen;
+                        while (now > (seen = Volatile.Read(ref peak)) && Interlocked.CompareExchange(ref peak, now, seen) != seen) { }
+                        for (int i = nextItem(); i >= 0; i = nextItem())
+                        {
+                            Thread.Sleep(1);
+                        }
+                    }
+                    finally
+                    {
+                        Interlocked.Decrement(ref workers);
+                    }
+                });
+                return 0;
+            });
+
+            Assert.That(peak, Is.InRange(1, 4), "the search used threads the load was holding");
+            Assert.That(budget.ThreadsInUse, Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// A load that fails must still give its threads back; otherwise every file still to be searched has a smaller budget for
+        /// the rest of the task (see AThreadIsReturnedWhenItsWorkerCannotBeStarted).
+        /// </summary>
+        [Test]
+        public static void ThreadsHeldForWorkThatThrowsAreReturned()
+        {
+            var budget = new SearchThreadBudget(4);
+            int threadsInUseDuringWork = -1;
+
+            Assert.That(() => budget.RunHolding<int>(3, () =>
+            {
+                threadsInUseDuringWork = budget.ThreadsInUse;
+                throw new InvalidOperationException("the spectra file could not be read");
+            }), Throws.InstanceOf<InvalidOperationException>());
+
+            Assert.That(threadsInUseDuringWork, Is.EqualTo(3), "the work ran holding its threads");
+            Assert.That(budget.ThreadsInUse, Is.EqualTo(0), "threads held for work that threw");
+            Assert.That(budget.SearchingFiles, Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// Work asking for more threads than the budget holds the whole budget, not more; work asking for none still runs, on one.
+        /// </summary>
+        [Test]
+        public static void HoldingIsCappedAtTheBudgetAndIsNeverBelowOneThread()
+        {
+            var budget = new SearchThreadBudget(4);
+            Assert.That(budget.RunHolding(10, () => budget.ThreadsInUse), Is.EqualTo(4));
+            Assert.That(budget.RunHolding(0, () => budget.ThreadsInUse), Is.EqualTo(1));
+            Assert.That(budget.ThreadsInUse, Is.EqualTo(0));
+        }
+
+        /// <summary>
         /// The glyco engine searches through the budget it is given, and returns every thread when it is done.
         /// </summary>
         [Test]
