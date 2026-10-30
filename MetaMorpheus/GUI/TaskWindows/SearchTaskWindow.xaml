@@ -1150,8 +1150,8 @@
                                         </StackPanel>
                                     </GroupBox>
                                     <GroupBox Header="Posterior Error Probability">
-                                        <StackPanel Margin="2">
-                                            <CheckBox Margin="3 0 0 0" x:Name="IterativePepTrainingCheckBox" Content="Iterative PEP training">
+                                        <StackPanel Margin="2" Orientation="Horizontal">
+                                            <CheckBox Margin="5 0 10 0" x:Name="IterativePepTrainingCheckBox" Content="Iterative PEP training"  VerticalAlignment="Center">
                                                 <ToolTipService.ToolTip>
                                                     <ToolTip ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                         <TextBlock>
@@ -1162,6 +1162,19 @@
                                                     </ToolTip>
                                                 </ToolTipService.ToolTip>
                                             </CheckBox>
+                                            <StackPanel Orientation="Horizontal" Margin="10 0" VerticalAlignment="Center">
+                                                <Label Content="PEP training q-value:" Width="120" />
+                                                <local:DoubleTextBoxControl x:Name="PepTrainingQValueTextBox" Width="45"
+                                                         ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                    <TextBox.ToolTip>
+                                                        <TextBlock>
+                                                            Targets with a q-value at or below this value are the positive examples the PEP model trains on.
+                                                            <LineBreak />
+                                                            Defaults: 0.005 for bottom-up, 0.025 for top-down and 0.05 for RNA. Values below 0.005 (0.025 for top-down) are raised to it.
+                                                        </TextBlock>
+                                                    </TextBox.ToolTip>
+                                                </local:DoubleTextBoxControl>
+                                            </StackPanel>
                                         </StackPanel>
                                     </GroupBox>
                                     <GroupBox Header="Mass Difference Histogram Analysis">
