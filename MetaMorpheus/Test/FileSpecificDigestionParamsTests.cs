@@ -7,7 +7,9 @@ using Omics.Digestion;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using TaskLayer;
 
 namespace Test
@@ -29,7 +31,17 @@ namespace Test
     /// not to quantify unlabeled peptides quantified them anyway for those files (PostSearchAnalysisTask reads this flag).</description></item>
     /// </list>
     /// <para>The second test compares the whole object with <see cref="DigestionParams.Equals(DigestionParams)"/>, which checks
-    /// every field, so a digestion setting added in the future that is forgotten in the rebuild fails here too.</para>
+    /// every field, so a digestion setting added in the future that is forgotten in the rebuild fails here too --
+    /// <b>but only if this fixture sets that setting away from its constructor default</b>. The rebuild's fallback IS the
+    /// constructor default, so a field left at its default agrees by accident and the guard says nothing.
+    /// <see cref="DigestionParams.RespectCleavageBlockingModifications"/> was added to mzLib defaulting to false and was
+    /// forgotten in the rebuild, and this test passed anyway until the line below set it true. Set every new digestion
+    /// setting here, not just the one being added.</para>
+    /// <para>The rest of <see cref="CommonParameters"/> is rebuilt from an explicit argument list the same way, and it left out
+    /// <see cref="CommonParameters.NumberOfWindows"/>, <see cref="CommonParameters.QValueCutoffForPepCalculation"/> and
+    /// <see cref="CommonParameters.DIAparameters"/>. Calibration writes file-specific settings for every file it calibrates, so
+    /// a search after calibration filtered peaks without its windows, trained PEP at the default q-value cutoff, and searched
+    /// DIA files as DDA. <see cref="FileSpecificRebuild_WithoutOverrides_KeepsEveryCommonSetting"/> compares every property.</para>
     /// </remarks>
     [TestFixture]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -51,7 +63,7 @@ namespace Test
                 generateUnlabeledProteinsForSilac: generateUnlabeledProteinsForSilac,
                 keepNGlycopeptide: keepNGlycopeptide, keepOGlycopeptide: keepOGlycopeptide));
 
-            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { MaxMissedCleavages = 5 });
+            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { MaxMissedCleavages = 5 }, null);
 
             var digestionParams = (DigestionParams)combined.DigestionParams;
             Assert.That(digestionParams.MaxMissedCleavages, Is.EqualTo(5), "the file-specific override still applies");
@@ -70,14 +82,140 @@ namespace Test
             var original = new DigestionParams("trypsin", maxMissedCleavages: 4, minPeptideLength: 6, maxPeptideLength: 40,
                 maxModificationIsoforms: 256, initiatorMethionineBehavior: InitiatorMethionineBehavior.Cleave, maxModsForPeptides: 3,
                 searchModeType: CleavageSpecificity.Semi, fragmentationTerminus: FragmentationTerminus.C,
-                generateUnlabeledProteinsForSilac: false, keepNGlycopeptide: true, keepOGlycopeptide: true);
+                generateUnlabeledProteinsForSilac: false, keepNGlycopeptide: true, keepOGlycopeptide: true,
+                respectCleavageBlockingModifications: true);
             var task = new CommonParameters(digestionParams: original);
 
-            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { PrecursorMassTolerance = new PpmTolerance(7) });
+            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { PrecursorMassTolerance = new PpmTolerance(7) }, null);
 
             Assert.That(combined.PrecursorMassTolerance.Value, Is.EqualTo(7), "the file-specific override still applies");
             Assert.That(combined.DigestionParams, Is.EqualTo(original),
                 $"file-specific rebuild changed digestion settings it was not asked to change: {original} became {combined.DigestionParams}");
+        }
+
+        /// <summary>
+        /// The cleavage-blocking flag keeps the task's value through a file-specific rebuild, in both states.
+        /// </summary>
+        /// <remarks>
+        /// Named separately from the whole-object test because the flag decides whether digestion is modification-aware at
+        /// all: silently falling back to false gives a file the historical modification-blind digest while the task reports
+        /// the corrected one, and the flag also feeds the index cache fingerprint, so the two runs are not distinguishable
+        /// afterwards. The true case is the one that failed before the rebuild carried the field.
+        /// </remarks>
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public static void FileSpecificRebuild_KeepsRespectCleavageBlockingModifications(bool respectCleavageBlockingModifications)
+        {
+            var task = new CommonParameters(digestionParams: new DigestionParams("trypsin",
+                respectCleavageBlockingModifications: respectCleavageBlockingModifications));
+
+            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { MaxMissedCleavages = 5 }, null);
+
+            var digestionParams = (DigestionParams)combined.DigestionParams;
+            Assert.That(digestionParams.MaxMissedCleavages, Is.EqualTo(5), "the file-specific override still applies");
+            Assert.That(digestionParams.RespectCleavageBlockingModifications, Is.EqualTo(respectCleavageBlockingModifications),
+                "RespectCleavageBlockingModifications was reset by the file-specific rebuild");
+        }
+
+        /// <summary>
+        /// File-specific settings that change only the precursor tolerance must leave every other setting equal to the task's.
+        /// Every constructor argument is set away from its default (asserted below), so a dropped one shows; reference-typed
+        /// settings must come across as the same instance, as in <see cref="IndexPartitioningTest.CloneWithNewTotalPartitions_PreservesEveryOtherSetting"/>.
+        /// </summary>
+        [Test]
+        public static void FileSpecificRebuild_WithoutOverrides_KeepsEveryCommonSetting()
+        {
+            var task = new CommonParameters(
+                taskDescriptor: "descriptor",
+                dissociationType: DissociationType.ETD,
+                ms2childScanDissociationType: DissociationType.EThcD,
+                ms3childScanDissociationType: DissociationType.HCD,
+                separationType: "CZE",
+                doPrecursorDeconvolution: false,
+                useProvidedPrecursorInfo: false,
+                deconvolutionIntensityRatio: 7,
+                deconvolutionMaxAssumedChargeState: 9,
+                reportAllAmbiguity: false,
+                addCompIons: true,
+                totalPartitions: 3,
+                qValueThreshold: 0.02,
+                pepQValueThreshold: 0.5,
+                qValueCutoffForPepCalculation: 0.004,
+                scoreCutoff: 4,
+                numberOfPeaksToKeepPerWindow: 111,
+                minimumAllowedIntensityRatioToBasePeak: 0.02,
+                windowWidthThomsons: 12,
+                numberOfWindows: 6,
+                normalizePeaksAccrossAllWindows: true,
+                trimMs1Peaks: true,
+                trimMsMsPeaks: false,
+                productMassTolerance: new PpmTolerance(11),
+                precursorMassTolerance: new PpmTolerance(6),
+                productMassTolerance_LowRes: new AbsoluteTolerance(0.44),
+                deconvolutionMassTolerance: new PpmTolerance(7),
+                maxThreadsToUsePerFile: 2,
+                digestionParams: new DigestionParams(protease: "Asp-N", maxMissedCleavages: 3, minPeptideLength: 6),
+                listOfModsVariable: new List<(string, string)> { ("Common Biological", "Phosphorylation on S") },
+                listOfModsFixed: new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C") },
+                assumeOrphanPeaksAreZ1Fragments: false,
+                maxHeterozygousVariants: 2,
+                minVariantDepth: 5,
+                addTruncations: true,
+                precursorDeconParams: new ClassicDeconvolutionParameters(2, 9, 5, 4),
+                productDeconParams: new ClassicDeconvolutionParameters(1, 7, 6, 3),
+                useMostAbundantPrecursorIntensity: false,
+                diaParameters: (EngineLayer.DIA.DIAparameters)System.Runtime.CompilerServices.RuntimeHelpers
+                    .GetUninitializedObject(typeof(EngineLayer.DIA.DIAparameters)),
+                fragmentationParams: new FragmentationParams(),
+                precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant,
+                rtPredictorName: "SSRCalc3",
+                retentionTimeRange: new DoubleRange(12, 14));
+
+            // CustomIons is not a constructor parameter; the constructor reads it from a global dictionary
+            typeof(CommonParameters).GetProperty(nameof(CommonParameters.CustomIons))
+                .SetValue(task, new List<ProductType> { ProductType.c, ProductType.zDot });
+
+            var fileSpecificTolerance = new PpmTolerance(7);
+            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { PrecursorMassTolerance = fileSpecificTolerance }, "TaGe_SA_A549_3_snip_2");
+
+            Assert.That(combined.PrecursorMassTolerance, Is.SameAs(fileSpecificTolerance), "the file-specific override still applies");
+
+            var defaults = new CommonParameters();
+            var indistinguishable = new List<string>();
+            var mismatches = new List<string>();
+
+            foreach (PropertyInfo property in typeof(CommonParameters).GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (property.Name == nameof(CommonParameters.PrecursorMassTolerance) || property.GetIndexParameters().Length > 0)
+                {
+                    continue;
+                }
+
+                object a = property.GetValue(task);
+                object b = property.GetValue(combined);
+                object def = property.GetValue(defaults);
+
+                // the rebuild always constructs new digestion parameters, so they are compared field by field
+                bool byValue = property.PropertyType.IsValueType || property.PropertyType == typeof(string)
+                    || property.Name == nameof(CommonParameters.DigestionParams);
+
+                if (byValue ? Equals(a, def) : ReferenceEquals(a, def))
+                {
+                    indistinguishable.Add(property.Name);
+                }
+
+                bool equal = a == null || byValue ? Equals(a, b) : ReferenceEquals(a, b);
+                if (!equal)
+                {
+                    mismatches.Add($"{property.Name}: '{a}' -> '{b}'");
+                }
+            }
+
+            Assert.That(mismatches, Is.Empty, "file-specific rebuild lost settings: " + string.Join("; ", mismatches));
+            Assert.That(indistinguishable, Is.Empty,
+                "these properties match a default-constructed CommonParameters, so this test cannot detect the "
+                + "rebuild dropping them: " + string.Join(", ", indistinguishable));
         }
 
         [Test]
@@ -87,7 +225,7 @@ namespace Test
                 retentionTimeRange: new DoubleRange(12.5, 48.75));
 
             var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task,
-                new FileSpecificParameters { PrecursorMassTolerance = new PpmTolerance(7) });
+                new FileSpecificParameters { PrecursorMassTolerance = new PpmTolerance(7) }, null);
 
             Assert.That(combined.RetentionTimeRange.Minimum, Is.EqualTo(12.5));
             Assert.That(combined.RetentionTimeRange.Maximum, Is.EqualTo(48.75));

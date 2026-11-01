@@ -555,6 +555,159 @@ namespace Test
         }
 
         /// <summary>
+        /// The per-file protein tables list each group's unique and shared peptides, as the combined table does. They
+        /// left both cells empty: the per-file subsets were never given their peptide text, while "Number of Unique
+        /// Peptides" (counted from the same peptides) was filled. So a row could say 5 unique peptides and list none.
+        /// </summary>
+        [Test]
+        public static void PostSearchIndividualFileProteinGroupsListTheirPeptides()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    Normalize = false,
+                    DoParsimony = true,
+                    WriteIndividualFiles = true
+                },
+                CommonParameters = new(precursorDeconParams: new IsoDecDeconvolutionParameters())
+            };
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestIndividualPgPeptideCells");
+            string inputFolder = Path.Combine(outputFolder, "inputs");
+            Directory.CreateDirectory(inputFolder);
+            string fastaPath = Path.Combine(inputFolder, "DbForPrunedDb.fasta");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta"), fastaPath, true);
+            string mzml1 = Path.Combine(inputFolder, "PrunedDbSpectra1.mzml");
+            string mzml2 = Path.Combine(inputFolder, "PrunedDbSpectra2.mzml");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml"), mzml1, true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml"), mzml2, true);
+
+            try
+            {
+                searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(fastaPath, false) },
+                    new List<string> { mzml1, mzml2 }, "normal");
+
+                var individualPgFiles = Directory.GetFiles(Path.Combine(outputFolder, "Individual File Results"), "*_ProteinGroups.tsv");
+                Assert.That(individualPgFiles.Length, Is.EqualTo(2));
+
+                foreach (var pgFile in individualPgFiles)
+                {
+                    var lines = File.ReadAllLines(pgFile);
+                    var header = lines[0].Split('\t').ToList();
+                    int unique = header.IndexOf("Unique Peptides");
+                    int shared = header.IndexOf("Shared Peptides");
+                    int numberUnique = header.IndexOf("Number of Unique Peptides");
+                    var rows = lines.Skip(1).Select(l => l.Split('\t')).ToList();
+
+                    Assert.That(rows.Count(r => r[unique].Length > 0), Is.GreaterThan(0), $"{pgFile} lists no unique peptide at all");
+                    foreach (var row in rows)
+                    {
+                        int listedUnique = row[unique].Split('|', StringSplitOptions.RemoveEmptyEntries).Length;
+                        Assert.That(listedUnique, Is.EqualTo(int.Parse(row[numberUnique])),
+                            $"{pgFile} {row[0]}: the Unique Peptides cell and Number of Unique Peptides disagree");
+                        Assert.That(row[unique].Length + row[shared].Length, Is.GreaterThan(0),
+                            $"{pgFile} {row[0]}: a group with peptides lists none");
+                    }
+                }
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// Each per-file protein table lists the peptides identified in that file, not the peptides of the whole search.
+        /// The test above searches two copies of one file, so its per-file lists equal the combined list and it cannot
+        /// tell them apart. Here the two files identify different peptides of the same protein: protB's YSLTPEGK is in
+        /// file 1 only and its GFHWSEAR in file 2 only, while LVNELTEFAK (also in protC) is in both.
+        /// </summary>
+        [Test]
+        public static void PostSearchIndividualFileProteinGroupsListOnlyTheirOwnFilesPeptides()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                CommonParameters = new CommonParameters(
+                    scoreCutoff: 1,
+                    digestionParams: new DigestionParams(
+                        maxMissedCleavages: 0,
+                        minPeptideLength: 5,
+                        initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+                SearchParameters = new SearchParameters
+                {
+                    DoParsimony = true,
+                    DoLabelFreeQuantification = false,
+                    WriteIndividualFiles = true
+                }
+            };
+
+            Protein protA = new Protein("AEDLNTKVQGLSASK", "protA");
+            Protein protB = new Protein("YSLTPEGKLVNELTEFAKGFHWSEAR", "protB");
+            Protein protC = new Protein("LVNELTEFAKDNWQSQR", "protC");
+            var peptides = new[] { protA, protB, protC }
+                .SelectMany(p => p.Digest(searchTask.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()))
+                .GroupBy(p => p.BaseSequence)
+                .ToDictionary(g => g.Key, g => (IBioPolymerWithSetMods)g.First());
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestIndividualPgOwnPeptides");
+            string inputFolder = Path.Combine(outputFolder, "inputs");
+            string dbPath = Path.Combine(inputFolder, "ownPeptides.xml");
+            string mzml1 = Path.Combine(inputFolder, "ownPeptides1.mzML");
+            string mzml2 = Path.Combine(inputFolder, "ownPeptides2.mzML");
+
+            // accession -> (unique peptides, shared peptides), as one protein table lists them
+            static Dictionary<string, (HashSet<string> Unique, HashSet<string> Shared)> ReadPeptideCells(string path)
+            {
+                var lines = File.ReadAllLines(path);
+                var header = lines[0].Split('\t').ToList();
+                int unique = header.IndexOf("Unique Peptides");
+                int shared = header.IndexOf("Shared Peptides");
+                return lines.Skip(1).Select(l => l.Split('\t')).ToDictionary(r => r[0], r => (
+                    r[unique].Split('|', StringSplitOptions.RemoveEmptyEntries).ToHashSet(),
+                    r[shared].Split('|', StringSplitOptions.RemoveEmptyEntries).ToHashSet()));
+            }
+
+            try
+            {
+                Directory.CreateDirectory(inputFolder);
+                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protA, protB, protC }, dbPath);
+                Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(new TestDataFile(
+                    new[] { "AEDLNTK", "VQGLSASK", "YSLTPEGK", "LVNELTEFAK" }.Select(s => peptides[s]).ToList()), mzml1, false);
+                Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(new TestDataFile(
+                    new[] { "GFHWSEAR", "LVNELTEFAK", "DNWQSQR" }.Select(s => peptides[s]).ToList()), mzml2, false);
+
+                searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(dbPath, false) },
+                    new List<string> { mzml1, mzml2 }, "normal");
+
+                var combined = ReadPeptideCells(Path.Combine(outputFolder, "AllProteinGroups.tsv"));
+                string individualFolder = Path.Combine(outputFolder, "Individual File Results");
+                var file1 = ReadPeptideCells(Path.Combine(individualFolder, "ownPeptides1_ProteinGroups.tsv"));
+                var file2 = ReadPeptideCells(Path.Combine(individualFolder, "ownPeptides2_ProteinGroups.tsv"));
+
+                // the combined table lists protB's peptides from both files
+                Assert.That(combined["protB"].Unique, Is.EquivalentTo(new[] { "YSLTPEGK", "GFHWSEAR" }));
+                Assert.That(combined["protB"].Shared, Is.EquivalentTo(new[] { "LVNELTEFAK" }));
+
+                // each per-file table lists only what its own file identified
+                Assert.That(file1["protA"].Unique, Is.EquivalentTo(new[] { "AEDLNTK", "VQGLSASK" }));
+                Assert.That(file1["protB"].Unique, Is.EquivalentTo(new[] { "YSLTPEGK" }));
+                Assert.That(file1["protB"].Shared, Is.EquivalentTo(new[] { "LVNELTEFAK" }));
+                Assert.That(file2["protB"].Unique, Is.EquivalentTo(new[] { "GFHWSEAR" }));
+                Assert.That(file2["protB"].Shared, Is.EquivalentTo(new[] { "LVNELTEFAK" }));
+                Assert.That(file2["protC"].Unique, Is.EquivalentTo(new[] { "DNWQSQR" }));
+
+                // and no per-file row lists a peptide the other file alone identified
+                Assert.That(file1.Values.SelectMany(v => v.Unique.Concat(v.Shared)).Intersect(new[] { "GFHWSEAR", "DNWQSQR" }), Is.Empty);
+                Assert.That(file2.Values.SelectMany(v => v.Unique.Concat(v.Shared)).Intersect(new[] { "AEDLNTK", "VQGLSASK", "YSLTPEGK" }), Is.Empty);
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
+            }
+        }
+
+        /// <summary>
         /// Test that we don't get a crash if protein groups are not constructed
         /// </summary>
         [Test]
@@ -887,8 +1040,13 @@ namespace Test
 
             string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
             string[] results = File.ReadAllLines(resultsFile);
-            Assert.That(results[6], Is.EqualTo("PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value."));
-            Assert.That(results[7], Is.EqualTo("All target PSMs with q-value <= 1: 84"));
+            // Each sentence sits just above the count it qualifies; the old text ("Results were filtered by q-value.")
+            // said a filter ran.
+            const string notFiltered = "PEP filtering was requested, but there were fewer than 100 PSMs (85, counting decoys), so results were not filtered.";
+            Assert.That(results[5], Is.EqualTo(notFiltered));
+            Assert.That(results[6], Is.EqualTo("All target PSMs with q-value <= 1: 84"));
+            Assert.That(results[7], Is.EqualTo(notFiltered));
+            Assert.That(results[8], Does.StartWith("All target peptides with q-value <= 1: "));
 
             // clean up
             Directory.Delete(folderPath, true);
@@ -923,7 +1081,8 @@ namespace Test
             {
                 SearchParameters = new SearchParameters
                 {
-                    DoLabelFreeQuantification = false // quant disabled just to save some time
+                    DoLabelFreeQuantification = false, // quant disabled just to save some time
+                    WriteIndividualFiles = true // the per-file counts are checked below
                 },
 
                 // Use pepQvalue filtering with fewer than 100 psms
@@ -947,7 +1106,10 @@ namespace Test
             string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
             string[] results = File.ReadAllLines(resultsFile);
 
-            Assert.That(results[7], Is.EqualTo("All target PSMs with q-value <= 1: 46"));
+            // Lines 5 and 7 say PEP filtering was not done, each just above the count it qualifies.
+            Assert.That(results[5], Does.StartWith("PEP filtering was requested, but there were fewer than 100 PSMs ("));
+            Assert.That(results[6], Is.EqualTo("All target PSMs with q-value <= 1: 46"));
+            Assert.That(results[7], Is.EqualTo(results[5]));
             Assert.That(results[8], Is.EqualTo("All target peptides with q-value <= 1: 14"));
             Assert.That(results[9], Is.EqualTo("All target protein groups with q-value <= 1: 14"));
             Assert.That(results[10], Is.EqualTo("All Precursors: 123"));

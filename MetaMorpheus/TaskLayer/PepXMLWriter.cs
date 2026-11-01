@@ -1,5 +1,7 @@
-﻿using EngineLayer;
+﻿using Chemistry;
+using EngineLayer;
 using Proteomics;
+using Proteomics.AminoAcidPolymer;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -15,6 +17,11 @@ namespace TaskLayer
 {
     public static class PepXMLWriter
     {
+        // the unmodified termini of a peptide: H on the N terminus, OH on the C terminus
+        private static readonly double UnmodifiedNTerminusMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
+        private static readonly double UnmodifiedCTerminusMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass
+            + PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
+
         public static void WritePepXml(List<SpectralMatch> psms, List<DbForTask> database, List<Modification> variableModifications, List<Modification> fixedModifications, CommonParameters CommonParameters, string outputPath)
         {
             if (!psms.Any())
@@ -122,16 +129,33 @@ namespace TaskLayer
             {
                 PeptideWithSetModifications peptide = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer as PeptideWithSetModifications;
 
+                // pepXML gives the mass of the modified residue or terminus, not the modification's mass shift, and keeps
+                // the termini apart from the residues
                 var mods = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
-                foreach (var mod in peptide.AllModsOneIsNterminus)
+                double? nTerminusMass = null;
+                double? cTerminusMass = null;
+                foreach (var mod in peptide.AllModsOneIsNterminus.OrderBy(kv => kv.Key))
                 {
-                    var pepXmlMod = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass
+                    int position = mod.Key - 1; // one-based residue; 0 is the N terminus, Length + 1 the C terminus
+                    double shift = (double)mod.Value.MonoisotopicMass;
+                    if (position == 0)
                     {
-                        mass = (double)mod.Value.MonoisotopicMass,
-                        position = (mod.Key - 1).ToString()
-                    };
-                    mods.Add(pepXmlMod);
+                        nTerminusMass = UnmodifiedNTerminusMass + shift;
+                    }
+                    else if (position == peptide.Length + 1)
+                    {
+                        cTerminusMass = UnmodifiedCTerminusMass + shift;
+                    }
+                    else
+                    {
+                        mods.Add(new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass
+                        {
+                            mass = (Residue.TryGetResidue(peptide.BaseSequence[position - 1], out Residue residue) ? residue.MonoisotopicMass : double.NaN) + shift,
+                            position = position.ToString()
+                        });
+                    }
                 }
+                bool isModified = mods.Count > 0 || nTerminusMass.HasValue || cTerminusMass.HasValue;
 
                 var proteinAccessions = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer.Parent.Accession).Distinct();
 
@@ -148,7 +172,16 @@ namespace TaskLayer
                     num_tot_proteins = (uint)proteinAccessions.Count(),
                     calc_neutral_pep_mass = (float)((psm.BioPolymerWithSetModsMonoisotopicMass != null) ? psm.BioPolymerWithSetModsMonoisotopicMass : float.NaN),
                     massdiff = ((psm.BioPolymerWithSetModsMonoisotopicMass != null) ? (psm.ScanPrecursorMass - psm.BioPolymerWithSetModsMonoisotopicMass.Value).ToString() : "Ambiguous"),
-                    modification_info = (mods.Count == 0 ? new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() } : null),
+                    modification_info = isModified
+                        ? new pepXML.Generated.modInfoDataType
+                        {
+                            mod_aminoacid_mass = mods.Count > 0 ? mods.ToArray() : null,
+                            mod_nterm_mass = nTerminusMass ?? 0,
+                            mod_nterm_massSpecified = nTerminusMass.HasValue,
+                            mod_cterm_mass = cTerminusMass ?? 0,
+                            mod_cterm_massSpecified = cTerminusMass.HasValue,
+                        }
+                        : null,
                     search_score = new pepXML.Generated.nameValueType[]
                     {
                                         new pepXML.Generated.nameValueType{ name = "Score", value = psm.Score.ToString()},

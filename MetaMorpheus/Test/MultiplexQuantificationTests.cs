@@ -6,7 +6,6 @@ using NUnit.Framework;
 using Omics;
 using Omics.Fragmentation;
 using Omics.Modifications;
-using IsobaricMassTag = EngineLayer.IsobaricMassTag;
 using Omics.SpectralMatch;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
@@ -31,17 +30,37 @@ namespace Test
         private static readonly string[] Tmt11Channels =
             { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" };
 
-        /// <summary>The staged spectra file's name without extension, which prefixes every sample column.</summary>
+        /// <summary>The staged spectra file's name without extension, which every sample column carries.</summary>
         private const string StagedMzmlName = "VA084TQ_6";
 
+        /// <summary>A channel the design annotates but leaves the Sample Name blank.</summary>
+        private const int BlankNameChannel = 3;
+
+        /// <summary>A channel the design leaves out entirely.</summary>
+        private const int UnannotatedChannel = 10;
+
         /// <summary>
-        /// Writes a TmtDesign.txt beside <paramref name="stagedMzmlPath"/> annotating every channel of
-        /// the TMT11 plex as a study sample, alternating between two conditions.
+        /// The column label of channel <paramref name="channel"/> under <see cref="WriteTmtDesign"/>'s design:
+        /// mzLib labels a named channel {sample}_{file}_{channel}, and a channel with no name, blank or
+        /// unannotated, keeps {file}_{channel}.
+        /// </summary>
+        private static string ChannelColumnLabel(int channel) =>
+            channel == BlankNameChannel || channel == UnannotatedChannel
+                ? $"{StagedMzmlName}_{Tmt11Channels[channel]}"
+                : $"Sample{channel + 1}_{StagedMzmlName}_{Tmt11Channels[channel]}";
+
+        /// <summary>
+        /// Writes a TmtDesign.txt beside <paramref name="stagedMzmlPath"/> annotating the channels of the
+        /// TMT11 plex as study samples, alternating between two conditions. One channel's Sample Name is
+        /// blank and one channel has no row, so both unnamed forms reach the real writers.
         /// </summary>
         private static void WriteTmtDesign(string dataFolder, string stagedMzmlPath)
         {
-            var rows = Tmt11Channels.Select((tag, i) =>
-                $"{stagedMzmlPath}\tPlex1\tSample{i + 1}\t{tag}\tCond{(i % 2 == 0 ? "A" : "B")}\t{i / 2 + 1}\t1\t1\tstudy sample");
+            var rows = Tmt11Channels
+                .Select((tag, i) => (tag, i))
+                .Where(c => c.i != UnannotatedChannel)
+                .Select(c =>
+                    $"{stagedMzmlPath}\tPlex1\t{(c.i == BlankNameChannel ? "" : $"Sample{c.i + 1}")}\t{c.tag}\tCond{(c.i % 2 == 0 ? "A" : "B")}\t{c.i / 2 + 1}\t1\t1\tstudy sample");
 
             File.WriteAllLines(
                 Path.Combine(dataFolder, GlobalVariables.TmtExperimentalDesignFileName),
@@ -122,7 +141,7 @@ namespace Test
                 // values would still look plausible and would be under the wrong sample.
                 for (int channel = 0; channel < Tmt11Channels.Length; channel++)
                 {
-                    Assert.That(header[1 + channel], Is.EqualTo($"{StagedMzmlName}_{Tmt11Channels[channel]}"),
+                    Assert.That(header[1 + channel], Is.EqualTo(ChannelColumnLabel(channel)),
                         "column order must follow the plex's channel order, not merely be distinct");
                 }
 
@@ -184,7 +203,16 @@ namespace Test
 
             var peptideLines = File.ReadAllLines(Path.Combine(searchOut, QuantificationWriter.PeptideFileName));
             Assert.That(peptideLines, Has.Length.GreaterThan(1), "at least one peptide must be quantified");
-            Assert.That(peptideLines[0].Split('\t'), Has.Length.EqualTo(1 + Tmt11Channels.Length));
+            var peptideHeader = peptideLines[0].Split('\t');
+            Assert.That(peptideHeader, Has.Length.EqualTo(1 + Tmt11Channels.Length));
+
+            // The peptide table is renamed too, so check its headers by name as the protein table's
+            // are, not only by count.
+            for (int channel = 0; channel < Tmt11Channels.Length; channel++)
+            {
+                Assert.That(peptideHeader[1 + channel], Is.EqualTo(ChannelColumnLabel(channel)),
+                    "the peptide table must name each channel as the protein table does");
+            }
 
             int compared = 0;
             foreach (var line in peptideLines.Skip(1))
@@ -222,9 +250,9 @@ namespace Test
 
             var header = lines[0].Split('\t');
 
-            foreach (string channel in Tmt11Channels)
+            for (int channel = 0; channel < Tmt11Channels.Length; channel++)
             {
-                string label = $"{StagedMzmlName}_{channel}";
+                string label = ChannelColumnLabel(channel);
                 Assert.That(header, Contains.Item($"SpectralCount_{label}"),
                     "the count columns must survive quantification");
                 Assert.That(header, Contains.Item($"CountOccupancy_{label}"),
@@ -751,21 +779,19 @@ namespace Test
         }
 
         /// <summary>
-        /// The case neither TMT fixture can reach, and the reason the excluded-match warning exists.
-        /// mzLib quantifies only a match that identifies exactly one biopolymer, and one sequence found in
-        /// two proteins is two unequal objects, so a peptide shared between two protein groups is dropped.
-        /// Every "Shared Peptides" cell in both fixture databases is empty, so nothing else here exercises
-        /// it -- and the failure is quiet: the raw table stays intact while the roll-ups total less, or,
-        /// when every peptide is shared, nothing at all.
+        /// One sequence in two indistinguishable proteins, which parsimony puts in one group: calmodulin's case
+        /// (P0DP23, P0DP24, P0DP25). Neither TMT fixture can reach it, because every "Shared Peptides" cell in
+        /// both fixture databases is empty.
         /// </summary>
         /// <remarks>
-        /// The exclusion itself is mzLib's to fix. What belongs here is saying that it happened: the engine
-        /// already counts the dropped matches and reports the count on a SUCCESSFUL run, which this
-        /// analysis previously read only in the failure branch -- so a total loss produced a clean search
-        /// and no warning at all.
+        /// The match names one candidate per protein. Until smith-chem-wisc/mzLib#1463, mzLib compared those as
+        /// objects and dropped the match as ambiguous, and it read "unique" from the group's own unique set, which is
+        /// left empty here: that set was parsimony's database-level list, empty for every group of indistinguishable
+        /// proteins. The group got no value, and this test pinned the warning that said so. Now the sequence is one
+        /// peptide, unique to the one group that lists it, which is how the protein table labels it too.
         /// </remarks>
         [Test]
-        public static void PeptideSharedBetweenTwoProteins_WarnsThatMatchesWereExcluded()
+        public static void PeptideInTwoIndistinguishableProteins_QuantifiesTheirGroup()
         {
             string folder = StageFolder("TmtGuardSharedPeptide");
             try
@@ -796,13 +822,60 @@ namespace Test
                     allSpectralMatches: new List<SpectralMatch> { psm },
                     proteinGroups: new List<ProteinGroup> { group });
 
-                Assert.That(parameters.MultiplexQuantificationResults, Is.Not.Null,
-                    "the run succeeds, which is exactly why the loss has to be said out loud");
-                Assert.That(parameters.MultiplexQuantificationResults.AmbiguousSpectralMatchesExcluded, Is.EqualTo(1),
-                    "the one match, shared between two proteins, is the one the engine drops");
-                Assert.That(warnings, Has.Exactly(1).Contains("did not identify exactly one biopolymer"));
-                Assert.That(warnings, Has.Exactly(1).Contains("shared between two protein groups"),
-                    "the warning has to name the cause, or a user cannot act on it");
+                var results = parameters.MultiplexQuantificationResults;
+                Assert.That(results, Is.Not.Null);
+                Assert.That(results.AmbiguousSpectralMatchesExcluded, Is.Zero,
+                    "one sequence in two proteins is one peptide, not an ambiguous match");
+                Assert.That(warnings, Has.None.Contains("left out of multiplex quantification"));
+                Assert.That(results.PeptideIntensities.Keys.Select(p => p.FullSequence), Is.EqualTo(new[] { fromA.FullSequence }),
+                    "one peptide row for the sequence, not one per protein");
+                Assert.That(results.ProteinIntensities[group].Values, Has.Some.GreaterThan(0),
+                    "the group's own unique set is empty, so only a group-level reading of unique reaches it");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// PEPTIDEK is in two proteins that form two groups. One group is written; the other is above the
+        /// q-value threshold and is not. Uniqueness is judged among every group of the search, written or not,
+        /// so PEPTIDEK is shared, and with shared peptides off it gives the written group nothing. Judged among
+        /// the written groups alone it would look unique to the one that is shown, because the group it shares
+        /// with is hidden. The protein table's Unique Peptides column is judged among every group too, so the
+        /// column and the values agree.
+        /// </summary>
+        [Test]
+        public static void PeptideAlsoListedByAnUnwrittenGroup_IsSharedNotUnique()
+        {
+            string folder = StageFolder("TmtGuardSharedWithUnwrittenGroup");
+            try
+            {
+                string rawPath = RawPathIn(folder);
+                WriteDesign(folder, ValidDesignRows(rawPath));
+
+                var proteinA = new Protein("PEPTIDEKPEPTIDER", "PROTEINA", "ORGANISM");
+                var proteinB = new Protein("PEPTIDEKWWWWR", "PROTEINB", "ORGANISM");
+                var fromA = FirstPeptideOf(proteinA);
+                var fromB = FirstPeptideOf(proteinB);
+                Assume.That(fromB.FullSequence, Is.EqualTo(fromA.FullSequence));
+                var psm = SharedPeptidePsm(rawPath, fromA, fromB);
+
+                var written = GroupOf(proteinA, new[] { fromA }, new[] { psm }, qValue: 0);
+                var unwritten = GroupOf(proteinB, new[] { fromB }, new[] { psm }, qValue: 0.5);
+
+                var (_, parameters) = RunMultiplexAnalysis(
+                    new List<string> { rawPath }, StageOutput(folder),
+                    allSpectralMatches: new List<SpectralMatch> { psm },
+                    proteinGroups: new List<ProteinGroup> { written, unwritten },
+                    writeHighQValuePsms: false);
+
+                var results = parameters.MultiplexQuantificationResults;
+                Assert.That(results, Is.Not.Null);
+                Assert.That(results.ProteinIntensities.Keys, Is.EquivalentTo(new[] { written }), "only the written group is quantified");
+                Assert.That(results.ProteinIntensities[written].Values, Has.None.GreaterThan(0),
+                    "PEPTIDEK is shared with the unwritten group, so it does not count toward the written one");
             }
             finally
             {
@@ -1109,9 +1182,8 @@ namespace Test
 
         /// <summary>
         /// One PSM carrying TMT11 reporter ions whose sequence was found in two proteins. Both candidates
-        /// are kept -- equal scores, reportAllAmbiguity -- which is what makes the match ambiguous to
-        /// mzLib's filter without making its BaseSequence ambiguous to MetaMorpheus's, so it passes
-        /// includeAmbiguous: false and is dropped later.
+        /// are kept -- equal scores, reportAllAmbiguity -- and its BaseSequence is not ambiguous to
+        /// MetaMorpheus's filter, so it passes includeAmbiguous: false and reaches the engine.
         /// </summary>
         private static SpectralMatch SharedPeptidePsm(string rawPath, IBioPolymerWithSetMods fromA, IBioPolymerWithSetMods fromB)
         {
@@ -1129,8 +1201,7 @@ namespace Test
             protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
 
         /// <summary>
-        /// A protein group over one protein, with every one of its peptides unique to it -- which is what
-        /// keeps these fixtures clear of the shared-peptide exclusion the test above covers.
+        /// A protein group over one protein, with every one of its peptides unique to it.
         /// </summary>
         private static ProteinGroup GroupOf(Protein protein, IEnumerable<IBioPolymerWithSetMods> peptides,
             IEnumerable<SpectralMatch> psms, double qValue = 0)
@@ -1171,7 +1242,7 @@ namespace Test
         /// </remarks>
         private static Ms2ScanWithSpecificMass ReporterIonScan(string rawPath, int scanNumber = 1, bool withReporterIons = true)
         {
-            var tag = IsobaricMassTag.GetIsobaricMassTag("TMT11");
+            IsobaricMassTag.TryGetIsobaricMassTag("TMT11", GlobalVariables.AllModsKnown, out var tag);
             double[] reporterMzs = tag.ReporterIonMzs.ToArray();
             double[] reporterIntensities = Enumerable.Range(1, reporterMzs.Length).Select(i => 1000.0 * i).ToArray();
 
@@ -1198,5 +1269,147 @@ namespace Test
 
         #endregion
 
+        #region The kit, resolved through mzLib's IsobaricMassTag
+
+        /// <summary>
+        /// A search asked for multiplex quantification with a modification that names no kit stops with an error
+        /// naming it, before any spectrum is searched, rather than quantifying against a guessed kit.
+        /// </summary>
+        [Test]
+        public static void ASearchWithAMultiplexModificationThatNamesNoKitStops()
+        {
+            string folder = StageFolder("MultiplexUnknownKit");
+            try
+            {
+                var task = new SearchTask
+                {
+                    SearchParameters = new SearchParameters { DoMultiplexQuantification = true, MultiplexModId = "NotAKit" }
+                };
+                string spectra = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+                string database = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+
+                Assert.That(() => task.RunTask(folder, new List<DbForTask> { new DbForTask(database, false) }, new List<string> { spectra }, "unknownKit"),
+                    Throws.InstanceOf<MetaMorpheusException>().With.Message.EqualTo("Could not find isobaric mass tag with the name NotAKit"));
+            }
+            finally
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>Writes the reporter-ion PSM table's header for a multiplex modification, with no PSMs.</summary>
+        private static string ReporterIonHeader(string multiplexModId)
+        {
+            string folder = StageFolder("ReporterIonHeader");
+            string path = Path.Combine(folder, "psms.psmtsv");
+            var task = new PostSearchAnalysisTask { CommonParameters = new CommonParameters() };
+            task.GetType().GetProperty("Parameters").SetValue(task, new PostSearchAnalysisParameters
+            {
+                SearchParameters = new SearchParameters { MultiplexModId = multiplexModId }
+            });
+
+            task.GetType().GetMethod("WritePsmPlusMultiplexIons", BindingFlags.NonPublic | BindingFlags.Instance)
+                .Invoke(task, new object[] { new List<SpectralMatch>(), path, false });
+
+            string header = File.ReadLines(path).First();
+            Directory.Delete(folder, true);
+            return header;
+        }
+
+        /// <summary>
+        /// The header names one column per channel of the kit, in reporter m/z order. A modification that names no kit
+        /// gets no reporter columns rather than another kit's: a search stops before this point, so this guards only
+        /// a caller that skipped the search's check.
+        /// </summary>
+        [Test]
+        public static void TheReporterIonHeaderNamesTheKitsChannelsAndNoOtherKits()
+        {
+            string psmHeader = SpectralMatch.GetTabSeparatedHeader().Trim();
+
+            Assert.That(ReporterIonHeader("TMT6"), Is.EqualTo(psmHeader + "\t126\t127\t128\t129\t130\t131"));
+            Assert.That(ReporterIonHeader("NotAKit"), Is.EqualTo(psmHeader + "\t"));
+        }
+
+        #endregion
+
+        #region Numbering gaps
+
+        /// <summary>
+        /// Two files of one plex as fractions 1 and 3, and as fractions 1 and 2. The gapped design used to
+        /// be refusable only in the GUI (the parser never checked); it is quantified, warned about in the
+        /// log and in results.txt, and every quantification table is the same as for the contiguous
+        /// numbering: isobaric quantification does not read the fraction number.
+        /// </summary>
+        [Test]
+        public static void TmtFractionGap_IsQuantifiedAsNumberedAndWarned()
+        {
+            var gapped = RunTwoFractionTmtSearch("TmtFractionGapGapped", secondFraction: 3);
+            var contiguous = RunTwoFractionTmtSearch("TmtFractionGapContiguous", secondFraction: 2);
+
+            string expected = "Plex Plex1: fractions 1, 3, quantified as numbered; fraction 2 is not in the design.";
+            Assert.That(gapped.Warnings, Has.Some.StartWith(expected));
+            Assert.That(gapped.ResultsTxt, Does.Contain(expected), "the warning is recorded in results.txt too");
+            Assert.That(contiguous.Warnings, Has.None.Contain("not in the design"));
+
+            foreach (string table in new[] { QuantificationWriter.PeptideFileName, QuantificationWriter.ProteinGroupFileName })
+            {
+                Assert.That(gapped.Tables[table], Has.Length.GreaterThan(1), table + " must quantify something");
+                Assert.That(gapped.Tables[table], Is.EqualTo(contiguous.Tables[table]), table);
+            }
+        }
+
+        private static (List<string> Warnings, string ResultsTxt, Dictionary<string, string[]> Tables) RunTwoFractionTmtSearch(string rootName, int secondFraction)
+        {
+            string root = Path.Combine(TestContext.CurrentContext.TestDirectory, rootName);
+            string dataFolder = Path.Combine(root, "data");
+            string outputFolder = Path.Combine(root, "out");
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+            Directory.CreateDirectory(dataFolder);
+
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                string source = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\VA084TQ_6.mzML");
+                var fractions = new[] { ("TmtFracA", 1), ("TmtFracB", secondFraction) };
+                var stagedPaths = fractions.Select(f =>
+                {
+                    string staged = Path.Combine(dataFolder, f.Item1 + ".mzML");
+                    File.Copy(source, staged);
+                    return staged;
+                }).ToList();
+
+                // One plex, two fractions: the fractions repeat the plex's channel-to-sample map.
+                var rows = fractions.SelectMany((f, file) => Tmt11Channels.Select((tag, i) =>
+                    $"{stagedPaths[file]}\tPlex1\tSample{i + 1}\t{tag}\tCond{(i % 2 == 0 ? "A" : "B")}\t{i / 2 + 1}\t{f.Item2}\t1\tstudy sample"));
+                File.WriteAllLines(
+                    Path.Combine(dataFolder, GlobalVariables.TmtExperimentalDesignFileName),
+                    new[] { TmtExperimentalDesign.Header }.Concat(rows));
+
+                var searchTask = Toml.ReadFile<SearchTask>(
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                    MetaMorpheusTask.tomlConfig);
+                searchTask.SearchParameters.DoParsimony = true;
+
+                new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("search", searchTask) },
+                    stagedPaths,
+                    new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\mouseTmt.fasta"), false) },
+                    outputFolder).Run();
+
+                string searchOut = Path.Combine(outputFolder, "search");
+                var tables = new[] { QuantificationWriter.PeptideFileName, QuantificationWriter.ProteinGroupFileName }
+                    .ToDictionary(t => t, t => File.ReadAllLines(Path.Combine(searchOut, t)));
+                return (warnings, File.ReadAllText(Path.Combine(searchOut, "results.txt")), tables);
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+                if (Directory.Exists(root)) Directory.Delete(root, true);
+            }
+        }
+
+        #endregion
     }
 }
