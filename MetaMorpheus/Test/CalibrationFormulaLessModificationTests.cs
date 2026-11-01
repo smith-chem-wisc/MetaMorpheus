@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TaskLayer;
+using Transcriptomics.Digestion;
 
 namespace Test
 {
@@ -81,6 +82,65 @@ namespace Test
             var unlabelled = new PeptideWithSetModifications("LGEHNIDVLEGNEQFINAAK", GlobalVariables.AllModsKnownDictionary);
 
             Assert.That(DataPointAcquisitionEngine.KnownChemicalFormula(formulaLess), Is.EqualTo(unlabelled.ThisChemicalFormula));
+        }
+
+        /// <summary>
+        /// The other half of the rule: every modification that has a formula stays in the known formula. The test above has
+        /// only the two formula-less labels, so it cannot see a known formula that dropped the rest.
+        /// </summary>
+        [Test]
+        public static void TheKnownFormulaKeepsEveryModificationThatHasAFormula()
+        {
+            ModificationMotif.TryGetMotif("N", out var motif);
+            var deamidation = new Modification(_originalId: "Deamidation", _modificationType: "Formula Test", _target: motif,
+                _locationRestriction: "Anywhere.", _chemicalFormula: ChemicalFormula.ParseFormula("H-1N-1O1"));
+            var nTerm = Tmt10("X", "Peptide N-terminal.", withFormula: false);
+            var lys = Tmt10("K", "Anywhere.", withFormula: false);
+            var mods = new Dictionary<string, Modification>
+                { [nTerm.IdWithMotif] = nTerm, [lys.IdWithMotif] = lys, [deamidation.IdWithMotif] = deamidation };
+            var formulaLess = new PeptideWithSetModifications(
+                "[Formula Test:TMT10 on X]LGEHN[Formula Test:Deamidation on N]IDVLEGNEQFINAAK[Formula Test:TMT10 on K]", mods);
+            var deamidatedOnly = new PeptideWithSetModifications("LGEHN[Formula Test:Deamidation on N]IDVLEGNEQFINAAK", mods);
+            Assert.That(formulaLess.ThisChemicalFormula, Is.Null, "the fixture must carry a formula-less modification");
+
+            Assert.That(DataPointAcquisitionEngine.KnownChemicalFormula(formulaLess), Is.EqualTo(deamidatedOnly.ThisChemicalFormula));
+        }
+
+        /// <summary>
+        /// Oligos take the same path: Mods\RnaMods.txt ships Sodium with a mass and no formula. The known formula is the
+        /// unmodified oligo's, and the envelope is anchored at the exact mass.
+        /// </summary>
+        [Test]
+        public static void AnOligoWithAFormulaLessModificationGetsAnEnvelopeAnchoredAtItsExactMass()
+        {
+            ModificationMotif.TryGetMotif("A", out var motif);
+            var sodiumLike = new Modification(_originalId: "Sodium", _modificationType: "Formula Test", _target: motif,
+                _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943); // Na - H, as RnaMods.txt's Sodium
+            var oligo = new OligoWithSetMods("GUA[Formula Test:Sodium on A]CUGCAUG",
+                new Dictionary<string, Modification> { [sodiumLike.IdWithMotif] = sodiumLike });
+            var unmodified = new OligoWithSetMods("GUACUGCAUG", new Dictionary<string, Modification>());
+            Assert.That(oligo.ThisChemicalFormula, Is.Null, "the fixture must carry a formula-less modification");
+
+            Assert.That(DataPointAcquisitionEngine.KnownChemicalFormula(oligo), Is.EqualTo(unmodified.ThisChemicalFormula));
+            var (masses, _) = DataPointAcquisitionEngine.TheoreticalIsotopicDistribution(oligo);
+            Assert.That(masses, Is.Not.Empty);
+            Assert.That(masses[0], Is.EqualTo(oligo.MonoisotopicMass).Within(1e-6), "anchored at the exact monoisotopic mass");
+        }
+
+        /// <summary>
+        /// A negative mass larger than the known formula leaves no envelope. Calibration skips such a match: SearchMS1Spectra
+        /// reads the first theoretical mass, so an empty envelope would throw inside its Parallel.ForEach.
+        /// </summary>
+        [Test]
+        public static void ANegativeMassLargerThanTheKnownFormulaGivesNoEnvelope()
+        {
+            ModificationMotif.TryGetMotif("K", out var motif);
+            var loss = new Modification(_originalId: "Loss", _modificationType: "Formula Test", _target: motif,
+                _locationRestriction: "Anywhere.", _monoisotopicMass: -5000);
+            var peptide = new PeptideWithSetModifications("PEPK[Formula Test:Loss on K]",
+                new Dictionary<string, Modification> { [loss.IdWithMotif] = loss });
+
+            Assert.That(DataPointAcquisitionEngine.TheoreticalIsotopicDistribution(peptide).Masses, Is.Empty);
         }
 
         /// <summary>
