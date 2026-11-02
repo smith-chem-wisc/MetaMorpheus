@@ -13,6 +13,9 @@ namespace GuiFunctions
     ///
     /// Stack state is shared through the accumulator passed in, so every series in one plot stacks on
     /// the same running totals per category, the way IsStacked did across sibling series.
+    ///
+    /// GapWidth must equal the GapWidth of the CategoryAxis the series is drawn against. Nothing checks
+    /// this: a mismatch draws plausible bars at the wrong width and offset rather than failing.
     /// </summary>
     public class StackedColumnSeries : RectangleBarSeries
     {
@@ -30,12 +33,12 @@ namespace GuiFunctions
         public double BaseValue => _baseValue;
 
         /// <summary>
-        /// Gap between adjacent bars, as a fraction of the category slot. Must be set before AddItem,
-        /// and must match the CategoryAxis this series is drawn against: BarSeriesBase sized bars as
+        /// Gap between adjacent bars, as a fraction of the category slot. Init-only because AddItem
+        /// reads it, and must match the CategoryAxis this series is drawn against: BarSeriesBase sized bars as
         /// BarWidth / (1 + GapWidth), and RectangleBarSeries ignores the axis, so the same arithmetic
         /// is reproduced here to keep the bars the width they were.
         /// </summary>
-        public double GapWidth { get; set; } = 0.3;
+        public double GapWidth { get; init; } = 0.3;
 
         private double HalfBarWidth => 0.5 / (1 + GapWidth);
 
