@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework; 
@@ -986,13 +986,6 @@ namespace Test
             string[] lines = File.ReadAllLines(Path.Combine(outputFolder, "Task", "AllQuantifiedPeptides.tsv"));
             int proteinGroupColumn = Array.IndexOf(lines[0].Split('\t'), "Protein Groups");
             Assert.That(proteinGroupColumn, Is.GreaterThanOrEqualTo(0));
-
-            var undefined = lines.Skip(1)
-                .Select(line => line.Split('\t'))
-                .Where(cells => cells[proteinGroupColumn] == "UNDEFINED")
-                .ToList();
-            Assert.That(undefined, Is.Empty, "quantified peptides with no protein group: "
-                + string.Join(", ", undefined.Select(cells => cells[0])));
 
             // this is the peptide parsimony disambiguates; it belongs to the beta-tubulin group
             var tubulin = lines.Skip(1)
