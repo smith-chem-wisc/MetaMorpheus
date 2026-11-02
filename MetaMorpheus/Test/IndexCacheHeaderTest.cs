@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using TaskLayer;
+using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 
 namespace Test
@@ -394,5 +395,174 @@ namespace Test
                 Directory.Delete(folder, true);
             }
         }
+
+        /// <summary>
+        /// The fingerprint has to change when ANY digestion setting changes, because
+        /// <c>SameSettings</c> compares this text verbatim: a setting the fingerprint does not carry is
+        /// a setting under which a stale index is silently reused, and the run then searches a peptide
+        /// index built for different parameters. There is no error and nothing else notices.
+        /// </summary>
+        /// <remarks>
+        /// These are regression tests for a real gap rather than hypothetical ones. <c>ToString</c> named
+        /// digestion settings one at a time, so every option added to <c>DigestionParams</c> after those
+        /// lines were written has been invisible here. Three already were:
+        /// <c>KeepNGlycopeptide</c>, <c>KeepOGlycopeptide</c> and <c>GeneratehUnlabeledProteinsForSilac</c>.
+        /// The two cases below fail on the parent commit for exactly that reason. The third case is the
+        /// control: it varies a setting that WAS named individually, so it passes either way and proves
+        /// the comparison itself works.
+        /// </remarks>
+        [Test]
+        public static void IndexFingerprint_ChangesWhenKeepNGlycopeptideChanges() =>
+            AssertFingerprintDistinguishes(
+                new DigestionParams(keepNGlycopeptide: false),
+                new DigestionParams(keepNGlycopeptide: true));
+
+        [Test]
+        public static void IndexFingerprint_ChangesWhenSilacUnlabeledGenerationChanges() =>
+            AssertFingerprintDistinguishes(
+                new DigestionParams(generateUnlabeledProteinsForSilac: true),
+                new DigestionParams(generateUnlabeledProteinsForSilac: false));
+
+        [Test]
+        public static void IndexFingerprint_ChangesWhenMaxMissedCleavagesChanges() =>
+            AssertFingerprintDistinguishes(
+                new DigestionParams(maxMissedCleavages: 2),
+                new DigestionParams(maxMissedCleavages: 3));
+
+        /// <summary>
+        /// mzLib's cleavage-blocking flag (mzLib #1119) changes which peptides digestion emits, and reaches the key
+        /// only through the <c>digestionParams:</c> line.
+        /// </summary>
+        [Test]
+        public static void IndexFingerprint_ChangesWhenRespectCleavageBlockingModificationsChanges() =>
+            AssertFingerprintDistinguishes(
+                new DigestionParams(respectCleavageBlockingModifications: false),
+                new DigestionParams(respectCleavageBlockingModifications: true));
+
+        /// <summary>
+        /// The <c>digestionParams:</c> line is the parameters as a saved task writes them. A setting that
+        /// is not in a task's TOML cannot be saved and reloaded, so tying the key to that TOML is what keeps
+        /// every user-settable option in the key without anyone remembering to add it. Both are written with
+        /// <see cref="DigestionTomlSettings"/>; this catches a digestion type configured in
+        /// <see cref="MetaMorpheusTask.tomlConfig"/> directly, which the key would not see.
+        /// </summary>
+        [Test]
+        public static void IndexFingerprint_DigestionParamsLineIsTheSavedTaskToml()
+        {
+            var nonDefault = new DigestionParams("Asp-N", maxMissedCleavages: 4,
+                initiatorMethionineBehavior: InitiatorMethionineBehavior.Cleave, minPeptideLength: 5, maxPeptideLength: 33,
+                maxModificationIsoforms: 77, maxModsForPeptides: 3, searchModeType: Omics.Digestion.CleavageSpecificity.Semi,
+                fragmentationTerminus: Omics.Fragmentation.FragmentationTerminus.N, generateUnlabeledProteinsForSilac: false,
+                keepNGlycopeptide: true, keepOGlycopeptide: true);
+
+            foreach (Omics.Digestion.IDigestionParams digestionParams in new Omics.Digestion.IDigestionParams[]
+                { new DigestionParams(), nonDefault, new RnaDigestionParams(), new RnaDigestionParams("RNase T1", 3, 4, 20, 9, 2) })
+            {
+                string savedTaskToml = Nett.Toml.WriteString((object)digestionParams, MetaMorpheusTask.tomlConfig);
+                string expected = string.Join("; ", savedTaskToml.Split('\r', '\n').Where(line => line.Length > 0));
+
+                Assert.That(IndexingEngine.DescribeDigestionParams(digestionParams), Is.EqualTo(expected), digestionParams.GetType().Name);
+            }
+        }
+
+        /// <summary>
+        /// Every digestion setting is written to a saved task, comes back from it unchanged, and is in the key.
+        /// </summary>
+        /// <remarks>
+        /// The settings are read off the types by reflection, so one that mzLib adds later is checked without editing
+        /// this test. A public property is a setting unless the configuration deliberately leaves it out, and the ones
+        /// left out (listed here) are derived from or alias another setting. A setting needs a setter, private or not,
+        /// for a saved task to load it back.
+        /// </remarks>
+        [Test]
+        public static void IndexFingerprint_AndSavedTask_CarryEveryDigestionSetting()
+        {
+            var protein = new DigestionParams("Asp-N", maxMissedCleavages: 4,
+                initiatorMethionineBehavior: InitiatorMethionineBehavior.Cleave, minPeptideLength: 5, maxPeptideLength: 33,
+                maxModificationIsoforms: 77, maxModsForPeptides: 3, searchModeType: Omics.Digestion.CleavageSpecificity.Semi,
+                fragmentationTerminus: Omics.Fragmentation.FragmentationTerminus.N, generateUnlabeledProteinsForSilac: false,
+                keepNGlycopeptide: true, keepOGlycopeptide: true, respectCleavageBlockingModifications: true);
+            var rna = new RnaDigestionParams("RNase T1", 3, 4, 20, 9, 2);
+
+            var leftOut = new Dictionary<Type, string[]>
+            {
+                [typeof(DigestionParams)] = new[] { "DigestionAgent", "SpecificDigestionAgent", "MaxMods", "MaxLength", "MinLength" },
+                [typeof(RnaDigestionParams)] = new[] { "DigestionAgent", "SpecificDigestionAgent" },
+            };
+
+            foreach (Omics.Digestion.IDigestionParams original in new Omics.Digestion.IDigestionParams[] { protein, rna })
+            {
+                Type type = original.GetType();
+                string savedTask = Nett.Toml.WriteString((object)original, MetaMorpheusTask.tomlConfig);
+                Nett.TomlTable table = Nett.Toml.ReadString(savedTask, MetaMorpheusTask.tomlConfig);
+                object reloaded = original is DigestionParams
+                    ? Nett.Toml.ReadString<DigestionParams>(savedTask, MetaMorpheusTask.tomlConfig)
+                    : Nett.Toml.ReadString<RnaDigestionParams>(savedTask, MetaMorpheusTask.tomlConfig);
+                string[] keyEntries = IndexingEngine.DescribeDigestionParams(original).Split("; ");
+
+                foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                {
+                    string name = type.Name + "." + property.Name;
+                    if (leftOut[type].Contains(property.Name))
+                    {
+                        Assert.That(table.ContainsKey(property.Name), Is.False, name + " is meant to be left out of a saved task");
+                        continue;
+                    }
+
+                    Assert.That(table.ContainsKey(property.Name), Is.True, name + " is not saved with the task");
+                    Assert.That(property.GetSetMethod(nonPublic: true), Is.Not.Null, name + " is saved but has no setter to load it with");
+                    Assert.That(property.GetValue(reloaded), Is.EqualTo(property.GetValue(original)), name + " changes when a saved task is loaded");
+                    Assert.That(keyEntries.Any(entry => entry.StartsWith(property.Name + " = ")), Is.True, name + " is not in the index cache key");
+                }
+            }
+        }
+
+        /// <summary>
+        /// RNA parameters are covered too. <see cref="RnaDigestionParams"/> has no <c>ToString</c> override,
+        /// which is why the line used to be omitted for RNA rather than carry a constant type name.
+        /// </summary>
+        [Test]
+        public static void IndexFingerprint_DescribesRnaDigestionByItsSettings()
+        {
+            string folder = NewDatabaseFolder(out List<DbForTask> databases);
+
+            try
+            {
+                string fingerprint = MakeEngine(new CommonParameters(digestionParams: new RnaDigestionParams("RNase T1")), databases, generatePrecursorIndex: false).ToString();
+
+                Assert.That(fingerprint, Does.Contain("digestionParams: "));
+                Assert.That(fingerprint, Does.Contain("Rnase = \"RNase T1\""));
+                Assert.That(fingerprint, Does.Not.Contain(nameof(RnaDigestionParams)));
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// Builds two indexing engines that differ only in their digestion parameters and asserts their
+        /// fingerprints differ. Everything else -- databases, decoy type, fragment size -- is held equal,
+        /// so a failure can only come from the digestion settings.
+        /// </summary>
+        private static void AssertFingerprintDistinguishes(DigestionParams first, DigestionParams second)
+        {
+            string folder = NewDatabaseFolder(out List<DbForTask> databases);
+
+            try
+            {
+                string firstFingerprint = MakeEngine(new CommonParameters(digestionParams: first), databases, generatePrecursorIndex: false).ToString();
+                string secondFingerprint = MakeEngine(new CommonParameters(digestionParams: second), databases, generatePrecursorIndex: false).ToString();
+
+                Assert.That(firstFingerprint, Is.Not.EqualTo(secondFingerprint),
+                    "Two digestion settings that produce different peptides share an index fingerprint, so "
+                    + "SameSettings will reuse the index built under the other one.");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
     }
 }
