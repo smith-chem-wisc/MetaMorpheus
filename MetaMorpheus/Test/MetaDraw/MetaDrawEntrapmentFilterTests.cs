@@ -46,7 +46,7 @@ namespace Test.MetaDraw
         /// <summary>A real PSM that passes every other filter, with its label rewritten.</summary>
         private static SpectrumMatchFromTsv PsmLabelled(string label)
         {
-            string source = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\noSAreaderTest.psmtsv");
+            string source = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "noSAreaderTest.psmtsv");
             string[] lines = File.ReadAllLines(source);
             string[] header = lines[0].Split('\t');
             int labelColumn = Array.IndexOf(header, SpectrumMatchFromTsvHeader.DecoyContaminantTarget);

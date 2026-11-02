@@ -51,7 +51,7 @@
     <Compile Remove="..\Test\MetaDraw\BioPolymerTabViewModelTests.cs" />
     <Compile Remove="..\Test\MetaDraw\ChimeraAnalysisTabViewModelTests.cs" />
     <Compile Remove="..\Test\MetaDraw\ChimeraDrawnSequenceTests.cs" />
-    <Compile Remove="..\Test\MetaDraw\ChimeraGroupViewModelTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\ChimeraGroupViewModelTests.Wpf.cs" />
     <Compile Remove="..\Test\MetaDraw\ChimeraLegendCanvasTests.cs" />
     <Compile Remove="..\Test\MetaDraw\ChimeraSpectrumMatchPlotTests.cs" />
     <Compile Remove="..\Test\MetaDraw\ColorGradientTests.cs" />
@@ -59,7 +59,6 @@
     <Compile Remove="..\Test\MetaDraw\FragmentReanalysis.cs" />
     <Compile Remove="..\Test\MetaDraw\FragmentReanalysisRaceConditionTest.cs" />
     <Compile Remove="..\Test\MetaDraw\MetaDrawDataLoaderTests.cs" />
-    <Compile Remove="..\Test\MetaDraw\MetaDrawEntrapmentFilterTests.cs" />
     <Compile Remove="..\Test\MetaDraw\MetaDrawExportRegressionTests.cs" />
     <Compile Remove="..\Test\MetaDraw\MetaDrawSettingsAndViewsTest.cs" />
     <Compile Remove="..\Test\MetaDraw\MetaDrawTest.cs" />
@@ -71,6 +70,9 @@
   <ItemGroup>
     <None Include="..\Test\TestData\VariantCrossTest.psmtsv" Link="TestData\VariantCrossTest.psmtsv" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\Test\TestData\SequenceCoverageTestPSM.psmtsv" Link="TestData\SequenceCoverageTestPSM.psmtsv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Test\TestData\noSAreaderTest.psmtsv" Link="TestData\noSAreaderTest.psmtsv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Test\TopDownTestData\TDGPTMDSearchResults.psmtsv" Link="TopDownTestData\TDGPTMDSearchResults.psmtsv" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Test\TopDownTestData\TDGPTMDSearchSingleSpectra.mzML" Link="TopDownTestData\TDGPTMDSearchSingleSpectra.mzML" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\Test\Transcriptomics\TestData\AllOligos.osmtsv" Link="Transcriptomics\TestData\AllOligos.osmtsv" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
