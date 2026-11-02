@@ -831,9 +831,19 @@ namespace Test
         // Task-level only, no per-file entries: the precursor clause and its gate.
         [TestCase("TaskPrecursorIsoDec", 1, true)]
         [TestCase("TaskPrecursorIsoDecButDeconvolutionOff", 1, false)]
-        // Products have no Do* flag, so IsoDec there always counts.
+        // Products have no Do* flag; IsoDec there counts whenever some scan's products are deconvoluted.
         [TestCase("TaskProductIsoDecOnly", 1, true)]
         [TestCase("TaskProductIsoDecOnlyAndDeconvolutionOff", 1, true)]
+        // LowCID parent scans are not deconvoluted; child scans and multiplex MS3 can still be.
+        [TestCase("LowCidProductIsoDecOnly", 1, false)]
+        [TestCase("LowCidPrecursorIsoDec", 1, true)]
+        [TestCase("LowCidProductIsoDecWithHcdMs2Children", 1, true)]
+        [TestCase("LowCidProductIsoDecWithHcdMs3Children", 1, true)]
+        [TestCase("LowCidProductIsoDecWithLowCidMs2ChildrenOnly", 1, true)]
+        [TestCase("LowCidProductIsoDecWithLowCidChildrenBoth", 1, false)]
+        [TestCase("LowCidProductIsoDecWithMultiplexQuant", 1, true)]
+        [TestCase("LowCidProductIsoDecWithDia", 1, true)]
+        [TestCase("EveryFileOverridesToLowCid", 2, false)]
         // Per-file entries take precedence over the task when they cover every file.
         [TestCase("EveryFileOverridesToClassic", 2, false)]
         [TestCase("OneFileOverridesToIsoDec", 2, true)]
@@ -854,6 +864,7 @@ namespace Test
 
             CommonParameters taskParameters;
             var perFileParameters = new List<(string FileName, CommonParameters Parameters)>();
+            bool doMultiplexQuantification = false;
 
             switch (scenario)
             {
@@ -870,6 +881,55 @@ namespace Test
                 case "TaskProductIsoDecOnlyAndDeconvolutionOff":
                     taskParameters = new CommonParameters(doPrecursorDeconvolution: false,
                         precursorDeconParams: Classic(), productDeconParams: IsoDec());
+                    break;
+                case "LowCidProductIsoDecOnly":
+                    taskParameters = new CommonParameters(dissociationType: DissociationType.LowCID,
+                        precursorDeconParams: Classic(), productDeconParams: IsoDec());
+                    break;
+                case "LowCidPrecursorIsoDec":
+                    taskParameters = new CommonParameters(dissociationType: DissociationType.LowCID,
+                        precursorDeconParams: IsoDec(), productDeconParams: Classic());
+                    break;
+                case "LowCidProductIsoDecWithHcdMs2Children":
+                    taskParameters = new CommonParameters(dissociationType: DissociationType.LowCID,
+                        ms2childScanDissociationType: DissociationType.HCD,
+                        precursorDeconParams: Classic(), productDeconParams: IsoDec());
+                    break;
+                case "LowCidProductIsoDecWithHcdMs3Children":
+                    taskParameters = new CommonParameters(dissociationType: DissociationType.LowCID,
+                        ms3childScanDissociationType: DissociationType.HCD,
+                        precursorDeconParams: Classic(), productDeconParams: IsoDec());
+                    break;
+                case "LowCidProductIsoDecWithLowCidMs2ChildrenOnly":
+                    // Setting either child type gathers MS3 children too, and an Unknown MS3 type is not LowCID.
+                    taskParameters = new CommonParameters(dissociationType: DissociationType.LowCID,
+                        ms2childScanDissociationType: DissociationType.LowCID,
+                        precursorDeconParams: Classic(), productDeconParams: IsoDec());
+                    break;
+                case "LowCidProductIsoDecWithLowCidChildrenBoth":
+                    taskParameters = new CommonParameters(dissociationType: DissociationType.LowCID,
+                        ms2childScanDissociationType: DissociationType.LowCID,
+                        ms3childScanDissociationType: DissociationType.LowCID,
+                        precursorDeconParams: Classic(), productDeconParams: IsoDec());
+                    break;
+                case "LowCidProductIsoDecWithMultiplexQuant":
+                    // SearchTask sets MS3ChildScanDissociationType = HCD on a transient copy when the file has MS3 scans.
+                    taskParameters = new CommonParameters(dissociationType: DissociationType.LowCID,
+                        precursorDeconParams: Classic(), productDeconParams: IsoDec());
+                    doMultiplexQuantification = true;
+                    break;
+                case "LowCidProductIsoDecWithDia":
+                    taskParameters = new CommonParameters(dissociationType: DissociationType.LowCID,
+                        precursorDeconParams: Classic(), productDeconParams: IsoDec(),
+                        diaParameters: new EngineLayer.DIA.DIAparameters(EngineLayer.DIA.DIAanalysisType.DIA,
+                            null, null, null, EngineLayer.DIA.PseudoMs2ConstructionType.MzPeak));
+                    break;
+                case "EveryFileOverridesToLowCid":
+                    taskParameters = new CommonParameters(precursorDeconParams: Classic(), productDeconParams: IsoDec());
+                    perFileParameters.Add(("a.mzML", new CommonParameters(dissociationType: DissociationType.LowCID,
+                        precursorDeconParams: Classic(), productDeconParams: IsoDec())));
+                    perFileParameters.Add(("b.mzML", new CommonParameters(dissociationType: DissociationType.LowCID,
+                        precursorDeconParams: Classic(), productDeconParams: IsoDec())));
                     break;
                 case "EveryFileOverridesToClassic":
                     taskParameters = new CommonParameters(precursorDeconParams: IsoDec(), productDeconParams: IsoDec());
@@ -907,6 +967,7 @@ namespace Test
             }
 
             var task = new SearchTask { CommonParameters = taskParameters, FileSpecificParameters = perFileParameters };
+            task.SearchParameters.DoMultiplexQuantification = doMultiplexQuantification;
             var method = typeof(MetaMorpheusTask).GetMethod("UsedIsoDecDeconvolution",
                 BindingFlags.NonPublic | BindingFlags.Instance);
             Assert.That(method, Is.Not.Null, "UsedIsoDecDeconvolution was renamed; this test needs updating");
