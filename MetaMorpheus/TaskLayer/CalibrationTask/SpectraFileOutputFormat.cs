@@ -11,8 +11,9 @@ namespace TaskLayer
     /// the bundled yeast file, a Calibrate then Search chain produces the same 80 PSMs through Mgf as
     /// through MzML, and 63 through MgfMs2Only.
     ///
-    /// A Search that follows reads either MGF variant, but Calibrate itself refuses .mgf input,
-    /// so a calibrated MGF cannot be calibrated again.
+    /// A Search that follows reads either MGF variant but turns off label-free quantification for
+    /// .mgf input, MS1 scans or not. Calibrate refuses .mgf input, so a calibrated MGF cannot be
+    /// calibrated again.
     /// </remarks>
     public enum SpectraFileOutputFormat
     {
@@ -28,8 +29,7 @@ namespace TaskLayer
 
         /// <summary>
         /// MGF with MS2 and above only, which every reader accepts. No MS1 means no precursor
-        /// deconvolution downstream, costing roughly a fifth of the identifications, and no MS1 scans
-        /// to quantify from.
+        /// deconvolution downstream, costing roughly a fifth of the identifications.
         /// </summary>
         MgfMs2Only
     }

@@ -77,11 +77,14 @@ namespace TaskLayer
             Initialize(taskId, dbFilenameList);
             Status("Calibrating...", new List<string> { _taskId });
 
-            if (CalibrationParameters.OutputFormat == SpectraFileOutputFormat.MgfMs2Only)
+            if (WritingMgf)
             {
-                Warn("Calibrated spectra will be written as mgf without MS1 scans. A task run after this one "
-                     + "cannot deconvolute precursors, so will identify fewer spectra than it would from mzML, "
-                     + "and has no MS1 scans to quantify from.");
+                Warn("Calibrated spectra will be written as mgf. A Search run after this one turns off "
+                     + "label-free quantification for mgf input."
+                     + (CalibrationParameters.OutputFormat == SpectraFileOutputFormat.MgfMs2Only
+                         ? " Without MS1 scans it also cannot deconvolute precursors, so will identify fewer "
+                           + "spectra than it would from mzML."
+                         : ""));
             }
 
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
