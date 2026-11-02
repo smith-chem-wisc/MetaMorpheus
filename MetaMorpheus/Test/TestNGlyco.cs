@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+﻿using Chemistry;
+using EngineLayer;
 using EngineLayer.GlycoSearch;
 using MassSpectrometry;
 using NUnit.Framework;
@@ -289,7 +290,7 @@ namespace Test
         [Test]
         public static void GlyTest_NGlycanCompositionFragments()
         {
-            var testKind = GlycanDatabase.String2Kind("HexNAc(3)Hex(4)Fuc(2)NeuAc(1)Xylose(1)");
+            var testKind = GlycanDatabase.ParseComposition("HexNAc(3)Hex(4)Fuc(2)NeuAc(1)Xylose(1)");
 
             var ions_NotFucExtended = GlycanDatabase.NGlycanCompositionFragments(testKind);
 
@@ -300,7 +301,7 @@ namespace Test
             Assert.That(ions_fucExtended.Count == 43);
 
 
-            var kind = GlycanDatabase.String2Kind("HexNAc(3)Hex(4)Fuc(2)NeuAc(1)");
+            var kind = GlycanDatabase.ParseComposition("HexNAc(3)Hex(4)Fuc(2)NeuAc(1)");
 
             Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H)(H(N(F)(H(A)))))))", 0).FirstOrDefault();
 
@@ -342,7 +343,7 @@ namespace Test
                 Assert.That(Glycan.NameCharDic["HexA"].Item2, Is.EqualTo(11));
                 Assert.That(Glycan.CharMassDic['U'], Is.EqualTo(17603209));
 
-                byte[] kind = GlycanDatabase.String2Kind("HexNAc(2)Hex(5)HexA(1)");
+                byte[] kind = GlycanDatabase.ParseComposition("HexNAc(2)Hex(5)HexA(1)");
                 Assert.That(kind.Length, Is.EqualTo(12));
                 Assert.That(kind[0], Is.EqualTo(5));   // Hex
                 Assert.That(kind[1], Is.EqualTo(2));   // HexNAc
@@ -477,23 +478,35 @@ namespace Test
         }
 
         [Test]
-        public static void LoadCustomMonosaccharides_DiagnosticIonsEmittedWhenPresent()
+        public static void LoadCustomMonosaccharides_DiagnosticIonsEmittedAsNeutralMassWhenPresent()
         {
+            // Column 4 holds observed singly-charged m/z, but GlycanDiagnosticIons feeds
+            // Modification.DiagnosticIons, which mzLib treats as NEUTRAL mass -- which is why every
+            // built-in literal in the property subtracts a proton. This test used to assert the raw
+            // m/z came back out, locking in the opposite: the ion was searched a proton high and never
+            // matched, so custom ions contributed nothing to the diagnostic-ion score.
             string tsv = "HexA\tU\t176.03209\t175.02482,157.01425\tHexuronic acid";
             string path = Path.GetTempFileName();
+            int protonScaled = Convert.ToInt32(PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 1E5);
             try
             {
                 Glycan.ResetCustomMonosaccharides();
                 File.WriteAllText(path, tsv);
                 GlycanDatabase.LoadCustomMonosaccharides(path);
 
-                byte[] kind = GlycanDatabase.String2Kind("HexNAc(2)HexA(1)");
+                byte[] kind = GlycanDatabase.ParseComposition("HexNAc(2)HexA(1)");
                 var glycan = new Glycan(null, Glycan.GetMass(kind), kind, null, false, "Nxs", GlycanType.N_glycan);
 
-                int expectedIon1 = (int)Math.Round(175.02482 * 1E5);
-                int expectedIon2 = (int)Math.Round(157.01425 * 1E5);
-                Assert.That(glycan.GlycanDiagnosticIons.Contains(expectedIon1));
-                Assert.That(glycan.GlycanDiagnosticIons.Contains(expectedIon2));
+                int expectedIon1 = (int)Math.Round(175.02482 * 1E5) - protonScaled;
+                int expectedIon2 = (int)Math.Round(157.01425 * 1E5) - protonScaled;
+                Assert.Multiple(() =>
+                {
+                    Assert.That(glycan.GlycanDiagnosticIons.Contains(expectedIon1));
+                    Assert.That(glycan.GlycanDiagnosticIons.Contains(expectedIon2));
+                    // The kind also carries HexNAc, so a built-in ion is emitted alongside and anchors
+                    // the convention these two are being held to.
+                    Assert.That(glycan.GlycanDiagnosticIons.Contains(20408720 - protonScaled));
+                });
             }
             finally
             {

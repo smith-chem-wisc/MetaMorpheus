@@ -83,62 +83,15 @@ namespace MetaMorpheusGUI
 
             CommitPendingEdits();
 
-            // A file with no plex passes every check below -- they are all scoped to a plex -- and
-            // then does not appear in the written design at all, because the design is built by
-            // grouping on plex. Silently dropping a file the user can see in the grid is worse than
-            // refusing to save.
-            var unplexed = _rows.Where(r => string.IsNullOrWhiteSpace(r.Plex)).ToList();
-            if (unplexed.Any())
-            {
-                return "Every file must be assigned a Plex. Missing for: "
-                    + string.Join(", ", unplexed.Select(r => Path.GetFileName(r.FilePath)));
-            }
-
-            if (_rows.Any(r => r.TechnicalReplicate < 1))
-                return "Technical Replicate values must be >= 1.";
-
-            if (_rows.Any(r => r.Fraction < 1))
-                return "Fraction values must be >= 1.";
-
-            // Every check below is scoped to one plex, because _rows spans plexes and a plex is its
-            // own labelling experiment. Unscoped, two files in different plexes both sitting at
-            // (Fraction 1, Technical Replicate 1) -- which is the correct design for a two-plex run
-            // with one fraction and one technical replicate, and the value the TmtDesignRow
-            // constructor assigns -- read as a duplicate and Save was refused. It also broke the
-            // round trip: SeedFromDesignFiles stores fraction, replicate and plex per file, so a
-            // two-plex design the parser accepts loaded into this grid and then could not be saved
-            // back out. TmtExperimentalDesign keys its own per-file state on plex the same way.
-            foreach (var plexGroup in _rows.GroupBy(r => r.Plex.Trim(), StringComparer.OrdinalIgnoreCase))
-            {
-                string plexLabel = $"Plex {plexGroup.Key}";
-
-                var distinctFractions = plexGroup.Select(r => r.Fraction).Distinct().OrderBy(i => i).ToList();
-                if (distinctFractions.First() != 1)
-                    return $"{plexLabel}: fractions must start at 1.";
-                int maxFraction = distinctFractions.Last();
-                for (int i = 1; i <= maxFraction; i++)
-                    if (!distinctFractions.Contains(i))
-                        return $"{plexLabel}: missing fraction number {i} in distinct set.";
-
-                foreach (var grp in plexGroup.GroupBy(r => r.Fraction))
-                {
-                    var techs = grp.Select(r => r.TechnicalReplicate).Distinct().OrderBy(t => t).ToList();
-                    if (techs.First() != 1)
-                        return $"{plexLabel}, fraction {grp.Key}: technical replicates must start at 1.";
-                    int maxTech = techs.Last();
-                    for (int t = 1; t <= maxTech; t++)
-                        if (!techs.Contains(t))
-                            return $"{plexLabel}, fraction {grp.Key}: missing technical replicate {t}.";
-                }
-
-                var duplicatePair = plexGroup.GroupBy(r => (r.Fraction, r.TechnicalReplicate))
-                                             .FirstOrDefault(g => g.Count() > 1);
-                if (duplicatePair != null)
-                    return $"{plexLabel}: duplicate Fraction/Technical Replicate combination: Fraction {duplicatePair.Key.Fraction}, Technical Replicate {duplicatePair.Key.TechnicalReplicate}.";
-            }
-
-            return null;
+            // The rules live in EngineLayer (#2793), where a test can reach them.
+            return TmtExperimentalDesign.GetErrorsInDesign(RowsAsFiles());
         }
+
+        /// <summary>A gap in fraction or technical replicate numbers, said but not refused.</summary>
+        private List<string> DesignWarnings() => TmtExperimentalDesign.GetWarningsInDesign(RowsAsFiles());
+
+        private List<TmtFileInfo> RowsAsFiles() =>
+            _rows.Select(r => new TmtFileInfo(r.FilePath, r.Plex, r.Fraction, r.TechnicalReplicate, null)).ToList();
         #endregion
 
         #region Editing
@@ -222,7 +175,10 @@ namespace MetaMorpheusGUI
         {
             CommitPendingEdits();
             var err = ValidateDesign();
-            MessageBox.Show(err ?? "Validation passed.",
+            var warnings = err == null ? DesignWarnings() : new List<string>();
+            MessageBox.Show(err ?? (warnings.Any()
+                    ? "Validation passed, with warnings:" + Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine + Environment.NewLine, warnings)
+                    : "Validation passed."),
                 err == null ? "OK" : "Validation Error");
         }
 
@@ -288,9 +244,11 @@ namespace MetaMorpheusGUI
             else
             {
                 int plexCount = design.Select(f => f.Plex).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+                var warnings = DesignWarnings();
                 MessageBox.Show(
                     $"Saved TMT design ({design.Count} file(s), {plexCount} plex(es)) to:"
-                    + Environment.NewLine + savePath,
+                    + Environment.NewLine + savePath
+                    + (warnings.Any() ? Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine + Environment.NewLine, warnings) : ""),
                     "Saved");
             }
 
