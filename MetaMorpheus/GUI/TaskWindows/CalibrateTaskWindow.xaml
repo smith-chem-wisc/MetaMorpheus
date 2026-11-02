@@ -76,11 +76,12 @@
                                 <RowDefinition Height="1*"/>
                                 <RowDefinition Height="1*"/>
                                 <RowDefinition Height="1*"/>
+                                <RowDefinition Height="1*"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
                             <!-- shown only for a loaded task this window cannot show as it is (see TaskWindowSearchMode) -->
-                            <TextBlock x:Name="SearchModeWarningTextBlock" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Visibility="Collapsed" TextWrapping="Wrap" MaxWidth="450" HorizontalAlignment="Left" Margin="10,0,5,5" Foreground="DarkRed" FontWeight="DemiBold" />
+                            <TextBlock x:Name="SearchModeWarningTextBlock" Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Visibility="Collapsed" TextWrapping="Wrap" MaxWidth="450" HorizontalAlignment="Left" Margin="10,0,5,5" Foreground="DarkRed" FontWeight="DemiBold" />
 
                             <!-- Protease -->
                             <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="0">
@@ -252,6 +253,20 @@
                                         </TextBlock>
                                     </ComboBox.ToolTip>
                                 </ComboBox>
+                            </StackPanel>
+
+                            <!-- Max Threads -->
+                            <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="5">
+                                <Label Content="Max Threads:" Width="150" />
+                                <local:IntegerTexBoxControl x:Name="MaxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <TextBox.ToolTip>
+                                        <TextBlock>
+                                            By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
+                                            <LineBreak />
+                                            Enter a lower number to limit CPU usage.
+                                        </TextBlock>
+                                    </TextBox.ToolTip>
+                                </local:IntegerTexBoxControl>
                             </StackPanel>
 
                         </Grid>
@@ -552,22 +567,6 @@
                                                     <TextBox.ToolTip>
                                                         <TextBlock>
                                                             The maximum number of heterozygous variants for combinitorics.
-                                                        </TextBlock>
-                                                    </TextBox.ToolTip>
-                                                </local:IntegerTexBoxControl>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </GroupBox>
-                                    <GroupBox Header="Fragment Ion Search Parameters">
-                                        <StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="5">
-                                                <Label Content="Max Threads:" Width="146" />
-                                                <local:IntegerTexBoxControl x:Name="MaxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                    <TextBox.ToolTip>
-                                                        <TextBlock>
-                                                            By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
-                                                            <LineBreak />
-                                                            Enter a lower number to limit CPU usage.
                                                         </TextBlock>
                                                     </TextBox.ToolTip>
                                                 </local:IntegerTexBoxControl>
