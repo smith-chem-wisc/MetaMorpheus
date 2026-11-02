@@ -375,7 +375,7 @@
                             <StackPanel Grid.Column="0">
                                 <StackPanel Orientation="Horizontal" Margin="5">
                                     <Label Content="Output format" VerticalAlignment="Center" />
-                                    <ComboBox x:Name="outputFormatComboBox" MinWidth="90" VerticalAlignment="Center"
+                                    <ComboBox x:Name="outputFormatComboBox" MinWidth="90" VerticalAlignment="Center" SelectionChanged="OutputFormatComboBox_SelectionChanged"
                                               ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <ComboBox.ToolTip>
                                             <TextBlock>
@@ -394,7 +394,12 @@
                                                     <LineBreak/>
                                                     <Bold>MgfMs2Only</Bold> — MS2 and above only, so every block has a PEPMASS and every reader accepts the file. Choose this
                                                     when the MGF is destined for Comet or another MSToolkit-based tool. Without MS1 scans nothing downstream can deconvolute a
-                                                    precursor, which costs roughly a fifth of the identifications: 63 PSMs rather than 80 on the same test file.
+                                                    precursor, which costs roughly a fifth of the identifications: 63 PSMs rather than 80 on the same test file. There are
+                                                    also no MS1 scans to quantify from.
+                                                    <LineBreak/>
+                                                    <LineBreak/>
+                                                    A Search that follows reads either MGF, but Calibrate does not take .mgf input, so a calibrated MGF
+                                                    cannot be calibrated again.
                                             </TextBlock>
                                         </ComboBox.ToolTip>
                                     </ComboBox>

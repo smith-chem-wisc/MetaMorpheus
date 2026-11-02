@@ -10,6 +10,9 @@ namespace TaskLayer
     /// Offered because "mgf in, mgf out" is a real workflow — smith-chem-wisc/MetaMorpheus#1673. Measured on
     /// the bundled yeast file, a Calibrate then Search chain produces the same 80 PSMs through Mgf as
     /// through MzML, and 63 through MgfMs2Only.
+    ///
+    /// A Search that follows reads either MGF variant, but Calibrate itself refuses .mgf input,
+    /// so a calibrated MGF cannot be calibrated again.
     /// </remarks>
     public enum SpectraFileOutputFormat
     {
@@ -25,7 +28,8 @@ namespace TaskLayer
 
         /// <summary>
         /// MGF with MS2 and above only, which every reader accepts. No MS1 means no precursor
-        /// deconvolution downstream, costing roughly a fifth of the identifications.
+        /// deconvolution downstream, costing roughly a fifth of the identifications, and no MS1 scans
+        /// to quantify from.
         /// </summary>
         MgfMs2Only
     }

@@ -156,30 +156,6 @@ namespace TaskLayer
             SearchParameters.MassDiffAcceptorType = LegacyMostAbundantEquivalent;
         }
 
-        /// <summary>
-        /// True only when every MS2 scan names an MS1 scan that is present in the file and has a resolvable
-        /// isolation range. Both are required to deconvolute a precursor: without a precursor scan number
-        /// <see cref="MetaMorpheusTask._GetMs2Scans"/> falls through to the scan header, and a null IsolationRange
-        /// makes GetIsolatedMassesAndCharges return nothing. IsolationRange needs an isolation width as well as a
-        /// centre, and the MGF reader defaults only the centre. A partially annotated file is treated as
-        /// header-only rather than deconvoluted for some scans and not others.
-        /// </summary>
-        internal static bool HasDeconvolutablePrecursorScans(MsDataFile file)
-        {
-            var scans = file.GetAllScansList();
-            var ms1ScanNumbers = scans.Where(s => s.MsnOrder == 1).Select(s => s.OneBasedScanNumber).ToHashSet();
-            if (ms1ScanNumbers.Count == 0)
-            {
-                return false;
-            }
-
-            var ms2Scans = scans.Where(s => s.MsnOrder == 2).ToList();
-            return ms2Scans.Count > 0
-                   && ms2Scans.All(s => s.OneBasedPrecursorScanNumber.HasValue
-                                        && ms1ScanNumbers.Contains(s.OneBasedPrecursorScanNumber.Value)
-                                        && s.IsolationRange != null);
-        }
-
         // Compiled optimized from the start. This method runs once per search, so the runtime would otherwise run it as
         // unoptimized code, which keeps every local alive until it is overwritten: each searched file's scans, matches and
         // search engine then stayed reachable through the rest of the run, about 0.6 GB per file on a TMT11 .raw file. It

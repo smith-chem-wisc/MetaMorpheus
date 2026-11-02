@@ -44,22 +44,22 @@ namespace Test
         [Test]
         public static void GateRequiresAnMs1ScanAndAResolvableIsolationRange()
         {
-            Assert.That(SearchTask.HasDeconvolutablePrecursorScans(FileOf(Ms1(1), Ms2(2, 1, 3.0))), Is.True,
+            Assert.That(MetaMorpheusTask.HasDeconvolutablePrecursorScans(FileOf(Ms1(1), Ms2(2, 1, 3.0))), Is.True,
                 "a file with MS1 scans, precursor scan numbers and isolation widths is deconvolutable");
 
-            Assert.That(SearchTask.HasDeconvolutablePrecursorScans(FileOf(Ms2(1, null, 3.0))), Is.False,
+            Assert.That(MetaMorpheusTask.HasDeconvolutablePrecursorScans(FileOf(Ms2(1, null, 3.0))), Is.False,
                 "no MS1 scans at all -- the ordinary third-party mgf");
 
-            Assert.That(SearchTask.HasDeconvolutablePrecursorScans(FileOf(Ms1(1), Ms2(2, null, 3.0))), Is.False,
+            Assert.That(MetaMorpheusTask.HasDeconvolutablePrecursorScans(FileOf(Ms1(1), Ms2(2, null, 3.0))), Is.False,
                 "MS1 present but nothing points at it");
 
-            Assert.That(SearchTask.HasDeconvolutablePrecursorScans(FileOf(Ms1(1), Ms2(2, 1, null))), Is.False,
+            Assert.That(MetaMorpheusTask.HasDeconvolutablePrecursorScans(FileOf(Ms1(1), Ms2(2, 1, null))), Is.False,
                 "no isolation width, so IsolationRange is null and deconvolution would return nothing");
 
-            Assert.That(SearchTask.HasDeconvolutablePrecursorScans(FileOf(Ms1(1), Ms2(2, 99, 3.0))), Is.False,
+            Assert.That(MetaMorpheusTask.HasDeconvolutablePrecursorScans(FileOf(Ms1(1), Ms2(2, 99, 3.0))), Is.False,
                 "precursor scan number names a scan that is not in the file");
 
-            Assert.That(SearchTask.HasDeconvolutablePrecursorScans(FileOf(Ms1(1))), Is.False,
+            Assert.That(MetaMorpheusTask.HasDeconvolutablePrecursorScans(FileOf(Ms1(1))), Is.False,
                 "no MS2 scans to search");
         }
 
@@ -70,10 +70,10 @@ namespace Test
         [Test]
         public static void GateIsAllOrNothingAcrossTheFile()
         {
-            Assert.That(SearchTask.HasDeconvolutablePrecursorScans(
+            Assert.That(MetaMorpheusTask.HasDeconvolutablePrecursorScans(
                     FileOf(Ms1(1), Ms2(2, 1, 3.0), Ms2(3, 1, 3.0))), Is.True);
 
-            Assert.That(SearchTask.HasDeconvolutablePrecursorScans(
+            Assert.That(MetaMorpheusTask.HasDeconvolutablePrecursorScans(
                     FileOf(Ms1(1), Ms2(2, 1, 3.0), Ms2(3, 1, null))), Is.False,
                 "one unannotated scan out of two");
         }
@@ -96,11 +96,11 @@ namespace Test
 
                 var readWithMs1 = MsDataFileReader.GetDataFile(withMs1);
                 readWithMs1.LoadAllStaticData();
-                Assert.That(SearchTask.HasDeconvolutablePrecursorScans(readWithMs1), Is.True);
+                Assert.That(MetaMorpheusTask.HasDeconvolutablePrecursorScans(readWithMs1), Is.True);
 
                 var readMs2Only = MsDataFileReader.GetDataFile(ms2Only);
                 readMs2Only.LoadAllStaticData();
-                Assert.That(SearchTask.HasDeconvolutablePrecursorScans(readMs2Only), Is.False);
+                Assert.That(MetaMorpheusTask.HasDeconvolutablePrecursorScans(readMs2Only), Is.False);
             }
             finally
             {

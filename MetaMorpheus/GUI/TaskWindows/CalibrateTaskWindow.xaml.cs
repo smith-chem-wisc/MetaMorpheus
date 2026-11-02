@@ -486,6 +486,11 @@ namespace MetaMorpheusGUI
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", $"{prefix}CalibrationTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
 
+        private void OutputFormatComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            writeIndexMzmlCheckbox.IsEnabled = outputFormatComboBox.SelectedItem is SpectraFileOutputFormat.MzML;
+        }
+
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
             bool isRnaMode = GuiGlobalParamsViewModel.Instance.IsRnaMode;

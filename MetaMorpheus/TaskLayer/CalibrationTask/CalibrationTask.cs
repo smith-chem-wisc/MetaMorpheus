@@ -77,6 +77,13 @@ namespace TaskLayer
             Initialize(taskId, dbFilenameList);
             Status("Calibrating...", new List<string> { _taskId });
 
+            if (CalibrationParameters.OutputFormat == SpectraFileOutputFormat.MgfMs2Only)
+            {
+                Warn("Calibrated spectra will be written as mgf without MS1 scans. A task run after this one "
+                     + "cannot deconvolute precursors, so will identify fewer spectra than it would from mzML, "
+                     + "and has no MS1 scans to quantify from.");
+            }
+
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 if (GlobalVariables.StopLoops) { break; }
@@ -645,19 +652,6 @@ namespace TaskLayer
             if (WritingMgf)
             {
                 bool includeMs1Scans = CalibrationParameters.OutputFormat == SpectraFileOutputFormat.Mgf;
-                if (includeMs1Scans)
-                {
-                    Warn("Writing calibrated spectra as mgf, including MS1 scans. An MS1 block has no "
-                         + "PEPMASS, which the mgf specification requires, so some readers will reject the "
-                         + "file. Use MgfMs2Only if it is destined for one of those.");
-                }
-                else
-                {
-                    Warn("Writing calibrated spectra as mgf without MS1 scans. A task run after this one "
-                         + "cannot deconvolute precursors and will identify fewer spectra than it would "
-                         + "from mzML.");
-                }
-
                 msDataFile.ExportAsMgf(mzFilePath, includeMs1Scans);
             }
             else
