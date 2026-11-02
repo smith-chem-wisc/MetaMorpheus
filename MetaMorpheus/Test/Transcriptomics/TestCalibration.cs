@@ -15,6 +15,7 @@ using Readers;
 namespace Test.Transcriptomics;
 
 [TestFixture]
+[NonParallelizable]
 public class TestCalibration
 {
     public static RnaSearchParameters SearchParameters;
@@ -34,86 +35,97 @@ public class TestCalibration
             dissociationType: DissociationType.CID,
             deconvolutionMaxAssumedChargeState: -20,
             deconvolutionIntensityRatio: 3,
-            deconvolutionMassTolerance: new PpmTolerance(20),
-            precursorMassTolerance: new PpmTolerance(10),
-            productMassTolerance: new PpmTolerance(5),
+            deconvolutionMassTolerance: new PpmTolerance(10),
+            precursorMassTolerance: new PpmTolerance(3),
+            productMassTolerance: new PpmTolerance(1),
             scoreCutoff: 5,
             totalPartitions: 1,
             maxThreadsToUsePerFile: 1,
             doPrecursorDeconvolution: true,
             useProvidedPrecursorInfo: false,
-            digestionParams: new RnaDigestionParams()
+            digestionParams: new RnaDigestionParams("top-down")
         );
     }
 
     [Test]
+    [NonParallelizable]
     public void CalibrationTask_ReducesMassError()
     {
+        var previousAnalyteType = GlobalVariables.AnalyteType;
+        GlobalVariables.AnalyteType = AnalyteType.Oligo;
+
         // Arrange
-        string testDir = TestContext.CurrentContext.TestDirectory;
-        List<string> dbPaths = 
-            [Path.Combine(testDir, "Transcriptomics", "TestData", "16mer2.fasta")];
-        List<string> spectraPaths = 
-            [Path.Combine(testDir, "Transcriptomics", "TestData", "RnaStandard_Subset.mzML")];
-        string outputDir = Path.Combine(testDir, "CalibrationTest");
-
-        if (Directory.Exists(outputDir))
-            Directory.Delete(outputDir, true); // Clean up previous test run
-        Directory.CreateDirectory(outputDir);
-
-        // Set up search-cali-search task for RNA
-        var dbs = dbPaths.Select(dbPath => new DbForTask(dbPath, false)).ToList();
-        var searchTask = new SearchTask()
+        try
         {
-            SearchParameters = SearchParameters,
-            CommonParameters = CommonParameters
-        };
-        var cali = new CalibrationTask()
+            string testDir = TestContext.CurrentContext.TestDirectory;
+            List<string> dbPaths =
+                [Path.Combine(testDir, "Transcriptomics", "TestData", "16mer2.fasta")];
+            List<string> spectraPaths =
+                [Path.Combine(testDir, "Transcriptomics", "TestData", "RnaStandard_Subset.mzML")];
+            string outputDir = Path.Combine(testDir, "CalibrationTest");
+
+            if (Directory.Exists(outputDir))
+                Directory.Delete(outputDir, true); // Clean up previous test run
+            Directory.CreateDirectory(outputDir);
+
+            // Set up search-cali-search task for RNA
+            var dbs = dbPaths.Select(dbPath => new DbForTask(dbPath, false)).ToList();
+            var searchTask = new SearchTask()
+            {
+                SearchParameters = SearchParameters,
+                CommonParameters = CommonParameters
+            };
+            var cali = new CalibrationTask()
+            {
+                CommonParameters = CommonParameters
+            };
+            var searchTask2 = new SearchTask()
+            {
+                SearchParameters = SearchParameters,
+                CommonParameters = CommonParameters
+            };
+            var runner = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)>()
+            {
+                ("Search1", searchTask),
+                ("Calibration", cali),
+                ("Search2", searchTask2)
+            }, spectraPaths, dbs, outputDir);
+            runner.Run();
+
+            var firstSearchDir = Path.Combine(outputDir, "Search1");
+            var firstOsmPath = Directory.GetFiles(firstSearchDir, "*OSMs.osmtsv", SearchOption.AllDirectories).First();
+            var firstOsms = SpectrumMatchTsvReader.ReadTsv(firstOsmPath, out var warnings);
+            Assert.That(warnings.Count, Is.EqualTo(0));
+
+            var secondSearchDir = Path.Combine(outputDir, "Search2");
+            var secondOsmPath = Directory.GetFiles(secondSearchDir, "*OSMs.osmtsv", SearchOption.AllDirectories).First();
+            var secondOsms = SpectrumMatchTsvReader.ReadTsv(secondOsmPath, out warnings);
+            Assert.That(warnings.Count, Is.EqualTo(0));
+
+            // Assert that calibration increased search results
+            Assert.That(secondOsms.Count, Is.GreaterThan(firstOsms.Count), "Expected more OligoSpectralMatches after calibration.");
+            Assert.That(secondOsms.Count(p => p.QValue <= 0.01), Is.GreaterThan(firstOsms.Count(p => p.QValue <= 0.01)),
+                "Expected more OligoSpectralMatches with QValue <= 0.01 after calibration.");
+
+            // Assert that the mass error is reduced after calibration
+            var firstErrors = firstOsms.Select(p => p.MassDiffDa)
+                .Select(double.Parse)
+                .ToList();
+            var secondErrors = secondOsms.Select(p => p.MassDiffDa)
+                .Select(double.Parse)
+                .ToList();
+
+            var firstAverage = firstErrors.Average();
+            var secondAverage = secondErrors.Average();
+
+            Assert.That(secondAverage, Is.LessThan(firstAverage),
+                "Expected average mass error to be reduced after calibration.");
+
+            Directory.Delete(outputDir, true); // Clean up after test
+        }
+        finally
         {
-            CommonParameters = CommonParameters
-        };
-        var searchTask2 = new SearchTask()
-        {
-            SearchParameters = SearchParameters,
-            CommonParameters = CommonParameters
-        };
-        var runner = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)>()
-        {
-            ("Search1", searchTask),
-            ("Calibration", cali),
-            ("Search2", searchTask2)
-        }, spectraPaths, dbs, outputDir);
-        runner.Run();
-
-        var firstSearchDir = Path.Combine(outputDir, "Search1");
-        var firstOsmPath = Directory.GetFiles(firstSearchDir, "*OSMs.osmtsv", SearchOption.AllDirectories).First();
-        var firstOsms = SpectrumMatchTsvReader.ReadTsv(firstOsmPath, out var warnings);
-        Assert.That(warnings.Count, Is.EqualTo(0));
-
-        var secondSearchDir = Path.Combine(outputDir, "Search2");
-        var secondOsmPath = Directory.GetFiles(secondSearchDir, "*OSMs.osmtsv", SearchOption.AllDirectories).First();
-        var secondOsms = SpectrumMatchTsvReader.ReadTsv(secondOsmPath, out warnings);
-        Assert.That(warnings.Count, Is.EqualTo(0));
-
-        // Assert that calibration increased search results
-        Assert.That(secondOsms.Count, Is.GreaterThan(firstOsms.Count), "Expected more OligoSpectralMatches after calibration.");
-        Assert.That(secondOsms.Count(p => p.QValue <= 0.01), Is.GreaterThan(firstOsms.Count(p => p.QValue <= 0.01)),
-            "Expected more OligoSpectralMatches with QValue <= 0.01 after calibration.");
-
-        // Assert that the mass error is reduced after calibration
-        var firstErrors = firstOsms.Select(p => p.MassDiffDa)
-            .Select(double.Parse)
-            .ToList();
-        var secondErrors = secondOsms.Select(p => p.MassDiffDa)
-            .Select(double.Parse)
-            .ToList();
-
-        var firstAverage = firstErrors.Average();
-        var secondAverage = secondErrors.Average();
-
-        Assert.That(secondAverage, Is.LessThan(firstAverage),
-            "Expected average mass error to be reduced after calibration.");
-
-        Directory.Delete(outputDir, true); // Clean up after test
+            GlobalVariables.AnalyteType = previousAnalyteType;
+        }
     }
 }

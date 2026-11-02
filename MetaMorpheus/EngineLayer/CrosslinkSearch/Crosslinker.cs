@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using MassSpectrometry;
 using System.Globalization;
@@ -75,23 +76,77 @@ namespace EngineLayer
             return cleaveDissociationTypes;
         }
 
+        /// <summary>
+        /// Columns in a crosslinker tsv row: Name, CrosslinkAminoAcid, CrosslinkerAminoAcid2, Cleavable,
+        /// DissociationType, CrosslinkerTotalMass, CrosslinkerShortMass, CrosslinkerLongMass, QuenchMassH2O,
+        /// QuenchMassNH2, QuenchMassTris.
+        /// </summary>
+        private const int ExpectedColumnCount = 11;
+
+        /// <summary>
+        /// How the header row starts. Matched by content rather than by position, because a hand-edited
+        /// file may carry notes above it -- and may have no header row at all.
+        /// </summary>
+        private const string HeaderPrefix = "Name\t";
+
         public static IEnumerable<Crosslinker> LoadCrosslinkers(string CrosslinkerLocation)
         {
             using (StreamReader crosslinkers = new StreamReader(CrosslinkerLocation))
             {
                 int lineCount = 0;
+                bool headerSeen = false;
 
                 while (crosslinkers.Peek() != -1)
                 {
                     lineCount++;
                     string line = crosslinkers.ReadLine();
-                    if (lineCount == 1)
+
+                    // CustomCrosslinkers.tsv is edited by hand, so a blank line or a '#' note in it is a
+                    // thing that happens. Both used to reach ParseCrosslinkerFromString and come back as
+                    // an unhandled IndexOutOfRangeException during startup, before any window opened.
+                    if (string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith("#", StringComparison.Ordinal))
                     {
                         continue;
                     }
 
-                    yield return ParseCrosslinkerFromString(line);
+                    // The header is the first line that is not blank or a note AND looks like the header,
+                    // wherever it lands. Counting it by position let a note above it push the header into
+                    // the data rows; consuming the first line unconditionally instead silently ate the
+                    // first crosslinker of a hand-written file that has no header row at all.
+                    if (!headerSeen && line.TrimStart().StartsWith(HeaderPrefix, StringComparison.Ordinal))
+                    {
+                        headerSeen = true;
+                        continue;
+                    }
+
+                    if (line.Split('\t').Length < ExpectedColumnCount)
+                    {
+                        throw new MetaMorpheusException($"Line {lineCount} of {Path.GetFileName(CrosslinkerLocation)} has "
+                            + $"{line.Split('\t').Length} tab-separated column(s); {ExpectedColumnCount} are required. The line was: {line}");
+                    }
+
+                    yield return ParseCrosslinkerFromString(line, CrosslinkerLocation, lineCount);
                 }
+            }
+        }
+
+        /// <summary>
+        /// <see cref="ParseCrosslinkerFromString(string)"/>, with a malformed row reported as a
+        /// <see cref="MetaMorpheusException"/> naming the file, the line number and the line -- the failure
+        /// contract the other custom-file readers follow. Without it, a header this loader does not
+        /// recognise, or a row with a non-numeric mass, reaches double.Parse and comes back as a raw
+        /// FormatException out of SetUpGlobalVariables, before any window opens.
+        /// </summary>
+        private static Crosslinker ParseCrosslinkerFromString(string line, string path, int lineNumber)
+        {
+            try
+            {
+                return ParseCrosslinkerFromString(line);
+            }
+            catch (Exception e) when (!(e is MetaMorpheusException))
+            {
+                throw new MetaMorpheusException($"Line {lineNumber} of {Path.GetFileName(path)} could not be read "
+                    + $"as a crosslinker: {e.Message} The line was: {line}", e);
             }
         }
 

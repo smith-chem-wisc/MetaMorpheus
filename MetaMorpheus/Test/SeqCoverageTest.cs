@@ -100,13 +100,23 @@ namespace Test
             var firstSequenceCoverageDisplayListWithMods = fjkd.ProteinGroups.First().SequenceCoverageDisplayListWithMods.First();
             Assert.That(firstSequenceCoverageDisplayListWithMods, Is.EqualTo("[mod1 on M]-MM[mod3 on M]KM[mod3 on M]MK-[mod5 on K]"));
 
-            var firstModInfo = fjkd.ProteinGroups.First().ModsInfo.First();
-            Assert.That(firstModInfo.Contains(@"#aa1[mod1 on M,info:occupancy=1.00(2/2)]"));
-            Assert.That(firstModInfo.Contains(@"#aa2[mod3 on M,info:occupancy=0.50(1/2)]"));
-            Assert.That(!(firstModInfo.Contains(@"#aa3")));
-            Assert.That(firstModInfo.Contains(@"#aa4[mod3 on M,info:occupancy=0.50(1/2)]"));
-            Assert.That(!(firstModInfo.Contains(@"#aa5")));
-            Assert.That(firstModInfo.Contains(@"#aa6[mod5 on K,info:occupancy=1.00(2/2)]"));
+            // Three PSMs over MMKMMK. mod1 and mod5 are on every PSM covering their site (2/2); mod3 is
+            // on one of the two covering residues 2 and 4 (1/2). Residues 3 and 5 carry no modification
+            // and must not appear. mod1 and mod5 are terminal rather than side-chain, so they report at
+            // pos0 and pos(length+1) instead of on residues 1 and 6.
+            var proteinGroup = fjkd.ProteinGroups.First();
+            proteinGroup.FilesForQuantification = new List<SpectraFileInfo>
+                { new SpectraFileInfo(fullFilePathWithExtension: "", condition: "", biorep: 0, fraction: 0, techrep: 0) };
+            proteinGroup.PopulateSampleGroupResults();
+
+            string row = proteinGroup.ToString();
+            Assert.That(row, Does.Contain("pos0[mod1 on M,info:fraction=1.00(2/2)]"));
+            Assert.That(row, Does.Contain("pos2[mod3 on M,info:fraction=0.50(1/2)]"));
+            Assert.That(row, Does.Not.Contain("pos3["));
+            Assert.That(row, Does.Contain("pos4[mod3 on M,info:fraction=0.50(1/2)]"));
+            Assert.That(row, Does.Not.Contain("pos5["));
+            Assert.That(row, Does.Contain("pos7[mod5 on K,info:fraction=1.00(2/2)]"));
+
             Console.WriteLine("Test output: " + firstSequenceCoverageDisplayList);
         }
 
