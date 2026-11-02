@@ -855,7 +855,7 @@ namespace GuiFunctions
                 8 => GetHydrophobicityScores(psms),
                 9 => psms.Where(p => !p.MissedCleavage.Contains("|")).Select(p => double.Parse(p.MissedCleavage)),
                 12 => psms.Select(p => (double)(int)Math.Round(p.RetentionTime, 0)),
-                14 => psms.SelectMany(p => ParseAmbiguousNotchValues(p.Notch)),
+                14 => psms.SelectMany(p => SpectrumMatchHistograms.ParseAmbiguousNotchValues(p.Notch)),
                 _ => Enumerable.Empty<double>()
             };
         }
@@ -882,28 +882,6 @@ namespace GuiFunctions
                 this.total = total;
                 this.bin = bin;
                 this.group = group;
-            }
-        }
-
-        private static IEnumerable<string> SplitAmbiguousNotch(string notch)
-        {
-            if (string.IsNullOrWhiteSpace(notch))
-                return new[] { "0" };
-
-            return notch.Split('|')
-                .Select(p => p.Trim())
-                .Where(p => p.Length > 0)
-                .DefaultIfEmpty("0");
-        }
-
-        private static IEnumerable<double> ParseAmbiguousNotchValues(string notch)
-        {
-            foreach (var part in SplitAmbiguousNotch(notch))
-            {
-                if (double.TryParse(part, NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
-                    yield return value;
-                else
-                    yield return 0.0;
             }
         }
 
