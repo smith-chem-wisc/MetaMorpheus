@@ -1133,8 +1133,8 @@ namespace Test
 
         /// <summary>
         /// A PSM that is ambiguous when parsimony starts is excluded from it, but parsimony's own
-        /// trimming can leave it unambiguous. Quantification then accepts it, so it must still be
-        /// matched to the protein group its proteins landed in rather than reported as UNDEFINED.
+        /// trimming can leave it unambiguous. Its peptide must then join the group its proteins landed
+        /// in, so the protein table and quantification both credit it there rather than UNDEFINED.
         /// </summary>
         [Test]
         public static void QuantifiedPeptideResolvedByParsimonyGetsItsProteinGroup()
@@ -1160,6 +1160,15 @@ namespace Test
                 .Select(line => line.Split('\t'))
                 .Single(cells => cells[1] == "EAESCDCLQGFQLTHSLGGGTGSGMGTLLISK");
             Assert.That(tubulin[proteinGroupColumn], Does.Contain("P04350"));
+
+            string[] groupLines = File.ReadAllLines(Path.Combine(outputFolder, "Task", "AllQuantifiedProteinGroups.tsv"));
+            string[] header = groupLines[0].Split('\t');
+            var tubulinGroup = groupLines.Skip(1)
+                .Select(line => line.Split('\t'))
+                .Single(cells => cells[Array.IndexOf(header, "Protein Accession")].Contains("P04350"));
+            Assert.That(tubulinGroup[Array.IndexOf(header, "Unique Peptides")], Does.Contain("EAESCDCLQGFQLTHSLGGGTGSGMGTLLISK"));
+            Assert.That(tubulinGroup[Array.IndexOf(header, "Number of Peptides")], Is.EqualTo("2"));
+            Assert.That(tubulinGroup[Array.IndexOf(header, "Number of Unique Peptides")], Is.EqualTo("2"));
 
             Directory.Delete(outputFolder, true);
         }

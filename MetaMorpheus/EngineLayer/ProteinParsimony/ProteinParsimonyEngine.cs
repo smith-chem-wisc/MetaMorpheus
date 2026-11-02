@@ -459,11 +459,40 @@ namespace EngineLayer
                 }
             }
 
+            AddPeptidesFromPsmsResolvedByTrimming();
+
             // construct protein groups
             List<ProteinGroup> proteinGroups = ConstructProteinGroups(uniquePeptides);
 
             // finished with parsimony
             return proteinGroups;
+        }
+
+        /// <summary>
+        /// Stage 5 can resolve a PSM that was ambiguous when <see cref="_fdrFilteredPeptides"/> was built. Adds the
+        /// peptides of PSMs that now pass the constructor's filter, so their groups list them and scoring, the protein
+        /// table and both quantification paths read the same peptide set.
+        /// </summary>
+        private void AddPeptidesFromPsmsResolvedByTrimming()
+        {
+            var alreadyUsed = new HashSet<SpectralMatch>(_fdrFilteredPsms);
+            var resolved = FilteredPsms.Filter(_allPsms,
+                    commonParams: CommonParameters,
+                    includeDecoys: true,
+                    includeContaminants: true,
+                    includeAmbiguous: false,
+                    includeHighQValuePsms: false)
+                .FilteredPsmsList
+                .Where(p => !alreadyUsed.Contains(p)
+                    && (_treatModPeptidesAsDifferentPeptides ? p.FullSequence != null : p.BaseSequence != null));
+
+            foreach (var psm in resolved)
+            {
+                foreach (var peptide in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer))
+                {
+                    _fdrFilteredPeptides.Add(peptide);
+                }
+            }
         }
 
         /// <summary>
