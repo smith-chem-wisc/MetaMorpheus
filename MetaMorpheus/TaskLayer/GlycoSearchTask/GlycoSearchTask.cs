@@ -346,12 +346,6 @@ namespace TaskLayer
                         List<PeptideWithSetModifications> peptideIndex = null;
                         List<int>[] precursorIndex = null;
                         GenerateIndexes_PeptideOnly(indexEngine, dbFilenameList, ref peptideIndex, ref precursorIndex, proteinList, taskId);
-                        if (peptideIndex == null)
-                        {
-                            // the first round's index could not be read back, so build it again
-                            FragmentIndex unusedFragmentIndex = null;
-                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref unusedFragmentIndex, ref precursorIndex, proteinList, taskId);
-                        }
 
                         // A rebuild, or a different cache folder, can hold the same peptides in a different order: mass ties
                         // are broken by digestion order, which depends on the thread count, and the thread count is not part
