@@ -144,7 +144,7 @@ namespace Test
             Assert.That(defaultParameters.CustomIons, Is.Not.EqualTo(notDefaultParameters.CustomIons));
 
             FileSpecificParameters emptyFileSpecificParameters = new FileSpecificParameters();
-            CommonParameters updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, emptyFileSpecificParameters);
+            CommonParameters updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, emptyFileSpecificParameters, null);
 
             //CHECK THAT NOTHING CHANGED
             Assert.That(updatedParameters.DissociationType, Is.EqualTo(notDefaultParameters.DissociationType));
@@ -183,7 +183,7 @@ namespace Test
                 DissociationType = DissociationType.CID,
                 CustomIons = new List<ProductType> { ProductType.b, ProductType.y }
             };
-            updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, basicFileSpecificParameters);
+            updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, basicFileSpecificParameters, null);
             //CHECK THAT SOMETHINGS CHANGED AND OTHERS DIDN'T
             Assert.That(updatedParameters.DissociationType, Is.EqualTo(basicFileSpecificParameters.DissociationType));
             Assert.That(updatedParameters.ProductMassTolerance, Is.EqualTo(basicFileSpecificParameters.ProductMassTolerance));
@@ -230,7 +230,7 @@ namespace Test
                 ProductDeconvolutionParameters = new IsoDecDeconvolutionParameters()
             };
 
-            CommonParameters updated = MetaMorpheusTask.SetAllFileSpecificCommonParams(defaultParams, fspOverride);
+            CommonParameters updated = MetaMorpheusTask.SetAllFileSpecificCommonParams(defaultParams, fspOverride, null);
 
             Assert.That(updated.PrecursorDeconvolutionParameters, Is.EqualTo(fspOverride.PrecursorDeconvolutionParameters));
             Assert.That(updated.PrecursorDeconvolutionParameters, Is.Not.EqualTo(defaultParams.PrecursorDeconvolutionParameters),
@@ -304,7 +304,7 @@ namespace Test
             Assert.That(defaultParameters.CustomIons, Is.Not.EqualTo(notDefaultParameters.CustomIons));
 
             FileSpecificParameters emptyFileSpecificParameters = new FileSpecificParameters();
-            CommonParameters updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, emptyFileSpecificParameters);
+            CommonParameters updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, emptyFileSpecificParameters, null);
 
             //CHECK THAT NOTHING CHANGED
             Assert.That(updatedParameters.DissociationType, Is.EqualTo(notDefaultParameters.DissociationType));
@@ -334,7 +334,9 @@ namespace Test
             {
                 PrecursorMassTolerance = new PpmTolerance(10),
                 ProductMassTolerance = new PpmTolerance(30),
-                DigestionAgent = RnaseDictionary.Dictionary["RNase PhyM"],
+                // any RNase other than the default does; RNase T1's name is stable, while "RNase PhyM" was renamed to
+                // "RNase PhyM (>= 7M urea)" by mzLib #1301 and no longer exists on mzLib master
+                DigestionAgent = RnaseDictionary.Dictionary["RNase T1"],
                 MinPeptideLength = 1,
                 MaxPeptideLength = 50,
                 MaxMissedCleavages = 2,
@@ -342,7 +344,7 @@ namespace Test
                 DissociationType = DissociationType.CID,
                 CustomIons = new List<ProductType> { ProductType.b, ProductType.y }
             };
-            updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, basicFileSpecificParameters);
+            updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, basicFileSpecificParameters, null);
             //CHECK THAT SOMETHINGS CHANGED AND OTHERS DIDN'T
             Assert.That(updatedParameters.DissociationType, Is.EqualTo(basicFileSpecificParameters.DissociationType));
             Assert.That(updatedParameters.ProductMassTolerance, Is.EqualTo(basicFileSpecificParameters.ProductMassTolerance));
@@ -383,7 +385,7 @@ namespace Test
 
             FileSpecificParameters emptyFileSpecificParameters = new FileSpecificParameters();
 
-            Assert.That(() => MetaMorpheusTask.SetAllFileSpecificCommonParams(defaultParameters, emptyFileSpecificParameters),
+            Assert.That(() => MetaMorpheusTask.SetAllFileSpecificCommonParams(defaultParameters, emptyFileSpecificParameters, null),
                 Throws.TypeOf<MetaMorpheusException>()
                     .With.Message.Contain("Unrecognized digestion parameters of type"));
         }
@@ -405,6 +407,7 @@ namespace Test
             public int MaxModificationIsoforms { get; set; }
             public int MaxMods { get; set; }
             public DigestionAgent DigestionAgent { get; }
+            public DigestionAgent SpecificDigestionAgent => DigestionAgent;
             public FragmentationTerminus FragmentationTerminus { get; }
             public CleavageSpecificity SearchModeType { get; }
             public IDigestionParams Clone(FragmentationTerminus? newTerminus = null) => this;

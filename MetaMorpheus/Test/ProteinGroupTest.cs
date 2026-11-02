@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+﻿using System;
+using EngineLayer;
 using FlashLFQ;
 using NUnit.Framework;
 using Proteomics;
@@ -17,6 +18,8 @@ using System.Text.RegularExpressions;
 using EngineLayer.DatabaseLoading;
 using Omics;
 using MzLibUtil;
+using EngineLayer.SpectrumMatch;
+using Omics.Fragmentation;
 
 namespace Test
 {
@@ -100,6 +103,84 @@ namespace Test
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupWithDecoyToString));
         }
 
+        /// <summary>
+        /// Entrapment competes as a target, so it is labelled rather than reclassified: ET for an
+        /// entrapment target, ED for a decoy of one. A group is entrapment if any member is, so a
+        /// real protein grouped with an entrapment protein reads ET.
+        /// </summary>
+        [TestCase(false, false, false, "T")]
+        [TestCase(true, false, false, "D")]
+        [TestCase(false, true, false, "C")]
+        [TestCase(false, false, true, "ET")]
+        [TestCase(true, false, true, "ED")]
+        public static void ProteinGroupWritesEntrapmentInItsLabel(bool isDecoy, bool isContaminant, bool isEntrapment, string expected)
+        {
+            var protein = new Protein("MEDEEK", "prot1", isDecoy: isDecoy, isContaminant: isContaminant, isEntrapment: isEntrapment);
+            var group = new ProteinGroup(new HashSet<IBioPolymer> { protein },
+                new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
+
+            Assert.That(LabelOf(group), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public static void AGroupHoldingAnyEntrapmentMemberReadsEt()
+        {
+            var real = new Protein("MEDEEK", "P12345");
+            var partner = new Protein("MEEDEK", "Random_P12345_f0", isEntrapment: true);
+            var group = new ProteinGroup(new HashSet<IBioPolymer> { real, partner },
+                new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
+
+            Assert.That(LabelOf(group), Is.EqualTo("ET"));
+        }
+
+        /// <summary>
+        /// A search never builds that two-member group directly: parsimony makes one group per protein and
+        /// scoring merges indistinguishable groups with mzLib's MergeWith, which keeps the surviving group's
+        /// flags. The survivor is the first accession alphabetically, so a real accession that sorts before
+        /// "Random_" survived and the combined table read T while the per-file table, built through the
+        /// constructor, read ET. Both orders, and the decoy pair, must agree with the any-member rule.
+        /// </summary>
+        [TestCase("P12345", false, "ET")]
+        [TestCase("Z12345", false, "ET")]
+        [TestCase("P12345", true, "ED")]
+        [TestCase("Z12345", true, "ED")]
+        public static void AMergedGroupOfARealProteinAndItsEntrapmentPartnerReadsEntrapmentInEveryTable(
+            string realAccession, bool isDecoy, string expected)
+        {
+            string prefix = isDecoy ? "DECOY_" : "";
+            var real = new Protein("PEPTIDEK", prefix + realAccession, isDecoy: isDecoy);
+            var partner = new Protein("PEPTIDEK", prefix + "Random_" + realAccession + "_f0", isDecoy: isDecoy, isEntrapment: true);
+            var commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
+            PeptideWithSetModifications PeptideOf(Protein protein) => new(protein, commonParameters.DigestionParams, 1, 8,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            var dataScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, 2, true,
+                Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1",
+                double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
+            var scan = new Ms2ScanWithSpecificMass(dataScan, 2, 0, "File", new CommonParameters());
+            SpectralMatch psm = new PeptideSpectralMatch(PeptideOf(real), 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            psm.AddOrReplace(PeptideOf(partner), 10, 0, true, new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
+
+            var psms = FilteredPsms.Filter(new List<SpectralMatch> { psm }, commonParameters).FilteredPsmsList;
+            var parsimony = (ProteinParsimonyResults)new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, null).Run();
+            var scored = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(parsimony.ProteinGroups, psms,
+                false, false, true, new CommonParameters(), null, new List<string>()).Run();
+
+            ProteinGroup merged = scored.SortedAndScoredProteinGroups.Single();
+            Assert.That(merged.Proteins, Is.EquivalentTo(new[] { real, partner }), "the two proteins are indistinguishable");
+            Assert.That(LabelOf(merged), Is.EqualTo(expected), "combined table");
+            Assert.That(LabelOf(merged.ConstructSubsetProteinGroup("File")), Is.EqualTo(expected), "per-file table");
+        }
+
+        private static string LabelOf(ProteinGroup group)
+        {
+            int column = Array.IndexOf(group.GetTabSeparatedHeader().Split('\t'), "Protein Decoy/Contaminant/Target");
+            Assert.That(column, Is.GreaterThanOrEqualTo(0));
+            return group.ToString().Split('\t')[column];
+        }
+
         [Test]
         public static void TestProteinGroupStringAndHeaderHaveSameNumberOfTabs()
         {
@@ -120,6 +201,39 @@ namespace Test
             string[] rowEntries = pgRow.Split("\t");
             Assert.That(headerFields.Length, Is.EqualTo(rowEntries.Length));
             Assert.That(Regex.Matches(pgHeader, @"\t").Count, Is.EqualTo(Regex.Matches(pgRow, @"\t").Count));
+        }
+
+        // The header must follow the object, not the reference it is held by. AllProteinGroups.tsv is
+        // written by code that holds ProteinGroup, but nothing stops a caller from holding the base
+        // type, and ToString() has always overridden. While GetTabSeparatedHeader() only hid the base
+        // method with `new`, a BioPolymerGroup reference paired BASE column names with a MetaMorpheus
+        // row: "BioPolymer Accession" over a protein table, no "Best Peptide PEP" column for the value
+        // the row still wrote, and -- because the base method lazy-populates SampleGroupResults where
+        // this one does not -- a different number of columns as well. The override is what fixes that,
+        // so this asserts through the base reference, which is the binding that used to be wrong.
+        [Test]
+        public static void TestProteinGroupHeaderDispatchesThroughBaseReference()
+        {
+            Protein prot1 = new Protein("MEDEEK", "prot1");
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(prot1, new DigestionParams(), 1, 3,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            ProteinGroup pg = new ProteinGroup(new HashSet<IBioPolymer> { prot1 },
+                new HashSet<IBioPolymerWithSetMods> { pwsm1 }, new HashSet<IBioPolymerWithSetMods> { pwsm1 });
+
+            Omics.BioPolymerGroup.BioPolymerGroup asBase = pg;
+
+            string headerThroughBase = asBase.GetTabSeparatedHeader();
+
+            Assert.That(headerThroughBase, Is.EqualTo(pg.GetTabSeparatedHeader()),
+                "GetTabSeparatedHeader must dispatch to ProteinGroup through a base reference; if it does not, "
+                + "the base method's columns are written above ProteinGroup's rows.");
+            Assert.That(headerThroughBase, Does.Contain("Protein Accession"));
+            Assert.That(headerThroughBase, Does.Contain("Best Peptide PEP"));
+            Assert.That(headerThroughBase, Does.Not.Contain("BioPolymer Accession"));
+
+            // The header taken through the base reference must still line up with the row, which has
+            // always dispatched.
+            Assert.That(headerThroughBase.Split('	').Length, Is.EqualTo(asBase.ToString().Split('	').Length));
         }
 
         // No upstream quant setup -> no dynamic columns in header or row.
@@ -283,6 +397,134 @@ namespace Test
                 Assert.That(pg.ToString().Split('\t').Length, Is.EqualTo(headerColumnCount),
                     $"Row column count for '{pg.ProteinGroupName}' does not match the header column count.");
             }
+        }
+
+        /// <summary>
+        /// The companion of TestMultipleProteinGroupsHeaderAndRowsHaveSameColumnCount, for the case that
+        /// test cannot reach. It assigns zeros for unmeasured samples, mirroring QuantificationAnalysis,
+        /// so HasIntensityData is true for every group and the columns line up by accident of the
+        /// label-free writer.
+        ///
+        /// mzLib's QuantificationEngine OMITS zero-valued cells instead, so a protein it found nothing
+        /// for gets an assigned-but-empty dictionary. Gating the Intensity_ column on the per-group
+        /// HasIntensityData then emits fewer columns for that protein than for its neighbour, while the
+        /// header is written once from the first group -- so every value after the gap lands under the
+        /// wrong column name. That is the shape the isobaric path produces.
+        /// </summary>
+        [Test]
+        public static void ProteinGroupsWithOmittedIntensitiesStillLineUpWithTheHeader()
+        {
+            Protein protA = new Protein("MEDEEK", "protA");
+            Protein protB = new Protein("MENEEK", "protB");
+            PeptideWithSetModifications pwsmA = new PeptideWithSetModifications(protA, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            PeptideWithSetModifications pwsmB = new PeptideWithSetModifications(protB, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            ProteinGroup pgA = new ProteinGroup(new HashSet<IBioPolymer> { protA },
+                new HashSet<IBioPolymerWithSetMods> { pwsmA }, new HashSet<IBioPolymerWithSetMods> { pwsmA });
+            ProteinGroup pgB = new ProteinGroup(new HashSet<IBioPolymer> { protB },
+                new HashSet<IBioPolymerWithSetMods> { pwsmB }, new HashSet<IBioPolymerWithSetMods> { pwsmB });
+
+            var fileA = new SpectraFileInfo(@"X:akeA.mzML", condition: "", biorep: 0, fraction: 0, techrep: 0);
+            var fileB = new SpectraFileInfo(@"X:akeB.mzML", condition: "", biorep: 1, fraction: 0, techrep: 0);
+            var files = new List<SpectraFileInfo> { fileA, fileB };
+
+            // Both groups were quantified -- both carry the full sample list. pgB simply had nothing
+            // observed, so its dictionary is assigned and empty rather than full of zeros.
+            pgA.FilesForQuantification = files;
+            pgA.IntensitiesByFile = new Dictionary<SpectraFileInfo, double> { { fileA, 100.0 }, { fileB, 200.0 } };
+            pgA.PopulateSampleGroupResults();
+
+            pgB.FilesForQuantification = files;
+            pgB.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
+            pgB.PopulateSampleGroupResults();
+
+            var proteinGroups = new List<ProteinGroup> { pgA, pgB };
+
+            int headerColumnCount = proteinGroups.First().GetTabSeparatedHeader().Split('	').Length;
+            foreach (var pg in proteinGroups)
+            {
+                Assert.That(pg.ToString().Split('	').Length, Is.EqualTo(headerColumnCount),
+                    $"Row column count for '{pg.ProteinGroupName}' does not match the header column count.");
+            }
+
+            // And the header must not depend on which group happens to be first: the writer takes it
+            // from proteinGroups.First(), which is not necessarily one that had observations.
+            Assert.That(pgB.GetTabSeparatedHeader(), Is.EqualTo(pgA.GetTabSeparatedHeader()),
+                "A quantified group with no observations must describe the same columns as one with them.");
+        }
+
+        /// <summary>
+        /// The other half of the gate, which the rectangularity test cannot see because it assigns both
+        /// fields on both groups. A group that knows its samples but was never given intensities -- the
+        /// state a quantifier leaves when it does not run -- must describe no intensity columns, because
+        /// nothing could ever fill them. This is what stops the gate from being satisfied by the sample
+        /// list alone.
+        /// </summary>
+        [Test]
+        public static void ProteinGroupWithSamplesButNoAssignedIntensities_HasNoIntensityColumns()
+        {
+            Protein prot = new Protein("MEDEEK", "protA");
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(prot, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            ProteinGroup pg = new ProteinGroup(new HashSet<IBioPolymer> { prot },
+                new HashSet<IBioPolymerWithSetMods> { pwsm }, new HashSet<IBioPolymerWithSetMods> { pwsm });
+
+            pg.FilesForQuantification = new List<SpectraFileInfo>
+            {
+                new SpectraFileInfo(@"X:akeA.mzML", condition: "", biorep: 0, fraction: 0, techrep: 0)
+            };
+            // IntensitiesByFile deliberately not assigned.
+            pg.PopulateSampleGroupResults();
+
+            string header = pg.GetTabSeparatedHeader();
+            Assert.Multiple(() =>
+            {
+                Assert.That(header, Does.Not.Contain("Intensity_"),
+                    "no intensities were assigned, so nothing could fill an intensity column");
+                Assert.That(header, Does.Contain("SpectralCount_"),
+                    "spectral counts do not depend on quantification");
+                Assert.That(pg.ToString().Split('	').Length, Is.EqualTo(header.Split('	').Length));
+            });
+        }
+
+        /// <summary>
+        /// <summary>
+        /// The third state, and the reason the gate tests a NON-EMPTY sample list rather than merely an
+        /// assigned one. ConstructSubsetProteinGroup, which builds the per-file protein groups, assigns
+        /// an empty sample list beside an empty-but-non-null dictionary whenever no sample matches the
+        /// requested file -- the ordinary case for a protein not seen in that file. With no samples,
+        /// PopulateSampleGroupResults falls back to grouping by spectral-match file path, so the group
+        /// still renders columns; gating on the dictionary alone, or on the list being merely assigned,
+        /// would advertise intensity columns that nothing can ever fill.
+        ///
+        /// The PSM is what makes this observable: without one there are no sample groups at all and the
+        /// row is empty either way.
+        /// </summary>
+        [Test]
+        public static void ProteinGroupWithNoSamplesButPsms_HasNoIntensityColumns()
+        {
+            Protein prot = new Protein("MEDEEK", "protA");
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(prot, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            ProteinGroup pg = new ProteinGroup(new HashSet<IBioPolymer> { prot },
+                new HashSet<IBioPolymerWithSetMods> { pwsm }, new HashSet<IBioPolymerWithSetMods> { pwsm });
+
+            // A PSM gives PopulateSampleGroupResults something to group by when there is no design.
+            pg.AllPsmsBelowOnePercentFDR.Add(GptmdFilterTests.DummySpectralMatch());
+
+            // Assigned, but empty -- both. This is what a subset for an unmatched file looks like.
+            pg.FilesForQuantification = new List<SpectraFileInfo>();
+            pg.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
+            pg.PopulateSampleGroupResults();
+
+            Assert.That(pg.SampleGroupResults, Is.Not.Empty,
+                "the PSM should have produced a sample group, or this test cannot see the difference");
+
+            string header = pg.GetTabSeparatedHeader();
+            Assert.Multiple(() =>
+            {
+                Assert.That(header, Does.Not.Contain("Intensity_"),
+                    "there are no samples, so an intensity column could never be filled");
+                Assert.That(pg.ToString().Split('	').Length, Is.EqualTo(header.Split('	').Length));
+            });
         }
 
         [Test]

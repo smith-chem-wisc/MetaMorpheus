@@ -9,7 +9,6 @@ using System.Linq;
 using EngineLayer.DatabaseLoading;
 using FlashLFQ;
 using MassSpectrometry;
-using Omics.Digestion;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
 using Proteomics.ProteolyticDigestion;
@@ -302,6 +301,7 @@ namespace TaskLayer
             // calculate single PSM FDR
             List<SpectralMatch> psms = items.Select(p => p as SpectralMatch).ToList();
             new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds).Run();
+            new DisambiguationEngine(psms, commonParameters, this.FileSpecificParameters, taskIds, AbsolutePepGapRule.PepEngineRule).Run();
 
         }
         private void GlycoProteinAnalysis(List<GlycoSpectralMatch> gsms, string outputFolder, string individualFileFolder = null, MyTaskResults myTaskResults = null )
@@ -370,6 +370,9 @@ namespace TaskLayer
             
             string fileName = "AllProteinGroups.tsv";
             string writtenFile = Path.Combine(outputFolder, individualFileFolder + "_"+ fileName);
+            // set peptide output values, as the search task does before it writes its protein table; without them the
+            // Unique and Shared Peptides cells are empty while Number of Unique Peptides is filled. Glyco has no SILAC labels.
+            ProteinGroups.ForEach(p => p.GetIdentifiedPeptidesOutput(null)); // set just before, by GlycoProteinAnalysis
             WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, qValueCutoff_FORDEBUGONLY);
            
 
@@ -412,6 +415,8 @@ namespace TaskLayer
             foreach (var proteinGroup in ProteinGroups)
             {
                 proteinGroup.FilesForQuantification = spectraFiles;
+                // A site modified in any sample group is reported as 0/N wherever another group covers it unmodified
+                proteinGroup.ReportSitesSeenModifiedInAnySampleGroup();
                 proteinGroup.PopulateSampleGroupResults();
             }
         }
@@ -477,6 +482,13 @@ namespace TaskLayer
                     Warn("Error reading experimental design file: " + errors.First() + ". Skipping quantification");
                     return;
                 }
+
+                // quantified as numbered; said now and in results.txt
+                foreach (string warning in ExperimentalDesign.GetWarningsInExperimentalDesign(spectraFileInfo))
+                {
+                    Warn(warning);
+                    Parameters.GlycoSearchTaskResults?.AddTaskSummaryText(warning);
+                }
             }
             else
             {
@@ -541,25 +553,12 @@ namespace TaskLayer
             // some PSMs may not have protein groups (if 2 peptides are required to construct a protein group, some PSMs will be left over)
             // the peptides should still be quantified but not considered for protein quantification
             var undefinedPg = new FlashLFQ.ProteinGroup("UNDEFINED", "", "");
-            //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
-            Dictionary<DigestionAgent, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<DigestionAgent, List<SpectralMatch>>();
-            Dictionary<DigestionAgent, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<DigestionAgent, FlashLfqResults>();
-
-            foreach (DigestionParams dp in Parameters.ListOfDigestionParams)
-            {
-                if (!proteaseSortedPsms.ContainsKey(dp.Protease))
-                {
-                    proteaseSortedPsms.Add(dp.Protease, new List<SpectralMatch>());
-                }
-            }
             foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
             {
                 if (!psmToProteinGroups.ContainsKey(psm))
                 {
                     psmToProteinGroups.Add(psm, new List<FlashLFQ.ProteinGroup> { undefinedPg });
                 }
-
-                proteaseSortedPsms[psm.DigestionParams.DigestionAgent].Add(psm);
             }
 
             // pass PSM info to FlashLFQ
@@ -576,7 +575,8 @@ namespace TaskLayer
                 foreach (var psm in spectraFile)
                 {
                     flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-                        psm.BioPolymerWithSetModsMonoisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+                        psm.BioPolymerWithSetModsMonoisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm],
+                        digestionAgentName: psm.DigestionParams.DigestionAgentName()));
                 }
             }
 
@@ -622,6 +622,7 @@ namespace TaskLayer
                     // Populate SampleGroupResults from the shared spectraFileInfo so
                     // every PG carries the same dynamic-column schema. Without this, the writer
                     // would have no way to produce uniform headers/rows.
+                    proteinGroup.ReportSitesSeenModifiedInAnySampleGroup();
                     proteinGroup.PopulateSampleGroupResults();
                 }
             }
