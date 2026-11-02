@@ -6,12 +6,14 @@ using System.Linq;
 using System.Text;
 using Chemistry;
 using Omics;
+using Omics.BioPolymer;
 using Omics.Fragmentation;
 using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Readers;
 using Readers.ProForma;
+using Transcriptomics.Digestion;
 
 namespace EngineLayer
 {
@@ -206,6 +208,14 @@ namespace EngineLayer
             if (GlobalVariables.AnalyteType == AnalyteType.Proteoform)
                 s[SpectrumMatchFromTsvHeader.ProForma] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.ToProFormaString())).ResolvedString;
             s[SpectrumMatchFromTsvHeader.EssentialSequence] = pepWithModsIsNull ? " " : sm.EssentialSequence != null ? sm.EssentialSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString;
+            // 5'- and 3'-termini are oligo-only columns
+            if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
+            {
+                s[SpectrumMatchFromTsvHeader.FivePrimeTerminus] = pepWithModsIsNull ? " " :
+                    Resolve(pepsWithMods.Select(b => (b as OligoWithSetMods)?.FivePrimeTerminus?.ThisChemicalFormula?.Formula)).ResolvedString;
+                s[SpectrumMatchFromTsvHeader.ThreePrimeTerminus] = pepWithModsIsNull ? " " :
+                    Resolve(pepsWithMods.Select(b => (b as OligoWithSetMods)?.ThreePrimeTerminus?.ThisChemicalFormula?.Formula)).ResolvedString;
+            }
             string geneString = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Parent.GeneNames.Select(d => $"{d.Item1}:{d.Item2}"))), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.AmbiguityLevel] = ProteoformLevelClassifier.ClassifyPrSM(s[SpectrumMatchFromTsvHeader.FullSequence], geneString);
             s[SpectrumMatchFromTsvHeader.SpectrumMatchCount] = pepWithModsIsNull ? " " : sm.PsmCount.ToString();
@@ -255,7 +265,7 @@ namespace EngineLayer
 
             string theoreticalsSearched = " ";
             s[SpectrumMatchFromTsvHeader.TheoreticalsSearched] = theoreticalsSearched;
-            s[SpectrumMatchFromTsvHeader.DecoyContaminantTarget] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.IsDecoy ? "D" : b.Parent.IsContaminant ? "C" : "T")).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.DecoyContaminantTarget] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => DecoyContaminantTargetLabel.For(b.Parent))).ResolvedString;
         }
 
         /// <summary>

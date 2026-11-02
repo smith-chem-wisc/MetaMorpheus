@@ -579,8 +579,12 @@ namespace Test.MetaDraw
                     fullSequence = fullSequence.Insert(mod.Key - 1 - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
                 }
 
-                List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
-                                                       p.NeutralTheoreticalProduct.ResiduePosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
+                List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p =>
+                {
+                    int cleavagePosition = DrawnSequence.GetCleavagePosition(p.NeutralTheoreticalProduct, psm.BaseSeq.Length);
+                    return cleavagePosition > MetaDrawSettings.FirstAAonScreenIndex
+                           && cleavagePosition < MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen;
+                }).ToList();
                 int psmStartResidue = int.Parse(psm.StartAndEndResiduesInParentSequence.Split("to")[0].Replace("[", ""));
                 var startAA = (MetaDrawSettings.FirstAAonScreenIndex + psmStartResidue).ToString();
                 var endAA = (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen + psmStartResidue - 1).ToString();
@@ -761,8 +765,12 @@ namespace Test.MetaDraw
                     fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
                 }
             }
-            List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
-                                                   p.NeutralTheoreticalProduct.ResiduePosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
+            List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p =>
+            {
+                int cleavagePosition = DrawnSequence.GetCleavagePosition(p.NeutralTheoreticalProduct, psm.BaseSeq.Length);
+                return cleavagePosition > MetaDrawSettings.FirstAAonScreenIndex
+                       && cleavagePosition < MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen;
+            }).ToList();
             Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + 
                 psm.StartAndEndResiduesInParentSequence.Replace("[","").Replace("]","").Replace("to", "").Replace(" ", "").Length + 2);
 
@@ -795,8 +803,12 @@ namespace Test.MetaDraw
                     fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
                 }
             }
-            matchedIons = modPsm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
-                                                p.NeutralTheoreticalProduct.ResiduePosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
+            matchedIons = modPsm.MatchedIons.Where(p =>
+            {
+                int cleavagePosition = DrawnSequence.GetCleavagePosition(p.NeutralTheoreticalProduct, modPsm.BaseSeq.Length);
+                return cleavagePosition > MetaDrawSettings.FirstAAonScreenIndex
+                       && cleavagePosition < MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen;
+            }).ToList();
             Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + 
                 psm.StartAndEndResiduesInParentSequence.Replace("[", "").Replace("]", "").Replace("to", "").Replace(" ", "").Length + 2);
 
@@ -2741,6 +2753,63 @@ namespace Test.MetaDraw
                     Is.EqualTo(new[] { "FileA", "FileB" }));
                 Assert.That(plot.PlotData.All(r => r.ContainsKey("Bin") && r.ContainsKey("Value") && r.ContainsKey("Total")),
                     Is.True);
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Test, Category("PlotModelStat")]
+        public static void TestPlotModelStat_Notch_GroupsAcrossFiles_HandlesEmptySourceFile()
+        {
+            MetaDrawSettings.ResetSettings();
+
+            var tempFile = WriteNotchPsmTsv(new[]
+            {
+                ("0.000", "AAA"),
+                ("1.003", "BBB"),
+                ("2.007", "CCC")
+            });
+
+            try
+            {
+                var allPsms = SpectrumMatchTsvReader.ReadTsv(tempFile, out _).ToList();
+                var fileWithData = new ObservableCollection<SpectrumMatchFromTsv>(allPsms);
+                var emptyFile = new ObservableCollection<SpectrumMatchFromTsv>();
+
+                var psmsByFile = new Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>
+                {
+                    { "FileWithData", fileWithData },
+                    { "EmptyFile", emptyFile }
+                };
+
+                var parameters = new PlotModelStatParameters
+                {
+                    GroupingProperty = "None",
+                    MinRelativeCutoff = 0,
+                    MaxRelativeCutoff = 100,
+                    AllowAmbiguousGroups = true,
+                    NormalizeHistogramToFile = false,
+                    UseLogScaleYAxis = false
+                };
+
+                var plot = new PlotModelStat(
+                    "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+                    new ObservableCollection<SpectrumMatchFromTsv>(allPsms),
+                    psmsByFile,
+                    parameters);
+
+                var seriesByTitle = plot.Model.Series
+                    .OfType<PlotColumnSeries>()
+                    .ToDictionary(s => s.Title, s => s);
+
+                Assert.That(seriesByTitle.Count, Is.EqualTo(2));
+                Assert.That(seriesByTitle["FileWithData"].Items.Count, Is.GreaterThan(0));
+                Assert.That(seriesByTitle["EmptyFile"].Items.Count, Is.EqualTo(0));
+
+                Assert.That(plot.PlotData.Select(r => r["Source File"]).Distinct().ToList(),
+                    Is.EqualTo(new[] { "FileWithData" }));
             }
             finally
             {

@@ -11,6 +11,8 @@
     <UserControl.Resources>
         <local:DeconvolutionTypeToControlConverter x:Key="DeconTypeToControlConverter"/>
         <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <local:BooleanToInvertedVisibilityConverter x:Key="BooleanToInvertedVisibilityConverter"/>
+        <SolidColorBrush x:Key="BorderColor" Color="#2f3640"/>
         <Style TargetType="GroupBox">
             <Setter Property="BorderThickness" Value="3 1 1 1"/>
             <Setter Property="Padding" Value="5"/>
@@ -54,31 +56,35 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Checkboxes -->
+                <!-- Task-wide precursor controls / file-specific note -->
                 <StackPanel Grid.Column="0">
-                    <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
-                        <CheckBox x:Name="UseProvidedPrecursor" Content="Use Provided Precursor"
-                                  IsChecked="{Binding UseProvidedPrecursors}" ToolTipService.ShowDuration="999999"
-                                  ToolTipService.InitialShowDelay="500">
-                            <CheckBox.ToolTip>
-                                <TextBlock>
-                                    Use the charge states and precursor masses determined by the instrument controller.
-                                </TextBlock>
-                            </CheckBox.ToolTip>
-                        </CheckBox>
-                    </StackPanel>
-
-                    <!-- Deconvolute precursors -->
-                    <StackPanel Orientation="Horizontal" Margin="10,10,5,5">
-                        <CheckBox x:Name="DeconvolutePrecursors" Content="Deconvolute Precursors"
-                                  IsChecked="{Binding DoPrecursorDeconvolution}" ToolTipService.ShowDuration="999999"
-                                  ToolTipService.InitialShowDelay="500">
-                            <CheckBox.ToolTip>
-                                <TextBlock>
-                                    Additionally searches for coisolated peptides, allowing for multiple peptides to be identified from a single MS2.
-                                </TextBlock>
-                            </CheckBox.ToolTip>
-                        </CheckBox>
+                    <TextBlock x:Name="FileSpecificContextNote"
+                               Visibility="{Binding ShowGlobalPrecursorControls, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToInvertedVisibilityConverter}}"
+                               Text="File-specific deconvolution takes effect only when the task has 'Deconvolute Precursors' enabled."
+                               TextWrapping="Wrap" Margin="10,5,5,5" FontStyle="Italic" Foreground="DarkSlateGray" FontSize="11"/>
+                    <StackPanel Visibility="{Binding ShowGlobalPrecursorControls, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
+                            <CheckBox x:Name="UseProvidedPrecursor" Content="Use Provided Precursor"
+                                      IsChecked="{Binding UseProvidedPrecursors}" ToolTipService.ShowDuration="999999"
+                                      ToolTipService.InitialShowDelay="500">
+                                <CheckBox.ToolTip>
+                                    <TextBlock>
+                                        Use the charge states and precursor masses determined by the instrument controller.
+                                    </TextBlock>
+                                </CheckBox.ToolTip>
+                            </CheckBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="10,10,5,5">
+                            <CheckBox x:Name="DeconvolutePrecursors" Content="Deconvolute Precursors"
+                                      IsChecked="{Binding DoPrecursorDeconvolution}" ToolTipService.ShowDuration="999999"
+                                      ToolTipService.InitialShowDelay="500">
+                                <CheckBox.ToolTip>
+                                    <TextBlock>
+                                        Additionally searches for coisolated peptides, allowing for multiple peptides to be identified from a single MS2.
+                                    </TextBlock>
+                                </CheckBox.ToolTip>
+                            </CheckBox>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
 
