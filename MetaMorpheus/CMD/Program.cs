@@ -16,6 +16,11 @@ using TaskLayer;
 // ThermoRawFileReaderLicence, which this file uses, and CS0104 is not worth a whole namespace.
 using SdrfQuantAudit = Readers.SdrfQuantAudit;
 using SdrfQuantAuditor = Readers.SdrfQuantAuditor;
+using SdrfLabelFreeDesign = Readers.SdrfLabelFreeDesign;
+using SdrfLabelFreeDesignOptions = Readers.SdrfLabelFreeDesignOptions;
+using SdrfIsobaricDesign = Readers.SdrfIsobaricDesign;
+using SdrfIsobaricDesignOptions = Readers.SdrfIsobaricDesignOptions;
+using MzLibIsobaricMassTag = Omics.Modifications.IsobaricMassTag;
 
 namespace MetaMorpheusCommandLine
 {
@@ -91,6 +96,12 @@ namespace MetaMorpheusCommandLine
                 GlobalVariables.UserSpecifiedDataDir = settings.CustomDataDirectory;
             }
 
+            // subscribed before startup so that what startup notices, such as a custom protease that
+            // collided with a built-in, reaches the console; WarnHandler reads the verbosity from here.
+            // Removed first so that calling Run more than once in a process does not print it twice.
+            CommandLineSettings = settings;
+            GlobalVariables.WarnHandler -= WarnHandler;
+            GlobalVariables.WarnHandler += WarnHandler;
             GlobalVariables.SetUpGlobalVariables();
 
             if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
@@ -128,6 +139,11 @@ namespace MetaMorpheusCommandLine
             if (settings.AuditSdrf != null)
             {
                 return AuditSdrf(settings, Console.Out);
+            }
+
+            if (settings.SdrfDesign != null)
+            {
+                return WriteDesignFromSdrf(settings, Console.Out);
             }
 
             // --acceptThermoLicence records the agreement without asking for it, for the situations that
@@ -257,6 +273,11 @@ namespace MetaMorpheusCommandLine
                         taskList.Add(("Task" + (i + 1) + "AveragingTask", AveragingTask));
                         break;
 
+                    case "Truncation":
+                        var truncationTask = Toml.ReadFile<TruncationSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        taskList.Add(("Task" + (i + 1) + "TruncationSearchTask", truncationTask));
+                        break;
+
                     default:
                         if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                         {
@@ -286,6 +307,15 @@ namespace MetaMorpheusCommandLine
                 return designExitCode;
             }
 
+            // a task whose digestion gives seed peptides it cannot use would finish with far fewer, wrong identifications
+            int digestionExitCode = RefuseSeedDigestion(taskList, Console.Out,
+                settings.Verbosity == CommandLineSettings.VerbosityType.minimal
+                    || settings.Verbosity == CommandLineSettings.VerbosityType.normal);
+            if (digestionExitCode != 0)
+            {
+                return digestionExitCode;
+            }
+
             EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, settings.OutputFolder);
 
             try
@@ -309,6 +339,29 @@ namespace MetaMorpheusCommandLine
             }
 
             return errorCode;
+        }
+
+        /// <summary>
+        /// Refuses the run when a task's digestion settings ask for seed peptides the task cannot use (see
+        /// <see cref="MetaMorpheusTask.GetSeedDigestionRefusal"/>). Checked for every task before any runs, as the GUI's Run
+        /// button does, and returns the process exit code: 0 to carry on, 6 to stop.
+        /// </summary>
+        /// <param name="print">Whether to write the reason to <paramref name="output"/>; the run is refused either way.</param>
+        public static int RefuseSeedDigestion(List<(string, MetaMorpheusTask)> taskList, TextWriter output, bool print)
+        {
+            foreach (var (taskName, task) in taskList)
+            {
+                string refusal = task.GetSeedDigestionRefusal(taskName);
+                if (refusal != null)
+                {
+                    if (print)
+                    {
+                        output.WriteLine(refusal);
+                    }
+                    return 6;
+                }
+            }
+            return 0;
         }
 
         /// <summary>
@@ -372,14 +425,23 @@ namespace MetaMorpheusCommandLine
 
             string designPath = hasClassicDesign ? pathToExperDesign : pathToTmtDesign;
             List<string> errors;
+            var warnings = new List<string>();
 
             if (hasClassicDesign)
             {
-                ExperimentalDesign.ReadExperimentalDesign(designPath, startingRawFilenameList, out errors);
+                var design = ExperimentalDesign.ReadExperimentalDesign(designPath, startingRawFilenameList, out errors);
+                if (!errors.Any())
+                {
+                    warnings = ExperimentalDesign.GetWarningsInExperimentalDesign(design);
+                }
             }
             else
             {
-                TmtExperimentalDesign.Read(designPath, startingRawFilenameList, out errors);
+                var tmtFiles = TmtExperimentalDesign.Read(designPath, startingRawFilenameList, out errors);
+                if (!errors.Any())
+                {
+                    warnings = TmtExperimentalDesign.GetWarningsInDesign(tmtFiles);
+                }
             }
 
             if (!errors.Any())
@@ -387,6 +449,10 @@ namespace MetaMorpheusCommandLine
                 if (reportToConsole)
                 {
                     write("Read " + Path.GetFileName(designPath) + " successfully");
+                    foreach (string warning in warnings)
+                    {
+                        write(warning);
+                    }
                 }
 
                 return 0;
@@ -486,6 +552,137 @@ namespace MetaMorpheusCommandLine
             {
                 WriteMultiLineIndented("Finished writing file: " + e.WrittenFile);
             }
+        }
+
+        /// <summary>
+        /// Carries out --sdrfDesign: reads a label-free SDRF with mzLib's SdrfLabelFreeDesign and writes
+        /// ExperimentalDesign.tsv beside the first spectra file, which is where a run given the same -s
+        /// looks for it (ResolveExperimentalDesign). The design is checked against exactly those files.
+        ///
+        /// Refuses rather than writes anything MetaMorpheus would reject, because an invalid design is
+        /// worse than none: a run finding one skips quantification with only a warning. The report is
+        /// printed whatever the verbosity, as for --auditSdrf: it is what was asked for, and it is the
+        /// only record of a biological replicate number added where the SDRF gives none.
+        /// </summary>
+        /// <returns>0 when the design was written; 4 when the SDRF could not be read; 5 when the design
+        /// was refused or a design file is already there.</returns>
+        public static int WriteDesignFromSdrf(CommandLineSettings settings, TextWriter output)
+        {
+            // -o is not honoured: a design anywhere else is one the run never reads. Said rather than
+            // dropped silently, because "Wrote <path>" alone would read as -o having been obeyed.
+            if (settings.OutputFolder != null)
+            {
+                output.WriteLine("-o is ignored with --sdrfDesign: the design is written beside the first spectra file, where a run looks for it.");
+            }
+
+            string designDirectory = Directory.GetParent(Path.GetFullPath(settings.Spectra.First())).FullName;
+            string designPath = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
+
+            // Never overwrite a design: it may be the user's own, and a run with both kinds present exits 5.
+            foreach (string existing in new[] { designPath, Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName) })
+            {
+                if (File.Exists(existing))
+                {
+                    output.WriteLine("A design file is already there, and it is not overwritten: " + existing);
+                    return 5;
+                }
+            }
+
+            // A bare name is the column's own name: 'genotype' means 'factor value[genotype]'. The prefix is
+            // matched in any case and written lowercase, as the SDRF specification names it, so
+            // 'Factor Value[genotype]' is that column too rather than 'factor value[Factor Value[genotype]]'.
+            // mzLib matches column names exactly, so the name inside the brackets is passed as given.
+            const string factorValuePrefix = "factor value[";
+            var conditionColumns = settings.SdrfConditionColumns?
+                .Select(c => c.StartsWith(factorValuePrefix, StringComparison.OrdinalIgnoreCase)
+                    ? factorValuePrefix + c.Substring(factorValuePrefix.Length)
+                    : factorValuePrefix + c + "]")
+                .ToList();
+
+            if (settings.SdrfTag != null)
+            {
+                return WriteTmtDesignFromSdrf(settings, conditionColumns, Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName), output);
+            }
+
+            SdrfLabelFreeDesign design;
+            try
+            {
+                design = SdrfLabelFreeDesign.Read(settings.SdrfDesign, new SdrfLabelFreeDesignOptions
+                {
+                    ConditionColumns = conditionColumns,
+                    SearchedFiles = settings.Spectra.Select(Path.GetFullPath).ToList(),
+                });
+            }
+            catch (Exception e)
+            {
+                output.WriteLine("The SDRF file could not be read: " + settings.SdrfDesign + Environment.NewLine + e.Message);
+                return 4;
+            }
+
+            output.WriteLine(design.Report());
+
+            if (!design.IsValid)
+            {
+                output.WriteLine("No design file was written.");
+                return 5;
+            }
+
+            design.WriteExperimentalDesignTsv(designPath);
+            output.WriteLine("Wrote " + designPath);
+            return 0;
+        }
+
+        /// <summary>
+        /// The isobaric half of --sdrfDesign: reads a TMT, iTRAQ or DiLeu SDRF with mzLib's SdrfIsobaricDesign,
+        /// for the kit --sdrfTag names and the plex source given, and writes TmtDesign.txt where a run given the
+        /// same -s looks for it. Refuses rather than writes anything MetaMorpheus would reject, as the label-free
+        /// half does; channel and replicate numbers are copied as the SDRF gives them, never renumbered.
+        /// </summary>
+        /// <returns>0 when the design was written; 4 when the SDRF could not be read; 5 when it was refused.</returns>
+        private static int WriteTmtDesignFromSdrf(CommandLineSettings settings, List<string> conditionColumns, string designPath, TextWriter output)
+        {
+            // validated already, so the kit is known
+            MzLibIsobaricMassTag.TryGetIsobaricMassTag(settings.SdrfTag, out var tag);
+
+            SdrfIsobaricDesign design;
+            try
+            {
+                design = SdrfIsobaricDesign.Read(settings.SdrfDesign, new SdrfIsobaricDesignOptions
+                {
+                    Tag = tag,
+                    PlexColumn = settings.SdrfPlexColumn,
+                    PlexFileNamePattern = settings.SdrfPlexPattern,
+                    SinglePlex = settings.SdrfSinglePlex,
+                    ConditionColumns = conditionColumns,
+                    SearchedFiles = settings.Spectra.Select(Path.GetFullPath).ToList(),
+                });
+            }
+            catch (Exception e)
+            {
+                output.WriteLine("The SDRF file could not be read: " + settings.SdrfDesign + Environment.NewLine + e.Message);
+                return 4;
+            }
+
+            output.WriteLine(design.Report());
+
+            if (!design.IsValid)
+            {
+                output.WriteLine("No design file was written.");
+                return 5;
+            }
+
+            // MetaMorpheus has no TMT16 multiplex label: TMTpro 16-plex is searched with TMT18, the same
+            // reagent. TmtDesign.txt names no kit, and TMT16's channels are TMT18's first sixteen, so the
+            // file is one a TMT18 run reads as is. Said, so the search is not set to a label that is not there.
+            if (tag.TagType == Omics.Modifications.IsobaricMassTagType.TMT16)
+            {
+                output.WriteLine("TMT16 is searched in MetaMorpheus with its TMT18 multiplex label (TMTpro, the same reagent). "
+                    + "This design is read as is by such a run; channels 134C and 135N stay empty.");
+            }
+
+            design.WriteTmtDesign(designPath);
+            output.WriteLine("Wrote " + designPath);
+            return 0;
         }
 
         /// <summary>

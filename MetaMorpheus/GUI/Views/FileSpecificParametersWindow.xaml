@@ -6,7 +6,10 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         KeyDown="KeyPressed"
-        Title="File-Specific Parameters" Height="Auto" MaxHeight="500" d:Height="410" Width="500" WindowStartupLocation="CenterScreen">
+        Title="File-Specific Parameters" Height="Auto" MaxHeight="650" d:Height="410" Width="500" WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <local:ProteinRnaTerminologyConverter x:Key="ProteinRnaTerminologyConverter"/>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -146,6 +149,33 @@
                     </CheckBox>
                     <Label x:Name="fileSpecificSeparationTypeLabel" Margin="20,0,0,0" Width="150" Content="Separation Type" IsEnabled="{Binding IsChecked, ElementName=fileSpecificSeparationTypesEnabled}" />
                     <ComboBox x:Name="fileSpecificSeparationType" IsEnabled="{Binding IsChecked, ElementName=fileSpecificSeparationTypesEnabled}"/>
+                </StackPanel>
+
+                <!-- File-specific Precursor Deconvolution Override -->
+                <Separator Margin="10,8,10,4"/>
+                <StackPanel Margin="10,0,10,8">
+                    <TextBlock FontWeight="SemiBold" Margin="0,0,0,4" Text="File-Specific Precursor Deconvolution"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <CheckBox x:Name="UseFileSpecificDeconCheckBox"
+                                  Content="Use file-specific precursor deconvolution"
+                                  VerticalAlignment="Center"
+                                  Checked="UseFileSpecificDeconCheckBox_Checked"/>
+                    </StackPanel>
+                    <local:HostDeconParamControl x:Name="DeconControl"
+                                                 GroupBoxHeader="Precursor Deconvolution Method"
+                                                 ShowMs2Section="False"
+                                                 ShowGlobalPrecursorControls="False"
+                                                 IsEnabled="{Binding IsChecked, ElementName=UseFileSpecificDeconCheckBox}"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <Button x:Name="ClearDeconButton"
+                                Content="Clear file-specific deconvolution override"
+                                Click="ClearDeconButton_Click"
+                                Height="24" Width="270" FontSize="11" HorizontalAlignment="Left"/>
+                    </StackPanel>
+                    <TextBlock x:Name="MultiFileDeconNote"
+                               Foreground="DimGray" FontStyle="Italic" TextWrapping="Wrap" FontSize="11"
+                               Visibility="Collapsed" Margin="0,4,0,0"
+                               Text="Deconvolution settings are disabled when multiple files are selected. Each file retains its own deconvolution settings."/>
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>

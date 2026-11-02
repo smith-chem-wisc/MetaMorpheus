@@ -81,6 +81,13 @@ namespace MetaMorpheusGUI
                     .Select(p => new SpectraFileInfo(p.FullFilePathWithExtension, p.Condition, int.Parse(p.Biorep) - 1, int.Parse(p.Techrep) - 1, int.Parse(p.Fraction) - 1))
                     .ToList();
                 ExperimentalDesign.WriteExperimentalDesignToFile(fileInfos);
+
+                // saved as numbered; said, because a skipped biorep number is often a typo
+                var warnings = ExperimentalDesign.GetWarningsInExperimentalDesign(fileInfos);
+                if (warnings.Any())
+                {
+                    MessageBox.Show("Experimental design saved.\n\n" + string.Join("\n\n", warnings));
+                }
             }
             catch (Exception ex)
             {

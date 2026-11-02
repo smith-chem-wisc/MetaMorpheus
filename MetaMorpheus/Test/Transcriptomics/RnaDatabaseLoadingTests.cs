@@ -152,7 +152,7 @@ class TestBioPolymer : IBioPolymer
 
     public TBioPolymerType CreateVariant<TBioPolymerType>(string variantBaseSequence, TBioPolymerType original,
         IEnumerable<SequenceVariation> appliedSequenceVariants, IEnumerable<TruncationProduct> applicableProteolysisProducts, IDictionary<int, List<Modification>> oneBasedModifications,
-        string sampleNameForVariants) where TBioPolymerType : IHasSequenceVariants
+        IDictionary<int, Modification> oneBasedFixedModifications, string sampleNameForVariants) where TBioPolymerType : IHasSequenceVariants
     {
         throw new NotImplementedException();
     }
@@ -202,6 +202,8 @@ class TestBioPolymer : IBioPolymer
     public List<Tuple<string, string>> GeneNames { get; }
 
     IDictionary<int, List<Modification>> IBioPolymer.OneBasedPossibleLocalizedModifications => _oneBasedPossibleLocalizedModifications1;
+
+    public IDictionary<int, Modification> OneBasedFixedModifications { get; } = new Dictionary<int, Modification>();
 
     public IEnumerable<IBioPolymerWithSetMods> Digest(IDigestionParams digestionParams, List<Modification> allKnownFixedModifications, List<Modification> variableModifications,
         List<SilacLabel> silacLabels = null, (SilacLabel startLabel, SilacLabel endLabel)? turnoverLabels = null,

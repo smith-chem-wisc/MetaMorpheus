@@ -144,7 +144,7 @@ namespace Test
             Assert.That(f.DissociationType, Is.EqualTo(DissociationType.ETD));
             Assert.That(f.MaxMissedCleavages, Is.Null);
 
-            CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
+            CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f, null);
 
             Assert.That(c.DigestionParams.DigestionAgent.Name, Is.EqualTo(digestionAgentName));
             Assert.That(c.DissociationType, Is.EqualTo(DissociationType.ETD));
@@ -172,7 +172,7 @@ namespace Test
             Assert.That(f.DissociationType, Is.EqualTo(DissociationType.ETD));
             Assert.That(f.MaxMissedCleavages, Is.Null);
 
-            CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(digestionParams: new RnaDigestionParams(maxMissedCleavages: 2)), f);
+            CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(digestionParams: new RnaDigestionParams(maxMissedCleavages: 2)), f, null);
 
             Assert.That(c.DigestionParams.DigestionAgent.Name, Is.EqualTo(digestionAgentName));
             Assert.That(c.DissociationType, Is.EqualTo(DissociationType.ETD));
