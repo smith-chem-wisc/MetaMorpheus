@@ -11,6 +11,7 @@ using Transcriptomics.Digestion;
 using EngineLayer.DIA;
 using Transcriptomics;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.DatabaseLoading;
 
 namespace EngineLayer
 {
@@ -66,7 +67,8 @@ namespace EngineLayer
             IFragmentationParams fragmentationParams = null,
             PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic,
                 string rtPredictorName = RTPredictorNames.Chronologer,
-            DoubleRange retentionTimeRange = null)
+            DoubleRange retentionTimeRange = null,
+            FastaHeaderParsingParameters fastaHeaderParsing = null)
 
         {
             retentionTimeRange ??= new DoubleRange(0, double.MaxValue);
@@ -145,6 +147,7 @@ namespace EngineLayer
             }
 
             RTPredictorName = rtPredictorName;
+            FastaHeaderParsing = fastaHeaderParsing ?? new FastaHeaderParsingParameters();
 
             CustomIons = digestionParams.ProductsFromDissociationType()[DissociationType.Custom];
 
@@ -230,6 +233,11 @@ namespace EngineLayer
         public IFragmentationParams FragmentationParameters { get; set; }
         public string RTPredictorName { get; private set; }
 
+        /// <summary>
+        /// How protein FASTA deflines are split into accession, name, gene and organism.
+        /// </summary>
+        public FastaHeaderParsingParameters FastaHeaderParsing { get; private set; }
+
         public CommonParameters Clone()
         {
             CommonParameters c = new CommonParameters();
@@ -304,7 +312,8 @@ namespace EngineLayer
                                 FragmentationParameters,
                                 PrecursorMassMatchMode,
                                 RTPredictorName,
-                                 RetentionTimeRange);
+                                 RetentionTimeRange,
+                                FastaHeaderParsing);
         }
 
         /// <summary>
@@ -358,7 +367,8 @@ namespace EngineLayer
                                 FragmentationParameters,
                                 PrecursorMassMatchMode,
                                 RTPredictorName,
-                                 RetentionTimeRange);
+                                 RetentionTimeRange,
+                                FastaHeaderParsing);
 
             // CustomIons is not a constructor parameter — the constructor reads it from the global
             // dissociation-type dictionary — so copy it across explicitly. GlycoSearchEngine branches on

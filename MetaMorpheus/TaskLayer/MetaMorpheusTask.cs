@@ -1,4 +1,4 @@
-﻿using Chemistry;
+using Chemistry;
 using EngineLayer;
 using EngineLayer.Indexing;
 using MassSpectrometry;
@@ -50,6 +50,20 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask
     {
+        /// <summary>
+        /// Nett hands a bare ArgumentException to the caller on an unrecognized enum name, which does
+        /// not say what the legal values are. TryParse alone also accepts any number, defined or not.
+        /// </summary>
+        private static FastaHeaderFormat ParseFastaHeaderFormat(string value)
+        {
+            if (Enum.TryParse<FastaHeaderFormat>(value, true, out var parsed) && Enum.IsDefined(parsed))
+                return parsed;
+
+            throw new MetaMorpheusException(
+                $"Unrecognized FASTA header format '{value}'. Valid values are: "
+                + string.Join(", ", Enum.GetNames<FastaHeaderFormat>()) + ".");
+        }
+
         #region Digestion settings that ask for seed peptides
 
         /// <summary>
@@ -415,6 +429,12 @@ namespace TaskLayer
                 .CreateInstance(() => RnaFragmentationParams.Default))
             .ConfigureType<FragmentationParams>(type => type
                 .CreateInstance(() => new()))
+            .ConfigureType<FastaHeaderParsingParameters>(type => type
+                .CreateInstance(() => new FastaHeaderParsingParameters()))
+            .ConfigureType<FastaHeaderFormat>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.ToString())
+                    .FromToml(tmlString => ParseFastaHeaderFormat(tmlString.Value))))
         );
        
 
@@ -955,7 +975,8 @@ namespace TaskLayer
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
                 rtPredictorName: commonParams.RTPredictorName,
-                retentionTimeRange: commonParams.RetentionTimeRange
+                retentionTimeRange: commonParams.RetentionTimeRange,
+                fastaHeaderParsing: commonParams.FastaHeaderParsing
                 );
 
             return returnParams;

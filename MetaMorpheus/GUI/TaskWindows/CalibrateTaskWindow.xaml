@@ -365,6 +365,8 @@
                     </StackPanel>
                 </GroupBox>
 
+                <local:FastaHeaderParsingControl x:Name="FastaHeaderParsingSettings" DockPanel.Dock="Top" />
+
                 <GroupBox Header="Output Options" DockPanel.Dock="Top">
                     <StackPanel>
                         <Grid>

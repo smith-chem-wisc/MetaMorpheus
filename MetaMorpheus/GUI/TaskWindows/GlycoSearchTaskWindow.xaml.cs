@@ -26,6 +26,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class GlycoSearchTaskWindow : Window
     {
+        private FastaHeaderParsingViewModel _fastaHeaderParsingViewModel;
         private readonly DataContextForSearchTaskWindow DataContextForSearchTaskWindow;
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
@@ -127,6 +128,8 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(GlycoSearchTask task)
         {
+            _fastaHeaderParsingViewModel = new FastaHeaderParsingViewModel(task.CommonParameters.FastaHeaderParsing);
+            FastaHeaderParsingSettings.DataContext = _fastaHeaderParsingViewModel;
             RbtOGlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.OGlycanSearch;
             RbtNGlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.NGlycanSearch;
             Rbt_N_O_GlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.N_O_GlycanSearch;
@@ -533,7 +536,8 @@ namespace MetaMorpheusGUI
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 precursorDeconParams: precursorDeconvolutionParameters,
                 productDeconParams: productDeconvolutionParameters,
-                rtPredictorName: rtPredictorModelName);
+                rtPredictorName: rtPredictorModelName,
+                fastaHeaderParsing: _fastaHeaderParsingViewModel.ToParameters());
 
             TheTask._glycoSearchParameters.WritePrunedDataBase = WritePrunedDBCheckBox.IsChecked.Value;
             SetModSelectionForPrunedDB();

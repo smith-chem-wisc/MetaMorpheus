@@ -25,6 +25,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class XLSearchTaskWindow : Window
     {
+        private FastaHeaderParsingViewModel _fastaHeaderParsingViewModel;
         private readonly DataContextForSearchTaskWindow DataContextForSearchTaskWindow;
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
@@ -122,6 +123,8 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(XLSearchTask task)
         {
+            _fastaHeaderParsingViewModel = new FastaHeaderParsingViewModel(task.CommonParameters.FastaHeaderParsing);
+            FastaHeaderParsingSettings.DataContext = _fastaHeaderParsingViewModel;
             cbCrosslinkers.SelectedItem = task.XlSearchParameters.Crosslinker;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
             ckbAddCompIon.IsChecked = task.CommonParameters.AddCompIons;
@@ -361,7 +364,8 @@ namespace MetaMorpheusGUI
                 listOfModsFixed: listOfModsFixed,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 precursorDeconParams: precursorDeconvolutionParameters,
-                productDeconParams: productDeconvolutionParameters);
+                productDeconParams: productDeconvolutionParameters,
+                fastaHeaderParsing: _fastaHeaderParsingViewModel.ToParameters());
 
             TheTask.CommonParameters = commonParamsToSave;
 

@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -73,6 +73,12 @@ namespace TaskLayer
 
             StringBuilder allResultsText = new StringBuilder();
 
+            if (!CheckFastaHeaderConfiguration())
+            {
+                FinishedAllTasks(OutputFolder);
+                return;
+            }
+
             for (int i = 0; i < TaskList.Count; i++)
             {
                 if (!CurrentRawDataFilenameList.Any())
@@ -116,6 +122,13 @@ namespace TaskLayer
                 {
                     Warn("Cannot proceed. Non-specific search is only implemented for proteins. " +
                          "Use Classic or Modern search for nucleic acid databases.");
+                    FinishedAllTasks(OutputFolder);
+                    return;
+                }
+
+                // In the loop, not before it: a GPTMD or calibration task changes the databases under later tasks.
+                if (!CheckFastaHeaders(ok.Item1, ok.Item2.CommonParameters))
+                {
                     FinishedAllTasks(OutputFolder);
                     return;
                 }
@@ -181,6 +194,57 @@ namespace TaskLayer
             }
             FinishedWritingAllResultsFileHandler?.Invoke(this, new StringEventArgs(resultsFileName, null));
             FinishedAllTasks(OutputFolder);
+        }
+
+        /// <summary>
+        /// The header checks that need no database, for every task before the first runs, so a typo in a
+        /// late task is not found hours into the run.
+        /// </summary>
+        private bool CheckFastaHeaderConfiguration()
+        {
+            bool ok = true;
+            foreach (var (taskName, task) in TaskList)
+            {
+                if (task.CommonParameters?.FastaHeaderParsing is not { } headerParsing)
+                    continue;
+
+                if (!headerParsing.ValidateConfiguration(out var errors))
+                {
+                    foreach (string error in errors)
+                        Warn($"Cannot proceed. {taskName}: {error}");
+                    ok = false;
+                }
+
+                // RnaDbLoader.LoadRnaFasta takes no regexes; it always detects the format itself.
+                if (!headerParsing.IsDefault() && task.CommonParameters.DetermineAnalyteType() == AnalyteType.Oligo)
+                    Warn($"{taskName}: the FASTA header format ({headerParsing.HeaderFormat}) applies to protein " +
+                         "databases only and has no effect on this nucleic acid search.");
+            }
+            return ok;
+        }
+
+        /// <summary>
+        /// Checks a non-default header setting against the first deflines of each FASTA the task is about to
+        /// load. Nothing is read for the default.
+        /// </summary>
+        private bool CheckFastaHeaders(string taskName, CommonParameters commonParameters)
+        {
+            if (commonParameters?.FastaHeaderParsing is not { } headerParsing || headerParsing.IsDefault()
+                || commonParameters.DetermineAnalyteType() == AnalyteType.Oligo)
+                return true;
+
+            bool ok = true;
+            foreach (var db in CurrentXmlDbFilenameList.Where(d => !d.IsSpectralLibrary && FastaHeaderSampler.IsFasta(d.FilePath)))
+            {
+                var headers = FastaHeaderSampler.ReadFirstHeaders(db.FilePath);
+                headerParsing.ValidateAgainstHeaders(Path.GetFileName(db.FilePath), headers, out var errors, out var warnings);
+                foreach (string warning in warnings)
+                    Warn($"{taskName}: {warning}");
+                foreach (string error in errors)
+                    Warn($"Cannot proceed. {taskName}: {error}");
+                ok &= errors.Count == 0;
+            }
+            return ok;
         }
 
         private void Warn(string v)

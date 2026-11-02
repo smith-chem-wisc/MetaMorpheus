@@ -668,6 +668,8 @@
                     </GroupBox>
 
                     <!-- Output Options -->
+                    <local:FastaHeaderParsingControl x:Name="FastaHeaderParsingSettings" DockPanel.Dock="Top" />
+
                     <GroupBox Header="Output Options" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
 
                         <Grid>

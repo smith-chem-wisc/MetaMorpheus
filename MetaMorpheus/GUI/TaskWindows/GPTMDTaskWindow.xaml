@@ -569,6 +569,8 @@
                         </Grid>
                     </Expander>
                 </GroupBox>
+                <local:FastaHeaderParsingControl x:Name="FastaHeaderParsingSettings" DockPanel.Dock="Top" />
+
                 <GroupBox Header="Output Options" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
                     <Expander>
                         <CheckBox x:Name="WriteDecoysCheckBox" Margin="20 0 0 0"

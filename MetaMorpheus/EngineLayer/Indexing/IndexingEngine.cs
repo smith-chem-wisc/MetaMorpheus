@@ -120,6 +120,10 @@ namespace EngineLayer.Indexing
 
             sb.AppendLine("maximumFragmentSize" + (int)Math.Round(MaxFragmentSize));
 
+            // Omitted for the default so indexes cached before this setting existed still match.
+            if (CommonParameters.FastaHeaderParsing is { } headerParsing && !headerParsing.IsDefault())
+                sb.AppendLine("FASTA header format: " + headerParsing.DescribeForIndexKey());
+
             sb.Append("Localizeable mods: " + BioPolymerList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
         }
