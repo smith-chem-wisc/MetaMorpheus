@@ -7,6 +7,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using EngineLayer.DatabaseLoading;
+using MetaMorpheusCommandLine;
 using NUnit.Framework.Legacy;
 using Readers;
 using TaskLayer;
@@ -93,6 +94,75 @@ namespace Test
             writtenFiles = new HashSet<string>(Directory.GetFiles(Path.Combine(outputFolder, "weird")));
             Assert.That(!writtenFiles.Contains("Individual File Results.zip"));
             Directory.Delete(subFolder, true);
+        }
+
+        /// <summary>
+        /// WriteIndividualFiles is off by default. A default search of two files writes no per-file PSM, peptide,
+        /// protein group or quantified peak table and no per-file counts in results.txt, but the per-file .mzID
+        /// still lands in "Individual File Results", because WriteMzId governs it. The default task TOML that
+        /// CMD -g writes says false. A task TOML without the key reads as off; one that sets it to true still
+        /// writes the per-file tables.
+        /// </summary>
+        [Test]
+        public static void IndividualFileTablesAreOffByDefault()
+        {
+            Assert.That(new SearchParameters().WriteIndividualFiles, Is.False);
+
+            string subFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"IndividualFilesOffByDefaultTest");
+            if (Directory.Exists(subFolder))
+                Directory.Delete(subFolder, true);
+            Directory.CreateDirectory(subFolder);
+            try
+            {
+                string defaultTomls = Path.Combine(subFolder, "defaultTomls");
+                CommandLineSettings.GenerateDefaultTaskTomls(defaultTomls);
+                string[] savedLines = File.ReadAllLines(Path.Combine(defaultTomls, "SearchTask.toml"));
+                Func<string, bool> isTheKey = line => line.Trim().StartsWith("WriteIndividualFiles ");
+                Assert.That(savedLines.Where(isTheKey).Select(line => line.Trim()), Is.EqualTo(new[] { "WriteIndividualFiles = false" }),
+                    "the default task TOML carries the key, set to false");
+
+                string keyAbsentToml = Path.Combine(subFolder, "keyAbsent.toml");
+                File.WriteAllLines(keyAbsentToml, savedLines.Where(line => !isTheKey(line)));
+                string keyTrueToml = Path.Combine(subFolder, "keyTrue.toml");
+                File.WriteAllLines(keyTrueToml, savedLines.Select(line => isTheKey(line) ? "WriteIndividualFiles = true" : line));
+
+                SearchTask defaultTask = Toml.ReadFile<SearchTask>(keyAbsentToml, MetaMorpheusTask.tomlConfig);
+                SearchTask optedInTask = Toml.ReadFile<SearchTask>(keyTrueToml, MetaMorpheusTask.tomlConfig);
+                Assert.That(defaultTask.SearchParameters.WriteIndividualFiles, Is.False);
+                Assert.That(optedInTask.SearchParameters.WriteIndividualFiles, Is.True);
+                Assert.That(defaultTask.SearchParameters.WriteMzId, Is.True, "premise: .mzID is written by default");
+
+                DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fasta"), false);
+                TestDataFile datafile = new TestDataFile(new PeptideWithSetModifications("AAFNSGK", null));
+                string pathOne = Path.Combine(subFolder, "fileOne.mzml");
+                string pathTwo = Path.Combine(subFolder, "fileTwo.mzml");
+                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(datafile, pathOne, false);
+                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(datafile, pathTwo, false);
+
+                string outputFolder = Path.Combine(subFolder, "Results");
+                var tasks = new List<(string, MetaMorpheusTask)> { ("default", defaultTask), ("optedIn", optedInTask) };
+                new EverythingRunnerEngine(tasks, new List<string> { pathOne, pathTwo }, new List<DbForTask> { db }, outputFolder).Run();
+
+                Func<string, string[]> individualFiles = task =>
+                    Directory.GetFiles(Path.Combine(outputFolder, task, "Individual File Results")).Select(Path.GetFileName).ToArray();
+                Func<string, string[]> perFileCounts = task =>
+                    File.ReadAllLines(Path.Combine(outputFolder, task, "results.txt"))
+                        .Where(line => line.StartsWith("fileOne - ") || line.StartsWith("fileTwo - ")).ToArray();
+
+                Assert.That(individualFiles("default"), Is.EquivalentTo(new[] { "fileOne.mzID", "fileTwo.mzID" }));
+                Assert.That(perFileCounts("default"), Is.Empty);
+
+                Assert.That(individualFiles("optedIn"), Is.SupersetOf(new[]
+                {
+                    "fileOne.mzID", "fileOne_PSMs.psmtsv", "fileOne_Peptides.psmtsv", "fileOne_ProteinGroups.tsv", "fileOne_QuantifiedPeaks.tsv",
+                    "fileTwo.mzID", "fileTwo_PSMs.psmtsv", "fileTwo_Peptides.psmtsv", "fileTwo_ProteinGroups.tsv", "fileTwo_QuantifiedPeaks.tsv"
+                }));
+                Assert.That(perFileCounts("optedIn"), Has.Some.StartsWith("fileOne - Target PSMs"));
+            }
+            finally
+            {
+                Directory.Delete(subFolder, true);
+            }
         }
 
         [Test]

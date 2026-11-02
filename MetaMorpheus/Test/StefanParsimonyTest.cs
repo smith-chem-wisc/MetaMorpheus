@@ -544,5 +544,77 @@ namespace Test
             Assert.That(results.SortedAndScoredProteinGroups.Count == 3);
             Assert.That(results.SortedAndScoredProteinGroups[1].QValue == 0.5);
         }
+
+        /// <summary>
+        /// A target group of two indistinguishable proteins, protein1 and protein2, loses the picked target-decoy
+        /// comparison under both accessions to a decoy group of DECOY_protein1 and DECOY_protein2. The picked FDR saved
+        /// the loser once per accession, so the rescue wrote the target group twice (smith-chem-wisc/MetaMorpheus#2921).
+        /// It is written once.
+        /// </summary>
+        [Test]
+        public static void TopPickedFdr_TargetLosingUnderTwoAccessions_IsRescuedOnce()
+        {
+            var (results, _) = RunTopPickedFdrWithTwoAccessionsPerGroup();
+            var groups = results.SortedAndScoredProteinGroups;
+
+            var target = groups.First(p => !p.IsDecoy && p.Proteins.Any(b => b.Accession == "protein1"));
+            Assert.That(groups.Count(p => ReferenceEquals(p, target)), Is.EqualTo(1));
+            Assert.That(groups.Count, Is.EqualTo(3)); // filler, the decoy group, the rescued target group
+            Assert.That(target.Proteins.Select(b => b.Accession), Is.EquivalentTo(new[] { "protein1", "protein2" }));
+        }
+
+        /// <summary>
+        /// The per-file tables take one subset of each group the search returned and run the same engine on them
+        /// (PostSearchAnalysisTask's individual-file loop). A repeated group multiplied there: two copies from the
+        /// search, each rescued twice again. Each subset group is written once.
+        /// </summary>
+        [Test]
+        public static void TopPickedFdr_PerFileSubsets_OfARescuedGroup_AreWrittenOnce()
+        {
+            var (results, psms) = RunTopPickedFdrWithTwoAccessionsPerGroup();
+
+            var subsets = results.SortedAndScoredProteinGroups.Select(p => p.ConstructSubsetProteinGroup("File")).ToList();
+            var perFile = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(subsets, psms, false, true, false,
+                new CommonParameters(), null, new List<string> { "Individual Spectra Files", "File" }).Run();
+
+            var groupNames = perFile.SortedAndScoredProteinGroups.Select(p => p.ProteinGroupName).ToList();
+            Assert.That(groupNames, Is.Unique);
+            Assert.That(groupNames, Has.Exactly(1).EqualTo("protein1|protein2"));
+        }
+
+        private static (ProteinScoringAndFdrResults results, List<SpectralMatch> psms) RunTopPickedFdrWithTwoAccessionsPerGroup()
+        {
+            Protein fillerProtein = new Protein("FILLR", "filler");
+            Protein target1 = new Protein("KFDSA", "protein1");
+            Protein target2 = new Protein("KFDSA", "protein2");
+            Protein decoy1 = new Protein("ASDFK", "DECOY_protein1", isDecoy: true);
+            Protein decoy2 = new Protein("ASDFK", "DECOY_protein2", isDecoy: true);
+
+            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 5);
+            PeptideWithSetModifications Digest(Protein protein) =>
+                protein.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
+
+            MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
+
+            var fillerPsm = new PeptideSpectralMatch(Digest(fillerProtein), 0, 30, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            var decoyPsm = new PeptideSpectralMatch(Digest(decoy1), 0, 15.11, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            decoyPsm.AddOrReplace(Digest(decoy2), 15.11, 0, true, new List<MatchedFragmentIon>());
+            var targetPsm = new PeptideSpectralMatch(Digest(target1), 0, 15.1, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            targetPsm.AddOrReplace(Digest(target2), 15.1, 0, true, new List<MatchedFragmentIon>());
+
+            List<SpectralMatch> psms = new List<SpectralMatch> { fillerPsm, decoyPsm, targetPsm };
+            psms.ForEach(p => p.ResolveAllAmbiguities());
+            psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0));
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, new CommonParameters(), includeHighQValuePsms: true);
+
+            var parsimony = (ProteinParsimonyResults)new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, new List<string>()).Run();
+            // One group per protein here; the scoring engine merges the indistinguishable pairs (mergeIndistinguishableProteinGroups).
+            Assert.That(parsimony.ProteinGroups.Count, Is.EqualTo(5));
+
+            var results = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(parsimony.ProteinGroups, filteredPsms.FilteredPsmsList, false, true, true,
+                new CommonParameters(), null, new List<string>()).Run();
+            return (results, filteredPsms.FilteredPsmsList);
+        }
     }
 }

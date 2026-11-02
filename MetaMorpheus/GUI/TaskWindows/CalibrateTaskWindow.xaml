@@ -76,7 +76,11 @@
                                 <RowDefinition Height="1*"/>
                                 <RowDefinition Height="1*"/>
                                 <RowDefinition Height="1*"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
+
+                            <!-- shown only for a loaded task this window cannot show as it is (see TaskWindowSearchMode) -->
+                            <TextBlock x:Name="SearchModeWarningTextBlock" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Visibility="Collapsed" TextWrapping="Wrap" MaxWidth="450" HorizontalAlignment="Left" Margin="10,0,5,5" Foreground="DarkRed" FontWeight="DemiBold" />
 
                             <!-- Protease -->
                             <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="0">
