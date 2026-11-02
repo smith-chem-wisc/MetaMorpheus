@@ -132,7 +132,6 @@ namespace EngineLayer
         public static GlobalSettings GlobalSettings { get; set; }
         public static IEnumerable<Modification> UnimodDeserialized { get; private set; }
         public static IEnumerable<Modification> UniprotDeseralized { get; private set; }
-        public static obo PsiModDeserialized { get; private set; }
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<Modification> AllRnaModsKnown { get { return _AllRnaModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
@@ -635,6 +634,21 @@ namespace EngineLayer
             }
         }
 
+        // A custom data directory made before this table shipped won't have it; mzLib embeds the same file.
+        private static Dictionary<string, int> LoadPsiModFormalCharges(string path)
+        {
+            if (File.Exists(path))
+            {
+                return ModificationLoader.ReadFormalChargesDictionary(path);
+            }
+
+            var omics = typeof(Mods).Assembly;
+            using var stream = omics.GetManifestResourceStream($"{omics.GetName().Name}.Resources.PsiModFormalCharges.tsv")
+                ?? throw new MetaMorpheusException($"PSI-MOD formal charge table not found at {path} or in mzLib");
+            using var reader = new StreamReader(stream);
+            return ModificationLoader.ReadFormalChargesDictionary(reader);
+        }
+
         private static void LoadModifications()
         {
             _AllModsKnown = new List<Modification>();
@@ -643,8 +657,7 @@ namespace EngineLayer
             AllModsKnownDictionary = new Dictionary<string, Modification>();
 
             UnimodDeserialized = Loaders.LoadUnimod(Path.Combine(DataDir, @"Data", @"unimod.xml")).ToList();
-            PsiModDeserialized = Loaders.LoadPsiMod(Path.Combine(DataDir, @"Data", @"PSI-MOD.obo.xml"));
-            var formalChargesDictionary = Loaders.GetFormalChargesDictionary(PsiModDeserialized);
+            var formalChargesDictionary = LoadPsiModFormalCharges(Path.Combine(DataDir, @"Data", @"PsiModFormalCharges.tsv"));
             UniprotDeseralized = Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
 
             // Seeded before the sweep below picks it up. The template is a title line plus a '#' banner,
