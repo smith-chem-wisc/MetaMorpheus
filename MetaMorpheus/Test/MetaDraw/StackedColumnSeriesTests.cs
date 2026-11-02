@@ -98,6 +98,7 @@ public class StackedColumnSeriesTests
     [Test]
     public void RenderedBarsAreVerticalAndShareABaseline()
     {
+        int plotsChecked = 0;
         foreach (var name in HistogramPlotNames)
         {
             var plot = BuildPlot(name);
@@ -113,6 +114,7 @@ public class StackedColumnSeriesTests
                 .Where(i => i.Y1 > i.Y0).ToList();
             if (items.Count < 2)
                 continue; // a single-bar histogram cannot show an orientation difference
+            plotsChecked++;
 
             var bars = items.Select(i => new
             {
@@ -132,6 +134,8 @@ public class StackedColumnSeriesTests
             Assert.That(bars.All(b => b.Right > b.Left), Is.True,
                 $"{name}: a bar has no horizontal extent");
         }
+
+        Assert.That(plotsChecked, Is.GreaterThan(0), "every histogram was skipped, so orientation was never checked");
     }
 
     /// <summary>
