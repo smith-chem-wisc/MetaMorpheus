@@ -141,7 +141,7 @@ namespace Test
 
             // write a real index next to the database so the read path is reached
             List<PeptideWithSetModifications> written = null;
-            List<int>[] fragmentIndex = null;
+            FragmentIndex fragmentIndex = null;
             List<int>[] precursorIndex = null;
             new XLSearchTask().GenerateIndexes(engine, dbList, ref written, ref fragmentIndex, ref precursorIndex,
                 proteins, "test");

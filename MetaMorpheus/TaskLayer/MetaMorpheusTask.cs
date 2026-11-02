@@ -2184,7 +2184,7 @@ namespace TaskLayer
                 // leave an unusable directory behind on every run.
                 Status("Running Index Engine...", new List<string> { taskId });
                 var indexResults = (IndexingResults)indexEngine.Run();
-                peptideIndex = indexResults.PeptideIndex;
+                peptideIndex = indexResults.PeptideIndex.Cast<PeptideWithSetModifications>().ToList();
 
                 if (indexEngine.GeneratePrecursorIndex)
                 {
