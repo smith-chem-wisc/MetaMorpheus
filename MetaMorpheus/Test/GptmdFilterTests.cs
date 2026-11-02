@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;

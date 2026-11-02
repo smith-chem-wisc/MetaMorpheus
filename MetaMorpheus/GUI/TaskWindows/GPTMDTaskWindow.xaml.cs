@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
