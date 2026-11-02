@@ -13,6 +13,12 @@ namespace EngineLayer.SpectrumMatch
         /// <summary>
         /// Filter based on PEP q-value (posterior error probability)
         /// </summary>
-        PepQValue
+        PepQValue,
+
+        /// <summary>
+        /// Filter based on the q-value notch alone (the q-value computed within each mass-difference notch).
+        /// Used only when a caller asks for it by name; MetaMorpheus never infers it.
+        /// </summary>
+        QValueNotch
     }
 }

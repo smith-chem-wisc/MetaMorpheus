@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Windows;
+using TaskLayer;
+using GuiFunctions.Util;
 
 namespace MetaMorpheusGUI
 {
@@ -86,6 +88,22 @@ namespace MetaMorpheusGUI
 
         #region Check Task Validity
 
+        /// <summary>
+        /// Checks, before a run, that a task's digestion settings do not ask for seed peptides the task cannot use (see
+        /// <see cref="MetaMorpheusTask.GetSeedDigestionRefusal"/>). Unlike the checks above, this takes the task itself: a task
+        /// loaded from a settings file never passes through a task window.
+        /// </summary>
+        public static bool CheckDigestionSearchMode(MetaMorpheusTask task, string taskName)
+        {
+            string refusal = task.GetSeedDigestionRefusal(taskName);
+            if (refusal != null)
+            {
+                MessageBox.Show(refusal);
+                return false;
+            }
+            return true;
+        }
+
         public static string MaxValueConversion(string text)
         {
             if (string.IsNullOrEmpty(text))
@@ -93,6 +111,16 @@ namespace MetaMorpheusGUI
                 text = int.MaxValue.ToString();
             }
             return text;
+        }
+
+        public static bool CheckRetentionTimeRange(string minimumText, string maximumText, out double minimum, out double maximum)
+        {
+            if (!RetentionTimeRangeParser.TryParse(minimumText, maximumText, out minimum, out maximum, out string errorMessage))
+            {
+                MessageBox.Show(errorMessage, "Invalid retention time", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+            return true;
         }
 
         public static bool CheckDeconvolutionMaxAssumedChargeState(string text)
