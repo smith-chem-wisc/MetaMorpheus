@@ -45,14 +45,14 @@ public static class BioPolymerCoverageColorMapperFactory
             case ColorResultsBy.CoverageType:
                 return new CategoricalBioPolymerCoverageColorMapper(
                     ColorResultsBy.CoverageType,
-                    r => MetaDrawSettings.BioPolymerCoverageColors[r.CoverageType],
+                    r => DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.BioPolymerCoverageColors[r.CoverageType]),
                     filteredResults => LegendOrder
                         .Where(t => filteredResults.Any(r => r.CoverageType == t))
                         .Select(t =>
                         {
                             var count = filteredResults.Count(r => r.CoverageType == t);
                             var unitLabel = filteredResults.FirstOrDefault()?.Match.GetDigestionProductLabel();
-                            return (MetaDrawSettings.BioPolymerCoverageColors[t], $"{AddSpaces(t.ToString())} {unitLabel}s: {count}");
+                            return (DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.BioPolymerCoverageColors[t]), $"{AddSpaces(t.ToString())} {unitLabel}s: {count}");
                         })
                         .ToList());
 
