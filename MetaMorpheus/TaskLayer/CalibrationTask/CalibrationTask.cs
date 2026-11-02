@@ -59,8 +59,8 @@ namespace TaskLayer
         private List<DbForTask> _dbFilenameList;
 
         // Modern Search indexing fields
-        private List<PeptideWithSetModifications> _peptideIndex;
-        private List<int>[] _fragmentIndex;
+        private List<IBioPolymerWithSetMods> _peptideIndex;
+        private FragmentIndex _fragmentIndex;
 
         protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
@@ -95,7 +95,7 @@ namespace TaskLayer
                 FileSpecificParameters fileSpecificParams = fileSettingsList[spectraFileIndex] == null
                     ? new()
                     : fileSettingsList[spectraFileIndex].Clone();
-                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParams);
+                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParams, originalUncalibratedFilePath);
 
                 // load the file
                 Status("Loading spectra file...", new List<string> { _taskId, "Individual Spectra Files" });
@@ -106,7 +106,7 @@ namespace TaskLayer
                 DataPointAquisitionResults acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, combinedParams, originalUncalibratedFilePath);
 
                 //not enough points on the first go so try again with a little wider tolerance
-                if (!SufficientAcquisitionResults(acquisitionResultsFirst))
+                if (!SufficientAcquisitionResults(acquisitionResultsFirst, combinedParams))
                 {
                     UpdateCombinedParameters(combinedParams,
                         combinedParams.PrecursorMassTolerance.Value * InitialSearchToleranceMultiplier,
@@ -115,7 +115,7 @@ namespace TaskLayer
                     acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, combinedParams, originalUncalibratedFilePath);
                 }
                 // If there still aren't enough points, give up
-                if (!SufficientAcquisitionResults(acquisitionResultsFirst))
+                if (!SufficientAcquisitionResults(acquisitionResultsFirst, combinedParams))
                 {
                     WriteUncalibratedFile(originalUncalibratedFilePath, uncalibratedNewFullFilePath, _unsuccessfullyCalibratedFilePaths, acquisitionResultsFirst, _taskId);
                     continue;
@@ -135,7 +135,7 @@ namespace TaskLayer
                 // and write the uncalibrated file
                 // TODO: We should check if calibration made things better, and if so keep the calibrated file
                 // this if statement only checks if things got worse
-                if (!SufficientAcquisitionResults(acquisitionResultsSecond))
+                if (!SufficientAcquisitionResults(acquisitionResultsSecond, combinedParams))
                 {
                     WriteUncalibratedFile(originalUncalibratedFilePath, uncalibratedNewFullFilePath, _unsuccessfullyCalibratedFilePaths, acquisitionResultsFirst, taskId);
                     continue;
@@ -162,6 +162,13 @@ namespace TaskLayer
                 fileSpecificParams.PrecursorMassTolerance = combinedParams.PrecursorMassTolerance;
                 fileSpecificParams.ProductMassTolerance = combinedParams.ProductMassTolerance;
 
+                // LowCID searches XCorr-process MS2 spectra in place (MetaMorpheusTask.GetMs2Scans) and CalibrationEngine
+                // leaves MS2 scans unchanged in that mode, so write them from the file as read, not the processed copies
+                if (combinedParams.DissociationType == DissociationType.LowCID)
+                {
+                    myMsDataFile = WithUnprocessedMsnScans(myMsDataFile, originalUncalibratedFilePath, combinedParams);
+                }
+
                 // write toml settings for the calibrated file
                 string calibratedTomlFilename = Path.Combine(outputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".toml");
                 CalibrationOutput(myMsDataFile, calibratedNewFullFilePath, fileSpecificParams, calibratedTomlFilename, taskId, originalUncalibratedFilenameWithoutExtension);
@@ -174,6 +181,7 @@ namespace TaskLayer
 
             // re-write experimental design (if it has been defined) with new calibrated file names
             UpdateExperimentalDesignFile(currentRawFileList, outputFolder);
+            UpdateTmtDesignFile(currentRawFileList, outputFolder);
 
             // finished calibrating all files for the task
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
@@ -189,6 +197,84 @@ namespace TaskLayer
             {
                 WriteNewExperimentalDesignFile(assumedPathToExperDesign, outputFolder, currentRawFileList, _unsuccessfullyCalibratedFilePaths);
             }
+        }
+
+        /// <summary>
+        /// Re-writes TmtDesign.txt, if there is one beside the spectra files, for the files calibration wrote. The search
+        /// looks for it beside the files it searches, so without this a TMT search after calibration quantified no channel.
+        /// </summary>
+        private void UpdateTmtDesignFile(List<string> currentRawFileList, string outputFolder)
+        {
+            string designPath = Path.Combine(Directory.GetParent(currentRawFileList.First()).FullName, GlobalVariables.TmtExperimentalDesignFileName);
+            if (!File.Exists(designPath))
+            {
+                DeleteEarlierTmtDesign(designPath, outputFolder);
+                return;
+            }
+
+            List<TmtFileInfo> originalDesign = TmtExperimentalDesign.Read(designPath, currentRawFileList, out var errors);
+            if (errors.Any())
+            {
+                Warn($"{GlobalVariables.TmtExperimentalDesignFileName} was not re-written for the calibrated files: " + string.Join(" ", errors));
+                DeleteEarlierTmtDesign(designPath, outputFolder);
+                return;
+            }
+
+            List<TmtFileInfo> calibratedDesign = originalDesign
+                .Select(file => new TmtFileInfo(CalibratedFilePath(file.FullFilePathWithExtension, outputFolder),
+                    file.Plex, file.Fraction, file.TechnicalReplicate, file.Annotations))
+                .ToList();
+
+            if (!SamePath(Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName), designPath))
+            {
+                // Into the output folder by name: a file calibration wrote nothing for keeps its original path, so the first
+                // file's folder can be the input folder, and the input design must not be overwritten.
+                _ = TmtExperimentalDesign.Write(calibratedDesign, outputFolder);
+                return;
+            }
+
+            // The output folder holds the input design. Its rows describe the input files, which are still there, so they
+            // are kept and the calibrated files' rows are added below them.
+            List<TmtFileInfo> calibratedFiles = calibratedDesign
+                .Where((file, i) => !SamePath(file.FullFilePathWithExtension, originalDesign[i].FullFilePathWithExtension))
+                .ToList();
+            if (calibratedFiles.Any())
+            {
+                _ = TmtExperimentalDesign.AddRows(designPath, calibratedFiles);
+            }
+        }
+
+        private static bool SamePath(string a, string b) =>
+            string.Equals(Path.GetFullPath(a), Path.GetFullPath(b), StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Deletes a TmtDesign.txt an earlier run wrote into <paramref name="outputFolder"/>, for a run that writes none.
+        /// Nothing empties a task folder before a run, so the search after calibration would read it as describing this
+        /// run's files. The input design <paramref name="inputDesignPath"/> is never deleted, even when the output folder
+        /// is the input folder.
+        /// </summary>
+        private static void DeleteEarlierTmtDesign(string inputDesignPath, string outputFolder)
+        {
+            string earlierDesign = Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName);
+            if (!SamePath(earlierDesign, inputDesignPath))
+            {
+                File.Delete(earlierDesign);
+            }
+        }
+
+        /// <summary>
+        /// The file the next task searches in place of <paramref name="originalFilePath"/>: the -calib mzML this run wrote
+        /// for it, or the original itself for a file it wrote none for. EverythingRunnerEngine passes the original on for a
+        /// file that could not be calibrated (not the copy this task writes to its output folder), for a type calibration
+        /// skips, and for a file a cancelled run never reached. The -calib name goes through ToSafeOutputPath, as the run
+        /// loop's does, so a name trimmed to fit the path cap is named trimmed.
+        /// </summary>
+        private string CalibratedFilePath(string originalFilePath, string outputFolder)
+        {
+            string calibrated = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(originalFilePath) + CalibSuffix + ".mzML")
+                .ToSafeOutputPath(CalibSuffix + ".mzML");
+            // ignoring case, as TmtExperimentalDesign.Read matches the design's File column to the spectra files
+            return MyTaskResults.NewSpectra.FirstOrDefault(written => SamePath(written, calibrated)) ?? originalFilePath;
         }
 
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, CommonParameters combinedParameters, string originalDataFile)
@@ -426,6 +512,7 @@ namespace TaskLayer
         /// (Precursor = 3/Product = 6)MultiplierForToml * acquisitionResults.PsmPrecursorIqrPpmError + |acquisitionResults.PsmPrecursorMedianPpmError|
         /// 
         /// Currently, this coerces the tolerance values to ppm tolerance. In the future, we should add support for absolute tolerance
+        /// Under LowCID the product tolerance is left as given, because MS2 scans are not calibrated in that mode.
         /// </summary>
         public static void UpdateCombinedParameters(CommonParameters combinedParams, DataPointAquisitionResults acquisitionResults)
         {
@@ -449,7 +536,10 @@ namespace TaskLayer
         public static void UpdateCombinedParameters(CommonParameters combinedParameters, double newPrecursorTolerance, double newProductTolerance)
         {
             combinedParameters.PrecursorMassTolerance = new PpmTolerance(newPrecursorTolerance);
-            combinedParameters.ProductMassTolerance = new PpmTolerance(newProductTolerance);
+            if (combinedParameters.DissociationType != DissociationType.LowCID)
+            {
+                combinedParameters.ProductMassTolerance = new PpmTolerance(newProductTolerance);
+            }
         }
 
         private void WriteUncalibratedFile(string originalUncalibratedFilePath, string uncalibratedNewFullFilePath, List<string> unsuccessfullyCalibratedFilePaths,
@@ -490,11 +580,29 @@ namespace TaskLayer
             return (numPsmsIncreased && numPeptidesIncreased && psmPrecursorMedianPpmErrorDecreased && psmProductMedianPpmErrorDecreased);
         }
 
-        private bool SufficientAcquisitionResults(DataPointAquisitionResults acquisitionResults)
+        /// <summary>
+        /// Returns the calibrated file with every MSn scan (n > 1) replaced by the same scan read fresh from disk.
+        /// </summary>
+        private static MsDataFile WithUnprocessedMsnScans(MsDataFile calibratedFile, string originalFilePath, CommonParameters combinedParams)
         {
+            Dictionary<int, MsDataScan> unprocessedScans = MsDataFileReader.GetDataFile(originalFilePath)
+                .LoadAllStaticData(null, combinedParams.MaxThreadsToUsePerFile)
+                .GetAllScansList()
+                .ToDictionary(scan => scan.OneBasedScanNumber);
+
+            MsDataScan[] scans = calibratedFile.GetAllScansList()
+                .Select(scan => scan.MsnOrder == 1 ? scan : unprocessedScans[scan.OneBasedScanNumber])
+                .ToArray();
+            return new GenericMsDataFile(scans, calibratedFile.SourceFile);
+        }
+
+        private bool SufficientAcquisitionResults(DataPointAquisitionResults acquisitionResults, CommonParameters combinedParams)
+        {
+            // LowCID calibrates MS1 only, so it collects no MS2 datapoints
             return acquisitionResults.Psms.Count >= NumRequiredPsms
                 && acquisitionResults.Ms1List.Count >= NumRequiredMs1Datapoints
-                && acquisitionResults.Ms2List.Count >= NumRequiredMs2Datapoints;
+                && (combinedParams.DissociationType == DissociationType.LowCID
+                    || acquisitionResults.Ms2List.Count >= NumRequiredMs2Datapoints);
         }
 
         public void WarnForWiderTolerance(double newPrecursorTolerance, double newProductTolerance)

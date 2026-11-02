@@ -148,9 +148,7 @@ public class ChimeraDrawnSequence
             return;
 
         double x, y;
-        var residueNum = ion.NeutralTheoreticalProduct.ProductType == ProductType.y
-            ? sequenceLength - ion.NeutralTheoreticalProduct.FragmentNumber
-            : ion.NeutralTheoreticalProduct.AminoAcidPosition;
+        var residueNum = DrawnSequence.GetCleavagePosition(ion.NeutralTheoreticalProduct, sequenceLength);
         x = GetX(residueNum);
         y = GetY(row) + MetaDrawSettings.ProductTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType];
 

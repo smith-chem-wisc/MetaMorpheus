@@ -1,17 +1,24 @@
 ﻿using Chemistry;
+using EngineLayer.DatabaseLoading;
 using EngineLayer.NonSpecificEnzymeSearch;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Omics;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
+using Omics.Digestion;
+using Nett;
+using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 
 namespace EngineLayer.Indexing
@@ -21,7 +28,10 @@ namespace EngineLayer.Indexing
         private static readonly double WaterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
 
         private const int FragmentBinsPerDalton = 1000;
-        private readonly List<Protein> ProteinList;
+
+        // keyed on a file's path, length and last write time; see ContentHash
+        private static readonly ConcurrentDictionary<string, string> ContentHashes = new();
+        private readonly List<IBioPolymer> BioPolymerList;
         private readonly List<Modification> FixedModifications;
         private readonly List<Modification> VariableModifications;
         private readonly List<SilacLabel> SilacLabels;
@@ -33,13 +43,18 @@ namespace EngineLayer.Indexing
         public readonly List<FileInfo> ProteinDatabases;
         public readonly TargetContaminantAmbiguity TcAmbiguity;
 
-        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications,
+        /// <summary>
+        /// Takes IEnumerable rather than List so that a List&lt;Protein&gt; still binds here by
+        /// covariance -- the protein callers need no change, and there is no overload to be ambiguous
+        /// about when someone passes an empty collection expression.
+        /// </summary>
+        public IndexingEngine(IEnumerable<IBioPolymer> bioPolymerList, List<Modification> variableModifications, List<Modification> fixedModifications,
             List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, int currentPartition, DecoyType decoyType,
-            CommonParameters commonParams, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, 
+            CommonParameters commonParams, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
             double maxFragmentSize, bool generatePrecursorIndex, List<FileInfo> proteinDatabases, TargetContaminantAmbiguity tcAmbiguity, List<string> nestedIds)
             : base(commonParams, fileSpecificParameters, nestedIds)
         {
-            ProteinList = proteinList;
+            BioPolymerList = bioPolymerList as List<IBioPolymer> ?? bioPolymerList.ToList();
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
             SilacLabels = silacLabels;
@@ -59,13 +74,17 @@ namespace EngineLayer.Indexing
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Databases: " + string.Join(",", ProteinDatabases.OrderBy(p => p.Name).Select(p => p.Name + ":" + p.CreationTime)));
+            sb.AppendLine("Databases: " + DescribeDatabases(ProteinDatabases));
             sb.AppendLine("Partitions: " + CurrentPartition + "/" + CommonParameters.TotalPartitions);
             sb.AppendLine("Precursor Index: " + GeneratePrecursorIndex);
             sb.AppendLine("Search Decoys: " + DecoyType);
-            sb.AppendLine("Number of proteins: " + ProteinList.Count);
-            sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
-            sb.AppendLine("Number of variable mods: " + VariableModifications.Count);
+            sb.AppendLine("Number of proteins: " + BioPolymerList.Count);
+            sb.AppendLine("Fixed mods: " + DescribeModifications(FixedModifications));
+            sb.AppendLine("Variable mods: " + DescribeModifications(VariableModifications));
+            sb.AppendLine("Silac labels: " + DescribeSilacLabels(SilacLabels));
+            sb.AppendLine("Turnover labels: " + (TurnoverLabels == null
+                ? "none"
+                : DescribeSilacLabel(TurnoverLabels.Value.StartLabel) + ">" + DescribeSilacLabel(TurnoverLabels.Value.EndLabel)));
             sb.AppendLine("Dissociation Type: " + CommonParameters.DissociationType);
             sb.AppendLine("Contaminant Handling: " + TcAmbiguity);
 
@@ -81,10 +100,257 @@ namespace EngineLayer.Indexing
             sb.AppendLine("cleavageSpecificity: " + CommonParameters.DigestionParams.SearchModeType);
             if (CommonParameters.DigestionParams is DigestionParams digestionParam)
                 sb.AppendLine("specificProtease: " + digestionParam.SpecificProtease);
+
+            // The lines above name digestion settings ONE AT A TIME, which silently makes this method a
+            // second place every new DigestionParams option has to be remembered. Anything not named
+            // here is invisible to the fingerprint, and because SameSettings compares this text
+            // verbatim, an index built under one value of a forgotten option is reused for a run that
+            // set a different one -- a wrong-answers bug with no error and no failing test.
+            //
+            // Three options were already in that state: KeepNGlycopeptide, KeepOGlycopeptide and
+            // GeneratehUnlabeledProteinsForSilac have never appeared above. Rather than adding a line
+            // per option forever, append the parameters as MetaMorpheus saves them in a task's TOML:
+            // every user-settable option has to be in that TOML or a saved task could not reload it, so
+            // every present and future option is covered here from the moment it exists, with no further
+            // change to this method. See DescribeDigestionParams.
+            //
+            // The repetition of fields already named above is deliberate and harmless -- this text is
+            // only ever compared whole, never parsed.
+            sb.AppendLine("digestionParams: " + DescribeDigestionParams(CommonParameters.DigestionParams));
+
             sb.AppendLine("maximumFragmentSize" + (int)Math.Round(MaxFragmentSize));
 
-            sb.Append("Localizeable mods: " + ProteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
+            sb.Append("Localizeable mods: " + BioPolymerList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// The digestion parameters for the index cache key: their TOML, one setting per entry, on one line.
+        /// </summary>
+        /// <remarks>
+        /// TOML rather than <c>DigestionParams.ToString()</c>, which covers only what mzLib remembers to
+        /// append to it, and nothing at all for <see cref="RnaDigestionParams"/>, which has no override.
+        /// The TOML is written by reflection over the runtime type, so it names every setting by key and
+        /// covers protein and RNA parameters alike. It is written with <see cref="DigestionTomlSettings"/>,
+        /// the configuration <c>MetaMorpheusTask.tomlConfig</c> saves tasks with, so the key carries exactly
+        /// the digestion settings a saved task carries. Write-only: nothing reads this text back.
+        /// </remarks>
+        internal static string DescribeDigestionParams(IDigestionParams digestionParams)
+        {
+            if (digestionParams == null)
+            {
+                return "none";
+            }
+
+            string toml = Toml.WriteString((object)digestionParams, DigestionTomlSettings.Settings);
+            return string.Join("; ", toml.Split('\r', '\n').Where(line => line.Length > 0));
+        }
+
+        /// <summary>
+        /// The identity of a modification list, for the index cache key.
+        /// </summary>
+        /// <remarks>
+        /// This names every modification instead of counting them. Counting was the defect: the cache key
+        /// is compared as literal text by <c>MetaMorpheusTask.SameSettings</c>, so two searches whose
+        /// modification lists differed but happened to be the same length produced the same key, and the
+        /// second search silently reused a peptide index built for the first one's modifications. The
+        /// index stores decorated <c>PeptideWithSetModifications</c>, so that index is wrong rather than
+        /// merely incomplete: a variable-mod swap loses every peptide bearing the new modification, and a
+        /// fixed-mod swap puts wrong masses in every entry.
+        ///
+        /// Each entry is the readable id followed by a short hash of the modification's complete definition
+        /// (<see cref="Modification.ToString"/>, i.e. its mods.txt record: target, location restriction,
+        /// chemical formula, monoisotopic mass, neutral losses, diagnostic ions). The id alone would miss
+        /// a user who edited a custom modification file in place, keeping the name and changing the mass;
+        /// the hash covers every field, and keeps covering fields added to Modification later.
+        ///
+        /// The list order is deliberately preserved rather than sorted. Modification enumeration is
+        /// truncated at MaxModificationIsoforms by a yield break in
+        /// <c>ProteolyticPeptide.GetModifiedPeptides</c>, so which isoforms survive can depend on the
+        /// order the modifications arrive in. Sorting here would let two orders share one key and reuse
+        /// each other's index. Preserving order can only cost a needless rebuild, never a wrong reuse.
+        /// </remarks>
+        internal static string DescribeModifications(IEnumerable<Modification> modifications)
+        {
+            if (modifications == null)
+            {
+                return "none";
+            }
+
+            return string.Join(",", modifications.Select(m =>
+                (m?.IdWithMotif ?? "unnamed") + "[" + ShortHash(m?.ToString()) + "]"));
+        }
+
+        /// <summary>
+        /// The identity of the SILAC label list, for the index cache key. Labels reach
+        /// <c>Protein.Digest</c> alongside the modifications and change which peptides land in the index,
+        /// but appeared nowhere in the key. <see cref="SilacLabel"/> does not override ToString, so the
+        /// fields are named here. Order is preserved for the same reason as the modifications.
+        /// </summary>
+        internal static string DescribeSilacLabels(IEnumerable<SilacLabel> labels)
+        {
+            if (labels == null)
+            {
+                return "none";
+            }
+
+            return string.Join(",", labels.Select(DescribeSilacLabel));
+        }
+
+        internal static string DescribeSilacLabel(SilacLabel label)
+        {
+            if (label == null)
+            {
+                return "none";
+            }
+
+            var sb = new StringBuilder();
+            sb.Append(label.OriginalAminoAcid).Append('>').Append(label.AminoAcidLabel)
+                .Append('(').Append(label.LabelChemicalFormula).Append(',').Append(label.MassDifference).Append(')');
+
+            if (label.AdditionalLabels != null)
+            {
+                foreach (SilacLabel additionalLabel in label.AdditionalLabels)
+                {
+                    sb.Append('+').Append(DescribeSilacLabel(additionalLabel));
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// A short, stable hash of a definition string, for use inside the index cache key.
+        /// </summary>
+        /// <remarks>
+        /// Eight bytes separates the handful of modifications in a search many times over, and keeps the
+        /// key readable next to the id it qualifies. This is a cache key, not a security boundary.
+        /// </remarks>
+        internal static string ShortHash(string definition)
+        {
+            if (string.IsNullOrEmpty(definition))
+            {
+                return "none";
+            }
+
+            byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(definition));
+            return Convert.ToHexString(hash, 0, 8).ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// The identity of the database list, for the index cache key.
+        /// </summary>
+        /// <remarks>
+        /// Each database is named and then qualified by a hash of its content. The key previously used
+        /// the file name and its CreationTime, and CreationTime does not move when a file is edited in
+        /// place: regenerate or hand-edit a FASTA at the same path and every byte of the key stays the
+        /// same, so the search reuses an index built from the old proteins. The name on its own is not
+        /// an identity either, being a bare file name rather than a path.
+        ///
+        /// Hashing is gated on (path, length, last write time) and memoised, because ToString is called
+        /// once per candidate index folder per database per partition and hashing on every call would
+        /// cost minutes on a large proteome. Content still decides the key, so touching a database
+        /// without changing it re-hashes but does not invalidate the cache. Within one process a file
+        /// edited to exactly its former length and write time would keep its old hash; across processes
+        /// the memo starts empty.
+        ///
+        /// The list order is preserved rather than sorted, for the same reason the modification list is.
+        /// DatabaseLoadingEngine.LoadBioPolymers appends each database's entries in list order and
+        /// SearchTask slices that list by index to build partitions, so with more than one partition a
+        /// reordered database list puts different proteins in partition k. Sorting here, as the key used
+        /// to, lets those two orders share one key.
+        /// </remarks>
+        internal static string DescribeDatabases(IEnumerable<FileInfo> databases)
+        {
+            if (databases == null)
+            {
+                return "none";
+            }
+
+            return string.Join(",", databases.Select(DescribeDatabase));
+        }
+
+        internal static string DescribeDatabase(FileInfo database)
+        {
+            if (database == null)
+            {
+                return "none";
+            }
+
+            return database.Name + "[" + ContentHash(database) + "]";
+        }
+
+        /// <summary>
+        /// The task's databases as the index cache key describes them, taken once, before the databases are
+        /// loaded. Pass this one list to every IndexingEngine the task builds.
+        /// </summary>
+        /// <remarks>
+        /// Everything a task indexes comes from the proteins it loaded when it started, so every key the
+        /// task builds must describe that content, not whatever is on disk by the time a later file,
+        /// partition or round builds its key. Each <see cref="FileInfo"/> keeps the stamp it read here, and
+        /// <see cref="ContentHash"/> memoises the hash under that stamp, so an edit made while the task
+        /// runs changes none of its keys: XL search's second round still finds the folder its first round
+        /// wrote, and no index of the old proteins is filed under the edited file's hash. The next task
+        /// takes a new snapshot and sees the edit.
+        /// </remarks>
+        public static List<FileInfo> SnapshotDatabases(IEnumerable<DbForTask> dbFilenameList)
+        {
+            List<FileInfo> databases = dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList();
+
+            // Called for its effect, not its value: this is where each snapshot reads its stamp and the
+            // content is hashed. A FileInfo reads its metadata on first use and keeps it, so without this the
+            // first key the task builds, after loading, would describe the file as it is then.
+            foreach (FileInfo database in databases)
+            {
+                _ = ContentHash(database);
+            }
+
+            return databases;
+        }
+
+        /// <summary>
+        /// A short hash of a file's content, memoised so a database is read at most once per edit.
+        /// </summary>
+        /// <remarks>
+        /// A file that cannot be read falls back to hashing its stamp, which still moves when the file
+        /// is edited. Throwing would take down a cache-key comparison over a database the search is
+        /// about to fail on anyway, and returning a constant would let two unreadable files share a key.
+        /// </remarks>
+        internal static string ContentHash(FileInfo database)
+        {
+            // Deliberately no Refresh(). FileInfo keeps the metadata it first read, and a task passes the
+            // same instances (see SnapshotDatabases) to every engine it builds, so all of that task's keys
+            // describe the database as it was loaded. A new FileInfo, as the next task makes, sees an edit.
+            if (!database.Exists)
+            {
+                return "missing";
+            }
+
+            // The separators are load-bearing: without them "<dir>/x1.fasta" of length 23 and
+            // "<dir>/x1.fasta2" of length 3 produce the same stamp, and the second file would be handed
+            // the first one's hash.
+            string stamp = database.FullName + "|" + database.Length + "|" + database.LastWriteTimeUtc.ToBinary();
+
+            if (ContentHashes.TryGetValue(stamp, out string cached))
+            {
+                return cached;
+            }
+
+            string hash;
+            try
+            {
+                using FileStream stream = database.OpenRead();
+                hash = Convert.ToHexString(SHA256.HashData(stream), 0, 8).ToLowerInvariant();
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // Deliberately not memoised. A database locked by another process for a moment must not
+                // pin its stamp to the fallback for the life of the process.
+                return ShortHash(stamp);
+            }
+
+            ContentHashes[stamp] = hash;
+            return hash;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -93,26 +359,31 @@ namespace EngineLayer.Indexing
             int oldPercentProgress = 0;
 
             // digest database
-            List<PeptideWithSetModifications> peptides = new List<PeptideWithSetModifications>();
+            // IBioPolymer.Digest covers proteins and nucleic acids alike, and already carries the SILAC
+            // parameters, so the index no longer needs to know which kind of polymer it is holding.
+            List<IBioPolymerWithSetMods> peptides = new List<IBioPolymerWithSetMods>();
 
-            if (CommonParameters.DigestionParams is not DigestionParams digestionParams)
-                throw new MetaMorpheusException("Digestion parameters must be of type DigestionParams. Not yet implemented for Rna Digestion");
-            
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+            // Each thread's peptides land in its own slot and are concatenated in thread order, so the
+            // peptide index does not depend on which thread finishes first. Appending under a lock made
+            // the order vary run to run, which changed how equal-mass peptides were ordered by the sort
+            // below and so changed reported Delta Scores between otherwise identical runs.
+            var peptidesPerThread = new List<IBioPolymerWithSetMods>[maxThreadsPerFile];
             Parallel.ForEach(threads, (i) =>
             {
-                List<PeptideWithSetModifications> localPeptides = new List<PeptideWithSetModifications>();
+                int threadIndex = i;
+                List<IBioPolymerWithSetMods> localPeptides = new List<IBioPolymerWithSetMods>();
 
-                for (; i < ProteinList.Count; i += maxThreadsPerFile)
+                for (; i < BioPolymerList.Count; i += maxThreadsPerFile)
                 {
                     // Stop loop if canceled
                     if (GlobalVariables.StopLoops) { return; }
 
-                    localPeptides.AddRange(ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels));
+                    localPeptides.AddRange(BioPolymerList[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels));
 
                     progress++;
-                    var percentProgress = (int)((progress / ProteinList.Count) * 100);
+                    var percentProgress = (int)((progress / BioPolymerList.Count) * 100);
 
                     if (percentProgress > oldPercentProgress)
                     {
@@ -121,14 +392,20 @@ namespace EngineLayer.Indexing
                     }
                 }
 
-                lock (peptides)
-                {
-                    peptides.AddRange(localPeptides);
-                }
+                // left null on cancellation, matching the previous behaviour of discarding partial results
+                peptidesPerThread[threadIndex] = localPeptides;
             });
 
+            foreach (var threadPeptides in peptidesPerThread)
+            {
+                if (threadPeptides != null)
+                {
+                    peptides.AddRange(threadPeptides);
+                }
+            }
+
             // sort peptides by mass
-            peptides.Sort((x, y) => x.MonoisotopicMass.CompareTo(y.MonoisotopicMass));
+            peptides = SortByMonoisotopicMass(peptides);
 
             //create precursor index (if specified)
             List<int>[] precursorIndex = null;
@@ -141,72 +418,259 @@ namespace EngineLayer.Indexing
                 NonSpecificEnzymeSearchEngine.GetVariableTerminalMods(CommonParameters.DigestionParams.FragmentationTerminus, VariableModifications) :
                 null;
 
-            // create fragment index
-            List<int>[] fragmentIndex;
+            // Create the fragment index in compressed sparse row form. Peptide ids are split into
+            // contiguous blocks, one per thread; each block fragments its own peptides into its own
+            // emission run, and the runs are concatenated in block order and counting-sorted into the
+            // two flat arrays. Concatenating in block order reproduces the sequence a single sequential
+            // pass produced, so the index does not depend on the thread count and peptide ids still
+            // ascend within every bin.
+            //
+            // Fragmenting once and recording where each fragment landed replaces counting in one pass
+            // and filling in a second: fragmentation is the expensive part of this loop, and the
+            // count-then-fill shape paid for it twice. Digestion above was already parallel; this stage
+            // was not, so a whole phase of indexing ran on one core.
+            int binCount = (int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1;
 
-            try
-            {
-                fragmentIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
-            }
-            catch (OutOfMemoryException)
-            {
-                throw new MetaMorpheusException("Max fragment mass too large for indexing engine; try \"Classic Search\" mode, or make the maximum fragment mass smaller");
-            }
+            List<PeptideBlock> blocks = PartitionPeptidesIntoBlocks(peptides.Count);
+            var fragmentEmissions = new FragmentEmissionRun[blocks.Count];
+            var interiorTerminalModEmissions = addInteriorTerminalModsToPrecursorIndex ? new List<(int Bin, int PeptideId)>[blocks.Count] : null;
+            var fragmentationProgress = new FragmentationProgress();
 
-            // populate fragment index
             progress = 0;
             oldPercentProgress = 0;
-            List<Product> fragments = new List<Product>();
 
-            for (int peptideId = 0; peptideId < peptides.Count; peptideId++)
+            Parallel.For(0, blocks.Count, new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, CommonParameters.MaxThreadsToUsePerFile) }, blockIndex =>
             {
-                peptides[peptideId].Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, fragments, CommonParameters.FragmentationParameters);
+                FragmentPeptideBlock(blocks[blockIndex], blockIndex, peptides, addInteriorTerminalModsToPrecursorIndex,
+                    terminalModifications, fragmentEmissions, interiorTerminalModEmissions, fragmentationProgress);
+            });
 
-                foreach (var theoreticalFragment in fragments)
+            FragmentIndex fragmentIndex = FragmentIndexBuilder.Build(binCount, fragmentEmissions);
+
+            // Replayed in block order, and within a block in ascending peptide id, which is the order the
+            // sequential loop appended them in. The precursor index is still a List<int>[] here, so the
+            // append order is the bin contents.
+            if (addInteriorTerminalModsToPrecursorIndex)
+            {
+                foreach (var blockEmissions in interiorTerminalModEmissions)
                 {
-                    double theoreticalFragmentMass = theoreticalFragment.NeutralMass;
-
-                    //if low res round
-                    if (CommonParameters.DissociationType == MassSpectrometry.DissociationType.LowCID)
+                    foreach ((int precursorBin, int peptideId) in blockEmissions)
                     {
-                        theoreticalFragmentMass = Math.Round(theoreticalFragmentMass / 1.0005079, 0) * 1.0005079;
-                    }
-
-                    if (theoreticalFragmentMass < MaxFragmentSize && theoreticalFragmentMass > 0)
-                    {
-                        int fragmentBin = (int)Math.Round(theoreticalFragmentMass * FragmentBinsPerDalton);
-
-                        if (fragmentIndex[fragmentBin] == null)
+                        if (precursorIndex[precursorBin] == null)
                         {
-                            fragmentIndex[fragmentBin] = new List<int> { peptideId };
+                            precursorIndex[precursorBin] = new List<int> { peptideId };
                         }
                         else
                         {
-                            fragmentIndex[fragmentBin].Add(peptideId);
+                            precursorIndex[precursorBin].Add(peptideId);
                         }
                     }
                 }
-
-                //Add terminal mods if needed (do it here rather than earlier so that we don't have to fragment twice)
-                if (addInteriorTerminalModsToPrecursorIndex)
-                {
-                    AddInteriorTerminalModsToPrecursorIndex(precursorIndex, fragments, peptides[peptideId], peptideId, terminalModifications);
-                }
-
-                progress++;
-                var percentProgress = (int)((progress / peptides.Count) * 100);
-
-                if (percentProgress > oldPercentProgress)
-                {
-                    oldPercentProgress = percentProgress;
-                    ReportProgress(new ProgressEventArgs(percentProgress, "Fragmenting peptides...", NestedIds));
-                }
             }
+
 
             return new IndexingResults(peptides, fragmentIndex, precursorIndex, this);
         }
 
-        private List<int>[] CreateNewPrecursorIndex(List<PeptideWithSetModifications> peptidesSortedByMass)
+        /// <summary>
+        /// Counts fragmented peptides across the parallel blocks. Each whole percent is announced by
+        /// exactly one thread -- whichever wins the compare-exchange that advances the counter -- so the
+        /// progress bar neither stalls nor reports the same percent several times.
+        /// </summary>
+        private sealed class FragmentationProgress
+        {
+            private long _peptidesFragmented;
+            private int _lastPercentReported;
+
+            internal bool AdvanceOnePeptide(int totalPeptides, out int percentProgress)
+            {
+                long done = Interlocked.Increment(ref _peptidesFragmented);
+                percentProgress = (int)(done * 100 / totalPeptides);
+
+                int last = Volatile.Read(ref _lastPercentReported);
+                return percentProgress > last && Interlocked.CompareExchange(ref _lastPercentReported, percentProgress, last) == last;
+            }
+        }
+
+        private readonly struct PeptideBlock
+        {
+            public PeptideBlock(int start, int end)
+            {
+                Start = start;
+                End = end;
+            }
+
+            /// <summary>First peptide id in the block.</summary>
+            public int Start { get; }
+
+            /// <summary>One past the last peptide id in the block.</summary>
+            public int End { get; }
+        }
+
+        /// <summary>
+        /// Splits the peptide ids into contiguous blocks, one per thread. Emissions are concatenated in
+        /// block order, so the index that comes out does not depend on how many blocks there are.
+        /// </summary>
+        private List<PeptideBlock> PartitionPeptidesIntoBlocks(int peptideCount)
+        {
+            var blocks = new List<PeptideBlock>();
+            if (peptideCount == 0)
+            {
+                return blocks;
+            }
+
+            int blockCount = Math.Max(1, Math.Min(CommonParameters.MaxThreadsToUsePerFile, peptideCount));
+            int blockSize = (peptideCount + blockCount - 1) / blockCount;
+
+            for (int start = 0; start < peptideCount; start += blockSize)
+            {
+                blocks.Add(new PeptideBlock(start, Math.Min(start + blockSize, peptideCount)));
+            }
+
+            return blocks;
+        }
+
+        /// <summary>
+        /// Fragments one contiguous block of peptides, recording the fragment bins each peptide lands in
+        /// and, when the search needs them, the interior terminal mod precursor bins -- which come out of
+        /// the same fragmentation, so peptides are still fragmented exactly once.
+        /// </summary>
+        private void FragmentPeptideBlock(PeptideBlock block, int blockIndex, List<IBioPolymerWithSetMods> peptides,
+            bool addInteriorTerminalModsToPrecursorIndex, List<Modification> terminalModifications,
+            FragmentEmissionRun[] fragmentEmissions, List<(int Bin, int PeptideId)>[] interiorTerminalModEmissions,
+            FragmentationProgress fragmentationProgress)
+        {
+            int blockLength = block.End - block.Start;
+            var fragmentRun = new FragmentEmissionRun(block.Start, blockLength);
+            var interiorEmissions = addInteriorTerminalModsToPrecursorIndex ? new List<(int Bin, int PeptideId)>() : null;
+
+            List<Product> fragments = new List<Product>();
+
+            for (int peptideId = block.Start; peptideId < block.End; peptideId++)
+            {
+                fragmentRun.BeginPeptide();
+
+                peptides[peptideId].Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, fragments, CommonParameters.FragmentationParameters);
+
+                foreach (var theoreticalFragment in fragments)
+                {
+                    if (TryGetFragmentBin(theoreticalFragment, out int fragmentBin))
+                    {
+                        fragmentRun.Add(fragmentBin);
+                    }
+                }
+
+                //Add terminal mods if needed (do it here rather than earlier so that we don't have to fragment twice)
+                // The "single" agents are NOT protein-only: mzLib's rnases.tsv ships RNases named
+                // singleN and singleC, which the Name.Contains("single") test above matches. What makes
+                // this reachable only for peptides is the refusal in SearchTask.RunSpecific -- a
+                // non-specific search rejects a nucleic acid database before it gets here. That guard
+                // lives in another file, so throw rather than skip if it is ever relaxed: silently
+                // omitting interior terminal mods would cost identifications with nothing reporting why.
+                if (addInteriorTerminalModsToPrecursorIndex)
+                {
+                    if (peptides[peptideId] is not PeptideWithSetModifications peptideForTerminalMods)
+                    {
+                        throw new MetaMorpheusException(
+                            "Interior terminal modifications are only implemented for peptides, but a " +
+                            $"{peptides[peptideId].GetType().Name} reached the precursor index under digestion agent " +
+                            $"'{CommonParameters.DigestionParams.DigestionAgent.Name}'. Non-specific search is " +
+                            "supposed to refuse a nucleic acid database before indexing.");
+                    }
+
+                    CollectInteriorTerminalModPrecursorBins(interiorEmissions, fragments, peptideForTerminalMods, peptideId, terminalModifications);
+                }
+
+                if (fragmentationProgress.AdvanceOnePeptide(peptides.Count, out int percentProgress))
+                {
+                    ReportProgress(new ProgressEventArgs(percentProgress, "Fragmenting peptides...", NestedIds));
+                }
+            }
+
+            fragmentRun.Complete();
+
+            fragmentEmissions[blockIndex] = fragmentRun;
+            if (interiorTerminalModEmissions != null)
+            {
+                interiorTerminalModEmissions[blockIndex] = interiorEmissions;
+            }
+        }
+
+        /// <summary>
+        /// The bin a theoretical fragment belongs in, or false if it falls outside the index. Shared by the
+        /// counting and filling passes so the two cannot disagree about which fragments are indexed — in
+        /// particular about the low-resolution rounding, which only applies to LowCID and which a second
+        /// hand-written copy of this arithmetic would be easy to omit.
+        /// </summary>
+        private bool TryGetFragmentBin(Product theoreticalFragment, out int fragmentBin)
+        {
+            double theoreticalFragmentMass = theoreticalFragment.NeutralMass;
+
+            //if low res round
+            if (CommonParameters.DissociationType == MassSpectrometry.DissociationType.LowCID)
+            {
+                theoreticalFragmentMass = Math.Round(theoreticalFragmentMass / 1.0005079, 0) * 1.0005079;
+            }
+
+            if (theoreticalFragmentMass < MaxFragmentSize && theoreticalFragmentMass > 0)
+            {
+                fragmentBin = (int)Math.Round(theoreticalFragmentMass * FragmentBinsPerDalton);
+                return true;
+            }
+
+            fragmentBin = -1;
+            return false;
+        }
+
+        /// <summary>
+        /// A value that changes when the peptide index holds different peptides or the same peptides in a different
+        /// order, for checking that two copies of one partition's index agree before peptide ids are carried from
+        /// one to the other. Order matters because it is not fixed by the settings alone:
+        /// <see cref="SortByMonoisotopicMass"/> breaks mass ties by digestion order, and digestion order depends on
+        /// MaxThreadsToUsePerFile, which is not part of the cache key. Each peptide is identified by its full
+        /// sequence, parent accession and start residue, so a shared peptide whose two proteins swap places is
+        /// caught too. Only for comparison within one process: string hashes are randomized per process.
+        /// </summary>
+        public static int PeptideOrderFingerprint(IReadOnlyList<IBioPolymerWithSetMods> peptides)
+        {
+            var hash = new HashCode();
+            hash.Add(peptides.Count);
+            foreach (IBioPolymerWithSetMods peptide in peptides)
+            {
+                hash.Add(peptide.FullSequence, StringComparer.Ordinal);
+                hash.Add(peptide.Parent.Accession, StringComparer.Ordinal);
+                hash.Add(peptide.OneBasedStartResidue);
+            }
+            return hash.ToHashCode();
+        }
+
+        /// <summary>
+        /// Sorts by monoisotopic mass, reading each mass once instead of once per comparison —
+        /// PeptideWithSetModifications.MonoisotopicMass rounds to 9 places on every read even though the
+        /// unrounded value is cached, so a comparison delegate pays for it ~2n*log(n) times.
+        /// Sorting (mass, position) pairs through the same comparison-based introsort reproduces the exact
+        /// permutation the previous in-place sort produced, which matters because equal masses are
+        /// pervasive: a reversed decoy has its target's residue composition and therefore its exact mass.
+        /// </summary>
+        internal static List<T> SortByMonoisotopicMass<T>(List<T> peptides) where T : IBioPolymerWithSetMods
+        {
+            var order = new KeyValuePair<double, int>[peptides.Count];
+            for (int i = 0; i < order.Length; i++)
+            {
+                order[i] = new KeyValuePair<double, int>(peptides[i].MonoisotopicMass, i);
+            }
+
+            Array.Sort(order, (x, y) => x.Key.CompareTo(y.Key));
+
+            var sorted = new List<T>(order.Length);
+            for (int i = 0; i < order.Length; i++)
+            {
+                sorted.Add(peptides[order[i].Value]);
+            }
+            return sorted;
+        }
+
+        private List<int>[] CreateNewPrecursorIndex(List<IBioPolymerWithSetMods> peptidesSortedByMass)
         {
             // create precursor index
             List<int>[] precursorIndex = null;
@@ -259,7 +723,13 @@ namespace EngineLayer.Indexing
 
         //add possible protein/peptide terminal modifications that aren't on the terminal amino acids
         //The purpose is for terminal mods that are contained WITHIN the Single peptide
-        private void AddInteriorTerminalModsToPrecursorIndex(List<int>[] precursorIndex, List<Product> fragmentMasses, PeptideWithSetModifications peptide, int peptideId, List<Modification> variableModifications)
+        /// <summary>
+        /// Records the interior terminal mod precursor bins for one peptide instead of writing them into
+        /// the precursor index directly. The blocks fragment in parallel and the precursor index is a
+        /// shared List&lt;int&gt;[], so the writes are replayed in block order afterwards -- which is the
+        /// order the sequential loop appended them in, and the bin contents are that order.
+        /// </summary>
+        private void CollectInteriorTerminalModPrecursorBins(List<(int Bin, int PeptideId)> emissions, List<Product> fragmentMasses, PeptideWithSetModifications peptide, int peptideId, List<Modification> variableModifications)
         {
             //Get database annotated mods
             Dictionary<int, List<Modification>> databaseAnnotatedMods = NonSpecificEnzymeSearchEngine.GetTerminalModPositions(peptide, CommonParameters.DigestionParams, variableModifications);
@@ -286,15 +756,7 @@ namespace EngineLayer.Indexing
                     if (modifiedMass <= MaxFragmentSize) //if the precursor is larger than the index allows, then don't add it
                     {
                         int precursorBin = (int)Math.Round(modifiedMass * FragmentBinsPerDalton);
-
-                        if (precursorIndex[precursorBin] == null)
-                        {
-                            precursorIndex[precursorBin] = new List<int> { peptideId };
-                        }
-                        else
-                        {
-                            precursorIndex[precursorBin].Add(peptideId);
-                        }
+                        emissions.Add((precursorBin, peptideId));
                     }
                 }
             }
