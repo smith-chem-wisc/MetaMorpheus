@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -46,17 +47,37 @@ public class SpectrumMatchHistogramsTests
     [TestCase(3)]
     [TestCase(6)]
     [TestCase(7)]
-    [TestCase(12)]
     [TestCase(14)]
     public void BinCountsAccountForEveryValue(int plotType)
     {
-        var data = SpectrumMatchHistograms.GetHistogramData(plotType, LoadFixture());
+        var bySourceFile = LoadFixture();
+        var data = SpectrumMatchHistograms.GetHistogramData(plotType, bySourceFile);
 
+        Assert.That(data.NumbersBySourceFile.Keys, Is.EquivalentTo(bySourceFile.Keys));
         foreach (var (file, numbers) in data.NumbersBySourceFile)
         {
             Assert.That(data.DictsBySourceFile.ContainsKey(file), $"no bins for {file}");
             Assert.That(data.DictsBySourceFile[file].Values.Sum(), Is.EqualTo(numbers.Count()),
                 $"plot {plotType}, file {file}: binned count does not match the values collected");
+        }
+    }
+
+    /// <summary>
+    /// Plots 12 and 13 bin PSMs directly and leave NumbersBySourceFile empty, so the check above cannot
+    /// reach them. Each PSM lands in exactly one bin, so the bins must sum to the PSM count per file.
+    /// </summary>
+    [TestCase(12)]
+    [TestCase(13)]
+    public void BinCountsAccountForEveryPsm(int plotType)
+    {
+        var bySourceFile = LoadFixture();
+        var data = SpectrumMatchHistograms.GetHistogramData(plotType, bySourceFile);
+
+        Assert.That(data.DictsBySourceFile.Keys, Is.EquivalentTo(bySourceFile.Keys));
+        foreach (var (file, psms) in bySourceFile)
+        {
+            Assert.That(data.DictsBySourceFile[file].Values.Sum(), Is.EqualTo(psms.Count),
+                $"plot {plotType}, file {file}: binned count does not match the PSM count");
         }
     }
 
@@ -71,19 +92,47 @@ public class SpectrumMatchHistogramsTests
         Assert.That(data.BinSize, Is.EqualTo(expected).Within(1e-9));
     }
 
-    /// <summary>Ambiguous notches are split across bins rather than parsed as one value or throwing.</summary>
+    /// <summary>
+    /// Ambiguous notches are split across bins rather than parsed as one value or dropped. Every notch in
+    /// the fixture is 0, so the first few rows are rewritten to "0|1": each must add one value to bin 1.
+    /// </summary>
     [Test]
     public void AmbiguousNotchesAreSplitAcrossBins()
     {
-        var bySourceFile = LoadFixture();
-        int ambiguous = bySourceFile.Values.SelectMany(v => v).Count(p => (p.Notch ?? "").Contains('|'));
-        var data = SpectrumMatchHistograms.GetHistogramData(14, bySourceFile);
+        const int ambiguousRows = 3;
+        string source = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "VariantCrossTest.psmtsv");
+        string[] lines = File.ReadAllLines(source);
+        int notchColumn = Array.IndexOf(lines[0].Split('\t'), SpectrumMatchFromTsvHeader.Notch);
+        Assert.That(notchColumn, Is.GreaterThanOrEqualTo(0), "fixture has no notch column");
 
-        int totalPsms = bySourceFile.Values.Sum(v => v.Count);
-        int binned = data.DictsBySourceFile.Values.Sum(d => d.Values.Sum());
+        string path = Path.Combine(TestContext.CurrentContext.TestDirectory, $"ambiguousNotch_{Guid.NewGuid():N}.psmtsv");
+        File.WriteAllLines(path, lines.Select((line, i) =>
+        {
+            if (i == 0 || i > ambiguousRows) return line;
+            string[] fields = line.Split('\t');
+            Assert.That(fields[notchColumn], Is.EqualTo("0"), "fixture notch changed; this test assumes 0");
+            fields[notchColumn] = "0|1";
+            return string.Join('\t', fields);
+        }));
 
-        Assert.That(binned, Is.GreaterThanOrEqualTo(totalPsms),
-            $"{ambiguous} PSMs have pipe-delimited notches, so the binned total should be at least the PSM count");
+        try
+        {
+            var bySourceFile = SpectrumMatchTsvReader.ReadTsv(path, out _)
+                .GroupBy(p => p.FileNameWithoutExtension)
+                .ToDictionary(g => g.Key, g => new ObservableCollection<SpectrumMatchFromTsv>(g));
+            var data = SpectrumMatchHistograms.GetHistogramData(14, bySourceFile);
+
+            int totalPsms = bySourceFile.Values.Sum(v => v.Count);
+            int binned = data.DictsBySourceFile.Values.Sum(d => d.Values.Sum());
+            int inBinOne = data.DictsBySourceFile.Values.Sum(d => d.GetValueOrDefault("1"));
+
+            Assert.That(binned, Is.EqualTo(totalPsms + ambiguousRows));
+            Assert.That(inBinOne, Is.EqualTo(ambiguousRows));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Test]
