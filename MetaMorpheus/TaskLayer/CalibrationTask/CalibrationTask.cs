@@ -661,8 +661,10 @@ namespace TaskLayer
                 var originalFileName = originalSpectraFile.FilenameWithoutExtension;
                 // Compare whole names, not substrings: "run_1" is a substring of "run_10", so a
                 // substring match hands run_1's design row the file belonging to run_10.
+                // Both forms of list entry keep the original file name, extension included.
+                string originalFileNameWithExtension = Path.GetFileName(originalSpectraFile.FullFilePathWithExtension);
                 var k = unsuccessfullyCalibratedFilePaths.FirstOrDefault(
-                    fn => GlobalVariables.GetFilenameWithoutExtension(fn) == originalFileName);
+                    fn => Path.GetFileName(fn) == originalFileNameWithExtension);
                 if (k != null)
                 {
                     newExperDesign.Add(new SpectraFileInfo(k, originalSpectraFile.Condition, originalSpectraFile.BiologicalReplicate, originalSpectraFile.TechnicalReplicate, originalSpectraFile.Fraction));
@@ -676,7 +678,9 @@ namespace TaskLayer
                 }
             }
 
-            _ = ExperimentalDesign.WriteExperimentalDesignToFile(newExperDesign);
+            // Into the output folder by name: a skipped file's row keeps its input path, so the first row's
+            // folder can be the input folder, and the input design must not be overwritten.
+            _ = ExperimentalDesign.WriteExperimentalDesignToFile(newExperDesign, outputFolder);
         }
     }
 }

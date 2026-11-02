@@ -51,6 +51,7 @@ namespace TaskLayer
 
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
+                // files not reached before a cancel keep -averaged rows in the new design; left so, as the user cancelled
                 if (GlobalVariables.StopLoops) { break; }
 
 
@@ -93,7 +94,13 @@ namespace TaskLayer
                 }
                 catch (Exception e)
                 {
+                    // no -averaged.mzML was written: record the skip, and do not report or pass on the file
+                    unsuccessfulyAveragedFilePaths.Add(originalUnaveragedFilepath);
                     Warn($"Averaging Failure! Could not average spectra for file {originalUnaveragedFilepathWithoutExtenstion} with exception {e.Message}");
+                    myFileManager.DoneWithFile(originalUnaveragedFilepath);
+                    FinishedDataFile(originalUnaveragedFilepath, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepath });
+                    ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion }));
+                    continue;
                 }
                 myFileManager.DoneWithFile(originalUnaveragedFilepath);
 
@@ -154,7 +161,8 @@ namespace TaskLayer
             foreach (var unaveragedSpectraFile in oldExperDesign)
             {
                 var originalUnaveragedFilePath = unaveragedSpectraFile.FullFilePathWithExtension;
-                var originalUnaveragedFilenameWithoutExtension = GlobalVariables.GetFilenameWithoutExtension(originalUnaveragedFilePath);
+                // as the run loop names it; GlobalVariables.GetFilenameWithoutExtension removes every copy of the extension
+                var originalUnaveragedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUnaveragedFilePath);
                 // ToSafeOutputPath here too, or a name the run loop trimmed is named untrimmed.
                 string averagedFilePath = Path.Combine(outputFolder, originalUnaveragedFilenameWithoutExtension + AveragingSuffix + ".mzML")
                     .ToSafeOutputPath(AveragingSuffix + ".mzML");
@@ -172,7 +180,9 @@ namespace TaskLayer
                 }
             }
 
-            ExperimentalDesign.WriteExperimentalDesignToFile(newExperDesign);
+            // into the output folder by name: a skipped file's row keeps its input path, so the first row's
+            // folder can be the input folder, and the input design must not be overwritten
+            ExperimentalDesign.WriteExperimentalDesignToFile(newExperDesign, outputFolder);
         }
 
 

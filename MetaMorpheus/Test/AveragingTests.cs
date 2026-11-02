@@ -241,26 +241,36 @@ namespace Test
         /// <summary>
         /// A file type the averaging task cannot average is skipped, and EverythingRunnerEngine hands
         /// the next task its original path. Its experimental design row must keep that path rather than
-        /// naming a -averaged.mzML that was never written. Issue #2192.
+        /// naming a -averaged.mzML that was never written. Issue #2192. Listed first, the skipped row
+        /// must not send the new design over the input one.
         /// </summary>
         [Test]
-        public static void SkippedFileKeepsItsOriginalPathInTheNewExperimentalDesign()
+        [TestCase(".mgf", false)]
+        [TestCase(".mgf", true)]
+        [TestCase(".msalign", false)]
+        [TestCase(".d", false)]
+        public static void SkippedFileKeepsItsOriginalPathInTheNewExperimentalDesign(string extension, bool skippedFirst)
         {
-            string testPath = Path.Combine(TestFolder, "AveragingSkippedFileDesign");
+            string testPath = Path.Combine(TestFolder, "AveragingSkippedFileDesign" + extension + skippedFirst);
             string outputFolder = Path.Combine(testPath, "Task1-Average");
             Directory.CreateDirectory(testPath);
             Directory.CreateDirectory(outputFolder);
 
             string averagable = Path.Combine(testPath, "sample1.mzML");
             File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), averagable, true);
-            string notAveragable = Path.Combine(testPath, "sample2.mgf");
-            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "ok.mgf"), notAveragable, true);
+            // skipped on extension before it is read, so only .mgf needs real content
+            string notAveragable = Path.Combine(testPath, "sample2" + extension);
+            if (extension == ".mgf")
+                File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "ok.mgf"), notAveragable, true);
+            else if (extension == ".d")
+                Directory.CreateDirectory(notAveragable);
+            else
+                File.WriteAllText(notAveragable, "");
 
-            _ = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo>
-            {
-                new(averagable, "condition1", 0, 0, 0),
-                new(notAveragable, "condition2", 0, 0, 0),
-            });
+            var files = skippedFirst ? new List<string> { notAveragable, averagable } : new List<string> { averagable, notAveragable };
+            string inputDesignPath = ExperimentalDesign.WriteExperimentalDesignToFile(
+                files.Select(f => new SpectraFileInfo(f, f == averagable ? "condition1" : "condition2", 0, 0, 0)).ToList());
+            string inputDesignBefore = File.ReadAllText(inputDesignPath);
 
             SpectralAveragingParameters options = new()
             {
@@ -268,11 +278,12 @@ namespace Test
                 NumberOfScansToAverage = 5,
             };
             SpectralAveragingTask averagingTask = new(options) { CommonParameters = commonParameters };
-            averagingTask.RunTask(outputFolder, new List<DbForTask>(), new List<string> { averagable, notAveragable }, "test");
+            averagingTask.RunTask(outputFolder, new List<DbForTask>(), files, "test");
 
             string averagedPath = Path.Combine(outputFolder, "sample1-averaged.mzML");
             Assert.That(File.Exists(averagedPath));
             Assert.That(File.Exists(Path.Combine(outputFolder, "sample2-averaged.mzML")), Is.False);
+            Assert.That(File.ReadAllText(inputDesignPath), Is.EqualTo(inputDesignBefore), "the input design was overwritten");
 
             string newDesignPath = Path.Combine(outputFolder, GlobalVariables.ExperimentalDesignFileName);
             Assert.That(File.Exists(newDesignPath));
@@ -282,12 +293,51 @@ namespace Test
 
             Assert.That(errors, Is.Empty);
             Assert.That(design.Count, Is.EqualTo(2));
-            Assert.That(design.Any(p => p.FullFilePathWithExtension == notAveragable));
-            Assert.That(design.Any(p => p.FullFilePathWithExtension == averagedPath));
+            Assert.That(design.Single(p => p.FullFilePathWithExtension == notAveragable).Condition, Is.EqualTo("condition2"));
+            Assert.That(design.Single(p => p.FullFilePathWithExtension == averagedPath).Condition, Is.EqualTo("condition1"));
 
             Directory.Delete(testPath, true);
         }
 
+        /// <summary>
+        /// Averaging that throws writes no -averaged.mzML, so the file must be recorded as skipped like
+        /// an unsupported type, and not reported as written or passed on as a new spectra file.
+        /// </summary>
+        [Test]
+        public static void FileWhoseAveragingThrowsKeepsItsOriginalPathInTheNewExperimentalDesign()
+        {
+            string testPath = Path.Combine(TestFolder, "AveragingThrowsDesign");
+            string outputFolder = Path.Combine(testPath, "Task1-Average");
+            Directory.CreateDirectory(testPath);
+            Directory.CreateDirectory(outputFolder);
+
+            string spectra = Path.Combine(testPath, "sample1.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), spectra, true);
+            _ = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { new(spectra, "condition1", 0, 0, 0) });
+
+            // a directory where the averaged file goes makes ExportAsMzML throw inside the try
+            string averagedPath = Path.Combine(outputFolder, "sample1-averaged.mzML");
+            Directory.CreateDirectory(averagedPath);
+
+            SpectralAveragingParameters options = new()
+            {
+                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScans,
+                NumberOfScansToAverage = 5,
+            };
+            SpectralAveragingTask averagingTask = new(options) { CommonParameters = commonParameters };
+            var results = averagingTask.RunTask(outputFolder, new List<DbForTask>(), new List<string> { spectra }, "test");
+
+            Assert.That(File.Exists(averagedPath), Is.False, "premise: averaging must have failed");
+            Assert.That(results.NewSpectra, Does.Not.Contain(averagedPath), "a file that was not written was passed on");
+
+            string newDesignPath = Path.Combine(outputFolder, GlobalVariables.ExperimentalDesignFileName);
+            var design = ExperimentalDesign.ReadExperimentalDesign(newDesignPath, new List<string> { spectra }, out var errors);
+            Assert.That(errors, Is.Empty);
+            Assert.That(design.Single().FullFilePathWithExtension, Is.EqualTo(spectra));
+            Assert.That(design.Single().Condition, Is.EqualTo("condition1"));
+
+            Directory.Delete(testPath, true);
+        }
 
         [Test]
         public static void TestExperimentalDesignError()
