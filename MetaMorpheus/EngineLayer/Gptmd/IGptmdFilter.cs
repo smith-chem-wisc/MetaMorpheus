@@ -164,9 +164,9 @@ public sealed class FlankingIonCoverageFilter : IGptmdFilter
 }
 
 /// <summary>
-/// Rejects an amino acid substitution that moves the digestion agent's cut sites. Such a
-/// substitution changes where the protein is cleaved, so the peptide actually produced is not the
-/// one being scored and its mass is not the unmodified peptide's mass plus the substitution delta.
+/// Rejects an amino acid substitution that removes a cut site defining one of the peptide's termini
+/// or creates one inside it. Either way the peptide being scored is not produced, or not produced
+/// cleanly, so its mass is not a reliable unmodified-mass-plus-substitution-delta hypothesis.
 /// Modifications that are not substitutions always pass.
 /// </summary>
 public sealed class CleavageSiteFilter : IGptmdFilter
@@ -195,8 +195,7 @@ public sealed class CleavageSiteFilter : IGptmdFilter
         if (digestionParams!.SearchModeType != CleavageSpecificity.Full)
             return true;
 
-        // GptmdEngine passes the site in "one is N-terminus" space, so residue one arrives as two.
-        int indexInPeptide = peptideOneBasedModSite - 2;
+        int indexInPeptide = peptideOneBasedModSite - 1;
         if (indexInPeptide < 0 || indexInPeptide >= candidatePeptide!.BaseSequence.Length)
             return true;
 
@@ -220,9 +219,17 @@ public sealed class CleavageSiteFilter : IGptmdFilter
         char[] substitutedWindow = window.ToCharArray();
         substitutedWindow[indexInParent - windowStart] = substituted;
 
-        // GetDigestionSiteIndices builds its result from a hash set, so compare as sets.
-        return new HashSet<int>(agent.GetDigestionSiteIndices(window))
-            .SetEquals(agent.GetDigestionSiteIndices(new string(substitutedWindow)));
+        var sitesBefore = new HashSet<int>(agent.GetDigestionSiteIndices(window));
+        var sitesAfter = new HashSet<int>(agent.GetDigestionSiteIndices(new string(substitutedWindow)));
+        int start = peptideStart - windowStart;
+        int end = start + candidatePeptide.BaseSequence.Length;
+
+        // Reject losing a cut that defines a terminus, or gaining one inside the peptide. Losing an
+        // internal missed cleavage still yields this peptide, so it passes.
+        bool terminusLost = (sitesBefore.Contains(start) && !sitesAfter.Contains(start))
+            || (sitesBefore.Contains(end) && !sitesAfter.Contains(end));
+        bool internalSiteGained = sitesAfter.Any(s => s > start && s < end && !sitesBefore.Contains(s));
+        return !terminusLost && !internalSiteGained;
     }
 
     /// <summary>

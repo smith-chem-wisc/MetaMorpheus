@@ -552,9 +552,6 @@ public class CleavageSiteFilterTests
             .Single(p => p.BaseSequence == peptideSequence);
     }
 
-    /// <summary>
-    /// GptmdEngine passes the site in "one is N-terminus" space, so residue one arrives as two.
-    /// </summary>
     private static bool Passes(PeptideWithSetModifications peptide, int oneBasedResidueInPeptide, Modification mod)
         => new CleavageSiteFilter().Passes(
             peptide,
@@ -562,7 +559,7 @@ public class CleavageSiteFilterTests
             newScore: 10,
             originalScore: 1,
             matchedIons: new List<MatchedFragmentIon>(),
-            peptideOneBasedModSite: oneBasedResidueInPeptide + 1,
+            peptideOneBasedModSite: oneBasedResidueInPeptide,
             peptideLength: peptide.BaseSequence.Length,
             mod);
 
@@ -599,6 +596,15 @@ public class CleavageSiteFilterTests
         // across cleaved and uncleaved forms. Pinned so the choice cannot change silently.
         var peptide = Peptide("PEPTIDEKAAAR", "PEPTIDEK", maxMissedCleavages: 2);
         Assert.That(Passes(peptide, 4, Substitution('T', 'R')), Is.False);
+    }
+
+    [Test]
+    public void Accepts_SubstitutionThatDestroysAnInternalMissedCleavageSite()
+    {
+        // K at residue 8 is a missed cleavage inside PEPTIDEKAAAR. Losing it leaves both termini in
+        // place, so this peptide is still produced, now with no missed cleavage.
+        var peptide = Peptide("PEPTIDEKAAAR", "PEPTIDEKAAAR", maxMissedCleavages: 1);
+        Assert.That(Passes(peptide, 8, Substitution('K', 'A')), Is.True);
     }
 
     [Test]
@@ -655,8 +661,7 @@ public class CleavageSiteFilterTests
     [Test]
     public void Accepts_WhenTheSiteIsNotAResidue()
     {
-        // Site one is the peptide N terminus, not a residue, so there is nothing to substitute.
-        // GptmdEngine never sends it for a residue modification; accept rather than guess.
+        // Sites are one-based residues, so zero is not a residue and there is nothing to substitute.
         var peptide = Peptide("PEPTIDEKAAAR", "PEPTIDEK");
 
         Assert.That(
@@ -664,7 +669,7 @@ public class CleavageSiteFilterTests
                 peptide,
                 GptmdFilterTests.DummySpectralMatch(),
                 10, 1, new List<MatchedFragmentIon>(),
-                peptideOneBasedModSite: 1,
+                peptideOneBasedModSite: 0,
                 peptideLength: peptide.BaseSequence.Length,
                 Substitution('K', 'A')),
             Is.True);
