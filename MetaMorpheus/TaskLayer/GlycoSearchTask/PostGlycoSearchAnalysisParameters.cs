@@ -12,7 +12,6 @@ namespace TaskLayer
     {
         public MyTaskResults GlycoSearchTaskResults { get; set; }
         public string SearchTaskId { get; set; }
-        public HashSet<DigestionParams> ListOfDigestionParams { get; set; }
         public GlycoSearchParameters GlycoSearchParameters { get; set; }
         public List<Protein> ProteinList { get; set; }
         public List<Modification> VariableModifications { get; set; }

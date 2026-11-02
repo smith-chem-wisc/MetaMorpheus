@@ -693,6 +693,83 @@ namespace Test
             File.Delete(mzmlName);
         }
 
+        /// <summary>
+        /// WriteContaminants = false withholds a contaminant's rows from AllQuantifiedPeptides.tsv and
+        /// AllQuantifiedPeaks.tsv. Under SILAC the PSMs and peaks name the labelled form
+        /// (PEPTIDER(+3.988)) while the peptide table is keyed by the unlabeled one, and a channel no
+        /// spectrum identified has peaks but no PSM; every one of them must still be withheld. Under a
+        /// lysine label that carries arginine as its additional label, both residues are written back.
+        /// </summary>
+        [Test]
+        [TestCase(false, false, TestName = "SilacContaminantRowsAreWithheld_HeavyOnlyIdentified")]
+        [TestCase(true, false, TestName = "SilacContaminantRowsAreWithheld_LightIdentifiedHeavyQuantified")]
+        [TestCase(false, true, TestName = "SilacContaminantRowsAreWithheld_LabelWithAnAdditionalLabel")]
+        public static void SilacContaminantRowsAreWithheldInEveryLabelForm(bool lightIdentified, bool withAdditionalLabel)
+        {
+            Residue heavyArginine = new("c", 'c', "c", Chemistry.ChemicalFormula.ParseFormula("C6H12N{15}4O"), ModificationSites.All); //+4 arginine
+            Residue.AddNewResiduesToDictionary(new List<Residue> { heavyArginine });
+            Residue lightArginine = Residue.GetResidue('R');
+            SilacLabel heavyLabel = new(lightArginine.Letter, heavyArginine.Letter, heavyArginine.ThisChemicalFormula.Formula, heavyArginine.MonoisotopicMass - lightArginine.MonoisotopicMass);
+
+            // The spectra carry one identified form and the other channel's envelope beside it.
+            string proteinSequence = "PEPTIDER";
+            string identified = lightIdentified ? "PEPTIDER" : "PEPTIDEc";
+            double toOtherChannel = heavyArginine.MonoisotopicMass - lightArginine.MonoisotopicMass;
+            if (withAdditionalLabel)
+            {
+                // Trypsin does not cleave K before P, so the peptide carries both labelled residues.
+                Residue heavyLysine = new("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
+                Residue.AddNewResiduesToDictionary(new List<Residue> { heavyLysine });
+                Residue lightLysine = Residue.GetResidue('K');
+                SilacLabel lysineLabel = new(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass);
+                lysineLabel.AddAdditionalSilacLabel(heavyLabel);
+                heavyLabel = lysineLabel;
+                proteinSequence = "PEPKPTIDER";
+                identified = "PEPaPTIDEc";
+                toOtherChannel += heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass;
+            }
+
+            SearchTask task = new()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    SilacLabels = new List<SilacLabel> { heavyLabel },
+                    WriteContaminants = false
+                },
+                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(generateUnlabeledProteinsForSilac: lightIdentified))
+            };
+
+            List<PeptideWithSetModifications> peptides = new() { new PeptideWithSetModifications(identified, new Dictionary<string, Modification>()) };
+            List<List<double>> massDifferences = new() { new List<double> { lightIdentified ? toOtherChannel : -toOtherChannel } };
+            string mzmlName = @"silacContaminant.mzML";
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(new TestDataFile(peptides, massDifferences), mzmlName, false);
+
+            string xmlName = "SilacContaminantDb.xml";
+            _ = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(),
+                new List<Protein> { new(proteinSequence, "accession1") }, xmlName);
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilacContaminant");
+            _ = Directory.CreateDirectory(outputFolder);
+            try
+            {
+                _ = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, true) }, new List<string> { mzmlName }, "taskId1").ToString();
+
+                string[] psms = File.ReadAllLines(Path.Combine(outputFolder, "AllPSMs.psmtsv"));
+                Assert.That(psms.Length, Is.EqualTo(1), "precondition: the contaminant PSMs are withheld from the PSM table");
+
+                string[] peptideRows = File.ReadAllLines(Path.Combine(outputFolder, "AllQuantifiedPeptides.tsv"));
+                string[] peakRows = File.ReadAllLines(Path.Combine(outputFolder, "AllQuantifiedPeaks.tsv"));
+                Assert.That(peptideRows.Skip(1), Is.Empty, "a contaminant peptide row survived");
+                Assert.That(peakRows.Skip(1), Is.Empty, "a contaminant peak row survived");
+            }
+            finally
+            {
+                Directory.Delete(outputFolder, true);
+                File.Delete(xmlName);
+                File.Delete(mzmlName);
+            }
+        }
+
         [Test]
         public static void TestSilacHelperMethods()
         {

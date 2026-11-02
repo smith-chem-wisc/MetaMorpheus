@@ -582,8 +582,8 @@ namespace GuiFunctions
                 Dictionary<string, Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>> groupedPsmsBySourceFile,
                 bool isGroupingEnabled)
         {
-            int end = dictsBySourceFile.Values.Max(p => p.Max(v => int.Parse(v.Key)));
-            int start = dictsBySourceFile.Values.Min(p => p.Min(v => int.Parse(v.Key)));
+            int end = dictsBySourceFile.Values.Max(p => p.Count == 0 ? 0 : p.Max(v => int.Parse(v.Key)));
+            int start = dictsBySourceFile.Values.Min(p => p.Count == 0 ? 0 : p.Min(v => int.Parse(v.Key)));
             int numBins = end - start + 1;
             int minBinLabels = 22;
             int skipBinLabel = numBins < minBinLabels ? 1 : numBins / minBinLabels;
