@@ -52,11 +52,11 @@ namespace TaskLayer
     {
         /// <summary>
         /// Nett hands a bare ArgumentException to the caller on an unrecognized enum name, which does
-        /// not say what the legal values are.
+        /// not say what the legal values are. TryParse alone also accepts any number, defined or not.
         /// </summary>
         private static FastaHeaderFormat ParseFastaHeaderFormat(string value)
         {
-            if (Enum.TryParse<FastaHeaderFormat>(value, true, out var parsed))
+            if (Enum.TryParse<FastaHeaderFormat>(value, true, out var parsed) && Enum.IsDefined(parsed))
                 return parsed;
 
             throw new MetaMorpheusException(

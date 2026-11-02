@@ -17,7 +17,6 @@ public enum FastaHeaderFormat
     UniProt,
     Ensembl,
     Gencode,
-    Ncbi,
     Auto,
     Custom
 }
@@ -26,7 +25,7 @@ public enum FastaHeaderFormat
 /// The six regexes handed to <see cref="ProteinDbLoader.LoadProteinFasta"/>. A null member means the
 /// field is not extracted.
 /// </summary>
-public class FastaHeaderFieldRegexSet
+public record FastaHeaderFieldRegexSet
 {
     public FastaHeaderFieldRegex? Accession { get; init; }
     public FastaHeaderFieldRegex? FullName { get; init; }
@@ -46,15 +45,14 @@ public class FastaHeaderParsingParameters
     /// <summary>
     /// Ceiling on a single validation match. Applies to validation only: mzLib's
     /// <see cref="FastaHeaderFieldRegex"/> compiles the pattern with no timeout, so a pattern that is
-    /// fast on the headers checked here can still stall a load. Passing real deflines to
-    /// <see cref="Validate"/> is what narrows that gap.
+    /// fast on the headers checked here can still stall a load. Checking real deflines in
+    /// <see cref="ValidateAgainstHeaders"/> is what narrows that gap.
     /// </summary>
     public static readonly TimeSpan ValidationMatchTimeout = TimeSpan.FromMilliseconds(250);
 
     /// <summary>
-    /// Deflines every validation run matches each pattern against, on top of any real ones supplied.
-    /// Only used to smoke out catastrophic backtracking; a pattern that matches nothing here is still
-    /// accepted, since a preset for one database format will not match another.
+    /// Deflines every custom pattern is matched against before any file is read. Only used to smoke out
+    /// catastrophic backtracking; a pattern that matches nothing here is still accepted.
     /// </summary>
     internal static readonly string[] ValidationHeaders =
     [
@@ -90,38 +88,25 @@ public class FastaHeaderParsingParameters
     }
 
     /// <summary>
-    /// Checks the custom patterns. Returns false and fills <paramref name="errors"/> with user-facing
-    /// messages when the configuration cannot be used. <paramref name="sampleHeaders"/> should be real
-    /// deflines from the databases about to be loaded where the caller can get them: the canned
-    /// headers cannot prove a pattern is fast on the user's own file.
+    /// The format every earlier version used. Nothing is sampled, gated or added to the index cache key
+    /// for it, so a default run behaves exactly as before.
     /// </summary>
-    public bool Validate(out List<string> errors, IEnumerable<string>? sampleHeaders = null)
+    // A method, not a property, so it is not written to the task TOML.
+    public bool IsDefault() => HeaderFormat == FastaHeaderFormat.UniProt;
+
+    /// <summary>
+    /// The checks that need no database: run before the first task, so a typo is reported before
+    /// anything has run rather than after the tasks ahead of it.
+    /// </summary>
+    public bool ValidateConfiguration(out List<string> errors)
     {
         errors = new List<string>();
-
-        if (HeaderFormat == FastaHeaderFormat.Auto)
-        {
-            // mzLib throws on a header it cannot classify, which reaches a GUI user as a crash
-            // report. Refuse it here instead, while there is still a message to give.
-            foreach (string header in sampleHeaders ?? [])
-            {
-                if (ProteinDbLoader.DetectFastaHeaderFormat(header) != FastaHeaderType.Unknown)
-                    continue;
-
-                errors.Add("The FASTA header format could not be detected automatically for this "
-                           + $"header: {header}. Pick a preset FASTA header format, or use Custom "
-                           + "and supply an accession regex.");
-                break;
-            }
-
-            return errors.Count == 0;
-        }
 
         if (HeaderFormat != FastaHeaderFormat.Custom)
             return true;
 
-        // mzLib falls back to header auto-detection when the accession regex is null, and that
-        // detection throws on a header it does not recognize. Require one instead.
+        // Not cosmetic: a null accession regex makes mzLib auto-detect, and detection assigns its own
+        // regexes over the other five with '=', so every other custom pattern would be discarded.
         if (string.IsNullOrWhiteSpace(CustomAccessionRegex))
             errors.Add("Custom FASTA header format requires an accession regex. Set 'CustomAccessionRegex' " +
                        "(the first capture group is used as the accession), or pick a preset FASTA header format.");
@@ -130,7 +115,7 @@ public class FastaHeaderParsingParameters
         {
             if (string.IsNullOrWhiteSpace(pattern))
                 continue;
-            if (!TryValidatePattern(pattern, sampleHeaders, out string? reason))
+            if (!TryValidatePattern(pattern, ValidationHeaders, out string? reason))
                 errors.Add($"The custom FASTA header regex for {fieldName} is not usable: {reason} Pattern: {pattern}");
         }
 
@@ -138,48 +123,98 @@ public class FastaHeaderParsingParameters
     }
 
     /// <summary>
-    /// Builds the regexes to hand to mzLib. Call <see cref="Validate"/> first; this throws on a
-    /// pattern that does not compile, as a backstop for callers that bypass the runner.
+    /// Checks this setting against the first deflines of one FASTA database. An accession regex that
+    /// matches nothing makes mzLib use the whole defline as the accession, silently, so a choice the user
+    /// made explicitly is refused when it matches none of <paramref name="sampledHeaders"/>.
+    /// <paramref name="warnings"/> carries problems worth reporting that need not stop the run.
+    /// </summary>
+    /// <param name="sampledHeaders">Null or empty when nothing could be read from the file.</param>
+    public bool ValidateAgainstHeaders(string databaseName, IReadOnlyList<string>? sampledHeaders,
+        out List<string> errors, out List<string> warnings)
+    {
+        errors = new List<string>();
+        warnings = new List<string>();
+
+        if (IsDefault())
+            return true;
+
+        if (sampledHeaders is not { Count: > 0 })
+        {
+            if (HeaderFormat is FastaHeaderFormat.Auto or FastaHeaderFormat.Custom)
+                errors.Add($"No FASTA header could be read from {databaseName}, so the {HeaderFormat} FASTA " +
+                           "header format cannot be checked against it.");
+            return errors.Count == 0;
+        }
+
+        FastaHeaderFieldRegex? accession;
+        switch (HeaderFormat)
+        {
+            case FastaHeaderFormat.Auto:
+                // mzLib detects once, from the first defline, and parses the whole file with that preset.
+                var detected = ProteinDbLoader.DetectFastaHeaderFormat(sampledHeaders[0]);
+                if (detected == FastaHeaderType.Unknown)
+                {
+                    errors.Add($"The FASTA header format of {databaseName} could not be detected automatically " +
+                               $"from its first header: {sampledHeaders[0]}. Pick a preset FASTA header format, " +
+                               "or use Custom and supply an accession regex.");
+                    return false;
+                }
+                accession = MzLibPreset(detected).Accession;
+                break;
+
+            case FastaHeaderFormat.Custom:
+                // Timed first: the loader will apply these with no timeout at all.
+                foreach (var (fieldName, pattern) in EnumerateCustomPatterns())
+                {
+                    if (!string.IsNullOrWhiteSpace(pattern) && !TryValidatePattern(pattern, sampledHeaders, out string? reason))
+                        errors.Add($"The custom FASTA header regex for {fieldName} is not usable on {databaseName}: {reason} Pattern: {pattern}");
+                }
+                if (errors.Count > 0)
+                    return false;
+                accession = GetFieldRegexes().Accession;
+                break;
+
+            default:
+                var expected = ToFastaHeaderType(HeaderFormat);
+                var looksLike = ProteinDbLoader.DetectFastaHeaderFormat(sampledHeaders[0]);
+                if (looksLike != FastaHeaderType.Unknown && looksLike != expected)
+                    warnings.Add($"{databaseName} looks like a {looksLike} database, but the FASTA header format " +
+                                 $"is set to {HeaderFormat}, which applies to every FASTA in the task.");
+                accession = GetFieldRegexes().Accession;
+                break;
+        }
+
+        // An empty capture falls back to the whole defline in mzLib just as a miss does.
+        if (!sampledHeaders.Any(h => !string.IsNullOrEmpty(accession?.ApplyRegex(h))))
+        {
+            string formatLabel = HeaderFormat == FastaHeaderFormat.Custom ? "custom accession regex" : $"{HeaderFormat} accession regex";
+            errors.Add($"The {formatLabel} matches none of the first {sampledHeaders.Count} headers of {databaseName}, " +
+                       $"so every accession would be the whole header line. First header: {sampledHeaders[0]}");
+        }
+
+        return errors.Count == 0;
+    }
+
+    /// <summary>
+    /// Builds the regexes to hand to mzLib. Call the Validate methods first; this throws on a pattern that
+    /// does not compile, as a backstop for callers that bypass the runner.
     /// </summary>
     public FastaHeaderFieldRegexSet GetFieldRegexes()
     {
         switch (HeaderFormat)
         {
             case FastaHeaderFormat.UniProt:
-                // FullName is deliberately used for both FullName and Name: that is what MetaMorpheus
-                // has always passed, and OrganismId has never been parsed. Changing either moves output.
-                return new FastaHeaderFieldRegexSet
+                // Not mzLib's UniProt bundle: MetaMorpheus has always passed the full-name regex as Name
+                // and never parsed OrganismId. Matching mzLib moves Name on every entry.
+                return MzLibPreset(FastaHeaderType.UniProt) with
                 {
-                    Accession = ProteinDbLoader.UniprotAccessionRegex,
-                    FullName = ProteinDbLoader.UniprotFullNameRegex,
                     Name = ProteinDbLoader.UniprotFullNameRegex,
-                    GeneName = ProteinDbLoader.UniprotGeneNameRegex,
-                    Organism = ProteinDbLoader.UniprotOrganismRegex,
+                    OrganismId = null,
                 };
 
             case FastaHeaderFormat.Ensembl:
-                return new FastaHeaderFieldRegexSet
-                {
-                    Accession = ProteinDbLoader.EnsemblAccessionRegex,
-                    FullName = ProteinDbLoader.EnsemblFullNameRegex,
-                    GeneName = ProteinDbLoader.EnsemblGeneNameRegex,
-                };
-
             case FastaHeaderFormat.Gencode:
-                return new FastaHeaderFieldRegexSet
-                {
-                    Accession = ProteinDbLoader.GencodeAccessionRegex,
-                    FullName = ProteinDbLoader.GencodeFullNameRegex,
-                    GeneName = ProteinDbLoader.GencodeGeneNameRegex,
-                };
-
-            case FastaHeaderFormat.Ncbi:
-                return new FastaHeaderFieldRegexSet
-                {
-                    Accession = NcbiAccessionRegex,
-                    FullName = NcbiFullNameRegex,
-                    Organism = NcbiOrganismRegex,
-                };
+                return MzLibPreset(ToFastaHeaderType(HeaderFormat));
 
             // All null on purpose: LoadProteinFasta only calls DetectFastaHeaderFormat when the
             // accession regex is null, so an empty set is how detection is requested.
@@ -203,13 +238,51 @@ public class FastaHeaderParsingParameters
     }
 
     /// <summary>
-    /// Legacy and modern NCBI deflines: >gi|16128008|ref|NP_414555.1| ... and >ref|NP_414555.1| ...
-    /// The greedy prefix pushes the opening pipe as late as possible, so the capture lands between the
-    /// last two pipes rather than spanning all of them.
+    /// What mzLib's LoadProteinFasta assigns after detecting <paramref name="type"/>.
     /// </summary>
-    public static readonly FastaHeaderFieldRegex NcbiAccessionRegex = new("accession", @">.*\|(.*)\|", 0, 1);
-    public static readonly FastaHeaderFieldRegex NcbiFullNameRegex = new("fullName", @">[^ ]*\s(.*?)(\s\[|$)", 0, 1);
-    public static readonly FastaHeaderFieldRegex NcbiOrganismRegex = new("organism", @"\[([^\[\]]+)\]\s*$", 0, 1);
+    // TODO: replace with mzLib's public per-format bundles, and add Ncbi, once the mzLib preset PR
+    // that follows MetaMorpheus #2782 is released.
+    internal static FastaHeaderFieldRegexSet MzLibPreset(FastaHeaderType type) => type switch
+    {
+        FastaHeaderType.UniProt => new FastaHeaderFieldRegexSet
+        {
+            Accession = ProteinDbLoader.UniprotAccessionRegex,
+            FullName = ProteinDbLoader.UniprotFullNameRegex,
+            Name = ProteinDbLoader.UniprotNameRegex,
+            GeneName = ProteinDbLoader.UniprotGeneNameRegex,
+            Organism = ProteinDbLoader.UniprotOrganismRegex,
+            OrganismId = ProteinDbLoader.UniprotOrganismIdRegex,
+        },
+        FastaHeaderType.Ensembl => new FastaHeaderFieldRegexSet
+        {
+            Accession = ProteinDbLoader.EnsemblAccessionRegex,
+            FullName = ProteinDbLoader.EnsemblFullNameRegex,
+            GeneName = ProteinDbLoader.EnsemblGeneNameRegex,
+        },
+        FastaHeaderType.Gencode => new FastaHeaderFieldRegexSet
+        {
+            Accession = ProteinDbLoader.GencodeAccessionRegex,
+            FullName = ProteinDbLoader.GencodeFullNameRegex,
+            GeneName = ProteinDbLoader.GencodeGeneNameRegex,
+        },
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "mzLib has no preset for this FASTA header type."),
+    };
+
+    private static FastaHeaderType ToFastaHeaderType(FastaHeaderFormat format) => format switch
+    {
+        FastaHeaderFormat.UniProt => FastaHeaderType.UniProt,
+        FastaHeaderFormat.Ensembl => FastaHeaderType.Ensembl,
+        FastaHeaderFormat.Gencode => FastaHeaderType.Gencode,
+        _ => throw new ArgumentOutOfRangeException(nameof(format), format, "Not a preset FASTA header format."),
+    };
+
+    /// <summary>
+    /// This setting as a line of the index cache key. Accessions are how a cached peptide index finds its
+    /// proteins again, so an index built under one format must not be offered to another.
+    /// </summary>
+    public string DescribeForIndexKey() => HeaderFormat != FastaHeaderFormat.Custom
+        ? HeaderFormat.ToString()
+        : HeaderFormat + "; " + string.Join("; ", EnumerateCustomPatterns().Select(p => p.FieldName + "=" + p.Pattern));
 
     private static FastaHeaderFieldRegex? Build(string fieldName, string pattern) =>
         string.IsNullOrWhiteSpace(pattern) ? null : new FastaHeaderFieldRegex(fieldName, pattern, 0, 1);
@@ -224,7 +297,7 @@ public class FastaHeaderParsingParameters
         yield return ("organism id", CustomOrganismIdRegex);
     }
 
-    private static bool TryValidatePattern(string pattern, IEnumerable<string>? sampleHeaders, out string? reason)
+    private static bool TryValidatePattern(string pattern, IEnumerable<string> headers, out string? reason)
     {
         Regex compiled;
         try
@@ -243,7 +316,7 @@ public class FastaHeaderParsingParameters
             return false;
         }
 
-        foreach (string header in ValidationHeaders.Concat(sampleHeaders ?? []))
+        foreach (string header in headers)
         {
             try
             {
@@ -251,7 +324,7 @@ public class FastaHeaderParsingParameters
             }
             catch (RegexMatchTimeoutException)
             {
-                reason = $"matching it against a sample header took longer than {ValidationMatchTimeout.TotalMilliseconds} ms.";
+                reason = $"matching it against a header took longer than {ValidationMatchTimeout.TotalMilliseconds} ms.";
                 return false;
             }
         }

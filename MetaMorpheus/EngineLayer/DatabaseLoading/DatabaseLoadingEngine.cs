@@ -108,7 +108,7 @@ public class DatabaseLoadingEngine(
             }
             else
             {
-                dbBioPolymers = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyProteinEntriesForThisDb, commonParameters, db.DecoyIdentifier);
+                dbBioPolymers = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyProteinEntriesForThisDb, commonParameters, db.DecoyIdentifier, errors);
                 emptyEntries += emptyProteinEntriesForThisDb;
             }
 
@@ -168,7 +168,7 @@ public class DatabaseLoadingEngine(
     }
 
     public static IEnumerable<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um,
-            out int emptyEntriesCount, CommonParameters commonParameters, string? decoyIdentifier = null)
+            out int emptyEntriesCount, CommonParameters commonParameters, string? decoyIdentifier = null, List<string>? loadErrors = null)
     {
         decoyIdentifier ??= GlobalVariables.DecoyIdentifier;
         List<Protein> proteinList;
@@ -185,6 +185,7 @@ public class DatabaseLoadingEngine(
                 headerRegexes.Accession, headerRegexes.FullName, headerRegexes.Name, headerRegexes.GeneName,
                 headerRegexes.Organism, commonParameters.MaxThreadsToUsePerFile, addTruncations: commonParameters.AddTruncations,
                 organismIdRegex: headerRegexes.OrganismId);
+            loadErrors?.AddRange(dbErrors);
         }
         else
         {

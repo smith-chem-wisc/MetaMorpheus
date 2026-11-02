@@ -73,6 +73,12 @@ namespace TaskLayer
 
             StringBuilder allResultsText = new StringBuilder();
 
+            if (!CheckFastaHeaderConfiguration())
+            {
+                FinishedAllTasks(OutputFolder);
+                return;
+            }
+
             for (int i = 0; i < TaskList.Count; i++)
             {
                 if (!CurrentRawDataFilenameList.Any())
@@ -120,14 +126,9 @@ namespace TaskLayer
                     return;
                 }
 
-                // A malformed user-supplied header regex is a configuration mistake, not a crash.
-                // Real deflines are passed in because mzLib compiles the pattern without a match
-                // timeout, so only the user's own headers can show it is fast enough on them.
-                if (ok.Item2.CommonParameters?.FastaHeaderParsing is { } headerParsing
-                    && !headerParsing.Validate(out var headerRegexErrors, SampleFastaHeaders(CurrentXmlDbFilenameList)))
+                // In the loop, not before it: a GPTMD or calibration task changes the databases under later tasks.
+                if (!CheckFastaHeaders(ok.Item1, ok.Item2.CommonParameters))
                 {
-                    foreach (string headerRegexError in headerRegexErrors)
-                        Warn($"Cannot proceed. {ok.Item1}: {headerRegexError}");
                     FinishedAllTasks(OutputFolder);
                     return;
                 }
@@ -196,41 +197,54 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// The first few deflines of each FASTA in the run, for validating a user-supplied regex
-        /// against the headers it will actually meet. Unreadable files are skipped: this is
-        /// validation input, and the loader reports a bad path itself.
+        /// The header checks that need no database, for every task before the first runs, so a typo in a
+        /// late task is not found hours into the run.
         /// </summary>
-        private static List<string> SampleFastaHeaders(List<DbForTask> databases, int perFile = 5)
+        private bool CheckFastaHeaderConfiguration()
         {
-            var headers = new List<string>();
-            foreach (var db in databases ?? new List<DbForTask>())
+            bool ok = true;
+            foreach (var (taskName, task) in TaskList)
             {
-                if (db.IsSpectralLibrary)
+                if (task.CommonParameters?.FastaHeaderParsing is not { } headerParsing)
                     continue;
 
-                string extension = Path.GetExtension(db.FilePath).ToLowerInvariant();
-                if (extension != ".fasta" && extension != ".fa")
-                    continue;
+                if (!headerParsing.ValidateConfiguration(out var errors))
+                {
+                    foreach (string error in errors)
+                        Warn($"Cannot proceed. {taskName}: {error}");
+                    ok = false;
+                }
 
-                try
-                {
-                    int taken = 0;
-                    foreach (string line in File.ReadLines(db.FilePath))
-                    {
-                        if (!line.StartsWith('>'))
-                            continue;
-                        headers.Add(line);
-                        if (++taken == perFile)
-                            break;
-                    }
-                }
-                catch (Exception)
-                {
-                    // Not this gate's job to report.
-                }
+                // RnaDbLoader.LoadRnaFasta takes no regexes; it always detects the format itself.
+                if (!headerParsing.IsDefault() && task.CommonParameters.DetermineAnalyteType() == AnalyteType.Oligo)
+                    Warn($"{taskName}: the FASTA header format ({headerParsing.HeaderFormat}) applies to protein " +
+                         "databases only and has no effect on this nucleic acid search.");
             }
+            return ok;
+        }
 
-            return headers;
+        /// <summary>
+        /// Checks a non-default header setting against the first deflines of each FASTA the task is about to
+        /// load. Nothing is read for the default.
+        /// </summary>
+        private bool CheckFastaHeaders(string taskName, CommonParameters commonParameters)
+        {
+            if (commonParameters?.FastaHeaderParsing is not { } headerParsing || headerParsing.IsDefault()
+                || commonParameters.DetermineAnalyteType() == AnalyteType.Oligo)
+                return true;
+
+            bool ok = true;
+            foreach (var db in CurrentXmlDbFilenameList.Where(d => !d.IsSpectralLibrary && FastaHeaderSampler.IsFasta(d.FilePath)))
+            {
+                var headers = FastaHeaderSampler.ReadFirstHeaders(db.FilePath);
+                headerParsing.ValidateAgainstHeaders(Path.GetFileName(db.FilePath), headers, out var errors, out var warnings);
+                foreach (string warning in warnings)
+                    Warn($"{taskName}: {warning}");
+                foreach (string error in errors)
+                    Warn($"Cannot proceed. {taskName}: {error}");
+                ok &= errors.Count == 0;
+            }
+            return ok;
         }
 
         private void Warn(string v)
