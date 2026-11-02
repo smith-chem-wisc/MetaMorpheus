@@ -7,6 +7,7 @@ using System.Linq;
 using Easy.Common.Extensions;
 using EngineLayer;
 using MassSpectrometry;
+using Readers;
 
 namespace GuiFunctions;
 
@@ -29,12 +30,10 @@ public class DeconHostViewModel : BaseViewModel
     /// <param name="deconvolutePrecursors"></param>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
     public DeconHostViewModel(DeconvolutionParameters? initialPrecursorParameters = null, DeconvolutionParameters? initialProductParameters = null,
-        bool useProvidedPrecursor = false, bool deconvolutePrecursors = true,
-        PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic)
+        bool useProvidedPrecursor = false, bool deconvolutePrecursors = true)
     {
         UseProvidedPrecursors = useProvidedPrecursor;
         DoPrecursorDeconvolution = deconvolutePrecursors;
-        PrecursorMassMatchMode = precursorMassMatchMode;
 
         // Order matters here, construct the lists before setting the selected parameters
         PrecursorDeconvolutionParametersList = new ObservableCollection<DeconParamsViewModel>();
@@ -103,32 +102,6 @@ public class DeconHostViewModel : BaseViewModel
             _doPrecursorDeconvolution = value;
             OnPropertyChanged(nameof(DoPrecursorDeconvolution));
         }
-    }
-
-    private PrecursorMassMatchMode _precursorMassMatchMode;
-    /// <summary>
-    /// Selects whether precursor candidates are matched by the monoisotopic mass (the default) or by the
-    /// most-abundant observed isotopic mass. Surfaced as the "Use Most Abundant Mass" checkbox in the
-    /// Calibration, GPTMD, and Search task windows.
-    /// </summary>
-    public PrecursorMassMatchMode PrecursorMassMatchMode
-    {
-        get => _precursorMassMatchMode;
-        set
-        {
-            _precursorMassMatchMode = value;
-            OnPropertyChanged(nameof(PrecursorMassMatchMode));
-            OnPropertyChanged(nameof(UseMostAbundantMass));
-        }
-    }
-
-    /// <summary>
-    /// Boolean projection of <see cref="PrecursorMassMatchMode"/> for two-way checkbox binding.
-    /// </summary>
-    public bool UseMostAbundantMass
-    {
-        get => _precursorMassMatchMode == PrecursorMassMatchMode.MostAbundant;
-        set => PrecursorMassMatchMode = value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic;
     }
 
     public void SetAllPrecursorMaxChargeState(int newMaxCharge)
@@ -208,6 +181,43 @@ public class DeconHostViewModel : BaseViewModel
     /// Hides the decon type selection combo box if only one options is present
     /// </summary>
     public bool DisplayDeconSelectionComboBox => PrecursorDeconvolutionParametersList.Count > 1 || ProductDeconvolutionParametersList.Count > 1;
+
+    /// <summary>
+    /// Adds a <see cref="FromFileDeconParamsViewModel"/> to
+    /// <see cref="PrecursorDeconvolutionParametersList"/> exactly once.
+    /// Does NOT add to the product list.
+    /// Call only from the file-specific settings host; ordinary task windows must never call this.
+    /// </summary>
+    /// <param name="initialFromFileParams">
+    /// When non-null the new item is pre-populated with these parameters and becomes the selected
+    /// precursor method.  When null a blank placeholder with default charges is added without
+    /// changing the current selection.
+    /// </param>
+    public void EnableFromFilePrecursorDeconvolution(
+        FromFileDeconvolutionParameters? initialFromFileParams = null)
+    {
+        if (PrecursorDeconvolutionParametersList.Any(x => x.DeconvolutionType == DeconvolutionType.FromFile))
+            return;
+
+        FromFileDeconvolutionParameters paramsToUse;
+        if (initialFromFileParams is null)
+        {
+            var defaultValues = GlobalVariables.AnalyteType.GetDefaultDeconParamValues(true);
+            paramsToUse = new FromFileDeconvolutionParameters("", defaultValues.MinAssumedChargeState, defaultValues.MaxAssumedChargeState, defaultValues.Polarity);
+        }
+        else
+        {
+            paramsToUse = initialFromFileParams;
+        }
+
+        var vm = (FromFileDeconParamsViewModel)paramsToUse.ToViewModel(true);
+        PrecursorDeconvolutionParametersList.Add(vm);
+        OnPropertyChanged(nameof(PrecursorDeconvolutionParametersList));
+        OnPropertyChanged(nameof(DisplayDeconSelectionComboBox));
+
+        if (initialFromFileParams is not null)
+            PrecursorDeconvolutionParameters = vm;
+    }
 }
 
 [ExcludeFromCodeCoverage] // Model used only for visualizing the view in visual studio

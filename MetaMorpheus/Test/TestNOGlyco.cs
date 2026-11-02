@@ -352,7 +352,7 @@ namespace Test
         {
             // Integration smoke test: the search pipeline must complete WITHOUT CRASHING when an
             // N-glycan is used as a fixed or variable modification and reaches GetGlycanYIons.
-            // This is the crash (NullReferenceException) this PR fixes.
+            // Unwrapped, this throws NullReferenceException.
             //
             // N-glycan-as-a-mod is not hydrated in this mode: if the glycan has no Y ions, the
             // consumption site skips them (dummy score) rather than generating them. Users should

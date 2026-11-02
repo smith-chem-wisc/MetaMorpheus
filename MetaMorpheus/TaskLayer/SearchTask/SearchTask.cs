@@ -5,6 +5,7 @@ using EngineLayer.DatabaseLoading;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
+using EngineLayer.Util;
 using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
@@ -20,6 +21,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Chemistry;
 
@@ -36,18 +38,23 @@ namespace TaskLayer
 
         public SearchParameters SearchParameters { get; set; }
 
+        /// <summary>
+        /// Builds the precursor search mode for a <see cref="MassDiffAcceptorType"/>.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately takes no <see cref="PrecursorMassMatchMode"/>. Whether candidates are matched on the
+        /// monoisotopic mass or the most-abundant isotopic mass is now carried entirely by
+        /// <paramref name="massDiffAcceptorType"/> (the <c>MostAbundant_*</c> members), so accepting the match
+        /// mode as well would let a caller ask for something this method cannot honour.
+        /// <see cref="RunSpecific"/> derives <see cref="CommonParameters.PrecursorMassMatchMode"/> from the
+        /// acceptor type instead, which is what keeps the theory and observed sides in step.
+        /// </remarks>
         public static MassDiffAcceptor GetMassDiffAcceptor(Tolerance precursorMassTolerance, MassDiffAcceptorType massDiffAcceptorType, string customMdac,
-            PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic, AverageResidue averagineModel = null,
-            double expectedIsotopeSpacing = Constants.C13MinusC12)
+            AverageResidue averagineModel = null, double expectedIsotopeSpacing = Constants.C13MinusC12)
         {
-            // Most-abundant mode matches candidates by their theoretical most-abundant isotopic peak,
-            // which directly solves the off-by-N problem. It replaces (rather than augments) the
-            // missed-monoisotopic notches, so it overrides the MassDiffAcceptorType selection.
-            if (precursorMassMatchMode == PrecursorMassMatchMode.MostAbundant)
-            {
-                return new MostAbundantMassDiffAcceptor("mostAbundant", precursorMassTolerance, averagineModel ?? new Averagine(),
-                    expectedIsotopeSpacing: expectedIsotopeSpacing);
-            }
+            averagineModel ??= GlobalVariables.AnalyteType == AnalyteType.Oligo
+                ? new OxyriboAveragine()
+                : new Averagine();
 
             switch (massDiffAcceptorType)
             {
@@ -94,28 +101,93 @@ namespace TaskLayer
                         },
                         precursorMassTolerance);
 
+                case MassDiffAcceptorType.MostAbundant_Exact:
+                    return new MostAbundantMassDiffAcceptor("mostAbundant", precursorMassTolerance, averagineModel, 0, expectedIsotopeSpacing);
+
+                case MassDiffAcceptorType.MostAbundant_PlusMinusOne:
+                    return new MostAbundantMassDiffAcceptor("mostAbundant_1", precursorMassTolerance, averagineModel, 1, expectedIsotopeSpacing);
+
+                case MassDiffAcceptorType.MostAbundant_PlusMinusTwo:
+                    return new MostAbundantMassDiffAcceptor("mostAbundant_2", precursorMassTolerance, averagineModel, 2, expectedIsotopeSpacing);
+
                 default:
                     throw new MetaMorpheusException("Unknown MassDiffAcceptorType");
             }
         }
 
+        /// <summary>
+        /// The acceptor type equivalent to the pre-<c>MostAbundant_*</c> way of asking for a most-abundant
+        /// search, i.e. <c>CommonParameters.PrecursorMassMatchMode = MostAbundant</c>. That setting used to
+        /// override <see cref="MassDiffAcceptorType"/> outright and build a
+        /// <see cref="MostAbundantMassDiffAcceptor"/> at <see cref="MostAbundantMassDiffAcceptor.DefaultMaxApexOffsetNeutrons"/>
+        /// (2) neutrons of apex tolerance, which is exactly what <see cref="MassDiffAcceptorType.MostAbundant_PlusMinusTwo"/>
+        /// builds today.
+        /// </summary>
+        private const MassDiffAcceptorType LegacyMostAbundantEquivalent = MassDiffAcceptorType.MostAbundant_PlusMinusTwo;
+
+        /// <summary>
+        /// Migrates a run that asks for most-abundant matching the old way — through
+        /// <see cref="CommonParameters.PrecursorMassMatchMode"/> rather than a <c>MostAbundant_*</c>
+        /// <see cref="MassDiffAcceptorType"/> — onto the acceptor type that now carries that request.
+        /// </summary>
+        /// <remarks>
+        /// The GUI migrates on open, so this only reaches TOML and command-line runs — which is where
+        /// most existing most-abundant configurations live, because the match mode was the only way to ask
+        /// for one before the <c>MostAbundant_*</c> members existed. Without this, the acceptor built below
+        /// would be monoisotopic and the run would come back silently changed. Migrating rather than merely
+        /// warning is what keeps those runs searching the way they used to; the warning is what stops the
+        /// change from being silent, and is the only record of it — <see cref="MetaMorpheusTask.RunTask"/>
+        /// writes the settings toml before it calls <see cref="RunSpecific"/>, so that file still shows the
+        /// original pairing.
+        /// </remarks>
+        private void MigrateLegacyMostAbundantRequest()
+        {
+            if (CommonParameters.PrecursorMassMatchMode != PrecursorMassMatchMode.MostAbundant
+                || SearchParameters.MassDiffAcceptorType.IsMostAbundant())
+            {
+                return;
+            }
+
+            Warn($"PrecursorMassMatchMode is {PrecursorMassMatchMode.MostAbundant} but MassDiffAcceptorType is " +
+                 $"{SearchParameters.MassDiffAcceptorType}, which is monoisotopic. Most-abundant matching is now selected " +
+                 $"by the mass difference acceptor, so this search will use {LegacyMostAbundantEquivalent} — the equivalent " +
+                 $"of the old setting. Set MassDiffAcceptorType explicitly to silence this.");
+
+            SearchParameters.MassDiffAcceptorType = LegacyMostAbundantEquivalent;
+        }
+
+        // Compiled optimized from the start. This method runs once per search, so the runtime would otherwise run it as
+        // unoptimized code, which keeps every local alive until it is overwritten: each searched file's scans, matches and
+        // search engine then stayed reachable through the rest of the run, about 0.6 GB per file on a TMT11 .raw file. It
+        // left that code only when one of its own loops ran hot, which the reporter ion loop used to do.
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId,
             FileSpecificParameters[] fileSettingsList)
         {
+            MigrateLegacyMostAbundantRequest();
+
             MyTaskResults = new(this);
+
+            // Reported HERE, before a single spectrum is read, rather than only at write time --
+            // a gap named up front can still be fixed cheaply, whereas one named after a three-hour
+            // search cannot. This warns; it does not refuse the run.
+            WarnAboutSdrfGaps(currentRawFileList);
+
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
-            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
+            var fileSpecificCommonParams = fileSettingsList.Select((b, i) => SetAllFileSpecificCommonParams(CommonParameters, b, currentRawFileList[i]));
 
             // start loading first spectra file in the background
             string fileToLoad = currentRawFileList[0];
-            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(fileToLoad, SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
+            var instrumentModelsByFile = new Dictionary<string, CvParam>(StringComparer.OrdinalIgnoreCase);
+            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(fileToLoad, SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0], fileToLoad)));
             nextFileLoadingTask.Start();
 
             if (SearchParameters.DoLabelFreeQuantification)
             {
-                // disable quantification if a .mgf or .d files are  being used
+                // disable quantification if a .mgf or Bruker file is being used. Bruker paths are normally the ".d"
+                // folder, but an inner file (analysis.baf, analysis.tdf, ...) can reach here too, so check for both.
                 if (currentRawFileList.Select(filepath => Path.GetExtension(filepath))
-                    .Any(ext => ext.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || ext.Equals(".d", StringComparison.OrdinalIgnoreCase) || ext.Equals(".msalign", StringComparison.OrdinalIgnoreCase)))
+                    .Any(ext => ext.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || ext.Equals(".d", StringComparison.OrdinalIgnoreCase) || ext.Equals(".msalign", StringComparison.OrdinalIgnoreCase) || BrukerDataDirectory.IsInnerFileExtension(ext)))
                 {
                     SearchParameters.DoLabelFreeQuantification = false;
                 }
@@ -167,6 +239,8 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // start loading proteins in the background
+            // one view of each database for every index key this task builds; see SnapshotDatabases
+            List<FileInfo> databasesAsLoaded = IndexingEngine.SnapshotDatabases(dbFilenameList);
             var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, SearchParameters.DecoyType, SearchParameters.SearchTarget, localizeableModificationTypes, SearchParameters.TCAmbiguity, SearchParameters.WriteTargetDecoyFasta, OutputFolder);
             var proteinLoadingTask = dbLoader.RunAsync();
             List<IBioPolymer> bioPolymerList = null!;
@@ -209,6 +283,7 @@ namespace TaskLayer
             int completedFiles = 0;
             object indexLock = new object();
             object psmLock = new object();
+            int? decidedPartitions = null;
 
             Status("Searching files...", new List<string> { taskId });
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
@@ -216,6 +291,7 @@ namespace TaskLayer
             Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>(); // key is filename, value is an int array of length 2, where the first element is the number of MS2 spectra in the file, and the second element is the number of different deconvoluted precursors assigned to those scans
             bool collectedDigestionInformation = false;
             IDictionary<(string Accession, string BaseSequence), int> digestionCountDictionary = null;
+            int numNotches = 0;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 if (GlobalVariables.StopLoops) { break; }
@@ -225,11 +301,19 @@ namespace TaskLayer
                 // mark the file as in-progress
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
-                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex], origDataFile);
+
+                // The theory side is governed by SearchParameters.MassDiffAcceptorType, while the observed precursor
+                // mass comes from PrecursorMassMatchMode. Keep them aligned so a most-abundant acceptor actually
+                // searches against most-abundant masses (and vice versa).
+                combinedParams.PrecursorMassMatchMode = SearchParameters.MassDiffAcceptorType.IsMostAbundant()
+                    ? PrecursorMassMatchMode.MostAbundant
+                    : PrecursorMassMatchMode.Monoisotopic;
 
                 MassDiffAcceptor massDiffAcceptor = GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac,
-                    combinedParams.PrecursorMassMatchMode, combinedParams.GetAverageResidue(),
-                    combinedParams.IsotopeSpacing());
+                    combinedParams.GetAverageResidue(), combinedParams.IsotopeSpacing());
+
+                numNotches = massDiffAcceptor.NumNotches;
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
@@ -238,6 +322,8 @@ namespace TaskLayer
                 // ensure that the next file has finished loading from the async method
                 nextFileLoadingTask.Wait();
                 var myMsDataFile = nextFileLoadingTask.Result;
+                // Kept for the SDRF, which would otherwise read every file again after the search.
+                instrumentModelsByFile[origDataFile] = myMsDataFile.SourceFile?.InstrumentModel;
 
                 // If the file is one which does not have precursor scans, but only precursor information, then we need to set the parameters accordingly
                 // We do this by adjusting the transient combined params so that this can be done on a file by file basis. 
@@ -260,7 +346,7 @@ namespace TaskLayer
                 if (origDataFile != currentRawFileList.Last())
                 {
                     int nextFileIndex = spectraFileIndex + 1;
-                    nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(currentRawFileList[nextFileIndex], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[nextFileIndex])));
+                    nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(currentRawFileList[nextFileIndex], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[nextFileIndex], currentRawFileList[nextFileIndex])));
                     nextFileLoadingTask.Start();
                 }
 
@@ -295,47 +381,51 @@ namespace TaskLayer
 
                 if (SearchParameters.DoMultiplexQuantification)
                 {
-                    IsobaricMassTag massTag = IsobaricMassTag.GetIsobaricMassTag(SearchParameters.MultiplexModId);
-                    if (massTag == null) // Should probably warn/update results if null
+                    if (!IsobaricMassTag.TryGetIsobaricMassTag(SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var massTag))
                     {
                         throw new MetaMorpheusException("Could not find isobaric mass tag with the name " + SearchParameters.MultiplexModId);
                     }
 
-                    foreach (var scan in arrayOfMs2ScansSortedByMass)
-                    {
-                        scan.SetIsobaricMassTagReporterIonIntensities(massTag);
-                    }
+                    // Reporter ions come from the scans as the file stores them, read again here. The loaded copy is
+                    // trimmed (MS2 when TrimMsMsPeaks is on, MS3 always) and a LowCID search bins its MS2 spectra in
+                    // place; either can remove a reporter ion, which would then be quantified as 0. Only the scans they
+                    // are read from are read again, one at a time where the file allows it, so that no second copy of the
+                    // whole file is held while the next one loads.
+                    MyFileManager.SetReporterIonIntensitiesFromStoredScans(origDataFile, myMsDataFile, arrayOfMs2ScansSortedByMass,
+                        massTag, combinedParams.MaxThreadsToUsePerFile);
                 }
 
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
                 {
-                    // Assume modern search is for proteins. 
-                    var proteinList = bioPolymerList.Cast<Protein>().ToList();
-                    for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
+                    // scoped to indexing/searching only, so the settings the task reports stay as configured
+                    CommonParameters indexParams = RaisePartitionsToFitMemory(bioPolymerList, combinedParams, fixedModifications,
+                        variableModifications, SearchParameters.SilacLabels, SearchParameters.StartTurnoverLabel,
+                        SearchParameters.EndTurnoverLabel, SearchParameters.MaxFragmentSize, ref decidedPartitions);
+                    for (int currentPartition = 0; currentPartition < indexParams.TotalPartitions; currentPartition++)
                     {
-                        List<PeptideWithSetModifications> peptideIndex = null;
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / combinedParams.TotalPartitions,
-                            ((currentPartition + 1) * proteinList.Count / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count / combinedParams.TotalPartitions));
+                        List<IBioPolymerWithSetMods> peptideIndex = null;
+                        List<IBioPolymer> proteinListSubset = bioPolymerList.GetRange(currentPartition * bioPolymerList.Count / indexParams.TotalPartitions,
+                            ((currentPartition + 1) * bioPolymerList.Count / indexParams.TotalPartitions) - (currentPartition * bioPolymerList.Count / indexParams.TotalPartitions));
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                            SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, combinedParams, FileSpecificParameters,
-                            SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), SearchParameters.TCAmbiguity, new List<string> { taskId });
-                        List<int>[] fragmentIndex = null;
+                            SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, indexParams, FileSpecificParameters,
+                            SearchParameters.MaxFragmentSize, false, databasesAsLoaded, SearchParameters.TCAmbiguity, new List<string> { taskId });
+                        FragmentIndex fragmentIndex = null;
                         List<int>[] precursorIndex = null;
 
                         lock (indexLock)
                         {
-                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
+                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, bioPolymerList, taskId);
                         }
 
                         Status("Searching files...", taskId);
 
                         new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition,
-                            combinedParams, this.FileSpecificParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
+                            indexParams, this.FileSpecificParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
-                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
+                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + indexParams.TotalPartitions + "!", thisId));
                         if (GlobalVariables.StopLoops) { break; }
                     }
                 }
@@ -384,24 +474,39 @@ namespace TaskLayer
                     //foreach terminus we're going to look at
                     foreach (CommonParameters paramToUse in paramsToUse)
                     {
+                        // Non-specific search is built around proteases -- terminal mod placement, the
+                        // "single" agents, the FDR categories -- none of which have a nucleic acid
+                        // counterpart yet. Say so, rather than letting the cast below throw a bare
+                        // InvalidCastException that names Protein and RNA and explains neither.
+                        if (bioPolymerList.Any(p => p is not Protein))
+                        {
+                            throw new MetaMorpheusException(
+                                "Non-specific search is only implemented for proteins. Use Classic or Modern search for nucleic acid databases.");
+                        }
+
                         var proteinList = bioPolymerList.Cast<Protein>().ToList();
+                        // scoped to indexing/searching only; paramToUse still carries the configured terminus
+                        // to the spectral-library step below
+                        CommonParameters indexParams = RaisePartitionsToFitMemory(proteinList, paramToUse, fixedModifications,
+                            variableModifications, SearchParameters.SilacLabels, SearchParameters.StartTurnoverLabel,
+                            SearchParameters.EndTurnoverLabel, SearchParameters.MaxFragmentSize, ref decidedPartitions);
 
                         //foreach database partition
-                        for (int currentPartition = 0; currentPartition < paramToUse.TotalPartitions; currentPartition++)
+                        for (int currentPartition = 0; currentPartition < indexParams.TotalPartitions; currentPartition++)
                         {
                             List<PeptideWithSetModifications> peptideIndex = null;
 
-                            List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / paramToUse.TotalPartitions,
-                                ((currentPartition + 1) * proteinList.Count / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count / paramToUse.TotalPartitions))
+                            List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / indexParams.TotalPartitions,
+                                ((currentPartition + 1) * proteinList.Count / indexParams.TotalPartitions) - (currentPartition * proteinList.Count / indexParams.TotalPartitions))
                                 .ToList(); // assume that only proteins are used in non-specific search
 
-                            List<int>[] fragmentIndex = null;
+                            FragmentIndex fragmentIndex = null;
                             List<int>[] precursorIndex = null;
 
                             Status("Getting fragment dictionary...", new List<string> { taskId });
                             var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                                SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, paramToUse, FileSpecificParameters,
-                                SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), SearchParameters.TCAmbiguity, new List<string> { taskId });
+                                SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, indexParams, FileSpecificParameters,
+                                SearchParameters.MaxFragmentSize, true, databasesAsLoaded, SearchParameters.TCAmbiguity, new List<string> { taskId });
                             lock (indexLock)
                             {
                                 GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
@@ -410,10 +515,10 @@ namespace TaskLayer
                             Status("Searching files...", taskId);
 
                             new NonSpecificEnzymeSearchEngine(fileSpecificPsmsSeparatedByFdrCategory, arrayOfMs2ScansSortedByMass, coisolationIndex, peptideIndex, fragmentIndex,
-                                precursorIndex, currentPartition, paramToUse, this.FileSpecificParameters, variableModifications, massDiffAcceptor,
+                                precursorIndex, currentPartition, indexParams, this.FileSpecificParameters, variableModifications, massDiffAcceptor,
                                 SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
-                            ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + paramToUse.TotalPartitions + "!", thisId));
+                            ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + indexParams.TotalPartitions + "!", thisId));
                             if (GlobalVariables.StopLoops) { break; }
                         }
 
@@ -496,7 +601,6 @@ namespace TaskLayer
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
-            int numNotches = GetNumNotches(SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
             //resolve category specific fdrs (for speedy semi and nonspecific
             if (SearchParameters.SearchType == SearchType.NonSpecific)
             {
@@ -518,6 +622,8 @@ namespace TaskLayer
                 FixedModifications = fixedModifications,
                 ListOfDigestionParams = [.. fileSpecificCommonParams.Select(p => p.DigestionParams)],
                 CurrentRawFileList = currentRawFileList,
+                AcquiredSpectraFiles = AcquiredSpectraFiles,
+                InstrumentModelsByFile = instrumentModelsByFile,
                 MyFileManager = myFileManager,
                 NumNotches = numNotches,
                 OutputFolder = OutputFolder,
@@ -535,25 +641,193 @@ namespace TaskLayer
                 CommonParameters = CommonParameters,
                 DigestionCountDictionary = digestionCountDictionary
             };
-            return postProcessing.Run();
+            MyTaskResults postSearchResults = postProcessing.Run();
+
+            // Hand the resolved, FDR'd PSM set to a downstream TruncationSearchTask via the shared
+            // in-memory task-chain context (decision #1). The consumer dedups to proteoform level, applies
+            // its own permissive parent filter, and null-filters as it goes — AllSpectralMatches is assembled
+            // from fixed-length per-file arrays that hold null slots for unmatched scans — so deposit the
+            // list as-is rather than allocating a filtered copy of it. The context is null (and this a
+            // no-op) unless the run list actually contains a consumer, and the runner clears it once that
+            // consumer has run.
+            TaskChainContext?.Deposit(taskId, parameters.AllSpectralMatches);
+            // Its CommonParameters ride along so the consumer can warn when its own settings disagree.
+            TaskChainContext?.Deposit(TaskChainContext.CommonParametersKey(taskId), CommonParameters);
+
+            return postSearchResults;
         }
 
-        private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
+        /// <summary>
+        /// Reports, before the search starts, which parts of the SDRF this run will not be able to
+        /// fill in. It does NOT refuse the run.
+        ///
+        /// It used to. That was stricter than the specification -- which marks organism part
+        /// required but explicitly permits the reserved words -- and stricter than the community,
+        /// a fifth of whose curated cells are one. It was also self-defeating: a user who is blocked
+        /// turns the feature off, and then there is no file at all.
+        ///
+        /// What replaces the refusal is not silence. The gaps are named here, before the run, so
+        /// they can still be fixed cheaply; they are named again in the coverage report afterwards,
+        /// against what was actually written. An SDRF padded with reserved words is honest and
+        /// spec-conformant; one whose emptiness is never mentioned is how a corpus fills with holes.
+        /// </summary>
+        private void WarnAboutSdrfGaps(List<string> currentRawFileList)
         {
-            switch (massDiffAcceptorType)
-            {
-                case MassDiffAcceptorType.Exact: return 1;
-                case MassDiffAcceptorType.OneMM: return 2;
-                case MassDiffAcceptorType.TwoMM: return 3;
-                case MassDiffAcceptorType.ThreeMM: return 4;
-                case MassDiffAcceptorType.ModOpen: return 1;
-                case MassDiffAcceptorType.Open: return 1;
-                case MassDiffAcceptorType.PlusOrMinusThreeMM: return 7;
-                case MassDiffAcceptorType.Custom: return ParseSearchMode(customMdac).NumNotches;
+            if (!SearchParameters.WriteSdrf || currentRawFileList is null || currentRawFileList.Count == 0)
+                return;
 
-                default: throw new MetaMorpheusException("Unknown mass difference acceptor type");
-            }
+            // First, and in its own method, so that no branch below can skip it. A branch that returns
+            // early (#2817's isobaric one did) would otherwise drop it for every TMT search.
+            WarnAboutProteomeXchangeAccession();
+
+            // These checks only warn, so they must never be what stops a search: a design another
+            // program holds open (Excel locks what it opens) is reported, not thrown.
+            string designDirectory = Path.GetDirectoryName(currentRawFileList.First()) ?? string.Empty;
+
+            // An isobaric search's samples live in TmtDesign.txt, one per channel, and the SDRF is
+            // written one row per channel from it. ExperimentalDesign.tsv is not consulted, so its
+            // absence is not a gap worth naming. No early return: a check added below this branch
+            // has to run for isobaric searches too (#2817 review: one did not).
+            if (SearchParameters.DoMultiplexQuantification)
+                WarnAboutIsobaricSdrfGaps(designDirectory, currentRawFileList);
+            else
+                WarnAboutLabelFreeSdrfGaps(designDirectory, currentRawFileList);
         }
+
+        /// <summary>
+        /// The ExperimentalDesign.tsv and SILAC half of <see cref="WarnAboutSdrfGaps"/>, for every search
+        /// that is not isobaric.
+        /// </summary>
+        private void WarnAboutLabelFreeSdrfGaps(string designDirectory, List<string> currentRawFileList)
+        {
+            string designPath = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
+
+            if (!File.Exists(designPath))
+            {
+                Warn("SDRF output is on, but there is no " + GlobalVariables.ExperimentalDesignFileName +
+                     " beside the spectra files (" + designPath + "). The search parameters will be " +
+                     "recorded in full; condition, replicate and fraction will not, and the sample " +
+                     "columns will say 'not available'. Set up the experimental design to fix that.");
+            }
+            else
+            {
+                try
+                {
+                    ExperimentalDesign.ReadExperimentalDesign(designPath, currentRawFileList, out var designErrors);
+                    if (designErrors.Any())
+                        Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
+                             " cannot be used as it stands, so the SDRF will describe the search only: " +
+                             string.Join("; ", designErrors));
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                    Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
+                         " could not be read before the search (" + e.Message + "). If it is still " +
+                         "unreadable when the SDRF is written, the SDRF will describe the search only.");
+                }
+            }
+
+            // SILAC cannot express comment[label]: SDRF wants one row per sample per channel, and
+            // MetaMorpheus has no channel-to-sample mapping for SILAC. Guessing would invent an
+            // experimental design.
+            // Turnover labels are copied into SilacLabels only further down RunSpecific, after this check.
+            if (SearchParameters.SilacLabels?.Any() == true
+                || SearchParameters.StartTurnoverLabel is not null
+                || SearchParameters.EndTurnoverLabel is not null)
+                Warn("SDRF output on a SILAC search: comment[label] is not filled in, because " +
+                     "MetaMorpheus has no map of which sample carries which label. Every other column " +
+                     "will be written.");
+        }
+
+        /// <summary>
+        /// The isobaric half of <see cref="WarnAboutSdrfGaps"/>. Without a usable TmtDesign.txt the
+        /// SDRF falls back to one row per file with no channel or sample, which is worth knowing
+        /// before a long TMT search rather than after it.
+        /// </summary>
+        private void WarnAboutIsobaricSdrfGaps(string designDirectory, List<string> currentRawFileList)
+        {
+            string tmtDesignPath = Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName);
+
+            if (!File.Exists(tmtDesignPath))
+            {
+                Warn("SDRF output is on for an isobaric search, but there is no " +
+                     GlobalVariables.TmtExperimentalDesignFileName + " beside the spectra files (" + tmtDesignPath +
+                     "). The SDRF will describe each file once, without its channels or samples.");
+                return;
+            }
+
+            var files = TmtExperimentalDesign.Read(tmtDesignPath, currentRawFileList, out var designErrors);
+            if (designErrors.Any())
+            {
+                Warn("SDRF output is on, but " + GlobalVariables.TmtExperimentalDesignFileName +
+                     " cannot be used as it stands, so the SDRF will describe each file once, without its " +
+                     "channels or samples: " + string.Join("; ", designErrors));
+                return;
+            }
+
+            IsobaricMassTagType? tagType = IsobaricMassTag.TryGetTagType(SearchParameters.MultiplexModId, out var type)
+                ? type
+                : null;
+            if (tagType is null)
+            {
+                Warn("SDRF output is on, but the multiplex label '" + SearchParameters.MultiplexModId + "' is not " +
+                     "an isobaric tag MetaMorpheus recognises, so the SDRF will describe each file once, without " +
+                     "its channels or samples.");
+                return;
+            }
+
+            // The gate the SDRF writer applies file by file: no PRIDE channel terms (DiLeu), a plex with no
+            // annotated channels, or a channel off the searched plex.
+            var reasons = files
+                .Select(f => PostSearchAnalysisTask.ChannelRowsUnusableReason(f, tagType.Value))
+                .Where(r => r is not null)
+                .Distinct()
+                .ToList();
+            if (reasons.Any())
+                Warn("SDRF output is on, but the SDRF will describe these files once, without their channels or " +
+                     "samples: " + string.Join("; ", reasons) + ".");
+
+            var usableFiles = files
+                .Where(f => PostSearchAnalysisTask.ChannelRowsUnusableReason(f, tagType.Value) is null)
+                .ToList();
+            var reusedSampleNames = PostSearchAnalysisTask.SampleNamesReusedForDifferentSamples(usableFiles);
+            if (reusedSampleNames.Any())
+                Warn("SDRF output is on. " + PostSearchAnalysisTask.ReusedSampleNamesWarning(reusedSampleNames,
+                    PostSearchAnalysisTask.SampleNamesRepeatedWithinAPlex(usableFiles)));
+
+            PostSearchAnalysisTask.IsobaricSourceNames(usableFiles,
+                files.Except(usableFiles).Select(f => f.FullFilePathWithExtension).ToList(), out var numbered);
+            if (numbered.Any())
+                Warn("SDRF output is on. " + PostSearchAnalysisTask.NumberedSourceNamesWarning(numbered));
+        }
+
+        /// <summary>
+        /// Names the ProteomeXchange accession before the run whenever one is set, not only when it is
+        /// malformed. The accession names ONE dataset but lives in task settings, which are reused (saved
+        /// Task Settings TOMLs, the GUI's defaults), and the GUI has no field for it. A well-formed
+        /// accession left over from another dataset would otherwise tie these files to the wrong
+        /// experiment without a word. Warned, not refused: the accession is still written as supplied.
+        ///
+        /// The form check accepts PXD or RPXD (PRIDE's reprocessed datasets) followed by six or more
+        /// digits, in any case. The specification's value type is PXD\d+, so seven-digit accessions
+        /// are valid once they exist.
+        /// </summary>
+        private void WarnAboutProteomeXchangeAccession()
+        {
+            string accession = SearchParameters.ProteomeXchangeAccession?.Trim();
+            if (string.IsNullOrEmpty(accession))
+                return;
+
+            string malformed = System.Text.RegularExpressions.Regex.IsMatch(accession, @"^R?PXD\d{6,}$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+                ? ""
+                : " That is not the form of a ProteomeXchange accession (PXD followed by six or more digits); " +
+                  "it will be written as given.";
+            Warn("SDRF output is on: the SDRF will record ProteomeXchange accession '" + accession +
+                 "' as the dataset these spectra files came from." + malformed + " If they did not, " +
+                 "clear ProteomeXchangeAccession in the task settings.");
+        }
+
 
         private static MassDiffAcceptor ParseSearchMode(string text)
         {

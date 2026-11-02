@@ -107,15 +107,22 @@ namespace Test
         }
 
         [Test]
-        public static void SearchTask_GetMassDiffAcceptor_ReturnsMostAbundantWhenModeSet()
+        public static void SearchTask_GetMassDiffAcceptor_WithMostAbundantType_ReturnsMostAbundantMassDiffAcceptor()
         {
-            var acc = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.OneMM, null,
-                PrecursorMassMatchMode.MostAbundant, Averagine);
+            var acc = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.MostAbundant_Exact, null,
+                averagineModel: Averagine);
             Assert.That(acc, Is.TypeOf<MostAbundantMassDiffAcceptor>());
+            Assert.That(acc.FileNameAddition, Is.EqualTo("mostAbundant"));
 
-            // Default mode is unaffected.
-            var def = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.OneMM, null);
-            Assert.That(def, Is.Not.TypeOf<MostAbundantMassDiffAcceptor>());
+            acc = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.MostAbundant_PlusMinusOne, null,
+                averagineModel: Averagine);
+            Assert.That(acc, Is.TypeOf<MostAbundantMassDiffAcceptor>());
+            Assert.That(acc.FileNameAddition, Is.EqualTo("mostAbundant_1"));
+
+            acc = SearchTask.GetMassDiffAcceptor(new PpmTolerance(5), MassDiffAcceptorType.MostAbundant_PlusMinusTwo, null,
+                averagineModel: Averagine);
+            Assert.That(acc, Is.TypeOf<MostAbundantMassDiffAcceptor>());
+            Assert.That(acc.FileNameAddition, Is.EqualTo("mostAbundant_2"));
         }
 
         /// <summary>
@@ -1156,9 +1163,10 @@ namespace Test
         }
 
         /// <summary>
-        /// The warning is actually emitted by a real task run, not merely computable. Runs a search in
-        /// most-abundant mode over a file whose precursors deconvolute, with precursor deconvolution turned
-        /// OFF so every scan falls back, and asserts the task raised the warning.
+        /// The warning is actually emitted by a real task run, not merely computable. Runs a search whose theory
+        /// (most-abundant mass diff acceptor) and observed (precursor mass match mode) sides are both most-abundant
+        /// over a file whose precursors deconvolute, with precursor deconvolution turned OFF so every scan falls
+        /// back, and asserts the task raised the warning.
         /// </summary>
         [Test]
         public static void SearchTask_EmitsMonoisotopicFallbackWarning_WhenNoApexObserved()
@@ -1170,6 +1178,7 @@ namespace Test
             try
             {
                 var searchTask = new SearchTask();
+                searchTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.MostAbundant_Exact;
                 searchTask.CommonParameters = new CommonParameters(
                     precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant,
                     doPrecursorDeconvolution: false);   // no envelope -> no observed apex on any scan
@@ -1183,6 +1192,121 @@ namespace Test
 
                 Assert.That(warnings.Any(w => w != null && w.Contains("no observed most-abundant peak")), Is.True,
                     "a most-abundant search fell back to monoisotopic matching without warning");
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+                if (Directory.Exists(outputFolder)) { Directory.Delete(outputFolder, true); }
+                string taskSettings = Path.Combine(TestContext.CurrentContext.TestDirectory, "Task Settings");
+                if (Directory.Exists(taskSettings)) { Directory.Delete(taskSettings, true); }
+            }
+        }
+
+        /// <summary>
+        /// Pins the acceptor that a legacy most-abundant request migrates onto. Before the
+        /// <c>MostAbundant_*</c> types existed, <c>PrecursorMassMatchMode = MostAbundant</c> overrode
+        /// <see cref="MassDiffAcceptorType"/> and built a <see cref="MostAbundantMassDiffAcceptor"/> at the
+        /// DEFAULT apex tolerance. <see cref="MassDiffAcceptorType.MostAbundant_PlusMinusTwo"/> is the member
+        /// that reproduces it, and SearchTask migrates onto that member — so if
+        /// <see cref="MostAbundantMassDiffAcceptor.DefaultMaxApexOffsetNeutrons"/> ever moves off 2, this
+        /// fails and the migration target has to move with it.
+        /// </summary>
+        [Test]
+        public static void MostAbundantPlusMinusTwo_ReproducesTheLegacyDefaultAcceptor()
+        {
+            var tol = new PpmTolerance(5);
+            var legacy = new MostAbundantMassDiffAcceptor("mostAbundant", tol, Averagine);
+            var migrated = SearchTask.GetMassDiffAcceptor(tol, MassDiffAcceptorType.MostAbundant_PlusMinusTwo, null,
+                averagineModel: Averagine);
+
+            Assert.That(migrated, Is.TypeOf<MostAbundantMassDiffAcceptor>());
+            Assert.That(((MostAbundantMassDiffAcceptor)migrated).MaxApexOffsetNeutrons,
+                Is.EqualTo(MostAbundantMassDiffAcceptor.DefaultMaxApexOffsetNeutrons));
+            Assert.That(migrated.NumNotches, Is.EqualTo(legacy.NumNotches));
+
+            // Same notch decision on every candidate across the window and one neutron past each edge.
+            const double mono = 15000.0;
+            double observedApex = mono + ApexOffset(mono);
+            foreach (int k in new[] { -3, -2, -1, 0, 1, 2, 3 })
+            {
+                double candidate = mono - k * Constants.C13MinusC12;
+                Assert.That(migrated.Accepts(observedApex, candidate), Is.EqualTo(legacy.Accepts(observedApex, candidate)),
+                    $"k={k} is accepted differently than the legacy acceptor");
+            }
+        }
+
+        /// <summary>
+        /// A toml or command-line run written before the <c>MostAbundant_*</c> acceptor types existed asks for
+        /// most-abundant matching the only way it could: <c>PrecursorMassMatchMode = MostAbundant</c> alongside
+        /// whatever monoisotopic acceptor type it happened to carry. That pairing must not come back as a
+        /// silently monoisotopic search. Asserts the task migrated the acceptor type and said so.
+        /// </summary>
+        [Test]
+        public static void SearchTask_MigratesLegacyMostAbundantRequest_AndWarns()
+        {
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => { lock (warnings) { warnings.Add(e.S); } };
+            MetaMorpheusTask.WarnHandler += handler;
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestMostAbundantLegacyMigration");
+            try
+            {
+                var searchTask = new SearchTask();
+                searchTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.ThreeMM;
+                searchTask.CommonParameters = new CommonParameters(
+                    precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
+
+                string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+                string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+                Directory.CreateDirectory(outputFolder);
+
+                searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) },
+                    new List<string> { myFile }, "test");
+
+                Assert.That(searchTask.SearchParameters.MassDiffAcceptorType,
+                    Is.EqualTo(MassDiffAcceptorType.MostAbundant_PlusMinusTwo),
+                    "a legacy most-abundant request was dropped back to a monoisotopic search");
+                Assert.That(warnings.Any(w => w != null && w.Contains("MassDiffAcceptorType is ThreeMM")), Is.True,
+                    "the acceptor type was changed without saying so");
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+                if (Directory.Exists(outputFolder)) { Directory.Delete(outputFolder, true); }
+                string taskSettings = Path.Combine(TestContext.CurrentContext.TestDirectory, "Task Settings");
+                if (Directory.Exists(taskSettings)) { Directory.Delete(taskSettings, true); }
+            }
+        }
+
+        /// <summary>
+        /// The mirror of <see cref="SearchTask_MigratesLegacyMostAbundantRequest_AndWarns"/>: a run that already
+        /// names a <c>MostAbundant_*</c> acceptor is left exactly as configured, so the migration cannot quietly
+        /// widen a ±0 or ±1 search to ±2.
+        /// </summary>
+        [Test]
+        public static void SearchTask_LeavesAnExplicitMostAbundantAcceptorAlone()
+        {
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> handler = (o, e) => { lock (warnings) { warnings.Add(e.S); } };
+            MetaMorpheusTask.WarnHandler += handler;
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestMostAbundantNoMigration");
+            try
+            {
+                var searchTask = new SearchTask();
+                searchTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.MostAbundant_Exact;
+                searchTask.CommonParameters = new CommonParameters(
+                    precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant);
+
+                string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+                string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+                Directory.CreateDirectory(outputFolder);
+
+                searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) },
+                    new List<string> { myFile }, "test");
+
+                Assert.That(searchTask.SearchParameters.MassDiffAcceptorType,
+                    Is.EqualTo(MassDiffAcceptorType.MostAbundant_Exact));
+                Assert.That(warnings.Any(w => w != null && w.Contains("Most-abundant matching is now selected")), Is.False,
+                    "an explicitly configured most-abundant acceptor was migrated");
             }
             finally
             {

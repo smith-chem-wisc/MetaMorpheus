@@ -489,6 +489,7 @@ namespace GuiFunctions
                 && CurrentlyDisplayedPlots.Count == 1
                 && reFragment == null
                 && SpectralMatchComparer.Instance.Equals(CurrentlyDisplayedPlots[0].SpectrumMatch, spectrumMatches[0]);
+            bool displayAttempted = false;
 
             foreach (var psm in spectrumMatches)
             {
@@ -514,14 +515,13 @@ namespace GuiFunctions
 
                     if (plotView.Name == "plotView")
                     {
+                        displayAttempted = true;
                         DisplaySequences(stationaryCanvas, null, null, psm);
-                        DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
+                        DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
+                        if (displayErrors?.Any() == true)
+                            errors.AddRange(displayErrors);
                     }
 
-                    if (errors != null)
-                    {
-                        errors.AddRange(errors);
-                    }
                 }
 
                 var rawSequence = psm.IsPeptide()
@@ -554,12 +554,12 @@ namespace GuiFunctions
                         case "PeptideSpectrumMatchPlot":
                             if (!plot.SpectrumMatch.FullSequence.Contains('['))
                                 legendCanvas = null;
-                            ((PeptideSpectrumMatchPlot)plot).ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas,
+                            ((PeptideSpectrumMatchPlot)plot).ExportPlot(filePath, stationaryCanvas,
                                 legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
                             break;
 
                         case "CrosslinkSpectrumMatchPlot":
-                            ((CrosslinkSpectrumMatchPlot)plot).ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas,
+                            ((CrosslinkSpectrumMatchPlot)plot).ExportPlot(filePath, stationaryCanvas,
                                 legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
                             break;
                     }
@@ -571,6 +571,7 @@ namespace GuiFunctions
 
             if (!skipPlotRegeneration && plotView.Name == "plotView")
             {
+                displayAttempted = true;
                 var psm = spectrumMatches.First();
 
                 // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
@@ -583,12 +584,17 @@ namespace GuiFunctions
                     psm.MatchedIons = newIons;
                 }
                 DisplaySequences(stationaryCanvas, null, null, psm);
-                DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
+                DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
+                if (displayErrors?.Any() == true)
+                    errors.AddRange(displayErrors);
 
                 // put the original ions back in place if they were altered
                 if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
                     psm.MatchedIons = oldMatchedIons;
             }
+
+            if (displayAttempted && errors.Count == 0)
+                errors = null;
         }
 
         /// <summary>
@@ -655,14 +661,20 @@ namespace GuiFunctions
             sequenceAnnotaitonCanvas.Width = width;
             System.Drawing.Bitmap annotationBitmap = ConvertCanvasToBitmap(sequenceAnnotaitonCanvas, directory);
             Point annotationPoint = new(-100, 0);
-            
-            System.Drawing.Bitmap ptmLegendBitmap = ConvertUIElementToBitmap(ptmLegend, directory);
-            Point ptmLegendPoint = new((annotationBitmap.Width / 2) - (ptmLegend.RenderSize.Width / 2) - 50, sequenceAnnotaitonCanvas.Height);
 
-            List<System.Drawing.Bitmap> toCombine = new List<System.Drawing.Bitmap>() { annotationBitmap, ptmLegendBitmap };
-            List<Point> points = new List<Point>() { annotationPoint, ptmLegendPoint };
+            List<System.Drawing.Bitmap> toCombine = new() { annotationBitmap };
+            List<Point> points = new() { annotationPoint };
+            System.Drawing.Bitmap ptmLegendBitmap = ConvertUIElementToBitmap(ptmLegend, directory);
+            if (ptmLegendBitmap != null)
+            {
+                Point ptmLegendPoint = new((annotationBitmap.Width / 2) - (ptmLegend.RenderSize.Width / 2) - 50, sequenceAnnotaitonCanvas.Height);
+                toCombine.Add(ptmLegendBitmap);
+                points.Add(ptmLegendPoint);
+            }
+
             System.Drawing.Bitmap combinedBitmap = CombineBitmap(toCombine, points, false);
-            System.Drawing.Bitmap finalBitmap = combinedBitmap.Clone(new System.Drawing.Rectangle(0, 0, combinedBitmap.Width - 140, combinedBitmap.Height), combinedBitmap.PixelFormat);
+            int finalWidth = Math.Max(1, combinedBitmap.Width - 140);
+            System.Drawing.Bitmap finalBitmap = combinedBitmap.Clone(new System.Drawing.Rectangle(0, 0, finalWidth, combinedBitmap.Height), combinedBitmap.PixelFormat);
             ExportBitmap(finalBitmap, path);
             combinedBitmap.Dispose();
             finalBitmap.Dispose();
@@ -674,8 +686,12 @@ namespace GuiFunctions
         /// <param name="images">list of objects to combine</param>
         /// <param name="points">the position to begin drawing each</param>
         /// <param name="overlap">true of they should overlap, false if they should stack ontop of one another vertically</param>
+        /// <param name="backgroundColor">background color painted over the combined canvas before drawing the source images.
+        /// When null (default), the background is chosen from <see cref="MetaDrawSettings.ExportType"/>: JPEG and BMP exports
+        /// use opaque white so uncovered regions render correctly in formats without alpha; PNG, TIFF, PDF, and WMF keep
+        /// a transparent background so uncovered regions stay see-through. Pass an explicit color to override the default.</param>
         /// <returns></returns>
-        public static System.Drawing.Bitmap CombineBitmap(List<System.Drawing.Bitmap> images, List<Point> points, bool overlap = true)
+        public static System.Drawing.Bitmap CombineBitmap(List<System.Drawing.Bitmap> images, List<Point> points, bool overlap = true, System.Drawing.Color? backgroundColor = null)
         {
             System.Drawing.Bitmap finalImage = null;
 
@@ -699,14 +715,17 @@ namespace GuiFunctions
                     }
                 }
 
-                //create a bitmap to hold the combined image
-                finalImage = new System.Drawing.Bitmap(width, height);
+                // Create a transparent bitmap to hold the combined image without changing source alpha.
+                finalImage = new System.Drawing.Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
                 //get a graphics object from the image so we can draw on it
                 using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(finalImage))
                 {
-                    //set background color
-                    g.Clear(System.Drawing.Color.White);
+                    // Choose a format-appropriate background when the caller did not override it.
+                    // JPEG and BMP do not support alpha; opaque white keeps uncovered regions visible.
+                    System.Drawing.Color resolvedBackground = backgroundColor
+                        ?? GetDefaultCombineBackgroundColor();
+                    g.Clear(resolvedBackground);
 
                     //go through each image and draw it on the final image
                     for (int i = 0; i < images.Count; i++)
@@ -845,9 +864,8 @@ namespace GuiFunctions
         private static System.Drawing.Bitmap ConvertCanvasToBitmap(Canvas canvas, string directory)
         {
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
-            string tempBitmapPath = System.IO.Path.Combine(directory, "temp.bmp");
-            int height = (int)canvas.Height == -2147483648 ? (int)canvas.ActualHeight : (int)canvas.Height;
-            int width = (int)canvas.Width == -2147483648 ? (int)canvas.ActualWidth : (int)canvas.Width;
+            int height = GetCanvasDimension(canvas.Height, canvas.ActualHeight);
+            int width = GetCanvasDimension(canvas.Width, canvas.ActualWidth);
             Size canvasSize = new Size(width, height);
             canvas.Measure(canvasSize);
             canvas.Arrange(new Rect(canvasSize));
@@ -855,18 +873,40 @@ namespace GuiFunctions
                 MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
             renderCanvasBitmap.Render(canvas);
 
-            BmpBitmapEncoder encoder = new BmpBitmapEncoder();
+            PngBitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(renderCanvasBitmap));
-            using (FileStream file = File.Create(tempBitmapPath))
+            using MemoryStream stream = new();
+            encoder.Save(stream);
+            stream.Seek(0, SeekOrigin.Begin);
+            using System.Drawing.Bitmap sourceBitmap = new(stream);
+            return new System.Drawing.Bitmap(sourceBitmap, new System.Drawing.Size(width, height));
+        }
+
+        internal static int GetCanvasDimension(double requestedDimension, double actualDimension)
+        {
+            double dimension = double.IsNaN(requestedDimension) || requestedDimension <= 0
+                ? actualDimension
+                : requestedDimension;
+
+            return Math.Max(1, (int)dimension);
+        }
+
+        /// <summary>
+        /// Chooses the default background color for <see cref="CombineBitmap"/> based on the current
+        /// <see cref="MetaDrawSettings.ExportType"/>. JPEG and BMP have no alpha channel, so uncovered
+        /// regions must be painted opaque white to remain visible. PNG, TIFF, PDF (rendered through a
+        /// PNG temp), and WMF preserve transparency.
+        /// </summary>
+        internal static System.Drawing.Color GetDefaultCombineBackgroundColor()
+        {
+            string exportType = MetaDrawSettings.ExportType;
+            if (string.Equals(exportType, "Jpeg", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(exportType, "Bmp", StringComparison.OrdinalIgnoreCase))
             {
-                encoder.Save(file);
+                return System.Drawing.Color.White;
             }
 
-            System.Drawing.Bitmap unformattedBitmap = new(tempBitmapPath);
-            System.Drawing.Bitmap bitmap = new(unformattedBitmap, new System.Drawing.Size(width, height));
-            unformattedBitmap.Dispose();
-            File.Delete(tempBitmapPath);
-            return bitmap;
+            return System.Drawing.Color.Transparent;
         }
 
         /// <summary>
@@ -879,7 +919,6 @@ namespace GuiFunctions
         {
             // initialize values
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
-            string tempBitmapPath = System.IO.Path.Combine(directory, "temp.bmp");
 
             if (visual == null)
             {
@@ -896,30 +935,16 @@ namespace GuiFunctions
 
             RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap((int)(width * dpiScale), (int)(height * dpiScale),
                 MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
-            VisualBrush visualBrush = new(visual);
-
-            // draw UIElement on a bitmap
-            DrawingVisual drawingVisual = new();
-            DrawingContext drawingContext = drawingVisual.RenderOpen();
-            using (drawingContext)
-            {
-                drawingContext.DrawRectangle(visualBrush, null, new Rect(new Point(0, 0), new Point(width, height)));
-            }
-            renderTargetBitmap.Render(drawingVisual);
+            renderTargetBitmap.Render(visual);
 
             // export and reload bitmap in correct formatting
-            BitmapEncoder encoder = new BmpBitmapEncoder();
+            BitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(renderTargetBitmap));
-            using (FileStream file = File.Create(tempBitmapPath))
-            {
-                encoder.Save(file);
-            }
-
-            System.Drawing.Bitmap unformattedBitmap = new System.Drawing.Bitmap(tempBitmapPath);
-            System.Drawing.Bitmap bitmap = new(unformattedBitmap, new System.Drawing.Size(width, height));
-            unformattedBitmap.Dispose();
-            File.Delete(tempBitmapPath);
-            return bitmap;
+            using MemoryStream stream = new();
+            encoder.Save(stream);
+            stream.Seek(0, SeekOrigin.Begin);
+            using System.Drawing.Bitmap sourceBitmap = new(stream);
+            return new System.Drawing.Bitmap(sourceBitmap, new System.Drawing.Size(width, height));
         }
 
         /// <summary>
@@ -932,7 +957,7 @@ namespace GuiFunctions
             switch (MetaDrawSettings.ExportType)
             {
                 case "Pdf":
-                    string tempImagePath = path.Replace(".Pdf", ".png");
+                    string tempImagePath = System.IO.Path.ChangeExtension(path, ".png");
                     bitmap.Save(tempImagePath, System.Drawing.Imaging.ImageFormat.Png);
                     ImageData imageData = ImageDataFactory.Create(tempImagePath);
                     File.Delete(tempImagePath);
