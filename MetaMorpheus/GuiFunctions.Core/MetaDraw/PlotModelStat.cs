@@ -3,6 +3,7 @@ using GuiFunctions.MetaDraw;
 using Omics.Fragmentation;
 using OxyPlot;
 using OxyPlot.Axes;
+using OxyPlot.Legends;
 using OxyPlot.Series;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.RetentionTimePrediction;
@@ -83,6 +84,9 @@ namespace GuiFunctions
             PlotModelStatParameters parameters = null)
         {
             privateModel = new PlotModel { Title = plotName, DefaultFontSize = 14 };
+            // OxyPlot 2.0 drew a legend on every model, at 12pt; 2.1+ draws none unless one is added,
+            // and sizes it from DefaultFontSize.
+            privateModel.Legends.Add(new Legend { LegendFontSize = 12 });
             allSpectralMatches = sms;
             this.psmsBySourceFile = smsBySourceFile;
             this.parameters = parameters ?? PlotModelStatParametersViewModel.Instance.GetParameters();
@@ -165,7 +169,7 @@ namespace GuiFunctions
 
         private void histogramPlot(int plotType)
         {
-            privateModel.Legends.Add(new OxyPlot.Legends.Legend { LegendTitle = "Source file(s)" });
+            privateModel.Legends.Single().LegendTitle = "Source file(s)";
 
             bool isGroupingEnabled = parameters.GroupingProperty != "None";
             Dictionary<string, Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>> groupedPsmsBySourceFile = null;
