@@ -27,6 +27,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class GptmdTaskWindow : Window
     {
+        private FastaHeaderParsingViewModel _fastaHeaderParsingViewModel;
         public ObservableCollection<GptmdFilterViewModel> FilterOptions { get; } = new();
         private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
@@ -85,7 +86,8 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(GptmdTask task)
         {
-            FastaHeaderParsingSettings.SetFromParameters(task.CommonParameters.FastaHeaderParsing);
+            _fastaHeaderParsingViewModel = new FastaHeaderParsingViewModel(task.CommonParameters.FastaHeaderParsing);
+            FastaHeaderParsingSettings.DataContext = _fastaHeaderParsingViewModel;
             GlobalVariables.AnalyteType = task.CommonParameters.DetermineAnalyteType();
             DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
                 TheTask.CommonParameters.ProductDeconvolutionParameters,
@@ -602,7 +604,7 @@ namespace MetaMorpheusGUI
                      productDeconParams: productDeconvolutionParameters,
                      precursorMassMatchMode: UseMostAbundantMassCheckBox.IsChecked.Value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic,
                      retentionTimeRange: new DoubleRange(minRetentionTime, maxRetentionTime),
-                     fastaHeaderParsing: FastaHeaderParsingSettings.ToParameters());
+                     fastaHeaderParsing: _fastaHeaderParsingViewModel.ToParameters());
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in GptmdModTypeForTreeViewObservableCollection)

@@ -30,6 +30,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class SearchTaskWindow : Window
     {
+        private FastaHeaderParsingViewModel _fastaHeaderParsingViewModel;
         private readonly DataContextForSearchTaskWindow DataContextForSearchTaskWindow;
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
@@ -195,7 +196,8 @@ namespace MetaMorpheusGUI
         /// <param name="task"></param>
         private void UpdateFieldsFromTask(SearchTask task)
         {
-            FastaHeaderParsingSettings.SetFromParameters(task.CommonParameters.FastaHeaderParsing);
+            _fastaHeaderParsingViewModel = new FastaHeaderParsingViewModel(task.CommonParameters.FastaHeaderParsing);
+            FastaHeaderParsingSettings.DataContext = _fastaHeaderParsingViewModel;
             GlobalVariables.AnalyteType = task.CommonParameters.DetermineAnalyteType();
             if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
             {
@@ -688,7 +690,7 @@ namespace MetaMorpheusGUI
                 fragmentationParams: _fragmentationParamsViewModel.ToFragmentationParams(),
                 retentionTimeRange: new DoubleRange(minRetentionTime, maxRetentionTime),
                 rtPredictorName: rtPredictorModelName,
-                fastaHeaderParsing: FastaHeaderParsingSettings.ToParameters());
+                fastaHeaderParsing: _fastaHeaderParsingViewModel.ToParameters());
 
             if (ClassicSearchRadioButton.IsChecked.Value)
             {

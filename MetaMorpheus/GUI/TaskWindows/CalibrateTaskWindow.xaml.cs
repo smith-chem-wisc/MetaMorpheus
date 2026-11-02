@@ -27,6 +27,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class CalibrateTaskWindow : Window
     {
+        private FastaHeaderParsingViewModel _fastaHeaderParsingViewModel;
         private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
@@ -71,7 +72,8 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
-            FastaHeaderParsingSettings.SetFromParameters(task.CommonParameters.FastaHeaderParsing);
+            _fastaHeaderParsingViewModel = new FastaHeaderParsingViewModel(task.CommonParameters.FastaHeaderParsing);
+            FastaHeaderParsingSettings.DataContext = _fastaHeaderParsingViewModel;
             GlobalVariables.AnalyteType = task.CommonParameters.DetermineAnalyteType();
             DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
                 TheTask.CommonParameters.ProductDeconvolutionParameters,
@@ -373,7 +375,7 @@ namespace MetaMorpheusGUI
                     productDeconParams: productDeconvolutionParameters,
                     precursorMassMatchMode: UseMostAbundantMassCheckBox.IsChecked.Value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic,
                     useProvidedPrecursorInfo: useProvidedPrecursorInfo,
-                    fastaHeaderParsing: FastaHeaderParsingSettings.ToParameters());
+                    fastaHeaderParsing: _fastaHeaderParsingViewModel.ToParameters());
                 TheTask.CommonParameters = commonParamsToSave;
             }
             else //bottom-up
@@ -397,7 +399,7 @@ namespace MetaMorpheusGUI
                     precursorDeconParams: precursorDeconvolutionParameters,
                     productDeconParams: productDeconvolutionParameters,
                     precursorMassMatchMode: UseMostAbundantMassCheckBox.IsChecked.Value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic,
-                    fastaHeaderParsing: FastaHeaderParsingSettings.ToParameters());
+                    fastaHeaderParsing: _fastaHeaderParsingViewModel.ToParameters());
                 TheTask.CommonParameters = commonParamsToSave;
             }
 
