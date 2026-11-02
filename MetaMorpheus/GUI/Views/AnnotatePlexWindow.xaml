@@ -52,6 +52,8 @@
             Paste Sample Names starting in the Sample Name column (optionally with a second column for Conditions).
             Paste Conditions starting in the Condition column to update only conditions.
             Technical replicate is now defined per file in the TMT Experimental Design window.
+            TMT16 has no search label of its own: search a TMTpro 16-plex with the TMT18 multiplex label. TMT16's channels
+            are TMT18's first 16, so this annotation still applies; the results also carry 134C and 135N columns, as empty channels.
         </TextBlock>
     </DockPanel>
 </Window>

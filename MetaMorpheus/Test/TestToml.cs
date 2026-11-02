@@ -21,6 +21,26 @@ namespace Test
     [TestFixture]
     public static class TestToml
     {
+        /// <summary>
+        /// The glyco task window writes MaximumGlycanBoxMass into the task, so it must survive a save and reload,
+        /// and a task file saved before the setting existed must load with the default.
+        /// </summary>
+        [Test]
+        public static void GlycoSearchTaskMaximumGlycanBoxMassRoundTrips()
+        {
+            string tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoMaxBoxMassTask.toml");
+            var glycoTask = new GlycoSearchTask();
+            glycoTask._glycoSearchParameters.MaximumGlycanBoxMass = 2500.5;
+
+            Toml.WriteFile(glycoTask, tomlPath, MetaMorpheusTask.tomlConfig);
+            var glycoTaskLoaded = Toml.ReadFile<GlycoSearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
+            File.Delete(tomlPath);
+            Assert.That(glycoTaskLoaded._glycoSearchParameters.MaximumGlycanBoxMass, Is.EqualTo(2500.5));
+
+            var legacyTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            Assert.That(legacyTask._glycoSearchParameters.MaximumGlycanBoxMass, Is.EqualTo(GlycanBox.DefaultMaximumGlycanBoxMass));
+        }
+
         [Test]
         public static void TestTomlFunction()
         {
@@ -124,7 +144,7 @@ namespace Test
             Assert.That(f.DissociationType, Is.EqualTo(DissociationType.ETD));
             Assert.That(f.MaxMissedCleavages, Is.Null);
 
-            CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
+            CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f, null);
 
             Assert.That(c.DigestionParams.DigestionAgent.Name, Is.EqualTo(digestionAgentName));
             Assert.That(c.DissociationType, Is.EqualTo(DissociationType.ETD));
@@ -152,7 +172,7 @@ namespace Test
             Assert.That(f.DissociationType, Is.EqualTo(DissociationType.ETD));
             Assert.That(f.MaxMissedCleavages, Is.Null);
 
-            CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(digestionParams: new RnaDigestionParams(maxMissedCleavages: 2)), f);
+            CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(digestionParams: new RnaDigestionParams(maxMissedCleavages: 2)), f, null);
 
             Assert.That(c.DigestionParams.DigestionAgent.Name, Is.EqualTo(digestionAgentName));
             Assert.That(c.DissociationType, Is.EqualTo(DissociationType.ETD));

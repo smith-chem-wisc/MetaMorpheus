@@ -21,6 +21,7 @@ using System.Runtime.CompilerServices;
 [assembly: TypeForwardedTo(typeof(GuiFunctions.DeconParamsViewModel))]
 [assembly: TypeForwardedTo(typeof(GuiFunctions.DeconvolutedSpeciesViewModel))]
 [assembly: TypeForwardedTo(typeof(GuiFunctions.FragmentViewModel))]
+[assembly: TypeForwardedTo(typeof(GuiFunctions.FromFileDeconParamsViewModel))]
 [assembly: TypeForwardedTo(typeof(GuiFunctions.GptmdFilterViewModel))]
 [assembly: TypeForwardedTo(typeof(GuiFunctions.GuiGlobalParams))]
 [assembly: TypeForwardedTo(typeof(GuiFunctions.IsoDecDeconParamsViewModel))]

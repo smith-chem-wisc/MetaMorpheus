@@ -57,12 +57,21 @@ public class MzLibExtensionsTests
     }
 
     [Test]
+    public void ToViewModel_WithFromFileDeconvolutionParameters_ReturnsFromFileDeconParamsViewModel()
+    {
+        var fromFileParams = new FromFileDeconvolutionParameters("path_ms1.feature", 1, 12);
+        var result = fromFileParams.ToViewModel();
+
+        Assert.That(result, Is.InstanceOf<FromFileDeconParamsViewModel>());
+        Assert.That(result.DeconvolutionType, Is.EqualTo(DeconvolutionType.FromFile));
+        Assert.That(((FromFileDeconParamsViewModel)result).FilePath, Is.EqualTo("path_ms1.feature"));
+    }
+
+    [Test]
     public void ToViewModel_WithUnsupportedParameters_ThrowsNotImplementedException()
     {
-        // Arrange
         var unsupportedParams = new ExampleNewDeconvolutionParametersTemplate(1, 20);
 
-        // Act & Assert
         Assert.That(() => unsupportedParams.ToViewModel(), Throws.TypeOf<NotImplementedException>());
     }
 
@@ -109,6 +118,32 @@ public class MzLibExtensionsTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.InstanceOf<MultipleDeconParamsViewModel>());
         Assert.That(result.DeconvolutionType, Is.EqualTo(DeconvolutionType.Multiple));
+    }
+
+    private static IEnumerable<TestCaseData> IsoDecDefaultCases()
+    {
+        yield return new TestCaseData(AnalyteType.Peptide, true, 1, 12);
+        yield return new TestCaseData(AnalyteType.Peptide, false, 1, 10);
+        yield return new TestCaseData(AnalyteType.Proteoform, true, 1, 60);
+        yield return new TestCaseData(AnalyteType.Proteoform, false, 1, 10);
+        yield return new TestCaseData(AnalyteType.Oligo, true, -20, -1);
+        yield return new TestCaseData(AnalyteType.Oligo, false, -10, -1);
+    }
+
+    [Test]
+    [TestCaseSource(nameof(IsoDecDefaultCases))]
+    public void GetDefaultDeconParams_IsoDec_AlwaysReportsSingleMonoisotope(AnalyteType analyteType, bool isPrecursor, int expectedMinCharge, int expectedMaxCharge)
+    {
+        var result = DeconvolutionType.IsoDecDeconvolution.GetDefaultDeconParams(analyteType, isPrecursor);
+
+        Assert.That(result, Is.InstanceOf<IsoDecDeconvolutionParameters>());
+        var isoDec = (IsoDecDeconvolutionParameters)result;
+
+        Assert.That(isoDec.ReportMulitpleMonoisos, Is.False,
+            "IsoDec must always report a single monoisotope, regardless of analyte type or precursor/product mode");
+        Assert.That(isoDec.MinAssumedChargeState, Is.EqualTo(expectedMinCharge));
+        Assert.That(isoDec.MaxAssumedChargeState, Is.EqualTo(expectedMaxCharge));
+        Assert.That(isoDec.Polarity, Is.EqualTo(analyteType == AnalyteType.Oligo ? Polarity.Negative : Polarity.Positive));
     }
 
     [Test]

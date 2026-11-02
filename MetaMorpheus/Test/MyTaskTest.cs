@@ -595,6 +595,7 @@ namespace Test
             SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"), MetaMorpheusTask.tomlConfig);
             task.SearchParameters.DecoyType = DecoyType.None;
             task.SearchParameters.WriteMzId = true;
+            task.SearchParameters.WriteIndividualFiles = true;
 
             DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fasta"), false);
             DbForTask db2 = new(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"DbForPrunedDb.fasta"), false);

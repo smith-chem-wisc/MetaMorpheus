@@ -1,4 +1,4 @@
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.Indexing;
 using MassSpectrometry;
@@ -11,10 +11,12 @@ using Omics.Modifications;
 using Omics.SpectrumMatch;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using Readers.SpectralLibrary;
 using SpectralAveraging;
 using System;
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -29,8 +31,9 @@ using Transcriptomics;
 using Transcriptomics.Digestion;
 using EngineLayer.Util;
 using EngineLayer.DIA;
-using EngineLayer.SpectrumMatch;
 using Omics.Fragmentation;
+using EngineLayer.Deconvolution;
+using TaskLayer.Util;
 
 namespace TaskLayer
 {
@@ -41,11 +44,234 @@ namespace TaskLayer
         Calibrate,
         XLSearch,
         GlycoSearch,
-        Average
+        Average,
+        Truncation
     }
 
     public abstract class MetaMorpheusTask
     {
+        #region Digestion settings that ask for seed peptides
+
+        /// <summary>
+        /// Whether these settings make digestion return seeds rather than peptides: SearchModeType None with any terminus, or
+        /// Semi with FragmentationTerminus N or C.
+        /// </summary>
+        /// <remarks>
+        /// In mzLib, <c>SearchModeType</c> Full gives fully specific peptides, and Semi with <c>FragmentationTerminus</c> Both
+        /// gives semi-specific peptides (since mzLib #1303). The other combinations give seeds: long stretches fixed at one
+        /// terminus whose other end the search engine decides afterwards, from the precursor mass. See
+        /// <c>DigestionParams.SearchModeType</c> in mzLib for the full table.
+        /// </remarks>
+        public static bool AsksForSeeds(DigestionParams digestionParams) =>
+            digestionParams.SearchModeType == CleavageSpecificity.None
+            || (digestionParams.SearchModeType == CleavageSpecificity.Semi && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C);
+
+        /// <summary>
+        /// Whether these settings make digestion return seed oligos rather than oligos: the rnase singleN or singleC,
+        /// SearchModeType None with any terminus, or Semi (from SearchModeType or the rnase's own specificity) with a single
+        /// terminus.
+        /// </summary>
+        /// <remarks>
+        /// Since mzLib 1.0.592 (#1318) nucleic acid digestion follows <c>SearchModeType</c> as protein digestion does.
+        /// With None, <c>RnaDigestionParams</c> swaps the rnase for singleN (terminus N or FivePrime) or singleC and keeps the
+        /// named one as <c>SpecificRnase</c>, so the rnase's specificity covers None and a named singleN or singleC alike.
+        /// Semi with FivePrime or ThreePrime gives the longest oligo from each cleavage site, fixed at that end. mzLib's
+        /// <c>Rnase.GetUnmodifiedOligos</c> takes Semi from SearchModeType or, failing that, from the rnase, so an rnase
+        /// defined as semi (rnase_custom.tsv allows it) does the same under SearchModeType Full. Each leaves the other end
+        /// to a search engine that decides it from the precursor mass. Semi with Both asks for semi-specific oligos, not
+        /// seeds; mzLib 1.0.595 does not digest it for nucleic acids yet, and this rule does not refuse it.
+        /// </remarks>
+        public static bool AsksForSeeds(RnaDigestionParams digestionParams) =>
+            digestionParams.Rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
+            || ((digestionParams.SearchModeType == CleavageSpecificity.Semi || digestionParams.Rnase.CleavageSpecificity == CleavageSpecificity.Semi)
+                && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C
+                    or FragmentationTerminus.FivePrime or FragmentationTerminus.ThreePrime);
+
+        /// <summary>
+        /// Why this task cannot run with its digestion settings, or null when it can. The GUI's Run button and the command
+        /// line check it for every task before a run starts; the task itself assumes its settings are valid.
+        /// </summary>
+        /// <remarks>
+        /// Only the non-specific search engine, which a Search task runs for <see cref="SearchType.NonSpecific"/>, can use seeds
+        /// (it makes its own N and C passes). Classic and Modern search, Glyco, crosslink, GPTMD and calibration score digestion
+        /// products as they are, so given seeds they finish normally and report far fewer, wrong identifications. A spectral
+        /// averaging task digests nothing, so its digestion settings are never used and are not checked, as it is already
+        /// exempt from needing a protein database.
+        /// </remarks>
+        /// <param name="taskName">The name the user knows the task by, included in the message when given.</param>
+        public string GetSeedDigestionRefusal(string taskName = null)
+        {
+            if (TaskType == MyTask.Average // averaging does not digest, so its digestion settings are never used
+                || this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific }) // the non-specific search engine trims seeds
+            {
+                return null;
+            }
+
+            string which = taskName == null ? "This task" : $"Task \"{taskName}\"";
+            IDigestionParams digestion = CommonParameters?.DigestionParams; // null CommonParameters: nothing to check
+            if (digestion is RnaDigestionParams rnaDigestionParams)
+            {
+                if (!AsksForSeeds(rnaDigestionParams))
+                {
+                    return null;
+                }
+
+                // Name what AsksForSeeds decided on. Rnase, not SpecificRnase: a task file saved before mzLib 1.0.592 has no
+                // SpecificRnase, so it reads back as top-down there while Rnase is singleN or singleC.
+                Rnase rnase = rnaDigestionParams.Rnase;
+                string terminus = $"FragmentationTerminus {rnaDigestionParams.FragmentationTerminus}";
+                string setting = rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
+                    ? rnaDigestionParams.SearchModeType == CleavageSpecificity.None
+                        ? "has SearchModeType None (non-specific)"
+                        : $"uses the rnase {rnase.Name}"
+                    : rnaDigestionParams.SearchModeType == CleavageSpecificity.Semi
+                        ? $"has SearchModeType Semi with {terminus}"
+                        : $"uses the semi-specific rnase {rnase.Name} with {terminus}";
+                return $"Cannot proceed. {which} {setting}, which gives seed oligos that only a non-specific search could use, " +
+                       "and non-specific search is not yet implemented for nucleic acids. Choose a fully specific rnase with SearchModeType Full.";
+            }
+
+            if (digestion is not DigestionParams digestionParams || !AsksForSeeds(digestionParams))
+            {
+                return null;
+            }
+
+            return digestionParams.SearchModeType == CleavageSpecificity.None
+                ? $"Cannot proceed. {which} has SearchModeType None (non-specific), which gives seed peptides that only the non-specific search can use. " +
+                  "Use a Search task with the non-specific search type, or choose fully or semi-specific digestion."
+                : $"Cannot proceed. {which} has SearchModeType Semi with FragmentationTerminus {digestionParams.FragmentationTerminus}, which gives seed peptides that only the non-specific search can use. " +
+                  "For semi-specific peptides, set FragmentationTerminus Both.";
+        }
+
+        #endregion
+
+        #region Settings files that name a protease mzLib no longer ships
+
+        /// <summary>
+        /// Semi-specific proteases mzLib used to ship, with the cleavage motifs each had. mzLib #1005 (February 2026) removed
+        /// "semi-trypsin", the only one, because a semi-specific search is asked for with <c>SearchModeType = Semi</c> on
+        /// the fully specific protease. Settings files written before that still name it, including the O-Pair Search
+        /// paper's glyco settings.
+        /// </summary>
+        private static readonly (string Name, string Motifs)[] RemovedSemiSpecificProteases =
+        {
+            ("semi-trypsin", "K|,R|"),
+        };
+
+        /// <summary>
+        /// Reads protein digestion parameters from a settings file with the normal reader. A file that names a removed
+        /// semi-specific protease (see <see cref="RemovedSemiSpecificProteases"/>) first has that name replaced, in the parsed
+        /// table, by the shipped fully specific protease with the same cleavage motifs, and its search mode made
+        /// semi-specific; the user is warned. Every other file is read exactly as before.
+        /// </summary>
+        /// <remarks>
+        /// <para><b>Why a translation is still needed.</b> mzLib 1.0.591 has no "semi-trypsin", so the Protease converter
+        /// throws for these files. What mzLib #1303 changed is that trypsin with <c>SearchModeType = Semi</c> and
+        /// FragmentationTerminus Both now digests into the semi-specific peptides "semi-trypsin" meant, so the translation
+        /// below is exact. A name change alone is not enough: the file says <c>SearchModeType = Full</c>, because its
+        /// semi-specificity came from the protease.</para>
+        /// <para><b>Search mode.</b> Full (or missing) becomes Semi. The FragmentationTerminus is kept; in glyco, crosslink and
+        /// classic settings it is Both. A file that already said Semi or None is a non-specific search asking for seeds,
+        /// with the removed name in SpecificProtease only, so its search mode and terminus are kept as they are.</para>
+        /// <para><b>Replacement.</b> Found by motif, not by name, because the name of the no-proline-rule trypsin is itself
+        /// changing (mzLib #1186). A protease the user has defined under the old name is in the dictionary and is used as
+        /// defined; nothing is translated.</para>
+        /// </remarks>
+        private static DigestionParams ReadProteinDigestionParams(TomlTable table)
+        {
+            string ReadString(string key) => table.ContainsKey(key) ? table.Get<string>(key) : null;
+            void SetString(string key, string value)
+            {
+                if (table.ContainsKey(key))
+                    table.Update(key, value);
+                else
+                    table.Add(key, value);
+            }
+
+            string protease = ReadString(nameof(DigestionParams.Protease));
+            string specificProtease = ReadString(nameof(DigestionParams.SpecificProtease));
+
+            // For a non-specific search the file's Protease is singleN or singleC and the removed name is in SpecificProtease.
+            var removed = RemovedSemiSpecificProteases.FirstOrDefault(r =>
+                (r.Name == protease || r.Name == specificProtease) && !ProteaseDictionary.Dictionary.ContainsKey(r.Name));
+            Protease replacement = removed.Name == null ? null : FindShippedFullySpecificProtease(removed.Motifs);
+            if (replacement == null)
+            {
+                return table.Get<DigestionParams>(); // unchanged behaviour, including the exception for an unknown protease
+            }
+
+            if (protease == removed.Name)
+            {
+                SetString(nameof(DigestionParams.Protease), replacement.Name);
+                SetString(nameof(DigestionParams.SpecificProtease), replacement.Name);
+                string searchModeType = ReadString(nameof(DigestionParams.SearchModeType));
+                if (searchModeType == null || searchModeType == nameof(CleavageSpecificity.Full))
+                {
+                    SetString(nameof(DigestionParams.SearchModeType), nameof(CleavageSpecificity.Semi));
+                }
+            }
+            else
+            {
+                SetString(nameof(DigestionParams.SpecificProtease), replacement.Name);
+            }
+
+            var digestionParams = table.Get<DigestionParams>();
+            Warn($"These settings name the protease \"{removed.Name}\", which is no longer available. They were read as \"{replacement.Name}\" " +
+                 $"with SearchModeType {digestionParams.SearchModeType} and FragmentationTerminus {digestionParams.FragmentationTerminus}, which digests the same peptides. " +
+                 "Save the task to update its settings.");
+            return digestionParams;
+        }
+
+        /// <summary>
+        /// The shipped fully specific protease that cleaves exactly like the removed one, or null if there is none.
+        /// </summary>
+        /// <remarks>
+        /// A candidate matches on its cleavage motifs and on its cleavage modification. The removed proteases modified
+        /// nothing when they cleaved, so a protease that carries a modification is a different digestion even with the same
+        /// motifs: it would add that modification at every terminus it cuts. The modification has to be part of the
+        /// comparison because the candidates are every protease in the dictionary, including the user's own custom ones, and
+        /// the tie-break is ordinal by name, which puts every capitalised name ahead of "trypsin".
+        /// </remarks>
+        private static Protease FindShippedFullySpecificProtease(string motifs)
+        {
+            static string Signature(IEnumerable<DigestionMotif> m, Modification cleavageMod) => string.Join(";", m
+                .Select(x => $"{x.InducingCleavage}|{x.PreventingCleavage}|{x.CutIndex}|{x.ExcludeFromWildcard}")
+                .OrderBy(s => s, StringComparer.Ordinal)) + "#" + cleavageMod?.IdWithMotif;
+
+            string wanted = Signature(DigestionMotif.ParseDigestionMotifsFromString(motifs), null);
+            return ProteaseDictionary.Dictionary.Values
+                .Where(p => p.CleavageSpecificity == CleavageSpecificity.Full && Signature(p.DigestionMotifs, p.CleavageMod) == wanted)
+                .OrderBy(p => p.Name, StringComparer.Ordinal)
+                .FirstOrDefault();
+        }
+
+        private static DoubleRange ParseRetentionTimeRange(string value)
+        {
+            string[] bounds = value.Trim().Trim('[', ']').Split(';');
+            if (bounds.Length != 2)
+                throw new MetaMorpheusException($"Invalid retention time range '{value}'. Expected 'minimum;maximum'.");
+
+            bool minimumParsed = double.TryParse(bounds[0].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double minimum);
+            bool maximumIsMaxValue = bounds[1].Trim().Equals("MaxValue", StringComparison.OrdinalIgnoreCase);
+            double maximum = 0;
+            bool maximumParsed = maximumIsMaxValue
+                || double.TryParse(bounds[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out maximum);
+            if (maximumIsMaxValue)
+            {
+                maximum = double.MaxValue;
+            }
+
+            if (!minimumParsed || !maximumParsed || !double.IsFinite(minimum) || !double.IsFinite(maximum)
+                || minimum < 0 || maximum < 0 || maximum < minimum)
+            {
+                throw new MetaMorpheusException($"Invalid retention time range '{value}'. Expected 'minimum;maximum'.");
+            }
+
+            return new DoubleRange(minimum, maximum);
+        }
+
+        #endregion
+
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
             .ConfigureType<Tolerance>(type => type
                 .WithConversionFor<TomlString>(convert => convert
@@ -56,10 +282,12 @@ namespace TaskLayer
             .ConfigureType<AbsoluteTolerance>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.ToString())))
-            .ConfigureType<Protease>(type => type
+            .ConfigureType<DoubleRange>(type => type
                 .WithConversionFor<TomlString>(convert => convert
-                    .ToToml(custom => custom.ToString())
-                    .FromToml(tmlString => ProteaseDictionary.Dictionary[tmlString.Value])))
+                    .ToToml(range => range.Maximum == double.MaxValue
+                        ? $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};MaxValue"
+                        : $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};{range.Maximum.ToString("R", CultureInfo.InvariantCulture)}")
+                    .FromToml(tomlString => ParseRetentionTimeRange(tomlString.Value))))
             .ConfigureType<List<string>>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => string.Join("\t", custom))
@@ -79,19 +307,11 @@ namespace TaskLayer
                 .WithConversionFor<TomlTable>(c => c
                     .FromToml(tmlTable =>
                         tmlTable.ContainsKey("Protease")
-                            ? tmlTable.Get<DigestionParams>()
+                            ? ReadProteinDigestionParams(tmlTable)
                             : tmlTable.Get<RnaDigestionParams>())))
-            .ConfigureType<DigestionParams>(type => type
-                .IgnoreProperty(p => p.DigestionAgent)
-                .IgnoreProperty(p => p.MaxMods)
-                .IgnoreProperty(p => p.MaxLength)
-                .IgnoreProperty(p => p.MinLength))
-            .ConfigureType<RnaDigestionParams>(type => type
-                .IgnoreProperty(p => p.DigestionAgent))
-            .ConfigureType<Rnase>(type => type
-                .WithConversionFor<TomlString>(convert => convert
-                    .ToToml(custom => custom.Name)
-                    .FromToml(tmlString => RnaseDictionary.Dictionary[tmlString.Value])))
+            // Protease, Rnase, DigestionParams and RnaDigestionParams. Defined in EngineLayer, because the index
+            // cache key writes digestion parameters with the same configuration; see DigestionTomlSettings.
+            .ConfigureDigestionTypes()
             // Switch on DeconvolutionParameters
             .ConfigureType<DeconvolutionParameters>(type => type
                 .WithConversionFor<TomlTable>(c => c
@@ -100,6 +320,9 @@ namespace TaskLayer
                         "ClassicDeconvolution" => tmlTable.Get<ClassicDeconvolutionParameters>(),
                         "IsoDecDeconvolution" => tmlTable.Get<IsoDecDeconvolutionParameters>(),
                         "Multiple" => tmlTable.Get<MultipleDeconParameters>(),
+                        "FromFile" => tmlTable.ContainsKey("FeatureFileMap")
+                            ? tmlTable.Get<FeatureMappedFromFileDeconvolutionParameters>()
+                            : tmlTable.Get<FromFileDeconvolutionParameters>(),
                         _ => throw new MetaMorpheusException($"Toml Parsing Failure - Unknown Deconvolution Type: {tmlTable.Get<string>("DeconvolutionType")}")
                     })))
             // Ignore all properties that are not user settable, instantiate with defaults. If the toml differs, defaults will be overridden. 
@@ -126,6 +349,14 @@ namespace TaskLayer
                     Polarity.Positive,
                     new Averagine(),
                     1.0033548381)))
+            .ConfigureType<FromFileDeconvolutionParameters>(type => type
+                .CreateInstance(() => new FromFileDeconvolutionParameters(string.Empty, 1, 20))
+                .IgnoreProperty(p => p.Features))
+            .ConfigureType<FeatureMappedFromFileDeconvolutionParameters>(type => type
+                .CreateInstance(() => new FeatureMappedFromFileDeconvolutionParameters()))
+            .ConfigureType<SearchFeatureFileMap>(type => type
+                .WithConversionFor<TomlTable>(convert => convert
+                    .FromToml(table => SearchFeatureFileMap.FromString(Toml.WriteString(table)))))
 
             // Convert average residue models to simple strings instead of tables, Nett makes all objects tables by default
             // The base class AverageResidue is used for Toml Reading. The derived classes are used for toml writing. 
@@ -192,6 +423,42 @@ namespace TaskLayer
         [TomlIgnore]
         public virtual string OutputFolder { get; private set; }
 
+        /// <summary>
+        /// In-memory hand-off shared across the tasks in a run list (docs/Truncation-Search.md decision #1).
+        /// Assigned by <see cref="EverythingRunnerEngine"/> before each task runs; a finishing task can
+        /// deposit results that a later task retrieves, avoiding a file round-trip. Null for tasks run
+        /// outside the runner (e.g. directly in tests), in which case consumers fall back to disk.
+        /// </summary>
+        [TomlIgnore]
+        public TaskChainContext TaskChainContext { get; set; }
+
+        /// <summary>
+        /// True for tasks that read results out of the <see cref="TaskChainContext"/>. The runner wires the
+        /// context up only when a run list contains at least one such task, and clears it once one has run —
+        /// so a task that deposits into the context does not pin its results through run lists that will
+        /// never read them.
+        /// </summary>
+        [TomlIgnore]
+        public virtual bool ConsumesTaskChainContext => false;
+
+        /// <summary>
+        /// Called at the start of <see cref="RunTask"/>, before the task TOML is written and before file-specific
+        /// parameters are resolved, so a task can settle its <see cref="CommonParameters"/> (e.g. adopt an upstream
+        /// task's from the <see cref="TaskChainContext"/>) and have the written TOML record what actually ran.
+        /// </summary>
+        protected virtual void ResolveParametersBeforeRun()
+        {
+        }
+
+        /// <summary>
+        /// The spectra files the whole run started from, before a Calibrate or Average task replaced them with
+        /// -calib / -averaged derivatives. Set by <see cref="EverythingRunnerEngine"/>; null when a task is run on
+        /// its own, in which case the files it is given are the acquired ones. An SDRF names these in
+        /// comment[data file] and the file the search read in comment[searched data file] (sdrf D46).
+        /// </summary>
+        [TomlIgnore]
+        public List<string> AcquiredSpectraFiles { get; set; }
+
         protected MyTaskResults MyTaskResults;
 
         protected MetaMorpheusTask(MyTask taskType)
@@ -224,17 +491,11 @@ namespace TaskLayer
         public CommonParameters CommonParameters { get; set; }
         public List<(string FileName, CommonParameters Parameters)> FileSpecificParameters { get; set; }
 
-        public const string IndexFolderName = "DatabaseIndex";
-        public const string IndexEngineParamsFileName = "indexEngine.params";
-        public const string PeptideIndexFileName = "peptideIndex.ind";
-        public const string FragmentIndexFileName = "fragmentIndex.ind";
-        public const string SecondIndexEngineParamsFileName = "secondIndexEngine.params";
-        public const string SecondFragmentIndexFileName = "secondFragmentIndex.ind";
-        public const string PrecursorIndexFileName = "precursorIndex.ind";
+        #region Deconvolution
 
         public static List<Ms2ScanWithSpecificMass>[] _GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
-            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
+            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1 && commonParameters.RetentionTimeRange.Contains(x.RetentionTime)).ToArray();
             var ms2Scans = msNScans.Where(p => p.MsnOrder == 2).ToArray();
             var ms3Scans = msNScans.Where(p => p.MsnOrder == 3).ToArray();
             List<Ms2ScanWithSpecificMass>[] scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[ms2Scans.Length];
@@ -281,7 +542,7 @@ namespace TaskLayer
                             if (commonParameters.DoPrecursorDeconvolution)
                             {
                                 foreach (IsotopicEnvelope envelope in ms2scan.GetIsolatedMassesAndCharges(
-                                    precursorSpectrum.MassSpectrum, commonParameters.PrecursorDeconvolutionParameters))
+                                    precursorSpectrum, commonParameters.PrecursorDeconvolutionParameters))
                                 {
                                     double? intensity = null;
                                     if (commonParameters.UseMostAbundantPrecursorIntensity)
@@ -428,17 +689,23 @@ namespace TaskLayer
         {
             if (commonParameters.DIAparameters != null)
             {
+                IEnumerable<Ms2ScanWithSpecificMass> pseudoMs2Scans;
                 switch (commonParameters.DIAparameters.AanalysisType)
                 {
                     case DIAanalysisType.DIA:
                         var diaEngine = new DIAEngine(myMSDataFile, commonParameters);
-                        return diaEngine.GetPseudoMs2Scans();
+                        pseudoMs2Scans = diaEngine.GetPseudoMs2Scans();
+                        break;
                     case DIAanalysisType.ISD:
                         var isdEngine = new ISDEngine(myMSDataFile, commonParameters);
-                        return isdEngine.GetPseudoMs2Scans();
+                        pseudoMs2Scans = isdEngine.GetPseudoMs2Scans();
+                        break;
                     default:
                         throw new NotImplementedException("DIA analysis type not implemented.");
                 }
+
+                // TODO: Move the retention time filtering to the inside of the engines. Currently, we do all the work then throw away the scans outside of the retention time range. This is inefficient, but it is a quick fix to get the retention time filtering working for DIA and ISD by someone who knows what is going on there. 
+                return pseudoMs2Scans.Where(scan => commonParameters.RetentionTimeRange.Contains(scan.RetentionTime));
             }
             var scansWithPrecursors = _GetMs2Scans(myMSDataFile, fullFilePath, commonParameters);
 
@@ -532,36 +799,54 @@ namespace TaskLayer
             return parentScans;
         }
 
-        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
+        #endregion
+
+        /// <summary>
+        /// Sets all file-specific common parameters for a given raw file path, using the provided common parameters and file-specific parameters. Any non-null file specific parameter will override the value in the common params. 
+        /// </summary>
+        /// <param name="commonParams">The template to override</param>
+        /// <param name="fileSpecificParams">Specific parameters to override common paramms. Null when no file specific toml is next to the raw file.</param>
+        /// <param name="rawFilePath"></param>
+        /// <returns></returns>
+        /// <exception cref="MetaMorpheusException"></exception>
+        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams, string rawFilePath)
         {
-            if (fileSpecificParams == null)
+            // If no toml next to raw files and we are not doing file specific decon 
+            if (fileSpecificParams == null && commonParams.PrecursorDeconvolutionParameters is not FeatureMappedFromFileDeconvolutionParameters)
             {
                 return commonParams;
             }
 
             // set file-specific digestion parameters
-            int minPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinLength;
-            int maxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxLength;
-            int maxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
-            int maxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxMods;
+            int minPeptideLength = fileSpecificParams?.MinPeptideLength ?? commonParams.DigestionParams.MinLength;
+            int maxPeptideLength = fileSpecificParams?.MaxPeptideLength ?? commonParams.DigestionParams.MaxLength;
+            int maxMissedCleavages = fileSpecificParams?.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
+            int maxModsForPeptide = fileSpecificParams?.MaxModsForPeptide ?? commonParams.DigestionParams.MaxMods;
 
             // set file-specific digestion params based upon the type of digestion params
             IDigestionParams fileSpecificDigestionParams;
             switch (commonParams.DigestionParams)
             {
                 case DigestionParams digestionParams:
+                    // Every digestion setting a file does not override must be carried from the task. A field left out of
+                    // this list silently falls back to its constructor default for every file with file-specific settings;
+                    // the glycopeptide and SILAC flags used to be (see FileSpecificDigestionParamsTests).
                     fileSpecificDigestionParams = new DigestionParams(
-                        protease: (fileSpecificParams.DigestionAgent ?? digestionParams.SpecificProtease).Name,
+                        protease: (fileSpecificParams?.DigestionAgent ?? digestionParams.SpecificProtease).Name,
                         maxMissedCleavages: maxMissedCleavages, minPeptideLength: minPeptideLength,
                         maxPeptideLength: maxPeptideLength, maxModsForPeptides: maxModsForPeptide,
                         maxModificationIsoforms: digestionParams.MaxModificationIsoforms,
                         initiatorMethionineBehavior: digestionParams.InitiatorMethionineBehavior,
                         fragmentationTerminus: digestionParams.FragmentationTerminus,
-                        searchModeType: digestionParams.SearchModeType);
+                        searchModeType: digestionParams.SearchModeType,
+                        generateUnlabeledProteinsForSilac: digestionParams.GeneratehUnlabeledProteinsForSilac,
+                        keepNGlycopeptide: digestionParams.KeepNGlycopeptide,
+                        keepOGlycopeptide: digestionParams.KeepOGlycopeptide,
+                        respectCleavageBlockingModifications: digestionParams.RespectCleavageBlockingModifications);
                     break;
                 case RnaDigestionParams:
                     fileSpecificDigestionParams = new RnaDigestionParams(
-                        rnase: (fileSpecificParams.DigestionAgent ?? commonParams.DigestionParams.DigestionAgent).Name,
+                        rnase: (fileSpecificParams?.DigestionAgent ?? commonParams.DigestionParams.DigestionAgent).Name,
                         maxMissedCleavages: maxMissedCleavages, minLength: minPeptideLength,
                         maxLength: maxPeptideLength, maxMods: maxModsForPeptide,
                         maxModificationIsoforms: commonParams.DigestionParams.MaxModificationIsoforms,
@@ -574,17 +859,53 @@ namespace TaskLayer
 
             // must be set in this manner as CommonParameters constructor will pull from this dictionary, then clear dictionary
             fileSpecificDigestionParams.ProductsFromDissociationType()[DissociationType.Custom] =
-                fileSpecificParams.CustomIons ?? commonParams.CustomIons;
+                fileSpecificParams?.CustomIons ?? commonParams.CustomIons;
 
             // set the rest of the file-specific parameters
-            Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
-            Tolerance productMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
-            Tolerance productMassTolerance_LowRes = fileSpecificParams.ProductMassTolerance_LowRes ?? commonParams.ProductMassTolerance_LowRes;
-            DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
-            string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
+            Tolerance precursorMassTolerance = fileSpecificParams?.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
+            Tolerance productMassTolerance = fileSpecificParams?.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+            Tolerance productMassTolerance_LowRes = fileSpecificParams?.ProductMassTolerance_LowRes ?? commonParams.ProductMassTolerance_LowRes;
+            DissociationType dissociationType = fileSpecificParams?.DissociationType ?? commonParams.DissociationType;
+            string separationType = fileSpecificParams?.SeparationType ?? commonParams.SeparationType;
 
-            DeconvolutionParameters precursorDeconParams = fileSpecificParams.PrecursorDeconvolutionParameters ?? commonParams.PrecursorDeconvolutionParameters;
-            DeconvolutionParameters productDeconParams = fileSpecificParams.ProductDeconvolutionParameters ?? commonParams.ProductDeconvolutionParameters;
+            DeconvolutionParameters precursorDeconParams = fileSpecificParams?.PrecursorDeconvolutionParameters ?? commonParams.PrecursorDeconvolutionParameters;
+
+            // mzLib loads a native FromFile feature file lazily on first use. Force that load here, before
+            // scan processing, so a missing/unreadable/unrecognized/malformed/empty source is diagnosed once
+            // and isolated to its own raw file; the memoized verdict keeps the 4-5 later calls for this raw
+            // from retrying a transiently-loadable file and contradicting the fallback already warned about.
+            // Deliberately not applied to the task-wide embedded map resolved below: that route must keep
+            // surfacing its own resolution errors.
+            if (fileSpecificParams?.PrecursorDeconvolutionParameters is FromFileDeconvolutionParameters fileSpecificFromFile)
+            {
+                FileSpecificDeconvolutionPreflight.PreflightDecision preflight =
+                    FileSpecificDeconvolutionPreflight.Resolve(fileSpecificParams, fileSpecificFromFile, rawFilePath);
+
+                if (!preflight.Succeeded)
+                {
+                    string rawPathForWarning = rawFilePath ?? "<unknown raw file>";
+                    if (preflight.TryConsumeWarning())
+                    {
+                        string featurePath = string.IsNullOrWhiteSpace(fileSpecificFromFile.FilePath)
+                            ? "<not set>"
+                            : fileSpecificFromFile.FilePath;
+                        Warn($"File-specific precursor deconvolution for '{rawPathForWarning}' cannot use " +
+                             $"feature file '{featurePath}': {preflight.FailureReason}. Falling back to the task-wide precursor " +
+                             $"deconvolution parameters ({commonParams.PrecursorDeconvolutionParameters?.GetType().Name ?? "none"}).");
+                    }
+
+                    precursorDeconParams = commonParams.PrecursorDeconvolutionParameters;
+                }
+            }
+
+            if (precursorDeconParams is FeatureMappedFromFileDeconvolutionParameters mapped)
+            {
+                if (rawFilePath == null)
+                    throw new MetaMorpheusException("Raw file path must be provided for feature-mapped file specific deconvolution parameters.");
+                else
+                    precursorDeconParams = mapped.ToDeconvolutionParameters(rawFilePath);
+            }
+            DeconvolutionParameters productDeconParams = fileSpecificParams?.ProductDeconvolutionParameters ?? commonParams.ProductDeconvolutionParameters;
 
             // DoPrecursorDeconvolution and DoProductDeconvolution flow from CommonParameters only;
             // file-specific PrecursorDeconvolutionParameters / ProductDeconvolutionParameters are stored
@@ -609,10 +930,12 @@ namespace TaskLayer
                 totalPartitions: commonParams.TotalPartitions,
                 qValueThreshold: commonParams.QValueThreshold,
                 pepQValueThreshold: commonParams.PepQValueThreshold,
+                qValueCutoffForPepCalculation: commonParams.QValueCutoffForPepCalculation,
                 scoreCutoff: commonParams.ScoreCutoff,
                 numberOfPeaksToKeepPerWindow: commonParams.NumberOfPeaksToKeepPerWindow,
                 minimumAllowedIntensityRatioToBasePeak: commonParams.MinimumAllowedIntensityRatioToBasePeak,
                 windowWidthThomsons: commonParams.WindowWidthThomsons,
+                numberOfWindows: commonParams.NumberOfWindows,
                 trimMs1Peaks: commonParams.TrimMs1Peaks,
                 trimMsMsPeaks: commonParams.TrimMsMsPeaks,
                 normalizePeaksAccrossAllWindows: commonParams.NormalizePeaksAccrossAllWindows,
@@ -628,9 +951,12 @@ namespace TaskLayer
                 precursorDeconParams: precursorDeconParams,
                 productDeconParams: productDeconParams,
                 useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity,
+                diaParameters: commonParams.DIAparameters,
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
-                rtPredictorName: commonParams.RTPredictorName);
+                rtPredictorName: commonParams.RTPredictorName,
+                retentionTimeRange: commonParams.RetentionTimeRange
+                );
 
             return returnParams;
         }
@@ -638,6 +964,7 @@ namespace TaskLayer
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName)
         {
             this.OutputFolder = output_folder;
+            ResolveParametersBeforeRun();
             MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
             StartingSingleTask(displayName);
 
@@ -670,7 +997,7 @@ namespace TaskLayer
                         {
                             TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificTomlPath, tomlConfig);
                             fileSettingsList[i] = new FileSpecificParameters(fileSpecificSettings);
-                            FileSpecificParameters.Add((currentRawDataFilepathList[i], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i])));
+                            FileSpecificParameters.Add((currentRawDataFilepathList[i], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i], rawFilePath)));
                         }
                         catch (MetaMorpheusException e)
                         {
@@ -685,7 +1012,7 @@ namespace TaskLayer
                     }
                     else // just used common parameters for file specific.
                     {
-                        FileSpecificParameters.Add((currentRawDataFilepathList[i], CommonParameters));
+                        FileSpecificParameters.Add((currentRawDataFilepathList[i], SetAllFileSpecificCommonParams(CommonParameters, null, rawFilePath)));
                     }
                 }
 
@@ -736,16 +1063,16 @@ namespace TaskLayer
                 file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilepathList.Select(b => '\t' + b)));
                 file.WriteLine("Databases:");
 
+                // One line per database (they used to run together on one line), each naming the file's content
+                // as well as its path: the same path can hold a different database from one run to the next.
                 foreach (var proteinDb in currentProteinDbFilenameList)
                 {
-                    if (proteinDb.IsContaminant)
-                    {
-                        file.Write(string.Join(Environment.NewLine, '\t' + "Contaminants " + proteinDb.FilePath + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()));
-                    }
-                    else
-                    {
-                        file.Write(string.Join(Environment.NewLine, '\t' + proteinDb.FilePath + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()));
-                    }
+                    string line = '\t' + (proteinDb.IsContaminant ? "Contaminants " : "") + proteinDb.FilePath
+                        + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()
+                        + " (" + proteinDb.IdentityText() + ")";
+                    if (proteinDb.DerivedFromText() is { } derivedFrom)
+                        line += "; " + derivedFrom;
+                    file.WriteLine(line);
                 }
             }
             FinishedWritingFile(proseFilePath, new List<string> { displayName });
@@ -1110,6 +1437,8 @@ namespace TaskLayer
 
         #endregion
 
+        #region IO 
+
         protected static void WritePsmsToTsv(IEnumerable<SpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned, bool writePeptideLevelResults = false)
         {
             
@@ -1158,12 +1487,15 @@ namespace TaskLayer
             return spectrumFilePath;
         }
 
+        #endregion
+
+        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList);
+
+        #region Event Handlers
         protected void ReportProgress(ProgressEventArgs v)
         {
             OutProgressHandler?.Invoke(this, v);
         }
-
-        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList);
 
         protected void FinishedWritingFile(string path, List<string> nestedIDs)
         {
@@ -1188,6 +1520,51 @@ namespace TaskLayer
         protected void Status(string v, List<string> nestedIds)
         {
             OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
+        }
+
+        /// <summary>
+        /// Returns <paramref name="parameters"/>, or a copy with a raised TotalPartitions when one index
+        /// build would not fit in available memory. Only ever raises, so a user who deliberately asked for
+        /// more partitions keeps them. Returning a copy rather than mutating matters:
+        /// SetAllFileSpecificCommonParams hands back the task's own CommonParameters when a file has no
+        /// file-specific settings, so mutating would rewrite the settings the task reports.
+        ///
+        /// Callers must use the returned instance for *every* read of TotalPartitions in the partition
+        /// loop — the loop bound and the protein-range slicing included — or the two will disagree and the
+        /// search will silently cover only part of the database.
+        /// </summary>
+        protected CommonParameters RaisePartitionsToFitMemory(IReadOnlyList<IBioPolymer> proteinList, CommonParameters parameters,
+            List<Modification> fixedModifications, List<Modification> variableModifications,
+            List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, double maxFragmentSize,
+            ref int? decidedPartitions)
+        {
+            // Decide once per task, not once per spectra file. Available memory shrinks as PSMs accumulate
+            // and each file's spectra are loaded, so re-deriving per file could index file 1 in one partition
+            // and file 5 in four. That would invalidate the disk cache for every partition (the count is part
+            // of IndexingEngine.ToString(), which is the cache key) and leave files within one run searched
+            // under different partitionings, whose PSM-level statistics are then not comparable.
+            if (decidedPartitions == null)
+            {
+                int suggested = IndexPartitioning.SuggestTotalPartitions(proteinList, parameters, fixedModifications,
+                    variableModifications, silacLabels, startLabel, endLabel, maxFragmentSize, parameters.TotalPartitions,
+                    out long estimatedBytes, out long budgetBytes, out bool cappedByMemory, out long estimatedFragmentEntries);
+
+                decidedPartitions = suggested;
+
+                if (suggested > parameters.TotalPartitions)
+                {
+                    foreach (string warning in IndexPartitioning.PartitionWarnings(parameters.TotalPartitions,
+                                 suggested, estimatedBytes, budgetBytes, cappedByMemory, estimatedFragmentEntries,
+                                 proteinList.Count))
+                    {
+                        Warn(warning);
+                    }
+                }
+            }
+
+            return decidedPartitions.Value <= parameters.TotalPartitions
+                ? parameters
+                : parameters.CloneWithNewTotalPartitions(decidedPartitions.Value);
         }
 
         protected static void Warn(string v)
@@ -1230,6 +1607,8 @@ namespace TaskLayer
             StartingSingleTaskHander?.Invoke(this, new SingleTaskEventArgs(displayName));
         }
 
+        #endregion
+
         private static IEnumerable<Type> GetSubclassesAndItself(Type type)
         {
             yield return type;
@@ -1266,16 +1645,44 @@ namespace TaskLayer
             Warn($"{engineName} engine Crashed! Error written to {outPath}");
         }
 
+        #region Peptide Indexing
+
+        public const string IndexFolderName = "DatabaseIndex";
+        public const string IndexEngineParamsFileName = "indexEngine.params";
+        public const string PeptideIndexFileName = "peptideIndex.bin";
+        public const string FragmentIndexFileName = "fragmentIndex.bin";
+        public const string SecondIndexEngineParamsFileName = "secondIndexEngine.params";
+        public const string SecondFragmentIndexFileName = "secondFragmentIndex.bin";
+        public const string PrecursorIndexFileName = "precursorIndex.bin";
+        private static void WritePeptideIndex(List<IBioPolymerWithSetMods> peptideIndex, string peptideIndexFileName)
+            => WritePeptideIndex(peptideIndex.Cast<PeptideWithSetModifications>().ToList(), peptideIndexFileName);
+
         private static void WritePeptideIndex(List<PeptideWithSetModifications> peptideIndex, string peptideIndexFileName)
         {
+            // The full sequence is the only part of a peptide's modifications that is written: ReadPeptideIndex rebuilds
+            // them from it. Digestion may leave it to be built when first read (mzLib builds it lazily for the many
+            // peptides a search never reports), so read it for every peptide before writing any.
+            foreach (PeptideWithSetModifications peptide in peptideIndex)
+            {
+                _ = peptide.FullSequence;
+            }
+
             var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
             var ser = new NetSerializer.Serializer(messageTypes);
 
-            using (var file = File.Create(peptideIndexFileName))
-            {
-                ser.Serialize(file, peptideIndex);
-            }
+            WriteThroughTemporaryFile(peptideIndexFileName, file => ser.Serialize(file, peptideIndex));
         }
+
+        /// <summary>
+        /// Cast rather than OfType, to match the write side one method up. Both respond to the same
+        /// violated precondition -- a cached index is only reachable when indexIsCacheable, which is
+        /// AnalyteType != Oligo -- and they must fail the same way. OfType here would drop the oligos
+        /// and carry on with whatever proteins remained, returning a plausible index silently built
+        /// from a subset of the database; the write side already throws on the first oligo.
+        /// </summary>
+        private static List<IBioPolymerWithSetMods> ReadPeptideIndex(string peptideIndexFileName, IEnumerable<IBioPolymer> allKnownBioPolymers)
+            => ReadPeptideIndex(peptideIndexFileName, allKnownBioPolymers.Cast<Protein>().ToList())
+                .Cast<IBioPolymerWithSetMods>().ToList();
 
         private static List<PeptideWithSetModifications> ReadPeptideIndex(string peptideIndexFileName, List<Protein> allKnownProteins)
         {
@@ -1320,29 +1727,192 @@ namespace TaskLayer
             return digestionParams;
         }
 
-        private static void WriteFragmentIndex(List<int>[] fragmentIndex, string fragmentIndexFileName)
-        {
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
+        // "MMFI" — guards against reading a file written by a different layout. The file name also changed
+        // when this replaced NetSerializer, so an index cached by an older version is simply not found and
+        // gets rebuilt rather than misread.
+        private const int FragmentIndexMagic = 0x4946_4D4D;
+        // "MMPI"
+        private const int PrecursorIndexMagic = 0x4950_4D4D;
+        // 2: the fragment index went from bin counts + concatenated ids to the compressed sparse row pair
+        private const int FragmentIndexFormatVersion = 2;
 
-            using (var file = File.Create(fragmentIndexFileName))
+        /// <summary>
+        /// The two arrays behind a <see cref="FragmentIndex"/>, written as raw little-endian int32 in bulk.
+        /// NetSerializer walked every list and every element individually; a fragment index has millions of
+        /// bins and hundreds of millions of entries, so the per-object cost dominated. Now that the in-memory
+        /// form is already flat, reading it back is a pair of array fills rather than a rebuild.
+        /// </summary>
+        private static void WriteFragmentIndex(FragmentIndex fragmentIndex, string fragmentIndexFileName)
+        {
+            WriteThroughTemporaryFile(fragmentIndexFileName, file =>
             {
-                ser.Serialize(file, fragmentIndex);
+                Span<int> header = stackalloc int[4];
+                header[0] = FragmentIndexMagic;
+                header[1] = FragmentIndexFormatVersion;
+                header[2] = fragmentIndex.BinStart.Length;
+                header[3] = fragmentIndex.PeptideIds.Length;
+                file.Write(MemoryMarshal.AsBytes(header));
+
+                WriteInt32Bulk(file, fragmentIndex.BinStart);
+                WriteInt32Bulk(file, fragmentIndex.PeptideIds);
+            });
+        }
+
+        /// <summary>
+        /// Writes under a temporary name and moves the file into place only once the write has finished, so a
+        /// cached index under its real name is always complete. Written straight to the real name, a write cut
+        /// short -- a killed process, a full disk -- left a valid header over a short payload, which the header
+        /// check in CheckFiles accepted: GenerateIndexes then rebuilt on every run, and GenerateSecondIndexes,
+        /// which has no recovery, crashed.
+        ///
+        /// A failed write deletes its partial file before the exception goes on. The partial file is as large as the
+        /// index, and a full disk is the likeliest reason for the failure.
+        /// </summary>
+        private static void WriteThroughTemporaryFile(string fileName, Action<FileStream> write)
+        {
+            string partialFileName = fileName + ".partial";
+            try
+            {
+                using (var file = new FileStream(partialFileName, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20))
+                {
+                    write(file);
+                }
+            }
+            catch
+            {
+                File.Delete(partialFileName);
+                throw;
+            }
+            File.Move(partialFileName, fileName, overwrite: true);
+        }
+
+        private static FragmentIndex ReadFragmentIndex(string fragmentIndexFileName)
+        {
+            using var file = new FileStream(fragmentIndexFileName, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20);
+
+            Span<int> header = stackalloc int[4];
+            file.ReadExactly(MemoryMarshal.AsBytes(header));
+            if (header[0] != FragmentIndexMagic || header[1] != FragmentIndexFormatVersion)
+            {
+                throw new MetaMorpheusException($"{fragmentIndexFileName} is not a fragment index this version can read.");
+            }
+
+            var binStart = new int[header[2]];
+            var peptideIds = new int[header[3]];
+            ReadInt32Bulk(file, binStart);
+            ReadInt32Bulk(file, peptideIds);
+
+            return new FragmentIndex(binStart, peptideIds);
+        }
+
+        /// <summary>
+        /// The precursor index is still a <see cref="List{T}"/> array: it is appended to after construction by
+        /// AddInteriorTerminalModsToPrecursorIndex, so it cannot be built with the count-then-fill pass a
+        /// compressed layout needs. Kept in the same flat format as before.
+        /// </summary>
+        private static void WritePrecursorIndex(List<int>[] precursorIndex, string precursorIndexFileName)
+            => WriteThroughTemporaryFile(precursorIndexFileName, file => WritePrecursorIndexPayload(precursorIndex, file));
+
+        private static void WritePrecursorIndexPayload(List<int>[] precursorIndex, FileStream file)
+        {
+            var counts = new int[precursorIndex.Length];
+            for (int i = 0; i < precursorIndex.Length; i++)
+            {
+                counts[i] = precursorIndex[i]?.Count ?? 0;
+            }
+
+            Span<int> header = stackalloc int[3];
+            header[0] = PrecursorIndexMagic;
+            header[1] = FragmentIndexFormatVersion;
+            header[2] = precursorIndex.Length;
+            file.Write(MemoryMarshal.AsBytes(header));
+            WriteInt32Bulk(file, counts);
+
+            var buffer = new int[1 << 20];
+            int staged = 0;
+            foreach (List<int> bin in precursorIndex)
+            {
+                if (bin == null || bin.Count == 0)
+                {
+                    continue;
+                }
+
+                ReadOnlySpan<int> ids = CollectionsMarshal.AsSpan(bin);
+                while (!ids.IsEmpty)
+                {
+                    if (staged == buffer.Length)
+                    {
+                        file.Write(MemoryMarshal.AsBytes(buffer.AsSpan(0, staged)));
+                        staged = 0;
+                    }
+
+                    int take = Math.Min(buffer.Length - staged, ids.Length);
+                    ids.Slice(0, take).CopyTo(buffer.AsSpan(staged));
+                    staged += take;
+                    ids = ids.Slice(take);
+                }
+            }
+
+            if (staged > 0)
+            {
+                file.Write(MemoryMarshal.AsBytes(buffer.AsSpan(0, staged)));
             }
         }
 
-        private static List<int>[] ReadFragmentIndex(string fragmentIndexFileName)
+        private static List<int>[] ReadPrecursorIndex(string precursorIndexFileName)
         {
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
+            using var file = new FileStream(precursorIndexFileName, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20);
 
-            using (var file = File.OpenRead(fragmentIndexFileName))
+            Span<int> header = stackalloc int[3];
+            file.ReadExactly(MemoryMarshal.AsBytes(header));
+            if (header[0] != PrecursorIndexMagic || header[1] != FragmentIndexFormatVersion)
             {
-                return (List<int>[])ser.Deserialize(file);
+                throw new MetaMorpheusException($"{precursorIndexFileName} is not a precursor index this version can read.");
+            }
+
+            var counts = new int[header[2]];
+            ReadInt32Bulk(file, counts);
+
+            var precursorIndex = new List<int>[counts.Length];
+            for (int i = 0; i < counts.Length; i++)
+            {
+                if (counts[i] == 0)
+                {
+                    continue;
+                }
+
+                var bin = new List<int>(counts[i]);
+                CollectionsMarshal.SetCount(bin, counts[i]);
+                ReadInt32Bulk(file, CollectionsMarshal.AsSpan(bin));
+                precursorIndex[i] = bin;
+            }
+
+            return precursorIndex;
+        }
+
+        private static void WriteInt32Bulk(Stream stream, int[] values)
+        {
+            // Span byte length is an int, so a >512 M-element array has to go out in chunks
+            const int chunk = 1 << 24;
+            for (int offset = 0; offset < values.Length; offset += chunk)
+            {
+                int count = Math.Min(chunk, values.Length - offset);
+                stream.Write(MemoryMarshal.AsBytes(values.AsSpan(offset, count)));
             }
         }
 
-        private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
+        private static void ReadInt32Bulk(Stream stream, Span<int> destination)
+        {
+            const int chunk = 1 << 24;
+            while (!destination.IsEmpty)
+            {
+                int count = Math.Min(chunk, destination.Length);
+                stream.ReadExactly(MemoryMarshal.AsBytes(destination.Slice(0, count)));
+                destination = destination.Slice(count);
+            }
+        }
+
+        internal static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
         {
             foreach (var database in dbFilenameList)
             {
@@ -1351,7 +1921,10 @@ namespace TaskLayer
 
                 if (!Directory.Exists(indexDirectory.FullName))
                 {
-                    return null;
+                    // Keep looking, as the loop already does when this folder holds no match. Returning
+                    // here made whether a later database's index is found depend on whether the first
+                    // database happens to have an index folder of its own.
+                    continue;
                 }
 
                 // all directories in the same directory as the bioPolymer database
@@ -1372,17 +1945,72 @@ namespace TaskLayer
             return null;
         }
 
+        /// <summary>
+        /// A folder is a cache hit only if its binary indexes carry a header this build can read. On existence
+        /// alone a stale folder fails in the reader instead, which GenerateSecondIndexes does not recover from.
+        /// </summary>
         private static string CheckFiles(IndexingEngine indexEngine, DirectoryInfo folder)
         {
-            if (File.Exists(Path.Combine(folder.FullName, IndexEngineParamsFileName)) &&
+            string paramsFile = Path.Combine(folder.FullName, IndexEngineParamsFileName);
+            string fragmentIndexFile = Path.Combine(folder.FullName, FragmentIndexFileName);
+            string precursorIndexFile = Path.Combine(folder.FullName, PrecursorIndexFileName);
+            string secondFragmentIndexFile = Path.Combine(folder.FullName, SecondFragmentIndexFileName);
+
+            if (File.Exists(paramsFile) &&
                 File.Exists(Path.Combine(folder.FullName, PeptideIndexFileName)) &&
-                File.Exists(Path.Combine(folder.FullName, FragmentIndexFileName)) &&
-                (File.Exists(Path.Combine(folder.FullName, PrecursorIndexFileName)) || !indexEngine.GeneratePrecursorIndex) &&
-                SameSettings(Path.Combine(folder.FullName, IndexEngineParamsFileName), indexEngine))
+                File.Exists(fragmentIndexFile) &&
+                (File.Exists(precursorIndexFile) || !indexEngine.GeneratePrecursorIndex) &&
+                SameSettings(paramsFile, indexEngine) &&
+                HasReadableIndexHeader(fragmentIndexFile, FragmentIndexMagic) &&
+                (!indexEngine.GeneratePrecursorIndex || HasReadableIndexHeader(precursorIndexFile, PrecursorIndexMagic)) &&
+                // written on demand by GenerateSecondIndexes, so absent is fine and stale is not
+                (!File.Exists(secondFragmentIndexFile) || HasReadableIndexHeader(secondFragmentIndexFile, FragmentIndexMagic)))
             {
                 return folder.FullName;
             }
             return null;
+        }
+
+        /// <summary>
+        /// The magic and format version the readers check, read at folder-selection time, and a file at least as
+        /// long as the header says its payload is. Any failure to get at them is a miss, since the reader would
+        /// fail on the same file.
+        ///
+        /// The length is what catches a truncated file: a write cut short keeps a valid header. The fragment index
+        /// is exactly its header plus two arrays whose lengths the header gives. The precursor index's bins are
+        /// variable, so only its counts array is known from the header, which still catches a file cut off
+        /// before the bins; reading every count to size the rest would cost a full read at selection time.
+        /// </summary>
+        private static bool HasReadableIndexHeader(string indexFileName, int expectedMagic)
+        {
+            bool isFragmentIndex = expectedMagic == FragmentIndexMagic;
+            Span<int> header = stackalloc int[isFragmentIndex ? 4 : 3];
+            long fileLength;
+            try
+            {
+                using var file = new FileStream(indexFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+                fileLength = file.Length;
+                file.ReadExactly(MemoryMarshal.AsBytes(header));
+            }
+            catch
+            {
+                return false;
+            }
+
+            if (header[0] != expectedMagic || header[1] != FragmentIndexFormatVersion)
+            {
+                return false;
+            }
+
+            long headerBytes = header.Length * sizeof(int);
+            if (isFragmentIndex)
+            {
+                // FragmentIndex needs at least one bin offset
+                return header[2] >= 1 && header[3] >= 0 &&
+                       fileLength == headerBytes + sizeof(int) * ((long)header[2] + header[3]);
+            }
+
+            return header[2] >= 0 && fileLength >= headerBytes + sizeof(int) * (long)header[2];
         }
 
         private static void WriteIndexEngineParams(IndexingEngine indexEngine, string fileName)
@@ -1402,15 +2030,45 @@ namespace TaskLayer
             {
                 Directory.CreateDirectory(pathToIndexes);
             }
-            var folder = Path.Combine(pathToIndexes, DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
+            // The folder name is a timestamp with one-second resolution, so two partitions indexed within
+            // the same second used to land in the same folder and overwrite each other's indexEngine.params
+            // and peptideIndex.ind. That leaves the earlier partition's index unfindable, which is fatal for
+            // XL search: its second round re-reads each partition's peptide index and gets null instead.
+            // Only reachable when indexing is fast enough for two partitions to finish inside one second.
+            string stamp = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
+            var folder = Path.Combine(pathToIndexes, stamp);
+            for (int disambiguator = 1; Directory.Exists(folder); disambiguator++)
+            {
+                folder = Path.Combine(pathToIndexes, $"{stamp}-{disambiguator}");
+            }
             Directory.CreateDirectory(folder);
             return folder;
         }
 
-        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
+        /// <summary>
+        /// Convenience overload for the protein-only tasks (cross-link, glyco, calibration, non-specific),
+        /// which index peptides and want them back typed as peptides. Distinguished by the ref parameter,
+        /// so it cannot be ambiguous with the general one.
+        /// </summary>
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex,
+            ref FragmentIndex fragmentIndex, ref List<int>[] precursorIndex, IEnumerable<IBioPolymer> allKnownProteins, string taskId)
+        {
+            List<IBioPolymerWithSetMods> bioPolymerIndex = null;
+            GenerateIndexes(indexEngine, dbFilenameList, ref bioPolymerIndex, ref fragmentIndex, ref precursorIndex, allKnownProteins, taskId);
+            peptideIndex = bioPolymerIndex?.Cast<PeptideWithSetModifications>().ToList();
+        }
+
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<IBioPolymerWithSetMods> peptideIndex, ref FragmentIndex fragmentIndex, ref List<int>[] precursorIndex, IEnumerable<IBioPolymer> allKnownProteins, string taskId)
         {
             bool successfullyReadIndices = false;
-            string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+
+            // The on-disk peptide index only round-trips peptides: OligoWithSetMods is neither
+            // [Serializable] nor able to restore its parent the way SetNonSerializedPeptideInfo does for
+            // PeptideWithSetModifications. Nucleic acid databases are small, so build in memory each
+            // time rather than block oligo searches on an mzLib serialization change.
+            bool indexIsCacheable = GlobalVariables.AnalyteType != AnalyteType.Oligo;
+
+            string pathToFolderWithIndices = indexIsCacheable ? GetExistingFolderWithIndices(indexEngine, dbFilenameList) : null;
 
             if (pathToFolderWithIndices != null) //if indexes exist
             {
@@ -1425,24 +2083,31 @@ namespace TaskLayer
                     if (indexEngine.GeneratePrecursorIndex)
                     {
                         Status("Reading precursor index...", new List<string> { taskId });
-                        precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
+                        precursorIndex = ReadPrecursorIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
                     }
 
                     successfullyReadIndices = true;
                 }
-                catch
+                catch (Exception e)
                 {
-                    // could put something here... this basically is just to prevent a crash if the index was unable to be read.
-
-                    // if the old index couldn't be read, a new one will be generated.
-
-                    // an old index may not be able to be read because of information required by new versions of MetaMorpheus
-                    // that wasn't written by old versions.
+                    // a new one is generated below; CheckFiles cannot anticipate every way a cached index
+                    // goes bad, so report why rather than losing the reason
+                    Warn("Could not read the existing index, so it is being rebuilt. Reason: " + e.Message);
                 }
             }
 
             if (!successfullyReadIndices) //if we didn't find indexes with the same params
             {
+                if (!indexIsCacheable)
+                {
+                    Status("Running Index Engine...", new List<string> { taskId });
+                    var inMemoryResults = (IndexingResults)indexEngine.Run();
+                    peptideIndex = inMemoryResults.PeptideIndex;
+                    fragmentIndex = inMemoryResults.FragmentIndex;
+                    precursorIndex = inMemoryResults.PrecursorIndex;
+                    return;
+                }
+
                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                 Status("Writing params...", new List<string> { taskId });
                 var paramsFile = Path.Combine(output_folderForIndices, IndexEngineParamsFileName);
@@ -1470,7 +2135,7 @@ namespace TaskLayer
                 {
                     Status("Writing precursor index...", new List<string> { taskId });
                     var precursorIndexFile = Path.Combine(output_folderForIndices, PrecursorIndexFileName);
-                    WriteFragmentIndex(precursorIndex, precursorIndexFile);
+                    WritePrecursorIndex(precursorIndex, precursorIndexFile);
                     FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
                 }
             }
@@ -1491,7 +2156,7 @@ namespace TaskLayer
                     if (indexEngine.GeneratePrecursorIndex)
                     {
                         Status("Reading precursor index...", new List<string> { taskId });
-                        precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
+                        precursorIndex = ReadPrecursorIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
                     }
 
                     successfullyReadIndices = true;
@@ -1513,7 +2178,7 @@ namespace TaskLayer
             }
         }
 
-        public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref List<int>[] secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
+        public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref FragmentIndex secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
             if (!File.Exists(Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName))) //if no indexes exist
@@ -1539,7 +2204,7 @@ namespace TaskLayer
             }
         }
 
-
+        #endregion
 
         /// <summary>
         /// Handle ambiguity when two theoretical bioPolymers in the
@@ -1657,3 +2322,5 @@ namespace TaskLayer
         }
     }
 }
+
+

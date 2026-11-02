@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <Nullable>disable</Nullable>
+    <Configurations>Debug;Release</Configurations>
     <!-- net10.0, no PlatformTarget: this project exists to prove the extracted half really is free of
          WPF, so it must be buildable and runnable on Linux and macOS. -->
   </PropertyGroup>
@@ -34,10 +35,14 @@
     <Compile Include="..\Test\GuiTests\**\*.cs" LinkBase="GuiTests" />
     <Compile Include="..\Test\MetaDraw\**\*.cs" LinkBase="MetaDraw" />
     <Compile Remove="..\Test\GuiTests\CustomMIonLossTests.cs" />
+    <Compile Remove="..\Test\GuiTests\CustomResidueViewModelTests.cs" />
     <Compile Remove="..\Test\GuiTests\FragmentParamsVM.cs" />
+    <Compile Remove="..\Test\GuiTests\GlycanSelectionViewModelTests.cs" />
     <Compile Remove="..\Test\GuiTests\GuiFunctionsTest.cs" />
     <Compile Remove="..\Test\GuiTests\GuiGlobalParamsTests.cs" />
+    <Compile Remove="..\Test\GuiTests\ModTreeFilterTests.cs" />
     <Compile Remove="..\Test\GuiTests\RelayAndDelegateCommandTests.cs" />
+    <Compile Remove="..\Test\GuiTests\TaskWindowSearchModeTests.cs" />
     <Compile Remove="..\Test\MetaDraw\BioPolymerCoverageColorMapperFactoryTests.cs" />
     <Compile Remove="..\Test\MetaDraw\BioPolymerCoverageColorMapperTests.cs" />
     <Compile Remove="..\Test\MetaDraw\BioPolymerCoverageColorScaleTests.cs" />
@@ -54,6 +59,7 @@
     <Compile Remove="..\Test\MetaDraw\FragmentReanalysis.cs" />
     <Compile Remove="..\Test\MetaDraw\FragmentReanalysisRaceConditionTest.cs" />
     <Compile Remove="..\Test\MetaDraw\MetaDrawDataLoaderTests.cs" />
+    <Compile Remove="..\Test\MetaDraw\MetaDrawEntrapmentFilterTests.cs" />
     <Compile Remove="..\Test\MetaDraw\MetaDrawExportRegressionTests.cs" />
     <Compile Remove="..\Test\MetaDraw\MetaDrawSettingsAndViewsTest.cs" />
     <Compile Remove="..\Test\MetaDraw\MetaDrawTest.cs" />
