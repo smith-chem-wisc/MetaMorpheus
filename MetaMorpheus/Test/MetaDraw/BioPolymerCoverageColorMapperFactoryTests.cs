@@ -56,9 +56,11 @@ public class BioPolymerCoverageColorMapperFactoryTests
     {
         var mapper = BioPolymerCoverageColorMapperFactory.Create(ColorResultsBy.CoverageType);
         var result = MakeResult(null, 10);
+        // Settings store OxyColor now, so the mapper converts on the way out and cannot hand back the
+        // stored instance. Compare the colour rather than brush identity.
         var expected = MetaDrawSettings.BioPolymerCoverageColors[BioPolymerCoverageType.Unique];
         mapper.Prepare([result], ColorGradientType.Viridis, false);
-        Assert.That(mapper.GetBrush(result), Is.EqualTo(expected));
+        Assert.That(mapper.GetBrush(result).Color, Is.EqualTo(DrawnSequence.ParseColorFromOxyColor(expected)));
     }
 
     [Test]

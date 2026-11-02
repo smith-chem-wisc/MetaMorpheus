@@ -3,6 +3,7 @@ using GuiFunctions.MetaDraw;
 using Omics.Fragmentation;
 using OxyPlot;
 using OxyPlot.Axes;
+using OxyPlot.Legends;
 using OxyPlot.Series;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.RetentionTimePrediction;
@@ -28,6 +29,34 @@ namespace GuiFunctions
         /// Stores the tabular data for text export. Each row is a dictionary of column name to value.
         /// </summary>
         public List<Dictionary<string, string>> PlotData { get; private set; } = new();
+
+        /// <summary>
+        /// Running stack height per category, shared by every series in this plot. ColumnSeries did
+        /// this internally through IsStacked; RectangleBarSeries has no equivalent, so it is explicit.
+        /// One plot per instance, so it resets naturally.
+        /// </summary>
+        private readonly Dictionary<int, double> stackTops = new();
+
+        private int seriesColorIndex;
+
+        /// <summary>
+        /// Gap between bars on the category axis. Shared with StackedColumnSeries, which has to size
+        /// its rectangles from the same number - a mismatch changes every bar's width silently.
+        /// </summary>
+        private const double CategoryGapWidth = 0.3;
+        private const double GroupedCategoryGapWidth = 0.1;
+
+        /// <summary>
+        /// ColumnSeries took its colour from PlotModel.DefaultColors automatically. RectangleBarSeries
+        /// does not, so the same palette is walked in the same order here.
+        /// </summary>
+        private OxyColor NextSeriesColor()
+        {
+            var palette = MetaDrawSettings.DataVisualizationColorOrder;
+            if (palette is null || palette.Count == 0)
+                return OxyColors.Automatic;
+            return palette[seriesColorIndex++ % palette.Count];
+        }
 
         public readonly static List<string> PlotNames = new List<string> {
             "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
@@ -55,6 +84,9 @@ namespace GuiFunctions
             PlotModelStatParameters parameters = null)
         {
             privateModel = new PlotModel { Title = plotName, DefaultFontSize = 14 };
+            // OxyPlot 2.0 drew a legend on every model, at 12pt; 2.1+ draws none unless one is added,
+            // and sizes it from DefaultFontSize.
+            privateModel.Legends.Add(new Legend { LegendFontSize = 12 });
             allSpectralMatches = sms;
             this.psmsBySourceFile = smsBySourceFile;
             this.parameters = parameters ?? PlotModelStatParametersViewModel.Instance.GetParameters();
@@ -137,7 +169,7 @@ namespace GuiFunctions
 
         private void histogramPlot(int plotType)
         {
-            privateModel.LegendTitle = "Source file(s)";
+            privateModel.Legends.Single().LegendTitle = "Source file(s)";
 
             bool isGroupingEnabled = parameters.GroupingProperty != "None";
             Dictionary<string, Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>>> groupedPsmsBySourceFile = null;
@@ -181,201 +213,8 @@ namespace GuiFunctions
 
         #region Histogram Data Gathering
 
-        private record HistogramRawData(
-            string XAxisTitle, string YAxisTitle, double BinSize, double LabelAngle,
-            Dictionary<string, IEnumerable<double>> NumbersBySourceFile,
-            Dictionary<string, Dictionary<string, int>> DictsBySourceFile);
-
-        private HistogramRawData GetHistogramData(int plotType)
-        {
-            string xAxisTitle = "";
-            string yAxisTitle = "Count";
-            double binSize = -1;
-            double labelAngle = 0;
-            var numbersBySourceFile = new Dictionary<string, IEnumerable<double>>();
-            var dictsBySourceFile = new Dictionary<string, Dictionary<string, int>>();
-
-            switch (plotType)
-            {
-                case 1: // Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)
-                    xAxisTitle = "Precursor error (ppm)";
-                    binSize = 0.1;
-                    foreach (string key in psmsBySourceFile.Keys)
-                    {
-                        numbersBySourceFile.Add(key, psmsBySourceFile[key].Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa, CultureInfo.InvariantCulture), 0) == 0).Select(p => double.Parse(p.MassDiffPpm, CultureInfo.InvariantCulture)));
-                        var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
-                        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
-                    }
-                    break;
-                case 2: // Histogram of Fragment PPM Errors 
-                    xAxisTitle = "Fragment error (ppm)";
-                    binSize = 2;
-                    foreach (string key in psmsBySourceFile.Keys)
-                    {
-                        numbersBySourceFile.Add(key, psmsBySourceFile[key].SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm)));
-                        var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
-                        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
-                    }
-                    break;
-                case 3: // Histogram of Precursor Charges
-                    xAxisTitle = "Precursor charge";
-                    binSize = 1;
-                    foreach (string key in psmsBySourceFile.Keys)
-                    {
-                        numbersBySourceFile.Add(key, psmsBySourceFile[key].Select(p => (double)(p.PrecursorCharge)));
-                        var results = numbersBySourceFile[key].GroupBy(p => p).OrderBy(p => p.Key).Select(p => p);
-                        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
-                    }
-                    break;
-                case 4: // Histogram of Fragment Charges
-                    xAxisTitle = "Fragment charge";
-                    binSize = 1;
-                    foreach (string key in psmsBySourceFile.Keys)
-                    {
-                        numbersBySourceFile.Add(key, psmsBySourceFile[key].SelectMany(p => p.MatchedIons.Select(v => (double)v.Charge)));
-                        var results = numbersBySourceFile[key].GroupBy(p => p).OrderBy(p => p.Key).Select(p => p);
-                        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
-                    }
-                    break;
-                case 5: // Histogram of PTM Spectral Counts
-                    xAxisTitle = "Modification";
-                    labelAngle = -50;
-                    foreach (string key in psmsBySourceFile.Keys)
-                    {
-                        var psmsWithMods = psmsBySourceFile[key].Where(p => !p.FullSequence.Contains("|") && p.FullSequence.Contains("["));
-                        var mods = psmsWithMods.Select(p => p.ToBioPolymerWithSetMods()).Select(p => p.AllModsOneIsNterminus).SelectMany(p => p.Values);
-                        var groupedMods = mods.GroupBy(p => p.IdWithMotif).ToList();
-                        dictsBySourceFile.Add(key, groupedMods.ToDictionary(p => p.Key, v => v.Count()));
-                    }
-                    break;
-                case 6: // Histogram of Precursor mass
-                    xAxisTitle = "Precursor Mass (Da)";
-                    binSize = 100;
-                    labelAngle = -50;
-                    foreach (string key in psmsBySourceFile.Keys)
-                    {
-                        numbersBySourceFile.Add(key, psmsBySourceFile[key].Select(p => (double)(p.PrecursorMass)));
-                        var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
-                        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
-                    }
-                    break;
-                case 7: // Histogram of Precursor m/z
-                    xAxisTitle = "Precursor mass/charge";
-                    binSize = 50;
-                    labelAngle = -50;
-                    foreach (string key in psmsBySourceFile.Keys)
-                    {
-                        numbersBySourceFile.Add(key, psmsBySourceFile[key].Select(p => (double)(p.PrecursorMz)));
-                        var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
-                        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
-                    }
-                    break;
-                case 8: // Histogram of Hydrophobicity Scores
-                    xAxisTitle = "Hydrophobicity Score (Determined by SSRCalc)";
-                    binSize = 2;
-                    labelAngle = -50;
-                    SSRCalc3 sSRCalc3 = new SSRCalc3("A100", SSRCalc3.Column.A100);
-                    foreach (string key in psmsBySourceFile.Keys)
-                    {
-                        var values = new List<double>();
-                        foreach (var psm in psmsBySourceFile[key].Where(p => p is not OsmFromTsv))
-                        {
-                            values.Add(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split("|")[0], null)));
-
-                        }
-                        numbersBySourceFile.Add(key, values);
-                        var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
-                        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
-                    }
-                    break;
-
-                case 9: // Histogram of Missed Cleavages
-                    xAxisTitle = "Missed Cleavages";
-                    binSize = 1;
-                    labelAngle = 0;
-                    foreach (var fileName in psmsBySourceFile.Keys)
-                    {
-                        var values = psmsBySourceFile[fileName].Where(p => !p.MissedCleavage.Contains("|")).Select(p => double.Parse(p.MissedCleavage)).ToList();
-                        numbersBySourceFile.Add(fileName, values);
-                        var results = numbersBySourceFile[fileName].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
-                        dictsBySourceFile.Add(fileName, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
-                    }
-                    break;
-                case 10: // Histogram of Fragment Ion Types by count
-                    xAxisTitle = "Fragment Types";
-                    labelAngle = 0;
-
-                    foreach (var fileName in psmsBySourceFile.Keys)
-                    {
-                        var allMatchedIons = psmsBySourceFile[fileName].SelectMany(p => p.MatchedIons).ToList();
-
-                        var result = allMatchedIons
-                            .GroupBy(p => p.NeutralTheoreticalProduct is CustomMProduct cmp ? cmp.Annotation : p.NeutralTheoreticalProduct.ProductType.ToString())
-                            .ToDictionary(p => p.Key.ToString(), p => p.Count());
-                        dictsBySourceFile.Add(fileName, result);
-                    }
-                    if (dictsBySourceFile.Sum(p => p.Value.Keys.Count) >= 40)
-                        labelAngle = -50;
-                    break;
-                case 11: // Histogram of Fragment Ion Types by intensity
-                    xAxisTitle = "Fragment Types";
-                    labelAngle = 0;
-                    yAxisTitle = "Summed Intensity";
-                    foreach (var fileName in psmsBySourceFile.Keys)
-                    {
-                        var allMatchedIons = psmsBySourceFile[fileName].SelectMany(p => p.MatchedIons).ToList();
-                        var result = allMatchedIons
-                            .GroupBy(p => p.NeutralTheoreticalProduct is CustomMProduct cmp ? cmp.Annotation : p.NeutralTheoreticalProduct.ProductType.ToString())
-                            .ToDictionary(p => p.Key.ToString(), p => (int)p.Sum(m => m.Intensity));
-                        dictsBySourceFile.Add(fileName, result);
-                    }
-                    if (dictsBySourceFile.Sum(p => p.Value.Keys.Count) >= 40)
-                        labelAngle = -50;
-                    break;
-                case 12: // Histogram of Ids by Retention Time
-                    xAxisTitle = "Retention Time";
-                    binSize = 1;
-                    labelAngle = 0;
-                    foreach (var fileName in psmsBySourceFile.Keys)
-                    {
-                        var result = psmsBySourceFile[fileName]
-                            .GroupBy(p => (int)Math.Round(p.RetentionTime, 0))
-                            .ToDictionary(p => p.Key.ToString(CultureInfo.InvariantCulture), p => p.Count());
-                        dictsBySourceFile.Add(fileName, result);
-                    }
-                    break;
-                case 13: // Histogram of Spectral Match Ambiguity Levels
-                    xAxisTitle = "Ambiguity Level";
-                    labelAngle = 0;
-                    foreach (var fileName in psmsBySourceFile.Keys)
-                    {
-                        var result = psmsBySourceFile[fileName]
-                            .GroupBy(p => NormalizeAmbiguityLevel(p.AmbiguityLevel))
-                            .ToDictionary(p => p.Key, p => p.Count());
-                        dictsBySourceFile.Add(fileName, result);
-                    }
-                    break;
-                case 14: // Histogram of Notch (ambiguous PSMs contribute to each of their pipe-delimited notches)
-                    xAxisTitle = "Notch";
-                    binSize = 1;
-                    labelAngle = 0;
-                    foreach (var fileName in psmsBySourceFile.Keys)
-                    {
-                        var values = new List<double>();
-                        foreach (var psm in psmsBySourceFile[fileName])
-                        {
-                            foreach (double notch in ParseAmbiguousNotchValues(psm.Notch))
-                                values.Add(notch);
-                        }
-                        numbersBySourceFile.Add(fileName, values);
-                        var results = values.GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
-                        dictsBySourceFile.Add(fileName, results.ToDictionary(p => p.Key.ToString(CultureInfo.InvariantCulture), v => v.Count()));
-                    }
-                    break;
-            }
-
-            return new HistogramRawData(xAxisTitle, yAxisTitle, binSize, labelAngle, numbersBySourceFile, dictsBySourceFile);
-        }
+        private SpectrumMatchHistograms.HistogramRawData GetHistogramData(int plotType)
+            => SpectrumMatchHistograms.GetHistogramData(plotType, psmsBySourceFile);
 
         #endregion
 
@@ -452,13 +291,12 @@ namespace GuiFunctions
 
                 foreach (string sourceFile in psmsBySourceFile.Keys)
                 {
-                    ColumnSeries column = new ColumnSeries
+                    var column = new StackedColumnSeries(stackTops, parameters.UseLogScaleYAxis ? 0.1 : 0)
                     {
-                        ColumnWidth = 200,
-                        IsStacked = true,
                         Title = sourceFile,
-                        TrackerFormatString = "Category: {bin}\n{0}: {2}\nGroup: {group}\nTotal: {total}",
-                        BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
+                        TrackerFormatString = "Category: {bin}\n{0}: {Value}\nGroup: {group}\nTotal: {total}",
+                        FillColor = NextSeriesColor(),
+                        GapWidth = isGroupingEnabled ? GroupedCategoryGapWidth : CategoryGapWidth
                     };
 
                     foreach (string groupKey in allGroupKeys)
@@ -469,7 +307,7 @@ namespace GuiFunctions
                             {
                                 string lookupKey = cat + "|" + groupKey;
                                 if (categoryToIndex.ContainsKey(lookupKey))
-                                    column.Items.Add(new HistItem(0, categoryToIndex[lookupKey], cat, filteredCounts[filteredCategoryIDs[cat]], groupKey));
+                                    column.AddItem(0, categoryToIndex[lookupKey], cat, filteredCounts[filteredCategoryIDs[cat]], groupKey);
                             }
                             continue;
                         }
@@ -488,7 +326,7 @@ namespace GuiFunctions
                             if (parameters.UseLogScaleYAxis && value > 0 && value < 0.1)
                                 value = 0.1;
 
-                            column.Items.Add(new HistItem(value, categoryToIndex[lookupKey], cat, filteredCounts[catId], groupKey));
+                            column.AddItem(value, categoryToIndex[lookupKey], cat, filteredCounts[catId], groupKey);
 
                             PlotData.Add(new Dictionary<string, string>
                             {
@@ -507,13 +345,12 @@ namespace GuiFunctions
             {
                 foreach (string key in dictsBySourceFile.Keys)
                 {
-                    ColumnSeries column = new ColumnSeries
+                    var column = new StackedColumnSeries(stackTops, parameters.UseLogScaleYAxis ? 0.1 : 0)
                     {
-                        ColumnWidth = 200,
-                        IsStacked = true,
                         Title = key,
-                        TrackerFormatString = "Bin: {bin}\n{0}: {2}\nTotal: {total}",
-                        BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
+                        TrackerFormatString = "Bin: {bin}\n{0}: {Value}\nTotal: {total}",
+                        FillColor = NextSeriesColor(),
+                        GapWidth = isGroupingEnabled ? GroupedCategoryGapWidth : CategoryGapWidth
                     };
 
                     foreach (var d in dictsBySourceFile[key])
@@ -527,7 +364,7 @@ namespace GuiFunctions
                         if (parameters.UseLogScaleYAxis && value < 0.1)
                             value = 0.1;
 
-                        column.Items.Add(new HistItem(value, id, d.Key, filteredCounts[id]));
+                        column.AddItem(value, id, d.Key, filteredCounts[id]);
 
                         PlotData.Add(new Dictionary<string, string>
                         {
@@ -554,7 +391,7 @@ namespace GuiFunctions
             if (plotType == 13)
             {
                 return groupPsms
-                    .GroupBy(p => NormalizeAmbiguityLevel(p.AmbiguityLevel))
+                    .GroupBy(p => SpectrumMatchHistograms.NormalizeAmbiguityLevel(p.AmbiguityLevel))
                     .ToDictionary(p => p.Key, p => p.Count());
             }
 
@@ -653,13 +490,12 @@ namespace GuiFunctions
 
                 foreach (string sourceFile in psmsBySourceFile.Keys)
                 {
-                    var column = new ColumnSeries
+                    var column = new StackedColumnSeries(stackTops, parameters.UseLogScaleYAxis ? 0.1 : 0)
                     {
-                        ColumnWidth = 200,
-                        IsStacked = true,
                         Title = sourceFile,
-                        TrackerFormatString = "Bin: {bin}\n{0}: {2}\nGroup: {group}\nTotal: {total}",
-                        BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
+                        TrackerFormatString = "Bin: {bin}\n{0}: {Value}\nGroup: {group}\nTotal: {total}",
+                        FillColor = NextSeriesColor(),
+                        GapWidth = isGroupingEnabled ? GroupedCategoryGapWidth : CategoryGapWidth
                     };
 
                     foreach (string groupKey in allGroupKeys)
@@ -670,15 +506,15 @@ namespace GuiFunctions
                             {
                                 string lookupKey = binKey.ToString() + "|" + groupKey;
                                 if (categoryToIndex.ContainsKey(lookupKey))
-                                    column.Items.Add(new HistItem(0, categoryToIndex[lookupKey],
-                                        (binKey * binSize).ToString(CultureInfo.InvariantCulture), filteredCounts[binToFilteredIndex[binKey]], groupKey));
+                                    column.AddItem(0, categoryToIndex[lookupKey],
+                                        (binKey * binSize).ToString(CultureInfo.InvariantCulture), filteredCounts[binToFilteredIndex[binKey]], groupKey);
                             }
                             continue;
                         }
 
                         var groupPsms = groupedPsmsBySourceFile[sourceFile][groupKey];
                         var groupNumbers = GetNumbersFromPsms(groupPsms, plotType);
-                        var groupDict = groupNumbers.GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key)
+                        var groupDict = groupNumbers.GroupBy(p => SpectrumMatchHistograms.RoundToBin(p, binSize)).OrderBy(p => p.Key)
                             .ToDictionary(p => p.Key.ToString(), v => v.Count());
 
                         foreach (var binKey in binToFilteredIndex.Keys.OrderBy(k => k))
@@ -693,8 +529,8 @@ namespace GuiFunctions
                             if (parameters.UseLogScaleYAxis && value > 0 && value < 0.1)
                                 value = 0.1;
 
-                            column.Items.Add(new HistItem(value, categoryToIndex[lookupKey],
-                                (binKey * binSize).ToString(CultureInfo.InvariantCulture), filteredCounts[binToFilteredIndex[binKey]], groupKey));
+                            column.AddItem(value, categoryToIndex[lookupKey],
+                                (binKey * binSize).ToString(CultureInfo.InvariantCulture), filteredCounts[binToFilteredIndex[binKey]], groupKey);
 
                             PlotData.Add(new Dictionary<string, string>
                             {
@@ -713,13 +549,12 @@ namespace GuiFunctions
             {
                 foreach (string key in dictsBySourceFile.Keys)
                 {
-                    var column = new ColumnSeries
+                    var column = new StackedColumnSeries(stackTops, parameters.UseLogScaleYAxis ? 0.1 : 0)
                     {
-                        ColumnWidth = 200,
-                        IsStacked = true,
                         Title = key,
-                        TrackerFormatString = "Bin: {bin}\n{0}: {2}\nTotal: {total}",
-                        BaseValue = parameters.UseLogScaleYAxis ? 0.1 : 0
+                        TrackerFormatString = "Bin: {bin}\n{0}: {Value}\nTotal: {total}",
+                        FillColor = NextSeriesColor(),
+                        GapWidth = isGroupingEnabled ? GroupedCategoryGapWidth : CategoryGapWidth
                     };
 
                     foreach (var d in dictsBySourceFile[key])
@@ -734,8 +569,8 @@ namespace GuiFunctions
                         if (parameters.UseLogScaleYAxis && value < 0.1)
                             value = 0.1;
 
-                        column.Items.Add(new HistItem(value, filteredIdx,
-                            (bin * binSize).ToString(CultureInfo.InvariantCulture), filteredCounts[filteredIdx]));
+                        column.AddItem(value, filteredIdx,
+                            (bin * binSize).ToString(CultureInfo.InvariantCulture), filteredCounts[filteredIdx]);
 
                         PlotData.Add(new Dictionary<string, string>
                         {
@@ -755,6 +590,18 @@ namespace GuiFunctions
 
         #region Axis Configuration
 
+        /// <summary>
+        /// A 2.2 CategoryAxis takes its range only from series bound to it. Grouped, the series bind to
+        /// GroupAxis, so the main axis would otherwise sit at [-0.5, 0.5] and draw one label.
+        /// </summary>
+        private static void PinToWholeSlots(CategoryAxis axis, int slotCount)
+        {
+            if (slotCount == 0)
+                return;
+            axis.Minimum = -0.5;
+            axis.Maximum = slotCount - 0.5;
+        }
+
         private void ConfigureHistogramAxes(string xAxisTitle, string yAxisTitle, double labelAngle,
             string[] category, bool isGroupingEnabled, List<string> allGroupKeys, int categoriesPerGroup)
         {
@@ -770,13 +617,14 @@ namespace GuiFunctions
                 Position = AxisPosition.Bottom,
                 ItemsSource = category,
                 Title = isGroupingEnabled ? null : xAxisTitle,
-                GapWidth = 0.3,
+                GapWidth = CategoryGapWidth,
                 Angle = labelAngle,
             };
+            PinToWholeSlots(mainAxis, category.Length);
 
             if (isGroupingEnabled && allGroupKeys != null && allGroupKeys.Count > 0 && categoriesPerGroup > 0)
             {
-                mainAxis.GapWidth = 0.1;
+                mainAxis.GapWidth = GroupedCategoryGapWidth;
 
                 if (allGroupKeys.Count > 1)
                 {
@@ -820,7 +668,7 @@ namespace GuiFunctions
                     Position = AxisPosition.Bottom,
                     Key = "GroupAxis",
                     ItemsSource = groupLabels,
-                    GapWidth = 0.1,
+                    GapWidth = GroupedCategoryGapWidth,
                     Angle = 0,
                     Title = parameters.GroupingProperty,
                     TitleFontWeight = FontWeights.Normal,
@@ -834,6 +682,7 @@ namespace GuiFunctions
                     MinorGridlineStyle = LineStyle.None,
                     PositionTier = 1,
                 };
+                PinToWholeSlots(groupAxis, category.Length);
                 privateModel.Axes.Add(groupAxis);
             }
 
@@ -964,14 +813,6 @@ namespace GuiFunctions
         }
 
         // returns a bin index of number relative to 0, midpoints are rounded towards zero
-        private static int roundToBin(double number, double binSize)
-        {
-            int sign = number < 0 ? -1 : 1;
-            double d = number * sign;
-            double remainder = d % binSize;
-            int i = remainder < 0.5 * binSize ? (int)(d / binSize + 0.001) : (int)(d / binSize + 1.001);
-            return i * sign;
-        }
 
         /// <summary>
         /// Groups PSMs by the specified property for side-by-side plotting.
@@ -1056,7 +897,7 @@ namespace GuiFunctions
                 8 => GetHydrophobicityScores(psms),
                 9 => psms.Where(p => !p.MissedCleavage.Contains("|")).Select(p => double.Parse(p.MissedCleavage)),
                 12 => psms.Select(p => (double)(int)Math.Round(p.RetentionTime, 0)),
-                14 => psms.SelectMany(p => ParseAmbiguousNotchValues(p.Notch)),
+                14 => psms.SelectMany(p => SpectrumMatchHistograms.ParseAmbiguousNotchValues(p.Notch)),
                 _ => Enumerable.Empty<double>()
             };
         }
@@ -1072,50 +913,6 @@ namespace GuiFunctions
             return values;
         }
 
-        private class HistItem : ColumnItem
-        {
-            public int total { get; set; }
-            public string bin { get; set; }
-            public string group { get; set; }
-            
-            public HistItem(double value, int categoryIndex, string bin, int total, string group = null) : base(value, categoryIndex)
-            {
-                this.total = total;
-                this.bin = bin;
-                this.group = group;
-            }
-        }
-
-        private static IEnumerable<string> SplitAmbiguousNotch(string notch)
-        {
-            if (string.IsNullOrWhiteSpace(notch))
-                return new[] { "0" };
-
-            return notch.Split('|')
-                .Select(p => p.Trim())
-                .Where(p => p.Length > 0)
-                .DefaultIfEmpty("0");
-        }
-
-        private static IEnumerable<double> ParseAmbiguousNotchValues(string notch)
-        {
-            foreach (var part in SplitAmbiguousNotch(notch))
-            {
-                if (double.TryParse(part, NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
-                    yield return value;
-                else
-                    yield return 0.0;
-            }
-        }
-
-        private static string NormalizeAmbiguityLevel(string ambiguityLevel)
-        {
-            if (string.IsNullOrWhiteSpace(ambiguityLevel))
-                return "1";
-
-            var first = ambiguityLevel.Split('|')[0].Trim();
-            return string.IsNullOrEmpty(first) ? "1" : first;
-        }
 
         /// <summary>
         /// Orders strings numerically if all values are numeric, otherwise alphabetically.
