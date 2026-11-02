@@ -570,27 +570,9 @@ namespace Test.MetaDraw
 
                 // Checks to see if the stationary sequence updated with the new positioning
                 string modifiedBaseSeq = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
-                string fullSequence = modifiedBaseSeq;
-                var modDictionary = peptide.AllModsOneIsNterminus.Where(p => p.Key == 1
-                        ? MetaDrawSettings.FirstAAonScreenIndex == 0
-                        : p.Key - 2 >= MetaDrawSettings.FirstAAonScreenIndex
-                          && p.Key - 2 < MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)
-                    .OrderByDescending(p => p.Key);
-                foreach (var mod in modDictionary)
-                {
-                    // if modification is within the visible region
-                    fullSequence = fullSequence.Insert(mod.Key - 1 - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
-                }
-
-                var cTerminalMod = peptide.AllModsOneIsNterminus
-                    .Where(p => p.Key == psm.BaseSeq.Length + 2)
-                    .Select(p => p.Value)
-                    .FirstOrDefault();
-                if (cTerminalMod != null && MetaDrawSettings.NumberOfAAOnScreen > 0
-                    && MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen >= psm.BaseSeq.Length)
-                {
-                    fullSequence += "-[" + cTerminalMod.ModificationType + ":" + cTerminalMod.IdWithMotif + "]";
-                }
+                // shares the production expression; MetaDraw_StationarySequenceDrawsTerminalAndLastResidueMods checks it independently
+                string fullSequence = DrawnSequence.GetStationaryFullSequence(peptide, psm.BaseSeq,
+                    MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
 
                 List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p =>
                 {

@@ -275,11 +275,28 @@ namespace GuiFunctions
             int firstResidueOnScreen = MetaDrawSettings.FirstAAonScreenIndex;
             int residuesOnScreen = MetaDrawSettings.NumberOfAAOnScreen;
             string baseSequence = sm.BaseSeq.Substring(firstResidueOnScreen, residuesOnScreen);
-            string fullSequence = baseSequence;
+            string fullSequence = GetStationaryFullSequence(peptide, sm.BaseSeq, firstResidueOnScreen, residuesOnScreen);
+
+            List<MatchedFragmentIon> matchedIons = sm.MatchedIons.Where(p =>
+            {
+                int cleavagePosition = GetCleavagePosition(p.NeutralTheoreticalProduct, sm.BaseSeq.Split('|')[0].Length);
+                return cleavagePosition > MetaDrawSettings.FirstAAonScreenIndex
+                       && cleavagePosition < MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen;
+            }).ToList();
+            stationarySequence.AnnotateBaseSequence(baseSequence, fullSequence, yLoc, matchedIons, sm, true,
+                fullSequenceLength: sm.BaseSeq.Split('|')[0].Length);
+        }
+
+        /// <summary>
+        /// The on-screen residues of the stationary sequence, with the mods that fall on them
+        /// </summary>
+        internal static string GetStationaryFullSequence(IBioPolymerWithSetMods peptide, string baseSeq, int firstResidueOnScreen, int residuesOnScreen)
+        {
+            string fullSequence = baseSeq.Substring(firstResidueOnScreen, residuesOnScreen);
 
             // AllModsOneIsNterminus keys: 1 is the N-terminus, zero-based residue r is r + 2, and the C-terminus is BaseSeq.Length + 2
             var cTerminalMod = peptide.AllModsOneIsNterminus
-                .Where(p => p.Key == sm.BaseSeq.Length + 2)
+                .Where(p => p.Key == baseSeq.Length + 2)
                 .Select(p => p.Value)
                 .FirstOrDefault();
 
@@ -295,19 +312,12 @@ namespace GuiFunctions
             }
 
             // a C-terminal mod sits past the last residue, so it is appended rather than inserted
-            if (cTerminalMod != null && residuesOnScreen > 0 && firstResidueOnScreen + residuesOnScreen >= sm.BaseSeq.Length)
+            if (cTerminalMod != null && residuesOnScreen > 0 && firstResidueOnScreen + residuesOnScreen >= baseSeq.Length)
             {
                 fullSequence += "-[" + cTerminalMod.ModificationType + ":" + cTerminalMod.IdWithMotif + "]";
             }
 
-            List<MatchedFragmentIon> matchedIons = sm.MatchedIons.Where(p =>
-            {
-                int cleavagePosition = GetCleavagePosition(p.NeutralTheoreticalProduct, sm.BaseSeq.Split('|')[0].Length);
-                return cleavagePosition > MetaDrawSettings.FirstAAonScreenIndex
-                       && cleavagePosition < MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen;
-            }).ToList();
-            stationarySequence.AnnotateBaseSequence(baseSequence, fullSequence, yLoc, matchedIons, sm, true,
-                fullSequenceLength: sm.BaseSeq.Split('|')[0].Length);
+            return fullSequence;
         }
 
         /// <summary>
