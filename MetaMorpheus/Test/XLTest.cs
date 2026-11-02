@@ -1640,6 +1640,69 @@ namespace Test
             File.Delete(outputFile);
         }
 
+        // ScoreChildScan's third branch: an MS3 child whose precursor mass equals the parent MS2's is annotated
+        // against the crosslinked peptide; one that differs by more than 0.001 Da, and is not one of this
+        // peptide's stub signatures, is not. No fixture has such a scan, so beta's signature MS3 (scan 4) is
+        // re-wrapped with the parent's precursor, and as the parent's only child.
+        [Test]
+        [TestCase(0.0, true)]
+        [TestCase(0.002, false)]
+        public static void TestMs3ChildWithParentPrecursorMass(double massOffset, bool expectAnnotated)
+        {
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, ms3childScanDissociationType: DissociationType.LowCID, precursorMassTolerance: new PpmTolerance(10));
+
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\10226.mzML");
+            var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
+            var fsp = new List<(string, CommonParameters)> { (spectraFile, commonParameters) };
+
+            Ms2ScanWithSpecificMass[] scans = MetaMorpheusTask.GetMs2ScansWrapByScanNum(file, spectraFile, commonParameters, out List<List<(double, int, double)>> precursorss).ToArray();
+            Ms2ScanWithSpecificMass parent = scans.First();
+            Ms2ScanWithSpecificMass signature = parent.ChildScans.Single(p => p.OneBasedScanNumber == 4);
+            Assert.That(signature.TheScan.MsnOrder, Is.EqualTo(3));
+
+            var sameAsParent = new Ms2ScanWithSpecificMass(signature.TheScan, (parent.PrecursorMass + massOffset).ToMz(parent.PrecursorCharge),
+                parent.PrecursorCharge, spectraFile, commonParameters, signature.ExperimentalFragments);
+            Assert.That(sameAsParent.PrecursorMass - parent.PrecursorMass, Is.EqualTo(massOffset).Within(1e-6));
+            parent.ChildScans = new List<Ms2ScanWithSpecificMass> { sameAsParent };
+
+            Protein bsa = new Protein("MKWVTFISLLLLFSSAYSRGVFRRDTHKSEIAHRFKDLGEEHFKGLVLIAFSQYL" +
+                "QQCPFDEHVKLVNELTEFAKTCVADESHAGCEKSLHTLFGDELCKVASLRETYGDMADCCEKQEPERNECFLSHKDDS" +
+                "PDLPKLKPDPNTLCDEFKADEKKFWGKYLYEIARRHPYFYAPELLYYANKYNGVFQECCQAEDKGACLLPKIETMRE" +
+                "KVLTSSARQRLRCASIQKFGERALKAWSVARLSQKFPKAEFVEVTKLVTDLTKVHKECCHGDLLECADDR" +
+                "ADLAKYICDNQDTISSKLKECCDKPLLEKSHCIAEVEKDAIPENLPPLTADFAEDKDVCKNYQEAKDAFL" +
+                "GSFLYEYSRRHPEYAVSVLLRLAKEYEATLEECCAKDDPHACYSTVFDKLKHLVDEPQNLIKQNCDQFEK" +
+                "LGEYGFQNALIVRYTRKVPQVSTPTLVEVSRSLGKVGTRCCTKPESERMPCTEDYLSLILNRLCVLHEKT" +
+                "PVSEKVTKCCTESLVNRRPCFSALTPDETYVPKAFDEKLFTFHADICTLPDTEKQIKKQTALVELLKHKP" +
+                "KATEEQLKTVMENFVAFVDKCCAADDKEACFAVEGPKLVVSTQTALA", "BSA");
+            var fixedMods = GlobalVariables.AllModsKnown.Where(p => p.IdWithMotif == "Carbamidomethyl on C").ToList();
+            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), fixedMods,
+               null, null, null, 0, DecoyType.None, commonParameters, fsp, 5000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>()).Run();
+
+            var csms = new List<CrosslinkSpectralMatch>[2];
+            var XLEngine = new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, null, 0,
+                commonParameters, fsp, GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"), 50, true, false, false, true, new List<string>(),
+                new List<(int, int, int)>[scans.Length], 0, indexingResults.PeptideIndex, precursorss);
+            XLEngine.FirstRoundSearch();
+            XLEngine.Run();
+
+            var csm = csms[0].First();
+            Assert.That(csm.ScanNumber, Is.EqualTo(2));
+            Assert.That(csm.BetaPeptide, Is.Not.Null);
+
+            if (expectAnnotated)
+            {
+                Assert.That(csm.ChildMatchedFragmentIons?.ToDictionary(p => p.Key, p => p.Value.Count),
+                    Is.EqualTo(new Dictionary<int, int> { { 4, 1 } }));
+                Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons?.ToDictionary(p => p.Key, p => p.Value.Count),
+                    Is.EqualTo(new Dictionary<int, int> { { 4, 1 } }));
+            }
+            else
+            {
+                Assert.That(csm.ChildMatchedFragmentIons, Is.Null);
+                Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons, Is.Null);
+            }
+        }
+
         [Test]
         [TestCase(1.0d, 1)]//below smallest number and outside tolerance returns index 1 because value 5 is closest
         [TestCase(30.0d, 10)]//above highest number and outside tolerance returns index 10, which is not an acceptable index.
