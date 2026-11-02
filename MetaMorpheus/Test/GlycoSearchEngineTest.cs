@@ -52,14 +52,14 @@ namespace Test
         }
 
         /// <summary>
-        /// SelectTopCandidates must keep exactly the ids, in exactly the order, that the engine's former selection did: a stable
+        /// DescendingScoreSorter.SelectTop must keep exactly the ids, in exactly the order, that the engine's former selection did: a stable
         /// descending sort by byte score, skipping ids below the cutoff, stopping at the first id scoring below the topN-th.
         /// </summary>
         [Test]
-        public static void SelectTopCandidatesMatchesStableSortSelection()
+        public static void SelectTopMatchesStableSortSelection()
         {
             var random = new System.Random(20260914);
-            int[] counts = new int[256];
+            var sorter = new EngineLayer.Util.DescendingScoreSorter();
             var actual = new List<int> { -1 }; // must be cleared by the method
             int[] topNs = { -1, 0, 1, 2, 5, 50, 1000 };
 
@@ -98,10 +98,9 @@ namespace Test
                     expected.Add(id);
                 }
 
-                GlycoSearchEngine.SelectTopCandidates(candidateIds, scores, cutoff, topN, counts, actual);
+                sorter.SelectTop(candidateIds, new EngineLayer.Util.ScanScoringTable(scores), cutoff, topN, actual);
 
                 Assert.That(actual, Is.EqualTo(expected), $"trial {trial}, topN {topN}, cutoff {cutoff}");
-                Assert.That(counts, Is.All.EqualTo(0));
             }
         }
 
@@ -227,7 +226,10 @@ namespace Test
             Assert.That(capped, Is.EqualTo(uncapped.Where(p => (double)p.Mass / 1E5 <= cap).ToArray()));
             Assert.That(capped.Length, Is.LessThan(uncapped.Length));
 
-            Assert.That(MakeEngineNGlycans(0), Is.Empty);
+            // A cap that leaves nothing is refused by name, as CheckedGlycanBoxes refuses it for O and N+O,
+            // rather than searching nothing and reporting nothing.
+            var ex = Assert.Throws<MetaMorpheusException>(() => MakeEngineNGlycans(0));
+            Assert.That(ex.Message, Does.Contain("NGlycan.gdb").And.Contain("maximum glycan box mass of 0 Da"));
         }
 
         private static Ms2ScanWithSpecificMass InvokeGetLocalizationScan(GlycoSearchEngine engine, Ms2ScanWithSpecificMass parentScan)

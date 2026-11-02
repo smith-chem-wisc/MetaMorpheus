@@ -100,7 +100,7 @@ public class GptmdFilterTests
         var ions = new List<MatchedFragmentIon>
         {
             CreateIon(FragmentationTerminus.N, fragmentNumber: 5, residuePosition: 5), // covers N-term
-            CreateIon(FragmentationTerminus.C, fragmentNumber: 6, residuePosition: 1)  // covers C-term
+            CreateIon(FragmentationTerminus.C, fragmentNumber: 4, residuePosition: 3)
         };
 
         bool result = filter.Passes(
@@ -160,7 +160,7 @@ public class GptmdFilterTests
         var ions = new List<MatchedFragmentIon>
         {
             CreateIon(FragmentationTerminus.N, fragmentNumber: 2, residuePosition: 2), // left flank
-            CreateIon(FragmentationTerminus.C, fragmentNumber: 3, residuePosition: 3)  // right flank
+            CreateIon(FragmentationTerminus.C, fragmentNumber: 4, residuePosition: 4)  // right flank
         };
 
         bool result = filter.Passes(
@@ -202,7 +202,31 @@ public class GptmdFilterTests
         var filter = new FlankingIonCoverageFilter();
         var ions = new List<MatchedFragmentIon>
         {
-            CreateIon(FragmentationTerminus.C, fragmentNumber: 3, residuePosition: 3)
+            CreateIon(FragmentationTerminus.C, fragmentNumber: 4, residuePosition: 4)
+        };
+
+        bool result = filter.Passes(
+            DummyPeptide(),
+            DummySpectralMatch(),
+            0, 0,
+            ions,
+            peptideOneBasedModSite: 3,
+            peptideLength: 7,
+            DummyMod());
+
+        Assert.That(result, Is.False);
+    }
+
+    [TestCase(FragmentationTerminus.C, 3)]
+    [TestCase(FragmentationTerminus.ThreePrime, 3)]
+    public void FlankingIonCoverageFilter_Passes_ReturnsFalseForTwoIonsAtSameCleavage(
+        FragmentationTerminus cTerminus, int cResiduePosition)
+    {
+        var filter = new FlankingIonCoverageFilter();
+        var ions = new List<MatchedFragmentIon>
+        {
+            CreateIon(FragmentationTerminus.N, fragmentNumber: 2, residuePosition: 2),
+            CreateIon(cTerminus, fragmentNumber: 5, residuePosition: cResiduePosition)
         };
 
         bool result = filter.Passes(
@@ -371,7 +395,7 @@ public class GptmdFilterTests
         var filter = new UniDirectionalIonCoverageFilter();
         var ions = new List<MatchedFragmentIon>
         {
-            CreateIon(FragmentationTerminus.C, fragmentNumber: 2, residuePosition: 2) // covers C-term, residuePosition < site
+            CreateIon(FragmentationTerminus.C, fragmentNumber: 5, residuePosition: 3)
         };
 
         bool result = filter.Passes(
@@ -413,7 +437,7 @@ public class GptmdFilterTests
         var filter = new UniDirectionalIonCoverageFilter();
         var ions = new List<MatchedFragmentIon>
         {
-            CreateIon(FragmentationTerminus.ThreePrime, fragmentNumber: 2, residuePosition: 2) // covers C-term, residuePosition < site
+            CreateIon(FragmentationTerminus.ThreePrime, fragmentNumber: 5, residuePosition: 3)
         };
 
         bool result = filter.Passes(

@@ -39,6 +39,13 @@ public class SpectralMatchHypothesis(int notch, IBioPolymerWithSetMods pwsm, Lis
 
     #endregion
 
+    /// <summary>
+    /// This hypothesis's posterior error probability, written by the PEP engine from the training round it kept.
+    /// The match's PEP is the lowest of its hypotheses'. Null if PEP was not computed for this match.
+    /// <see cref="DisambiguationEngine"/> uses it to remove hypotheses PEP scores well below the best.
+    /// </summary>
+    public double? PEP { get; set; } = null;
+
     public bool Equals(ISearchAttempt? other)
     {
         if (other is SpectralMatchHypothesis hypothesis) return Equals(hypothesis);
