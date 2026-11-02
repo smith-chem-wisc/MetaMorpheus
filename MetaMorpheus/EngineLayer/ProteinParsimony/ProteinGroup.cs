@@ -7,6 +7,7 @@ using System.Text;
 using MassSpectrometry;
 using Omics.Modifications;
 using Omics;
+using Omics.BioPolymer;
 using Omics.BioPolymerGroup;
 using Omics.SpectralMatch;
 using Transcriptomics.Digestion;
@@ -25,13 +26,13 @@ namespace EngineLayer
     /// the base class names.
     ///
     /// Score() is handled entirely by the base class.
-    /// CalculateSequenceCoverage() and GetTabSeparatedHeader() are hidden (via new) because
-    /// CalculateSequenceCoverage() accesses MetaMorpheus-specific SpectralMatch members
-    /// (GetAminoAcidCoverage, BestMatchingBioPolymersWithSetMods, FragmentCoveragePositionInPeptide)
-    /// that are not on the ISpectralMatch interface, and GetTabSeparatedHeader() uses
-    /// MetaMorpheus-specific column names and includes BestPeptidePEP.
-    /// Because ToString() overrides but GetTabSeparatedHeader() only hides, calling them through a
-    /// BioPolymerGroup reference pairs base column names with MetaMorpheus rows. Call both on ProteinGroup.
+    /// CalculateSequenceCoverage() is hidden (via new) because it accesses MetaMorpheus-specific
+    /// SpectralMatch members (GetAminoAcidCoverage, BestMatchingBioPolymersWithSetMods,
+    /// FragmentCoveragePositionInPeptide) that are not on the ISpectralMatch interface.
+    /// GetTabSeparatedHeader() OVERRIDES rather than hides. It still writes MetaMorpheus column names
+    /// and BestPeptidePEP, but because ToString() also overrides, the pair now dispatches together:
+    /// a BioPolymerGroup reference gets MetaMorpheus columns above MetaMorpheus rows instead of base
+    /// column names above MetaMorpheus rows.
     /// </summary>
     public class ProteinGroup : BioPolymerGroup
     {
@@ -152,6 +153,13 @@ namespace EngineLayer
         /// </summary>
         public HashSet<string> SearchedSpectraFilePaths { get; set; }
 
+        // The Intensity_ gate is BioPolymerGroup.HasAssignedSampleIntensities, inherited rather than
+        // restated. This class carried a private copy of the same expression while the base member was
+        // private; 1.0.589 exposes it as protected, so the copy is gone. Its reasoning -- why the gate
+        // is a property of the whole group and not the per-group SampleGroupResult.HasIntensityData,
+        // and why both SamplesForQuantification and IntensitiesBySample are required -- lives on the
+        // base member, which is now the only place it is written down.
+
         // Fails open: an unset path list or a group with no file info means we cannot tell, and dropping
         // columns on a guess is worse than keeping them.
         private bool WasSearched(SampleGroupResult group) =>
@@ -174,6 +182,16 @@ namespace EngineLayer
         #endregion
 
         #region Peptide Output
+
+        /// <summary>
+        /// The number of distinct unique peptides: distinct full sequences when modified peptides are displayed as
+        /// different, distinct base sequences otherwise. This is the "Number of Unique Peptides" column and mzIdentML's
+        /// MS:1001097. <see cref="UniquePeptides"/> holds one peptide per protein, so a group of N indistinguishable
+        /// proteins holds each of its peptides N times; count it through here, not by its size.
+        /// </summary>
+        public int NumberOfUniquePeptides => DisplayModsOnPeptides
+            ? UniquePeptides.Select(p => p.FullSequence).Distinct().Count()
+            : UniquePeptides.Select(p => p.BaseSequence).Distinct().Count();
 
         /// <summary>
         /// Populates unique and shared peptide output strings, converting to light SILAC sequences if needed.
@@ -233,7 +251,7 @@ namespace EngineLayer
         /// MetaMorpheus TSV header with "Protein" column names and BestPeptidePEP.
         /// Quantification/occupancy columns use the base BioPolymerGroup SampleGroupResult format.
         /// </summary>
-        public new string GetTabSeparatedHeader()
+        public override string GetTabSeparatedHeader()
         {
             var sb = new StringBuilder();
             sb.Append("Protein Accession" + '\t');
@@ -261,7 +279,7 @@ namespace EngineLayer
 
                     if (searched)
                         sb.Append($"SpectralCount_{group.Label}\t");
-                    if (group.HasIntensityData)
+                    if (HasAssignedSampleIntensities)
                         sb.Append($"Intensity_{group.Label}\t");
                     if (searched)
                         sb.Append($"CountOccupancy_{group.Label}\t");
@@ -351,10 +369,7 @@ namespace EngineLayer
             sb.Append("\t");
 
             // number of unique peptides
-            if (!DisplayModsOnPeptides)
-                sb.Append("" + UniquePeptides.Select(p => p.BaseSequence).Distinct().Count());
-            else
-                sb.Append("" + UniquePeptides.Select(p => p.FullSequence).Distinct().Count());
+            sb.Append("" + NumberOfUniquePeptides);
             sb.Append("\t");
 
             // sequence coverage percent
@@ -393,9 +408,11 @@ namespace EngineLayer
                         sb.Append("\t");
                     }
 
-                    if (group.HasIntensityData)
+                    if (HasAssignedSampleIntensities)
                     {
-                        if (group.Intensity > 0)
+                        // Empty rather than 0 when this group has nothing: the cell must not
+                        // assert a measurement that was not made.
+                        if (group.HasIntensityData && group.Intensity > 0)
                             sb.Append(group.Intensity);
                         sb.Append("\t");
                     }
@@ -418,13 +435,11 @@ namespace EngineLayer
             sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
             sb.Append("\t");
 
-            // isDecoy
-            if (IsDecoy)
-                sb.Append("D");
-            else if (IsContaminant)
-                sb.Append("C");
-            else
-                sb.Append("T");
+            // decoy / contaminant / target, with entrapment written ET or ED. Entrapment is read from the
+            // members, not IsEntrapment: mzLib's MergeWith keeps the surviving group's flags, so a real
+            // protein merged with its entrapment partner would otherwise read T here and ET in the per-file
+            // tables, which rebuild the group through the constructor.
+            sb.Append(DecoyContaminantTargetLabel.For(IsDecoy, IsContaminant, Proteins.Any(p => p.IsEntrapment)));
             sb.Append("\t");
 
             // cumulative target
@@ -647,7 +662,10 @@ namespace EngineLayer
             ProteinGroup subsetPg = new ProteinGroup(Proteins, allPeptidesForThisFile, allUniquePeptidesForThisFile)
             {
                 AllPsmsBelowOnePercentFDR = allPsmsForThisFile,
-                DisplayModsOnPeptides = DisplayModsOnPeptides
+                DisplayModsOnPeptides = DisplayModsOnPeptides,
+                // the sites seen modified anywhere in the search, not just in this file, so a site this file
+                // covers but never saw modified is reported as 0/N rather than left out
+                OccupancySitesToReport = OccupancySitesToReport
             };
 
             // Both adapters rebuild their collection on every read, so snapshot each one.

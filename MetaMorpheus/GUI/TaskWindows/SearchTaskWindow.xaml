@@ -1,4 +1,4 @@
-﻿<Window x:Class="MetaMorpheusGUI.SearchTaskWindow"
+<Window x:Class="MetaMorpheusGUI.SearchTaskWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -496,7 +496,7 @@
                     </GroupBox>
 
                     <!-- Quantification options -->
-                    <GroupBox Header="Quantification" DockPanel.Dock="Top" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
+                    <GroupBox Header="Quantification" DockPanel.Dock="Top">
                         <!-- Radio Buttons for Quant Method -->
                         <StackPanel Margin="5">
                             <RadioButton x:Name="CheckBoxNoQuant" Content="No quantification" GroupName="QuantType">
@@ -701,7 +701,16 @@
                                                  ConverterParameter="Write PSMs &amp; peptides with q-value above threshold"/>
                                     </CheckBox.Content>
                                 </CheckBox>
-                                <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />
+                                <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <CheckBox.ToolTip>
+                                        <ToolTip>
+                                            <ToolTip.Content>
+                                                <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
+                                                         ConverterParameter="When more than one spectra file is searched, also write PSM, peptide, protein group and quantified peak tables for each file to 'Individual File Results', with PSM and peptide FDR recalculated for that file alone. Off by default. Per-file .mzID files are written whenever Write .mzID is checked."/>
+                                            </ToolTip.Content>
+                                        </ToolTip>
+                                    </CheckBox.ToolTip>
+                                </CheckBox>
                                 <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" />
                                 <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update spectral library" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}" />
                                 <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress individual file results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
@@ -711,6 +720,22 @@
                                             Writes a FASTA file containing all target and decoy sequences loaded from the database.
                                             <LineBreak/>
                                             This can be useful for verifying the decoy generation and database sanitization.
+                                        </TextBlock>
+                                    </CheckBox.ToolTip>
+                                </CheckBox>
+                                <CheckBox x:Name="WriteSdrfCheckBox" Content="Write SDRF experimental-design file">
+                                    <CheckBox.ToolTip>
+                                        <TextBlock>
+                                            Writes an SDRF-Proteomics file describing this experiment alongside the results,
+                                            so searches can be compared and mined across experiments.
+                                            <LineBreak/>
+                                            Reads the sample metadata from ExperimentalDesign.tsv beside the spectra files: an SDRF
+                                            records which sample each file came from, and nothing in a search knows that. Without
+                                            it the search still runs, a warning names what is missing, and those columns say
+                                            "not available".
+                                            <LineBreak/>
+                                            A TMT or iTRAQ search reads TmtDesign.txt instead, and writes one row for each sample
+                                            in each channel.
                                         </TextBlock>
                                     </CheckBox.ToolTip>
                                 </CheckBox>
@@ -767,6 +792,47 @@
                                         </StackPanel>
                                     </GroupBox>
                                     <local:HostDeconParamControl x:Name="DeisotopingControl" DataContext="{Binding}"/>
+                                    <GroupBox Header="Retention Time Filtering">
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Retention time range -->
+                                            <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0">
+                                                <Label Content="Min Retention Time (min):" Width="150" />
+                                                <local:DoubleTextBoxControl x:Name="MinRetentionTimeTextBox" Width="55" LowerBound="0"
+                                                                ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                    <TextBox.ToolTip>
+                                                        <TextBlock>
+                                                Minimum retention time to include in the search, in minutes.
+                                                <LineBreak />
+                                                Scans before this time are ignored.
+                                                        </TextBlock>
+                                                    </TextBox.ToolTip>
+                                                </local:DoubleTextBoxControl>
+                                            </StackPanel>
+
+                                            <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1">
+                                                <Label Content="Max Retention Time (min):" Width="150" />
+                                                <local:DoubleTextBoxControl x:Name="MaxRetentionTimeTextBox" Width="55" LowerBound="0"
+                                                                ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                    <TextBox.ToolTip>
+                                                        <TextBlock>
+                                                Maximum retention time to include in the search, in minutes.
+                                                <LineBreak />
+                                                Leave blank to search through the end of the file.
+                                                        </TextBlock>
+                                                    </TextBox.ToolTip>
+                                                </local:DoubleTextBoxControl>
+                                            </StackPanel>
+                                        </Grid>
+
+                                    </GroupBox>
+                                    
+                                    
                                     <GroupBox Header="Peak Trimming">
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
@@ -1083,6 +1149,21 @@
                                                              GroupName="RTPredictorType" Content="Prosit 2020 (network)"
                                                              ToolTip="Deep-learning retention time predictor served via Koina (network required). Same as Prosit2019iRT but trained for TMT-labeled peptides." />
                                             </Grid>
+                                        </StackPanel>
+                                    </GroupBox>
+                                    <GroupBox Header="Posterior Error Probability">
+                                        <StackPanel Margin="2">
+                                            <CheckBox Margin="3 0 0 0" x:Name="IterativePepTrainingCheckBox" Content="Iterative PEP training">
+                                                <ToolTipService.ToolTip>
+                                                    <ToolTip ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                        <TextBlock>
+                                                            Retrain the PEP model on its own output until the number of accepted target peptides stops growing (semi-supervised, as in Percolator and mokapot).
+                                                            <LineBreak />
+                                                            Unchecked, PEP trains once, on labels from the search-score q-value.
+                                                        </TextBlock>
+                                                    </ToolTip>
+                                                </ToolTipService.ToolTip>
+                                            </CheckBox>
                                         </StackPanel>
                                     </GroupBox>
                                     <GroupBox Header="Mass Difference Histogram Analysis">

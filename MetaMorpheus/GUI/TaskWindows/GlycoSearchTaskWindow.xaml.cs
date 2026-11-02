@@ -16,6 +16,7 @@ using TaskLayer;
 using UsefulProteomicsDatabases;
 using System.IO;
 using GuiFunctions;
+using GuiFunctions.Util;
 
 
 namespace MetaMorpheusGUI
@@ -30,6 +31,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForTreeViewModel> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
+        private GlycanSelectionViewModel GlycanSelectionViewModel;
         private CustomFragmentationWindow CustomFragmentationWindow;
         private DeconHostViewModel DeconHostViewModel;
 
@@ -130,7 +132,9 @@ namespace MetaMorpheusGUI
             RbtNGlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.NGlycanSearch;
             Rbt_N_O_GlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.N_O_GlycanSearch;
             TbMaxOGlycanNum.Text = task._glycoSearchParameters.MaximumOGlycanAllowed.ToString(CultureInfo.InvariantCulture);
+            TbMaxGlycanBoxMass.Text = task._glycoSearchParameters.MaximumGlycanBoxMass.ToString(CultureInfo.InvariantCulture);
             CkbOxoniumIonFilt.IsChecked = task._glycoSearchParameters.OxoniumIonFilt;
+            TbCustomOxoniumThreshold.Text = task._glycoSearchParameters.CustomOxoniumThreshold.ToString(CultureInfo.InvariantCulture);
 
             txtTopNum.Text = task._glycoSearchParameters.GlycoSearchTopNum.ToString(CultureInfo.InvariantCulture);
             CmbOGlycanDatabase.SelectedItem = task._glycoSearchParameters.OGlycanDatabasefile;
@@ -197,7 +201,12 @@ namespace MetaMorpheusGUI
             MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxLength.ToString(CultureInfo.InvariantCulture);
             if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
             {
-                proteaseComboBox.SelectedItem = digestionParams.Protease;
+                proteaseComboBox.SelectedItem = TaskWindowSearchMode.ProteaseToShow(digestionParams);
+                SemiSpecificCheckBox.IsChecked = TaskWindowSearchMode.IsSemiSpecific(digestionParams);
+                // a loaded task that asks for seed peptides cannot be shown here as it is, so say what happens to it
+                string searchModeWarning = TaskWindowSearchMode.ForSemiSpecificChoiceWarning(digestionParams);
+                SearchModeWarningTextBlock.Text = searchModeWarning;
+                SearchModeWarningTextBlock.Visibility = searchModeWarning == null ? Visibility.Collapsed : Visibility.Visible;
                 initiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
             }
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
@@ -266,8 +275,53 @@ namespace MetaMorpheusGUI
             {
                 ye.VerifyCheckState();
             }
+
+            // The tree is built here, not in PopulateChoices, because it needs the saved selection.
+            // GlobalVariables is read on this side of the boundary; the view model takes the glycans
+            // as an argument so a test can hand it its own.
+            GlycanSelectionViewModel = new GlycanSelectionViewModel(
+                GlobalVariables.OGlycansByDatabase.Concat(GlobalVariables.NGlycansByDatabase),
+                task._glycoSearchParameters.SelectedGlycans);
+            UpdateActiveGlycanDatabases();
+            glycanTreeView.DataContext = GlycanSelectionViewModel.Displayed;
+            GlycanSelectionSummary.DataContext = GlycanSelectionViewModel;
+
+            // Registered only now, so setting the fields above does not rebuild a tree that is not there yet.
+            CmbOGlycanDatabase.SelectionChanged += (_, _) => UpdateActiveGlycanDatabases();
+            CmbNGlycanDatabase.SelectionChanged += (_, _) => UpdateActiveGlycanDatabases();
+            RbtOGlycoSearch.Checked += (_, _) => UpdateActiveGlycanDatabases();
+            RbtNGlycoSearch.Checked += (_, _) => UpdateActiveGlycanDatabases();
+            Rbt_N_O_GlycoSearch.Checked += (_, _) => UpdateActiveGlycanDatabases();
+
             WritePrunedDBCheckBox.IsChecked = task._glycoSearchParameters.WritePrunedDataBase;
             UpdateModSelectionGrid();
+        }
+
+        /// <summary>
+        /// Shows only the glycan groups the search will use: the O-glycan database for an O search, the
+        /// N-glycan database for an N search, both for N-O. The engine narrows only those, so a tick in
+        /// any other group would be saved and then ignored.
+        /// </summary>
+        private void UpdateActiveGlycanDatabases()
+        {
+            if (GlycanSelectionViewModel == null)
+            {
+                return;
+            }
+
+            var active = new List<string>();
+            bool nSearch = RbtNGlycoSearch.IsChecked == true;
+            bool noSearch = Rbt_N_O_GlycoSearch.IsChecked == true;
+            if (!nSearch)
+            {
+                active.Add(CmbOGlycanDatabase.SelectedItem?.ToString());
+            }
+            if (nSearch || noSearch)
+            {
+                active.Add(CmbNGlycanDatabase.SelectedItem?.ToString());
+            }
+
+            GlycanSelectionViewModel.SetActiveDatabases(active);
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -284,6 +338,13 @@ namespace MetaMorpheusGUI
                 fieldNotUsed, fieldNotUsed, fieldNotUsed, DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState.ToString(), TopNPeaksTextBox.Text, MinRatioTextBox.Text, null, null, numberOfDatabaseSearchesTextBox.Text, TxtBoxMaxModPerPep.Text, 
                 fieldNotUsed, null, null, null))
             {
+                return;
+            }
+
+            if (!EngineLayer.GlycoSearch.GlycoPeptides.TryParseCustomOxoniumThreshold(TbCustomOxoniumThreshold.Text,
+                    out double customOxoniumThreshold, out string customOxoniumThresholdError))
+            {
+                MessageBox.Show(customOxoniumThresholdError);
                 return;
             }
 
@@ -313,9 +374,13 @@ namespace MetaMorpheusGUI
 
             TheTask._glycoSearchParameters.OGlycanDatabasefile = CmbOGlycanDatabase.SelectedItem.ToString();
             TheTask._glycoSearchParameters.NGlycanDatabasefile = CmbNGlycanDatabase.SelectedItem.ToString();
+
+            TheTask._glycoSearchParameters.SelectedGlycans = GlycanSelectionViewModel.ToSelectedGlycans();
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
+            TheTask._glycoSearchParameters.MaximumGlycanBoxMass = double.Parse(TbMaxGlycanBoxMass.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.OxoniumIonFilt = CkbOxoniumIonFilt.IsChecked.Value;
+            TheTask._glycoSearchParameters.CustomOxoniumThreshold = customOxoniumThreshold;
             TheTask._glycoSearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
             TheTask._glycoSearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
             TheTask._glycoSearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
@@ -365,6 +430,8 @@ namespace MetaMorpheusGUI
             int MaxModificationIsoforms = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
             int MaxModPerPep = (int.Parse(TxtBoxMaxModPerPep.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
+            // Semi-specific peptides (SearchModeType Semi, terminus Both) or fully specific ones; never seeds, which a glyco search cannot use
+            var (searchModeType, fragmentationTerminus) = TaskWindowSearchMode.ForSemiSpecificChoice(SemiSpecificCheckBox.IsChecked == true);
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
                 maxMissedCleavages: MaxMissedCleavages,
@@ -372,7 +439,9 @@ namespace MetaMorpheusGUI
                 maxPeptideLength: MaxPeptideLength,
                 maxModificationIsoforms: MaxModificationIsoforms,
                 maxModsForPeptides: MaxModPerPep,
-                initiatorMethionineBehavior: InitiatorMethionineBehavior);
+                initiatorMethionineBehavior: InitiatorMethionineBehavior,
+                searchModeType: searchModeType,
+                fragmentationTerminus: fragmentationTerminus);
 
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
@@ -515,6 +584,12 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void TextChanged_Glycan(object sender, TextChangedEventArgs args)
+        {
+            SearchModifications.SetTimer();
+            SearchModifications.GlycanSearch = true;
+        }
+
         private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
             SearchModifications.SetTimer();
@@ -539,6 +614,13 @@ namespace MetaMorpheusGUI
             {
                 SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
                 SearchModifications.VariableSearch = false;
+            }
+
+            if (SearchModifications.GlycanSearch)
+            {
+                // The view model filters, so it can keep the filtered group checkboxes in step with their rows.
+                GlycanSelectionViewModel.Filter(SearchGlycan.Text);
+                SearchModifications.GlycanSearch = false;
             }
         }
 
