@@ -264,8 +264,10 @@ namespace Test
         /// Calibration rewrote ExperimentalDesign.tsv for the -calib file names but not TmtDesign.txt, so the search
         /// after it found no TMT design beside the calibrated files and quantified no channel.
         /// </summary>
-        [Test]
-        public static void TmtDesignIsRewrittenForTheCalibratedFile()
+        [TestCase(SpectraFileOutputFormat.MzML, ".mzML")]
+        [TestCase(SpectraFileOutputFormat.Mgf, ".mgf")]
+        [TestCase(SpectraFileOutputFormat.MgfMs2Only, ".mgf")]
+        public static void TmtDesignIsRewrittenForTheCalibratedFile(SpectraFileOutputFormat format, string calibratedExtension)
         {
             string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtDesignCalibrationTest");
             string outputFolder = Path.Combine(unitTestFolder, "TaskOutput");
@@ -280,11 +282,13 @@ namespace Test
 
             try
             {
-                new CalibrationTask().RunTask(outputFolder,
+                var task = new CalibrationTask();
+                task.CalibrationParameters.OutputFormat = format;
+                task.RunTask(outputFolder,
                     new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta"), false) },
                     new List<string> { spectraFile }, "test");
 
-                string calibratedFile = Path.Combine(outputFolder, "filename1-calib.mzML");
+                string calibratedFile = Path.Combine(outputFolder, "filename1-calib" + calibratedExtension);
                 Assert.That(File.Exists(calibratedFile), "the fixture only means anything if calibration succeeds");
 
                 var rewritten = TmtExperimentalDesign.Read(Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName),

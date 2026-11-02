@@ -284,7 +284,7 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// The file the next task searches in place of <paramref name="originalFilePath"/>: the -calib mzML this run wrote
+        /// The file the next task searches in place of <paramref name="originalFilePath"/>: the -calib file this run wrote
         /// for it, or the original itself for a file it wrote none for. EverythingRunnerEngine passes the original on for a
         /// file that could not be calibrated (not the copy this task writes to its output folder), for a type calibration
         /// skips, and for a file a cancelled run never reached. The -calib name goes through ToSafeOutputPath, as the run
@@ -292,8 +292,8 @@ namespace TaskLayer
         /// </summary>
         private string CalibratedFilePath(string originalFilePath, string outputFolder)
         {
-            string calibrated = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(originalFilePath) + CalibSuffix + ".mzML")
-                .ToSafeOutputPath(CalibSuffix + ".mzML");
+            string calibrated = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(originalFilePath) + CalibSuffix + CalibratedFileExtension)
+                .ToSafeOutputPath(CalibSuffix + CalibratedFileExtension);
             // ignoring case, as TmtExperimentalDesign.Read matches the design's File column to the spectra files
             return MyTaskResults.NewSpectra.FirstOrDefault(written => SamePath(written, calibrated)) ?? originalFilePath;
         }
