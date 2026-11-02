@@ -1,0 +1,81 @@
+<UserControl x:Class="MetaMorpheusGUI.FromFileDeconParamsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:MetaMorpheusGUI"
+             mc:Ignorable="d"
+             d:DesignHeight="80" d:DesignWidth="600">
+    <Grid >
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Label Content="MS1 Feature File:" Grid.Column="0" VerticalAlignment="Center"/>
+            <TextBox Grid.Column="1" x:Name="FilePathTextBox"
+                     Text="{Binding FilePath, Mode=OneWay}"
+                     IsReadOnly="True" VerticalContentAlignment="Center"
+                     ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                <TextBox.ToolTip>
+                    <TextBlock>Absolute path to a FlashDeconv/TopFD _ms1.feature or Dinosaur .feature.tsv file.</TextBlock>
+                </TextBox.ToolTip>
+            </TextBox>
+            <Button Grid.Column="2" Content="Browse..." x:Name="BrowseButton"
+                    Click="BrowseButton_Click" Margin="4,0,0,0" Padding="6,2"/>
+        </Grid>
+
+        <TextBlock Grid.Row="1" x:Name="ValidationTextBlock"
+                   Foreground="Red" FontSize="11" Margin="0,2,0,2"
+                   Visibility="Collapsed" TextWrapping="Wrap"/>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="*"/>
+                <!--<ColumnDefinition Width="Auto"/>-->
+            </Grid.ColumnDefinitions>
+
+            <Label Content="Max Assumed Charge State:" Grid.Column="0"/>
+            <local:IntegerTexBoxControl Grid.Column="1" Width="45"
+                                        Text="{Binding MaxAssumedChargeState}"
+                                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                        AllowNegative="True"
+                                        ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                <TextBox.ToolTip>
+                    <TextBlock>Maximum charge state for feature matching. Use negative values for negative-mode data.</TextBlock>
+                </TextBox.ToolTip>
+            </local:IntegerTexBoxControl>
+
+            <Label Content="Min Assumed Charge State:" Grid.Column="2"/>
+            <local:IntegerTexBoxControl Grid.Column="3" Width="45"
+                                        Text="{Binding MinAssumedChargeState}"
+                                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                        AllowNegative="True"
+                                        ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                <TextBox.ToolTip>
+                    <TextBlock>Minimum charge state for feature matching.</TextBlock>
+                </TextBox.ToolTip>
+            </local:IntegerTexBoxControl>
+
+            <!--<CheckBox Grid.Column="4" Content="Use Generic Score"
+                      IsChecked="{Binding UseGenericScore}"
+                      VerticalAlignment="Center" Margin="10,0,0,0"
+                      ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                <CheckBox.ToolTip>
+                    <TextBlock>Use a generic isotopic-envelope score instead of the file-format-native score.</TextBlock>
+                </CheckBox.ToolTip>
+            </CheckBox>-->
+        </Grid>
+    </Grid>
+</UserControl>

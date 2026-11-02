@@ -1,6 +1,8 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using NUnit.Framework;
+using Omics.Modifications;
+using Omics.BioPolymerGroup;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System;
 using System.Collections.Generic;
@@ -173,7 +175,11 @@ namespace Test
 
         #region Projection onto mzLib
 
-        private static IsobaricMassTag Tmt10() => IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
+        private static IsobaricMassTag Tmt10()
+        {
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT10, GlobalVariables.AllModsKnown, out var tag);
+            return tag;
+        }
 
         /// <summary>
         /// A rooted fixture path ending in <paramref name="name"/>, built for whatever platform the
@@ -246,6 +252,109 @@ namespace Test
             }
         }
 
+        /// <summary>
+        /// The design's Sample Name reaches mzLib, which puts it in the channel's column label. A channel
+        /// the design leaves unnamed or unannotated keeps {file}_{channel}, so it is not labelled by
+        /// something the user never wrote.
+        /// </summary>
+        [Test]
+        public static void ToMzLibDesign_NamesAChannelByItsSample_AndLeavesAnUnnamedOneByFileAndChannel()
+        {
+            var tag = Tmt10();
+            var file = new TmtFileInfo(FixturePath("data", "run1.raw"), "PlexA", 1, 1, new List<TmtPlexAnnotation>
+            {
+                new() { Tag = "126", SampleName = "Pool", Condition = "Reference", BiologicalReplicate = 1, SampleType = TmtSampleType.Reference },
+                new() { Tag = "127N", SampleName = "", Condition = "Treated", BiologicalReplicate = 1, SampleType = TmtSampleType.StudySample }
+            });
+
+            var design = TmtExperimentalDesign.ToMzLibDesign(new[] { file }, tag, out var errors);
+
+            Assert.IsEmpty(errors);
+            var byChannel = design.FileNameSampleInfoDictionary["run1.raw"]
+                .Cast<IsobaricQuantSampleInfo>()
+                .ToDictionary(s => s.ChannelLabel);
+
+            Assert.AreEqual("Pool", byChannel["126"].SampleName);
+            Assert.AreEqual("Pool_run1_126", SampleGroupLabels.ForSample(byChannel["126"]));
+
+            Assert.That(byChannel["127N"].SampleName, Is.Null.Or.Empty, "a blank Sample Name is handed over blank");
+            Assert.AreEqual("run1_127N", SampleGroupLabels.ForSample(byChannel["127N"]), "named blank in the design");
+            Assert.IsNull(byChannel["127C"].SampleName, "not annotated at all");
+            Assert.AreEqual("run1_127C", SampleGroupLabels.ForSample(byChannel["127C"]));
+        }
+
+        /// <summary>
+        /// Sample 1 in run.raw and the unnamed 126 of 1_run.raw would both label 1_run_126, and
+        /// AllProteinGroups.tsv writes a label as-is, so its header would repeat. The named channel goes
+        /// back to {file}_{channel}, which is what both were before sample names reached the label, and
+        /// the user is told which channels.
+        /// </summary>
+        [Test]
+        public static void ToMzLibDesign_UnnamesAChannelWhoseLabelAnotherChannelAlreadyHas()
+        {
+            var tag = Tmt10();
+            var named = new TmtFileInfo(FixturePath("data", "run.raw"), "PlexA", 1, 1, new List<TmtPlexAnnotation>
+            {
+                new() { Tag = "126", SampleName = "1", Condition = "A", BiologicalReplicate = 1, SampleType = TmtSampleType.StudySample },
+                new() { Tag = "127N", SampleName = "S2", Condition = "A", BiologicalReplicate = 2, SampleType = TmtSampleType.StudySample }
+            });
+            var unnamed = new TmtFileInfo(FixturePath("data", "1_run.raw"), "PlexB", 1, 1, new List<TmtPlexAnnotation>());
+
+            var design = TmtExperimentalDesign.ToMzLibDesign(new[] { named, unnamed }, tag, out var errors, out var warnings);
+
+            Assert.IsEmpty(errors);
+            var labels = design.FileNameSampleInfoDictionary.Values
+                .SelectMany(samples => samples)
+                .Select(sample => SampleGroupLabels.ForSample(sample))
+                .ToList();
+            Assert.That(labels, Is.Unique);
+
+            var run = design.FileNameSampleInfoDictionary["run.raw"].Cast<IsobaricQuantSampleInfo>().ToDictionary(s => s.ChannelLabel);
+            Assert.AreEqual("run_126", SampleGroupLabels.ForSample(run["126"]));
+            Assert.AreEqual("S2_run_127N", SampleGroupLabels.ForSample(run["127N"]), "a channel that collides with nothing keeps its name");
+            Assert.AreEqual("A", run["126"].Condition, "only the name is dropped");
+
+            Assert.AreEqual(1, warnings.Count);
+            Assert.That(warnings[0], Does.Contain("126 of 'run.raw'"));
+            Assert.That(warnings[0], Does.Contain("126 of '1_run.raw'"));
+            Assert.That(warnings[0], Does.Contain("'1_run_126'"));
+        }
+
+        /// <summary>
+        /// Two named channels can collide with each other: S_1 in run.raw and S in 1_run.raw both label
+        /// S_1_run_126. Both go back to {file}_{channel}, run_126 and 1_run_126, which are distinct.
+        /// </summary>
+        [Test]
+        public static void ToMzLibDesign_UnnamesBothNamedChannelsThatShareALabel()
+        {
+            var tag = Tmt10();
+            var first = FileWith(FixturePath("data", "run.raw"), "PlexA", 1, 1, ("126", "A", 1, TmtSampleType.StudySample));
+            var second = FileWith(FixturePath("data", "1_run.raw"), "PlexB", 1, 1, ("126", "A", 2, TmtSampleType.StudySample));
+            first.Annotations[0].SampleName = "S_1";
+            second.Annotations[0].SampleName = "S";
+
+            var design = TmtExperimentalDesign.ToMzLibDesign(new[] { first, second }, tag, out var errors, out var warnings);
+
+            Assert.IsEmpty(errors);
+            Assert.AreEqual("run_126", SampleGroupLabels.ForSample(design.FileNameSampleInfoDictionary["run.raw"][0]));
+            Assert.AreEqual("1_run_126", SampleGroupLabels.ForSample(design.FileNameSampleInfoDictionary["1_run.raw"][0]));
+            Assert.AreEqual(1, warnings.Count);
+        }
+
+        /// <summary>A design whose labels are already unique is handed over unchanged and warns nothing.</summary>
+        [Test]
+        public static void ToMzLibDesign_WarnsNothingWhenEveryLabelIsUnique()
+        {
+            var tag = Tmt10();
+            var file = FileWith(FixturePath("data", "run1.raw"), "PlexA", 1, 1, ("126", "A", 1, TmtSampleType.StudySample));
+            file.Annotations[0].SampleName = "Pool";
+
+            var design = TmtExperimentalDesign.ToMzLibDesign(new[] { file }, tag, out _, out var warnings);
+
+            Assert.IsEmpty(warnings);
+            Assert.AreEqual("Pool", ((IsobaricQuantSampleInfo)design.FileNameSampleInfoDictionary["run1.raw"][0]).SampleName);
+        }
+
         [Test]
         public static void ToMzLibDesign_CarriesTheAnnotationOntoTheMatchingChannel()
         {
@@ -294,6 +403,30 @@ namespace Test
             Assert.AreEqual(9, unannotated.Count);
             Assert.IsTrue(unannotated.All(s => s.Condition == string.Empty));
             Assert.IsTrue(unannotated.All(s => !s.IsReferenceChannel));
+        }
+
+        /// <summary>
+        /// The plex window offers TMT16, but there is no TMT16 search label, so a TMTpro 16-plex is searched
+        /// as TMT18 and its design is projected with TMT18's tag. The window says the annotation still applies
+        /// and that 134C and 135N come out as empty channels; this pins both halves of that note.
+        /// </summary>
+        [Test]
+        public static void ToMzLibDesign_ATmt16AnnotationProjectsOntoTmt18sFirstSixteenChannels()
+        {
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT18, GlobalVariables.AllModsKnown, out var tmt18);
+            var tmt16Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.TMT16);
+            var file = FileWith(FixturePath("data", "run1.raw"), "PlexA", 1, 1,
+                tmt16Labels.Select(label => (label, "Cond", 1, TmtSampleType.StudySample)).ToArray());
+
+            var design = TmtExperimentalDesign.ToMzLibDesign(new[] { file }, tmt18, out var errors);
+            Assert.IsEmpty(errors);
+
+            var samples = design.FileNameSampleInfoDictionary["run1.raw"].Cast<IsobaricQuantSampleInfo>().ToList();
+            Assert.AreEqual(18, samples.Count);
+            Assert.That(samples.Take(16).Select(s => s.ChannelLabel), Is.EqualTo(tmt16Labels));
+            Assert.IsTrue(samples.Take(16).All(s => s.Condition == "Cond"));
+            Assert.That(samples.Skip(16).Select(s => s.ChannelLabel), Is.EqualTo(new[] { "134C", "135N" }));
+            Assert.IsTrue(samples.Skip(16).All(s => s.Condition == string.Empty && s.SampleName == null));
         }
 
         [Test]
@@ -385,12 +518,13 @@ namespace Test
         [Test]
         public static void MismatchedChannelAndReporterIonCountsAreRefused()
         {
-            var tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT11);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT11, GlobalVariables.AllModsKnown, out var tag);
             Assert.That(tag, Is.Not.Null, "TMT11 must load, or this test proves nothing");
 
             int realCount = tag.ReporterIonMzs.Length;
             typeof(IsobaricMassTag)
-                .GetProperty(nameof(IsobaricMassTag.ReporterIonMzs))!
+                .GetField($"<{nameof(IsobaricMassTag.ReporterIonMzs)}>k__BackingField",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                 .SetValue(tag, tag.ReporterIonMzs.Take(realCount - 1).ToArray());
 
             var design = TmtExperimentalDesign.ToMzLibDesign(new[] { OneFile("a.raw", "Plex1", "126") }, tag, out var errors);
@@ -416,7 +550,7 @@ namespace Test
         [Test]
         public static void TwoEntriesSharingAFileNameAreRefusedWithoutLosingTheRest()
         {
-            var tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT11);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT11, GlobalVariables.AllModsKnown, out var tag);
             Assert.That(tag, Is.Not.Null);
 
             var files = new[]
@@ -444,7 +578,7 @@ namespace Test
         [Test]
         public static void EntryWithNoFileNameIsReported()
         {
-            var tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT11);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT11, GlobalVariables.AllModsKnown, out var tag);
             Assert.That(tag, Is.Not.Null);
 
             var files = new[]
