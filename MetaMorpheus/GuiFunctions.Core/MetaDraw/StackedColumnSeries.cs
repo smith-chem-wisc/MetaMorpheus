@@ -80,6 +80,7 @@ namespace GuiFunctions
                 X1 = categoryIndex + HalfBarWidth,
                 Y0 = y0,
                 Y1 = y1,
+                Value = value,
                 Color = FillColor,
                 bin = bin,
                 total = total,
@@ -98,8 +99,11 @@ namespace GuiFunctions
         public string bin { get; set; }
         public string group { get; set; }
 
-        /// <summary>This segment's own magnitude, i.e. what BarItem.Value held before the rewrite.</summary>
-        public double Value => Y1 - Y0;
+        /// <summary>
+        /// This segment's own magnitude, i.e. what BarItem.Value held before the rewrite. Stored, not
+        /// Y1 - Y0, which carries float noise into the tooltip once the stack is above 0.
+        /// </summary>
+        public double Value { get; init; }
 
         /// <summary>Index on the category axis, i.e. what BarItem.CategoryIndex held.</summary>
         public int CategoryIndex => (int)Math.Round((X0 + X1) / 2);

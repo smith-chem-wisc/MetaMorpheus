@@ -365,5 +365,24 @@ public class StackedColumnSeriesTests
         Assert.That(hit.Text, Does.Not.Contain("{"), $"an unresolved placeholder remains: {hit.Text}");
     }
 
+    /// <summary>
+    /// A segment stacked above 0 reports the value it was given. Deriving it as Y1 - Y0 put float
+    /// noise in the tooltip: 0.7999999999999999 where 2.0 showed 0.8.
+    /// </summary>
+    [Test]
+    public void StackedSegmentReportsTheValueItWasGiven()
+    {
+        var stackTops = new Dictionary<int, double>();
+        var lower = new StackedColumnSeries(stackTops, 0);
+        var upper = new StackedColumnSeries(stackTops, 0);
+        lower.AddItem(0.6, 0, "0", 1);
+        upper.AddItem(0.8, 0, "0", 1);
+
+        var item = upper.Items.OfType<StackedColumnItem>().Single();
+        Assert.That(item.Y1 - item.Y0, Is.Not.EqualTo(0.8), "fixture no longer exercises float noise");
+        Assert.That(item.Value, Is.EqualTo(0.8));
+        Assert.That(item.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("0.8"));
+    }
+
     private static double Round(double value) => System.Math.Round(value, 6);
 }
