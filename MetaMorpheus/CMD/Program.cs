@@ -198,11 +198,10 @@ namespace MetaMorpheusCommandLine
                 if (res == null)
                 {
                     Console.WriteLine("No response could be read, because MetaMorpheus is not running interactively. Searching Thermo .raw files requires agreeing to the terms above.");
-                    Console.WriteLine("To agree without a console, pipe a response (echo y | metamorpheus ...) or set UserHasAgreedToThermoRawFileReaderLicence to true in " + Path.Combine(GlobalVariables.DataDir, @"settings.toml") + ".");
+                    Console.WriteLine("To agree without a console, add --acceptThermoLicence, pipe a response (echo y | metamorpheus ...), or set UserHasAgreedToThermoRawFileReaderLicence to true in " + Path.Combine(GlobalVariables.DataDir, @"settings.toml") + ".");
                     Console.WriteLine("You can still search .mzML and .mgf files without agreeing to the Thermo licence.");
-                    // 5 already means "experimental design failure" three times over below; a licence
-                    // prompt that could not be asked has to be distinguishable from that.
-                    errorCode = 6;
+                    // 3 is declined, 5 experimental design, 6 seed digestion refused
+                    errorCode = 7;
                     return errorCode;
                 }
                 if (res == "y")
@@ -503,6 +502,13 @@ namespace MetaMorpheusCommandLine
             if (answer?.ToLowerInvariant() == "y" || answer?.ToLowerInvariant() == "yes")
             {
                 return 0;
+            }
+
+            // null when stdin is redirected or closed
+            if (answer == null)
+            {
+                write("No response could be read, because MetaMorpheus is not running interactively. "
+                    + "Fix or remove " + designPath + ", or pipe a response (echo y | metamorpheus ...) to continue without it.");
             }
 
             return 5;

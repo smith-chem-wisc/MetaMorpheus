@@ -162,6 +162,20 @@ not there, or no spectra files in `-s`), 4 for an SDRF it could not read, and 5 
 refused or a design file is already there.
 
 
+## Command-line exit codes
+
+| code | meaning |
+|---|---|
+| 0 | success, including `--help`, `-g`, `--auditSdrf`, and `--acceptThermoLicence` on its own |
+| 1 | the command line could not be parsed |
+| 2 | a settings error, such as a file that is not there |
+| 3 | the Thermo licence was declined |
+| 4 | the run failed, or an SDRF could not be read |
+| 5 | an experimental design problem, or `--sdrfDesign` refused to write one |
+| 6 | a task's digestion settings produce seed peptides that only the non-specific search can use |
+| 7 | the Thermo licence prompt could not be answered, because there is no console; see `--acceptThermoLicence` above |
+
+
 ## References & Citation Guide for MetaMorpheus
 
 MetaMorpheus:

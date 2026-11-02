@@ -125,11 +125,11 @@ namespace Test
 
         /// <summary>
         /// A .raw file on a machine that has not agreed to the Thermo licence, with nothing to read
-        /// the answer from. Exit code 6 - NOT 5, which already means the experimental design failed
-        /// at three separate sites, and NOT 3, which means the user actively declined.
+        /// the answer from. Exit code 7 - NOT 3, which means the user actively declined, 5, which
+        /// means the experimental design failed, or 6, which means a seed digestion was refused.
         /// </summary>
         [Test]
-        public void ThermoLicencePromptWithNoConsoleReturnsSix()
+        public void ThermoLicencePromptWithNoConsoleReturnsSeven()
         {
             string folder = FreshFolder("CmdThermoLicenceNoConsole");
 
@@ -145,9 +145,11 @@ namespace Test
                     "-d", TestDataPath("smalldb.fasta"),
                     "-o", Path.Combine(folder, "output"));
 
-                Assert.AreEqual(6, result.ExitCode);
+                Assert.AreEqual(7, result.ExitCode);
                 Assert.IsTrue(result.Output.Contains("not running interactively"),
                     "the run should say why it could not ask, rather than failing silently");
+                Assert.IsTrue(result.Output.Contains("--acceptThermoLicence"),
+                    "the run should name the flag that lets a batch job agree without a console");
                 Assert.IsTrue(result.Output.Contains("UserHasAgreedToThermoRawFileReaderLicence"),
                     "the run should name the setting that lets a batch job agree without a console");
                 Assert.IsFalse(result.Output.Contains("NullReferenceException"));
@@ -163,12 +165,11 @@ namespace Test
         }
 
         /// <summary>
-        /// Exit code 5 already means the experimental design failed. This pins that a licence prompt
-        /// nobody could answer stays distinguishable from an active refusal - the whole reason for
-        /// not reusing an existing code.
+        /// This pins that a licence prompt nobody could answer stays distinguishable from an active
+        /// refusal - the whole reason for not reusing an existing code.
         /// </summary>
         [Test]
-        public void DeclinedThermoLicenceStillReturnsThreeNotSix()
+        public void DeclinedThermoLicenceStillReturnsThreeNotSeven()
         {
             string folder = FreshFolder("CmdThermoLicenceDeclined");
 
@@ -182,7 +183,7 @@ namespace Test
                     "-d", TestDataPath("smalldb.fasta"),
                     "-o", Path.Combine(folder, "output"));
 
-                Assert.AreEqual(3, result.ExitCode, "a refusal is 3; only an unanswerable prompt is 6");
+                Assert.AreEqual(3, result.ExitCode, "a refusal is 3; only an unanswerable prompt is 7");
             }
             finally
             {
