@@ -81,8 +81,10 @@ namespace Test
             Assert.That(results.SequenceEqual(resultsToml));
 
             CalibrationTask calibrationTask = new();
+            calibrationTask.CalibrationParameters.OutputFormat = SpectraFileOutputFormat.MgfMs2Only;
             Toml.WriteFile(calibrationTask, "CalibrationTask.toml", MetaMorpheusTask.tomlConfig);
-            _ = Toml.ReadFile<CalibrationTask>("CalibrationTask.toml", MetaMorpheusTask.tomlConfig);
+            var calibrationTaskLoaded = Toml.ReadFile<CalibrationTask>("CalibrationTask.toml", MetaMorpheusTask.tomlConfig);
+            Assert.That(calibrationTaskLoaded.CalibrationParameters.OutputFormat, Is.EqualTo(SpectraFileOutputFormat.MgfMs2Only));
 
             GptmdTask gptmdTask = new GptmdTask();
             Toml.WriteFile(gptmdTask, "GptmdTask.toml", MetaMorpheusTask.tomlConfig);

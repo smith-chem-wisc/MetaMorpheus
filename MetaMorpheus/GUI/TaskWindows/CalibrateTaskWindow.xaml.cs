@@ -106,6 +106,8 @@ namespace MetaMorpheusGUI
             PrecursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             PrecursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
+            outputFormatComboBox.ItemsSource = Enum.GetValues(typeof(SpectraFileOutputFormat));
+            outputFormatComboBox.SelectedItem = task.CalibrationParameters.OutputFormat;
             writeIndexMzmlCheckbox.IsChecked = task.CalibrationParameters.WriteIndexedMzml;
             NumberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
 
@@ -398,6 +400,7 @@ namespace MetaMorpheusGUI
                 TheTask.CommonParameters = commonParamsToSave;
             }
 
+            TheTask.CalibrationParameters.OutputFormat = (SpectraFileOutputFormat)outputFormatComboBox.SelectedItem;
             TheTask.CalibrationParameters.WriteIndexedMzml = writeIndexMzmlCheckbox.IsChecked.Value;
             TheTask.CalibrationParameters.WriteIntermediateFiles = writeIntermediateFilesCheckBox.IsChecked.Value;
             if (ModernSearchRadioButton.IsChecked == true)
@@ -481,6 +484,11 @@ namespace MetaMorpheusGUI
             SaveButton_Click(sender, e);
             var prefix = GuiGlobalParamsViewModel.Instance.IsRnaMode ? "Rna" : "";
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", $"{prefix}CalibrationTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
+        }
+
+        private void OutputFormatComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            writeIndexMzmlCheckbox.IsEnabled = outputFormatComboBox.SelectedItem is SpectraFileOutputFormat.MzML;
         }
 
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)

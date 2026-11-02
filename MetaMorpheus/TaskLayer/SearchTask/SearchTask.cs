@@ -327,7 +327,9 @@ namespace TaskLayer
 
                 // If the file is one which does not have precursor scans, but only precursor information, then we need to set the parameters accordingly
                 // We do this by adjusting the transient combined params so that this can be done on a file by file basis. 
-                if (myMsDataFile is Mgf or Ms2Align)
+                // An MGF written by mzLib carries its MS1 scans and the headers deconvolution needs, so that
+                // case is decided by content. msalign is always header-only.
+                if (myMsDataFile is Ms2Align || (myMsDataFile is Mgf && !HasDeconvolutablePrecursorScans(myMsDataFile)))
                 {
                     combinedParams.DoPrecursorDeconvolution = false;
                     combinedParams.UseProvidedPrecursorInfo = true;

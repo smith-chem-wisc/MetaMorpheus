@@ -493,6 +493,30 @@ namespace TaskLayer
 
         #region Deconvolution
 
+        /// <summary>
+        /// True only when every MS2 scan names an MS1 scan that is present in the file and has a resolvable
+        /// isolation range. Both are required to deconvolute a precursor: without a precursor scan number
+        /// <see cref="_GetMs2Scans"/> falls through to the scan header, and a null IsolationRange
+        /// makes GetIsolatedMassesAndCharges return nothing. IsolationRange needs an isolation width as well as a
+        /// centre, and the MGF reader defaults only the centre. A partially annotated file is treated as
+        /// header-only rather than deconvoluted for some scans and not others.
+        /// </summary>
+        internal static bool HasDeconvolutablePrecursorScans(MsDataFile file)
+        {
+            var scans = file.GetAllScansList();
+            var ms1ScanNumbers = scans.Where(s => s.MsnOrder == 1).Select(s => s.OneBasedScanNumber).ToHashSet();
+            if (ms1ScanNumbers.Count == 0)
+            {
+                return false;
+            }
+
+            var ms2Scans = scans.Where(s => s.MsnOrder == 2).ToList();
+            return ms2Scans.Count > 0
+                   && ms2Scans.All(s => s.OneBasedPrecursorScanNumber.HasValue
+                                        && ms1ScanNumbers.Contains(s.OneBasedPrecursorScanNumber.Value)
+                                        && s.IsolationRange != null);
+        }
+
         public static List<Ms2ScanWithSpecificMass>[] _GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
             var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1 && commonParameters.RetentionTimeRange.Contains(x.RetentionTime)).ToArray();
