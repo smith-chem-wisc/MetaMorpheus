@@ -441,9 +441,6 @@
       <Component Id="src_Microsoft.Extensions.DependencyModel.dll" Guid="3137EB45-DE67-4CA2-96B3-58B621E520DF">
         <File Id="src_Microsoft.Extensions.DependencyModel.dll" Name="Microsoft.Extensions.DependencyModel.dll" Source="$(var.GUI_TargetDir)Microsoft.Extensions.DependencyModel.dll" />
       </Component>      
-      <Component Id="src_mzPlot.dll" Guid="01851FB5-6148-4AFC-9C51-5FED01E9E49C">
-        <File Id="src_mzPlot.dll" Name="mzPlot.dll" Source="$(var.GUI_TargetDir)mzPlot.dll" />
-      </Component>
       <Component Id="src_MetaMorpheusGUI.deps.json" Guid="B5A6A934-76F0-407D-85D9-9DA45109B815">
         <File Id="src_MetaMorpheusGUI.deps.json" Name="MetaMorpheusGUI.deps.json" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.deps.json" />
       </Component>

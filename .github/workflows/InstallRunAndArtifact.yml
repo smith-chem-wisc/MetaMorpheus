@@ -276,6 +276,9 @@ jobs:
             # the build output while no longer being installed. This entry becomes dead and
             # should be swept when MetaMorpheus moves to a post-#1156 mzLib.
             "ThermoFisher.CommonCore.MassPrecisionEstimator.dll",
+            # Arrives with the mzLib package; nothing in MetaMorpheus references it, and it is built
+            # against OxyPlot 2.0.0, whose ColumnSeries the shipped 2.2.0 no longer has.
+            "mzPlot.dll",
             "Microsoft.Win32.SystemEvents.dll",
             "Microsoft.Extensions.DependencyInjection.Abstractions.dll",
             "Microsoft.Extensions.DependencyInjection.dll",
