@@ -180,6 +180,49 @@ public class StackedColumnSeriesTests
     }
 
     /// <summary>
+    /// Grouped mode adds a second category axis, GroupAxis, and the series bind to it rather than to
+    /// the axis carrying the bin labels. Under 2.2 an unbound CategoryAxis no longer ranges over its
+    /// labels, so the bin axis sat at [-0.5, 0.5] and drew a single label. Both must span every slot.
+    /// </summary>
+    [Test]
+    public void CategoryAxesSpanWholeSlotsWhenGrouped()
+    {
+        var parameters = new PlotModelStatParameters
+        {
+            GroupingProperty = "Precursor Charge",
+            MinRelativeCutoff = 0,
+            MaxRelativeCutoff = 100,
+            AllowAmbiguousGroups = true,
+            NormalizeHistogramToFile = false,
+            UseLogScaleYAxis = false
+        };
+
+        int groupedPlots = 0;
+        foreach (var name in HistogramPlotNames)
+        {
+            var plot = BuildPlot(name, parameters);
+            Render(plot.Model);
+
+            var axes = plot.Model.Axes.OfType<CategoryAxis>().ToList();
+            if (axes.All(a => a.Key != "GroupAxis"))
+                continue;
+            groupedPlots++;
+
+            foreach (var axis in axes)
+            {
+                int slots = axis.ItemsSource.Cast<object>().Count();
+                string which = axis.Key ?? "bin axis";
+                Assert.That(axis.ActualMinimum, Is.EqualTo(-0.5).Within(1e-9),
+                    $"{name}: {which} does not start at the left edge of the first slot");
+                Assert.That(axis.ActualMaximum, Is.EqualTo(slots - 0.5).Within(1e-9),
+                    $"{name}: {which} does not reach the end of the last slot");
+            }
+        }
+
+        Assert.That(groupedPlots, Is.GreaterThan(0), "no histogram produced a grouped axis");
+    }
+
+    /// <summary>
     /// Segments of one category stack: each starts where the one below it ended, and the first
     /// starts at the series base value. This is what IsStacked did before it had to be explicit.
     /// </summary>

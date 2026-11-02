@@ -590,6 +590,18 @@ namespace GuiFunctions
 
         #region Axis Configuration
 
+        /// <summary>
+        /// A 2.2 CategoryAxis takes its range only from series bound to it. Grouped, the series bind to
+        /// GroupAxis, so the main axis would otherwise sit at [-0.5, 0.5] and draw one label.
+        /// </summary>
+        private static void PinToWholeSlots(CategoryAxis axis, int slotCount)
+        {
+            if (slotCount == 0)
+                return;
+            axis.Minimum = -0.5;
+            axis.Maximum = slotCount - 0.5;
+        }
+
         private void ConfigureHistogramAxes(string xAxisTitle, string yAxisTitle, double labelAngle,
             string[] category, bool isGroupingEnabled, List<string> allGroupKeys, int categoriesPerGroup)
         {
@@ -608,6 +620,7 @@ namespace GuiFunctions
                 GapWidth = CategoryGapWidth,
                 Angle = labelAngle,
             };
+            PinToWholeSlots(mainAxis, category.Length);
 
             if (isGroupingEnabled && allGroupKeys != null && allGroupKeys.Count > 0 && categoriesPerGroup > 0)
             {
@@ -669,6 +682,7 @@ namespace GuiFunctions
                     MinorGridlineStyle = LineStyle.None,
                     PositionTier = 1,
                 };
+                PinToWholeSlots(groupAxis, category.Length);
                 privateModel.Axes.Add(groupAxis);
             }
 
