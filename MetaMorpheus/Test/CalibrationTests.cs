@@ -302,6 +302,100 @@ namespace Test
             Directory.Delete(unitTestFolder, true);
         }
 
+        /// <summary>
+        /// Calls CalibrationWarnMessage with acquisition results short of exactly one requirement, so each
+        /// failure branch fires, and checks the spectra file name leads the warning.
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        [TestCase(10, 0, 0, "Could not find enough high-quality")]
+        [TestCase(16, 39, 0, "Could not find enough MS1 datapoints. Required 40, saw 39")]
+        [TestCase(16, 40, 79, "Could not find enough MS2 datapoints. Required 80, saw 79")]
+        public static void CalibrationWarnMessageNamesTheSpectraFile(int psmCount, int ms1Count, int ms2Count, string expectedReason)
+        {
+            List<string> warnings = WarningsFromCalibrationWarnMessage(psmCount, ms1Count, ms2Count, "fileA.mzML");
+
+            Assert.That(warnings, Has.Count.EqualTo(1));
+            Assert.That(warnings[0], Does.StartWith("fileA.mzML: Calibration failure! "));
+            Assert.That(warnings[0], Does.Contain(expectedReason));
+        }
+
+        /// <summary>
+        /// Without a file name the warnings read as they did before the prefix was added.
+        /// </summary>
+        [Test]
+        [NonParallelizable]
+        public static void CalibrationWarningsWithoutAFileNameHaveNoPrefix()
+        {
+            Assert.That(WarningsFromCalibrationWarnMessage(16, 39, 0, null).Single(),
+                Does.StartWith("Calibration failure! Could not find enough MS1 datapoints."));
+
+            List<string> warnings = new();
+            EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                new CalibrationTask().WarnForWiderTolerance(15, 75, " ");
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+            }
+            Assert.That(warnings.Single(), Does.StartWith("Could not find enough PSMs to calibrate with"));
+        }
+
+        [Test]
+        [NonParallelizable]
+        public static void UnsupportedFileTypeWarningNamesTheSpectraFile()
+        {
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CalibrationUnsupportedTypeWarningTest");
+            string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+            Directory.CreateDirectory(outputFolder);
+            string mgfPath = Path.Combine(unitTestFolder, "unsupported.mgf");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "ok.mgf"), mgfPath, true);
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fa");
+
+            List<string> warnings = new();
+            EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                new CalibrationTask().RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) },
+                    new List<string> { mgfPath }, "test");
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+                Directory.Delete(unitTestFolder, true);
+            }
+
+            Assert.That(warnings, Has.Exactly(1).EqualTo("unsupported.mgf: Calibration for .mgf files is not supported."));
+        }
+
+        private static List<string> WarningsFromCalibrationWarnMessage(int psmCount, int ms1Count, int ms2Count, string spectraFileName)
+        {
+            var protein = new Protein("PEPTIDEKPEPTIDEKPEPTIDEK", "ACC");
+            var pep = new PeptideWithSetModifications(protein, new DigestionParams(), 1, protein.BaseSequence.Length,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            List<SpectralMatch> psms = Enumerable.Range(0, psmCount).Select(_ => BuildPsmWithPrecursorMass(pep, pep.MonoisotopicMass)).ToList();
+            List<LabeledDataPoint> DataPoints(int n) =>
+                Enumerable.Range(0, n).Select(i => new LabeledDataPoint(500.001, i + 1, 0, 0, 0, 500, null)).ToList();
+            var results = new DataPointAquisitionResults(null, psms, DataPoints(ms1Count), DataPoints(ms2Count), 0, 0, 0, 0);
+
+            List<string> warnings = new();
+            EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
+            MetaMorpheusTask.WarnHandler += handler;
+            try
+            {
+                new CalibrationTask().CalibrationWarnMessage(results, spectraFileName);
+            }
+            finally
+            {
+                MetaMorpheusTask.WarnHandler -= handler;
+            }
+            return warnings;
+        }
+
         private static readonly string[] Tmt11Channels =
             { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" };
 
