@@ -282,7 +282,7 @@ namespace Test
 
             Assert.That(captured.ToString(), Does.Contain("no spectral library was given"),
                 "the refusal printed nothing at all here before EverythingRunnerEngine.WarnHandler was wired up");
-            Assert.That(exitCode, Is.Not.Zero,
+            Assert.That(exitCode, Is.EqualTo(8),
                 "a run that was refused and wrote nothing must not report success to the calling script");
             Assert.That(Directory.Exists(output), Is.False, "the search ran anyway");
         }

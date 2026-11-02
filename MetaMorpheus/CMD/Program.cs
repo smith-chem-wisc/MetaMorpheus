@@ -327,10 +327,10 @@ namespace MetaMorpheusCommandLine
                 a.Run();
 
                 // A refusal used to leave through here as exit code 0 with nothing written, which a script
-                // cannot tell from a successful run.
+                // cannot tell from a successful run. Not 6, which is RefuseSeedDigestion's.
                 if (a.RefusedToProceed)
                 {
-                    errorCode = 6;
+                    errorCode = 8;
                 }
             }
             catch (Exception e)
