@@ -142,7 +142,25 @@
                                     <Label Content="Maximum OGlycan Allowed"/>
                                     <local:IntegerTexBoxControl x:Name="TbMaxOGlycanNum" Width="45"/>
                                 </StackPanel>
-                                <CheckBox x:Name="CkbOxoniumIonFilt" Content="OxoniumIonFilt" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center">
+                                    <CheckBox x:Name="CkbOxoniumIonFilt" Content="OxoniumIonFilt" VerticalAlignment="Center"/>
+                                    <StackPanel Orientation="Horizontal" Margin="10,0,0,0" IsEnabled="{Binding IsChecked, ElementName=CkbOxoniumIonFilt}"
+                                                ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <StackPanel.ToolTip>
+                                            <TextBlock>
+                                                The threshold for the diagnostic ions of custom monosaccharides (MonosaccharidesCustom.tsv).
+                                                <LineBreak />
+                                                An ion counts as observed only when its intensity is above this fraction of the HexNAc 138.055 ion.
+                                                <LineBreak />
+                                                A decimal fraction between 0 and 1. Default 0.02 (2%).
+                                                <LineBreak />
+                                                NeuAc and HexNAc(1)Hex(1) always use 2%. Used only when OxoniumIonFilt is checked.
+                                            </TextBlock>
+                                        </StackPanel.ToolTip>
+                                        <Label Content="Custom Oxonium Threshold"/>
+                                        <TextBox x:Name="TbCustomOxoniumThreshold" Width="45" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="4" Margin="0,5,0,0" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <StackPanel.ToolTip>
                                         <TextBlock>
