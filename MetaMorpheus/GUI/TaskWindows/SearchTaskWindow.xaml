@@ -348,7 +348,7 @@
                                                 <LineBreak />
                                                 PepQValueElseQValueNotch: the PEP q-value where PEP was trained for a protease, otherwise the q-value notch alone, below the smaller threshold.
                                                 <LineBreak />
-                                                Every fallback is reported and warned.
+                                                Every fallback is reported and warned. A named filter whose threshold is 1 is refused.
                                             </TextBlock>
                                         </ComboBox.ToolTip>
                                     </ComboBox>

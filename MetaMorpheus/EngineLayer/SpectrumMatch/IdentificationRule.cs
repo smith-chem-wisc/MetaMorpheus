@@ -48,6 +48,51 @@ namespace EngineLayer.SpectrumMatch
                 "The identification filter is inferred from the thresholds; there is no single threshold.")
         };
 
+        /// <summary>
+        /// Why a named filter cannot run with these thresholds, or null when it can (and when no filter is named). Its
+        /// threshold must lie strictly between 0 and 1: compared strictly, a threshold of 1 keeps every match, and 1 is
+        /// what the GUI sends for the threshold box it leaves unticked; 0 keeps none.
+        /// </summary>
+        public static string ThresholdProblem(CommonParameters commonParameters)
+        {
+            if (!IsExplicit(commonParameters))
+            {
+                return null;
+            }
+            IdentificationFilterMode mode = commonParameters.IdentificationFilter;
+            double threshold = Threshold(commonParameters);
+            if (threshold > 0 && threshold < 1)
+            {
+                return null;
+            }
+            string heldTo = mode switch
+            {
+                IdentificationFilterMode.QValueNotch => "the q-value threshold",
+                IdentificationFilterMode.PepQValue => "the PEP q-value threshold",
+                _ => "the smaller of the q-value and PEP q-value thresholds"
+            };
+            string set = mode switch
+            {
+                IdentificationFilterMode.QValueNotch => "Set the q-value threshold between 0 and 1 (in the Search task window, leave the PEP q-value box unticked)",
+                IdentificationFilterMode.PepQValue => "Set the PEP q-value threshold between 0 and 1 (in the Search task window, tick the PEP q-value box)",
+                _ => "Set either threshold between 0 and 1"
+            };
+            return $"The identification filter {mode} holds every match to {heldTo}, which is {threshold.ToString(CultureInfo.InvariantCulture)}, "
+                + $"so it would keep {(threshold >= 1 ? "every match" : "no match")}. {set}, or choose another identification filter.";
+        }
+
+        /// <summary>
+        /// Refuses a named filter whose threshold is not strictly between 0 and 1 (<see cref="ThresholdProblem"/>).
+        /// Called when a task starts, before anything is searched, so nothing is lost.
+        /// </summary>
+        public static void ThrowIfThresholdUnusable(CommonParameters commonParameters)
+        {
+            if (ThresholdProblem(commonParameters) is { } problem)
+            {
+                throw new MetaMorpheusException(problem);
+            }
+        }
+
         /// <summary>The FDR value a match is judged on, under <paramref name="mode"/>, given its FDR values at one level.</summary>
         public static FilterType ValueFor(FdrInfo fdrInfo, IdentificationFilterMode mode) => mode switch
         {

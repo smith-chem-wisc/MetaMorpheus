@@ -6,8 +6,10 @@ namespace EngineLayer.SpectrumMatch
     /// database, the spectral library, the mzIdentML and pepXML files, and the summaries.
     /// </summary>
     /// <remarks>
-    /// A named filter (anything but <see cref="Thresholds"/>) compares strictly (value &lt; threshold). PEP is trained
-    /// per digestion agent, and in a semi- or non-specific search per cleavage-specificity category. Where it was not trained, both PEP filters fall back
+    /// A named filter (anything but <see cref="Thresholds"/>) compares strictly (value &lt; threshold), and a task
+    /// refuses to start when the named filter's threshold is not between 0 and 1: at 1 it would keep every match, at
+    /// 0 none (<see cref="IdentificationRule.ThresholdProblem"/>). PEP is trained per digestion agent, and in a semi-
+    /// or non-specific search per cleavage-specificity category. Where it was not trained, both PEP filters fall back
     /// for those matches only, and the search says so in results.txt, naming the digestion agent and the category,
     /// and warns.
     /// </remarks>

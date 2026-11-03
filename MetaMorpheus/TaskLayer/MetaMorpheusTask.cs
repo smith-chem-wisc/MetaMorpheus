@@ -982,6 +982,10 @@ namespace TaskLayer
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
             try
             {
+                // A named identification filter held to a threshold of 1 would keep every match (0: none). Refuse it
+                // now, before anything is searched.
+                IdentificationRule.ThrowIfThresholdUnusable(CommonParameters);
+
                 var stopWatch = new Stopwatch();
                 stopWatch.Start();
 

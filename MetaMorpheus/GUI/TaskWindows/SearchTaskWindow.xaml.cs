@@ -697,6 +697,13 @@ namespace MetaMorpheusGUI
                 rtPredictorName: rtPredictorModelName,
                 identificationFilter: (IdentificationFilterMode)IdentificationFilterComboBox.SelectedItem);
 
+            // The box left unticked is sent as 1.0; a named identification filter held to it would keep every match.
+            if (IdentificationRule.ThresholdProblem(commonParamsToSave) is { } identificationFilterProblem)
+            {
+                MessageBox.Show(identificationFilterProblem);
+                return;
+            }
+
             if (ClassicSearchRadioButton.IsChecked.Value)
             {
                 TheTask.SearchParameters.SearchType = SearchType.Classic;

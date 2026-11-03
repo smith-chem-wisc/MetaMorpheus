@@ -87,6 +87,37 @@ namespace Test
         }
 
         [Test]
+        public static void ANamedFilterHeldToOneOrZero_IsRefused()
+        {
+            // acesnik's case: the GUI sends 1.0 for the box it leaves unticked, and a named filter compares strictly, so
+            // PepQValue with the PEP box unticked would hold every table, protein group and quantification input to < 1.
+            Assert.That(IdentificationRule.ThresholdProblem(Named(IdentificationFilterMode.PepQValue, qValueThreshold: 0.01, pepQValueThreshold: 1.0)),
+                Is.EqualTo("The identification filter PepQValue holds every match to the PEP q-value threshold, which is 1, so it would keep every match. "
+                    + "Set the PEP q-value threshold between 0 and 1 (in the Search task window, tick the PEP q-value box), or choose another identification filter."));
+            Assert.That(IdentificationRule.ThresholdProblem(Named(IdentificationFilterMode.QValueNotch, qValueThreshold: 1.0)), Does.Contain("leave the PEP q-value box unticked"));
+            Assert.That(IdentificationRule.ThresholdProblem(Named(IdentificationFilterMode.PepQValueElseQValueNotch, qValueThreshold: 0, pepQValueThreshold: 1.0)),
+                Does.Contain("which is 0, so it would keep no match"));
+
+            // Either GUI box works for PEP-else-notch, the thresholds filter is never refused, and a usable one passes.
+            Assert.That(IdentificationRule.ThresholdProblem(Named(IdentificationFilterMode.PepQValueElseQValueNotch, qValueThreshold: 0.01, pepQValueThreshold: 1.0)), Is.Null);
+            Assert.That(IdentificationRule.ThresholdProblem(Named(IdentificationFilterMode.PepQValueElseQValueNotch, qValueThreshold: 1.0, pepQValueThreshold: 0.01)), Is.Null);
+            Assert.That(IdentificationRule.ThresholdProblem(new CommonParameters(qValueThreshold: 1.0, pepQValueThreshold: 1.0)), Is.Null);
+            Assert.That(IdentificationRule.ThresholdProblem(Named(IdentificationFilterMode.QValueNotch, qValueThreshold: 0.01)), Is.Null);
+        }
+
+        [Test]
+        public static void SearchTask_ANamedFilterHeldToOne_IsRefusedBeforeTheSearch()
+        {
+            var ex = Assert.Throws<MetaMorpheusException>(() =>
+                Search("refused", Named(IdentificationFilterMode.PepQValue, qValueThreshold: 0.01, pepQValueThreshold: 1.0), trainPep: false));
+            Assert.That(ex!.Message, Does.StartWith("The identification filter PepQValue holds every match to the PEP q-value threshold, which is 1"));
+
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "IdentificationFilterSetting_refused");
+            Assert.That(Directory.GetFiles(folder, "*.psmtsv"), Is.Empty, "refused before anything was searched");
+            Directory.Delete(folder, true);
+        }
+
+        [Test]
         public static void PepElseNotch_AProteaseWithoutPep_IsJudgedOnTheNotch_NotOnPepQValue2()
         {
             var filtered = FilteredPsms.Filter(TwoProteases(), Named(IdentificationFilterMode.PepQValueElseQValueNotch));
