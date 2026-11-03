@@ -79,12 +79,10 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
         return new DiaLibrarySearchResults(this, matches);
     }
 
+    /// <param name="scans">The window's scans in retention-time order; never empty, since each window is a group of scans.</param>
     private List<DiaPrecursorMatch> SearchWindow((double Minimum, double Maximum) window, MsDataScan[] scans, PpmTolerance tolerance)
     {
         var matches = new List<DiaPrecursorMatch>();
-        if (scans.Length == 0)
-            return matches;
-
         double[] scanIrts = scans.Select(scan => _irtMap.ToIrt(new RtMinutes(scan.RetentionTime)).Value).ToArray();
         double irtLow = scanIrts.Min() - _parameters.IrtHalfWindow;
         double irtHigh = scanIrts.Max() + _parameters.IrtHalfWindow;
