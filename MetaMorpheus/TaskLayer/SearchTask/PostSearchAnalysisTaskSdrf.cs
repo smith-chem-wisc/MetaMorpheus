@@ -413,7 +413,9 @@ namespace TaskLayer
                     && !string.Equals(acquired, Path.GetFileName(rawFilePath), StringComparison.OrdinalIgnoreCase)
                         ? Path.GetFileName(rawFilePath)
                         : null,
-                AssayName = "run " + Path.GetFileNameWithoutExtension(rawFilePath),
+                // The run, so named after the acquired file like comment[data file]: calibration and averaging
+                // make no new run (sdrf D56). Named after the derivative, one deposit had two naming schemes.
+                AssayName = "run " + Path.GetFileNameWithoutExtension(AcquiredFileNameOf(rawFilePath) ?? rawFilePath),
                 Instrument = ResolveInstrument(rawFilePath),
                 PrecursorMassTolerance = common.PrecursorMassTolerance,
                 ProductMassTolerance = common.ProductMassTolerance,
