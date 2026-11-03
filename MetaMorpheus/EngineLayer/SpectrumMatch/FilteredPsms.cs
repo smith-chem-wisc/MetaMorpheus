@@ -289,6 +289,11 @@ namespace EngineLayer.SpectrumMatch
                 .Distinct()
                 .OrderBy(v => v == FilterType.PepQValue ? 0 : 1)
                 .ToList();
+            if (judgedOn.Count == 0)
+            {
+                // Nothing to judge: name the value the filter asked for.
+                judgedOn.Add(mode == IdentificationFilterMode.QValueNotch ? FilterType.QValueNotch : FilterType.PepQValue);
+            }
             FilterType filterType = judgedOn.Count == 1 ? judgedOn[0] : IdentificationRule.Fallback(mode);
 
             List<SpectralMatch> filtered = candidates
@@ -299,7 +304,7 @@ namespace EngineLayer.SpectrumMatch
             return new FilteredPsms(filtered, filterType, threshold, false, filterAtPeptideLevel)
             {
                 IdentificationFilter = mode,
-                JudgedOn = string.Join(" or ", (judgedOn.Count == 0 ? new List<FilterType> { filterType } : judgedOn).Select(GetFilterTypeString)),
+                JudgedOn = string.Join(" or ", judgedOn.Select(GetFilterTypeString)),
                 PepFilteringNotDone = IdentificationRule.PepNotTrainedSentence(candidates, filterAtPeptideLevel, commonParams)
             };
         }

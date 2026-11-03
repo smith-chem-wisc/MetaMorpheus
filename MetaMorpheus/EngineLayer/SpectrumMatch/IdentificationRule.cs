@@ -174,7 +174,7 @@ namespace EngineLayer.SpectrumMatch
             var groups = new List<PepTrainingGroup>();
             var byAgent = matches
                 .Where(m => m?.GetFdrInfo(peptideLevel) != null)
-                .GroupBy(m => m.DigestionParams?.DigestionAgent?.Name ?? "unknown")
+                .GroupBy(m => m.DigestionParams.DigestionAgent.Name) // as FdrAnalysisEngine groups them
                 .OrderBy(g => g.Key, StringComparer.Ordinal);
             foreach (var agent in byAgent)
             {
@@ -253,14 +253,14 @@ namespace EngineLayer.SpectrumMatch
         private static bool IsPepFilter(CommonParameters commonParameters) =>
             commonParameters?.IdentificationFilter is IdentificationFilterMode.PepQValue or IdentificationFilterMode.PepQValueElseQValueNotch;
 
+        /// <summary>The match's cleavage-specificity category, from its best candidate (a match always has one).</summary>
         private static (int Rank, string Label) CategoryOf(SpectralMatch match) =>
-            match.BestMatchingBioPolymersWithSetMods.FirstOrDefault()?.SpecificBioPolymer?.CleavageSpecificityForFdrCategory switch
+            match.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.CleavageSpecificityForFdrCategory switch
             {
                 CleavageSpecificity.Full => (0, "fully specific"),
                 CleavageSpecificity.Semi => (1, "semi-specific"),
                 CleavageSpecificity.None => (2, "non-specific"),
-                { } other => (3, other.ToString()),
-                null => (4, "unknown")
+                var other => (3, other.ToString())
             };
 
         private static string UnitName(bool peptideLevel) =>

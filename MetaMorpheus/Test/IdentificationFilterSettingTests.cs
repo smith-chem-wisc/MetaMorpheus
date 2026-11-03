@@ -220,6 +220,97 @@ namespace Test
         }
 
         [Test]
+        public static void TheFallbackSentence_NamesEveryGroupThatFellBack_AtEitherLevel()
+        {
+            // Arg-C untrained throughout; trypsin trained for fully specific matches only, its non-specific and
+            // unclassified ones not.
+            var matches = Matches("PEPTIDEK", "trypsin", 4, 4, pepTrained: true)
+                .Concat(Matches("NNSPECIFICK", "trypsin", 3, 3, pepTrained: false, specificity: CleavageSpecificity.None))
+                .Concat(Matches("NCATEGRYK", "trypsin", 2, 2, pepTrained: false, specificity: CleavageSpecificity.Unknown))
+                .Concat(Matches("PEPTIDER", "Arg-C", 2, 2, pepTrained: false))
+                .ToList();
+            var commonParameters = Named(IdentificationFilterMode.PepQValueElseQValueNotch);
+
+            Assert.That(IdentificationRule.PepNotTrainedSentence(matches, peptideLevel: false, commonParameters),
+                Is.EqualTo("PEP filtering was requested, but PEP was not computed for the Arg-C, trypsin non-specific and trypsin Unknown PSMs, "
+                    + "so they were filtered by q-value notch."));
+            Assert.That(IdentificationRule.PepTrainingGroups(matches, peptideLevel: false).Select(g => (g.Name, g.PepTrained, g.Count)), Is.EqualTo(new[]
+            {
+                ("Arg-C", false, 2), ("trypsin fully specific", true, 4), ("trypsin non-specific", false, 3), ("trypsin Unknown", false, 2)
+            }));
+
+            // At the peptide level a group counts distinct full sequences.
+            foreach (var psm in matches) psm.PeptideFdrInfo = psm.PsmFdrInfo.Clone();
+            Assert.That(IdentificationRule.PepNotTrainedSentence(matches, peptideLevel: true, commonParameters),
+                Is.EqualTo("PEP filtering was requested, but PEP q-values were not computed at the peptide level for Arg-C, trypsin non-specific "
+                    + "and trypsin Unknown, so those peptides were filtered by q-value notch."));
+            Assert.That(IdentificationRule.PepTrainingGroups(matches, peptideLevel: true).Sum(g => g.Count), Is.EqualTo(4));
+
+            // A null and a match with no FDR values are passed over.
+            var withOddOnes = new List<SpectralMatch> { null, new PeptideSpectralMatch(matches[0].BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer,
+                    0, 1, 1, new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, 2, true, Polarity.Positive,
+                        double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.HCD, 0, null),
+                        2, 0, "File", new CommonParameters()), new CommonParameters(), new List<MatchedFragmentIon>()),
+                matches[0] };
+            Assert.That(IdentificationRule.PepTrainingGroups(withOddOnes, peptideLevel: false), Is.EqualTo(new[] { new IdentificationRule.PepTrainingGroup("trypsin", null, true, 1) }));
+
+            // Nothing to say under the notch filter, or with no filter named.
+            Assert.That(IdentificationRule.PepNotTrainedSentence(matches, peptideLevel: false, Named(IdentificationFilterMode.QValueNotch, qValueThreshold: 0.01)), Is.Null);
+            Assert.That(IdentificationRule.PepNotTrainedSentence(matches, peptideLevel: false, null), Is.Null);
+            Assert.That(IdentificationRule.FellBack(matches, peptideLevel: false, new CommonParameters()), Is.False);
+        }
+
+        [Test]
+        public static void TheRuleRefusesWhatIsNotANamedFilter_AndReadsEachValue()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => IdentificationRule.Threshold(IdentificationFilterMode.Thresholds, 0.01, 0.01));
+            Assert.Throws<ArgumentOutOfRangeException>(() => IdentificationRule.ValueFor(null, IdentificationFilterMode.Thresholds));
+            Assert.Throws<ArgumentOutOfRangeException>(() => IdentificationRule.ToTier((FilterType)99));
+            Assert.Throws<ArgumentOutOfRangeException>(() => FilteredPsms.GetFilterTypeString((FilterType)99));
+            Assert.That(IdentificationRule.IsExplicit(null), Is.False);
+
+            // No match, or no FDR values at the level asked: does not pass.
+            var noPeptideLevel = Matches("PEPTIDEK", "trypsin", 1, 1, pepTrained: true)[0];
+            Assert.That(noPeptideLevel.PeptideFdrInfo, Is.Null);
+            Assert.That(IdentificationRule.Passes(noPeptideLevel, peptideLevel: true, IdentificationFilterMode.PepQValue, 0.01), Is.False);
+            Assert.That(IdentificationRule.Passes(null, peptideLevel: false, IdentificationFilterMode.PepQValue, 0.01), Is.False);
+
+            // Nothing to judge: the summary names the value the filter asked for.
+            Assert.That(FilteredPsms.Filter(new List<SpectralMatch>(), Named(IdentificationFilterMode.PepQValue)).GetFilterTypeString(), Is.EqualTo("pep q-value"));
+            Assert.That(FilteredPsms.Filter(new List<SpectralMatch>(), Named(IdentificationFilterMode.QValueNotch, qValueThreshold: 0.01)).GetFilterTypeString(),
+                Is.EqualTo("q-value notch"));
+
+            // The value handed on (e.g. to FlashLFQ) is the one the match was judged on.
+            var trained = Matches("PEPTIDEK", "trypsin", 1, 1, pepTrained: true)[0];
+            trained.SetFdrValues(1, 0, 0.003, 1, 0, 0.002, 0, 0.001);
+            trained.PsmFdrInfo.PepTrained = true;
+            var untrained = Matches("PEPTIDER", "Arg-C", 1, 1, pepTrained: false)[0];
+            untrained.SetFdrValues(1, 0, 0.003, 1, 0, 0.002, 0, 2);
+            Assert.That(IdentificationRule.GetValue(trained, false, IdentificationFilterMode.PepQValue), Is.EqualTo(0.001));
+            Assert.That(IdentificationRule.GetValue(untrained, false, IdentificationFilterMode.PepQValue), Is.EqualTo(0.003));
+            Assert.That(IdentificationRule.GetValue(untrained, false, IdentificationFilterMode.PepQValueElseQValueNotch), Is.EqualTo(0.002));
+            var both = FilteredPsms.Filter(new List<SpectralMatch> { trained, untrained }, Named(IdentificationFilterMode.PepQValue));
+            Assert.That(both.Select(p => p.DigestionParams.DigestionAgent.Name), Is.EqualTo(new[] { "trypsin", "Arg-C" }));
+            Assert.That(both.Select(both.GetFilterValue), Is.EqualTo(new[] { 0.001, 0.003 }));
+        }
+
+        [Test]
+        public static void ProteinGroups_AreRankedByPepOnlyWhenEveryMatchWasJudgedOnPep()
+        {
+            // A match whose PEP was not trained has PEP 0, which would rank its groups first.
+            var filterType = typeof(ProteinScoringAndFdrEngine).GetField("_filterType", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+            FilterType RankedBy(List<SpectralMatch> psms, IdentificationFilterMode mode) =>
+                (FilterType)filterType.GetValue(new ProteinScoringAndFdrEngine(new List<ProteinGroup>(), psms, false, false, true, Named(mode, qValueThreshold: 0.01),
+                    new List<(string, CommonParameters)>(), new List<string>()))!;
+
+            var trainedOnly = Matches("PEPTIDEK", "trypsin", 5, 5, pepTrained: true);
+            Assert.That(RankedBy(trainedOnly.Append(null).ToList(), IdentificationFilterMode.PepQValue), Is.EqualTo(FilterType.PepQValue), "a null is passed over");
+            Assert.That(RankedBy(TwoProteases(), IdentificationFilterMode.PepQValue), Is.EqualTo(FilterType.QValue));
+            Assert.That(RankedBy(TwoProteases(), IdentificationFilterMode.PepQValueElseQValueNotch), Is.EqualTo(FilterType.QValueNotch));
+            Assert.That(RankedBy(trainedOnly, IdentificationFilterMode.QValueNotch), Is.EqualTo(FilterType.QValueNotch));
+        }
+
+        [Test]
         public static void FilteringTheFilteredMatchesAgain_GivesTheSameAnswer()
         {
             // pcruzparri's case: every confident target has PEP exactly 0. Judged from the values alone, the second pass
