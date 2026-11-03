@@ -45,6 +45,13 @@ namespace TaskLayer
                 {
                     sb.AppendLine("New databases: ");
                     sb.AppendLine(string.Join(Environment.NewLine + "\t", NewDatabases.Select(b => b.FilePath)).ToString());
+                    sb.AppendLine("New database identities: ");
+                    foreach (var db in NewDatabases)
+                    {
+                        sb.AppendLine("\t" + db.FileName + ": " + db.IdentityText());
+                        if (db.DerivedFromText() is { } derivedFrom)
+                            sb.AppendLine("\t\t" + derivedFrom);
+                    }
                 }
                 sb.AppendLine();
                 sb.AppendLine("--------------------------------------------------");
@@ -67,7 +74,11 @@ namespace TaskLayer
 
         internal void AddResultText(string resultsText)
         {
-            resultTexts.Add(resultsText);
+            // Engines report here as they finish, which can be from several threads when a task searches spectra files at once.
+            lock (resultTexts)
+            {
+                resultTexts.Add(resultsText);
+            }
         }
 
         internal void AddPsmPeptideProteinSummaryText(string targetTextString)

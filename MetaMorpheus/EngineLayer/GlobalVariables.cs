@@ -6,6 +6,7 @@ using MassSpectrometry;
 using Nett;
 using Omics.Modifications;
 using Proteomics.AminoAcidPolymer;
+using Transcriptomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -77,6 +78,12 @@ namespace EngineLayer
         private const string EmbeddedProteasesResourceName = "Proteomics.ProteolyticDigestion.proteases.tsv";
         private const string EmbeddedRnasesResourceName = "Transcriptomics.Digestion.rnases.tsv";
 
+        /// <summary>Template seeded into the user's OGlycan_Custom.gdb. Embedded in EngineLayer.</summary>
+        private const string EmbeddedCustomOGlycanResourceName = "EngineLayer.Glycan_Mods.OGlycan_Custom.gdb";
+
+        /// <summary>Template seeded into the user's NGlycan_Custom.gdb. Embedded in EngineLayer.</summary>
+        private const string EmbeddedCustomNGlycanResourceName = "EngineLayer.Glycan_Mods.NGlycan_Custom.gdb";
+
         /// <summary>Template seeded into Mods\CustomModifications.txt and Mods\RnaCustomModifications.txt.</summary>
         /// <remarks>
         /// The first line is the title CustomModWindow writes when it creates the file itself, so the GUI's
@@ -102,6 +109,23 @@ namespace EngineLayer
         public static string CustomProteasePath => Path.Combine(DataDir, "proteases_custom.tsv");
         public static string CustomRnasePath => Path.Combine(DataDir, "rnase_custom.tsv");
         public static string CustomMonosaccharidePath => Path.Combine(DataDir, "MonosaccharidesCustom.tsv");
+        /// <summary>
+        /// The user's own O-glycan database, offered in the GlycoSearch task beside the shipped ones.
+        /// </summary>
+        /// <remarks>
+        /// At the DataDir root rather than under Glycan_Mods\OGlycan\, for the same reason
+        /// MonosaccharidesCustom.tsv is: Product.wxs gives Glycan_Mods and both of its subfolders a
+        /// &lt;RemoveFolder On="both"/&gt;, so the installer owns those folders and a user's file in one of
+        /// them is not somewhere we should be putting it. The cost is that it is not picked up by the
+        /// directory sweep in LoadGlycans and has to be added to OGlycanDatabasePaths by name.
+        /// </remarks>
+        public static string CustomOGlycanDatabasePath => Path.Combine(DataDir, "OGlycan_Custom.gdb");
+
+        /// <summary>
+        /// The user's own N-glycan database, offered in the GlycoSearch task beside the shipped ones.
+        /// At the DataDir root for the same reason as <see cref="CustomOGlycanDatabasePath"/>.
+        /// </summary>
+        public static string CustomNGlycanDatabasePath => Path.Combine(DataDir, "NGlycan_Custom.gdb");
 
         public static bool StopLoops { get; set; }
         public static string MetaMorpheusVersion { get; private set; }
@@ -125,6 +149,28 @@ namespace EngineLayer
         public static List<string> OGlycanDatabasePaths { get; private set; }
         public static List<string> NGlycanDatabasePaths { get; private set; }
 
+        /// <summary>
+        /// The O-glycans of every database in <see cref="OGlycanDatabasePaths"/>, keyed by file name and
+        /// ordered by mass.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="AllModsKnown"/> also holds every glycan, but flattens all databases together and so
+        /// cannot say which file a glycan came from. The task window groups its glycan tree by database, so
+        /// it needs the provenance this keeps. Keyed by file name -- not full path -- because that is what
+        /// the task parameters persist and what the database combo boxes already display.
+        ///
+        /// Loaded with ToGenerateIons:false, exactly like the AllModsKnown population below, so these are
+        /// for DISPLAY ONLY: their Ions are null, which also makes Glycan.Equals throw on them. The search
+        /// re-loads its glycans with ions; see GlycoSearchEngine.
+        /// </remarks>
+        public static Dictionary<string, List<Glycan>> OGlycansByDatabase { get; private set; }
+
+        /// <summary>
+        /// The N-glycans of every database in <see cref="NGlycanDatabasePaths"/>, keyed by file name and
+        /// ordered by mass. Display-only, for the same reasons as <see cref="OGlycansByDatabase"/>.
+        /// </summary>
+        public static Dictionary<string, List<Glycan>> NGlycansByDatabase { get; private set; }
+
         public static void SetUpGlobalVariables()
         {
             AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp", ".msl" };
@@ -145,6 +191,7 @@ namespace EngineLayer
             LoadRnaModifications();
             LoadGlycans();
             LoadCustomAminoAcids();
+            LoadCustomNucleotides();
             SetUpGlobalSettings();
             LoadDissociationTypes();
             LoadAvailableProteomes();
@@ -196,7 +243,7 @@ namespace EngineLayer
                         allMods.Add(mod);
                         modTypes.Add(mod.ModificationType);
                     }
-                    else if (!mod.ModificationType.Equals("Unimod"))
+                    else if (!mod.ModificationType.Equals("Unimod") && !mod.ModificationType.Equals("Modomics"))
                     {
                         ErrorsReadingMods.Add("Duplicate mod IDs! Skipping " + mod.ModificationType + ":" + mod.IdWithMotif);
                     }
@@ -243,8 +290,14 @@ namespace EngineLayer
                     string[] line = aminoAcidLines[i].Split('\t').ToArray(); //tsv Name, one letter, monoisotopic, chemical formula
                     if (line.Length >= 4) //check something is there (not a blank line)
                     {
+                        if (string.IsNullOrWhiteSpace(line[0]) || string.IsNullOrWhiteSpace(line[1]) ||
+                            ContainsTabOrNewline(line[0]) || ContainsTabOrNewline(line[1]))
+                        {
+                            continue;
+                        }
+
                         char letter = line[1][0];
-                        if (InvalidAminoAcids.Contains(letter))
+                        if (!IsValidResidueLetter(letter) || InvalidAminoAcids.Contains(letter))
                         {
                             throw new MetaMorpheusException("Error while reading 'CustomAminoAcids.txt'. Line " + (i + 1).ToString() + " contains an invalid amino acid. (Ex: " + string.Join(", ", InvalidAminoAcids.Select(x => x.ToString())) + ")");
                         }
@@ -290,6 +343,130 @@ namespace EngineLayer
                 }
             }
             File.WriteAllLines(aminoAcidPath, linesToWrite.ToArray());
+        }
+
+        public static void LoadCustomNucleotides()
+        {
+            string nucleotidePath = Path.Combine(DataDir, "CustomNucleotides", "CustomNucleotides.txt");
+            if (!File.Exists(nucleotidePath))
+            {
+                WriteNucleotidesFile();
+                return;
+            }
+
+            string[] nucleotideLines = File.ReadAllLines(nucleotidePath);
+            for (int i = 1; i < nucleotideLines.Length; i++)
+            {
+                string[] line = nucleotideLines[i].Split('\t');
+                if (line.Length != 4 || string.IsNullOrWhiteSpace(nucleotideLines[i]) ||
+                    line[1].Length != 1)
+                    continue;
+
+                try
+                {
+                    char letter = line[1][0];
+                    if (!TryValidateCustomNucleotide(line[0], letter, line[2], out _))
+                        continue;
+
+                    ChemicalFormula formula = ChemicalFormula.ParseFormula(line[3]);
+
+                    bool letterExists = Nucleotide.TryGetResidue(letter, out Nucleotide existingByLetter);
+                    bool symbolExists = Nucleotide.TryGetResidue(line[2], out Nucleotide existingBySymbol);
+                    bool nameExists = Nucleotide.TryGetResidue(line[0], out Nucleotide existingByName);
+
+                    if (letterExists || symbolExists || nameExists)
+                    {
+                        continue;
+                    }
+
+                    Nucleotide.AddResidue(line[0], letter, line[2], formula);
+                }
+                catch (Exception)
+                {
+                    // Keep a malformed persisted row from preventing the application from starting.
+                    continue;
+                }
+            }
+        }
+
+        public static void WriteNucleotidesFile()
+        {
+            string directory = Path.Combine(DataDir, "CustomNucleotides");
+            if (!Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            string nucleotidePath = Path.Combine(directory, "CustomNucleotides.txt");
+            List<string> linesToWrite = new List<string>
+            {
+                "Name\tOneLetterAbbr.\tSymbol\tBaseChemicalFormula"
+            };
+
+            foreach (Nucleotide nucleotide in GetDefaultRnaNucleotides())
+            {
+                linesToWrite.Add($"{nucleotide.Name}\t{nucleotide.Letter}\t{nucleotide.Symbol}\t{nucleotide.BaseChemicalFormula.Formula}");
+            }
+
+            File.WriteAllLines(nucleotidePath, linesToWrite);
+        }
+
+        public static bool TryValidateCustomNucleotide(string name, char letter, string symbol, out string validationMessage)
+        {
+            if (string.IsNullOrWhiteSpace(name) || ContainsTabOrNewline(name))
+            {
+                validationMessage = "A nucleotide name without tab or newline characters is required.";
+                return false;
+            }
+
+            if (!IsValidResidueLetter(letter) || IsReservedNucleotideCharacter(letter))
+            {
+                validationMessage = $"The nucleotide character '{letter}' is reserved and cannot be assigned.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(symbol) || ContainsTabOrNewline(symbol))
+            {
+                validationMessage = "A nucleotide symbol without tab or newline characters is required.";
+                return false;
+            }
+
+            string letterText = letter.ToString();
+            if (name.Equals(symbol, StringComparison.Ordinal) || name.Equals(letterText, StringComparison.Ordinal) ||
+                symbol.Equals(letterText, StringComparison.Ordinal))
+            {
+                validationMessage = "The nucleotide name, letter, and symbol must be distinct.";
+                return false;
+            }
+
+            validationMessage = string.Empty;
+            return true;
+        }
+
+        public static bool ContainsTabOrNewline(string value)
+        {
+            return value.IndexOfAny(new[] { '\t', '\r', '\n' }) >= 0;
+        }
+
+        private static bool IsValidResidueLetter(char letter)
+        {
+            return letter <= 'z' && !char.IsControl(letter) && !char.IsWhiteSpace(letter);
+        }
+
+        private static bool IsReservedNucleotideCharacter(char letter)
+        {
+            return new[] { ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' }.Contains(letter);
+        }
+
+        private static IEnumerable<Nucleotide> GetDefaultRnaNucleotides()
+        {
+            return new[]
+            {
+                Nucleotide.AdenineBase,
+                Nucleotide.CytosineBase,
+                Nucleotide.GuanineBase,
+                Nucleotide.UracilBase,
+                Nucleotide.InosineBase,
+                Nucleotide.PseudoUracilBase
+            };
         }
 
         // Does the same thing as Process.Start() except it works on .NET Core
@@ -541,6 +718,17 @@ namespace EngineLayer
             GlycanDatabase.EnsureCustomMonosaccharideFileExists(CustomMonosaccharidePath);
             GlycanDatabase.LoadCustomMonosaccharides(CustomMonosaccharidePath);
 
+            // Seed the user's own database before anything reads it. It is header-less and its template is
+            // all comment lines, so a freshly seeded file contributes no glycans and the two steps below are
+            // independent of it. See CustomDataFile for the recipe every custom file follows.
+            CustomDataFile.EnsureExists(CustomOGlycanDatabasePath,
+                () => CustomDataFile.EmbeddedText(typeof(GlobalVariables).Assembly, EmbeddedCustomOGlycanResourceName),
+                "custom O-glycan database");
+
+            CustomDataFile.EnsureExists(CustomNGlycanDatabasePath,
+                () => CustomDataFile.EmbeddedText(typeof(GlobalVariables).Assembly, EmbeddedCustomNGlycanResourceName),
+                "custom N-glycan database");
+
             OGlycanDatabasePaths = new List<string>();
             NGlycanDatabasePaths = new List<string>();
 
@@ -549,16 +737,41 @@ namespace EngineLayer
                 OGlycanDatabasePaths.Add(glycanFile);
             }
 
+            // Added by name because it deliberately does not live in the swept folder -- see
+            // CustomOGlycanDatabasePath. A failed seeding does not get this far: EnsureExists throws and
+            // startup stops, as it does for every custom file. The guard is the same File.Exists check the
+            // other custom files make, and only matters if the file is gone again by the time we get here.
+            if (File.Exists(CustomOGlycanDatabasePath))
+            {
+                OGlycanDatabasePaths.Add(CustomOGlycanDatabasePath);
+            }
+
             foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"NGlycan")))
             {
                 NGlycanDatabasePaths.Add(glycanFile);
             }
 
+            if (File.Exists(CustomNGlycanDatabasePath))
+            {
+                NGlycanDatabasePaths.Add(CustomNGlycanDatabasePath);
+            }
+
             //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
             //The reason why not include Glycan into modification database is for users to apply their own database.
+            OGlycansByDatabase = new Dictionary<string, List<Glycan>>();
+            NGlycansByDatabase = new Dictionary<string, List<Glycan>>();
+
+            // Read through LoadGlycansOrWarn rather than LoadGlycan directly: this runs inside
+            // SetUpGlobalVariables, so a typo in a user's own database would otherwise stop MetaMorpheus
+            // opening -- and with it the only window that could fix the file. One path at a time, so each
+            // database's glycans are recorded under it; a database that cannot be read is recorded empty.
             foreach (var path in OGlycanDatabasePaths)
             {
-                var oGlycans = GlycanDatabase.LoadGlycan(path, false, true);
+                var oGlycans = GlycanDatabase.LoadGlycansOrWarn(new[] { path }, true, Warn);
+                // Recorded per database, because the flattening below loses which file each glycan came from.
+                // Enumerate the LOADED OBJECTS, not the file's lines: a structure-format database can yield
+                // several Glycan objects from one line (Glycan.Struct2Glycan).
+                OGlycansByDatabase[Path.GetFileName(path)] = oGlycans.OrderBy(g => g.Mass).ToList();
                 foreach (var glycan in oGlycans)
                 {
                     if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
@@ -570,7 +783,8 @@ namespace EngineLayer
             }
             foreach (var path in NGlycanDatabasePaths)
             {
-                var nGlycans = GlycanDatabase.LoadGlycan(path, false, false);
+                var nGlycans = GlycanDatabase.LoadGlycansOrWarn(new[] { path }, false, Warn);
+                NGlycansByDatabase[Path.GetFileName(path)] = nGlycans.OrderBy(g => g.Mass).ToList();
                 foreach (var glycan in nGlycans)
                 {
                     if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
@@ -600,9 +814,48 @@ namespace EngineLayer
             };
         }
 
+        /// <summary>
+        /// Loads the catalogue of UniProt proteomes offered by the "Download UniProt Database" window.
+        /// </summary>
+        /// <remarks>
+        /// The catalogue is a convenience, not a prerequisite: MetaMorpheus searches perfectly well without
+        /// it, so failing to read it must never stop the program starting. It is normally shipped beside the
+        /// executable, but <see cref="DataDir"/> can resolve elsewhere — to %LOCALAPPDATA%\MetaMorpheus for a
+        /// Program Files install, or to a data directory the user has already created and passed with
+        /// --mmsettings — and in those cases
+        /// the file may simply not be there. This method is called from <see cref="SetUpGlobalVariables"/>,
+        /// which runs in the MainWindow constructor and in Program.Main outside any try/catch, so an escaping
+        /// exception is an unhandled crash at launch rather than a degraded feature.
+        /// <para>
+        /// The failure is reported through <see cref="WarnHandler"/>, not the console: the GUI has no
+        /// console, and the CLI's handler honours -v none. Both front ends subscribe before startup.
+        /// </para>
+        /// <para>
+        /// An empty dictionary is the safe degraded value, not null: DownloadUniProtDatabaseWindow enumerates
+        /// this property and calls FirstOrDefault on it without a null check, so a null here has always been
+        /// a latent NullReferenceException the moment that window is opened.
+        /// </para>
+        /// </remarks>
         private static void LoadAvailableProteomes()
         {
-            AvailableUniProtProteomes = ProteinDbRetriever.UniprotProteomesList(Path.Combine(DataDir,@"Proteomes",@"availableUniProtProteomes.txt.gz"));
+            string proteomeListPath = Path.Combine(DataDir, @"Proteomes", @"availableUniProtProteomes.txt.gz");
+
+            try
+            {
+                // mzLib reports a missing or unreadable catalogue by exception and never returns null
+                // (smith-chem-wisc/mzLib#1126, first released in 1.0.584).
+                AvailableUniProtProteomes = ProteinDbRetriever.UniprotProteomesList(proteomeListPath);
+            }
+            catch (Exception e)
+            {
+                // Deliberately broad: every way reading a local file can fail — absent, wrong extension,
+                // truncated, locked, unreadable — has the same consequence for this optional catalogue, and
+                // none of them is worth refusing to start over.
+                AvailableUniProtProteomes = new Dictionary<string, string>();
+
+                Warn($"Could not read the list of available UniProt proteomes from '{proteomeListPath}'. " +
+                     $"Downloading a proteome by name will be unavailable. {e.Message}");
+            }
         }
         private static void SetUpGlobalSettings()
         {
@@ -628,10 +881,9 @@ namespace EngineLayer
             var glycoMods = ModificationLoader.ReadModsFromFile(glycoFile, out var errorMods);
             foreach (var glycoMod in glycoMods)
             {
-                var kind = GlycanDatabase.String2Kind(glycoMod.OriginalId);
+                byte[] kind = GlycoModComposition(glycoMod.OriginalId, glycoFile);
 
-                // If we cannot parse the glycan string, we add the glycoMod as a normal modification.
-                if (kind.Sum(p => p) == 0)
+                if (kind == null || kind.Sum(p => p) == 0)
                 {
                     _AllModsKnown.Add(glycoMod);
                     continue;
@@ -650,6 +902,44 @@ namespace EngineLayer
                 }
                 _AllModsKnown.Add(glycan);
             }
+        }
+
+        /// <summary>
+        /// The composition a glyco.txt modification ID names, or null when it names none. An ID with no '('
+        /// -- Hex, dHex, Galactosyl on N-term -- names a single residue, not a composition, and is kept as an
+        /// ordinary modification. One that has a '(' but is not a composition is kept the same way, but said:
+        /// this runs at startup, outside any try, so it must not throw, and it must not quietly become a
+        /// different glycan either. The ID is cut the way a glycan database line is (GlycanDatabase.CompositionPart),
+        /// so text after the last ')' -- HexNAc(1)Hex(1) on S -- is ignored, as the old String2Kind ignored it,
+        /// and said, as the database loader says it.
+        /// </summary>
+        internal static byte[] GlycoModComposition(string originalId, string glycoFile)
+        {
+            if (originalId.IndexOf('(') < 0)
+            {
+                return null;
+            }
+
+            string composition = GlycanDatabase.CompositionPart(originalId, out string ignored);
+            byte[] kind;
+            try
+            {
+                kind = GlycanDatabase.ParseComposition(composition);
+            }
+            catch (FormatException ex)
+            {
+                Warn($"The glyco modification '{originalId}' in {glycoFile} is not a glycan composition, so it is " +
+                    $"kept as an ordinary modification. {ex.Message}");
+                return null;
+            }
+
+            if (ignored != null)
+            {
+                Warn($"Read the glyco modification '{originalId}' in {glycoFile} as the glycan \"{composition}\", " +
+                    $"ignoring \"{ignored}\" after it. If that was meant to be part of the glycan, fix the ID: " +
+                    "a composition is a name and a count repeated, e.g. HexNAc(2)Hex(5)NeuAc(1).");
+            }
+            return kind;
         }
 
         private static void LoadDigestionAgents()

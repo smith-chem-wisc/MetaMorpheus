@@ -301,6 +301,17 @@ namespace EngineLayer
         }
 
         /// <summary>
+        /// Characters a monosaccharide name may not contain, because a composition line gives them a meaning
+        /// of their own: '#' starts a note, and parentheses hold a count. A name with one registers, but a
+        /// composition using it loads as a different glycan -- HexNAc(1)Sia#2(1) is read as HexNAc(1).
+        /// </summary>
+        public static readonly char[] CharsNotAllowedInName = { '#', '(', ')' };
+
+        public static string NameHasReservedCharacter(string name) =>
+            $"Monosaccharide name '{name}' cannot contain '#', '(' or ')'. In a glycan database '#' starts a note and " +
+            "parentheses hold a count, so a composition using this name would be read as a different glycan.";
+
+        /// <summary>
         /// Register a custom monosaccharide. Called by GlycanDatabase.LoadCustomMonosaccharides
         /// at startup. Appends a new slot at the end of Kind[] (index = KindCapacity-after-add - 1).
         /// </summary>
@@ -312,6 +323,8 @@ namespace EngineLayer
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Monosaccharide name must be non-empty.", nameof(name));
+            if (name.IndexOfAny(CharsNotAllowedInName) >= 0)
+                throw new ArgumentException(NameHasReservedCharacter(name), nameof(name));
             if (NameCharDic.ContainsKey(name))
                 throw new ArgumentException($"Monosaccharide name '{name}' already exists (built-in or previously-registered).", nameof(name));
             if (CharMassDic.ContainsKey(code))
@@ -455,7 +468,7 @@ namespace EngineLayer
         /// <summary>
         /// Custom-monosaccharide diagnostic ions exposed as (observed m/z scaled by 1e5, Kind[] index)
         /// pairs in a deterministic order (by Kind index, then declaration order). Empty unless customs
-        /// were registered. Consumed by the strict custom-oxonium branch of GlycoPeptides.DiagonsticFilter
+        /// were registered. Consumed by the strict custom-oxonium branch of GlycoPeptides.CustomOxoniumFilter
         /// and used to size the oxonium intensity list. No hydrogen offset is applied: values are observed
         /// m/z, matching the convention of AllOxoniumIons and the MonosaccharidesCustom.tsv documentation.
         /// </summary>
@@ -806,7 +819,7 @@ namespace EngineLayer
         /// </summary>
         /// <param name="structure"> ex.(N(H(A))(N(H(A))(F))) </param>
         /// <returns> The glycan Mass </returns>
-        private static int GetMass(string structure)
+        internal static int GetMass(string structure)
         {
             int y = 0;
             foreach (var entry in _kindEntries)

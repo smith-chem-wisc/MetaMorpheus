@@ -354,7 +354,7 @@ namespace Test
 
             internal void ScoreOn(FragmentIndex fragmentIndex, List<int> binsToSearch, byte[] scoringTable, byte cutoff, List<int> observed, double precursor,
                 double lowest, double highest, List<IBioPolymerWithSetMods> peptideIndex, MassDiffAcceptor acceptor, DissociationType dissociationType)
-                => IndexedScoring(fragmentIndex, binsToSearch, scoringTable, cutoff, observed, precursor, lowest, highest, peptideIndex, acceptor, 0, dissociationType);
+                => IndexedScoring(fragmentIndex, binsToSearch, new EngineLayer.Util.ScanScoringTable(scoringTable), cutoff, observed, precursor, lowest, highest, peptideIndex, acceptor, 0, dissociationType);
 
             internal static bool IsSorted(List<IBioPolymerWithSetMods> peptideIndex) => IsSortedForBinSearch(peptideIndex);
 
@@ -370,7 +370,7 @@ namespace Test
 
             internal static void Score(FragmentIndex fragmentIndex, List<int> binsToSearch, byte[] scoringTable, byte cutoff, List<int> observed, double precursor,
                 double lowest, double highest, List<IBioPolymerWithSetMods> peptideIndex, MassDiffAcceptor acceptor, DissociationType dissociationType)
-                => new Probe().IndexedScoring(fragmentIndex, binsToSearch, scoringTable, cutoff, observed, precursor, lowest, highest, peptideIndex, acceptor, 0, dissociationType);
+                => new Probe().IndexedScoring(fragmentIndex, binsToSearch, new EngineLayer.Util.ScanScoringTable(scoringTable), cutoff, observed, precursor, lowest, highest, peptideIndex, acceptor, 0, dissociationType);
         }
     }
 }
