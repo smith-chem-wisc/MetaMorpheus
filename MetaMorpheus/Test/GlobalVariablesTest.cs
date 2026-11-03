@@ -134,6 +134,23 @@ namespace Test
         }
 
         [Test]
+        public static void TestEmbeddedFormalChargeTableMatchesTheShippedOneAndAMissingOneIsReported()
+        {
+            // The fallback must give the same charges as the file the installer ships.
+            var shipped = Omics.Modifications.IO.ModificationLoader.ReadFormalChargesDictionary(
+                Path.Combine(GlobalVariables.DataDir, @"Data", @"PsiModFormalCharges.tsv"));
+            var embedded = GlobalVariables.ReadEmbeddedPsiModFormalCharges(typeof(Omics.Modifications.Mods).Assembly, "unused");
+            Assert.That(embedded, Is.Not.Empty);
+            Assert.That(embedded, Is.EquivalentTo(shipped));
+
+            // An assembly without the table stands in for an mzLib that stopped embedding it: startup must
+            // say which file it could not find, not fail with a null reference.
+            var ex = Assert.Throws<MetaMorpheusException>(() =>
+                GlobalVariables.ReadEmbeddedPsiModFormalCharges(typeof(GlobalVariables).Assembly, "missing.tsv"));
+            Assert.That(ex.Message, Does.Contain("missing.tsv"));
+        }
+
+        [Test]
         public static void TestCustomDataDirectoryWithoutTheFormalChargeTableFallsBackToMzLibsCopy()
         {
             // A custom data directory made by a MetaMorpheus that shipped PSI-MOD.obo.xml has no

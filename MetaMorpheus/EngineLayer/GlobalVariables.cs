@@ -642,8 +642,16 @@ namespace EngineLayer
                 return ModificationLoader.ReadFormalChargesDictionary(path);
             }
 
-            var omics = typeof(Mods).Assembly;
-            using var stream = omics.GetManifestResourceStream($"{omics.GetName().Name}.Resources.PsiModFormalCharges.tsv")
+            return ReadEmbeddedPsiModFormalCharges(typeof(Mods).Assembly, path);
+        }
+
+        /// <summary>
+        /// Reads the PSI-MOD formal-charge table embedded in <paramref name="assembly"/>, which is mzLib's
+        /// Omics assembly in production. The assembly is a parameter so a test can pass one without the table.
+        /// </summary>
+        internal static Dictionary<string, int> ReadEmbeddedPsiModFormalCharges(System.Reflection.Assembly assembly, string path)
+        {
+            using var stream = assembly.GetManifestResourceStream($"{assembly.GetName().Name}.Resources.PsiModFormalCharges.tsv")
                 ?? throw new MetaMorpheusException($"PSI-MOD formal charge table not found at {path} or in mzLib");
             using var reader = new StreamReader(stream);
             return ModificationLoader.ReadFormalChargesDictionary(reader);
