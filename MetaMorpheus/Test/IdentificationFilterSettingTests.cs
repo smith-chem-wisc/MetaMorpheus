@@ -302,6 +302,88 @@ namespace Test
             Assert.That(Written(Named(IdentificationFilterMode.QValueNotch, qValueThreshold: 0.01)), Is.False, "a named filter is strict");
         }
 
+        /// <summary>A match to the first peptide of <paramref name="protein"/>, on its own scan.</summary>
+        private static SpectralMatch Match(Protein protein, int notch, double score, int scanNumber)
+        {
+            var peptide = protein.Digest(new DigestionParams(minPeptideLength: 1), new List<Modification>(), new List<Modification>()).First();
+            var dataScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false),
+                scanNumber, 2, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null,
+                null, "scan=" + scanNumber, double.NaN, null, null, double.NaN, null, DissociationType.HCD, 0, null);
+            var scan = new Ms2ScanWithSpecificMass(dataScan, 2, 0, "File", new CommonParameters());
+            var psm = new PeptideSpectralMatch(peptide, notch, score, scanNumber, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+            return psm;
+        }
+
+        [Test]
+        public static void FdrEngine_PsmsWithin1PercentFdr_FollowsTheNamedFilter()
+        {
+            // Through FdrAnalysisEngine.Run, which computes the q-values itself: 10 decoys in notch 0 outscore 100 targets
+            // in notch 1, so every target fails the q-value and passes the notch.
+            var target = new Protein("PEPTIDEK", "target", databaseFilePath: "temp");
+            var decoy = new Protein("EDITPEPK", "DECOY_target", isDecoy: true, databaseFilePath: "temp");
+            List<SpectralMatch> Run(CommonParameters commonParameters, out FdrAnalysisResults results)
+            {
+                var psms = Enumerable.Range(1, 10).Select(i => Match(decoy, notch: 0, score: 100, scanNumber: i))
+                    .Concat(Enumerable.Range(11, 100).Select(i => Match(target, notch: 1, score: 50, scanNumber: i)))
+                    .ToList();
+                results = (FdrAnalysisResults)new FdrAnalysisEngine(psms, 2, commonParameters,
+                    new List<(string, CommonParameters)> { ("File", commonParameters) }, new List<string>(), doPEP: false).Run();
+                return psms;
+            }
+
+            var psms = Run(new CommonParameters(), out var thresholds);
+            Assert.That(psms.Where(p => !p.IsDecoy).All(p => p.FdrInfo.QValue > 0.01 && p.FdrInfo.QValueNotch < 0.01));
+            Assert.That(thresholds.PsmsWithin1PercentFdr, Is.EqualTo(0), "q-value <= 0.01, as before");
+
+            Run(Named(IdentificationFilterMode.QValueNotch, qValueThreshold: 0.01), out var named);
+            Assert.That(named.PsmsWithin1PercentFdr, Is.EqualTo(100), "the notch decides under QValueNotch");
+        }
+
+        [Test]
+        public static void MzIdentMl_PassThreshold_FollowsTheNamedFilter_ForMatchesAndProteinGroups()
+        {
+            // One match passes the notch and not the q-value, the other the q-value and not the notch; the protein group
+            // sits exactly at the threshold.
+            var protein = new Protein("PEPTIDEK", "ACC1", databaseFilePath: "temp");
+            var notchOnly = Match(protein, notch: 0, score: 10, scanNumber: 1);
+            notchOnly.SetFdrValues(1, 0, 0.5, 1, 0, 0.001, 0, 2);
+            var qValueOnly = Match(protein, notch: 0, score: 10, scanNumber: 2);
+            qValueOnly.SetFdrValues(1, 0, 0.001, 1, 0, 0.5, 0, 2);
+            var psms = new List<SpectralMatch> { notchOnly, qValueOnly };
+            var group = new ProteinGroup(new HashSet<Omics.IBioPolymer> { protein },
+                new HashSet<Omics.IBioPolymerWithSetMods>(psms.SelectMany(p => p.BestMatchingBioPolymersWithSetMods).Select(p => p.SpecificBioPolymer)),
+                new HashSet<Omics.IBioPolymerWithSetMods>())
+            {
+                QValue = 0.01
+            };
+            group.SequenceCoverageFraction.Add(0.5);
+
+            (string[] Matches, string[] Groups) PassThresholds(FilteredPsms identificationFilter)
+            {
+                string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "IdentificationFilterSetting_passThreshold.mzID");
+                try
+                {
+                    MzIdentMLWriter.WriteMzIdentMl(psms, new List<ProteinGroup> { group }, new List<Modification>(), new List<Modification>(),
+                        null, new List<DigestionAgent>(), new MzLibUtil.PpmTolerance(20), new MzLibUtil.PpmTolerance(20), 0, path, true,
+                        identificationFilter: identificationFilter);
+                    var elements = XDocument.Load(path).Descendants().ToList();
+                    string[] Of(string name) => elements.Where(e => e.Name.LocalName == name).Select(e => (string)e.Attribute("passThreshold")).ToArray();
+                    return (Of("SpectrumIdentificationItem"), Of("ProteinDetectionHypothesis"));
+                }
+                finally
+                {
+                    if (File.Exists(path)) File.Delete(path);
+                }
+            }
+
+            var named = FilteredPsms.Filter(psms, Named(IdentificationFilterMode.QValueNotch, qValueThreshold: 0.01), includeHighQValuePsms: true);
+            Assert.That(PassThresholds(named), Is.EqualTo((new[] { "true", "false" }, new[] { "false" })),
+                "the notch decides each match; the group at exactly 0.01 fails the strict comparison");
+            Assert.That(PassThresholds(null), Is.EqualTo((new[] { "false", "true" }, new[] { "true" })),
+                "no filter passed: q-value <= 0.01, as before");
+        }
+
         [Test]
         public static void ModificationCounts_FollowTheNamedFilter()
         {
