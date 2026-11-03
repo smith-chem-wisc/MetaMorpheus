@@ -1936,7 +1936,7 @@ namespace TaskLayer
             
             // Count protein groups that pass the configured filter threshold
             // This uses the same threshold that was used for PSM and peptide filtering to ensure consistency
-            int proteinGroupCount = ProteinGroups.Count(b => filteredPsms.PassesThreshold(b.QValue) && !b.IsDecoy);
+            int proteinGroupCount = ProteinGroups.Count(b => filteredPsms.ValuePassesThreshold(b.QValue) && !b.IsDecoy);
             string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " " + filteredPsms.GetThresholdString() + fdrSuffix + ": " + proteinGroupCount;
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = proteinResultsText;
 
@@ -2026,7 +2026,7 @@ namespace TaskLayer
                 {
                     // write summary text
                     string fileProteinResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsmsByFile.GetFilterTypeString() + " " 
-                        + filteredPsmsByFile.GetThresholdString() + ": " + subsetProteinGroupsForThisFile.Count(b => filteredPsmsByFile.PassesThreshold(b.QValue) && !b.IsDecoy);
+                        + filteredPsmsByFile.GetThresholdString() + ": " + subsetProteinGroupsForThisFile.Count(b => filteredPsmsByFile.ValuePassesThreshold(b.QValue) && !b.IsDecoy);
                     ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = fileProteinResultsText;
 
                     // write result files

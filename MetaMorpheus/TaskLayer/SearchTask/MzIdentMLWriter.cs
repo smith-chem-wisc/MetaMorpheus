@@ -433,7 +433,7 @@ namespace TaskLayer
                     chargeState = psm.ScanPrecursorCharge,
                     id = "SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2,
                     experimentalMassToCharge = Math.Round(psm.ScanPrecursorMonoisotopicPeakMz, 5),
-                    passThreshold = namedFilter != null ? namedFilter.Passes(psm) : psm.FdrInfo.QValue <= 0.01,
+                    passThreshold = namedFilter != null ? namedFilter.PassesThreshold(psm) : psm.FdrInfo.QValue <= 0.01,
                     //NOTE:ONLY CAN HAVE ONE PEPTIDE REF PER SPECTRUM IDENTIFICATION ITEM
                     peptide_ref = "P_" + peptide_ids[psm.FullSequence].Item1,
                     PeptideEvidenceRef = new mzIdentML110.Generated.PeptideEvidenceRefType[psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).Distinct().Count()],
@@ -714,7 +714,7 @@ namespace TaskLayer
                         {
                             id = "PDH_" + this_protein_id,
                             dBSequence_ref = "DBS_" + protein.Accession,
-                            passThreshold = namedFilter != null ? namedFilter.PassesThreshold(proteinGroup.QValue) : proteinGroup.QValue <= 0.01, // otherwise hardcoded as 1% FDR
+                            passThreshold = namedFilter != null ? namedFilter.ValuePassesThreshold(proteinGroup.QValue) : proteinGroup.QValue <= 0.01, // otherwise hardcoded as 1% FDR
                             PeptideHypothesis = peptideHypotheses.ToArray(),
                             cvParam = new mzIdentML110.Generated.CVParamType[4]
                             {

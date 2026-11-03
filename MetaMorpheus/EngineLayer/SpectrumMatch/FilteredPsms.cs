@@ -65,11 +65,13 @@ namespace EngineLayer.SpectrumMatch
             }
         }
 
-        /// <summary>True when the match passes this filter, e.g. the mzIdentML passThreshold.</summary>
-        public bool Passes(SpectralMatch psm) => AboveThreshold(psm);
-
+        /// <summary>
+        /// The value the matches were filtered on, for summary text: e.g. "pep q-value", or under a named
+        /// identification filter "pep q-value or q-value notch" when digestion agents differ.
+        /// </summary>
         public string GetFilterTypeString() => JudgedOn ?? GetFilterTypeString(FilterType);
 
+        /// <summary>The summary-text name of a filter type, e.g. "pep q-value".</summary>
         public static string GetFilterTypeString(FilterType filterType) => filterType switch
         {
             FilterType.PepQValue => "pep q-value",
@@ -87,10 +89,11 @@ namespace EngineLayer.SpectrumMatch
             : "<= " + Math.Round(FilterThreshold, 2);
 
         /// <summary>
-        /// Applies this filter's comparison to a value already reduced to a q-value, e.g. a protein group's: strict
-        /// under a named identification filter, inclusive otherwise.
+        /// Applies this filter's comparison to a value already reduced to one q-value, such as a protein group's:
+        /// strict under a named identification filter, inclusive otherwise. For a match, use
+        /// <see cref="PassesThreshold(SpectralMatch)"/>.
         /// </summary>
-        public bool PassesThreshold(double value) => IsExplicit ? value < FilterThreshold : value <= FilterThreshold;
+        public bool ValuePassesThreshold(double qValue) => IsExplicit ? qValue < FilterThreshold : qValue <= FilterThreshold;
 
         /// <summary>
         /// The FDR value this filter decided on for a match, at the level it filtered (as <see cref="AboveThreshold"/>),
