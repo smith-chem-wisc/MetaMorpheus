@@ -8,7 +8,9 @@ using System.Reflection;
 using System.Security.Cryptography;
 using EngineLayer;
 using EngineLayer.DiaLibrarySearch;
+using MassSpectrometry;
 using NUnit.Framework;
+using Omics.SpectralMatch.MslSpectralLibrary;
 using Readers.SpectralLibrary;
 
 namespace Test.DiaLibrarySearch;
@@ -54,6 +56,10 @@ public class DiaLibrarySearchEngineTests
     }
 
     private DiaLibrarySearchResults Search(SyntheticDiaRun run) => Search(run, EndpointMap, out _);
+
+    private static List<DiaPrecursorMatch> Search(MslLibrary library, IEnumerable<MsDataScan> scans) =>
+        ((DiaLibrarySearchResults)new DiaLibrarySearchEngine(scans.ToArray(), library, EndpointMap, new DiaLibrarySearchParameters(),
+            new CommonParameters(), [], []).Run()).Matches.OrderBy(m => m.PrecursorIndex).ToList();
 
     /// <summary>Three of every four targets elute. At least 90% of those are reported at 1% FDR.</summary>
     [Test]
@@ -183,5 +189,149 @@ public class DiaLibrarySearchEngineTests
         Assert.That(best.LibraryIrt.Value, Is.EqualTo(entry.RetentionTime).Within(1e-3));
         Assert.That(best.ApexRt.Value, Is.EqualTo(SyntheticDiaRun.TrueRtMinutes(entry.RetentionTime)).Within(SyntheticDiaRun.CycleMinutes));
         Assert.That(best.ApexIrt, Is.EqualTo(EndpointMap.ToIrt(best.ApexRt)));
+    }
+
+    [Test]
+    public void EachMatchCarriesItsLibraryPrecursor()
+    {
+        var run = SyntheticDiaRun.Build(100, entry => SyntheticDiaRun.Bucket(entry, 4) != 0);
+
+        var matches = Search(run).Matches;
+
+        Assert.That(matches, Is.Not.Empty);
+        foreach (var match in matches)
+        {
+            var entry = run.Library.Single(e => e.FullSequence == match.FullSequence);
+            Assert.That(match.Charge, Is.EqualTo(entry.ChargeState), match.FullSequence);
+            Assert.That(match.PrecursorMz, Is.EqualTo(entry.PrecursorMz).Within(1e-3), match.FullSequence);
+            Assert.That(match.IsDecoy, Is.EqualTo(entry.IsDecoy), match.FullSequence);
+            Assert.That(match.LibraryIrt.Value, Is.EqualTo(entry.RetentionTime).Within(1e-3), match.FullSequence);
+        }
+    }
+
+    /// <summary>
+    /// A precursor isolated by two windows is reported once, with the better of its two scores. The second window
+    /// covers the first shifted by 0.25 m/z and holds the same scans with every intensity squared, so a precursor's
+    /// fragment pattern, and its score, differ between them.
+    /// </summary>
+    [Test]
+    public void APrecursorIsolatedByTwoWindowsKeepsItsBestScore()
+    {
+        var run = SyntheticDiaRun.Build(200, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0);
+        double firstWindowCentre = SyntheticDiaRun.FirstWindowLowMz + SyntheticDiaRun.WindowWidth / 2;
+        int scanNumber = run.Scans.Length + 1;
+        var shifted = run.Scans.Where(scan => scan.IsolationMz == firstWindowCentre)
+            .Select(scan => SyntheticDiaRun.Scan(
+                new MzSpectrum(scan.MassSpectrum.XArray.ToArray(), scan.MassSpectrum.YArray.Select(y => y * y).ToArray(), false),
+                scanNumber++, scan.RetentionTime, firstWindowCentre + 0.25))
+            .ToList();
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+
+        var first = Search(library, run.Scans).ToDictionary(m => m.PrecursorIndex, m => m.Score);
+        var second = Search(library, shifted).ToDictionary(m => m.PrecursorIndex, m => m.Score);
+        var both = Search(library, run.Scans.Concat(shifted));
+
+        var inBoth = second.Keys.Where(first.ContainsKey).ToList();
+        Assert.That(inBoth.Count(i => second[i] > first[i]), Is.Positive, "some precursors must score better in the second window");
+        Assert.That(inBoth.Count(i => second[i] < first[i]), Is.Positive, "and some worse");
+        Assert.That(both.Select(m => m.PrecursorIndex), Is.Unique);
+        var expected = first.Keys.Union(second.Keys).ToDictionary(i => i,
+            i => Math.Max(first.GetValueOrDefault(i, double.NegativeInfinity), second.GetValueOrDefault(i, double.NegativeInfinity)));
+        Assert.That(both.ToDictionary(m => m.PrecursorIndex, m => m.Score), Is.EquivalentTo(expected));
+    }
+
+    /// <summary>
+    /// Only MS2 scans with an isolation range are searched, and a scan with no peaks contributes nothing. Adding an MS1
+    /// scan and an MS2 scan without an isolation range, both full of library fragments, and an empty MS2 scan inside a
+    /// window changes no match.
+    /// </summary>
+    [Test]
+    public void ScansThatAreNotDiaWindowsChangeNothing()
+    {
+        var run = SyntheticDiaRun.Build(100, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0);
+        var richest = run.Scans.MaxBy(scan => scan.MassSpectrum.SumOfAllY)!;
+        int scanNumber = run.Scans.Length + 1;
+        var extra = new[]
+        {
+            SyntheticDiaRun.Scan(richest.MassSpectrum, scanNumber++, richest.RetentionTime, isolationMz: null, msnOrder: 1),
+            SyntheticDiaRun.Scan(richest.MassSpectrum, scanNumber++, richest.RetentionTime, isolationMz: null),
+            SyntheticDiaRun.Scan(new MzSpectrum([], [], false), scanNumber, richest.RetentionTime, richest.IsolationMz),
+        };
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+
+        var plain = Search(library, run.Scans);
+        var withExtra = Search(library, run.Scans.Concat(extra));
+
+        Assert.That(plain, Is.Not.Empty);
+        Assert.That(withExtra, Is.EqualTo(plain));
+    }
+
+    /// <summary>
+    /// An entry with no fragments has nothing to score and is skipped. mzLib's validator refuses such an entry, but
+    /// <see cref="MslLibrary.Save"/> does not run it, so a library written elsewhere can hold one.
+    /// </summary>
+    [Test]
+    public void AnEntryWithoutFragmentsIsNotScored()
+    {
+        var run = SyntheticDiaRun.Build(50, entry => !entry.IsDecoy);
+        var template = run.Library.First(entry => !entry.IsDecoy);
+        var bare = new MslLibraryEntry
+        {
+            FullSequence = "PEPTIDEPEPTIDEK",
+            BaseSequence = "PEPTIDEPEPTIDEK",
+            PrecursorMz = template.PrecursorMz,
+            ChargeState = template.ChargeState,
+            RetentionTime = template.RetentionTime,
+            IsDecoy = false,
+        };
+        string path = Path.Combine(_directory, $"bare_{Guid.NewGuid():N}.msl");
+        MslLibrary.Save(path, run.Library.Append(bare).ToList());
+        using var library = MslLibrary.Load(path);
+
+        var sequences = Search(library, run.Scans).Select(m => m.FullSequence).ToList();
+
+        Assert.That(sequences, Does.Contain(template.FullSequence), "its neighbour, at the same m/z and iRT, is still scored");
+        Assert.That(sequences, Does.Not.Contain(bare.FullSequence));
+    }
+
+    /// <summary>Stop, pressed before the search reaches a window, leaves every window unsearched.</summary>
+    [Test]
+    [NonParallelizable]
+    public void AStoppedSearchSearchesNoWindow()
+    {
+        var run = SyntheticDiaRun.Build(50, entry => !entry.IsDecoy);
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+        bool stopLoops = GlobalVariables.StopLoops;
+        List<DiaPrecursorMatch> matches;
+        try
+        {
+            GlobalVariables.StopLoops = true;
+            matches = Search(library, run.Scans);
+        }
+        finally
+        {
+            GlobalVariables.StopLoops = stopLoops;
+        }
+
+        Assert.That(matches, Is.Empty);
+        Assert.That(Search(library, run.Scans), Is.Not.Empty, "the same search, not stopped, finds precursors");
+    }
+
+    [TestCase("scans")]
+    [TestCase("library")]
+    [TestCase("irtMap")]
+    [TestCase("parameters")]
+    public void AMissingArgumentIsRefusedByName(string argument)
+    {
+        var run = SyntheticDiaRun.Build(5, _ => false);
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+
+        var e = Assert.Throws<ArgumentNullException>(() => new DiaLibrarySearchEngine(
+            argument == "scans" ? null! : run.Scans,
+            argument == "library" ? null! : library,
+            argument == "irtMap" ? null! : EndpointMap,
+            argument == "parameters" ? null! : new DiaLibrarySearchParameters(),
+            new CommonParameters(), [], []));
+        Assert.That(e!.ParamName, Is.EqualTo(argument));
     }
 }

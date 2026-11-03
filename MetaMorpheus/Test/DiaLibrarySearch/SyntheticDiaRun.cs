@@ -103,15 +103,23 @@ internal sealed class SyntheticDiaRun
 
                 var ordered = peaks.OrderBy(p => p.Mz).ToArray();
                 var spectrum = new MzSpectrum(ordered.Select(p => p.Mz).ToArray(), ordered.Select(p => p.Intensity).ToArray(), false);
-                scans.Add(new MsDataScan(spectrum, scanNumber, 2, true, Polarity.Positive, rt, new MzRange(150, 1500), "synthetic",
-                    MZAnalyzerType.Orbitrap, spectrum.SumOfAllY, 10, null, $"scan={scanNumber}",
-                    isolationMZ: low + WindowWidth / 2, isolationWidth: WindowWidth, dissociationType: DissociationType.HCD));
+                scans.Add(Scan(spectrum, scanNumber, rt, isolationMz: low + WindowWidth / 2));
                 scanNumber++;
             }
         }
 
         return new SyntheticDiaRun(library, scans.ToArray(), planted.Select(e => e.FullSequence).ToHashSet());
     }
+
+    /// <summary>
+    /// A scan as the synthetic run builds them. An MS2 scan isolates <see cref="WindowWidth"/> around
+    /// <paramref name="isolationMz"/>; with no isolation m/z it has no isolation range.
+    /// </summary>
+    public static MsDataScan Scan(MzSpectrum spectrum, int scanNumber, double rtMinutes, double? isolationMz, int msnOrder = 2) =>
+        new(spectrum, scanNumber, msnOrder, true, Polarity.Positive, rtMinutes, new MzRange(150, 1500), "synthetic",
+            MZAnalyzerType.Orbitrap, spectrum.SumOfAllY, 10, null, $"scan={scanNumber}",
+            isolationMZ: isolationMz, isolationWidth: isolationMz is null ? null : WindowWidth,
+            dissociationType: msnOrder == 2 ? DissociationType.HCD : null);
 
     /// <summary>Writes the library as a .msl, validated first, and returns its path.</summary>
     public string WriteLibrary(string directory)
