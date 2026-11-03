@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using EngineLayer.FdrAnalysis;
+using Omics.Digestion;
 using Quantification;
 
 namespace EngineLayer.SpectrumMatch
@@ -13,11 +14,13 @@ namespace EngineLayer.SpectrumMatch
     /// peptide tables, protein inference and protein FDR, quantification, the pruned database, the spectral library,
     /// the mzIdentML and pepXML files, and the summaries.
     ///
-    /// <para>The FDR value each match is judged on is decided by the match's own <see cref="FdrInfo.PepTrained"/>,
-    /// which <see cref="FdrAnalysisEngine"/> sets for each digestion agent at each level. So the decision is made
+    /// <para>The FDR value each match is judged on is decided by the match's own <see cref="FdrInfo.PepTrained"/>.
+    /// <see cref="FdrAnalysisEngine"/> sets it for each digestion agent at each level, on the matches it is given; a
+    /// semi- or non-specific search gives it each cleavage-specificity category separately. So the decision is made
     /// once, by the engine that trained (or did not train) PEP, and every later filter over any subset of the
-    /// matches reaches the same answer for each match. A digestion agent PEP was not trained for is never judged on
-    /// a PEP q-value.</para>
+    /// matches reaches the same answer for each match. A match whose PEP was not trained is never judged on a PEP
+    /// q-value: both PEP filters fall back for it (<see cref="Fallback"/>), and the search reports each fallback
+    /// (<see cref="PepNotTrainedSentence"/>).</para>
     ///
     /// <para>The comparison is mzLib's <see cref="QuantifiedPsmRule.PassesConfidence"/>, the rule FlashLFQ also
     /// applies: the value strictly below the threshold.</para>
@@ -30,8 +33,7 @@ namespace EngineLayer.SpectrumMatch
 
         /// <summary>
         /// The threshold the filter is held to: the q-value threshold for the notch, the PEP q-value threshold for the
-        /// PEP q-value, and for PEP-else-notch the smaller of the two, for both tiers. A q-value threshold of 1 (what
-        /// the GUI sends when its PEP box is ticked) therefore never turns the fallback into "filter nothing".
+        /// PEP q-value (and its fallback), and for PEP-else-notch the smaller of the two, for both tiers.
         /// </summary>
         public static double Threshold(CommonParameters commonParameters) =>
             Threshold(commonParameters.IdentificationFilter, commonParameters.QValueThreshold, commonParameters.PepQValueThreshold);
@@ -50,14 +52,20 @@ namespace EngineLayer.SpectrumMatch
         public static FilterType ValueFor(FdrInfo fdrInfo, IdentificationFilterMode mode) => mode switch
         {
             IdentificationFilterMode.QValueNotch => FilterType.QValueNotch,
-            IdentificationFilterMode.PepQValue => FilterType.PepQValue,
+            IdentificationFilterMode.PepQValue => fdrInfo is { PepTrained: true } ? FilterType.PepQValue : FilterType.QValue,
             IdentificationFilterMode.PepQValueElseQValueNotch => fdrInfo is { PepTrained: true } ? FilterType.PepQValue : FilterType.QValueNotch,
             _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Not an explicit identification filter.")
         };
 
         /// <summary>
+        /// The value a match whose PEP was not trained is judged on: the q-value under
+        /// <see cref="IdentificationFilterMode.PepQValue"/>, the q-value notch otherwise.
+        /// </summary>
+        public static FilterType Fallback(IdentificationFilterMode mode) => ValueFor(null, mode);
+
+        /// <summary>
         /// True when the match passes the filter at this level: its value strictly below <paramref name="threshold"/>.
-        /// A PEP q-value that did not come from a trained model never passes.
+        /// A q-value is read as MetaMorpheus's q-value filter reads it, the q-value and the q-value notch together.
         /// </summary>
         public static bool Passes(SpectralMatch match, bool peptideLevel, IdentificationFilterMode mode, double threshold)
         {
@@ -66,12 +74,12 @@ namespace EngineLayer.SpectrumMatch
             {
                 return false;
             }
-            FilterType value = ValueFor(fdrInfo, mode);
-            if (value == FilterType.PepQValue && !fdrInfo.PepTrained)
-            {
-                return false;
-            }
-            return QuantifiedPsmRule.PassesConfidence(ToTier(value), fdrInfo.QValue, fdrInfo.QValueNotch, fdrInfo.PEP_QValue, threshold);
+            bool Below(FilterType value) =>
+                QuantifiedPsmRule.PassesConfidence(ToTier(value), fdrInfo.QValue, fdrInfo.QValueNotch, fdrInfo.PEP_QValue, threshold);
+            FilterType judgedOn = ValueFor(fdrInfo, mode);
+            return judgedOn == FilterType.QValue
+                ? Below(FilterType.QValue) && Below(FilterType.QValueNotch)
+                : Below(judgedOn);
         }
 
         /// <summary>The value the filter judges the match on at this level, e.g. the q-value handed to FlashLFQ.</summary>
@@ -96,76 +104,121 @@ namespace EngineLayer.SpectrumMatch
         };
 
         /// <summary>
-        /// For each digestion agent among <paramref name="matches"/>, whether PEP was trained at this level, and how
-        /// many matches (PSM level) or distinct full sequences (peptide level) it has. In name order.
+        /// Matches PEP was trained, or not trained, for together. <see cref="Category"/> is the cleavage-specificity
+        /// category, named only when the digestion agent's categories differ, which happens when FDR runs per category
+        /// (semi- and non-specific searches); null otherwise. <see cref="Count"/> is matches at the PSM level and
+        /// distinct full sequences at the peptide level.
         /// </summary>
-        public static List<(string Agent, bool PepTrained, int Count)> PepTrainingByAgent(IEnumerable<SpectralMatch> matches, bool peptideLevel) =>
-            matches
-                .Where(m => m?.GetFdrInfo(peptideLevel) != null)
-                .GroupBy(m => m.DigestionParams?.DigestionAgent?.Name ?? "unknown")
-                .OrderBy(g => g.Key, StringComparer.Ordinal)
-                .Select(g => (g.Key,
-                    g.Any(m => m.GetFdrInfo(peptideLevel).PepTrained),
-                    peptideLevel ? g.Select(m => m.FullSequence).Distinct().Count() : g.Count()))
-                .ToList();
+        public readonly record struct PepTrainingGroup(string Agent, string Category, bool PepTrained, int Count)
+        {
+            /// <summary>The digestion agent, and the category when there is one, e.g. "trypsin semi-specific".</summary>
+            public string Name => Category == null ? Agent : Agent + " " + Category;
+        }
 
         /// <summary>
-        /// Under <see cref="IdentificationFilterMode.PepQValue"/>, the search cannot be filtered as asked when PEP was
-        /// not trained for a digestion agent: this throws, naming each such agent. Does nothing under any other mode.
+        /// Whether PEP was trained at this level, judged on each match's own record: one group per digestion agent
+        /// when all its matches agree, and one per cleavage-specificity category when they do not. Agents in name
+        /// order, categories fully, semi-, then non-specific.
         /// </summary>
-        public static void ThrowIfPepNotTrained(IEnumerable<SpectralMatch> matches, bool peptideLevel, CommonParameters commonParameters)
+        public static List<PepTrainingGroup> PepTrainingGroups(IEnumerable<SpectralMatch> matches, bool peptideLevel)
         {
-            if (commonParameters?.IdentificationFilter != IdentificationFilterMode.PepQValue)
+            int Count(IEnumerable<SpectralMatch> group) =>
+                peptideLevel ? group.Select(m => m.FullSequence).Distinct().Count() : group.Count();
+            bool Trained(SpectralMatch m) => m.GetFdrInfo(peptideLevel).PepTrained;
+
+            var groups = new List<PepTrainingGroup>();
+            var byAgent = matches
+                .Where(m => m?.GetFdrInfo(peptideLevel) != null)
+                .GroupBy(m => m.DigestionParams?.DigestionAgent?.Name ?? "unknown")
+                .OrderBy(g => g.Key, StringComparer.Ordinal);
+            foreach (var agent in byAgent)
             {
-                return;
+                var flags = agent.Select(Trained).Distinct().ToList();
+                if (flags.Count == 1)
+                {
+                    groups.Add(new PepTrainingGroup(agent.Key, null, flags[0], Count(agent)));
+                    continue;
+                }
+                foreach (var category in agent.GroupBy(m => (Category: CategoryOf(m), Trained: Trained(m)))
+                             .OrderBy(g => g.Key.Category.Rank).ThenBy(g => g.Key.Category.Label, StringComparer.Ordinal).ThenByDescending(g => g.Key.Trained))
+                {
+                    groups.Add(new PepTrainingGroup(agent.Key, category.Key.Category.Label, category.Key.Trained, Count(category)));
+                }
             }
-            var untrained = PepTrainingByAgent(matches, peptideLevel).Where(a => !a.PepTrained).ToList();
-            if (untrained.Count > 0)
-            {
-                throw new MetaMorpheusException(
-                    $"The identification filter is the PEP q-value, but PEP was not trained at the {LevelName(peptideLevel)} level for "
-                    + string.Join(", ", untrained.Select(a => $"{a.Agent} ({a.Count} {UnitName(peptideLevel)})"))
-                    + ". PEP is trained only for a digestion agent with more than 1000 matches, and training can fail on small or one-sided data. "
-                    + "Choose PepQValueElseQValueNotch or QValueNotch as the identification filter to search these data.");
-            }
+            return groups;
         }
 
         /// <summary>
         /// What the filter did at this level, for results.txt and the manuscript prose: e.g. "pep q-value &lt; 0.01",
-        /// or, when digestion agents differ, "pep q-value &lt; 0.01 for trypsin; q-value notch &lt; 0.01 for Arg-C (PEP
-        /// not trained: 640 PSMs)".
+        /// or, when the groups differ, "pep q-value &lt; 0.01 for trypsin; q-value &lt; 0.01 (PEP not trained: 640 PSMs)
+        /// for Arg-C".
         /// </summary>
         public static string Describe(IEnumerable<SpectralMatch> matches, bool peptideLevel, CommonParameters commonParameters)
         {
             IdentificationFilterMode mode = commonParameters.IdentificationFilter;
             string threshold = " < " + Threshold(commonParameters).ToString(CultureInfo.InvariantCulture);
-            if (mode != IdentificationFilterMode.PepQValueElseQValueNotch)
+            if (mode == IdentificationFilterMode.QValueNotch)
             {
-                return FilteredPsms.GetFilterTypeString(ValueFor(null, mode)) + threshold;
+                return FilteredPsms.GetFilterTypeString(FilterType.QValueNotch) + threshold;
             }
 
-            var agents = PepTrainingByAgent(matches, peptideLevel);
-            if (agents.All(a => a.PepTrained))
+            var groups = PepTrainingGroups(matches, peptideLevel);
+            if (groups.All(g => g.PepTrained))
             {
                 return FilteredPsms.GetFilterTypeString(FilterType.PepQValue) + threshold;
             }
-            string Fallback((string Agent, bool PepTrained, int Count) a) =>
-                $"{FilteredPsms.GetFilterTypeString(FilterType.QValueNotch)}{threshold} (PEP not trained: {a.Count} {UnitName(peptideLevel)})";
-            if (agents.Count == 1)
+            string Untrained(PepTrainingGroup g) =>
+                $"{FilteredPsms.GetFilterTypeString(Fallback(mode))}{threshold} (PEP not trained: {g.Count} {UnitName(peptideLevel)})";
+            if (groups.Count == 1)
             {
-                return Fallback(agents[0]);
+                return Untrained(groups[0]);
             }
-            return string.Join("; ", agents.Select(a => (a.PepTrained ? FilteredPsms.GetFilterTypeString(FilterType.PepQValue) + threshold : Fallback(a)) + " for " + a.Agent));
+            return string.Join("; ", groups.Select(g => (g.PepTrained ? FilteredPsms.GetFilterTypeString(FilterType.PepQValue) + threshold : Untrained(g)) + " for " + g.Name));
         }
 
-        /// <summary>True when, under PEP-else-notch, at least one digestion agent fell back to the notch at this level.</summary>
+        /// <summary>True when, under a PEP filter, the matches of at least one group fell back at this level.</summary>
         public static bool FellBack(IEnumerable<SpectralMatch> matches, bool peptideLevel, CommonParameters commonParameters) =>
-            commonParameters.IdentificationFilter == IdentificationFilterMode.PepQValueElseQValueNotch
-            && PepTrainingByAgent(matches, peptideLevel).Any(a => !a.PepTrained);
+            IsPepFilter(commonParameters) && PepTrainingGroups(matches, peptideLevel).Any(g => !g.PepTrained);
 
-        private static string LevelName(bool peptideLevel) =>
-            peptideLevel ? GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower() : GlobalVariables.AnalyteType.GetSpectralMatchLabel();
+        /// <summary>
+        /// Under a PEP filter, the sentence saying which matches PEP was not trained for and what they were filtered by
+        /// instead, in the words a PEP filter that falls back uses everywhere (<see cref="FilteredPsms.PepFilteringNotDone"/>),
+        /// naming each digestion agent, and its category where there is one. Null when nothing fell back.
+        /// </summary>
+        public static string PepNotTrainedSentence(IEnumerable<SpectralMatch> matches, bool peptideLevel, CommonParameters commonParameters)
+        {
+            if (!IsPepFilter(commonParameters))
+            {
+                return null;
+            }
+            var untrained = PepTrainingGroups(matches, peptideLevel).Where(g => !g.PepTrained).Select(g => g.Name).ToList();
+            if (untrained.Count == 0)
+            {
+                return null;
+            }
+            string names = untrained.Count == 1
+                ? untrained[0]
+                : string.Join(", ", untrained.Take(untrained.Count - 1)) + " and " + untrained[^1];
+            string fallback = FilteredPsms.GetFilterTypeString(Fallback(commonParameters.IdentificationFilter));
+            return peptideLevel
+                ? $"PEP filtering was requested, but PEP q-values were not computed at the peptide level for {names}, so those {UnitName(true)} were filtered by {fallback}."
+                : $"PEP filtering was requested, but PEP was not computed for the {names} {UnitName(false)}, so they were filtered by {fallback}.";
+        }
 
-        private static string UnitName(bool peptideLevel) => LevelName(peptideLevel) + "s";
+        private static bool IsPepFilter(CommonParameters commonParameters) =>
+            commonParameters?.IdentificationFilter is IdentificationFilterMode.PepQValue or IdentificationFilterMode.PepQValueElseQValueNotch;
+
+        private static (int Rank, string Label) CategoryOf(SpectralMatch match) =>
+            match.BestMatchingBioPolymersWithSetMods.FirstOrDefault()?.SpecificBioPolymer?.CleavageSpecificityForFdrCategory switch
+            {
+                CleavageSpecificity.Full => (0, "fully specific"),
+                CleavageSpecificity.Semi => (1, "semi-specific"),
+                CleavageSpecificity.None => (2, "non-specific"),
+                { } other => (3, other.ToString()),
+                null => (4, "unknown")
+            };
+
+        private static string UnitName(bool peptideLevel) =>
+            (peptideLevel ? GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower() : GlobalVariables.AnalyteType.GetSpectralMatchLabel()) + "s";
     }
 }

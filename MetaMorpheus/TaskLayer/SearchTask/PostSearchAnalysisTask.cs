@@ -106,10 +106,6 @@ namespace TaskLayer
                 // there is no point at which a predicted angle could still reach PEP.
                 SkipPredictedSpectralAngles("semi- and non-specific searches compute FDR before post-search analysis");
             }
-            // A search that named the PEP q-value as its identification filter cannot be filtered as asked when PEP
-            // was not trained for one of its digestion agents: fail now, naming them, before anything is written.
-            IdentificationRule.ThrowIfPepNotTrained(Parameters.AllSpectralMatches, peptideLevel: false, CommonParameters);
-            IdentificationRule.ThrowIfPepNotTrained(Parameters.AllSpectralMatches, peptideLevel: true, CommonParameters);
             ConstructResultsDictionary();
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
@@ -1625,9 +1621,8 @@ namespace TaskLayer
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
-            ReportIdentificationFilter(psmsForPsmResults);
             string psmResultsText = $"All target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsForPsmResults.GetFilterTypeString() + " " + psmsForPsmResults.GetThresholdString() + ": " + psmsForPsmResults.TargetPsmsAboveThreshold;
-            ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = WithPepFilteringNotDone(psmsForPsmResults, psmResultsText);
+            ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = WithIdentificationFilter(psmsForPsmResults, WithPepFilteringNotDone(psmsForPsmResults, psmResultsText));
             string precursorResultsText = $"All {GlobalVariables.AnalyteType.GetPrecursorLabel()}: " + Parameters.NumMs2SpectraPerFile.Select(f=>f.Value[1]).Sum();
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetPrecursorLabel()}")] = precursorResultsText;
             string ms2ScanCountResultsText = $"All {GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}: " + Parameters.NumMs2SpectraPerFile.Select(f => f.Value[0]).Sum();
@@ -1651,10 +1646,9 @@ namespace TaskLayer
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
-            ReportIdentificationFilter(peptidesForPeptideResults);
             string peptideResultsText = $"All target {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()}s with " + peptidesForPeptideResults.GetFilterTypeString() + " " + peptidesForPeptideResults.GetThresholdString() + ": " +
                 peptidesForPeptideResults.TargetPsmsAboveThreshold;
-            ResultsDictionary[("All", GlobalVariables.AnalyteType.GetUniqueFormLabel())] = WithPepFilteringNotDone(peptidesForPeptideResults, peptideResultsText);
+            ResultsDictionary[("All", GlobalVariables.AnalyteType.GetUniqueFormLabel())] = WithIdentificationFilter(peptidesForPeptideResults, WithPepFilteringNotDone(peptidesForPeptideResults, peptideResultsText));
         }
 
         private bool _pepFilteringNotDoneWarned;
@@ -1675,24 +1669,21 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Under a named identification filter, says in results.txt which value decided at this level and, for each
-        /// digestion agent that fell back from the PEP q-value to the notch, why. A fallback is also a warning.
+        /// Under a named identification filter, the results.txt text for one level with the line saying which value
+        /// decided above it, e.g. "Identification filter for PSMs: pep q-value &lt; 0.01 for trypsin; q-value &lt; 0.01
+        /// (PEP not trained: 200 PSMs) for Arg-C". A fallback is also stated, and warned, by
+        /// <see cref="WithPepFilteringNotDone"/>. Unchanged when the filter was inferred from the thresholds.
         /// </summary>
-        private void ReportIdentificationFilter(FilteredPsms filtered)
+        private string WithIdentificationFilter(FilteredPsms filtered, string text)
         {
-            if (filtered.IdentificationFilter == IdentificationFilterMode.Thresholds) return;
+            if (filtered.IdentificationFilter == IdentificationFilterMode.Thresholds) return text;
             bool peptideLevel = filtered.PeptideLevelFiltering;
             string level = peptideLevel
                 ? GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower() + "s"
                 : GlobalVariables.AnalyteType.GetSpectralMatchLabel() + "s";
             string description = IdentificationRule.Describe(Parameters.AllSpectralMatches, peptideLevel, CommonParameters);
-            string line = $"Identification filter for {level}: {description}";
-            if (IdentificationRule.FellBack(Parameters.AllSpectralMatches, peptideLevel, CommonParameters))
-            {
-                Warn(line);
-            }
-            Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(line + Environment.NewLine);
             _identificationFilterProse.Add($"{level} at {description}");
+            return $"Identification filter for {level}: {description}" + Environment.NewLine + text;
         }
 
         private readonly List<string> _identificationFilterProse = new();

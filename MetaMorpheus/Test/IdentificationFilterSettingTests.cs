@@ -35,13 +35,16 @@ namespace Test
         /// <summary>
         /// <paramref name="count"/> target matches to <paramref name="sequence"/>, digested with <paramref name="protease"/>;
         /// the first <paramref name="confident"/> have q, notch and PEP q-value 0.001, the rest 0.5. When PEP was not
-        /// trained, every PEP q-value is FdrInfo's initial 2, as FdrAnalysisEngine leaves it.
+        /// trained, every PEP q-value is FdrInfo's initial 2, as FdrAnalysisEngine leaves it. <paramref name="specificity"/>
+        /// is the cleavage-specificity category a semi- or non-specific search runs FDR in.
         /// </summary>
-        private static List<SpectralMatch> Matches(string sequence, string protease, int count, int confident, bool pepTrained, double pep = 0)
+        private static List<SpectralMatch> Matches(string sequence, string protease, int count, int confident, bool pepTrained, double pep = 0,
+            CleavageSpecificity specificity = CleavageSpecificity.Full, bool decoy = false, bool contaminant = false)
         {
-            var peptide = new Protein(sequence, "acc_" + sequence)
+            var peptide = new Protein(sequence, (decoy ? "DECOY_" : "") + "acc_" + sequence, isDecoy: decoy, isContaminant: contaminant)
                 .Digest(new DigestionParams(protease: protease, minPeptideLength: 1), new List<Modification>(), new List<Modification>())
                 .First();
+            peptide.CleavageSpecificityForFdrCategory = specificity;
             var dataScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false),
                 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null,
                 null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.HCD, 0, null);
@@ -96,19 +99,93 @@ namespace Test
             Assert.That(IdentificationRule.Describe(TwoProteases(), peptideLevel: false, Named(IdentificationFilterMode.PepQValueElseQValueNotch)),
                 Is.EqualTo("q-value notch < 0.01 (PEP not trained: 200 PSMs) for Arg-C; pep q-value < 0.01 for trypsin"));
             Assert.That(IdentificationRule.FellBack(TwoProteases(), peptideLevel: false, Named(IdentificationFilterMode.PepQValueElseQValueNotch)), Is.True);
+            Assert.That(filtered.PepFilteringNotDone,
+                Is.EqualTo("PEP filtering was requested, but PEP was not computed for the Arg-C PSMs, so they were filtered by q-value notch."));
         }
 
         [Test]
-        public static void PepQValue_AProteaseWithoutPep_FailsNamingIt()
+        public static void PepQValue_AProteaseWithoutPep_FallsBackToTheQValue_AndSaysSo()
         {
-            var ex = Assert.Throws<MetaMorpheusException>(() =>
-                FilteredPsms.Filter(TwoProteases(), Named(IdentificationFilterMode.PepQValue)));
-            Assert.That(ex!.Message, Does.Contain("PEP was not trained at the PSM level for Arg-C (200 PSMs)"));
-            Assert.That(ex.Message, Does.Not.Contain("trypsin"));
+            // The user's ruling (2026-11-03): fall back loudly, as #2919's explicit PEP filter does, instead of failing.
+            var filtered = FilteredPsms.Filter(TwoProteases(), Named(IdentificationFilterMode.PepQValue));
 
-            // Every protease trained: it filters on the PEP q-value.
-            var filtered = FilteredPsms.Filter(Matches("PEPTIDEK", "trypsin", 300, 150, pepTrained: true), Named(IdentificationFilterMode.PepQValue));
-            Assert.That((filtered.FilterType, filtered.FilterThreshold, filtered.FilteredPsmsList.Count), Is.EqualTo((FilterType.PepQValue, 0.01, 150)));
+            Assert.That(filtered.FilteredPsmsList.Count(p => p.DigestionParams.DigestionAgent.Name == "trypsin"), Is.EqualTo(150));
+            Assert.That(filtered.FilteredPsmsList.Count(p => p.DigestionParams.DigestionAgent.Name == "Arg-C"), Is.EqualTo(100));
+            Assert.That((filtered.FilterType, filtered.GetFilterTypeString(), filtered.GetThresholdString()),
+                Is.EqualTo((FilterType.QValue, "pep q-value or q-value", "< 0.01")));
+            Assert.That(filtered.PepFilteringNotDone,
+                Is.EqualTo("PEP filtering was requested, but PEP was not computed for the Arg-C PSMs, so they were filtered by q-value."));
+            Assert.That(IdentificationRule.Describe(TwoProteases(), peptideLevel: false, Named(IdentificationFilterMode.PepQValue)),
+                Is.EqualTo("q-value < 0.01 (PEP not trained: 200 PSMs) for Arg-C; pep q-value < 0.01 for trypsin"));
+
+            // Every protease trained: it filters on the PEP q-value, and says nothing more.
+            var trained = FilteredPsms.Filter(Matches("PEPTIDEK", "trypsin", 300, 150, pepTrained: true), Named(IdentificationFilterMode.PepQValue));
+            Assert.That((trained.FilterType, trained.FilterThreshold, trained.FilteredPsmsList.Count), Is.EqualTo((FilterType.PepQValue, 0.01, 150)));
+            Assert.That(trained.PepFilteringNotDone, Is.Null);
+        }
+
+        [Test]
+        public static void ThePepFilters_DifferInWhatAnUntrainedProteaseFallsBackTo()
+        {
+            // Two untrained Arg-C matches: one passes the q-value but not the notch, the other the notch but not the
+            // q-value. PepQValue falls back to the q-value as MetaMorpheus's q-value filter reads it (q-value and notch),
+            // PepQValueElseQValueNotch to the notch alone.
+            var matches = Matches("PEPTIDER", "Arg-C", 2, 0, pepTrained: false);
+            matches[0].SetFdrValues(1, 0, 0.001, 1, 0, 0.5, 0, 2);
+            matches[1].SetFdrValues(1, 0, 0.5, 1, 0, 0.001, 0, 2);
+
+            Assert.That(FilteredPsms.Filter(matches, Named(IdentificationFilterMode.PepQValue)).FilteredPsmsList, Is.Empty);
+            Assert.That(FilteredPsms.Filter(matches, Named(IdentificationFilterMode.PepQValueElseQValueNotch)).FilteredPsmsList,
+                Is.EqualTo(new[] { matches[1] }));
+
+            // The threshold: PEP q-value threshold alone, or the smaller of the two.
+            Assert.That(IdentificationRule.Threshold(IdentificationFilterMode.PepQValue, 0.01, 0.05), Is.EqualTo(0.05));
+            Assert.That(IdentificationRule.Threshold(IdentificationFilterMode.PepQValueElseQValueNotch, 0.01, 0.05), Is.EqualTo(0.01));
+        }
+
+        [Test]
+        public static void PepTrainedForOneCategoryButNotAnother_IsJudgedAndReportedPerCategory()
+        {
+            // acesnik's case: a semi- or non-specific search runs FDR once per cleavage-specificity category
+            // (NonSpecificEnzymeSearchEngine.ResolveFdrCategorySpecificPsms), so one digestion agent can have PEP trained
+            // for its fully specific matches and not for its semi-specific ones. Judged and reported per agent with
+            // "any trained", the semi-specific matches would be dropped (PepQValue) or the fallback go unreported.
+            var matches = Matches("PEPTIDEK", "trypsin", 300, 150, pepTrained: true)
+                .Concat(Matches("SEMIPEPTIDEK", "trypsin", 200, 100, pepTrained: false, specificity: CleavageSpecificity.Semi))
+                .ToList();
+
+            foreach (var mode in new[] { IdentificationFilterMode.PepQValue, IdentificationFilterMode.PepQValueElseQValueNotch })
+            {
+                var filtered = FilteredPsms.Filter(matches, Named(mode));
+                string fallback = mode == IdentificationFilterMode.PepQValue ? "q-value" : "q-value notch";
+
+                Assert.That(filtered.FilteredPsmsList.Count(p => p.BaseSequence == "SEMIPEPTIDEK"), Is.EqualTo(100), mode.ToString());
+                Assert.That(filtered.PepFilteringNotDone,
+                    Is.EqualTo($"PEP filtering was requested, but PEP was not computed for the trypsin semi-specific PSMs, so they were filtered by {fallback}."));
+                Assert.That(IdentificationRule.Describe(matches, peptideLevel: false, Named(mode)),
+                    Is.EqualTo($"pep q-value < 0.01 for trypsin fully specific; {fallback} < 0.01 (PEP not trained: 200 PSMs) for trypsin semi-specific"));
+                Assert.That(IdentificationRule.FellBack(matches, peptideLevel: false, Named(mode)), Is.True);
+            }
+
+            // When every category of an agent agrees, the report names the agent alone.
+            Assert.That(IdentificationRule.PepTrainingGroups(Matches("PEPTIDEK", "trypsin", 3, 3, pepTrained: true)
+                    .Concat(Matches("SEMIPEPTIDEK", "trypsin", 2, 2, pepTrained: true, specificity: CleavageSpecificity.Semi)), peptideLevel: false),
+                Is.EqualTo(new[] { new IdentificationRule.PepTrainingGroup("trypsin", null, true, 5) }));
+        }
+
+        [Test]
+        public static void ANamedFilter_KeepsTheChoicesEveryFilterShares()
+        {
+            // The named path runs after the decoy, contaminant and ambiguity choices every filter applies, so a predicate
+            // added there (as #2854 first proposed for entrapment) reaches it too.
+            var matches = Matches("PEPTIDEK", "trypsin", 10, 10, pepTrained: true)
+                .Concat(Matches("PEPTIDER", "trypsin", 10, 10, pepTrained: true, decoy: true))
+                .Concat(Matches("CNTAMINANTK", "trypsin", 10, 10, pepTrained: true, contaminant: true))
+                .ToList();
+
+            var filtered = FilteredPsms.Filter(matches, Named(IdentificationFilterMode.PepQValue), includeDecoys: false, includeContaminants: false);
+            Assert.That(filtered.FilteredPsmsList.Select(p => p.BaseSequence).Distinct(), Is.EqualTo(new[] { "PEPTIDEK" }));
+            Assert.That(FilteredPsms.Filter(matches, Named(IdentificationFilterMode.PepQValue)).FilteredPsmsList, Has.Count.EqualTo(30));
         }
 
         [Test]
@@ -270,11 +347,16 @@ namespace Test
         {
             var (folder, results, warnings) = Search("fallback", Named(IdentificationFilterMode.PepQValueElseQValueNotch), trainPep: false);
 
-            string psmLine = results.Single(l => l.StartsWith("Identification filter for PSMs: "));
-            Assert.That(psmLine, Does.Match(@"^Identification filter for PSMs: q-value notch < 0\.01 \(PEP not trained: \d+ PSMs\)$"));
+            // Each level's lines sit together: the filter, the fallback (as #2919 words it, naming the protease), the count.
+            int psmLine = Array.FindIndex(results, l => l.StartsWith("Identification filter for PSMs: "));
+            Assert.That(results[psmLine], Does.Match(@"^Identification filter for PSMs: q-value notch < 0\.01 \(PEP not trained: \d+ PSMs\)$"));
+            string sentence = "PEP filtering was requested, but PEP was not computed for the trypsin PSMs, so they were filtered by q-value notch.";
+            Assert.That(results[psmLine + 1], Is.EqualTo(sentence));
+            Assert.That(results[psmLine + 2], Does.StartWith("All target PSMs with q-value notch < 0.01: "));
+            Assert.That(int.Parse(results[psmLine + 2].Split(": ")[1]), Is.GreaterThan(0));
             Assert.That(results, Has.One.Match(@"^Identification filter for peptides: q-value notch < 0\.01 \(PEP not trained: \d+ peptides\)$"));
-            Assert.That(warnings, Has.Some.EqualTo(psmLine));
-            Assert.That(int.Parse(results.Single(l => l.StartsWith("All target PSMs with q-value notch < 0.01: ")).Split(": ")[1]), Is.GreaterThan(0));
+            Assert.That(results, Has.One.EqualTo("PEP filtering was requested, but PEP q-values were not computed at the peptide level for trypsin, so those peptides were filtered by q-value notch."));
+            Assert.That(warnings, Has.One.EqualTo(sentence), "one warning per search, as #2919");
             Assert.That(results, Has.One.StartsWith("All target protein groups with q-value notch < 0.01: "));
             Assert.That(File.ReadAllText(Path.Combine(folder, "AutoGeneratedManuscriptProse.txt")),
                 Does.Contain("Identifications were filtered on one value throughout (PepQValueElseQValueNotch): PSMs at q-value notch < 0.01"));
@@ -349,12 +431,21 @@ namespace Test
         }
 
         [Test]
-        public static void SearchTask_PepQValue_PepNotTrained_FailsTheTask()
+        public static void SearchTask_PepQValue_PepNotTrained_FallsBackToTheQValueAndSaysSo()
         {
-            var ex = Assert.Throws<MetaMorpheusException>(() => Search("fails", Named(IdentificationFilterMode.PepQValue), trainPep: false));
-            Assert.That(ex!.Message, Does.StartWith("The identification filter is the PEP q-value, but PEP was not trained at the PSM level for trypsin ("));
+            // Was a failed task (D57); now the search writes its results, held to the q-value, and says so loudly.
+            var (folder, results, warnings) = Search("pepQValueFallback", Named(IdentificationFilterMode.PepQValue), trainPep: false);
 
-            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "IdentificationFilterSetting_fails"), true);
+            int psmLine = Array.FindIndex(results, l => l.StartsWith("Identification filter for PSMs: "));
+            Assert.That(results[psmLine], Does.Match(@"^Identification filter for PSMs: q-value < 0\.01 \(PEP not trained: \d+ PSMs\)$"));
+            string sentence = "PEP filtering was requested, but PEP was not computed for the trypsin PSMs, so they were filtered by q-value.";
+            Assert.That(results[psmLine + 1], Is.EqualTo(sentence));
+            Assert.That(results[psmLine + 2], Does.StartWith("All target PSMs with q-value < 0.01: "));
+            Assert.That(int.Parse(results[psmLine + 2].Split(": ")[1]), Is.GreaterThan(0));
+            Assert.That(results, Has.One.StartsWith("All target protein groups with q-value < 0.01"));
+            Assert.That(warnings, Has.One.EqualTo(sentence));
+
+            Directory.Delete(folder, true);
         }
 
         [Test]

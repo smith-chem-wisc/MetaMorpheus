@@ -37,13 +37,13 @@ namespace EngineLayer
             if (IdentificationRule.IsExplicit(CommonParameters))
             {
                 // The search named its identification filter: the PSMs are judged as everywhere else. Protein groups are
-                // ranked by PEP only when every PSM was judged on a trained PEP; a digestion agent without one has PEP 0
-                // on every match, which would rank its groups first.
+                // ranked by PEP only when every PSM was judged on a trained PEP; a match whose PEP was not trained has
+                // PEP 0, which would rank its groups first. Otherwise by q-value, as the filter's fallback is.
                 _filterThreshold = IdentificationRule.Threshold(CommonParameters);
                 _filterType = filteredPsms.Where(p => p?.PsmFdrInfo != null)
-                    .All(p => IdentificationRule.ValueFor(p.PsmFdrInfo, CommonParameters.IdentificationFilter) == FilterType.PepQValue && p.PsmFdrInfo.PepTrained)
+                    .All(p => IdentificationRule.ValueFor(p.PsmFdrInfo, CommonParameters.IdentificationFilter) == FilterType.PepQValue)
                     ? FilterType.PepQValue
-                    : FilterType.QValueNotch;
+                    : IdentificationRule.Fallback(CommonParameters.IdentificationFilter);
             }
             else if (CommonParameters.PepQValueThreshold < CommonParameters.QValueThreshold)
             {

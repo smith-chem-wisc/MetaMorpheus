@@ -342,11 +342,13 @@
                                                 <LineBreak />
                                                 Thresholds (default): inferred from the two thresholds above, as before.
                                                 <LineBreak />
-                                                QValueNotch: the q-value notch, below the q-value threshold.
+                                                QValueNotch: the q-value notch, below the q-value threshold (leave the PEP box unticked).
                                                 <LineBreak />
-                                                PepQValue: the PEP q-value, below the PEP q-value threshold. The search fails if PEP was not trained for a protease.
+                                                PepQValue: the PEP q-value, below the PEP q-value threshold (tick the PEP box). Where PEP was not trained for a protease, the q-value instead.
                                                 <LineBreak />
-                                                PepQValueElseQValueNotch: the PEP q-value where PEP was trained for a protease, otherwise the q-value notch, below the smaller threshold. Each fallback is reported.
+                                                PepQValueElseQValueNotch: the PEP q-value where PEP was trained for a protease, otherwise the q-value notch alone, below the smaller threshold.
+                                                <LineBreak />
+                                                Every fallback is reported and warned.
                                             </TextBlock>
                                         </ComboBox.ToolTip>
                                     </ComboBox>

@@ -31,12 +31,12 @@ namespace EngineLayer.SpectrumMatch
         /// <see cref="IdentificationFilterMode.Thresholds"/> when the filter was inferred from the thresholds or the
         /// caller named a <see cref="SpectrumMatch.FilterType"/>. When named, <see cref="IdentificationRule"/> judges
         /// every match, strictly below <see cref="FilterThreshold"/>, and <see cref="FilterType"/> is the value the
-        /// matches were judged on (the notch when digestion agents differ).
+        /// matches were judged on (the fallback value when some were judged on PEP and some were not).
         /// </summary>
         public IdentificationFilterMode IdentificationFilter { get; init; }
         /// <summary>
         /// Under a named identification filter, the values the matches were judged on, e.g. "pep q-value", or
-        /// "pep q-value or q-value notch" when digestion agents differ; null otherwise.
+        /// "pep q-value or q-value notch" when PEP was trained for some and not for others; null otherwise.
         /// </summary>
         private string JudgedOn { get; init; }
         private bool IsExplicit => IdentificationFilter != IdentificationFilterMode.Thresholds;
@@ -67,7 +67,7 @@ namespace EngineLayer.SpectrumMatch
 
         /// <summary>
         /// The value the matches were filtered on, for summary text: e.g. "pep q-value", or under a named
-        /// identification filter "pep q-value or q-value notch" when digestion agents differ.
+        /// identification filter "pep q-value or q-value" when PEP was trained for some matches and not for others.
         /// </summary>
         public string GetFilterTypeString() => JudgedOn ?? GetFilterTypeString(FilterType);
 
@@ -180,9 +180,9 @@ namespace EngineLayer.SpectrumMatch
         /// <see cref="PepFilteringNotDone"/>, so a search still writes its results.</param>
         /// <remarks>When <paramref name="commonParams"/> names an identification filter
         /// (<see cref="CommonParameters.IdentificationFilter"/>) and no <paramref name="filterType"/> is given, that filter
-        /// decides, through <see cref="IdentificationRule"/>, at its threshold (computed from the two thresholds above).
-        /// Under <see cref="IdentificationFilterMode.PepQValue"/>, matches of a digestion agent PEP was not trained for
-        /// throw, unless <paramref name="includeHighQValuePsms"/> keeps every match anyway.</remarks>
+        /// decides, through <see cref="IdentificationRule"/>, at its threshold (computed from the two thresholds above),
+        /// after the same decoy, contaminant and ambiguity choices as every other filter. Matches whose PEP was not
+        /// trained fall back, and <see cref="PepFilteringNotDone"/> names their digestion agents.</remarks>
         /// <returns> A FilteredPsms object</returns>
         public static FilteredPsms Filter(IEnumerable<SpectralMatch> psms,
             CommonParameters commonParams,
@@ -273,31 +273,23 @@ namespace EngineLayer.SpectrumMatch
 
         /// <summary>
         /// The filter the search named: each match judged by <see cref="IdentificationRule"/> on the value its own
-        /// FDR values say (the PEP q-value only where PEP was trained for its digestion agent), strictly below the
-        /// threshold. No count rule and no silent fallback.
+        /// FDR values say (the PEP q-value only where PEP was trained for it), strictly below the threshold. No count
+        /// rule. A fallback is never silent: <see cref="PepFilteringNotDone"/> names the matches that fell back.
         /// </summary>
         private static FilteredPsms FilterByName(List<SpectralMatch> candidates, CommonParameters commonParams, bool includeHighQValuePsms,
             double qValueThreshold, double pepQValueThreshold, bool filterAtPeptideLevel)
         {
             IdentificationFilterMode mode = commonParams.IdentificationFilter;
             double threshold = IdentificationRule.Threshold(mode, qValueThreshold, pepQValueThreshold);
-            if (!includeHighQValuePsms)
-            {
-                IdentificationRule.ThrowIfPepNotTrained(candidates, filterAtPeptideLevel, commonParams);
-            }
 
+            // The values the matches are judged on, PEP first.
             var judgedOn = candidates
                 .Where(psm => psm.GetFdrInfo(filterAtPeptideLevel) != null)
                 .Select(psm => IdentificationRule.ValueFor(psm.GetFdrInfo(filterAtPeptideLevel), mode))
                 .Distinct()
-                .OrderBy(v => v)
+                .OrderBy(v => v == FilterType.PepQValue ? 0 : 1)
                 .ToList();
-            FilterType filterType = judgedOn.Count switch
-            {
-                0 => IdentificationRule.ValueFor(null, mode),
-                1 => judgedOn[0],
-                _ => FilterType.QValueNotch
-            };
+            FilterType filterType = judgedOn.Count == 1 ? judgedOn[0] : IdentificationRule.Fallback(mode);
 
             List<SpectralMatch> filtered = candidates
                 .Where(psm => includeHighQValuePsms || IdentificationRule.Passes(psm, filterAtPeptideLevel, mode, threshold))
@@ -307,7 +299,8 @@ namespace EngineLayer.SpectrumMatch
             return new FilteredPsms(filtered, filterType, threshold, false, filterAtPeptideLevel)
             {
                 IdentificationFilter = mode,
-                JudgedOn = string.Join(" or ", (judgedOn.Count == 0 ? new List<FilterType> { filterType } : judgedOn).Select(GetFilterTypeString))
+                JudgedOn = string.Join(" or ", (judgedOn.Count == 0 ? new List<FilterType> { filterType } : judgedOn).Select(GetFilterTypeString)),
+                PepFilteringNotDone = IdentificationRule.PepNotTrainedSentence(candidates, filterAtPeptideLevel, commonParams)
             };
         }
 
