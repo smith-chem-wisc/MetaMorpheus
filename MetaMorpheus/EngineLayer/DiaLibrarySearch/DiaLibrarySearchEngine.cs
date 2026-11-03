@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Chromatography.RetentionTimeCalibration;
 using MassSpectrometry;
 using MassSpectrometry.MzSpectra;
 using MzLibUtil;
@@ -30,13 +31,13 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
 {
     private readonly MsDataScan[] _scans;
     private readonly MslLibrary _library;
-    private readonly IIrtMap _irtMap;
+    private readonly IrtCalibrationModel _irtMap;
     private readonly DiaLibrarySearchParameters _parameters;
 
     /// <param name="scans">The run's scans. Only MS2 scans with an isolation range are searched.</param>
     /// <param name="library">A loaded library holding targets and decoys. The engine does not dispose it.</param>
-    /// <param name="irtMap">This run's retention time to library iRT map.</param>
-    public DiaLibrarySearchEngine(MsDataScan[] scans, MslLibrary library, IIrtMap irtMap, DiaLibrarySearchParameters parameters,
+    /// <param name="irtMap">This run's calibration from minutes to library iRT (mzLib <see cref="IrtCalibrationModel"/>).</param>
+    public DiaLibrarySearchEngine(MsDataScan[] scans, MslLibrary library, IrtCalibrationModel irtMap, DiaLibrarySearchParameters parameters,
         CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
         List<string> nestedIds)
         : base(commonParameters, fileSpecificParameters, nestedIds)

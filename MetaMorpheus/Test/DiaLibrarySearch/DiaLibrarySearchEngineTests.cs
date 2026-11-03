@@ -6,9 +6,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
+using Chromatography.RetentionTimeCalibration;
 using EngineLayer;
 using EngineLayer.DiaLibrarySearch;
 using MassSpectrometry;
+using MzLibUtil;
 using NUnit.Framework;
 using Omics.SpectralMatch.MslSpectralLibrary;
 using Readers.SpectralLibrary;
@@ -29,7 +31,7 @@ public class DiaLibrarySearchEngineTests
     /// A linear run-RT to iRT map through the true curve's endpoints (iRT -20 at 0.5 min, iRT 120 at 9.936 min). The
     /// true curve bows away from it by up to about 12 iRT, inside the engine's default iRT window.
     /// </summary>
-    private static readonly LinearIrtMap EndpointMap = LinearIrtMap.ThroughPoints(
+    private static readonly IrtCalibrationModel EndpointMap = IrtCalibration.Line(
         (new RtMinutes(SyntheticDiaRun.TrueRtMinutes(-20)), new Irt(-20)),
         (new RtMinutes(SyntheticDiaRun.TrueRtMinutes(120)), new Irt(120)));
 
@@ -46,7 +48,7 @@ public class DiaLibrarySearchEngineTests
         Directory.Delete(_directory, true);
     }
 
-    private DiaLibrarySearchResults Search(SyntheticDiaRun run, IIrtMap map, out string libraryPath)
+    private DiaLibrarySearchResults Search(SyntheticDiaRun run, IrtCalibrationModel map, out string libraryPath)
     {
         libraryPath = run.WriteLibrary(_directory);
         using var library = MslLibrary.Load(libraryPath);
@@ -155,7 +157,7 @@ public class DiaLibrarySearchEngineTests
         }
 
         var run = SyntheticDiaRun.Build(200, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0);
-        var identity = new LinearIrtMap(slope: 1, intercept: 0);
+        var identity = IrtCalibration.Line((new RtMinutes(0), new Irt(0)), (new RtMinutes(1), new Irt(1)));
 
         var results = Search(run, identity, out _);
 
