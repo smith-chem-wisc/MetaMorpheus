@@ -1592,7 +1592,7 @@ namespace TaskLayer
                     .SelectMany(pwsm => pwsm.SpecificBioPolymer.AllModsOneIsNterminus.Values)
                     .Any(mod => mod.OriginalId.Equals(Parameters.MultiplexModification.OriginalId))))
             {
-                WritePsmPlusMultiplexIons(psms, filePath);
+                WritePsmPlusMultiplexIons(psms, filePath, writePeptideLevelResults);
             }
             else
             {
