@@ -353,7 +353,8 @@ namespace Test
         /// <summary>
         /// Calibrate -> Search: the search reads the -calib derivative. comment[data file] still names the
         /// acquired file, extension and all, and comment[searched data file] names the derivative (sdrf D46,
-        /// pcruzparri's review of #2816). The instrument comes from the search's own load of the file.
+        /// pcruzparri's review of #2816). The instrument comes from the search's own load of the file. The assay is
+        /// named after the acquired file too: calibration makes no new MS run (sdrf D56).
         /// </summary>
         [Test]
         public static void AfterCalibrationTheSdrfNamesTheAcquiredFileAndTheCalibratedFileItSearched()
@@ -378,6 +379,7 @@ namespace Test
 
             Assert.That(row["comment[data file]"], Is.EqualTo("sample1.mzML"), "the acquired file, as deposited");
             Assert.That(row["comment[searched data file]"], Is.EqualTo("sample1-calib.mzML"), "the file the search read");
+            Assert.That(row["assay name"], Is.EqualTo("run sample1"), "the run, named after the acquired file");
             Assert.That(row["comment[instrument]"], Does.Contain("LTQ Orbitrap Velos"),
                 "read from the search's own load of the file, not a second read");
 
@@ -1285,14 +1287,45 @@ namespace Test
         }
 
         /// <summary>
+        /// An assay is an MS run, so it is named after the acquired file, the file comment[data file] names (sdrf
+        /// D56). Calibration and averaging make no new run. PXReprise's TMT search of PXD034564 (MetaMorpheus 1.1.13)
+        /// named its 16 calibrated files <c>run X-calib</c> beside 16 <c>run X</c>: two naming schemes in one deposit,
+        /// and not the <c>run X</c> the SDRF drafter gives the same files. A search with no starting list has only
+        /// the derivative, which is then its data file, so the derivative names the assay.
+        /// </summary>
+        [Test]
+        public static void AnAssayIsNamedAfterTheAcquiredFileNotTheDerivativeTheSearchRead()
+        {
+            string[] searched = { "plexA-calib-averaged.mzML" };
+            IEnumerable<string> Design(string folder) => new[]
+            {
+                TmtDesignRow(folder, searched[0], "Plex1", "S1", "126", "CondA", 1, 1),
+                TmtDesignRow(folder, searched[0], "Plex1", "S2", "127N", "CondB", 1, 1)
+            };
+
+            var rows = IsobaricSdrfRows(nameof(AnAssayIsNamedAfterTheAcquiredFileNotTheDerivativeTheSearchRead),
+                searched, Design, out _, acquiredFileNames: new[] { "plexA.raw" });
+            Assert.That(rows, Has.Count.EqualTo(2));
+            Assert.That(rows.Select(r => r.Assay.DataFileName), Is.All.EqualTo("plexA.raw"), "the file the name follows");
+            Assert.That(rows.Select(r => r.Assay.AssayName), Is.All.EqualTo("run plexA"), "every channel row of the run");
+
+            var alone = IsobaricSdrfRows(nameof(AnAssayIsNamedAfterTheAcquiredFileNotTheDerivativeTheSearchRead) + "_Alone",
+                searched, Design, out _);
+            Assert.That(alone.Select(r => r.Assay.AssayName), Is.All.EqualTo("run plexA-calib-averaged"),
+                "no starting list: the derivative is the data file, so it names the run");
+        }
+
+        /// <summary>
         /// The rows BuildSdrfRows gives for a TMT11 search of <paramref name="fileNames"/>, with a TmtDesign.txt
         /// of <paramref name="designRows"/> (given the folder) beside them, and the warnings it raised. No
         /// search is run and the spectra files need not exist: only the design is read. With
         /// <paramref name="inputSdrf"/>, its rows are the search's input SDRF. <paramref name="multiplexModId"/> is the kit.
+        /// <paramref name="acquiredFileNames"/> are the files the run started from, when the searched files are
+        /// derivatives of them; null is a search run on its own.
         /// </summary>
         private static List<SdrfRowInput> IsobaricSdrfRows(string testName, string[] fileNames,
             Func<string, IEnumerable<string>> designRows, out List<string> warnings, IEnumerable<string[]> inputSdrf = null,
-            string multiplexModId = "TMT11")
+            string multiplexModId = "TMT11", string[] acquiredFileNames = null)
         {
             string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "SdrfOutput_" + testName);
             if (Directory.Exists(folder)) Directory.Delete(folder, true);
@@ -1306,6 +1339,7 @@ namespace Test
                 Parameters = new PostSearchAnalysisParameters
                 {
                     CurrentRawFileList = fileNames.Select(n => Path.Combine(folder, n)).ToList(),
+                    AcquiredSpectraFiles = acquiredFileNames?.Select(n => Path.Combine(folder, n)).ToList(),
                     SearchParameters = new SearchParameters { DoMultiplexQuantification = true, MultiplexModId = multiplexModId }
                 }
             };
