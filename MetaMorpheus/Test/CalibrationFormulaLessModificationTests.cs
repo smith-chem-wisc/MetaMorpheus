@@ -66,11 +66,15 @@ namespace Test
 
             Assert.That(masses, Is.Not.Empty);
             Assert.That(masses[0], Is.EqualTo(formulaLess.MonoisotopicMass).Within(1e-6), "anchored at the exact monoisotopic mass");
-            // The three most abundant isotopologues, as calibration searches them: same peaks, within 2 mDa and 5% of the
-            // tallest. Averagine stands in for two labels' atoms only; the residues keep their own formula.
-            for (int i = 0; i < 3; i++)
+            // The first four isotopologues (here the most abundant, which calibration searches): each within 0.2 ppm of the true
+            // one and within 5% of the tallest in intensity. Calibration trains on the m/z error of each peak it matches, so
+            // this is the bound on what the stand-in adds to a point's error (the label's atoms alone are averagine; the
+            // residues keep their own formula, and the monoisotopic peak is exact). Measured on TMT10 and TMTpro peptides of
+            // 8 to 31 residues: 0.01 to 0.12 ppm per peak, while calibration's own tolerance is ppm-sized.
+            for (int i = 0; i < 4; i++)
             {
-                Assert.That(masses[i], Is.EqualTo(truth.Masses[i]).Within(0.002), $"isotopologue {i} mass");
+                double ppm = (masses[i] - truth.Masses[i]) / truth.Masses[i] * 1e6;
+                Assert.That(Math.Abs(ppm), Is.LessThan(0.2), $"isotopologue {i} mass, {ppm:F3} ppm from the true envelope's");
                 Assert.That(intensities[i] / intensities.Max(), Is.EqualTo(truth.Intensities[i] / truth.Intensities.Max()).Within(0.05), $"isotopologue {i} intensity");
             }
         }
