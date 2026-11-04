@@ -157,11 +157,20 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
         return intensities;
     }
 
-    private static List<DiaPrecursorMatch> AssignQValues(List<DiaPrecursorMatch> matches)
+    private List<DiaPrecursorMatch> AssignQValues(List<DiaPrecursorMatch> matches)
     {
         var targets = matches.Where(m => !m.IsDecoy).ToList();
         var decoyScores = matches.Where(m => m.IsDecoy).Select(m => m.Score).ToList();
         double[] qValues = DeconvolutionQValueCalculator.AssignQValues(targets.Select(m => m.Score).ToList(), decoyScores);
+
+        // mzLib's calculator gives every target 0 when it has no decoy scores. (D+1)/T still holds here: D is 0, and 1/rank,
+        // made monotone, is 1/T for every target.
+        if (decoyScores.Count == 0 && targets.Count > 0)
+        {
+            Warn($"No decoy precursor was scored, so all {targets.Count} target q-values are (0+1)/{targets.Count}, with no decoy evidence behind them. " +
+                "Check that the library's decoys have fragments and cover this run's isolation windows and iRT range.");
+            Array.Fill(qValues, 1.0 / targets.Count);
+        }
 
         var assigned = targets.Select((m, i) => m with { QValue = qValues[i] }).ToList();
         assigned.AddRange(matches.Where(m => m.IsDecoy));
