@@ -1,6 +1,7 @@
 using EngineLayer;
 using EngineLayer.FdrAnalysis;
 using GuiFunctions;
+using GuiFunctions.Util;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -550,16 +551,12 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                digestionParamsToSave = new DigestionParams(
-                    protease: protease.Name,
-                    maxMissedCleavages: maxMissedCleavages,
-                    minPeptideLength: minPeptideLengthValue,
-                    maxPeptideLength: maxPeptideLengthValue,
-                    maxModificationIsoforms: maxModificationIsoformsValue,
-                    initiatorMethionineBehavior: initiatorMethionineBehavior,
+                // pass only what this window shows; every other digestion setting is kept from the loaded task
+                digestionParamsToSave = TaskWindowDigestionParams.ForSave(TheTask.CommonParameters.DigestionParams,
+                    protease.Name, maxMissedCleavages, minPeptideLengthValue, maxPeptideLengthValue, maxModificationIsoformsValue,
                     maxModsForPeptides: maxModsForPeptideValue,
-                    searchModeType: searchModeType,
-                    fragmentationTerminus: fragmentationTerminus,
+                    initiatorMethionineBehavior: initiatorMethionineBehavior,
+                    searchMode: (searchModeType, fragmentationTerminus),
                     generateUnlabeledProteinsForSilac: CheckBoxQuantifyUnlabeledForSilac.IsChecked.Value);
             }
                 
