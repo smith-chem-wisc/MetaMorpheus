@@ -10,10 +10,15 @@
     <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
         <StackPanel Orientation="Horizontal" Margin="0 0 10 0">
             <Label Content="5' Cap:" />
-            <ComboBox x:Name="FivePrimeComboBox" MinWidth="110" VerticalAlignment="Center"
+            <ComboBox x:Name="FivePrimeComboBox" MinWidth="130" VerticalAlignment="Center"
                       ItemsSource="{Binding FivePrimeOptions}"
                       SelectedItem="{Binding SelectedFivePrimeOption}"
                       ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                <ComboBox.ItemContainerStyle>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="ToolTip" Value="{Binding ToolTip}" />
+                    </Style>
+                </ComboBox.ItemContainerStyle>
                 <ComboBox.ToolTip>
                     <TextBlock>
                         Chemical cap placed on the 5' end of each RNA in the database.
@@ -29,10 +34,15 @@
         </StackPanel>
         <StackPanel Orientation="Horizontal">
             <Label Content="3' Cap:" />
-            <ComboBox x:Name="ThreePrimeComboBox" MinWidth="110" VerticalAlignment="Center"
+            <ComboBox x:Name="ThreePrimeComboBox" MinWidth="130" VerticalAlignment="Center"
                       ItemsSource="{Binding ThreePrimeOptions}"
                       SelectedItem="{Binding SelectedThreePrimeOption}"
                       ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                <ComboBox.ItemContainerStyle>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="ToolTip" Value="{Binding ToolTip}" />
+                    </Style>
+                </ComboBox.ItemContainerStyle>
                 <ComboBox.ToolTip>
                     <TextBlock>
                         Chemical cap placed on the 3' end of each RNA in the database.
