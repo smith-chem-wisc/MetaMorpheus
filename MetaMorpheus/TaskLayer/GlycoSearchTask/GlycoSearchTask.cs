@@ -86,12 +86,14 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
+            // one view of each database for every index key this task builds; see SnapshotDatabases
+            List<FileInfo> databaseFileInfos = IndexingEngine.SnapshotDatabases(dbFilenameList);
             var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, _glycoSearchParameters.DecoyType, true, localizeableModificationTypes);
             var loadingResults = dbLoader.Run() as DatabaseLoadingEngineResults;
             List<Protein> proteinList = loadingResults!.BioPolymers.Cast<Protein>().ToList();
 
             MyFileManager myFileManager = new (_glycoSearchParameters.DisposeOfFileWhenDone);
-            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
+            var fileSpecificCommonParams = fileSettingsList.Select((b, i) => SetAllFileSpecificCommonParams(CommonParameters, b, currentRawFileList[i]));
 
             int completedFiles = 0;
 
@@ -132,7 +134,8 @@ namespace TaskLayer
             var indexParamsPerFile = new CommonParameters[fileCount];
             for (int spectraFileIndex = 0; spectraFileIndex < fileCount; spectraFileIndex++)
             {
-                combinedParamsPerFile[spectraFileIndex] = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                var origDataFile = currentRawFileList[spectraFileIndex];
+                combinedParamsPerFile[spectraFileIndex] = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex], origDataFile);
 
                 // scoped to indexing/searching only, so the settings the task reports stay as configured.
                 // every TotalPartitions read below comes from indexParams, including the loop bound and the
@@ -147,7 +150,6 @@ namespace TaskLayer
                 _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.MaximumGlycanBoxMass, _glycoSearchParameters.SelectedGlycans);
 
             var thisIds = currentRawFileList.Select(file => new List<string> { taskId, "Individual Spectra Files", file }).ToList();
-            var databaseFileInfos = dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList();
 
             Ms2ScanWithSpecificMass[] LoadMs2Scans(int spectraFileIndex, CommonParameters loadParams)
             {
@@ -213,12 +215,13 @@ namespace TaskLayer
                 long freeBytes = IndexPartitioning.AvailableBytes();
                 FileParallelismPlan plan = FileParallelism.Decide(fileCount, threadBudget, freeBytes, bytesPerFile, _glycoSearchParameters.MaximumSpectraFilesInParallel, tableBytes);
 
-                // The split above sets how many files run at once and how many threads load each; the search itself draws on one budget
-                // shared by every file, so threads move from files that finish to files still searching.
+                // The split above sets how many files run at once and how many threads load each. Loading and searching both draw on one
+                // budget shared by every file, so the task never runs more than MaxThreadsToUsePerFile threads, and search threads move
+                // from files that finish to files still searching.
                 var searchThreads = new SearchThreadBudget(threadBudget);
                 ProseCreatedWhileRunning.Append("spectra files searched in parallel = " + plan.FilesInParallel + " of " + fileCount + " (limited by " + plan.LimitedBy + ")"
-                    + ", each loaded with " + plan.ThreadsPerFile + " threads and searched with threads shared from a budget of " + searchThreads.TotalThreads
-                    + " that move from files that finish to files still searching; \n");
+                    + ", each loaded with " + plan.ThreadsPerFile + " threads and searched with threads, both taken from one budget of " + searchThreads.TotalThreads
+                    + "; threads move from files that finish to files still searching; \n");
                 ProseCreatedWhileRunning.Append("memory free after building the index and loading the first spectra file = " + (freeBytes / 1e9).ToString("0.0") + " GB, estimated "
                     + (bytesPerFile / 1e9).ToString("0.0") + " GB for each further file and " + (tableBytes / 1e9).ToString("0.0") + " GB of scoring tables shared by all files; \n");
 
@@ -232,13 +235,17 @@ namespace TaskLayer
                 {
                     if (GlobalVariables.StopLoops) { return; }
 
-                    Ms2ScanWithSpecificMass[] scans = scansPerFile[spectraFileIndex] ?? LoadMs2Scans(spectraFileIndex, loadParamsPerFile[spectraFileIndex]);
+                    // A file loads with a fixed ThreadsPerFile, never more than its share of the budget, so it waits for that many threads
+                    // from the files already searching rather than running them on top of the budget.
+                    Ms2ScanWithSpecificMass[] scans = scansPerFile[spectraFileIndex]
+                        ?? searchThreads.RunHolding(plan.ThreadsPerFile, () => LoadMs2Scans(spectraFileIndex, loadParamsPerFile[spectraFileIndex]));
                     scansPerFile[spectraFileIndex] = null;
 
                     var gsms = new List<GlycoSpectralMatch>[scans.Length];
                     new GlycoSearchEngine(gsms, scans, peptideIndex, fragmentIndex, null, 0, searchParamsPerFile[spectraFileIndex], this.FileSpecificParameters, glycanSearchSpace,
                         _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisIds[spectraFileIndex])
                     {
+                        CustomOxoniumThreshold = _glycoSearchParameters.CustomOxoniumThreshold,
                         ThreadBudget = searchThreads
                     }.Run();
                     gsmsPerFile[spectraFileIndex] = gsms;
@@ -287,7 +294,10 @@ namespace TaskLayer
                         FragmentIndex secondFragmentIndex = null;
 
                         return new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, indexParams, this.FileSpecificParameters, glycanSearchSpace,
-                            _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisId, candidates);
+                            _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisId, candidates)
+                        {
+                            CustomOxoniumThreshold = _glycoSearchParameters.CustomOxoniumThreshold
+                        };
                     }
 
                     // The TopN candidate cut has to be taken over the whole database, or which glycopeptides are reported

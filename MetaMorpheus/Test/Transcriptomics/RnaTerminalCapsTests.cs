@@ -69,7 +69,7 @@ public class RnaTerminalCapsTests
             CommonParameters = new CommonParameters(digestionParams: new RnaDigestionParams(), fivePrimeTerminus: FivePrimeCap, threePrimeTerminus: ThreePrimeCap)
         };
         var fileSpecific = new FileSpecificParameters { MaxMissedCleavages = 1 };
-        var result = MetaMorpheusTask.SetAllFileSpecificCommonParams(task.CommonParameters, fileSpecific);
+        var result = MetaMorpheusTask.SetAllFileSpecificCommonParams(task.CommonParameters, fileSpecific, null);
         Assert.That(result.FivePrimeTerminus, Is.EqualTo(task.CommonParameters.FivePrimeTerminus));
         Assert.That(result.ThreePrimeTerminus, Is.EqualTo(task.CommonParameters.ThreePrimeTerminus));
         Assert.That(result.ThreePrimeTerminus, Is.Not.Null);
@@ -223,7 +223,7 @@ public class RnaTerminalCapsTests
                      new CommonParameters(digestionParams: new DigestionParams())
                  })
         {
-            var result = MetaMorpheusTask.SetAllFileSpecificCommonParams(common, fileSpecific);
+            var result = MetaMorpheusTask.SetAllFileSpecificCommonParams(common, fileSpecific, null);
             Assert.That(result.FivePrimeTerminus, Is.Null);
             Assert.That(result.ThreePrimeTerminus, Is.Null);
         }

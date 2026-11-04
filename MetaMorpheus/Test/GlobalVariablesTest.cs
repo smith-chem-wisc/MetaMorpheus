@@ -1,7 +1,9 @@
-﻿using EngineLayer;
+using EngineLayer;
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Test
 {
@@ -16,7 +18,8 @@ namespace Test
         /// catalogue by throwing rather than returning null (smith-chem-wisc/mzLib#1126).
         ///
         /// The file is shipped beside the executable, but DataDir can resolve to %LOCALAPPDATA%\MetaMorpheus
-        /// for a Program Files install, or to a --customDataDir the user already created, and in those cases
+        /// for a Program Files install, or to a data directory the user already created and passed with
+        /// --mmsettings, and in those cases
         /// it may simply be absent. This hides it to reproduce that.
         /// </summary>
         [Test]
@@ -41,6 +44,12 @@ namespace Test
             if (wasPresent)
                 Directory.Move(proteomesDirectory, hiddenDirectory);
 
+            // The failure must reach WarnHandler, the startup channel both front ends subscribe to;
+            // a Console write would be invisible in the GUI and ignore the CLI's -v none.
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> recordWarning = (sender, e) => warnings.Add(e.S);
+            GlobalVariables.WarnHandler += recordWarning;
+
             try
             {
                 Assert.DoesNotThrow(() => GlobalVariables.SetUpGlobalVariables(),
@@ -50,9 +59,14 @@ namespace Test
                 // FirstOrDefault on it with no null check, so null would be a latent NullReferenceException.
                 Assert.That(GlobalVariables.AvailableUniProtProteomes, Is.Not.Null);
                 Assert.That(GlobalVariables.AvailableUniProtProteomes, Is.Empty);
+
+                Assert.That(warnings, Has.Some.Contains("available UniProt proteomes"),
+                    "the missing catalogue must be reported through GlobalVariables.WarnHandler");
             }
             finally
             {
+                GlobalVariables.WarnHandler -= recordWarning;
+
                 if (wasPresent)
                 {
                     if (Directory.Exists(proteomesDirectory))
@@ -117,6 +131,57 @@ namespace Test
             GC.WaitForPendingFinalizers();
 
             Directory.Delete(customDataDir, true);
+        }
+
+        [Test]
+        public static void TestEmbeddedFormalChargeTableMatchesTheShippedOneAndAMissingOneIsReported()
+        {
+            // The fallback must give the same charges as the file the installer ships.
+            var shipped = Omics.Modifications.IO.ModificationLoader.ReadFormalChargesDictionary(
+                Path.Combine(GlobalVariables.DataDir, @"Data", @"PsiModFormalCharges.tsv"));
+            var embedded = GlobalVariables.ReadEmbeddedPsiModFormalCharges(typeof(Omics.Modifications.Mods).Assembly, "unused");
+            Assert.That(embedded, Is.Not.Empty);
+            Assert.That(embedded, Is.EquivalentTo(shipped));
+
+            // An assembly without the table stands in for an mzLib that stopped embedding it: startup must
+            // say which file it could not find, not fail with a null reference.
+            var ex = Assert.Throws<MetaMorpheusException>(() =>
+                GlobalVariables.ReadEmbeddedPsiModFormalCharges(typeof(GlobalVariables).Assembly, "missing.tsv"));
+            Assert.That(ex.Message, Does.Contain("missing.tsv"));
+        }
+
+        [Test]
+        public static void TestCustomDataDirectoryWithoutTheFormalChargeTableFallsBackToMzLibsCopy()
+        {
+            // A custom data directory made by a MetaMorpheus that shipped PSI-MOD.obo.xml has no
+            // PsiModFormalCharges.tsv, and is never copied over again because it already exists.
+            // Its UniProt mods must still come out with the same charges as the default directory's.
+            static List<string> UniProtMods() => GlobalVariables.UniprotDeseralized
+                .Select(m => $"{m.IdWithMotif}|{m.ChemicalFormula?.Formula}").OrderBy(s => s, StringComparer.Ordinal).ToList();
+            List<string> expected = UniProtMods();
+
+            string customDataDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CustomDataDirWithoutFormalCharges");
+            if (Directory.Exists(customDataDir))
+                Directory.Delete(customDataDir, true);
+            GlobalVariables.CopyFilesRecursively(new DirectoryInfo(GlobalVariables.DataDir), new DirectoryInfo(customDataDir));
+            string table = Path.Combine(customDataDir, @"Data", @"PsiModFormalCharges.tsv");
+            File.Delete(table);
+
+            try
+            {
+                GlobalVariables.UserSpecifiedDataDir = customDataDir;
+                Assert.DoesNotThrow(GlobalVariables.SetUpGlobalVariables);
+                Assert.That(File.Exists(table), Is.False, "the fallback reads mzLib's embedded copy, it does not write one");
+                Assert.That(UniProtMods(), Is.EqualTo(expected));
+            }
+            finally
+            {
+                GlobalVariables.UserSpecifiedDataDir = null;
+                GlobalVariables.SetUpGlobalVariables();
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                Directory.Delete(customDataDir, true);
+            }
         }
 
         [Test]
@@ -200,5 +265,6 @@ namespace Test
             Assert.That(AnalyteType.Proteoform.GetDigestionAgentLabel(), Is.EqualTo("Protease"));
             Assert.That(AnalyteType.Oligo.GetDigestionAgentLabel(), Is.EqualTo("RNase"));
         }
+
     }
 }
