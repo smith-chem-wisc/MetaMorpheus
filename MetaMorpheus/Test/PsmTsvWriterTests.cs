@@ -19,6 +19,7 @@ using System.Linq;
 using System.Reflection;
 using Transcriptomics;
 using Transcriptomics.Digestion;
+using System;
 
 namespace Test
 {
@@ -843,6 +844,65 @@ namespace Test
         {
             Assert.That(MetaDrawLogic.ShouldShowProFormaColumn(null), Is.False);
             Assert.That(MetaDrawLogic.ShouldShowProFormaColumn(new List<SpectrumMatchFromTsv>()), Is.False);
+        }
+
+        [Test]
+        [NonParallelizable] // mutates GUI-global IsRnaMode
+        public static void ShouldShowProFormaColumn_RequiresProteinModeAndNonEmptyProForma()
+        {
+            var viewModel = GuiGlobalParamsViewModel.Instance;
+            bool originalMode = viewModel.IsRnaMode;
+
+            try
+            {
+                var matchesWithProForma = new List<SpectrumMatchFromTsv>
+                {
+                    BuildSpectrumMatchForProFormaColumnTest("M[Oxidation]PEPTIDEK")
+                };
+
+                viewModel.IsRnaMode = false;
+                Assert.That(MetaDrawLogic.ShouldShowProFormaColumn(matchesWithProForma), Is.True);
+
+                viewModel.IsRnaMode = true;
+                Assert.That(MetaDrawLogic.ShouldShowProFormaColumn(matchesWithProForma), Is.False);
+
+                viewModel.IsRnaMode = false;
+                var matchesWithoutProForma = new List<SpectrumMatchFromTsv>
+                {
+                    BuildSpectrumMatchForProFormaColumnTest(null),
+                    BuildSpectrumMatchForProFormaColumnTest("   ")
+                };
+                Assert.That(MetaDrawLogic.ShouldShowProFormaColumn(matchesWithoutProForma), Is.False);
+            }
+            finally
+            {
+                viewModel.IsRnaMode = originalMode;
+            }
+        }
+
+        private static SpectrumMatchFromTsv BuildSpectrumMatchForProFormaColumnTest(string proForma)
+        {
+            var spectrumMatch = (SpectrumMatchFromTsv)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(PsmFromTsv));
+            var runtimeType = spectrumMatch.GetType();
+
+            var proFormaProperty = runtimeType.GetProperty("ProForma", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (proFormaProperty?.GetSetMethod(true) != null)
+            {
+                proFormaProperty.SetValue(spectrumMatch, proForma);
+                return spectrumMatch;
+            }
+
+            FieldInfo backingField = null;
+            for (Type type = runtimeType; type != null && backingField == null; type = type.BaseType)
+            {
+                backingField = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                    .FirstOrDefault(f => f.FieldType == typeof(string)
+                        && f.Name.Contains("proforma", StringComparison.OrdinalIgnoreCase));
+            }
+
+            Assert.That(backingField, Is.Not.Null);
+            backingField!.SetValue(spectrumMatch, proForma);
+            return spectrumMatch;
         }
 
         #region Oligo Terminus Columns
