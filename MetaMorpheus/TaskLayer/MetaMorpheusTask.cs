@@ -1,4 +1,5 @@
 ﻿using Chemistry;
+using Chemistry;
 using EngineLayer;
 using EngineLayer.Indexing;
 using MassSpectrometry;
@@ -273,6 +274,10 @@ namespace TaskLayer
             .ConfigureType<RnaDigestionParams>(type => type
                 .IgnoreProperty(p => p.DigestionAgent)
                 .IgnoreProperty(p => p.SpecificDigestionAgent))
+            .ConfigureType<ChemicalFormula>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(formula => formula.Formula)
+                    .FromToml(tmlString => CommonParameters.TryParseFormula(tmlString.Value))))
             .ConfigureType<Rnase>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.Name)
@@ -867,7 +872,9 @@ namespace TaskLayer
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
                 rtPredictorName: commonParams.RTPredictorName,
-                retentionTimeRange: commonParams.RetentionTimeRange);
+                retentionTimeRange: commonParams.RetentionTimeRange,
+                fivePrimeTerminus: commonParams.FivePrimeTerminus?.Formula,
+                threePrimeTerminus: commonParams.ThreePrimeTerminus?.Formula);
 
             return returnParams;
         }

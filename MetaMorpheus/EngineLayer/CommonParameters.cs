@@ -1,3 +1,4 @@
+using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
 using Omics.Fragmentation;
@@ -66,7 +67,9 @@ namespace EngineLayer
             IFragmentationParams fragmentationParams = null,
             PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic,
                 string rtPredictorName = RTPredictorNames.Chronologer,
-            DoubleRange retentionTimeRange = null)
+            DoubleRange retentionTimeRange = null,
+            string fivePrimeTerminus = null,
+            string threePrimeTerminus = null)
 
         {
             retentionTimeRange ??= new DoubleRange(0, double.MaxValue);
@@ -145,6 +148,11 @@ namespace EngineLayer
             }
 
             RTPredictorName = rtPredictorName;
+
+            // Terminal caps only mean something for RNA; null means "use mzLib's default cap".
+            bool isRna = digestionParams is RnaDigestionParams;
+            FivePrimeTerminus = isRna ? TryParseFormula(fivePrimeTerminus) : null;
+            ThreePrimeTerminus = isRna ? TryParseFormula(threePrimeTerminus) : null;
 
             CustomIons = digestionParams.ProductsFromDissociationType()[DissociationType.Custom];
 
@@ -230,6 +238,35 @@ namespace EngineLayer
         public IFragmentationParams FragmentationParameters { get; set; }
         public string RTPredictorName { get; private set; }
 
+        /// <summary>
+        /// The 5' cap applied to every RNA loaded from a database (e.g. O-3P-1).
+        /// Null in protein mode, and in RNA mode when the mzLib default should be used.
+        /// </summary>
+        public ChemicalFormula FivePrimeTerminus { get; private set; }
+
+        /// <summary>
+        /// The 3' cap applied to every RNA loaded from a database (e.g. OH).
+        /// Null in protein mode, and in RNA mode when the mzLib default should be used.
+        /// </summary>
+        public ChemicalFormula ThreePrimeTerminus { get; private set; }
+
+        /// <summary>
+        /// Parses a chemical formula, returning null (the mzLib default cap) if the text is blank or cannot be understood.
+        /// </summary>
+        public static ChemicalFormula TryParseFormula(string formula)
+        {
+            if (string.IsNullOrWhiteSpace(formula))
+                return null;
+            try
+            {
+                return ChemicalFormula.ParseFormula(formula.Trim());
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
         public CommonParameters Clone()
         {
             CommonParameters c = new CommonParameters();
@@ -304,7 +341,9 @@ namespace EngineLayer
                                 FragmentationParameters,
                                 PrecursorMassMatchMode,
                                 RTPredictorName,
-                                 RetentionTimeRange);
+                                 RetentionTimeRange,
+                                 FivePrimeTerminus?.Formula,
+                                 ThreePrimeTerminus?.Formula);
         }
 
         /// <summary>
@@ -358,7 +397,9 @@ namespace EngineLayer
                                 FragmentationParameters,
                                 PrecursorMassMatchMode,
                                 RTPredictorName,
-                                 RetentionTimeRange);
+                                 RetentionTimeRange,
+                                 FivePrimeTerminus?.Formula,
+                                 ThreePrimeTerminus?.Formula);
 
             // CustomIons is not a constructor parameter — the constructor reads it from the global
             // dissociation-type dictionary — so copy it across explicitly. GlycoSearchEngine branches on
