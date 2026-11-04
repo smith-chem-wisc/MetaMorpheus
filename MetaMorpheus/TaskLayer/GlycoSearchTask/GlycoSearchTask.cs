@@ -215,12 +215,13 @@ namespace TaskLayer
                 long freeBytes = IndexPartitioning.AvailableBytes();
                 FileParallelismPlan plan = FileParallelism.Decide(fileCount, threadBudget, freeBytes, bytesPerFile, _glycoSearchParameters.MaximumSpectraFilesInParallel, tableBytes);
 
-                // The split above sets how many files run at once and how many threads load each; the search itself draws on one budget
-                // shared by every file, so threads move from files that finish to files still searching.
+                // The split above sets how many files run at once and how many threads load each. Loading and searching both draw on one
+                // budget shared by every file, so the task never runs more than MaxThreadsToUsePerFile threads, and search threads move
+                // from files that finish to files still searching.
                 var searchThreads = new SearchThreadBudget(threadBudget);
                 ProseCreatedWhileRunning.Append("spectra files searched in parallel = " + plan.FilesInParallel + " of " + fileCount + " (limited by " + plan.LimitedBy + ")"
-                    + ", each loaded with " + plan.ThreadsPerFile + " threads and searched with threads shared from a budget of " + searchThreads.TotalThreads
-                    + " that move from files that finish to files still searching; \n");
+                    + ", each loaded with " + plan.ThreadsPerFile + " threads and searched with threads, both taken from one budget of " + searchThreads.TotalThreads
+                    + "; threads move from files that finish to files still searching; \n");
                 ProseCreatedWhileRunning.Append("memory free after building the index and loading the first spectra file = " + (freeBytes / 1e9).ToString("0.0") + " GB, estimated "
                     + (bytesPerFile / 1e9).ToString("0.0") + " GB for each further file and " + (tableBytes / 1e9).ToString("0.0") + " GB of scoring tables shared by all files; \n");
 
@@ -234,7 +235,10 @@ namespace TaskLayer
                 {
                     if (GlobalVariables.StopLoops) { return; }
 
-                    Ms2ScanWithSpecificMass[] scans = scansPerFile[spectraFileIndex] ?? LoadMs2Scans(spectraFileIndex, loadParamsPerFile[spectraFileIndex]);
+                    // A file loads with a fixed ThreadsPerFile, never more than its share of the budget, so it waits for that many threads
+                    // from the files already searching rather than running them on top of the budget.
+                    Ms2ScanWithSpecificMass[] scans = scansPerFile[spectraFileIndex]
+                        ?? searchThreads.RunHolding(plan.ThreadsPerFile, () => LoadMs2Scans(spectraFileIndex, loadParamsPerFile[spectraFileIndex]));
                     scansPerFile[spectraFileIndex] = null;
 
                     var gsms = new List<GlycoSpectralMatch>[scans.Length];
