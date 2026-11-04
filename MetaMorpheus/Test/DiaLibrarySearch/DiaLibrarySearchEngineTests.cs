@@ -130,6 +130,31 @@ public class DiaLibrarySearchEngineTests
     }
 
     /// <summary>
+    /// Decoys can also go unscored by lying outside every searched window, in m/z or in iRT, so that the search never
+    /// reaches them. Left where they were, the same decoys score on this run's noise.
+    /// </summary>
+    [TestCase(true)]
+    [TestCase(false)]
+    public void DecoysOutsideEverySearchedWindowLeaveEveryTargetOneOverT(bool outsideInMz)
+    {
+        var run = SyntheticDiaRun.Build(20, entry => !entry.IsDecoy);
+        Assert.That(Search(run).DecoyCount, Is.Positive, "left where they were, the decoys score");
+        foreach (var decoy in run.Library.Where(entry => entry.IsDecoy))
+        {
+            if (outsideInMz)
+                decoy.PrecursorMz = SyntheticDiaRun.FirstWindowLowMz - 100;
+            else
+                decoy.RetentionTime = 10000;
+        }
+
+        var results = Search(run);
+
+        Assert.That(results.DecoyCount, Is.Zero);
+        Assert.That(results.TargetCount, Is.EqualTo(20));
+        Assert.That(results.Matches.Select(m => m.QValue), Is.All.EqualTo(1.0 / 20));
+    }
+
+    /// <summary>
     /// Enough targets can pass on (0+1)/T alone, so a search that scored targets but no decoy says so. An ordinary search
     /// does not, and neither does one that scored nothing, whose results claim nothing.
     /// </summary>
