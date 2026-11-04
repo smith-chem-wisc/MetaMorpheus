@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using EngineLayer.DatabaseLoading;
+using EngineLayer.Util;
 
 namespace TaskLayer
 {
@@ -15,15 +16,25 @@ namespace TaskLayer
         private readonly List<(string, MetaMorpheusTask)> TaskList;
         private string OutputFolder;
         private List<string> CurrentRawDataFilenameList;
+
+        /// <summary>The files the run started from; CurrentRawDataFilenameList moves on to derivatives.</summary>
+        private readonly List<string> AcquiredRawDataFilenameList;
         private List<DbForTask> CurrentXmlDbFilenameList;
         private List<string> _warnings;
+
+        // Shared in-memory hand-off between tasks in this run list (docs/Truncation-Search.md decision #1).
+        // Only created when the run list actually contains a task that reads from it, so a depositing task
+        // does not pin its results for the rest of a run nothing will consume them in.
+        private readonly TaskChainContext _taskChainContext;
 
         public EverythingRunnerEngine(List<(string, MetaMorpheusTask)> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string outputFolder)
         {
             TaskList = taskList;
             OutputFolder = outputFolder.Trim('"');
+            _taskChainContext = taskList.Any(t => t.Item2.ConsumesTaskChainContext) ? new TaskChainContext() : null;
 
             CurrentRawDataFilenameList = startingRawFilenameList;
+            AcquiredRawDataFilenameList = startingRawFilenameList?.ToList();
             CurrentXmlDbFilenameList = startingXmlDbFilenameList;
             _warnings = new();
         }
@@ -87,6 +98,29 @@ namespace TaskLayer
                
                 var ok = TaskList[i];
 
+                // give every task the shared in-memory hand-off so a finishing task can deposit
+                // results for a later one (e.g. SearchTask -> TruncationSearchTask), decision #1.
+                // Null unless this run list has a consumer, in which case deposits are no-ops.
+                ok.Item2.TaskChainContext = _taskChainContext;
+
+                // Non-specific search is built around proteases -- terminal mod placement, the "single"
+                // agents, the FDR categories -- none of which have a nucleic acid counterpart yet.
+                // Refused here rather than only in SearchTask because a MetaMorpheusException out of
+                // RunSpecific is dumped into results.txt with a stack trace and rethrown, and the GUI
+                // routes the faulted task to EverythingRunnerExceptionHandler -- so the user is told
+                // MetaMorpheus crashed and invited to file a bug, and never sees the message that says
+                // what to do instead. The throw in SearchTask stays as a backstop for a caller invoking
+                // RunTask directly.
+                if (ok.Item2 is SearchTask nonSpecificCandidate
+                    && nonSpecificCandidate.SearchParameters.SearchType == SearchType.NonSpecific
+                    && GlobalVariables.AnalyteType == AnalyteType.Oligo)
+                {
+                    Warn("Cannot proceed. Non-specific search is only implemented for proteins. " +
+                         "Use Classic or Modern search for nucleic acid databases.");
+                    FinishedAllTasks(OutputFolder);
+                    return;
+                }
+
                 // reset product types for custom fragmentation
                 ok.Item2.CommonParameters.SetCustomProductTypes();
 
@@ -96,7 +130,15 @@ namespace TaskLayer
                     Directory.CreateDirectory(outputFolderForThisTask);
 
                 // Actual task running code
+                ok.Item2.AcquiredSpectraFiles = AcquiredRawDataFilenameList;
                 var myTaskResults = ok.Item2.RunTask(outputFolderForThisTask, CurrentXmlDbFilenameList, CurrentRawDataFilenameList, ok.Item1);
+
+                // A consumer has taken what it needed; drop the deposited results rather than holding the
+                // upstream search's whole PSM graph alive for the remainder of the run list (decision #1).
+                if (ok.Item2.ConsumesTaskChainContext)
+                {
+                    _taskChainContext?.Clear();
+                }
 
                 if (myTaskResults.NewDatabases != null)
                 {
@@ -111,13 +153,10 @@ namespace TaskLayer
                     }
                     else
                     {
-                        // at least one file was not successfully calibrated
-                        var successfulFiles = myTaskResults.NewSpectra.Select(p => Path.GetFileNameWithoutExtension(p)
-                            .Replace(CalibrationTask.CalibSuffix, "")
-                            .Replace(SpectralAveragingTask.AveragingSuffix, "")).ToList();
-                        var origFiles = CurrentRawDataFilenameList.Select(Path.GetFileNameWithoutExtension).ToList();
-                        var unsuccessfulFiles = origFiles.Except(successfulFiles).ToList();
-                        var unsuccessfulFilePaths = CurrentRawDataFilenameList.Where(p => unsuccessfulFiles.Contains(Path.GetFileNameWithoutExtension(p))).ToList();
+                        // at least one file was skipped or not successfully calibrated, so it is passed on as it was
+                        var unsuccessfulFilePaths = CurrentRawDataFilenameList
+                            .Where(p => !myTaskResults.NewSpectra.Any(written => WasWrittenFor(written, p, ok.Item2, outputFolderForThisTask)))
+                            .ToList();
                         CurrentRawDataFilenameList = myTaskResults.NewSpectra;
                         CurrentRawDataFilenameList.AddRange(unsuccessfulFilePaths);
                     }
@@ -171,6 +210,22 @@ namespace TaskLayer
         private void NewDBs(List<DbForTask> newDatabases)
         {
             NewDbsHandler?.Invoke(this, new XmlForTaskListEventArgs(newDatabases));
+        }
+
+        /// <summary>
+        /// Whether <paramref name="task"/> wrote <paramref name="written"/> for its input <paramref name="input"/>. Calibration
+        /// and averaging, the tasks that write spectra, name the file they write for an input as the input's name plus the
+        /// one suffix the task adds (-calib, -averaged), in the task's output folder, through ToSafeOutputPath; this builds
+        /// that name and compares. Stripping both suffixes from the written name instead missed every input that was itself
+        /// a -calib file (x-calib-averaged strips to x, not x-calib) and every name trimmed to the path cap, and such an
+        /// input was then searched again beside the file written for it (#2942).
+        /// </summary>
+        private static bool WasWrittenFor(string written, string input, MetaMorpheusTask task, string taskOutputFolder)
+        {
+            string suffix = task is SpectralAveragingTask ? SpectralAveragingTask.AveragingSuffix : CalibrationTask.CalibSuffix;
+            string writtenForInput = Path.Combine(taskOutputFolder, Path.GetFileNameWithoutExtension(input) + suffix + ".mzML")
+                .ToSafeOutputPath(suffix + ".mzML");
+            return string.Equals(Path.GetFullPath(written), Path.GetFullPath(writtenForInput), StringComparison.OrdinalIgnoreCase);
         }
     }
 }

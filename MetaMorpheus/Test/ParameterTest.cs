@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -44,7 +44,38 @@ namespace Test
             Assert.That(fsp.DigestionAgent, Is.EqualTo(fspClone.DigestionAgent));
             Assert.That(fsp.SeparationType, Is.EqualTo(fspClone.SeparationType));
             CollectionAssert.AreEqual(fsp.CustomIons, fspClone.CustomIons);
+            Assert.That(fsp.PrecursorDeconvolutionParameters, Is.EqualTo(fspClone.PrecursorDeconvolutionParameters));
+            Assert.That(fsp.ProductDeconvolutionParameters, Is.EqualTo(fspClone.ProductDeconvolutionParameters));
             GlobalVariables.AnalyteType = AnalyteType.Peptide;
+        }
+
+        [Test]
+        public static void TestFileSpecificParametersClone_CopiesDeconvolutionParams()
+        {
+            FileSpecificParameters fsp = new FileSpecificParameters
+            {
+                PrecursorDeconvolutionParameters = new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                ProductDeconvolutionParameters = new IsoDecDeconvolutionParameters(),
+                CustomIons = new List<ProductType> { ProductType.b, ProductType.y }
+            };
+
+            FileSpecificParameters fspClone = fsp.Clone();
+            Assert.That(fspClone, Is.Not.Null);
+
+            Assert.That(fspClone.PrecursorDeconvolutionParameters, Is.Not.Null);
+            Assert.That(fspClone.PrecursorDeconvolutionParameters, Is.EqualTo(fsp.PrecursorDeconvolutionParameters));
+            Assert.That(fspClone.PrecursorDeconvolutionParameters.MaxAssumedChargeState,
+                Is.EqualTo(fsp.PrecursorDeconvolutionParameters.MaxAssumedChargeState));
+
+            Assert.That(fspClone.ProductDeconvolutionParameters, Is.Not.Null);
+            Assert.That(fspClone.ProductDeconvolutionParameters, Is.EqualTo(fsp.ProductDeconvolutionParameters));
+
+            Assert.That(fspClone.CustomIons, Is.Not.Null);
+            CollectionAssert.AreEqual(fsp.CustomIons, fspClone.CustomIons);
+
+            // Verify clone creates a new list, not sharing the reference
+            fspClone.CustomIons.Add(ProductType.c);
+            Assert.That(fsp.CustomIons.Count, Is.EqualTo(2), "Original's list should not be affected by clone modifications");
         }
 
         [Test]
@@ -113,7 +144,7 @@ namespace Test
             Assert.That(defaultParameters.CustomIons, Is.Not.EqualTo(notDefaultParameters.CustomIons));
 
             FileSpecificParameters emptyFileSpecificParameters = new FileSpecificParameters();
-            CommonParameters updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, emptyFileSpecificParameters);
+            CommonParameters updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, emptyFileSpecificParameters, null);
 
             //CHECK THAT NOTHING CHANGED
             Assert.That(updatedParameters.DissociationType, Is.EqualTo(notDefaultParameters.DissociationType));
@@ -137,6 +168,8 @@ namespace Test
             Assert.That(updatedParameters.ListOfModsVariable, Is.EqualTo(notDefaultParameters.ListOfModsVariable));
             Assert.That(updatedParameters.ListOfModsFixed, Is.EqualTo(notDefaultParameters.ListOfModsFixed));
             Assert.That(updatedParameters.CustomIons, Is.EqualTo(notDefaultParameters.CustomIons));
+            Assert.That(updatedParameters.PrecursorDeconvolutionParameters, Is.EqualTo(notDefaultParameters.PrecursorDeconvolutionParameters));
+            Assert.That(updatedParameters.ProductDeconvolutionParameters, Is.EqualTo(notDefaultParameters.ProductDeconvolutionParameters));
 
             FileSpecificParameters basicFileSpecificParameters = new FileSpecificParameters
             {
@@ -150,7 +183,7 @@ namespace Test
                 DissociationType = DissociationType.CID,
                 CustomIons = new List<ProductType> { ProductType.b, ProductType.y }
             };
-            updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, basicFileSpecificParameters);
+            updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, basicFileSpecificParameters, null);
             //CHECK THAT SOMETHINGS CHANGED AND OTHERS DIDN'T
             Assert.That(updatedParameters.DissociationType, Is.EqualTo(basicFileSpecificParameters.DissociationType));
             Assert.That(updatedParameters.ProductMassTolerance, Is.EqualTo(basicFileSpecificParameters.ProductMassTolerance));
@@ -179,7 +212,31 @@ namespace Test
             Assert.That(((DigestionParams)updatedParameters.DigestionParams).InitiatorMethionineBehavior, Is.EqualTo(((DigestionParams)notDefaultParameters.DigestionParams).InitiatorMethionineBehavior));
             Assert.That(updatedParameters.ListOfModsVariable, Is.EqualTo(notDefaultParameters.ListOfModsVariable));
             Assert.That(updatedParameters.ListOfModsFixed, Is.EqualTo(notDefaultParameters.ListOfModsFixed));
+            Assert.That(updatedParameters.PrecursorDeconvolutionParameters, Is.EqualTo(notDefaultParameters.PrecursorDeconvolutionParameters));
+            Assert.That(updatedParameters.ProductDeconvolutionParameters, Is.EqualTo(notDefaultParameters.ProductDeconvolutionParameters));
 
+        }
+
+        [Test]
+        public static void TestFileSpecificParamsOverridesDeconvParams()
+        {
+            CommonParameters defaultParams = new CommonParameters(
+                precursorDeconParams: new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                productDeconParams: new ClassicDeconvolutionParameters(1, 10, 4, 3));
+
+            var fspOverride = new FileSpecificParameters
+            {
+                PrecursorDeconvolutionParameters = new IsoDecDeconvolutionParameters(),
+                ProductDeconvolutionParameters = new IsoDecDeconvolutionParameters()
+            };
+
+            CommonParameters updated = MetaMorpheusTask.SetAllFileSpecificCommonParams(defaultParams, fspOverride, null);
+
+            Assert.That(updated.PrecursorDeconvolutionParameters, Is.EqualTo(fspOverride.PrecursorDeconvolutionParameters));
+            Assert.That(updated.PrecursorDeconvolutionParameters, Is.Not.EqualTo(defaultParams.PrecursorDeconvolutionParameters),
+                "FSP deconv params should override CP defaults");
+            Assert.That(updated.ProductDeconvolutionParameters, Is.EqualTo(fspOverride.ProductDeconvolutionParameters));
+            Assert.That(updated.ProductDeconvolutionParameters, Is.Not.EqualTo(defaultParams.ProductDeconvolutionParameters));
         }
 
 
@@ -247,7 +304,7 @@ namespace Test
             Assert.That(defaultParameters.CustomIons, Is.Not.EqualTo(notDefaultParameters.CustomIons));
 
             FileSpecificParameters emptyFileSpecificParameters = new FileSpecificParameters();
-            CommonParameters updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, emptyFileSpecificParameters);
+            CommonParameters updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, emptyFileSpecificParameters, null);
 
             //CHECK THAT NOTHING CHANGED
             Assert.That(updatedParameters.DissociationType, Is.EqualTo(notDefaultParameters.DissociationType));
@@ -270,12 +327,16 @@ namespace Test
             Assert.That(updatedParameters.ListOfModsVariable, Is.EqualTo(notDefaultParameters.ListOfModsVariable));
             Assert.That(updatedParameters.ListOfModsFixed, Is.EqualTo(notDefaultParameters.ListOfModsFixed));
             Assert.That(updatedParameters.CustomIons, Is.EqualTo(notDefaultParameters.CustomIons));
+            Assert.That(updatedParameters.PrecursorDeconvolutionParameters, Is.EqualTo(notDefaultParameters.PrecursorDeconvolutionParameters));
+            Assert.That(updatedParameters.ProductDeconvolutionParameters, Is.EqualTo(notDefaultParameters.ProductDeconvolutionParameters));
 
             FileSpecificParameters basicFileSpecificParameters = new FileSpecificParameters
             {
                 PrecursorMassTolerance = new PpmTolerance(10),
                 ProductMassTolerance = new PpmTolerance(30),
-                DigestionAgent = RnaseDictionary.Dictionary["RNase PhyM"],
+                // any RNase other than the default does; RNase T1's name is stable, while "RNase PhyM" was renamed to
+                // "RNase PhyM (>= 7M urea)" by mzLib #1301 and no longer exists on mzLib master
+                DigestionAgent = RnaseDictionary.Dictionary["RNase T1"],
                 MinPeptideLength = 1,
                 MaxPeptideLength = 50,
                 MaxMissedCleavages = 2,
@@ -283,7 +344,7 @@ namespace Test
                 DissociationType = DissociationType.CID,
                 CustomIons = new List<ProductType> { ProductType.b, ProductType.y }
             };
-            updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, basicFileSpecificParameters);
+            updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, basicFileSpecificParameters, null);
             //CHECK THAT SOMETHINGS CHANGED AND OTHERS DIDN'T
             Assert.That(updatedParameters.DissociationType, Is.EqualTo(basicFileSpecificParameters.DissociationType));
             Assert.That(updatedParameters.ProductMassTolerance, Is.EqualTo(basicFileSpecificParameters.ProductMassTolerance));
@@ -311,6 +372,8 @@ namespace Test
             Assert.That(updatedParameters.MaxThreadsToUsePerFile, Is.EqualTo(notDefaultParameters.MaxThreadsToUsePerFile));
             Assert.That(updatedParameters.ListOfModsVariable, Is.EqualTo(notDefaultParameters.ListOfModsVariable));
             Assert.That(updatedParameters.ListOfModsFixed, Is.EqualTo(notDefaultParameters.ListOfModsFixed));
+            Assert.That(updatedParameters.PrecursorDeconvolutionParameters, Is.EqualTo(notDefaultParameters.PrecursorDeconvolutionParameters));
+            Assert.That(updatedParameters.ProductDeconvolutionParameters, Is.EqualTo(notDefaultParameters.ProductDeconvolutionParameters));
         }
 
 
@@ -322,7 +385,7 @@ namespace Test
 
             FileSpecificParameters emptyFileSpecificParameters = new FileSpecificParameters();
 
-            Assert.That(() => MetaMorpheusTask.SetAllFileSpecificCommonParams(defaultParameters, emptyFileSpecificParameters),
+            Assert.That(() => MetaMorpheusTask.SetAllFileSpecificCommonParams(defaultParameters, emptyFileSpecificParameters, null),
                 Throws.TypeOf<MetaMorpheusException>()
                     .With.Message.Contain("Unrecognized digestion parameters of type"));
         }
@@ -344,6 +407,7 @@ namespace Test
             public int MaxModificationIsoforms { get; set; }
             public int MaxMods { get; set; }
             public DigestionAgent DigestionAgent { get; }
+            public DigestionAgent SpecificDigestionAgent => DigestionAgent;
             public FragmentationTerminus FragmentationTerminus { get; }
             public CleavageSpecificity SearchModeType { get; }
             public IDigestionParams Clone(FragmentationTerminus? newTerminus = null) => this;

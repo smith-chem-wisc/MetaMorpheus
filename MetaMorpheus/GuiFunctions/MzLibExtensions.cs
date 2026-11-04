@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+using Chemistry;
+using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using Omics;
@@ -9,9 +10,9 @@ using Readers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Chemistry;
 using Transcriptomics;
 using Transcriptomics.Digestion;
+using UsefulProteomicsDatabases;
 
 namespace GuiFunctions
 {
@@ -21,6 +22,12 @@ namespace GuiFunctions
     public static class MzLibExtensions
     {
 
+        public static DeconParamsViewModel GetDefaultViewModel(this DeconvolutionType deconvolutionType, AnalyteType? analyteType = null, bool isPrecursor = true)
+        {
+            var defaultParams = deconvolutionType.GetDefaultDeconParams(analyteType, isPrecursor);
+            return defaultParams?.ToViewModel(isPrecursor);
+        }
+
         /// <summary>
         /// Converts the given <see cref="DeconvolutionParameters"/> to a <see cref="DeconParamsViewModel"/>.
         /// </summary>
@@ -29,20 +36,84 @@ namespace GuiFunctions
         /// <exception cref="NotImplementedException">
         /// Thrown when the type of <paramref name="parameters"/> is not supported.
         /// </exception>
-        public static DeconParamsViewModel ToViewModel(this DeconvolutionParameters parameters)
+        public static DeconParamsViewModel ToViewModel(this DeconvolutionParameters parameters, bool isPrecursor = true)
         {
             if (parameters is ClassicDeconvolutionParameters classicParams)
-            {
                 return new ClassicDeconParamsViewModel(classicParams);
-            }
-            else if (parameters is IsoDecDeconvolutionParameters isoParams)
-            {
+            
+            if (parameters is IsoDecDeconvolutionParameters isoParams)
                 return new IsoDecDeconParamsViewModel(isoParams);
-            }
-            else
+            
+            if (parameters is MultipleDeconParameters multipleParams)
+                return new MultipleDeconParamsViewModel(multipleParams, isPrecursor);
+
+            if (parameters is FromFileDeconvolutionParameters fromFileParams)
+                return new FromFileDeconParamsViewModel(fromFileParams);
+
+            throw new NotImplementedException();
+        }
+
+        public static (int MinAssumedChargeState, int MaxAssumedChargeState, Polarity Polarity, AverageResidue AverageResidueModel) GetDefaultDeconParamValues(this AnalyteType analyteType, bool isPrecursor)
+        {
+            return (analyteType switch
             {
-                throw new NotImplementedException();
+                AnalyteType.Peptide => 1,
+                AnalyteType.Proteoform => 1,
+                AnalyteType.Oligo => isPrecursor ? -20 : -10,
+                _ => throw new ArgumentOutOfRangeException()
+            },
+            analyteType switch
+            {
+                AnalyteType.Peptide => isPrecursor ? 12 : 10,
+                AnalyteType.Proteoform => isPrecursor ? 60 : 10,
+                AnalyteType.Oligo => -1,
+                _ => throw new ArgumentOutOfRangeException()
+            },
+            analyteType switch
+            {
+                AnalyteType.Peptide => Polarity.Positive,
+                AnalyteType.Proteoform => Polarity.Positive,
+                AnalyteType.Oligo => Polarity.Negative,
+                _ => throw new ArgumentOutOfRangeException()
+            },
+            analyteType switch
+            {
+                AnalyteType.Peptide => new Averagine(),
+                AnalyteType.Proteoform => new Averagine(),
+                AnalyteType.Oligo => new OxyriboAveragine(),
+                _ => throw new ArgumentOutOfRangeException()
+            });
+        }
+
+        public static DeconvolutionParameters GetDefaultDeconParams(this DeconvolutionType type, AnalyteType? analyteType = null, bool isPrecursor = true)
+        {
+            analyteType ??= GlobalVariables.AnalyteType;
+            var (minCharge, maxCharge, polarity, averageResidueModel) = analyteType.Value.GetDefaultDeconParamValues(isPrecursor);
+
+            switch (type)
+            {
+                case DeconvolutionType.FromFile:
+                case DeconvolutionType.ExampleNewDeconvolutionTemplate:
+                    return null;
+
+                // Default to only classic
+                case DeconvolutionType.Multiple:
+                    var inner = DeconvolutionType.ClassicDeconvolution.GetDefaultDeconParams(analyteType, isPrecursor);
+                    return new MultipleDeconParameters([inner], inner.MinAssumedChargeState, inner.MaxAssumedChargeState, inner.Polarity, inner.AverageResidueModel, inner.ExpectedIsotopeSpacing);
+
+                case DeconvolutionType.ClassicDeconvolution:
+                    return new ClassicDeconvolutionParameters(minCharge, maxCharge, 4, 3, polarity, averageResidueModel);
+                    
+                case DeconvolutionType.IsoDecDeconvolution:
+                    return new IsoDecDeconvolutionParameters(polarity)
+                    {
+                        MaxAssumedChargeState = maxCharge,
+                        MinAssumedChargeState = minCharge,
+                        ReportMulitpleMonoisos = false,
+                    };
             }
+
+            return null;
         }
 
         public static bool IsCrossLinkedPeptide(this SpectrumMatchFromTsv sm)

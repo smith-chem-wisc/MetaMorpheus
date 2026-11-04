@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using OxyPlot;
 using Omics.Fragmentation;
 using System;
@@ -11,6 +11,7 @@ using Easy.Common.Extensions;
 using Readers;
 using GuiFunctions.MetaDraw;
 using OxyPlot.Wpf;
+using GuiFunctions.MetaDraw.BioPolymerCoverage.ColorMapping.Gradient;
 
 namespace GuiFunctions
 {
@@ -37,6 +38,7 @@ namespace GuiFunctions
         // graphic settings
         public static Dictionary<string, bool> SpectrumDescription { get; set; }
         public static bool DisplayIonAnnotations { get; set; } = true;
+        public static bool UseShortIonAnnotationsWhenPossible { get; set; } = false;
         public static bool AnnotateMzValues { get; set; } = false;
         public static bool AnnotateCharges { get; set; } = true;
         public static bool AnnotationBold { get; set; } = false;
@@ -59,6 +61,8 @@ namespace GuiFunctions
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
         public static double SpectrumDescriptionFontSize { get; set; } = 10;
         public static bool AnnotateIsotopicEnvelopes { get; set; } = true;
+        public static double MinMzToPlot { get; set; } = 0;
+        public static double MaxMzToPlot { get; set; } = 4000;
 
         // Chimera Settings
         public static bool DisplayChimeraLegend { get; set; } = true;
@@ -84,6 +88,7 @@ namespace GuiFunctions
         // biopolymer coverage settings
         public static int BioPolymerCoverageFontSize { get; set; } = 16;
         public static Dictionary<BioPolymerCoverageType, SolidColorBrush> BioPolymerCoverageColors { get; set; }
+        public static ColorGradientType BioPolymerCoverageGradientType { get; set; } = ColorGradientType.Viridis;
 
         #endregion
 
@@ -116,7 +121,7 @@ namespace GuiFunctions
         public static string[] CoverageTypes { get; set; } = { "N-Terminal Color", "C-Terminal Color", "Internal Color" };
         public static string[] ExportTypes { get; set; } = { "Pdf", "Png", "Jpeg", "Tiff", "Wmf", "Bmp" };
         public static string[] AmbiguityTypes { get; set; } = { "No Filter", "1", "2A", "2B", "2C", "2D", "3", "4", "5" };
-        public static string[] GroupingProperties { get; set; } = { "None", "Notch", "Precursor Charge", "File Name", "Ambiguity Level", "Missed Cleavages", "OrganismName", "DecoyContamTarget" };
+        public static string[] GroupingProperties { get; set; } = { "None", "Notch", "Precursor Charge", "File Name", "Ambiguity Level", "Missed Cleavages", "Collision Energy", "OrganismName", "DecoyContamTarget" };
 
         #endregion
 
@@ -143,7 +148,7 @@ namespace GuiFunctions
         {
             if (sm.QValue <= QValueFilter
                  && (sm.QValueNotch == null || sm.QValueNotch <= QValueFilter)
-                 && (sm.DecoyContamTarget == "T" || (sm.DecoyContamTarget == "D" && ShowDecoys) || (sm.DecoyContamTarget == "C" && ShowContaminants))
+                 && (EveryParentIs(sm.DecoyContamTarget, "T", "ET") || (EveryParentIs(sm.DecoyContamTarget, "D", "ED") && ShowDecoys) || (sm.DecoyContamTarget == "C" && ShowContaminants))
                  // Glyco localization level filtering - only applies to glyco psms that have localization levels
                  && (sm is not GlycoPsmFromTsv { GlycanLocalizationLevel: not null } gly || (gly.GlycanLocalizationLevel.Value >= LocalizationLevelStart && gly.GlycanLocalizationLevel.Value <= LocalizationLevelEnd)))
             {
@@ -160,6 +165,14 @@ namespace GuiFunctions
 
             return false;
         }
+
+        /// <summary>
+        /// True when every parent named by a Decoy/Contaminant/Target label is one of the two kinds.
+        /// Entrapment is written ET/ED but is a target or decoy for filtering, and a peptide shared by
+        /// a target and an entrapment protein reads "T|ET"; a mixed "T|D" or "T|C" still matches neither.
+        /// </summary>
+        private static bool EveryParentIs(string label, string kind, string entrapmentKind) =>
+            !string.IsNullOrEmpty(label) && label.Split('|').All(part => part == kind || part == entrapmentKind);
 
         private static void InitializeDictionaries()
         {
@@ -515,6 +528,7 @@ namespace GuiFunctions
             return new MetaDrawSettingsSnapshot()
             {
                 DisplayIonAnnotations = DisplayIonAnnotations,
+                UseShortIonAnnotationsWhenPossible = UseShortIonAnnotationsWhenPossible,
                 AnnotateMzValues = AnnotateMzValues,
                 AnnotateCharges = AnnotateCharges,
                 AnnotationBold = AnnotationBold,
@@ -549,6 +563,8 @@ namespace GuiFunctions
                 AnnotateIsotopicEnvelopes = AnnotateIsotopicEnvelopes,
                 SpectrumDescriptionFontSize = SpectrumDescriptionFontSize,
                 SuppressMessageBoxes = SuppressMessageBoxes,
+                MinMzToPlot = MinMzToPlot,
+                MaxMzToPlot = MaxMzToPlot,
                 ChimeraLegendTakeFirstIfAmbiguous = ChimeraLegendTakeFirstIfAmbiguous,
                 ChimeraLegendMaxWidth = ChimeraLegendMaxWidth,
                 NormalizeHistogramToFile = NormalizeHistogramToFile,
@@ -556,6 +572,7 @@ namespace GuiFunctions
                 DataVisualizationColorOrder = DataVisualizationColorOrder?.Select(c => c.GetColorName()).ToList(),
                 BioPolymerCoverageFontSize = BioPolymerCoverageFontSize,
                 BioPolymerCoverageColors = BioPolymerCoverageColors.Select(p => $"{p.Key},{p.Value.ToOxyColor().GetColorName()}").ToList(),
+                BioPolymerCoverageGradientType = BioPolymerCoverageGradientType,
                 
                 // Save from the new ViewModel structure
                 UseLogScaleYAxis = PlotModelStatParametersViewModel.Instance.UseLogScaleYAxis,
@@ -573,6 +590,7 @@ namespace GuiFunctions
         {
             flaggedErrorOnRead = false;
             DisplayIonAnnotations = settings.DisplayIonAnnotations;
+            UseShortIonAnnotationsWhenPossible = settings.UseShortIonAnnotationsWhenPossible;
             AnnotateMzValues = settings.AnnotateMzValues;
             AnnotateCharges = settings.AnnotateCharges;
             AnnotationBold = settings.AnnotationBold;
@@ -602,12 +620,15 @@ namespace GuiFunctions
             UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
             InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
             SuppressMessageBoxes = settings.SuppressMessageBoxes;
+            MinMzToPlot = settings.MinMzToPlot;
+            MaxMzToPlot = settings.MaxMzToPlot;
             ChimeraLegendTakeFirstIfAmbiguous = settings.ChimeraLegendTakeFirstIfAmbiguous;
             ChimeraLegendMaxWidth = settings.ChimeraLegendMaxWidth;
             NormalizeHistogramToFile = settings.NormalizeHistogramToFile;
             DisplayFilteredOnly = settings.DisplayFilteredOnly;
             BioPolymerCoverageFontSize = settings.BioPolymerCoverageFontSize;
-            
+            BioPolymerCoverageGradientType = settings.BioPolymerCoverageGradientType;
+
             // Load into the new ViewModel structure
             var plotParams = new PlotModelStatParameters
             {

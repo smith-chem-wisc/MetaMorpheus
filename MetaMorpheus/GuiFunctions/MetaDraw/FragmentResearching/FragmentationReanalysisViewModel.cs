@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -119,6 +119,15 @@ namespace GuiFunctions
             set { _productIonMassTolerance = value; OnPropertyChanged(nameof(ProductIonMassTolerance)); }
         }
 
+        private string _selectedToleranceUnit = "ppm";
+        public string SelectedToleranceUnit
+        {
+            get => _selectedToleranceUnit;
+            set { _selectedToleranceUnit = value; OnPropertyChanged(nameof(SelectedToleranceUnit)); }
+        }
+
+        public ObservableCollection<string> PossibleToleranceUnits { get; } = ["ppm", "Da"];
+
         private bool _matchAllCharges;
         public bool MatchAllCharges
         {
@@ -206,10 +215,10 @@ namespace GuiFunctions
                     // unsupported ions due to :
                     case ProductType.Y:
                     case ProductType.Ycore:
-                    case ProductType.D:
                         break;
 
                     // default case
+                    case ProductType.D:
                     default:
                         yield return new FragmentViewModel(false, product);
                         break;
@@ -264,6 +273,26 @@ namespace GuiFunctions
             }
             var allProducts = terminalProducts.Concat(internalProducts).ToList();
 
+            // Diagnostic Ions require a specific fragmentaiton type in PeptideWithSetMods.Fragment, not Custom Fragmentation Type, so we must handle it separately
+            if (productsSnapshot.Contains(ProductType.D))
+            {
+                var fragmentTypesToUse = bioPolymer.AllModsOneIsNterminus
+                    .SelectMany(p => p.Value.DiagnosticIons)
+                    .DistinctBy(p => p.Value.SequenceEqual(p.Value))
+                    .Select(p => p.Key);
+
+                HashSet<Product> diagnosticProducts = new HashSet<Product>();
+                List<Product> productList = new List<Product>();
+                foreach (var dissType in fragmentTypesToUse)
+                {
+                    productList.Clear();
+                    bioPolymer.Fragment(dissType, FragmentationTerminus.Both, productList, fragmentationParams);
+                    terminalProducts.AddRange(productList.Where(p => p.ProductType == ProductType.D));
+                }
+
+                allProducts.AddRange(terminalProducts);
+            }
+
             // These will either be default or parsed from the search toml leading to the PSMs. 
             var commonParams = new CommonParameters(
                 precursorDeconParams: MetaDrawSettingsViewModel.Instance.DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters,
@@ -274,8 +303,13 @@ namespace GuiFunctions
                 );
 
 
-            if (Math.Abs(commonParams.ProductMassTolerance.Value - ProductIonMassTolerance) > 0.00001)
-                commonParams.ProductMassTolerance = new PpmTolerance(ProductIonMassTolerance);
+            bool valueChanged = Math.Abs(commonParams.ProductMassTolerance.Value - ProductIonMassTolerance) > 0.00001;
+            bool typeChanged = (SelectedToleranceUnit == "Da" && commonParams.ProductMassTolerance is not AbsoluteTolerance)
+                || (SelectedToleranceUnit == "ppm" && commonParams.ProductMassTolerance is not PpmTolerance);
+            if (typeChanged || valueChanged)
+                commonParams.ProductMassTolerance = SelectedToleranceUnit == "ppm"
+                    ? new PpmTolerance(ProductIonMassTolerance)
+                    : new AbsoluteTolerance(ProductIonMassTolerance);
 
             var specificMass = new Ms2ScanWithSpecificMass(ms2Scan, smToRematch.PrecursorMz,
                 smToRematch.PrecursorCharge, smToRematch.FileNameWithoutExtension, commonParams);
@@ -286,7 +320,7 @@ namespace GuiFunctions
                 : newMatches;
 
             uniqueMatches = uniqueMatches.Where(p => productsSnapshot.Contains(p.NeutralTheoreticalProduct.ProductType))
-                .Where(p => Math.Abs(p.MassErrorPpm) <= ProductIonMassTolerance);
+                .Where(p => Math.Abs(SelectedToleranceUnit == "ppm" ? p.MassErrorPpm : p.MassErrorDa) <= ProductIonMassTolerance);
 
             // retain only internal ions
             if (!FragmentationParamsViewModel.GenerateInternalIons)

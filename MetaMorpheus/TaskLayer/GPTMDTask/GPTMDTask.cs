@@ -46,7 +46,7 @@ namespace TaskLayer
             MyFileManager myFileManager = new MyFileManager(true);
 
             // start loading first spectra file in the background
-            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(currentRawFileList[0], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
+            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(currentRawFileList[0], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0], currentRawFileList[0])));
             nextFileLoadingTask.Start();
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
@@ -80,7 +80,9 @@ namespace TaskLayer
 
             // temporary search type for writing prose
             // the actual search type is technically file-specific but we don't allow file-specific notches, so it's safe to do this
-            MassDiffAcceptor tempSearchMode = new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance);
+            MassDiffAcceptor tempSearchMode = CommonParameters.UsesMostAbundantPeak()
+                ? new MostAbundantDotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance, CommonParameters.GetAverageResidue(), expectedIsotopeSpacing: CommonParameters.IsotopeSpacing())
+                : new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), CommonParameters.PrecursorMassTolerance);
             ProseCreatedWhileRunning.Append("precursor mass tolerance(s) = {" + tempSearchMode.ToProseString() + "}; ");
 
             ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + ". ");
@@ -112,8 +114,10 @@ namespace TaskLayer
                 // mark the file as in-progress
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
-                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-                MassDiffAcceptor searchMode = new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance);
+                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex], origDataFile);
+                MassDiffAcceptor searchMode = combinedParams.UsesMostAbundantPeak()
+                    ? new MostAbundantDotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance, combinedParams.GetAverageResidue(), expectedIsotopeSpacing: combinedParams.IsotopeSpacing())
+                    : new DotMassDiffAcceptor("", GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos), combinedParams.PrecursorMassTolerance);
 
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
@@ -126,11 +130,15 @@ namespace TaskLayer
                 if (origDataFile != currentRawFileList.Last())
                 {
                     int nextFileIndex = spectraFileIndex + 1;
-                    nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(currentRawFileList[nextFileIndex], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[nextFileIndex])));
+                    nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(currentRawFileList[nextFileIndex], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[nextFileIndex], currentRawFileList[nextFileIndex])));
                     nextFileLoadingTask.Start();
                 }
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.GetPrecursorMassForSearch(combinedParams)).ToArray();
+                // A most-abundant search falls back to the monoisotopic mass for any scan with no observed
+                // apex. That is intended, but silent — report how often it happens so it is noticed.
+                string fallbackWarning = arrayOfMs2ScansSortedByMass.GetMonoisotopicFallbackWarning(combinedParams, Path.GetFileName(origDataFile));
+                if (fallbackWarning != null) { Warn(fallbackWarning); }
                 myFileManager.DoneWithFile(origDataFile);
                 SpectralMatch[] psmArray = new SpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
@@ -173,7 +181,7 @@ namespace TaskLayer
             // GPTMD doesn't work as well if you do FDR on a file-by-file basis. Presumably this is because it takes multiple files to get enough PSMs for all the different notches
             new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, doPEP: false).Run();
             Dictionary<string, HashSet<Tuple<int, Modification>>> allModDictionary = new();
-            new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, allModDictionary, GptmdParameters.GptmdFilters).Run();
+            new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, allModDictionary, GptmdParameters.GptmdFilters, GptmdParameters.AddAlternativeSitesForDatabaseMods, fixedModifications).Run();
 
             //Move this text after search because proteins don't get loaded until search begins.
             ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + $" non-decoy {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
@@ -200,7 +208,12 @@ namespace TaskLayer
 
                 FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
-                MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullName, false));
+                var newDb = new DbForTask(outputXMLdbFullName, false)
+                {
+                    DerivedFrom = dbFilenameList.Where(p => !p.IsContaminant && !p.IsSpectralLibrary).ToList()
+                };
+                newDb.RecordIdentity();
+                MyTaskResults.NewDatabases.Add(newDb);
                 if(dbFilenameList.Any(p=>p.IsSpectralLibrary))
                 {
                     MyTaskResults.NewDatabases.Add(dbFilenameList.First(p => p.IsSpectralLibrary));
@@ -227,7 +240,12 @@ namespace TaskLayer
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(allModDictionary, toWrite, outputXMLdbFullNameContaminants);
 
                 FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
-                MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
+                var newContaminantDb = new DbForTask(outputXMLdbFullNameContaminants, true)
+                {
+                    DerivedFrom = dbFilenameList.Where(p => p.IsContaminant).ToList()
+                };
+                newContaminantDb.RecordIdentity();
+                MyTaskResults.NewDatabases.Add(newContaminantDb);
                 MyTaskResults.AddTaskSummaryText("Contaminant modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
                 MyTaskResults.AddTaskSummaryText("Mods types and counts:");
                 MyTaskResults.AddTaskSummaryText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));

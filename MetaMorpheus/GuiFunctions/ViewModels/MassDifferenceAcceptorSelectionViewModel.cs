@@ -1,12 +1,13 @@
-﻿using Chemistry;
+using Chemistry;
 using Easy.Common.Extensions;
+using EngineLayer;
+using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
-using MzLibUtil;
 using TaskLayer;
 
 namespace GuiFunctions;
@@ -22,7 +23,14 @@ public enum CustomMdacMode
 /// </summary>
 public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
 {
-    public ObservableCollection<MassDifferenceAcceptorTypeViewModel> MassDiffAcceptorTypes { get; }
+    public ObservableCollection<MassDifferenceAcceptorTypeViewModel> MonoMassDiffAcceptorTypes { get; }
+    public ObservableCollection<MassDifferenceAcceptorTypeViewModel> MostAbundantMassDiffAcceptorTypes { get; }
+
+    /// <summary>
+    /// The acceptor collection that matches the currently selected precursor mass mode. The GUI binds a single
+    /// ListBox to this, so the inactive collection is never bound and cannot write a stale <c>null</c> selection back.
+    /// </summary>
+    public ObservableCollection<MassDifferenceAcceptorTypeViewModel> ActiveMassDiffAcceptorTypes => UseMostAbundantMass ? MostAbundantMassDiffAcceptorTypes : MonoMassDiffAcceptorTypes;
     public ObservableCollection<SelectableNotchViewModel> PredefinedNotches { get; } = new()
     {
         new SelectableNotchViewModel("Missed Mono", Chemistry.Constants.C13MinusC12),
@@ -30,8 +38,10 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
         new SelectableNotchViewModel("K+", ChemicalFormula.ParseFormula("K1H-1").MonoisotopicMass),
     };
 
-    public MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType selectedType, string customText, double defaultCustomTolerance = 5)
+    public MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType selectedType, string customText, double defaultCustomTolerance = 5,
+        PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic)
     {
+
         // Almost every piece of this constructor is order dependent. Be careful when changing. 
         var types = Enum.GetValues<MassDiffAcceptorType>().ToList();
         if (types.Count > 1)
@@ -41,13 +51,29 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
             types.Insert(4, last);
         }
         var models = types.Select(CreateModel);
-        MassDiffAcceptorTypes = new(models);
-        SelectedType = MassDiffAcceptorTypes.FirstOrDefault(m => m.Type == selectedType) ?? MassDiffAcceptorTypes.First();
+        MonoMassDiffAcceptorTypes = new(models.Where(p => !p.Type.IsMostAbundant()).OrderBy(p => p));
+        MostAbundantMassDiffAcceptorTypes = new(models.Where(p => p.Type.IsMostAbundant()).OrderBy(p => p));
+        SelectedType = MonoMassDiffAcceptorTypes.FirstOrDefault(m => m.Type == selectedType) ?? MostAbundantMassDiffAcceptorTypes.FirstOrDefault(m => m.Type == selectedType) ?? MonoMassDiffAcceptorTypes.First();
 
         // Default tolerance types
         ToleranceTypes = new[] { "ppm", "da" };
         SelectedToleranceType = ToleranceTypes[0];
         ToleranceValue = defaultCustomTolerance.ToString(CultureInfo.InvariantCulture);
+
+        // Precursor Mass Match Modes - Order of these operations is important
+        PrecursorMassMatchModes = new ObservableCollection<PrecursorMassMatchMode>(Enum.GetValues<PrecursorMassMatchMode>());
+
+        if (SelectedType.Type.IsMostAbundant())
+        {
+            _previousMostAbundantSelected = SelectedType;
+            _previousMonoSelected = MonoMassDiffAcceptorTypes[0]; // Set to Exact 
+        }
+        else
+        {
+            _previousMonoSelected = SelectedType;
+            _previousMostAbundantSelected = MostAbundantMassDiffAcceptorTypes.Last(); // Set to +- 2
+        }
+        PrecursorMassMatchMode = precursorMassMatchMode;
 
         foreach (var notch in PredefinedNotches)
         {
@@ -69,12 +95,78 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
         }
     }
 
+    #region Most Abundant vs Mono Mode
+
+
+    // Used as defaults and/or to ensure when switching modes that the previous radio button is checked. 
+    private MassDifferenceAcceptorTypeViewModel _previousMonoSelected;
+    private MassDifferenceAcceptorTypeViewModel _previousMostAbundantSelected;
+
+
+    public ObservableCollection<PrecursorMassMatchMode> PrecursorMassMatchModes { get; } 
+
+    private PrecursorMassMatchMode _precursorMassMatchMode;
+    /// <summary>
+    /// Selects whether precursor candidates are matched by the monoisotopic mass (the default) or by the
+    /// most-abundant observed isotopic mass. Surfaced as the "Use Most Abundant Mass" checkbox in the
+    /// Calibration, GPTMD, and Search task windows.
+    /// </summary>
+    public PrecursorMassMatchMode PrecursorMassMatchMode
+    {
+        get => _precursorMassMatchMode;
+        set
+        {
+            if (_precursorMassMatchMode != value)
+            {
+                _precursorMassMatchMode = value;
+
+                if (value is PrecursorMassMatchMode.MostAbundant)
+                {
+                    _previousMonoSelected = SelectedType;
+                    SelectedType = _previousMostAbundantSelected;
+                }
+                else if (value is PrecursorMassMatchMode.Monoisotopic)
+                {
+                    _previousMostAbundantSelected = SelectedType;
+                    SelectedType = _previousMonoSelected;
+                }
+            }
+
+            OnPropertyChanged(nameof(PrecursorMassMatchMode));
+            OnPropertyChanged(nameof(UseMostAbundantMass)); 
+            OnPropertyChanged(nameof(UseMonoisotopicMass));
+            OnPropertyChanged(nameof(ActiveMassDiffAcceptorTypes));
+        }
+    }
+
+    /// <summary>
+    /// Boolean projection of <see cref="PrecursorMassMatchMode"/> for two-way checkbox binding.
+    /// </summary>
+    public bool UseMostAbundantMass
+    {
+        get => _precursorMassMatchMode == PrecursorMassMatchMode.MostAbundant;
+        set => PrecursorMassMatchMode = value ? PrecursorMassMatchMode.MostAbundant : PrecursorMassMatchMode.Monoisotopic;
+    }
+
+    public bool UseMonoisotopicMass
+    {
+        get => _precursorMassMatchMode == PrecursorMassMatchMode.Monoisotopic;
+        set => PrecursorMassMatchMode = value ? PrecursorMassMatchMode.Monoisotopic : PrecursorMassMatchMode.MostAbundant;
+    }
+
+    #endregion
+
     private MassDifferenceAcceptorTypeViewModel _selectedType;
     public MassDifferenceAcceptorTypeViewModel SelectedType
     {
         get => _selectedType;
         set
         {
+            if (value == null)
+            {
+                return; // keep the prior selection if a binding ever coerces its source item to null
+            }
+
             if (_selectedType != null) // only false during initialization when no cache is present. 
             {
                 switch (_selectedType.Type)
@@ -361,7 +453,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
                     break;
                 case "OpenSearch":
                     // Switch to the Open type and do not set CustomMode
-                    SelectedType = MassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.Open);
+                    SelectedType = MonoMassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.Open);
                     break;
                 default:
                     // For unknown/unsupported modes, just store the string for advanced/legacy use
@@ -437,6 +529,9 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
             MassDiffAcceptorType.ModOpen => "-187 and Up",
             MassDiffAcceptorType.Open => "Accept all",
             MassDiffAcceptorType.Custom => "Custom",
+            MassDiffAcceptorType.MostAbundant_Exact => "Most Abundant Exact",
+            MassDiffAcceptorType.MostAbundant_PlusMinusOne => "Most Abundant +- 1 Isotopologue",
+            MassDiffAcceptorType.MostAbundant_PlusMinusTwo => "Most Abundant +- 2 Isotopologues",
             _ => throw new NotImplementedException($"No model implemented for type: {type}"),
         };
 
@@ -450,6 +545,9 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
             MassDiffAcceptorType.ModOpen => "An \"open-mass\" search that allows mass-differences between observed and theoretical precursor masses of -187 Da to infinity (observed can be infinitely more massive than the theoretical).\r\nThe purpose of this search type is to detect mass-differences corresponding to PTMs, amino acid variants, sample handling artifacts, etc.\r\nPlease use \"Modern Search\" mode when using this search type.",
             MassDiffAcceptorType.Open => "An \"open-mass\" search that allows mass-differences between observed and theoretical precursor masses of -infinity to infinity. \r\nThe purpose of this search type is to detect mass-differences corresponding to PTMs, amino acid variants, sample handling artifacts, etc. \r\nPlease use \"Modern Search\" mode when using this search type.",
             MassDiffAcceptorType.Custom => "A custom mass difference acceptor may be specified in multiple ways: \r\n* To accept a custom (other than the interval corresponding to the precursor tolerance) interval around zero daltons, specify a custom name, followed by \"ppmAroundZero\" or \"daltonsAroundZero\", followed by the numeric value corresponding to the interval width. \r\nExamples: \r\n\t* CustomPpmInterval ppmAroundZero 5 \r\n\t* CustomDaltonInterval daltonsAroundZero 2.1 \r\n* To accept a variety of pre-specified mass differences, use a custom name, followed by \"dot\", followed by a custom bin width, followed by comma separated acceptable mass differences. \r\nExamples: \r\n\t* CustomMissedIsotopePeaks dot 5 ppm 0,1.0029,2.0052 \r\n\t* CustomOxidationAllowed dot 0.1 da 0,16 \r\n* To accept mass differences in pre-specified dalton intervals, use a custom name, followed by \"interval\", followed by comma separated mass intervals in brackets. \r\nExample: \r\n\t* CustomPositiveIntervalAcceptror interval [0,200]",
+            MassDiffAcceptorType.MostAbundant_Exact => "Match precursor candidates by the most abundant observed isotopic mass instead of the monoisotopic mass.\r\n                                                Recommended for large (&gt;35 kDa) top-down proteoforms, where the monoisotopic peak is often undetectable.\r\n This search type assumes that there are no isotopic errors. The most abundant isotopologue is used for the theoretical mass.",
+            MassDiffAcceptorType.MostAbundant_PlusMinusOne => "Match precursor candidates by the most abundant observed isotopic mass instead of the monoisotopic mass.\r\n                                                Recommended for large (&gt;35 kDa) top-down proteoforms, where the monoisotopic peak is often undetectable.\r\n This search type allows for a 1 neutron isotopic error. The most abundant isotopologue is used for the theoretical mass.",
+            MassDiffAcceptorType.MostAbundant_PlusMinusTwo => "Match precursor candidates by the most abundant observed isotopic mass instead of the monoisotopic mass.\r\n                                                Recommended for large (&gt;35 kDa) top-down proteoforms, where the monoisotopic peak is often undetectable.\r\n This search type allows for a 2 neutron isotopic error. The most abundant isotopologue is used for the theoretical mass.",
             _ => throw new NotImplementedException($"No model implemented for type: {type}"),
         };
 
@@ -463,6 +561,9 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
             MassDiffAcceptorType.ModOpen => 0,
             MassDiffAcceptorType.Open => 0,
             MassDiffAcceptorType.Custom => 0,
+            MassDiffAcceptorType.MostAbundant_Exact => 0,
+            MassDiffAcceptorType.MostAbundant_PlusMinusOne => 1,
+            MassDiffAcceptorType.MostAbundant_PlusMinusTwo => 2,
             _ => throw new NotImplementedException($"No model implemented for type: {type}"),
         };
 
@@ -476,6 +577,9 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
             MassDiffAcceptorType.ModOpen => 0,
             MassDiffAcceptorType.Open => 0,
             MassDiffAcceptorType.Custom => 0,
+            MassDiffAcceptorType.MostAbundant_Exact => 0,
+            MassDiffAcceptorType.MostAbundant_PlusMinusOne => 1,
+            MassDiffAcceptorType.MostAbundant_PlusMinusTwo => 2,
             _ => throw new NotImplementedException($"No model implemented for type: {type}"),
         };
 
@@ -493,7 +597,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
 /// <summary>
 /// A single MassDiff acceptor type and all relevant GUI display information
 /// </summary>
-public class MassDifferenceAcceptorTypeViewModel : BaseViewModel, IEquatable<MassDiffAcceptorType>, IEquatable<MassDifferenceAcceptorTypeViewModel>
+public class MassDifferenceAcceptorTypeViewModel : BaseViewModel, IEquatable<MassDiffAcceptorType>, IEquatable<MassDifferenceAcceptorTypeViewModel>, IComparable<MassDifferenceAcceptorTypeViewModel>   
 {
     private int _positiveMissedMonos;
     public int PositiveMissedMonos
@@ -548,6 +652,11 @@ public class MassDifferenceAcceptorTypeViewModel : BaseViewModel, IEquatable<Mas
     public override int GetHashCode()
     {
         return (int)Type;
+    }
+
+    public int CompareTo(MassDifferenceAcceptorTypeViewModel other)
+    {
+        return Type.CompareTo(other.Type);
     }
 }
 

@@ -1,7 +1,9 @@
 using Easy.Common.Extensions;
 using EngineLayer;
+using EngineLayer.Util;
 using GuiFunctions;
 using GuiFunctions.MetaDraw;
+using MassSpectrometry;
 using Nett;
 using Omics.Fragmentation;
 using OxyPlot;
@@ -12,12 +14,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -41,7 +43,7 @@ namespace MetaMorpheusGUI
         public PtmLegendViewModel PtmLegend;
         private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".osmtsv", ".tsv" };
-        private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
+        private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp", ".msl" };
         private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
         public ChimeraAnalysisTabViewModel ChimeraAnalysisTabViewModel { get; set; }
         public DeconExplorationTabViewModel DeconExplorationViewModel { get; set; }
@@ -57,7 +59,9 @@ namespace MetaMorpheusGUI
             itemsControlSampleViewModel = new ParentChildScanPlotsView();
             ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel;
             AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel(!GuiGlobalParamsViewModel.Instance.IsRnaMode);
+            ChildFragmentIonControl.DataContext = FragmentationReanalysisViewModel;
             AdditionalFragmentIonControl.LinkMetaDraw(this);
+            ChildFragmentIonControl.LinkMetaDraw(this);
 
             BioPolymerTabViewModel = new BioPolymerTabViewModel(MetaDrawLogic);
             ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel();
@@ -96,7 +100,10 @@ namespace MetaMorpheusGUI
             {
                 foreach (var draggedFilePath in files)
                 {
-                    if (File.Exists(draggedFilePath) | (Directory.Exists(draggedFilePath) && Regex.IsMatch(draggedFilePath, @".d$")) )
+                    // the only directories worth dropping are Bruker ".d" folders. AddFile still decides whether the
+                    // contents are readable, so an unreadable folder is reported by the loader rather than ignored here.
+                    if (File.Exists(draggedFilePath)
+                        || (Directory.Exists(draggedFilePath) && BrukerDataDirectory.IsDotDPath(draggedFilePath)))
                     {
                         AddFile(draggedFilePath);
                     }
@@ -110,10 +117,10 @@ namespace MetaMorpheusGUI
 
             if (GlobalVariables.AcceptedSpectraFormats.Contains(theExtension))
             {
-                // If a bruker timsTof file was selected, we actually want the parent folder
-                if(theExtension == ".tdf" || theExtension == ".tdf_bin")
+                // If a Bruker inner file was selected, we actually want the parent .d folder
+                if (BrukerDataDirectory.TryGetParentDotDFolder(filePath, out string dotDFolder))
                 {
-                    filePath = Path.GetDirectoryName(filePath);
+                    filePath = dotDFolder;
                 }
                 if (!MetaDrawLogic.SpectraFilePaths.Contains(filePath))
                 {
@@ -220,10 +227,25 @@ namespace MetaMorpheusGUI
             SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
 
             List<MatchedFragmentIon> oldMatchedIons = null;
+            Dictionary<int, List<MatchedFragmentIon>> savedChildIons = null;
+            Dictionary<int, List<MatchedFragmentIon>> savedBetaIons = null;
+
             if (FragmentationReanalysisViewModel.Persist && sender is DataGrid)
             {
-                oldMatchedIons = psm.MatchedIons;
-                ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm);
+                if (MetaDrawTabControl.SelectedItem == ParentChildScanView && psm.ChildScanMatchedIons != null)
+                {
+                    savedChildIons = SaveChildScanIons(psm.ChildScanMatchedIons);
+                    if (psm is PsmFromTsv { BetaPeptideChildScanMatchedIons: not null } bp)
+                    {
+                        savedBetaIons = SaveChildScanIons(bp.BetaPeptideChildScanMatchedIons);
+                    }
+                    RematchChildScans(psm);
+                }
+                else
+                {
+                    oldMatchedIons = psm.MatchedIons;
+                    ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm);
+                }
             }
 
             wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Visible;
@@ -305,25 +327,37 @@ namespace MetaMorpheusGUI
             double maxDisplayedPerRow = (int)Math.Round((UpperSequenceAnnotaiton.ActualWidth - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0) + 7;
             MetaDrawSettings.SequenceAnnotationSegmentPerRow = (int)Math.Floor(maxDisplayedPerRow / (double)(MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment + 1));
 
-            // draw the annotated spectrum
-            MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, sequenceAnnotationCanvas, psm);
-            MetaDrawLogic.DisplaySpectrumMatch(plotView, psm, itemsControlSampleViewModel, out var errors);
-
-            // add ptm legend if desired
-            if (MetaDrawSettings.ShowLegend)
+            List<string> errors = null;
+            try
             {
-                int descriptionLineCount = MetaDrawSettings.SpectrumDescription.Count(p => p.Value);
-                if (psm.Name.IsNotNullOrEmptyOrWhiteSpace())
+                // draw the annotated spectrum
+                MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas,
+                    sequenceAnnotationCanvas, psm);
+                MetaDrawLogic.DisplaySpectrumMatch(plotView, psm, itemsControlSampleViewModel, out errors);
+
+                // add ptm legend if desired
+                if (MetaDrawSettings.ShowLegend)
                 {
-                    descriptionLineCount += (int)Math.Floor((psm.Name.Length - 20) / (double)SpectrumMatchPlot.MaxCharactersPerDescriptionLine);
+                    int descriptionLineCount = MetaDrawSettings.SpectrumDescription.Count(p => p.Value);
+                    if (psm.Name.IsNotNullOrEmptyOrWhiteSpace())
+                    {
+                        descriptionLineCount += (int)Math.Floor((psm.Name.Length - 20) /
+                                                                (double)SpectrumMatchPlot
+                                                                    .MaxCharactersPerDescriptionLine);
+                    }
+
+                    if (psm.Accession.Length > 10)
+                        descriptionLineCount++;
+                    double verticalOffset = descriptionLineCount * 1.7 * MetaDrawSettings.SpectrumDescriptionFontSize;
+
+                    PtmLegend = new PtmLegendViewModel(psm, verticalOffset);
+                    ChildScanPtmLegendControl.DataContext = PtmLegend;
+                    SequenceCoveragePtmLegendControl.DataContext = PtmLegend;
                 }
-                if (psm.Accession.Length > 10)
-                    descriptionLineCount++;
-                double verticalOffset = descriptionLineCount * 1.4 * MetaDrawSettings.SpectrumDescriptionFontSize;
-                
-                PtmLegend = new PtmLegendViewModel(psm, verticalOffset);
-                ChildScanPtmLegendControl.DataContext = PtmLegend;
-                SequenceCoveragePtmLegendControl.DataContext = PtmLegend;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error drawing spectrum and sequence: " + ex.Message);
             }
 
             //draw the sequence coverage if not crosslinked
@@ -378,6 +412,12 @@ namespace MetaMorpheusGUI
             // put the original ions back in place if they were altered
             if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
                 psm.MatchedIons = oldMatchedIons;
+
+            if (savedChildIons != null)
+                RestoreChildScanIons(psm.ChildScanMatchedIons, savedChildIons);
+
+            if (psm is PsmFromTsv bpRestore && savedBetaIons != null)
+                RestoreChildScanIons(bpRestore.BetaPeptideChildScanMatchedIons, savedBetaIons);
         }
 
         #region File Selection and Resetting 
@@ -472,6 +512,19 @@ namespace MetaMorpheusGUI
                 ClearPresentationArea();
                 MetaDrawLogic.FilteredListOfPsms.Clear();
             }
+
+            UpdateProFormaColumnVisibility();
+        }
+
+        /// <summary>
+        /// Shows the ProForma column only while the loaded results carry ProForma strings. Called after every
+        /// load and after every reset, so the column never lingers over results it does not describe.
+        /// </summary>
+        private void UpdateProFormaColumnVisibility()
+        {
+            proFormaColumn.Visibility = MetaDrawLogic.ShouldShowProFormaColumn(MetaDrawLogic.AllSpectralMatches)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
         }
 
         #endregion
@@ -558,6 +611,8 @@ namespace MetaMorpheusGUI
                 deconExplorationTabViewModel: DeconExplorationViewModel,
                 fragmentationReanalysisViewModel: FragmentationReanalysisViewModel);
             dataGridScanNums.IsEnabled = true;
+
+            UpdateProFormaColumnVisibility();
 
             if (errors.Any())
             {
@@ -1104,9 +1159,9 @@ namespace MetaMorpheusGUI
             if (plotView.Model != null)
             {
                 var description =
-                    plotView.ActualModel.Annotations.First(p =>
+                    plotView.ActualModel.Annotations.FirstOrDefault(p =>
                         p is PlotTextAnnotation anno && anno.Text.Contains("\r\n")) as PlotTextAnnotation;
-                descriptionWidth = -description!.X - 60;
+                descriptionWidth = description is null ? 160 : -description.X - 60;
             }
             else
             {
@@ -1264,35 +1319,114 @@ namespace MetaMorpheusGUI
         /// <summary>
         /// Method to fire the plotting method with new fragment ions
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        /// <exception cref="NotImplementedException"></exception>
         internal void SearchWithNewIons_OnClick(object sender, RoutedEventArgs e)
         {
-            // find currently selected psm
             var psm = dataGridScanNums.SelectedItem as SpectrumMatchFromTsv;
             if (psm is null)
                 return;
-            
-            // replace the ions and replot
-            var oldIons = psm.MatchedIons;
-            ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm);
-            dataGridScanNums.SelectedItem = psm;
-            dataGridScanNums_SelectedCellsChanged(FragmentationReanalysisViewModel, null);
 
-            // put the old ions back
-            psm.MatchedIons = oldIons;
+            if (MetaDrawTabControl.SelectedItem == ParentChildScanView)
+            {
+                if (psm.ChildScanMatchedIons == null)
+                    return;
+
+                var savedChildIons = SaveChildScanIons(psm.ChildScanMatchedIons);
+                Dictionary<int, List<MatchedFragmentIon>> savedBetaIons = null;
+                if (psm is PsmFromTsv { BetaPeptideChildScanMatchedIons: not null } bp)
+                {
+                    savedBetaIons = SaveChildScanIons(bp.BetaPeptideChildScanMatchedIons);
+                }
+
+                RematchChildScans(psm);
+
+                dataGridScanNums.SelectedItem = psm;
+                dataGridScanNums_SelectedCellsChanged(new object(), null);
+
+                RestoreChildScanIons(psm.ChildScanMatchedIons, savedChildIons);
+                if (psm is PsmFromTsv { BetaPeptideChildScanMatchedIons: not null } bp2 && savedBetaIons != null)
+                {
+                    RestoreChildScanIons(bp2.BetaPeptideChildScanMatchedIons, savedBetaIons);
+                }
+            }
+            else
+            {
+                var oldIons = psm.MatchedIons;
+                ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm, false);
+                dataGridScanNums.SelectedItem = psm;
+                dataGridScanNums_SelectedCellsChanged(FragmentationReanalysisViewModel, null);
+                psm.MatchedIons = oldIons;
+            }
         }
 
         /// <summary>
         /// Replaces matched fragment ions on a psm with new ion types after a quick search
         /// </summary>
-        /// <param name="psm"></param>
-        private void ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(SpectrumMatchFromTsv psm, bool concatOldIonsOfType = false)
+        private void ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(SpectrumMatchFromTsv psm, bool concatOldIonsOfType = false, MsDataScan? scan = null)
         {
-            var scan = MetaDrawLogic.GetMs2ScanFromPsm(psm);
+            scan ??= MetaDrawLogic.GetMs2ScanFromPsm(psm);
             var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(scan, psm, concatOldIonsOfType);
             psm.MatchedIons = newIons;
+        }
+
+        private static Dictionary<int, List<MatchedFragmentIon>> SaveChildScanIons(Dictionary<int, List<MatchedFragmentIon>> original)
+        {
+            var copy = new Dictionary<int, List<MatchedFragmentIon>>();
+            foreach (var kvp in original)
+            {
+                copy[kvp.Key] = new List<MatchedFragmentIon>(kvp.Value);
+            }
+            return copy;
+        }
+
+        private static void RestoreChildScanIons(Dictionary<int, List<MatchedFragmentIon>> target, Dictionary<int, List<MatchedFragmentIon>> saved)
+        {
+            foreach (var kvp in saved)
+            {
+                if (target.TryGetValue(kvp.Key, out var list))
+                {
+                    list.Clear();
+                    list.AddRange(kvp.Value);
+                }
+                else
+                {
+                    target[kvp.Key] = new List<MatchedFragmentIon>(kvp.Value);
+                }
+            }
+            var toRemove = target.Keys.Except(saved.Keys).ToList();
+            foreach (var key in toRemove)
+            {
+                target.Remove(key);
+            }
+        }
+
+        private void RematchChildScans(SpectrumMatchFromTsv psm)
+        {
+            if (psm.ChildScanMatchedIons == null)
+                return;
+
+            if (!MetaDrawLogic.MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out var spectraFile))
+                return;
+
+            foreach (var scanNumber in psm.ChildScanMatchedIons.Keys.ToList())
+            {
+                MsDataScan childScan = spectraFile.GetOneBasedScanFromDynamicConnection(scanNumber);
+                var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(childScan, psm, false);
+                var list = psm.ChildScanMatchedIons[scanNumber];
+                list.Clear();
+                list.AddRange(newIons);
+            }
+
+            if (psm is PsmFromTsv { BetaPeptideChildScanMatchedIons: not null } bp)
+            {
+                foreach (var scanNumber in bp.BetaPeptideChildScanMatchedIons.Keys.ToList())
+                {
+                    MsDataScan childScan = spectraFile.GetOneBasedScanFromDynamicConnection(scanNumber);
+                    var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(childScan, psm, false);
+                    var list = bp.BetaPeptideChildScanMatchedIons[scanNumber];
+                    list.Clear();
+                    list.AddRange(newIons);
+                }
+            }
         }
 
         private void MetaDraw_OnClosing(object sender, CancelEventArgs e)

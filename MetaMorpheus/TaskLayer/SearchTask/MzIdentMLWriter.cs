@@ -19,7 +19,7 @@ namespace TaskLayer
     {
         public static void WriteMzIdentMl(IEnumerable<SpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<Modification> variableMods, 
             List<Modification> fixedMods, List<SilacLabel> silacLabels, List<DigestionAgent> proteases, Tolerance productTolerance, 
-            Tolerance parentTolerance, int missedCleavages, string outputPath, bool appendMotifToModNames)
+            Tolerance parentTolerance, int missedCleavages, string outputPath, bool appendMotifToModNames, bool? semiSpecific = null)
         {
 
             //if SILAC, remove the silac labels, because the base/full sequences reported for output are not the same as the peptides in the best peptides list for the psm
@@ -37,7 +37,14 @@ namespace TaskLayer
                         }
                     }
                 }
-                psms = psms.Where(p => p.BaseSequence != null && !p.FullSequence.Contains("|") && !labelsToSearch.Any(x => p.BaseSequence.Contains(x)));
+                // SpectralMatch.FullSequence is assigned from PsmTsvWriter.Resolve(...).ResolvedValue,
+                // which is null whenever the candidate sequences disagree -- the pipe-joined form is
+                // ResolvedString and is discarded. So FullSequence is either a clean sequence or null,
+                // never "|"-delimited, and the old !FullSequence.Contains("|") conjunct could only ever
+                // be true or throw a NullReferenceException on an ambiguous PSM. Dropping it fixes the
+                // crash without narrowing psms, which also feeds peptides/proteins/filenames below;
+                // ambiguous PSMs are excluded from the identification data by unambiguousPsms instead.
+                psms = psms.Where(p => p.BaseSequence != null && !labelsToSearch.Any(x => p.BaseSequence.Contains(x)));
             }
 
             List<PeptideWithSetModifications> peptides = psms.SelectMany(i => i.BestMatchingBioPolymersWithSetMods.Select(v => v.SpecificBioPolymer as PeptideWithSetModifications)).Distinct().ToList();
@@ -341,7 +348,9 @@ namespace TaskLayer
                             Modification = new mzIdentML110.Generated.ModificationType[peptide.NumMods]
                         };
                         int mod_id = 0;
-                        foreach (KeyValuePair<int, Modification> mod in peptide.AllModsOneIsNterminus)
+                        // in position order: the dictionary's own order depends on how the peptide was built (digested
+                        // here, or read back from the Modern search's peptide-index cache), and the file should not
+                        foreach (KeyValuePair<int, Modification> mod in peptide.AllModsOneIsNterminus.OrderBy(kv => kv.Key))
                         {
                             _mzid.SequenceCollection.Peptide[peptide_id.Item1].Modification[mod_id] = new mzIdentML110.Generated.ModificationType()
                             {
@@ -565,11 +574,17 @@ namespace TaskLayer
             int protease_index = 0;
             foreach (DigestionAgent protease in proteases)
             {
+                // The search's own specificity when the caller gives it: trypsin is Full even in a semi-specific search,
+                // whose semi-specificity comes from SearchModeType. Otherwise what the protease itself says.
+                bool isSemiSpecific = semiSpecific ?? protease.CleavageSpecificity == CleavageSpecificity.Semi;
                 _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].Enzymes.Enzyme[protease_index] = new mzIdentML110.Generated.EnzymeType()
                 {
                     id = "E_" + protease_index,
                     name = protease.Name,
-                    semiSpecific = protease.CleavageSpecificity == CleavageSpecificity.Semi,
+                    semiSpecific = isSemiSpecific,
+                    // Written only for a semi-specific search. The attribute is optional, and every other search's file stays
+                    // as it always was, with no semiSpecific attribute at all.
+                    semiSpecificSpecified = isSemiSpecific,
                     missedCleavagesSpecified = true,
                     missedCleavages = missedCleavages,
                     EnzymeName = new mzIdentML110.Generated.ParamListType()
@@ -640,30 +655,61 @@ namespace TaskLayer
 
             if (groups != null)
             {
-                _mzid.DataCollection.AnalysisData.ProteinDetectionList = new mzIdentML110.Generated.ProteinDetectionListType()
-                {
-                    id = "PDL",
-                    ProteinAmbiguityGroup = new mzIdentML110.Generated.ProteinAmbiguityGroupType[groups.Count]
-                };
+                // Built up in lists rather than fixed-size arrays because a ProteinDetectionHypothesis
+                // with no PeptideHypothesis, and a ProteinAmbiguityGroup with no
+                // ProteinDetectionHypothesis, are both schema-invalid and have to be left out.
+                var ambiguityGroups = new List<mzIdentML110.Generated.ProteinAmbiguityGroupType>();
 
                 int group_id = 0;
                 int protein_id = 0;
                 foreach (EngineLayer.ProteinGroup proteinGroup in groups)
                 {
-                    _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id] = new mzIdentML110.Generated.ProteinAmbiguityGroupType()
-                    {
-                        id = "PAG_" + group_id,
-                        ProteinDetectionHypothesis = new mzIdentML110.Generated.ProteinDetectionHypothesisType[proteinGroup.Proteins.Count]
-                    };
-                    int pag_protein_index = 0;
+                    var detectionHypotheses = new List<mzIdentML110.Generated.ProteinDetectionHypothesisType>();
                     foreach (Protein protein in proteinGroup.Proteins)
                     {
-                        _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index] = new mzIdentML110.Generated.ProteinDetectionHypothesisType()
+                        var peptideHypotheses = new List<mzIdentML110.Generated.PeptideHypothesisType>();
+                        foreach (PeptideWithSetModifications peptide in proteinGroup.AllPeptides)
                         {
-                            id = "PDH_" + protein_id,
+                            if (peptide_evidence_ids.ContainsKey(peptide))
+                            {
+                                if (peptide.Protein == protein)
+                                {
+                                    var peptideHypothesis = new mzIdentML110.Generated.PeptideHypothesisType()
+                                    {
+                                        peptideEvidence_ref = "PE_" + peptide_evidence_ids[peptide],
+                                        SpectrumIdentificationItemRef = new mzIdentML110.Generated.SpectrumIdentificationItemRefType[peptide_ids[peptide.FullSequence].Item2.Count],
+                                    };
+
+                                    int i = 0;
+                                    foreach (string sii in peptide_ids[peptide.FullSequence].Item2)
+                                    {
+                                        peptideHypothesis.SpectrumIdentificationItemRef[i] = new mzIdentML110.Generated.SpectrumIdentificationItemRefType()
+                                        {
+                                            spectrumIdentificationItem_ref = sii
+                                        };
+                                        i++;
+                                    }
+                                    peptideHypotheses.Add(peptideHypothesis);
+                                }
+                            }
+                        }
+
+                        int this_protein_id = protein_id;
+                        protein_id++;
+
+                        // No peptide evidence written for this protein, e.g. a group supported only
+                        // by PSMs whose sequence could not be resolved.
+                        if (peptideHypotheses.Count == 0)
+                        {
+                            continue;
+                        }
+
+                        detectionHypotheses.Add(new mzIdentML110.Generated.ProteinDetectionHypothesisType()
+                        {
+                            id = "PDH_" + this_protein_id,
                             dBSequence_ref = "DBS_" + protein.Accession,
                             passThreshold = proteinGroup.QValue <= 0.01, // hardcoded as 1% FDR but we could change this to the provided threshold
-                            PeptideHypothesis = new mzIdentML110.Generated.PeptideHypothesisType[proteinGroup.AllPeptides.Count],
+                            PeptideHypothesis = peptideHypotheses.ToArray(),
                             cvParam = new mzIdentML110.Generated.CVParamType[4]
                             {
                             new mzIdentML110.Generated.CVParamType
@@ -692,41 +738,32 @@ namespace TaskLayer
                                 accession = "MS:1001097",
                                 name = "distinct peptide sequences",
                                 cvRef = "PSI-MS",
-                                value = proteinGroup.UniquePeptides.Count.ToString()
+                                value = proteinGroup.NumberOfUniquePeptides.ToString()
                             }
                             }
-                        };
-                        int peptide_id = 0;
-                        foreach (PeptideWithSetModifications peptide in proteinGroup.AllPeptides)
-                        {
-                            if (peptide_evidence_ids.ContainsKey(peptide))
-                            {
-                                if (peptide.Protein == protein)
-                                {
-                                    _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index].PeptideHypothesis[peptide_id] = new mzIdentML110.Generated.PeptideHypothesisType()
-                                    {
-                                        peptideEvidence_ref = "PE_" + peptide_evidence_ids[peptide],
-                                        SpectrumIdentificationItemRef = new mzIdentML110.Generated.SpectrumIdentificationItemRefType[peptide_ids[peptide.FullSequence].Item2.Count],
-                                    };
-
-                                    int i = 0;
-                                    foreach (string sii in peptide_ids[peptide.FullSequence].Item2)
-                                    {
-                                        _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index].PeptideHypothesis[peptide_id].SpectrumIdentificationItemRef[i] = new mzIdentML110.Generated.SpectrumIdentificationItemRefType()
-                                        {
-                                            spectrumIdentificationItem_ref = sii
-                                        };
-                                        i++;
-                                    }
-                                    peptide_id++;
-                                }
-                            }
-                        }
-                        pag_protein_index++;
-                        protein_id++;
+                        });
                     }
+
+                    int this_group_id = group_id;
                     group_id++;
+
+                    if (detectionHypotheses.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    ambiguityGroups.Add(new mzIdentML110.Generated.ProteinAmbiguityGroupType()
+                    {
+                        id = "PAG_" + this_group_id,
+                        ProteinDetectionHypothesis = detectionHypotheses.ToArray()
+                    });
                 }
+
+                _mzid.DataCollection.AnalysisData.ProteinDetectionList = new mzIdentML110.Generated.ProteinDetectionListType()
+                {
+                    id = "PDL",
+                    ProteinAmbiguityGroup = ambiguityGroups.ToArray()
+                };
             }
             XmlWriter writer = XmlWriter.Create(outputPath, settings);
             _indexedSerializer.Serialize(writer, _mzid);

@@ -31,7 +31,10 @@ namespace MetaMorpheusGUI
                     return new ClassicDeconParamsControl() { DataContext = value as ClassicDeconParamsViewModel };
                 case DeconvolutionType.IsoDecDeconvolution:
                     return new IsoDecDeconParamControl() { DataContext = value as IsoDecDeconParamsViewModel };
-
+                case DeconvolutionType.Multiple:
+                    return new MultipleDeconParamControl { DataContext = value as MultipleDeconParamsViewModel };
+                case DeconvolutionType.FromFile:
+                    return new FromFileDeconParamsControl() { DataContext = value as FromFileDeconParamsViewModel };
                 case DeconvolutionType.ExampleNewDeconvolutionTemplate:
                 default:
                     throw new ArgumentException("Invalid DeconvolutionType", nameof(value));
