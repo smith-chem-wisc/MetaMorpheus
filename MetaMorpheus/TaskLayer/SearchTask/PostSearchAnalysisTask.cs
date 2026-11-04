@@ -738,9 +738,22 @@ namespace TaskLayer
             static bool CarriesReporterIons(SpectralMatch psm) =>
                 psm.IsobaricMassTagReporterIonIntensities is { Length: > 0 };
 
+            // Reporter ions come from the label. Intensities are read at the reporter m/z of every scan, so a
+            // peptide that carries no label -- a protein N-terminus acetylated before labelling, with no
+            // lysine -- has values too, and they are the signal of whatever was co-isolated with it.
+            // Quantifying such a match credits that signal to its peptide and protein. The filter above
+            // leaves one sequence per match, so every candidate it names carries the same modifications.
+            static bool CarriesMultiplexLabel(SpectralMatch psm) =>
+                psm.GetIdentifiedBioPolymersWithSetMods().All(peptide => peptide.AllModsOneIsNterminus.Values
+                    .Any(mod => mod.ModificationType == "Multiplex Label"));
+
+            static bool IsQuantifiable(SpectralMatch psm) => CarriesReporterIons(psm) && CarriesMultiplexLabel(psm);
+
             var filteredPsms = FilterMatches(Parameters.SearchParameters.WriteContaminants);
 
-            var quantifiablePsms = filteredPsms.Where(CarriesReporterIons).ToList();
+            var withReporterIons = filteredPsms.Where(CarriesReporterIons).ToList();
+            var quantifiablePsms = withReporterIons.Where(CarriesMultiplexLabel).ToList();
+            int unlabelledPsms = withReporterIons.Count - quantifiablePsms.Count;
 
             if (quantifiablePsms.Count == 0)
             {
@@ -748,10 +761,15 @@ namespace TaskLayer
                 // reporter-bearing match in a run can be a contaminant, and the plain wording then
                 // blames the data for what the filter above removed. Asked only on the way out, so a
                 // run that quantifies never pays for the second filter.
-                bool contaminantsCarriedThemAll = !Parameters.SearchParameters.WriteContaminants
-                    && FilterMatches(includeContaminants: true).Any(CarriesReporterIons);
+                bool contaminantsCarriedThemAll = unlabelledPsms == 0
+                    && !Parameters.SearchParameters.WriteContaminants
+                    && FilterMatches(includeContaminants: true).Any(IsQuantifiable);
 
-                Warn(contaminantsCarriedThemAll
+                Warn(unlabelledPsms > 0
+                    ? $"{unlabelledPsms} spectral match(es) carried reporter ion intensities, but none carried a " +
+                      "multiplex label modification, so none can be quantified by its channels. Is the label set " +
+                      "as a fixed modification? Skipping multiplex quantification"
+                    : contaminantsCarriedThemAll
                     ? "Every spectral match that carried reporter ion intensities was a contaminant, and " +
                       "contaminants are not being written. Skipping multiplex quantification"
                     : "No spectral matches carried reporter ion intensities. Skipping multiplex quantification");
@@ -848,6 +866,17 @@ namespace TaskLayer
                 Warn($"{results.AmbiguousSpectralMatchesExcluded} spectral match(es) were left out of " +
                      "multiplex quantification because they did not identify exactly one full sequence, so the " +
                      "peptide and protein tables total less than the reporter ion columns in the .psmtsv");
+            }
+
+            // Said now and in results.txt: the .psmtsv still shows these matches' reporter columns, so without
+            // the count the tables look as if they lost them.
+            if (unlabelledPsms > 0)
+            {
+                string unlabelled = $"{unlabelledPsms} spectral match(es) carried reporter ion intensities but no " +
+                    "multiplex label modification, and were left out of multiplex quantification: a peptide without " +
+                    "the label releases no reporter ions, so their values came from co-isolated peptides";
+                Warn(unlabelled);
+                Parameters.SearchTaskResults.AddTaskSummaryText(unlabelled);
             }
 
             // Rebuild the per-group column schema the engine's write-back invalidated: assigning
