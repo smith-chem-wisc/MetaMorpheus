@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Test
 {
@@ -130,6 +131,57 @@ namespace Test
             GC.WaitForPendingFinalizers();
 
             Directory.Delete(customDataDir, true);
+        }
+
+        [Test]
+        public static void TestEmbeddedFormalChargeTableMatchesTheShippedOneAndAMissingOneIsReported()
+        {
+            // The fallback must give the same charges as the file the installer ships.
+            var shipped = Omics.Modifications.IO.ModificationLoader.ReadFormalChargesDictionary(
+                Path.Combine(GlobalVariables.DataDir, @"Data", @"PsiModFormalCharges.tsv"));
+            var embedded = GlobalVariables.ReadEmbeddedPsiModFormalCharges(typeof(Omics.Modifications.Mods).Assembly, "unused");
+            Assert.That(embedded, Is.Not.Empty);
+            Assert.That(embedded, Is.EquivalentTo(shipped));
+
+            // An assembly without the table stands in for an mzLib that stopped embedding it: startup must
+            // say which file it could not find, not fail with a null reference.
+            var ex = Assert.Throws<MetaMorpheusException>(() =>
+                GlobalVariables.ReadEmbeddedPsiModFormalCharges(typeof(GlobalVariables).Assembly, "missing.tsv"));
+            Assert.That(ex.Message, Does.Contain("missing.tsv"));
+        }
+
+        [Test]
+        public static void TestCustomDataDirectoryWithoutTheFormalChargeTableFallsBackToMzLibsCopy()
+        {
+            // A custom data directory made by a MetaMorpheus that shipped PSI-MOD.obo.xml has no
+            // PsiModFormalCharges.tsv, and is never copied over again because it already exists.
+            // Its UniProt mods must still come out with the same charges as the default directory's.
+            static List<string> UniProtMods() => GlobalVariables.UniprotDeseralized
+                .Select(m => $"{m.IdWithMotif}|{m.ChemicalFormula?.Formula}").OrderBy(s => s, StringComparer.Ordinal).ToList();
+            List<string> expected = UniProtMods();
+
+            string customDataDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CustomDataDirWithoutFormalCharges");
+            if (Directory.Exists(customDataDir))
+                Directory.Delete(customDataDir, true);
+            GlobalVariables.CopyFilesRecursively(new DirectoryInfo(GlobalVariables.DataDir), new DirectoryInfo(customDataDir));
+            string table = Path.Combine(customDataDir, @"Data", @"PsiModFormalCharges.tsv");
+            File.Delete(table);
+
+            try
+            {
+                GlobalVariables.UserSpecifiedDataDir = customDataDir;
+                Assert.DoesNotThrow(GlobalVariables.SetUpGlobalVariables);
+                Assert.That(File.Exists(table), Is.False, "the fallback reads mzLib's embedded copy, it does not write one");
+                Assert.That(UniProtMods(), Is.EqualTo(expected));
+            }
+            finally
+            {
+                GlobalVariables.UserSpecifiedDataDir = null;
+                GlobalVariables.SetUpGlobalVariables();
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                Directory.Delete(customDataDir, true);
+            }
         }
 
         [Test]
