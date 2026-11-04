@@ -18,6 +18,12 @@ using SdrfQuantAudit = Readers.SdrfQuantAudit;
 using SdrfQuantAuditor = Readers.SdrfQuantAuditor;
 using SdrfLabelFreeDesign = Readers.SdrfLabelFreeDesign;
 using SdrfLabelFreeDesignOptions = Readers.SdrfLabelFreeDesignOptions;
+using SdrfIsobaricDesign = Readers.SdrfIsobaricDesign;
+using SdrfIsobaricDesignOptions = Readers.SdrfIsobaricDesignOptions;
+using SdrfDocument = Readers.SdrfDocument;
+using SdrfSearchScope = Readers.SdrfSearchScope;
+using SdrfSearchScoping = Readers.SdrfSearchScoping;
+using MzLibIsobaricMassTag = Omics.Modifications.IsobaricMassTag;
 
 namespace MetaMorpheusCommandLine
 {
@@ -422,14 +428,23 @@ namespace MetaMorpheusCommandLine
 
             string designPath = hasClassicDesign ? pathToExperDesign : pathToTmtDesign;
             List<string> errors;
+            var warnings = new List<string>();
 
             if (hasClassicDesign)
             {
-                ExperimentalDesign.ReadExperimentalDesign(designPath, startingRawFilenameList, out errors);
+                var design = ExperimentalDesign.ReadExperimentalDesign(designPath, startingRawFilenameList, out errors);
+                if (!errors.Any())
+                {
+                    warnings = ExperimentalDesign.GetWarningsInExperimentalDesign(design);
+                }
             }
             else
             {
-                TmtExperimentalDesign.Read(designPath, startingRawFilenameList, out errors);
+                var tmtFiles = TmtExperimentalDesign.Read(designPath, startingRawFilenameList, out errors);
+                if (!errors.Any())
+                {
+                    warnings = TmtExperimentalDesign.GetWarningsInDesign(tmtFiles);
+                }
             }
 
             if (!errors.Any())
@@ -437,6 +452,10 @@ namespace MetaMorpheusCommandLine
                 if (reportToConsole)
                 {
                     write("Read " + Path.GetFileName(designPath) + " successfully");
+                    foreach (string warning in warnings)
+                    {
+                        write(warning);
+                    }
                 }
 
                 return 0;
@@ -541,12 +560,13 @@ namespace MetaMorpheusCommandLine
         /// <summary>
         /// Carries out --sdrfDesign: reads a label-free SDRF with mzLib's SdrfLabelFreeDesign and writes
         /// ExperimentalDesign.tsv beside the first spectra file, which is where a run given the same -s
-        /// looks for it (ResolveExperimentalDesign). The design is checked against exactly those files.
+        /// looks for it (ResolveExperimentalDesign). The design is checked against exactly those files, after
+        /// the SDRF is restricted to them (RestrictSdrfToSearchedFiles).
         ///
         /// Refuses rather than writes anything MetaMorpheus would reject, because an invalid design is
         /// worse than none: a run finding one skips quantification with only a warning. The report is
         /// printed whatever the verbosity, as for --auditSdrf: it is what was asked for, and it is the
-        /// only record of a biological-replicate renumbering.
+        /// only record of a biological replicate number added where the SDRF gives none.
         /// </summary>
         /// <returns>0 when the design was written; 4 when the SDRF could not be read; 5 when the design
         /// was refused or a design file is already there.</returns>
@@ -583,10 +603,15 @@ namespace MetaMorpheusCommandLine
                     : factorValuePrefix + c + "]")
                 .ToList();
 
+            if (settings.SdrfTag != null)
+            {
+                return WriteTmtDesignFromSdrf(settings, conditionColumns, Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName), output);
+            }
+
             SdrfLabelFreeDesign design;
             try
             {
-                design = SdrfLabelFreeDesign.Read(settings.SdrfDesign, new SdrfLabelFreeDesignOptions
+                design = SdrfLabelFreeDesign.Read(RestrictSdrfToSearchedFiles(settings, output), new SdrfLabelFreeDesignOptions
                 {
                     ConditionColumns = conditionColumns,
                     SearchedFiles = settings.Spectra.Select(Path.GetFullPath).ToList(),
@@ -610,6 +635,113 @@ namespace MetaMorpheusCommandLine
             output.WriteLine("Wrote " + designPath);
             return 0;
         }
+
+        /// <summary>
+        /// The isobaric half of --sdrfDesign: reads a TMT, iTRAQ or DiLeu SDRF with mzLib's SdrfIsobaricDesign,
+        /// for the kit --sdrfTag names and the plex source given, and writes TmtDesign.txt where a run given the
+        /// same -s looks for it. Refuses rather than writes anything MetaMorpheus would reject, as the label-free
+        /// half does; channel and replicate numbers are copied as the SDRF gives them, never renumbered.
+        /// </summary>
+        /// <returns>0 when the design was written; 4 when the SDRF could not be read; 5 when it was refused.</returns>
+        private static int WriteTmtDesignFromSdrf(CommandLineSettings settings, List<string> conditionColumns, string designPath, TextWriter output)
+        {
+            // validated already, so the kit is known
+            MzLibIsobaricMassTag.TryGetIsobaricMassTag(settings.SdrfTag, out var tag);
+
+            SdrfIsobaricDesign design;
+            try
+            {
+                design = SdrfIsobaricDesign.Read(RestrictSdrfToSearchedFiles(settings, output), new SdrfIsobaricDesignOptions
+                {
+                    Tag = tag,
+                    PlexColumn = settings.SdrfPlexColumn,
+                    PlexFileNamePattern = settings.SdrfPlexPattern,
+                    SinglePlex = settings.SdrfSinglePlex,
+                    ConditionColumns = conditionColumns,
+                    SearchedFiles = settings.Spectra.Select(Path.GetFullPath).ToList(),
+                });
+            }
+            catch (Exception e)
+            {
+                output.WriteLine("The SDRF file could not be read: " + settings.SdrfDesign + Environment.NewLine + e.Message);
+                return 4;
+            }
+
+            output.WriteLine(design.Report());
+
+            if (!design.IsValid)
+            {
+                output.WriteLine("No design file was written.");
+                return 5;
+            }
+
+            // MetaMorpheus has no TMT16 multiplex label: TMTpro 16-plex is searched with TMT18, the same
+            // reagent. TmtDesign.txt names no kit, and TMT16's channels are TMT18's first sixteen, so the
+            // file is one a TMT18 run reads as is. Said, so the search is not set to a label that is not there.
+            if (tag.TagType == Omics.Modifications.IsobaricMassTagType.TMT16)
+            {
+                output.WriteLine("TMT16 is searched in MetaMorpheus with its TMT18 multiplex label (TMTpro, the same reagent). "
+                    + "This design is read as is by such a run; channels 134C and 135N stay empty.");
+            }
+
+            design.WriteTmtDesign(designPath);
+            output.WriteLine("Wrote " + designPath);
+            return 0;
+        }
+
+        /// <summary>
+        /// Reads the --sdrfDesign SDRF restricted to the -s files with mzLib's SdrfSearchScope (QP-S35), so that a
+        /// design reader sees only this search's rows, each naming the file this search reads. The join is mzLib's
+        /// (MAP-12): a searched file finds its rows by file stem, ignoring case and the -calib and -averaged suffixes
+        /// MetaMorpheus writes, so a row naming X.raw stands for a search of X.mzML or X-calib.mzML, and an earlier
+        /// search's comment[searched data file] is replaced by this one's. The design readers stay join-free (QP-S18).
+        ///
+        /// No acquired-name map is passed: the -s files are the files the user names, and the suffix rule covers an
+        /// earlier search's derivatives (sdrf 085). What the join could not place is printed before the design
+        /// report, only the lists that have entries, SharedStem first: it means one searched file whose rows name
+        /// two different acquired files, which only the depositor can resolve.
+        ///
+        /// An SDRF without comment[data file] cannot be joined, so it is returned as given, and the design reader
+        /// refuses it with its own report, as before. Throws, as the readers did, when the file cannot be read.
+        /// </summary>
+        private static SdrfDocument RestrictSdrfToSearchedFiles(CommandLineSettings settings, TextWriter output)
+        {
+            var sdrf = new SdrfDocument(settings.SdrfDesign);
+            if (!sdrf.Header.Contains(SdrfLabelFreeDesign.DataFileColumn))
+            {
+                return sdrf;
+            }
+
+            SdrfSearchScoping scope = SdrfSearchScope.Restrict(sdrf, settings.Spectra.Select(Path.GetFullPath).ToList());
+
+            var lists = new (string Name, IReadOnlyList<string> Entries)[]
+            {
+                ("SharedStem (every row is kept; only the depositor can say which acquired file is right)", scope.SharedStem),
+                ("SearchedWithoutRow", scope.SearchedWithoutRow),
+                ("DroppedDataFiles (the search does not read them)", scope.DroppedDataFiles),
+                ("Ambiguous (claimed by two or more searched files; the first, in name order, is kept)", scope.Ambiguous),
+            };
+            int rowsRead = sdrf.Results.Count;
+            int rowsKept = scope.Document.Results.Count;
+            if (rowsKept < rowsRead || lists.Any(l => l.Entries.Count > 0))
+            {
+                output.WriteLine($"SDRF joined to the searched files by mzLib's SdrfSearchScope: {rowsKept} of {rowsRead} SDRF rows kept.");
+                foreach (var (name, entries) in lists)
+                {
+                    foreach (string entry in entries)
+                    {
+                        output.WriteLine($"  {name}: {entry}");
+                    }
+                }
+                if (rowsKept < rowsRead)
+                {
+                    output.WriteLine("  Line numbers in the design report below count the kept rows, not the lines of the SDRF file.");
+                }
+            }
+
+            return scope.Document;
+        }
+
         /// <summary>
         /// Prints what one SDRF document says about quantification, and runs nothing else.
         ///

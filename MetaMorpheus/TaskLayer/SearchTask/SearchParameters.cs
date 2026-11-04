@@ -48,7 +48,7 @@ namespace TaskLayer
             WriteHighQValuePsms = true;
             WriteDecoys = true;
             WriteContaminants = true;
-            WriteIndividualFiles = true;
+            WriteIndividualFiles = false;
             LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific };
             TCAmbiguity = TargetContaminantAmbiguity.RemoveContaminant;
         }
@@ -107,6 +107,14 @@ namespace TaskLayer
         public bool WriteHighQValuePsms { get; set; }
         public bool WriteDecoys { get; set; }
         public bool WriteContaminants { get; set; }
+        /// <summary>
+        /// On a search of more than one spectra file, write a PSM, peptide, protein-group and quantified-peak
+        /// table for each file to "Individual File Results", and each file's counts to the results summary
+        /// (results.txt, allResults.txt). The per-file PSM and peptide tables re-run FDR on that file's
+        /// matches alone. Off by default; a task TOML that sets it to true still writes them. Per-file .mzID
+        /// and .pep.XML are governed by <see cref="WriteMzId"/> and <see cref="WritePepXml"/>, not by this
+        /// setting.
+        /// </summary>
         public bool WriteIndividualFiles { get; set; }
         public bool WriteSpectralLibrary { get; set; }
         /// <summary>
@@ -163,5 +171,16 @@ namespace TaskLayer
         /// names the dataset it was deposited under.
         /// </summary>
         public string ProteomeXchangeAccession { get; set; }
+
+        /// <summary>
+        /// An SDRF describing the samples this search's files came from, or null. With <see cref="WriteSdrf"/>, the
+        /// SDRF the search writes then copies each searched file's sample columns from it cell for cell (source name,
+        /// characteristics, material type, factor values and sample comments), instead of building them from
+        /// ExperimentalDesign.tsv or TmtDesign.txt. Statistics reads per-sample facts (individual, age, batch) only
+        /// from the written SDRF, and the curator's cells are the only record of them (sdrf D50).
+        ///
+        /// Set in the task file by a pipeline that re-analyses a deposit; the GUI has no field for it.
+        /// </summary>
+        public string InputSdrfPath { get; set; }
     }
 }

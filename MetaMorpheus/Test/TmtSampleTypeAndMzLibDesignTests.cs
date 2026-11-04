@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using NUnit.Framework;
+using Omics.Modifications;
 using Omics.BioPolymerGroup;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System;
@@ -174,7 +175,11 @@ namespace Test
 
         #region Projection onto mzLib
 
-        private static IsobaricMassTag Tmt10() => IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT10);
+        private static IsobaricMassTag Tmt10()
+        {
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT10, GlobalVariables.AllModsKnown, out var tag);
+            return tag;
+        }
 
         /// <summary>
         /// A rooted fixture path ending in <paramref name="name"/>, built for whatever platform the
@@ -400,6 +405,30 @@ namespace Test
             Assert.IsTrue(unannotated.All(s => !s.IsReferenceChannel));
         }
 
+        /// <summary>
+        /// The plex window offers TMT16, but there is no TMT16 search label, so a TMTpro 16-plex is searched
+        /// as TMT18 and its design is projected with TMT18's tag. The window says the annotation still applies
+        /// and that 134C and 135N come out as empty channels; this pins both halves of that note.
+        /// </summary>
+        [Test]
+        public static void ToMzLibDesign_ATmt16AnnotationProjectsOntoTmt18sFirstSixteenChannels()
+        {
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT18, GlobalVariables.AllModsKnown, out var tmt18);
+            var tmt16Labels = IsobaricMassTag.GetReporterIonLabels(IsobaricMassTagType.TMT16);
+            var file = FileWith(FixturePath("data", "run1.raw"), "PlexA", 1, 1,
+                tmt16Labels.Select(label => (label, "Cond", 1, TmtSampleType.StudySample)).ToArray());
+
+            var design = TmtExperimentalDesign.ToMzLibDesign(new[] { file }, tmt18, out var errors);
+            Assert.IsEmpty(errors);
+
+            var samples = design.FileNameSampleInfoDictionary["run1.raw"].Cast<IsobaricQuantSampleInfo>().ToList();
+            Assert.AreEqual(18, samples.Count);
+            Assert.That(samples.Take(16).Select(s => s.ChannelLabel), Is.EqualTo(tmt16Labels));
+            Assert.IsTrue(samples.Take(16).All(s => s.Condition == "Cond"));
+            Assert.That(samples.Skip(16).Select(s => s.ChannelLabel), Is.EqualTo(new[] { "134C", "135N" }));
+            Assert.IsTrue(samples.Skip(16).All(s => s.Condition == string.Empty && s.SampleName == null));
+        }
+
         [Test]
         public static void ToMzLibDesign_ChannelThatIsNotPartOfTheTag_IsAnError()
         {
@@ -489,12 +518,13 @@ namespace Test
         [Test]
         public static void MismatchedChannelAndReporterIonCountsAreRefused()
         {
-            var tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT11);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT11, GlobalVariables.AllModsKnown, out var tag);
             Assert.That(tag, Is.Not.Null, "TMT11 must load, or this test proves nothing");
 
             int realCount = tag.ReporterIonMzs.Length;
             typeof(IsobaricMassTag)
-                .GetProperty(nameof(IsobaricMassTag.ReporterIonMzs))!
+                .GetField($"<{nameof(IsobaricMassTag.ReporterIonMzs)}>k__BackingField",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                 .SetValue(tag, tag.ReporterIonMzs.Take(realCount - 1).ToArray());
 
             var design = TmtExperimentalDesign.ToMzLibDesign(new[] { OneFile("a.raw", "Plex1", "126") }, tag, out var errors);
@@ -520,7 +550,7 @@ namespace Test
         [Test]
         public static void TwoEntriesSharingAFileNameAreRefusedWithoutLosingTheRest()
         {
-            var tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT11);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT11, GlobalVariables.AllModsKnown, out var tag);
             Assert.That(tag, Is.Not.Null);
 
             var files = new[]
@@ -548,7 +578,7 @@ namespace Test
         [Test]
         public static void EntryWithNoFileNameIsReported()
         {
-            var tag = IsobaricMassTag.GetIsobaricMassTag(IsobaricMassTagType.TMT11);
+            IsobaricMassTag.TryGetIsobaricMassTag(IsobaricMassTagType.TMT11, GlobalVariables.AllModsKnown, out var tag);
             Assert.That(tag, Is.Not.Null);
 
             var files = new[]

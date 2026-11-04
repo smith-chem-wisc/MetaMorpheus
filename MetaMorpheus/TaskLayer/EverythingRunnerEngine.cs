@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using EngineLayer.DatabaseLoading;
+using EngineLayer.Util;
 
 namespace TaskLayer
 {
@@ -152,13 +153,10 @@ namespace TaskLayer
                     }
                     else
                     {
-                        // at least one file was not successfully calibrated
-                        var successfulFiles = myTaskResults.NewSpectra.Select(p => Path.GetFileNameWithoutExtension(p)
-                            .Replace(CalibrationTask.CalibSuffix, "")
-                            .Replace(SpectralAveragingTask.AveragingSuffix, "")).ToList();
-                        var origFiles = CurrentRawDataFilenameList.Select(Path.GetFileNameWithoutExtension).ToList();
-                        var unsuccessfulFiles = origFiles.Except(successfulFiles).ToList();
-                        var unsuccessfulFilePaths = CurrentRawDataFilenameList.Where(p => unsuccessfulFiles.Contains(Path.GetFileNameWithoutExtension(p))).ToList();
+                        // at least one file was skipped or not successfully calibrated, so it is passed on as it was
+                        var unsuccessfulFilePaths = CurrentRawDataFilenameList
+                            .Where(p => !myTaskResults.NewSpectra.Any(written => WasWrittenFor(written, p, ok.Item2, outputFolderForThisTask)))
+                            .ToList();
                         CurrentRawDataFilenameList = myTaskResults.NewSpectra;
                         CurrentRawDataFilenameList.AddRange(unsuccessfulFilePaths);
                     }
@@ -212,6 +210,22 @@ namespace TaskLayer
         private void NewDBs(List<DbForTask> newDatabases)
         {
             NewDbsHandler?.Invoke(this, new XmlForTaskListEventArgs(newDatabases));
+        }
+
+        /// <summary>
+        /// Whether <paramref name="task"/> wrote <paramref name="written"/> for its input <paramref name="input"/>. Calibration
+        /// and averaging, the tasks that write spectra, name the file they write for an input as the input's name plus the
+        /// one suffix the task adds (-calib, -averaged), in the task's output folder, through ToSafeOutputPath; this builds
+        /// that name and compares. Stripping both suffixes from the written name instead missed every input that was itself
+        /// a -calib file (x-calib-averaged strips to x, not x-calib) and every name trimmed to the path cap, and such an
+        /// input was then searched again beside the file written for it (#2942).
+        /// </summary>
+        private static bool WasWrittenFor(string written, string input, MetaMorpheusTask task, string taskOutputFolder)
+        {
+            string suffix = task is SpectralAveragingTask ? SpectralAveragingTask.AveragingSuffix : CalibrationTask.CalibSuffix;
+            string writtenForInput = Path.Combine(taskOutputFolder, Path.GetFileNameWithoutExtension(input) + suffix + ".mzML")
+                .ToSafeOutputPath(suffix + ".mzML");
+            return string.Equals(Path.GetFullPath(written), Path.GetFullPath(writtenForInput), StringComparison.OrdinalIgnoreCase);
         }
     }
 }

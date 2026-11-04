@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+﻿using System;
+using EngineLayer;
 using FlashLFQ;
 using NUnit.Framework;
 using Proteomics;
@@ -17,6 +18,8 @@ using System.Text.RegularExpressions;
 using EngineLayer.DatabaseLoading;
 using Omics;
 using MzLibUtil;
+using EngineLayer.SpectrumMatch;
+using Omics.Fragmentation;
 
 namespace Test
 {
@@ -98,6 +101,84 @@ namespace Test
             string exectedProteinGroupWithDecoyToString =
     "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t0\tT\t0\t0\t0\t0\t0\t0";
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupWithDecoyToString));
+        }
+
+        /// <summary>
+        /// Entrapment competes as a target, so it is labelled rather than reclassified: ET for an
+        /// entrapment target, ED for a decoy of one. A group is entrapment if any member is, so a
+        /// real protein grouped with an entrapment protein reads ET.
+        /// </summary>
+        [TestCase(false, false, false, "T")]
+        [TestCase(true, false, false, "D")]
+        [TestCase(false, true, false, "C")]
+        [TestCase(false, false, true, "ET")]
+        [TestCase(true, false, true, "ED")]
+        public static void ProteinGroupWritesEntrapmentInItsLabel(bool isDecoy, bool isContaminant, bool isEntrapment, string expected)
+        {
+            var protein = new Protein("MEDEEK", "prot1", isDecoy: isDecoy, isContaminant: isContaminant, isEntrapment: isEntrapment);
+            var group = new ProteinGroup(new HashSet<IBioPolymer> { protein },
+                new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
+
+            Assert.That(LabelOf(group), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public static void AGroupHoldingAnyEntrapmentMemberReadsEt()
+        {
+            var real = new Protein("MEDEEK", "P12345");
+            var partner = new Protein("MEEDEK", "Random_P12345_f0", isEntrapment: true);
+            var group = new ProteinGroup(new HashSet<IBioPolymer> { real, partner },
+                new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
+
+            Assert.That(LabelOf(group), Is.EqualTo("ET"));
+        }
+
+        /// <summary>
+        /// A search never builds that two-member group directly: parsimony makes one group per protein and
+        /// scoring merges indistinguishable groups with mzLib's MergeWith, which keeps the surviving group's
+        /// flags. The survivor is the first accession alphabetically, so a real accession that sorts before
+        /// "Random_" survived and the combined table read T while the per-file table, built through the
+        /// constructor, read ET. Both orders, and the decoy pair, must agree with the any-member rule.
+        /// </summary>
+        [TestCase("P12345", false, "ET")]
+        [TestCase("Z12345", false, "ET")]
+        [TestCase("P12345", true, "ED")]
+        [TestCase("Z12345", true, "ED")]
+        public static void AMergedGroupOfARealProteinAndItsEntrapmentPartnerReadsEntrapmentInEveryTable(
+            string realAccession, bool isDecoy, string expected)
+        {
+            string prefix = isDecoy ? "DECOY_" : "";
+            var real = new Protein("PEPTIDEK", prefix + realAccession, isDecoy: isDecoy);
+            var partner = new Protein("PEPTIDEK", prefix + "Random_" + realAccession + "_f0", isDecoy: isDecoy, isEntrapment: true);
+            var commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
+            PeptideWithSetModifications PeptideOf(Protein protein) => new(protein, commonParameters.DigestionParams, 1, 8,
+                CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            var dataScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, 2, true,
+                Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1",
+                double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
+            var scan = new Ms2ScanWithSpecificMass(dataScan, 2, 0, "File", new CommonParameters());
+            SpectralMatch psm = new PeptideSpectralMatch(PeptideOf(real), 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            psm.AddOrReplace(PeptideOf(partner), 10, 0, true, new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
+
+            var psms = FilteredPsms.Filter(new List<SpectralMatch> { psm }, commonParameters).FilteredPsmsList;
+            var parsimony = (ProteinParsimonyResults)new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, null).Run();
+            var scored = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(parsimony.ProteinGroups, psms,
+                false, false, true, new CommonParameters(), null, new List<string>()).Run();
+
+            ProteinGroup merged = scored.SortedAndScoredProteinGroups.Single();
+            Assert.That(merged.Proteins, Is.EquivalentTo(new[] { real, partner }), "the two proteins are indistinguishable");
+            Assert.That(LabelOf(merged), Is.EqualTo(expected), "combined table");
+            Assert.That(LabelOf(merged.ConstructSubsetProteinGroup("File")), Is.EqualTo(expected), "per-file table");
+        }
+
+        private static string LabelOf(ProteinGroup group)
+        {
+            int column = Array.IndexOf(group.GetTabSeparatedHeader().Split('\t'), "Protein Decoy/Contaminant/Target");
+            Assert.That(column, Is.GreaterThanOrEqualTo(0));
+            return group.ToString().Split('\t')[column];
         }
 
         [Test]
