@@ -1,0 +1,50 @@
+<UserControl x:Class="MetaMorpheusGUI.RnaTerminalCapsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="40" d:DesignWidth="450"
+             Visibility="{Binding Converter={StaticResource CollapseOnProteinModeConverter}}">
+
+    <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+        <StackPanel Orientation="Horizontal" Margin="0 0 10 0">
+            <Label Content="5' Cap:" />
+            <ComboBox x:Name="FivePrimeComboBox" MinWidth="110" VerticalAlignment="Center"
+                      ItemsSource="{Binding FivePrimeOptions}"
+                      SelectedItem="{Binding SelectedFivePrimeOption}"
+                      ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                <ComboBox.ToolTip>
+                    <TextBlock>
+                        Chemical cap placed on the 5' end of each RNA in the database.
+                        <LineBreak />
+                        Default uses the mzLib value.
+                    </TextBlock>
+                </ComboBox.ToolTip>
+            </ComboBox>
+            <TextBox x:Name="FivePrimeCustomTextBox" Width="70" Margin="5 0 0 0" VerticalAlignment="Center"
+                     Text="{Binding FivePrimeCustomFormula, UpdateSourceTrigger=PropertyChanged}"
+                     Visibility="{Binding IsFivePrimeCustom, Converter={StaticResource bool2VisConverter}}"
+                     ToolTip="Chemical formula, e.g. O-3P-1" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <Label Content="3' Cap:" />
+            <ComboBox x:Name="ThreePrimeComboBox" MinWidth="110" VerticalAlignment="Center"
+                      ItemsSource="{Binding ThreePrimeOptions}"
+                      SelectedItem="{Binding SelectedThreePrimeOption}"
+                      ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                <ComboBox.ToolTip>
+                    <TextBlock>
+                        Chemical cap placed on the 3' end of each RNA in the database.
+                        <LineBreak />
+                        Default uses the mzLib value.
+                    </TextBlock>
+                </ComboBox.ToolTip>
+            </ComboBox>
+            <TextBox x:Name="ThreePrimeCustomTextBox" Width="70" Margin="5 0 0 0" VerticalAlignment="Center"
+                     Text="{Binding ThreePrimeCustomFormula, UpdateSourceTrigger=PropertyChanged}"
+                     Visibility="{Binding IsThreePrimeCustom, Converter={StaticResource bool2VisConverter}}"
+                     ToolTip="Chemical formula, e.g. H2O4P" />
+        </StackPanel>
+    </WrapPanel>
+</UserControl>

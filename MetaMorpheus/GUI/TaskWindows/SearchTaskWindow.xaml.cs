@@ -41,6 +41,7 @@ namespace MetaMorpheusGUI
         private CustomFragmentationWindow CustomFragmentationWindow;
         private MassDifferenceAcceptorSelectionViewModel _massDifferenceAcceptorViewModel;
         private FragmentationParamsViewModel _fragmentationParamsViewModel;
+        private RnaTerminalCapsViewModel _rnaTerminalCapsViewModel;
         private string _defaultMultiplexType = "TMT10";
         private DeconHostViewModel DeconHostViewModel;
 
@@ -463,6 +464,8 @@ namespace MetaMorpheusGUI
 
             _fragmentationParamsViewModel = new FragmentationParamsViewModel(task.CommonParameters, task.SearchParameters);
             FragmentationParametersControl.DataContext = _fragmentationParamsViewModel;
+            _rnaTerminalCapsViewModel = new RnaTerminalCapsViewModel(task.CommonParameters);
+            RnaTerminalCapsControl.DataContext = _rnaTerminalCapsViewModel;
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -537,6 +540,11 @@ namespace MetaMorpheusGUI
             int maxModificationIsoformsValue = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
             int maxModsForPeptideValue = (int.Parse(MaxModNumTextBox.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior initiatorMethionineBehavior = ((InitiatorMethionineBehavior)InitiatorMethionineBehaviorComboBox.SelectedIndex);
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode && !_rnaTerminalCapsViewModel.Validate(out string terminalCapError))
+            {
+                System.Windows.MessageBox.Show(terminalCapError, "Invalid terminal cap", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
             IDigestionParams digestionParamsToSave;
             if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
             {
@@ -668,6 +676,8 @@ namespace MetaMorpheusGUI
                 precursorMassTolerance: PrecursorMassTolerance,
                 productMassTolerance: ProductMassTolerance,
                 digestionParams: digestionParamsToSave,
+                fivePrimeTerminus: _rnaTerminalCapsViewModel.FivePrimeTerminus,
+                threePrimeTerminus: _rnaTerminalCapsViewModel.ThreePrimeTerminus,
                 separationType: separationType,
                 trimMs1Peaks: TrimMs1Peaks,
                 trimMsMsPeaks: TrimMsMsPeaks,
