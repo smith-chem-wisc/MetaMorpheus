@@ -414,6 +414,86 @@ namespace Test
         }
 
         /// <summary>
+        /// A TMT search's peptide tables carry peptide-level q-values, as every other search's do, so the rows that pass
+        /// the 1% filter are the peptides results.txt counts. The multiplex writer used to drop the peptide-level flag and
+        /// write each peptide's best PSM's PSM-level values instead: on PXD034564, 44,037 target rows passed against
+        /// results.txt's 43,114. Two copies of one file give every peptide two PSMs, so PSM-level values show.
+        /// </summary>
+        [Test]
+        public static void TmtSearch_PeptideTablesCarryPeptideLevelQValues()
+        {
+            string root = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtPeptideLevelQValues");
+            string dataFolder = Path.Combine(root, "data");
+            string outputFolder = Path.Combine(root, "out");
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+
+            try
+            {
+                string first = StageMzml(dataFolder);
+                string second = Path.Combine(dataFolder, "VA084TQ_6_copy.mzML");
+                File.Copy(first, second);
+
+                var searchTask = Toml.ReadFile<SearchTask>(
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                    MetaMorpheusTask.tomlConfig);
+                searchTask.SearchParameters.WriteIndividualFiles = true; // the per-file peptide tables go through the same writer
+                new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("search", searchTask) },
+                    new List<string> { first, second },
+                    new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\mouseTmt.fasta"), false) },
+                    outputFolder).Run();
+
+                string searchOut = Path.Combine(outputFolder, "search");
+                var results = File.ReadAllLines(Path.Combine(searchOut, "results.txt"));
+
+                AssertPeptideTableMatchesItsSummaryLine(Path.Combine(searchOut, "AllPeptides.psmtsv"),
+                    results, "All target peptides with ");
+                foreach (string fileName in new[] { first, second }.Select(Path.GetFileNameWithoutExtension))
+                {
+                    AssertPeptideTableMatchesItsSummaryLine(Path.Combine(searchOut, "Individual File Results", fileName + "_Peptides.psmtsv"),
+                        results, fileName + " - Target peptides with ");
+                }
+            }
+            finally
+            {
+                if (Directory.Exists(root)) Directory.Delete(root, true);
+            }
+        }
+
+        private static void AssertPeptideTableMatchesItsSummaryLine(string peptideTable, string[] results, string summaryPrefix)
+        {
+            // e.g. "All target peptides with pep q-value <= 0.01: 123"; the filter named is the one the count used
+            string summary = results.SingleOrDefault(l => l.StartsWith(summaryPrefix))
+                ?? throw new AssertionException($"no \"{summaryPrefix}\" line in results.txt:{Environment.NewLine}{string.Join(Environment.NewLine, results)}");
+            string filter = summary[summaryPrefix.Length..summary.IndexOf(" <= ")];
+            double threshold = double.Parse(summary[(summary.IndexOf(" <= ") + 4)..summary.LastIndexOf(':')], System.Globalization.CultureInfo.InvariantCulture);
+            int reported = int.Parse(summary[(summary.LastIndexOf(':') + 1)..]);
+
+            var lines = File.ReadAllLines(peptideTable);
+            var header = lines[0].Split('\t');
+            int label = Array.IndexOf(header, "Decoy/Contaminant/Target");
+            int cumulativeTarget = Array.IndexOf(header, "Cumulative Target");
+            var rows = lines.Skip(1).Select(l => l.Split('\t')).ToList();
+            double Value(string[] row, string column) =>
+                double.Parse(row[Array.IndexOf(header, column)], System.Globalization.CultureInfo.InvariantCulture);
+            Func<string[], bool> passes = filter switch
+            {
+                "pep q-value" => r => Value(r, "PEP_QValue") <= threshold,
+                "q-value notch" => r => Value(r, "QValue Notch") <= threshold,
+                "q-value" => r => Value(r, "QValue") <= threshold && Value(r, "QValue Notch") <= threshold,
+                _ => throw new AssertionException($"unknown filter in \"{summary}\""),
+            };
+
+            int passing = rows.Count(r => r[label] == "T" && passes(r));
+            Assert.That(reported, Is.GreaterThan(0), $"{Path.GetFileName(peptideTable)}: the search must find peptides");
+            Assert.That(passing, Is.EqualTo(reported),
+                $"{Path.GetFileName(peptideTable)}: its rows passing 1% must be the peptides results.txt counts");
+            // a peptide-level cumulative count counts peptides, so it can never exceed the peptides written
+            Assert.That(rows.Max(r => int.Parse(r[cumulativeTarget])), Is.LessThanOrEqualTo(rows.Count),
+                $"{Path.GetFileName(peptideTable)}: its cumulative target count must count peptides, not PSMs");
+        }
+
+        /// <summary>
         /// A TMT search with no design file is still a legitimate search — there is simply no
         /// channel-to-sample mapping to quantify against. It must complete and still write the
         /// reporter ion columns, without any quantification files appearing.
