@@ -109,11 +109,28 @@ namespace TaskLayer
             // missing or unusable: SearchTask.WarnAboutSdrfGaps told the user before the run that it is
             // not consulted, and a file-level condition would misdescribe a file holding many samples.
             var isobaric = ReadIsobaricDesignIfPresent(out var tagType);
+
+            // With an input SDRF, whether it can describe this search is decided first, by the rule SearchTask's
+            // pre-run warning uses, and a refusal is thrown before anything is warned about. The warnings below
+            // describe the SDRF being written, so a refused input must not reach them: they would describe an SDRF
+            // that the crash record beside them says was never written (pcruzparri's review of #2934).
+            var refused = new List<string>();
+            if (inputSdrf is not null)
+            {
+                var refusals = InputSdrfJoinProblems(inputSdrf);
+                var filesWithChannelRows = isobaric?
+                    .Where(f => ChannelRowsUnusableReason(f.Value, tagType!.Value) is null)
+                    .ToDictionary(f => f.Key, f => f.Value, StringComparer.OrdinalIgnoreCase);
+                InputRowsToCopy(inputSdrf, Parameters.CurrentRawFileList,
+                    filesWithChannelRows ?? new Dictionary<string, TmtFileInfo>(), tagType, refusals);
+                if (refusals.Any())
+                    throw InputSdrfRefused(refusals);
+            }
+
             var design = Parameters.SearchParameters.DoMultiplexQuantification
                 ? new Dictionary<string, SpectraFileInfo>(StringComparer.OrdinalIgnoreCase)
                 : ReadExperimentalDesignIfPresent();
             var describedOnce = new List<string>();
-            var refused = inputSdrf is null ? null : InputSdrfJoinProblems(inputSdrf);
 
             // A sample name reused across plexes for different material (#2817 review): only those names
             // are scoped to their plex. A bridge, which agrees on condition and replicate, keeps its name.
@@ -226,15 +243,26 @@ namespace TaskLayer
                 yield return new SdrfRowInput(sample, assay);
             }
 
-            if (describedOnce.Any())
-                Warn("The SDRF describes these files once, without their channels or samples: " +
-                     string.Join("; ", describedOnce.Distinct()) + ".");
+            // The input already passed the check above, which uses the same rule, so nothing should be refused here. If the
+            // two ever disagree, the SDRF is still refused rather than written with a sample missing.
+            if (refused.Any())
+                throw InputSdrfRefused(refused);
 
-            // Thrown here, after every file, so that one crash record lists every file and channel at once.
-            if (refused is { Count: > 0 })
-                throw new InvalidDataException("The input SDRF " + Parameters.SearchParameters.InputSdrfPath.Trim() +
-                    " cannot describe this search, so no " + SdrfFileName + " was written: " + string.Join("; ", refused) + ".");
+            // With an input SDRF, each such file's sample columns are its one input row's; only its channels are missing.
+            if (describedOnce.Any())
+                Warn((inputSdrf is null
+                         ? "The SDRF describes these files once, without their channels or samples: "
+                         : "The SDRF describes these files once, each by its one row of the input SDRF, without their channels: ") +
+                     string.Join("; ", describedOnce.Distinct()) + ".");
         }
+
+        /// <summary>
+        /// The refusal of an input SDRF that cannot describe this search, listing every file and channel at once, so one
+        /// crash record names them all.
+        /// </summary>
+        private InvalidDataException InputSdrfRefused(List<string> refusals) =>
+            new("The input SDRF " + Parameters.SearchParameters.InputSdrfPath.Trim() + " cannot describe this search, so no " +
+                SdrfFileName + " was written: " + string.Join("; ", refusals) + ".");
 
         /// <summary>
         /// The input SDRF restricted to this search's files, or null when the task names none. The join is mzLib's
@@ -249,8 +277,30 @@ namespace TaskLayer
             if (string.IsNullOrWhiteSpace(path))
                 return null;
 
-            return SdrfSearchScope.Restrict(new SdrfDocument(path.Trim()), Parameters.CurrentRawFileList,
+            return SdrfSearchScope.Restrict(OpenInputSdrf(path), Parameters.CurrentRawFileList,
                 AcquiredFileNames(Parameters.CurrentRawFileList, Parameters.AcquiredSpectraFiles));
+        }
+
+        /// <summary>
+        /// The input SDRF at <paramref name="inputSdrfPath"/>, opened the same way for the writer and for SearchTask's
+        /// pre-run warning, so both give the same reason. mzLib's SdrfDocument reads a path with no file behind it as an
+        /// SDRF with no columns, and SdrfSearchScope then says it has no comment[data file] column, which sends the user
+        /// to the wrong fix (pcruzparri's review of #2934). So a folder, or a path with no file, throws
+        /// <see cref="FileNotFoundException"/> here, naming the full path that was looked at. A relative path is read
+        /// against the working directory, not the task file's folder, and the message says so.
+        /// </summary>
+        internal static SdrfDocument OpenInputSdrf(string inputSdrfPath)
+        {
+            string given = inputSdrfPath.Trim();
+            string fullPath = Path.GetFullPath(given);
+            if (File.Exists(fullPath))
+                return new SdrfDocument(fullPath);
+
+            if (Directory.Exists(fullPath))
+                throw new FileNotFoundException($"{fullPath} is a folder; InputSdrfPath names the SDRF file itself", fullPath);
+            throw new FileNotFoundException($"no file was found at {fullPath}" + (Path.IsPathRooted(given)
+                ? ""
+                : $"; '{given}' is a relative path, read against the working directory, so give the full path"), fullPath);
         }
 
         /// <summary>

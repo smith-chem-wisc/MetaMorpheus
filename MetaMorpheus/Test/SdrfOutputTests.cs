@@ -1855,8 +1855,47 @@ namespace Test
             if (rowsForB == 0)
                 Assert.That(warnings.Any(w => w.Contains("b.mzml") && w.Contains("no " + SdrfFileName)), Is.True,
                     "A file with no input row is named before the search. " + string.Join(" | ", warnings));
+            // The refusal comes before the write-time warnings, so none describes the SDRF that was not written
+            // (pcruzparri's review of #2934): with no ExperimentalDesign.tsv this one said the sample columns are copied.
+            Assert.That(warnings.Any(w => w.Contains("Its sample columns are copied")), Is.False, string.Join(" | ", warnings));
 
             Directory.Delete(folder, true);
+        }
+
+        /// <summary>
+        /// A TMT file described once (its plex has no annotated channels) takes its one input row. With an input written a
+        /// row per channel the SDRF is refused, and no warning describes the SDRF that was not written; with one row the
+        /// SDRF is written, and its warning says the file's sample columns are that row's, not that it has no samples
+        /// (pcruzparri's review of #2934).
+        /// </summary>
+        [TestCase(true)]
+        [TestCase(false)]
+        public static void ATmtFileDescribedOnceIsWarnedAboutOnlyWhenItsSdrfIsWritten(bool inputHasARowPerChannel)
+        {
+            var input = inputHasARowPerChannel
+                ? TmtInputSdrf(Tmt11Channels.Select((tag, i) => ("VA084TQ_6.raw", "TMT" + tag, "donor " + (i + 1))).ToArray())
+                : TmtInputSdrf(("VA084TQ_6.raw", "not available", "pooled donors"));
+
+            string root = RunTmtSearchWritingSdrf(nameof(ATmtFileDescribedOnceIsWarnedAboutOnlyWhenItsSdrfIsWritten) + inputHasARowPerChannel,
+                writeDesign: true, out string output, out List<string> warnings, placeholderOnly: true, inputSdrf: input);
+            string all = string.Join(" | ", warnings);
+
+            Assert.That(warnings.Any(w => w.Contains("without their channels or samples")), Is.False, all);
+            if (inputHasARowPerChannel)
+            {
+                Assert.That(File.Exists(Path.Combine(output, SdrfFileName)), Is.False);
+                Assert.That(File.ReadAllText(Path.Combine(output, "SdrfWriter_crash.txt")), Does.Contain("has 11 rows in it"));
+                Assert.That(warnings.Any(w => w.Contains("The SDRF describes these files once")), Is.False, all);
+            }
+            else
+            {
+                var document = new SdrfDocument(Path.Combine(output, SdrfFileName));
+                document.LoadResults();
+                Assert.That(document.Results.Single()["source name"], Is.EqualTo("pooled donors"));
+                Assert.That(warnings.Any(w => w.Contains("each by its one row of the input SDRF, without their channels")), Is.True, all);
+            }
+
+            Directory.Delete(root, true);
         }
 
         /// <summary>
@@ -2193,7 +2232,8 @@ namespace Test
             var warnings = WarningsBeforeASearchWithAnInputSdrf(
                 nameof(AnUnreadableInputSdrfIsNamedBeforeTheRun_AndNoDesignIsNoLongerASampleGap), inputSdrf: null);
 
-            Assert.That(warnings.Any(w => w.Contains("missing.sdrf.tsv") && w.Contains("no " + SdrfFileName)), Is.True,
+            Assert.That(warnings.Any(w => w.Contains("missing.sdrf.tsv") && w.Contains("no file was found")
+                                          && w.Contains("no " + SdrfFileName)), Is.True,
                 string.Join(" | ", warnings));
             Assert.That(warnings.Any(w => w.Contains("sample columns will say 'not available'")), Is.False,
                 string.Join(" | ", warnings));
@@ -2207,6 +2247,41 @@ namespace Test
             Assert.That(readable.Any(w => w.Contains("no " + SdrfFileName)), Is.False,
                 "A readable input that covers every searched file with no blank sample fact gives no input warning. " +
                 string.Join(" | ", readable));
+        }
+
+        /// <summary>
+        /// An InputSdrfPath with no SDRF file behind it is named for what it is, before the run and by the writer, which
+        /// open it the same way (OpenInputSdrf): no file there, a folder, or a relative path, which is read against the
+        /// working directory and not beside the spectra. mzLib reads a missing file as an SDRF with no columns, so each
+        /// was reported as an SDRF without comment[data file], the wrong fix for an SDRF that has one (pcruzparri's
+        /// review of #2934).
+        /// </summary>
+        [TestCase("a missing file", "no file was found at")]
+        [TestCase("a folder", "is a folder")]
+        [TestCase("a relative path", "is a relative path, read against the working directory")]
+        public static void AnInputSdrfPathWithNoSdrfFileBehindItIsNamedForWhatItIs(string kind, string reason)
+        {
+            // input.sdrf.tsv is written beside the spectra; given relative, it is looked for in the working directory.
+            const string relative = "input.sdrf.tsv";
+            Assume.That(File.Exists(relative), Is.False, "the working directory has an input.sdrf.tsv of its own");
+            string PathFor(string folder) => kind switch
+            {
+                "a missing file" => Path.Combine(folder, "missing.sdrf.tsv"),
+                "a folder" => folder,
+                _ => relative
+            };
+
+            var warnings = WarningsBeforeASearchWithAnInputSdrf(
+                nameof(AnInputSdrfPathWithNoSdrfFileBehindItIsNamedForWhatItIs) + kind.Replace(' ', '_'), LabelFreeInputSdrf(),
+                PathFor);
+
+            string all = string.Join(" | ", warnings);
+            Assert.That(warnings.Any(w => w.Contains(reason) && w.Contains("no " + SdrfFileName)), Is.True, all);
+            Assert.That(warnings.Any(w => w.Contains("comment[data file]")), Is.False, all);
+
+            var thrown = Assert.Throws<FileNotFoundException>(() =>
+                PostSearchAnalysisTask.OpenInputSdrf(" " + PathFor(TestContext.CurrentContext.TestDirectory) + " "));
+            Assert.That(thrown!.Message, Does.Contain(reason), "the writer's crash record gives the same reason");
         }
 
         /// <summary>
@@ -2248,15 +2323,20 @@ namespace Test
         /// <summary>
         /// The warnings SearchTask gives before a label-free search of a.mzml and b.mzml with SDRF output on and an input
         /// SDRF of <paramref name="inputSdrf"/>, or a path that does not exist when it is null. No ExperimentalDesign.tsv.
+        /// With <paramref name="inputSdrfPathFor"/>, InputSdrfPath is what it gives for the run's folder instead.
         /// </summary>
-        private static List<string> WarningsBeforeASearchWithAnInputSdrf(string testName, IEnumerable<string[]> inputSdrf)
+        private static List<string> WarningsBeforeASearchWithAnInputSdrf(string testName, IEnumerable<string[]> inputSdrf,
+            Func<string, string> inputSdrfPathFor = null)
         {
             string folder = SetUpIsolatedRun(testName, out _, out _);
             string inputPath = Path.Combine(folder, inputSdrf is null ? "missing.sdrf.tsv" : "input.sdrf.tsv");
             if (inputSdrf is not null)
                 File.WriteAllLines(inputPath, inputSdrf.Select(cells => string.Join("\t", cells)));
 
-            var task = new SearchTask { SearchParameters = new SearchParameters { WriteSdrf = true, InputSdrfPath = inputPath } };
+            var task = new SearchTask
+            {
+                SearchParameters = new SearchParameters { WriteSdrf = true, InputSdrfPath = inputSdrfPathFor?.Invoke(folder) ?? inputPath }
+            };
             var warnings = new List<string>();
             EventHandler<StringEventArgs> handler = (o, e) => warnings.Add(e.S);
             MetaMorpheusTask.WarnHandler += handler;
