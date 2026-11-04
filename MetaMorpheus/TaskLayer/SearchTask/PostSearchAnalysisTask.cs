@@ -1681,7 +1681,8 @@ namespace TaskLayer
             string level = peptideLevel
                 ? GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower() + "s"
                 : GlobalVariables.AnalyteType.GetSpectralMatchLabel() + "s";
-            string description = IdentificationRule.Describe(Parameters.AllSpectralMatches, peptideLevel, CommonParameters);
+            // Counted over the target matches the filter judged, not over every match the search made (zhuoxinshi, 11-03).
+            string description = filtered.Description ?? IdentificationRule.Describe(Parameters.AllSpectralMatches, peptideLevel, CommonParameters);
             _identificationFilterProse.Add($"{level} at {description}");
             return $"Identification filter for {level}: {description}" + Environment.NewLine + text;
         }

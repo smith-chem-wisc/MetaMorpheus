@@ -27,6 +27,12 @@ namespace EngineLayer.SpectrumMatch
         /// </summary>
         public string PepFilteringNotDone { get; init; }
         /// <summary>
+        /// Under a named identification filter, what the filter did at this level (<see cref="IdentificationRule.Describe"/>),
+        /// with its "PEP not trained" counts taken over the target matches it judged: after the caller's decoy, contaminant
+        /// and ambiguity choices, decoys left out. Null when the filter was inferred from the thresholds.
+        /// </summary>
+        public string Description { get; init; }
+        /// <summary>
         /// The identification filter the search named (<see cref="CommonParameters.IdentificationFilter"/>), or
         /// <see cref="IdentificationFilterMode.Thresholds"/> when the filter was inferred from the thresholds or the
         /// caller named a <see cref="SpectrumMatch.FilterType"/>. When named, <see cref="IdentificationRule"/> judges
@@ -305,7 +311,8 @@ namespace EngineLayer.SpectrumMatch
             {
                 IdentificationFilter = mode,
                 JudgedOn = string.Join(" or ", judgedOn.Select(GetFilterTypeString)),
-                PepFilteringNotDone = IdentificationRule.PepNotTrainedSentence(candidates, filterAtPeptideLevel, commonParams)
+                PepFilteringNotDone = IdentificationRule.PepNotTrainedSentence(candidates, filterAtPeptideLevel, commonParams),
+                Description = IdentificationRule.Describe(candidates.Where(psm => !psm.IsDecoy), filterAtPeptideLevel, commonParams)
             };
         }
 

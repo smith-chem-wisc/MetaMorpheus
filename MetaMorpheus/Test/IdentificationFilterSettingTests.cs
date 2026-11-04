@@ -135,6 +135,21 @@ namespace Test
         }
 
         [Test]
+        public static void TheFiltersDescription_CountsTheTargetsItJudged_NotEveryMatch()
+        {
+            // zhuoxinshi (11-03): results.txt's "(PEP not trained: N PSMs)" was counted over every match the search made,
+            // decoys included. It is now the filter's own count: the target matches it judged, after the caller's choices.
+            var withDecoys = TwoProteases().Concat(Matches("PEPTIDER", "Arg-C", 40, 0, pepTrained: false, decoy: true)).ToList();
+            var named = Named(IdentificationFilterMode.PepQValueElseQValueNotch);
+
+            Assert.That(FilteredPsms.Filter(withDecoys, named, includeDecoys: true).Description,
+                Is.EqualTo("q-value notch < 0.01 (PEP not trained: 200 PSMs) for Arg-C; pep q-value < 0.01 for trypsin"));
+            Assert.That(IdentificationRule.Describe(withDecoys, peptideLevel: false, named),
+                Does.Contain("(PEP not trained: 240 PSMs)"), "every match, as results.txt counted before");
+            Assert.That(FilteredPsms.Filter(withDecoys, new CommonParameters()).Description, Is.Null, "nothing named, nothing described");
+        }
+
+        [Test]
         public static void PepQValue_AProteaseWithoutPep_FallsBackToTheQValue_AndSaysSo()
         {
             // The user's ruling (2026-11-03): fall back loudly, as #2919's explicit PEP filter does, instead of failing.
