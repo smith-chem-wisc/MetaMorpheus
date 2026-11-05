@@ -165,6 +165,56 @@ namespace Test
             }
         }
 
+        /// <summary>
+        /// Each file's "_QuantifiedPeaks.tsv" in "Individual File Results" holds that file's peaks only: the rows of
+        /// AllQuantifiedPeaks.tsv whose File Name is that file, in the same order. It used to hold every file's peaks,
+        /// so a search of N files wrote N copies of AllQuantifiedPeaks.tsv (126 copies of 1.49 GB in one search).
+        /// </summary>
+        [Test]
+        public static void IndividualFileQuantifiedPeaksHoldOnlyThatFilesPeaks()
+        {
+            string subFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"IndividualQuantifiedPeaksTest");
+            if (Directory.Exists(subFolder))
+                Directory.Delete(subFolder, true);
+            Directory.CreateDirectory(subFolder);
+            try
+            {
+                SearchTask task = new SearchTask();
+                task.SearchParameters.WriteIndividualFiles = true;
+                task.SearchParameters.CompressIndividualFiles = false;
+                Assert.That(task.SearchParameters.DoLabelFreeQuantification, Is.True, "premise: label-free quantification is on");
+
+                DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fasta"), false);
+                TestDataFile datafile = new TestDataFile(new PeptideWithSetModifications("AAFNSGK", null));
+                string pathOne = Path.Combine(subFolder, "fileOne.mzml");
+                string pathTwo = Path.Combine(subFolder, "fileTwo.mzml");
+                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(datafile, pathOne, false);
+                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(datafile, pathTwo, false);
+
+                string outputFolder = Path.Combine(subFolder, "Results");
+                new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task", task) }, new List<string> { pathOne, pathTwo },
+                    new List<DbForTask> { db }, outputFolder).Run();
+
+                string[] allPeaks = File.ReadAllLines(Path.Combine(outputFolder, "task", "AllQuantifiedPeaks.tsv"));
+                int fileNameColumn = Array.IndexOf(allPeaks[0].Split('\t'), "File Name");
+                Assert.That(fileNameColumn, Is.GreaterThanOrEqualTo(0));
+
+                foreach (string file in new[] { "fileOne", "fileTwo" })
+                {
+                    string[] expectedRows = allPeaks.Skip(1).Where(row => row.Split('\t')[fileNameColumn] == file).ToArray();
+                    Assert.That(expectedRows, Is.Not.Empty, $"premise: {file} has quantified peaks");
+
+                    string[] perFile = File.ReadAllLines(Path.Combine(outputFolder, "task", "Individual File Results", file + "_QuantifiedPeaks.tsv"));
+                    Assert.That(perFile[0], Is.EqualTo(allPeaks[0]), $"{file}: same header as AllQuantifiedPeaks.tsv");
+                    Assert.That(perFile.Skip(1).ToArray(), Is.EqualTo(expectedRows), $"{file}: its own peaks only, in AllQuantifiedPeaks.tsv's order");
+                }
+            }
+            finally
+            {
+                Directory.Delete(subFolder, true);
+            }
+        }
+
         [Test]
         public static void TestOpairFileOutput()
         {
