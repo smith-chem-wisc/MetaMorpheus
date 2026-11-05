@@ -133,6 +133,7 @@ namespace MetaMorpheusGUI
             TbMaxOGlycanNum.Text = task._glycoSearchParameters.MaximumOGlycanAllowed.ToString(CultureInfo.InvariantCulture);
             TbMaxGlycanBoxMass.Text = task._glycoSearchParameters.MaximumGlycanBoxMass.ToString(CultureInfo.InvariantCulture);
             CkbOxoniumIonFilt.IsChecked = task._glycoSearchParameters.OxoniumIonFilt;
+            TbCustomOxoniumThreshold.Text = task._glycoSearchParameters.CustomOxoniumThreshold.ToString(CultureInfo.InvariantCulture);
 
             txtTopNum.Text = task._glycoSearchParameters.GlycoSearchTopNum.ToString(CultureInfo.InvariantCulture);
             CmbOGlycanDatabase.SelectedItem = task._glycoSearchParameters.OGlycanDatabasefile;
@@ -339,6 +340,13 @@ namespace MetaMorpheusGUI
                 return;
             }
 
+            if (!EngineLayer.GlycoSearch.GlycoPeptides.TryParseCustomOxoniumThreshold(TbCustomOxoniumThreshold.Text,
+                    out double customOxoniumThreshold, out string customOxoniumThresholdError))
+            {
+                MessageBox.Show(customOxoniumThresholdError);
+                return;
+            }
+
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
 
             DissociationType childDissociationType = DissociationType.Unknown;
@@ -371,6 +379,7 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumGlycanBoxMass = double.Parse(TbMaxGlycanBoxMass.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.OxoniumIonFilt = CkbOxoniumIonFilt.IsChecked.Value;
+            TheTask._glycoSearchParameters.CustomOxoniumThreshold = customOxoniumThreshold;
             TheTask._glycoSearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
             TheTask._glycoSearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
             TheTask._glycoSearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;

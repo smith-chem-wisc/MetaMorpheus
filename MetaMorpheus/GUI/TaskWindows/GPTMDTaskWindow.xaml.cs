@@ -126,6 +126,7 @@ namespace MetaMorpheusGUI
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             WriteDecoysCheckBox.IsChecked = task.GptmdParameters.WriteDecoys;
+            AlternativeSitesForDatabaseModsCheckBox.IsChecked = task.GptmdParameters.AddAlternativeSitesForDatabaseMods;
 
             TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
@@ -608,6 +609,7 @@ namespace MetaMorpheusGUI
             }
             TheTask.GptmdParameters.GptmdFilters = FilterOptions.Where(f => f.IsSelected).Select(f => f.Filter).ToList();
             TheTask.GptmdParameters.WriteDecoys = WriteDecoysCheckBox.IsChecked.Value;
+            TheTask.GptmdParameters.AddAlternativeSitesForDatabaseMods = AlternativeSitesForDatabaseModsCheckBox.IsChecked.Value;
             TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;

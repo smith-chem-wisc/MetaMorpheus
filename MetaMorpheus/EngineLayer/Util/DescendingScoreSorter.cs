@@ -12,8 +12,10 @@ namespace EngineLayer.Util
     /// handed back in the order they were observed, which is what OrderByDescending did. Ties decide which
     /// peptide ends up as the PSM when the fine scores also tie, so an unstable sort would quietly change results.
     ///
-    /// This is the only place the search sorts or cuts candidates by coarse score; modern, crosslink and glyco
-    /// all come through here.
+    /// Modern, crosslink and glyco sort or cut each partition's candidates here. Two multi-partition merges then
+    /// re-cut the pooled candidates without it, because those carry scores from several partitions' tables:
+    /// glyco's KeepGlobalTopN, a stable LINQ sort that agrees with this one, and crosslink's trim, which uses
+    /// List.Sort and so is not stable.
     ///
     /// One instance per thread -- it reuses its buffers and is not safe to share.
     /// </summary>

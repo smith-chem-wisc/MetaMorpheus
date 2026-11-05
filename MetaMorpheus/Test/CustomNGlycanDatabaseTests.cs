@@ -107,7 +107,7 @@ namespace Test
                 Assert.That(glycans.Count, Is.EqualTo(2));
                 Assert.That(glycans.Select(g => g.Target.ToString()), Is.EquivalentTo(new[] { "Nxs", "Nxt" }));
                 Assert.That(glycans.Select(g => Glycan.GetKindString(g.Kind)).Distinct().Single(),
-                    Is.EqualTo(Glycan.GetKindString(GlycanDatabase.String2Kind("HexNAc(4)Hex(5)Fuc(1)NeuAc(1)"))));
+                    Is.EqualTo(Glycan.GetKindString(GlycanDatabase.ParseComposition("HexNAc(4)Hex(5)Fuc(1)NeuAc(1)"))));
             });
         }
 
