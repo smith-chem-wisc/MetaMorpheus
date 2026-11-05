@@ -69,6 +69,8 @@ namespace MetaMorpheusGUI
 
         internal CalibrationTask TheTask { get; private set; }
 
+        private RnaTerminalCapsViewModel _rnaTerminalCapsViewModel;
+
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
             GlobalVariables.AnalyteType = task.CommonParameters.DetermineAnalyteType();
@@ -184,6 +186,8 @@ namespace MetaMorpheusGUI
             {
                 ye.VerifyCheckState();
             }
+            _rnaTerminalCapsViewModel = new RnaTerminalCapsViewModel(task.CommonParameters);
+            RnaTerminalCapsControl.DataContext = _rnaTerminalCapsViewModel;
         }
 
         private void PopulateChoices()
@@ -281,6 +285,11 @@ namespace MetaMorpheusGUI
             int maxModsPerPeptide = int.Parse(MaxModsPerPeptideTextBox.Text, CultureInfo.InvariantCulture);
             //bool addTruncations = addTruncations.
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode && !_rnaTerminalCapsViewModel.Validate(out string terminalCapError))
+            {
+                System.Windows.MessageBox.Show(terminalCapError, "Invalid terminal cap", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
             CustomFragmentationWindow.Close();
             IDigestionParams digestionParamsToSave;
             if (isRnaMode)
@@ -356,6 +365,8 @@ namespace MetaMorpheusGUI
                     taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "CalibrateTask",
                     maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                     digestionParams: digestionParamsToSave,
+                    fivePrimeTerminus: _rnaTerminalCapsViewModel.FivePrimeTerminus,
+                    threePrimeTerminus: _rnaTerminalCapsViewModel.ThreePrimeTerminus,
                     dissociationType: dissociationType,
                     scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                     listOfModsFixed: listOfModsFixed,
@@ -380,6 +391,8 @@ namespace MetaMorpheusGUI
                     taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "CalibrateTask",
                     maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                     digestionParams: digestionParamsToSave,
+                    fivePrimeTerminus: _rnaTerminalCapsViewModel.FivePrimeTerminus,
+                    threePrimeTerminus: _rnaTerminalCapsViewModel.ThreePrimeTerminus,
                     dissociationType: dissociationType,
                     scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                     listOfModsFixed: listOfModsFixed,

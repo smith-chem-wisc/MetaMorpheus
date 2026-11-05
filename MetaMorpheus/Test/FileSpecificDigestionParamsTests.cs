@@ -1,3 +1,4 @@
+using Transcriptomics.Digestion;
 using EngineLayer;
 using GuiFunctions.Util;
 using MassSpectrometry;
@@ -155,7 +156,8 @@ namespace Test
                 productMassTolerance_LowRes: new AbsoluteTolerance(0.44),
                 deconvolutionMassTolerance: new PpmTolerance(7),
                 maxThreadsToUsePerFile: 2,
-                digestionParams: new DigestionParams(protease: "Asp-N", maxMissedCleavages: 3, minPeptideLength: 6),
+                // RNA digestion, because the terminal caps only exist for RNA and would be null (and so untested) otherwise
+                digestionParams: new RnaDigestionParams("RNase T1", maxMissedCleavages: 3, minLength: 6),
                 listOfModsVariable: new List<(string, string)> { ("Common Biological", "Phosphorylation on S") },
                 listOfModsFixed: new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C") },
                 assumeOrphanPeaksAreZ1Fragments: false,
@@ -170,7 +172,9 @@ namespace Test
                 fragmentationParams: new FragmentationParams(),
                 precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant,
                 rtPredictorName: "SSRCalc3",
-                retentionTimeRange: new DoubleRange(12, 14));
+                retentionTimeRange: new DoubleRange(12, 14),
+                fivePrimeTerminus: "H3O6P2",
+                threePrimeTerminus: "O3P");
 
             // CustomIons is not a constructor parameter; the constructor reads it from a global dictionary
             typeof(CommonParameters).GetProperty(nameof(CommonParameters.CustomIons))
@@ -198,14 +202,18 @@ namespace Test
 
                 // the rebuild always constructs new digestion parameters, so they are compared field by field
                 bool byValue = property.PropertyType.IsValueType || property.PropertyType == typeof(string)
-                    || property.Name == nameof(CommonParameters.DigestionParams);
+                    || property.Name == nameof(CommonParameters.DigestionParams)
+                    // rebuilt from their formula text, so equal rather than the same instance
+                    || property.Name is nameof(CommonParameters.FivePrimeTerminus) or nameof(CommonParameters.ThreePrimeTerminus);
 
                 if (byValue ? Equals(a, def) : ReferenceEquals(a, def))
                 {
                     indistinguishable.Add(property.Name);
                 }
 
-                bool equal = a == null || byValue ? Equals(a, b) : ReferenceEquals(a, b);
+                // ChemicalFormula implements IEquatable<ChemicalFormula> but does not override object.Equals
+                bool equal = a is Chemistry.ChemicalFormula formula ? formula.Equals(b as Chemistry.ChemicalFormula)
+                    : a == null || byValue ? Equals(a, b) : ReferenceEquals(a, b);
                 if (!equal)
                 {
                     mismatches.Add($"{property.Name}: '{a}' -> '{b}'");

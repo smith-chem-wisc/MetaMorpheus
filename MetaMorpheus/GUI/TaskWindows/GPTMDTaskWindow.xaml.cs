@@ -83,6 +83,8 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private RnaTerminalCapsViewModel _rnaTerminalCapsViewModel;
+
         private void UpdateFieldsFromTask(GptmdTask task)
         {
             GlobalVariables.AnalyteType = task.CommonParameters.DetermineAnalyteType();
@@ -224,6 +226,8 @@ namespace MetaMorpheusGUI
             {
                 filter.IsSelected = TheTask.GptmdParameters.GptmdFilters.Any(f => f.GetType() == filter.Filter.GetType());
             }
+            _rnaTerminalCapsViewModel = new RnaTerminalCapsViewModel(task.CommonParameters);
+            RnaTerminalCapsControl.DataContext = _rnaTerminalCapsViewModel;
         }
 
         private void PopulateChoices()
@@ -468,6 +472,11 @@ namespace MetaMorpheusGUI
             int maxModsPerPeptide = int.Parse(MaxModsPerPeptideTextBox.Text, CultureInfo.InvariantCulture);
             InitiatorMethionineBehavior initiatorMethionineBehavior = (InitiatorMethionineBehavior)InitiatorMethionineBehaviorComboBox.SelectedIndex;
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode && !_rnaTerminalCapsViewModel.Validate(out string terminalCapError))
+            {
+                System.Windows.MessageBox.Show(terminalCapError, "Invalid terminal cap", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
             CustomFragmentationWindow.Close();
 
             Tolerance productMassTolerance;
@@ -583,6 +592,8 @@ namespace MetaMorpheusGUI
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "GPTMDTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                 digestionParams: digestionParamsToSave,
+                fivePrimeTerminus: _rnaTerminalCapsViewModel.FivePrimeTerminus,
+                threePrimeTerminus: _rnaTerminalCapsViewModel.ThreePrimeTerminus,
                     dissociationType: dissociationType,
                     scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                     precursorMassTolerance: precursorMassTolerance,
