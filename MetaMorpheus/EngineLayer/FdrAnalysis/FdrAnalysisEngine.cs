@@ -110,8 +110,10 @@ namespace EngineLayer.FdrAnalysis
                     filterAtPeptideLevel: true).FilteredPsmsList;
 
                 // Whether this pass leaves PEP q-values from a trained model at each level, for FdrInfo.PepTrained.
-                // Null: this pass trains nothing and reuses PEPs an earlier pass computed, so that pass's record stands.
-                bool? pepTrainedPsmLevel = false, pepTrainedPeptideLevel = false;
+                // Null: this pass trains nothing (doPep false) or reuses PEPs an earlier pass computed, so that pass's record
+                // stands. A doPep-false pass must never stamp: over matches whose PEPs are all exactly 0, as a trained
+                // model's confident targets often are (the variant tables' passing peptides), it would mark them untrained.
+                bool? pepTrainedPsmLevel = doPep ? false : null, pepTrainedPeptideLevel = doPep ? false : null;
                 if ((psms.Count > PsmCountThresholdForInvertedQvalue || QvalueThresholdOverride) & doPep)
                 {
                     CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: false);

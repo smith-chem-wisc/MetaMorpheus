@@ -20,9 +20,10 @@ namespace EngineLayer.ModificationAnalysis
 
             ModificationAnalysisResults myAnalysisResults = new ModificationAnalysisResults(this);
 
-            // A named identification filter decides here as everywhere else; otherwise q-value <= 0.01, as before.
+            // A 1% count, as on master and as CountPsm and PsmsWithin1PercentFdr are: a named identification filter decides
+            // which value each match is judged on, at 0.01; otherwise q-value <= 0.01, as before.
             var confidentTargetPsms = IdentificationRule.IsExplicit(CommonParameters)
-                ? NewPsms.Where(b => !b.IsDecoy && IdentificationRule.Passes(b, peptideLevel: false, CommonParameters.IdentificationFilter, IdentificationRule.Threshold(CommonParameters))).ToList()
+                ? NewPsms.Where(b => !b.IsDecoy && IdentificationRule.Passes(b, peptideLevel: false, CommonParameters.IdentificationFilter, threshold: 0.01)).ToList()
                 : NewPsms.Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy).ToList();
 
             // For the database ones, only need un-ambiguous protein and location in protein

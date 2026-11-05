@@ -84,6 +84,15 @@ namespace Test
 
             Assert.That(read.CommonParameters.IdentificationFilter, Is.EqualTo(IdentificationFilterMode.PepQValueElseQValueNotch));
             Assert.That(read.CommonParameters.CloneWithNewTerminus().IdentificationFilter, Is.EqualTo(IdentificationFilterMode.PepQValueElseQValueNotch));
+
+            // A TOML saved before the setting existed has no IdentificationFilter line, and reads as the thresholds filter.
+            Nett.Toml.WriteFile(new SearchTask { CommonParameters = Named(IdentificationFilterMode.QValueNotch, qValueThreshold: 0.01) }, toml, MetaMorpheusTask.tomlConfig);
+            var lines = File.ReadAllLines(toml);
+            Assert.That(lines, Has.One.Match(@"^\s*IdentificationFilter = "));
+            File.WriteAllLines(toml, lines.Where(l => !System.Text.RegularExpressions.Regex.IsMatch(l, @"^\s*IdentificationFilter = ")));
+            var old = Nett.Toml.ReadFile<SearchTask>(toml, MetaMorpheusTask.tomlConfig);
+            File.Delete(toml);
+            Assert.That(old.CommonParameters.IdentificationFilter, Is.EqualTo(IdentificationFilterMode.Thresholds));
         }
 
         [Test]
@@ -514,6 +523,11 @@ namespace Test
 
             Assert.That(Counted(new CommonParameters()), Is.EqualTo(0));
             Assert.That(Counted(Named(IdentificationFilterMode.QValueNotch, qValueThreshold: 0.01)), Is.GreaterThan(0));
+
+            // The modification counts are a 1% count, as on master and as the Spectrum Match Count column and "PSMs within
+            // 1% FDR" are: a named filter decides which value, never the threshold. A notch of 0.02 passes a 0.05 filter.
+            psm.SetFdrValues(1, 0, 0.5, 1, 0, 0.02, 0, 2);
+            Assert.That(Counted(Named(IdentificationFilterMode.QValueNotch, qValueThreshold: 0.05)), Is.EqualTo(0));
         }
 
         /// <summary>
@@ -635,6 +649,28 @@ namespace Test
             Assert.That(FilteredPsms.Filter(psms, named).FilterType, Is.EqualTo(FilterType.PepQValue));
             Assert.That(IdentificationRule.Describe(psms, peptideLevel: false, named), Is.EqualTo("pep q-value < 0.5"));
             Assert.That(IdentificationRule.FellBack(psms, peptideLevel: false, named), Is.False);
+        }
+
+        [Test]
+        public static void ALaterPassThatTrainsNothing_KeepsTheRecord_WhenEveryPepIsZero()
+        {
+            // The variant tables run a doPEP:false FDR pass over the passing variant peptides alone. A trained model often
+            // gives its confident targets a PEP of exactly 0, and a pass over only such matches must not stamp them "PEP not
+            // trained": a named PEP filter would then judge them on a q-value recomputed over that subset, and say PEP was
+            // not computed. With one decoy whose PEP is above 0 among them, the same matches kept the record.
+            var target = new Protein("PEPTIDEK", "target", databaseFilePath: "temp");
+            var psms = Enumerable.Range(1, 50).Select(i => Match(target, notch: 0, score: 50, scanNumber: i)).ToList();
+            foreach (var psm in psms)
+            {
+                psm.SetFdrValues(1, 0, 0.001, 1, 0, 0.001, pep: 0, pepQValue: 0.001);
+                psm.PsmFdrInfo.PepTrained = true;
+            }
+            var commonParameters = new CommonParameters();
+            new FdrAnalysisEngine(psms, 2, commonParameters, new List<(string, CommonParameters)> { ("File", commonParameters) },
+                new List<string>(), doPEP: false).Run();
+
+            Assert.That(psms.All(p => p.PsmFdrInfo.PepTrained), "a pass that trains nothing keeps the earlier record");
+            Assert.That(IdentificationRule.FellBack(psms, peptideLevel: false, Named(IdentificationFilterMode.PepQValue)), Is.False);
         }
 
         [Test]
