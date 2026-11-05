@@ -82,8 +82,8 @@ public class RnaTerminalCapsViewModel : BaseViewModel
             : new List<TerminalCapOption>
             {
                 Cap("Hydroxyl", NucleicAcid.DefaultThreePrimeTerminus.Formula, "3'-OH. The default for a full-length oligonucleotide.", true),
-                Cap("Phosphate", Rnase.DefaultThreePrimeTerminus.ThisChemicalFormula.Formula, "3'-phosphate, as left by RNase digestion."),
-                Cap("Cyclic phosphate", "O3P", "2',3'-cyclic phosphate, the intermediate of RNase T1/A cleavage.")
+                Cap("Phosphate", Rnase.DefaultThreePrimeTerminus.ThisChemicalFormula.Formula, "3'-phosphate on the full-length RNA's 3' end only. Digestion products already end in a 3'-phosphate."),
+                Cap("Cyclic phosphate", "O3P", "2',3'-cyclic phosphate on the full-length RNA's 3' end only. Interior digestion products are not changed.")
             };
         options.Add(CustomOption);
         return new ObservableCollection<TerminalCapOption>(options);
@@ -178,7 +178,7 @@ public class RnaTerminalCapsViewModel : BaseViewModel
             }
             catch (Exception)
             {
-                error = $"The {label} cap '{formula}' is not a valid chemical formula (for example: OH or H2O4P).";
+                error = $"The {label} cap '{formula}' is not a valid chemical formula (for example: {(label == "5'" ? "H or H2O3P" : "H2O4P or O3P")}). Leave it blank to use the default.";
                 return false;
             }
         }

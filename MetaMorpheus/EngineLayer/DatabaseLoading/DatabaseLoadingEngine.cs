@@ -166,7 +166,7 @@ public class DatabaseLoadingEngine(
             List<string> modTypesToExclude = GlobalVariables.AllRnaModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
             rnaList = RnaDbLoader.LoadRnaXML(fileName, generateTargets, decoyType, isContaminant, GlobalVariables.AllRnaModsKnown, modTypesToExclude, out unknownMods, commonParameters.MaxThreadsToUsePerFile, fivePrimeTerm: fivePrimeTerm, threePrimeTerm: threePrimeTerm, decoyIdentifier: decoyIdentifier);
 
-            // The XML loader reads termini from the file rather than from its parameters, so apply a requested cap explicitly.
+            // The XML loader accepts the termini but does not apply them (it passes null to the entry parser), so apply a requested cap explicitly.
             foreach (var rna in rnaList)
             {
                 if (fivePrimeTerm != null)

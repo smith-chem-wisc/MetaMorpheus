@@ -560,6 +560,7 @@ namespace Test
                 Assert.That(Fingerprint(null, "O3P"), Is.Not.EqualTo(defaults), "3' cap");
                 Assert.That(Fingerprint("H3O6P2", null), Is.Not.EqualTo(Fingerprint(null, "O3P")));
                 Assert.That(Fingerprint(null, null), Is.EqualTo(defaults), "the same caps give the same key");
+                Assert.That(defaults, Does.Not.Contain("PrimeTerminus"), "unset caps leave existing keys unchanged");
             }
             finally
             {

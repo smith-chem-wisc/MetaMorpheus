@@ -259,7 +259,9 @@ namespace EngineLayer
                 return null;
             try
             {
-                return ChemicalFormula.ParseFormula(formula.Trim());
+                // a formula with no atoms ("C0", "H-1H") is the same as no cap
+                var parsed = ChemicalFormula.ParseFormula(formula.Trim());
+                return parsed.AtomCount == 0 ? null : parsed;
             }
             catch (Exception)
             {

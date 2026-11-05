@@ -472,6 +472,11 @@ namespace MetaMorpheusGUI
             int maxModsPerPeptide = int.Parse(MaxModsPerPeptideTextBox.Text, CultureInfo.InvariantCulture);
             InitiatorMethionineBehavior initiatorMethionineBehavior = (InitiatorMethionineBehavior)InitiatorMethionineBehaviorComboBox.SelectedIndex;
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode && !_rnaTerminalCapsViewModel.Validate(out string terminalCapError))
+            {
+                System.Windows.MessageBox.Show(terminalCapError, "Invalid terminal cap", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
             CustomFragmentationWindow.Close();
 
             Tolerance productMassTolerance;
@@ -555,11 +560,6 @@ namespace MetaMorpheusGUI
             bool doPrecursorDeconvolution = DeconHostViewModel.DoPrecursorDeconvolution;
 
 
-            if (GuiGlobalParamsViewModel.Instance.IsRnaMode && !_rnaTerminalCapsViewModel.Validate(out string terminalCapError))
-            {
-                System.Windows.MessageBox.Show(terminalCapError, "Invalid terminal cap", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-                return;
-            }
             IDigestionParams digestionParamsToSave;
             if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
             {

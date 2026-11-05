@@ -7,10 +7,19 @@
              d:DesignHeight="40" d:DesignWidth="450"
              Visibility="{Binding Converter={StaticResource CollapseOnProteinModeConverter}}">
 
-    <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-        <StackPanel Orientation="Horizontal" Margin="0 0 10 0">
-            <Label Content="5' Cap:" />
-            <ComboBox x:Name="FivePrimeComboBox" MinWidth="130" VerticalAlignment="Center"
+    <!-- Two equal columns so both caps share one line at any width; the combos shrink instead of wrapping. -->
+    <Grid VerticalAlignment="Center">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <DockPanel Grid.Column="0" Margin="0 0 10 0" LastChildFill="True">
+            <Label Content="5' Cap:" DockPanel.Dock="Left" />
+            <TextBox x:Name="FivePrimeCustomTextBox" DockPanel.Dock="Right" Width="60" Margin="5 0 0 0" VerticalAlignment="Center"
+                     Text="{Binding FivePrimeCustomFormula, UpdateSourceTrigger=PropertyChanged}"
+                     Visibility="{Binding IsFivePrimeCustom, Converter={StaticResource bool2VisConverter}}"
+                     ToolTip="Chemical formula, e.g. O-3P-1" />
+            <ComboBox x:Name="FivePrimeComboBox" MinWidth="70" VerticalAlignment="Center"
                       ItemsSource="{Binding FivePrimeOptions}"
                       SelectedItem="{Binding SelectedFivePrimeOption}"
                       ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
@@ -27,14 +36,14 @@
                     </TextBlock>
                 </ComboBox.ToolTip>
             </ComboBox>
-            <TextBox x:Name="FivePrimeCustomTextBox" Width="70" Margin="5 0 0 0" VerticalAlignment="Center"
-                     Text="{Binding FivePrimeCustomFormula, UpdateSourceTrigger=PropertyChanged}"
-                     Visibility="{Binding IsFivePrimeCustom, Converter={StaticResource bool2VisConverter}}"
-                     ToolTip="Chemical formula, e.g. O-3P-1" />
-        </StackPanel>
-        <StackPanel Orientation="Horizontal">
-            <Label Content="3' Cap:" />
-            <ComboBox x:Name="ThreePrimeComboBox" MinWidth="130" VerticalAlignment="Center"
+        </DockPanel>
+        <DockPanel Grid.Column="1" LastChildFill="True">
+            <Label Content="3' Cap:" DockPanel.Dock="Left" />
+            <TextBox x:Name="ThreePrimeCustomTextBox" DockPanel.Dock="Right" Width="60" Margin="5 0 0 0" VerticalAlignment="Center"
+                     Text="{Binding ThreePrimeCustomFormula, UpdateSourceTrigger=PropertyChanged}"
+                     Visibility="{Binding IsThreePrimeCustom, Converter={StaticResource bool2VisConverter}}"
+                     ToolTip="Chemical formula, e.g. H2O4P" />
+            <ComboBox x:Name="ThreePrimeComboBox" MinWidth="70" VerticalAlignment="Center"
                       ItemsSource="{Binding ThreePrimeOptions}"
                       SelectedItem="{Binding SelectedThreePrimeOption}"
                       ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
@@ -51,10 +60,6 @@
                     </TextBlock>
                 </ComboBox.ToolTip>
             </ComboBox>
-            <TextBox x:Name="ThreePrimeCustomTextBox" Width="70" Margin="5 0 0 0" VerticalAlignment="Center"
-                     Text="{Binding ThreePrimeCustomFormula, UpdateSourceTrigger=PropertyChanged}"
-                     Visibility="{Binding IsThreePrimeCustom, Converter={StaticResource bool2VisConverter}}"
-                     ToolTip="Chemical formula, e.g. H2O4P" />
-        </StackPanel>
-    </WrapPanel>
+        </DockPanel>
+    </Grid>
 </UserControl>

@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using Chemistry;
@@ -8,6 +10,8 @@ using GuiFunctions;
 using MassSpectrometry;
 using Nett;
 using NUnit.Framework;
+using Omics;
+using Omics.BioPolymerGroup;
 using Omics.Digestion;
 using Proteomics.ProteolyticDigestion;
 using TaskLayer;
@@ -149,7 +153,11 @@ public class RnaTerminalCapsTests
     }
 
     [Test]
-    public void TomlWithUnreadableCapFormulaFallsBackToNull()
+    [TestCase("zzz!")]
+    [TestCase("H3O6P2x")]
+    [TestCase("h3o6p2")]
+    [TestCase("C0")]
+    public void TomlWithUnreadableCapFormulaThrows(string badFormula)
     {
         string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "RnaCapsBadFormula.toml");
         try
@@ -162,8 +170,17 @@ public class RnaTerminalCapsTests
             string text = File.ReadAllText(path);
             string written = $"FivePrimeTerminus = \"{task.CommonParameters.FivePrimeTerminus.Formula}\"";
             Assert.That(text, Does.Contain(written));
-            File.WriteAllText(path, text.Replace(written, "FivePrimeTerminus = \"zzz!\""));
 
+            // a typo must not quietly become the default chemistry
+            File.WriteAllText(path, text.Replace(written, $"FivePrimeTerminus = \"{badFormula}\""));
+            var ex = Assert.Catch(() => Toml.ReadFile<SearchTask>(path, MetaMorpheusTask.tomlConfig));
+            var messages = new List<string>();
+            for (var e = ex; e != null; e = e.InnerException)
+                messages.Add(e.Message);
+            Assert.That(messages, Has.Some.Contains("Invalid RNA terminal cap"));
+
+            // blank is still "use the default"
+            File.WriteAllText(path, text.Replace(written, "FivePrimeTerminus = \"  \""));
             var loaded = Toml.ReadFile<SearchTask>(path, MetaMorpheusTask.tomlConfig);
             Assert.That(loaded.CommonParameters.FivePrimeTerminus, Is.Null);
             Assert.That(loaded.CommonParameters.ThreePrimeTerminus, Is.EqualTo(task.CommonParameters.ThreePrimeTerminus));
@@ -175,10 +192,54 @@ public class RnaTerminalCapsTests
     }
 
     [Test]
+    [TestCase("20mer1.fasta")]
+    [TestCase("20mer1.xml")]
+    public void DecoysCarryTheSameCapsAsTargets(string databaseFileName)
+    {
+        GlobalVariables.AnalyteType = AnalyteType.Oligo;
+        var dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", databaseFileName);
+        var common = new CommonParameters(digestionParams: new RnaDigestionParams(), fivePrimeTerminus: "H3O6P2", threePrimeTerminus: "O3P");
+        var dbForTask = new List<DbForTask> { new DbForTask(dbPath, false) };
+        var results = (DatabaseLoadingEngineResults)new DatabaseLoadingEngine(common, [], [], dbForTask, "TestTaskId", DecoyType.Reverse).Run()!;
+
+        var all = results.BioPolymers.Cast<RNA>().ToList();
+        Assert.That(all.Any(r => r.IsDecoy), Is.True);
+        Assert.That(all.Any(r => !r.IsDecoy), Is.True);
+        // a target/decoy mass split would bias the FDR
+        foreach (var rna in all)
+        {
+            Assert.That(rna.FivePrimeTerminus.ThisChemicalFormula, Is.EqualTo(common.FivePrimeTerminus), rna.Name);
+            Assert.That(rna.ThreePrimeTerminus.ThisChemicalFormula, Is.EqualTo(common.ThreePrimeTerminus), rna.Name);
+        }
+    }
+
+    [Test]
+    public void ProteinGroupMassIncludesTheRnasCaps()
+    {
+        GlobalVariables.AnalyteType = AnalyteType.Oligo;
+        var dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", "20mer1.fasta");
+        double Mass(CommonParameters common)
+        {
+            var rna = DatabaseLoadingEngine.LoadOligoDb(dbPath, true, DecoyType.None, new List<string>(), false, out _, out _, common).Single();
+            var group = new ProteinGroup(new HashSet<IBioPolymer> { rna }, new HashSet<IBioPolymerWithSetMods>(), new HashSet<IBioPolymerWithSetMods>());
+            var header = group.GetTabSeparatedHeader().Split('\t');
+            return double.Parse(group.ToString().Split('\t')[Array.IndexOf(header, "Protein Unmodified Mass")], CultureInfo.InvariantCulture);
+        }
+
+        double defaultMass = Mass(new CommonParameters(digestionParams: new RnaDigestionParams()));
+        double cappedMass = Mass(new CommonParameters(digestionParams: new RnaDigestionParams(), fivePrimeTerminus: "H3O6P2", threePrimeTerminus: "O3P"));
+        double expectedShift = ChemicalFormula.ParseFormula("H3O6P2").MonoisotopicMass - NucleicAcid.DefaultFivePrimeTerminus.MonoisotopicMass
+            + ChemicalFormula.ParseFormula("O3P").MonoisotopicMass - NucleicAcid.DefaultThreePrimeTerminus.MonoisotopicMass;
+        Assert.That(cappedMass - defaultMass, Is.EqualTo(expectedShift).Within(1e-4));
+    }
+
+    [Test]
     [TestCase(null, null)]
     [TestCase("", null)]
     [TestCase("   ", null)]
     [TestCase("not a formula!", null)]
+    [TestCase("C0", null)]
+    [TestCase("H-1H", null)]
     [TestCase("OH", "OH")]
     [TestCase("  H2O4P  ", "H2O4P")]
     public void TryParseFormulaHandlesBlankBadAndPaddedText(string text, string expected)
@@ -309,7 +370,7 @@ public class RnaTerminalCapsTests
             ThreePrimeCustomFormula = "zzz!"
         };
         Assert.That(vm.Validate(out string error), Is.False);
-        Assert.That(error, Does.Contain("3'"));
+        Assert.That(error, Does.Contain("3'").And.Contain("H2O4P or O3P").And.Contain("blank"));
 
         vm.ThreePrimeCustomFormula = "  ";
         Assert.That(vm.ThreePrimeTerminus, Is.Null); // blank custom falls back to the default
@@ -364,7 +425,7 @@ public class RnaTerminalCapsTests
             FivePrimeCustomFormula = "zzz!"
         };
         Assert.That(vm.Validate(out string error), Is.False);
-        Assert.That(error, Does.Contain("5'").And.Contain("zzz!"));
+        Assert.That(error, Does.Contain("5'").And.Contain("zzz!").And.Contain("H or H2O3P"));
     }
 
     [Test]

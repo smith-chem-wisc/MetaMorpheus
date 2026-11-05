@@ -9,6 +9,7 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Readers;
+using Transcriptomics.Digestion;
 using Assert = NUnit.Framework.Assert;
 
 namespace Test.GuiTests;
@@ -268,6 +269,50 @@ public class MzLibExtensionsTests
     {
         var result = TestOsm.ToBioPolymerWithSetMods();
         Assert.That(result.GetType().Name, Is.EqualTo("OligoWithSetMods"));
+    }
+
+    [Test]
+    public void ToBioPolymerWithSetMods_UsesTheMatchsOwnTerminalCaps()
+    {
+        var osm = TestOsm;
+        var originalFive = osm.FivePrimeTerminus;
+        var originalThree = osm.ThreePrimeTerminus;
+        try
+        {
+            double defaultMass = ((OligoWithSetMods)osm.ToBioPolymerWithSetMods()).MonoisotopicMass;
+
+            osm.FivePrimeTerminus = Chemistry.ChemicalFormula.ParseFormula("H3O6P2");
+            osm.ThreePrimeTerminus = Chemistry.ChemicalFormula.ParseFormula("O3P");
+            var capped = (OligoWithSetMods)osm.ToBioPolymerWithSetMods();
+
+            Assert.That(capped.FivePrimeTerminus.ThisChemicalFormula, Is.EqualTo(osm.FivePrimeTerminus.ThisChemicalFormula));
+            Assert.That(capped.ThreePrimeTerminus.ThisChemicalFormula, Is.EqualTo(osm.ThreePrimeTerminus.ThisChemicalFormula));
+            Assert.That(capped.MonoisotopicMass, Is.Not.EqualTo(defaultMass));
+        }
+        finally
+        {
+            osm.FivePrimeTerminus = originalFive;
+            osm.ThreePrimeTerminus = originalThree;
+        }
+    }
+
+    [Test]
+    public void ToBioPolymerWithSetMods_FallsBackToDefaultTerminiWhenTheMatchHasNone()
+    {
+        var osm = TestOsm;
+        var originalFive = osm.FivePrimeTerminus;
+        var originalThree = osm.ThreePrimeTerminus;
+        try
+        {
+            osm.FivePrimeTerminus = null;
+            osm.ThreePrimeTerminus = null;
+            Assert.That(osm.ToBioPolymerWithSetMods(), Is.InstanceOf<OligoWithSetMods>());
+        }
+        finally
+        {
+            osm.FivePrimeTerminus = originalFive;
+            osm.ThreePrimeTerminus = originalThree;
+        }
     }
 
     [Test]

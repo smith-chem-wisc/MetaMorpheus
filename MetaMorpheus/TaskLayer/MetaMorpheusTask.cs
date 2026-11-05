@@ -1,5 +1,4 @@
 ﻿using Chemistry;
-using Chemistry;
 using EngineLayer;
 using EngineLayer.Indexing;
 using MassSpectrometry;
@@ -246,6 +245,15 @@ namespace TaskLayer
                 .FirstOrDefault();
         }
 
+        // Blank means "use the mzLib default", but unreadable text must not silently become the default chemistry.
+        private static ChemicalFormula ParseTerminalCap(string value)
+        {
+            ChemicalFormula cap = CommonParameters.TryParseFormula(value);
+            if (cap == null && !string.IsNullOrWhiteSpace(value))
+                throw new MetaMorpheusException($"Invalid RNA terminal cap '{value}'. Expected a chemical formula.");
+            return cap;
+        }
+
         private static DoubleRange ParseRetentionTimeRange(string value)
         {
             string[] bounds = value.Trim().Trim('[', ']').Split(';');
@@ -317,7 +325,7 @@ namespace TaskLayer
             .ConfigureType<ChemicalFormula>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(formula => formula.Formula)
-                    .FromToml(tmlString => CommonParameters.TryParseFormula(tmlString.Value))))
+                    .FromToml(tmlString => ParseTerminalCap(tmlString.Value))))
             // Switch on DeconvolutionParameters
             .ConfigureType<DeconvolutionParameters>(type => type
                 .WithConversionFor<TomlTable>(c => c

@@ -285,12 +285,12 @@ namespace MetaMorpheusGUI
             int maxModsPerPeptide = int.Parse(MaxModsPerPeptideTextBox.Text, CultureInfo.InvariantCulture);
             //bool addTruncations = addTruncations.
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
-            CustomFragmentationWindow.Close();
             if (GuiGlobalParamsViewModel.Instance.IsRnaMode && !_rnaTerminalCapsViewModel.Validate(out string terminalCapError))
             {
                 System.Windows.MessageBox.Show(terminalCapError, "Invalid terminal cap", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                 return;
             }
+            CustomFragmentationWindow.Close();
             IDigestionParams digestionParamsToSave;
             if (isRnaMode)
             {
