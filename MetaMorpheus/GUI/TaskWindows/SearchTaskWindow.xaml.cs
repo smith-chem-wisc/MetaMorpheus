@@ -358,6 +358,15 @@ namespace MetaMorpheusGUI
                 QValueThresholdTextBox.Text = "0.01";
             }
 
+            // A task still at the bottom-up default starts from the default for its search type
+            double pepTrainingQ = task.CommonParameters.QValueCutoffForPepCalculation;
+            if (pepTrainingQ == PepAnalysisEngine.DefaultQValueCutoffForPepCalculation(false, false))
+            {
+                pepTrainingQ = PepAnalysisEngine.DefaultQValueCutoffForPepCalculation(GuiGlobalParamsViewModel.Instance.IsRnaMode,
+                    task.CommonParameters.DigestionParams.DigestionAgent.Name == "top-down");
+            }
+            PepTrainingQValueTextBox.Text = pepTrainingQ.ToString(CultureInfo.InvariantCulture);
+
             if (task.CommonParameters.PepQValueThreshold < 1)
             {
                 PepQValueThresholdTextBox.Text = task.CommonParameters.PepQValueThreshold.ToString(CultureInfo.InvariantCulture);
@@ -661,6 +670,7 @@ namespace MetaMorpheusGUI
                 useProvidedPrecursorInfo: useProvidedPrecursorInfo,
                 qValueThreshold: !PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(QValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 pepQValueThreshold: PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(PepQValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
+                qValueCutoffForPepCalculation: double.Parse(PepTrainingQValueTextBox.Text, CultureInfo.InvariantCulture),
                 scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,
@@ -950,6 +960,8 @@ namespace MetaMorpheusGUI
                     case "top-down":
                         if (UpdateGUISettings.UseTopDownRecommendedSettings())
                         {
+                            PepTrainingQValueTextBox.Text = PepAnalysisEngine.DefaultQValueCutoffForPepCalculation(isRnaMode, true)
+                                .ToString(CultureInfo.InvariantCulture);
                             DeconHostViewModel.DoPrecursorDeconvolution = true;
                             DeconHostViewModel.UseProvidedPrecursors = false;
                             if (isRnaMode)
