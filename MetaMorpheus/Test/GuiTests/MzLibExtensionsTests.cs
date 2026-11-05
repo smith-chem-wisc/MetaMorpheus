@@ -9,6 +9,7 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Readers;
+using Transcriptomics;
 using Transcriptomics.Digestion;
 using Assert = NUnit.Framework.Assert;
 
@@ -296,20 +297,41 @@ public class MzLibExtensionsTests
         }
     }
 
+    // PreviousResidue and NextResidue have protected setters
+    private static void SetResidues(SpectrumMatchFromTsv sm, string previous, string next)
+    {
+        typeof(SpectrumMatchFromTsv).GetProperty(nameof(SpectrumMatchFromTsv.PreviousResidue)).SetValue(sm, previous);
+        typeof(SpectrumMatchFromTsv).GetProperty(nameof(SpectrumMatchFromTsv.NextResidue)).SetValue(sm, next);
+    }
+
     [Test]
     public void ToBioPolymerWithSetMods_FallsBackToDefaultTerminiWhenTheMatchHasNone()
     {
         var osm = TestOsm;
         var originalFive = osm.FivePrimeTerminus;
         var originalThree = osm.ThreePrimeTerminus;
+        string originalPrevious = osm.PreviousResidue;
+        string originalNext = osm.NextResidue;
         try
         {
             osm.FivePrimeTerminus = null;
             osm.ThreePrimeTerminus = null;
-            Assert.That(osm.ToBioPolymerWithSetMods(), Is.InstanceOf<OligoWithSetMods>());
+
+            // at the ends of the parent sequence: the full-length defaults
+            SetResidues(osm, "-", "-");
+            var fullLength = (OligoWithSetMods)osm.ToBioPolymerWithSetMods();
+            Assert.That(fullLength.FivePrimeTerminus.ThisChemicalFormula, Is.EqualTo(NucleicAcid.DefaultFivePrimeTerminus));
+            Assert.That(fullLength.ThreePrimeTerminus.ThisChemicalFormula, Is.EqualTo(NucleicAcid.DefaultThreePrimeTerminus));
+
+            // with a neighbour on each side: the RNase digestion defaults
+            SetResidues(osm, "A", "A");
+            var interior = (OligoWithSetMods)osm.ToBioPolymerWithSetMods();
+            Assert.That(interior.FivePrimeTerminus.ThisChemicalFormula, Is.EqualTo(Rnase.DefaultFivePrimeTerminus.ThisChemicalFormula));
+            Assert.That(interior.ThreePrimeTerminus.ThisChemicalFormula, Is.EqualTo(Rnase.DefaultThreePrimeTerminus.ThisChemicalFormula));
         }
         finally
         {
+            SetResidues(osm, originalPrevious, originalNext);
             osm.FivePrimeTerminus = originalFive;
             osm.ThreePrimeTerminus = originalThree;
         }

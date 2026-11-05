@@ -259,9 +259,10 @@ namespace EngineLayer
                 return null;
             try
             {
-                // a formula with no atoms ("C0", "H-1H") is the same as no cap
+                // An empty formula ("C0", "H-1H") is the same as no cap. Test the text, not AtomCount: it is a signed
+                // sum, so valid caps that net to zero atoms ("H-1Na", "O-1S") must be kept.
                 var parsed = ChemicalFormula.ParseFormula(formula.Trim());
-                return parsed.AtomCount == 0 ? null : parsed;
+                return parsed.Formula.Length == 0 ? null : parsed;
             }
             catch (Exception)
             {

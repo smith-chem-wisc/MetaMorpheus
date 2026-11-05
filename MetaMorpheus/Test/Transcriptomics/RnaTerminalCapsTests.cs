@@ -240,6 +240,10 @@ public class RnaTerminalCapsTests
     [TestCase("not a formula!", null)]
     [TestCase("C0", null)]
     [TestCase("H-1H", null)]
+    [TestCase("H-1Na", "H-1Na")]
+    [TestCase("O-1S", "O-1S")]
+    [TestCase("H-1K", "H-1K")]
+    [TestCase("C{13}C-1", "C{13}C-1")]
     [TestCase("OH", "OH")]
     [TestCase("  H2O4P  ", "H2O4P")]
     public void TryParseFormulaHandlesBlankBadAndPaddedText(string text, string expected)

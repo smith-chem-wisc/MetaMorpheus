@@ -44,7 +44,7 @@ public class TerminalCapOption(string name, ChemicalFormula capFormula, string d
 public class RnaTerminalCapsViewModel : BaseViewModel
 {
     public static readonly TerminalCapOption CustomOption = new("Custom formula...", null,
-        "Type a chemical formula for the cap, e.g. H2O4P. Anything that cannot be read is ignored and the default is used.",
+        "Type a chemical formula for the cap: the change from the hydroxyl, e.g. H or H2O3P at 5', H2O4P or O3P at 3'. Unreadable text is rejected when you save; leave it blank to use the default.",
         FragmentationTerminus.None, isCustom: true);
 
     private TerminalCapOption _selectedFivePrimeOption;
@@ -172,11 +172,8 @@ public class RnaTerminalCapsViewModel : BaseViewModel
         {
             if (formula == null)
                 continue;
-            try
-            {
-                ChemicalFormula.ParseFormula(formula);
-            }
-            catch (Exception)
+            // ask the parser the loader uses, so the window cannot accept anything the loader would drop
+            if (CommonParameters.TryParseFormula(formula) == null)
             {
                 error = $"The {label} cap '{formula}' is not a valid chemical formula (for example: {(label == "5'" ? "H or H2O3P" : "H2O4P or O3P")}). Leave it blank to use the default.";
                 return false;
