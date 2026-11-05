@@ -221,10 +221,7 @@ namespace EngineLayer.Util
             if (fractionalIntensityComparison != 0)
                 return fractionalIntensityComparison > 0;
 
-            int chargeComparison = Math.Abs(candidate.Charge).CompareTo(Math.Abs(existing.Charge));
-            if (chargeComparison != 0)
-                return chargeComparison > 0;
-
+            // Both callers only compare precursors that Equals has matched, which requires the same charge
             return candidate.MonoisotopicPeakMz < existing.MonoisotopicPeakMz;
         }
 
@@ -275,14 +272,8 @@ namespace EngineLayer.Util
                         int j = i + 1;
                         while (j < list.Count)
                         {
+                            // Every precursor in this list has the same charge; the list is one group
                             var right = list[j];
-
-                            // Require same absolute charge for stitching
-                            if (Math.Abs(right.Charge) != absCharge)
-                            {
-                                j++;
-                                continue;
-                            }
 
                             if (AreSequentialAtSpacing(left, right, spacing, tolerance))
                             {

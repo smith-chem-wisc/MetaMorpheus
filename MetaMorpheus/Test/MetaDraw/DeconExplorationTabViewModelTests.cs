@@ -167,6 +167,28 @@ public class DeconExplorationTabViewModelTests
         Assert.That(isoDecTolerance.GetMaximumValue(1000), Is.EqualTo(new PpmTolerance(11).GetMaximumValue(1000)));
     }
 
+    [Test]
+    public void GetDeconvolutionTolerance_RejectsUnsupportedParameterTypes()
+    {
+        var unsupported = new EngineLayer.Deconvolution.FeatureMappedFromFileDeconvolutionParameters();
+
+        Assert.Throws<System.ArgumentOutOfRangeException>(() => DeconExplorationTabViewModel.GetDeconvolutionTolerance(unsupported));
+    }
+
+    [Test]
+    public void ApplyPrecursorFiltering_RaisesPropertyChangedOnlyOnChange()
+    {
+        var vm = new DeconExplorationTabViewModel(metaDrawLogic);
+        var raised = new List<string>();
+        vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        vm.ApplyPrecursorFiltering = true;
+        vm.ApplyPrecursorFiltering = true;
+
+        Assert.That(vm.ApplyPrecursorFiltering, Is.True);
+        Assert.That(raised.Count(name => name == nameof(DeconExplorationTabViewModel.ApplyPrecursorFiltering)), Is.EqualTo(1));
+    }
+
     [Test, Apartment(System.Threading.ApartmentState.STA)]
     public void RunDeconvolutionCommand_FullSpectrumMode_LimitsAxis()
     {

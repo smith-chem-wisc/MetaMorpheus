@@ -982,6 +982,177 @@ namespace Test
             Assert.That(precursors, Does.Contain(low));
         }
 
+        private static Precursor GetPrecursorFromPeaks(List<(double mz, double intensity)> peaks, double monoMz, int charge,
+            double? intensity = null, double? fractionalIntensity = null)
+        {
+            var envelope = new IsotopicEnvelope(peaks, monoMz.ToMass(charge), charge, peaks.Sum(p => p.intensity), 0.5);
+            return new Precursor(envelope, intensity, fractionalIntensity);
+        }
+
+        [Test]
+        public static void NonGenericEnumerator_ReturnsAllPrecursors()
+        {
+            var set = new PrecursorSet(new PpmTolerance(5))
+            {
+                new Precursor(500.0, 2, 100, 3),
+                new Precursor(600.0, 2, 100, 3)
+            };
+
+            var enumerated = new List<object>();
+            var enumerator = ((System.Collections.IEnumerable)set).GetEnumerator();
+            while (enumerator.MoveNext())
+                enumerated.Add(enumerator.Current);
+
+            Assert.That(enumerated, Has.Count.EqualTo(2));
+        }
+
+        [Test]
+        public static void RemoveDuplicates_KeepsTheBetterRepresentative()
+        {
+            var set = new PrecursorSet(new PpmTolerance(5));
+
+            // One with an envelope beats one without, whatever the order
+            var withEnvelope = GetLadderPrecursor(500.0, 500.0, 3, 2, 100);
+            var withoutEnvelope = new Precursor(500.0, 2, 1000, 5);
+            var list = new List<Precursor> { withoutEnvelope, withEnvelope };
+            set.RemoveDuplicates(in list);
+            Assert.That(list, Is.EquivalentTo(new[] { withEnvelope }));
+
+            list = new List<Precursor> { withEnvelope, withoutEnvelope };
+            set.RemoveDuplicates(in list);
+            Assert.That(list, Is.EquivalentTo(new[] { withEnvelope }));
+
+            // Same peak count: the more intense one wins
+            var dim = new Precursor(500.0, 2, 100, 3);
+            var bright = new Precursor(500.0, 2, 200, 3);
+            list = new List<Precursor> { dim, bright };
+            set.RemoveDuplicates(in list);
+            Assert.That(list, Is.EquivalentTo(new[] { bright }));
+
+            list = new List<Precursor> { bright, dim };
+            set.RemoveDuplicates(in list);
+            Assert.That(list, Is.EquivalentTo(new[] { bright }));
+
+            // Same intensity: the larger fractional intensity wins
+            var lowFraction = new Precursor(500.0, 2, 100, 3, 0.2);
+            var highFraction = new Precursor(500.0, 2, 100, 3, 0.6);
+            list = new List<Precursor> { lowFraction, highFraction };
+            set.RemoveDuplicates(in list);
+            Assert.That(list, Is.EquivalentTo(new[] { highFraction }));
+
+            // Everything else equal: the lower m/z wins
+            var lowerMz = new Precursor(500.0, 2, 100, 3, 0.5);
+            var higherMz = new Precursor(500.001, 2, 100, 3, 0.5);
+            list = new List<Precursor> { higherMz, lowerMz };
+            set.RemoveDuplicates(in list);
+            Assert.That(list, Is.EquivalentTo(new[] { lowerMz }));
+        }
+
+        [Test]
+        public static void MergeSplitEnvelopes_ReusesABetterExistingPrecursor()
+        {
+            // An existing full envelope at the merged mass with more peaks is kept instead of the synthetic merge
+            int charge = 2;
+            double spacing = Constants.C13MinusC12 / charge;
+            double m0 = 500.0;
+            var left = GetLadderPrecursor(m0, m0, 3, charge, 300);
+            var right = GetLadderPrecursor(m0 + 1.0, m0 + 3 * spacing, 2, charge, 100);
+            var existing = GetLadderPrecursor(m0, m0, 7, charge, 300);
+
+            var precursors = new List<Precursor> { left, existing, right };
+            PrecursorSet.MergeSplitEnvelopes(in precursors, new PpmTolerance(5), Constants.C13MinusC12);
+
+            Assert.That(precursors, Is.EquivalentTo(new[] { existing }));
+        }
+
+        [Test]
+        public static void MergeAndHarmonics_IgnoreNullAndSingleItemLists()
+        {
+            var tol = new PpmTolerance(5);
+            List<Precursor> nullList = null;
+            Assert.DoesNotThrow(() => PrecursorSet.MergeSplitEnvelopes(in nullList, tol, Constants.C13MinusC12));
+            Assert.DoesNotThrow(() => PrecursorSet.RemoveLowHarmonics(in nullList, tol));
+
+            var single = new List<Precursor> { GetLadderPrecursor(500, 500, 3, 2, 100) };
+            PrecursorSet.MergeSplitEnvelopes(in single, tol, Constants.C13MinusC12);
+            PrecursorSet.RemoveLowHarmonics(in single, tol);
+            Assert.That(single, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public static void MergePrecursors_OverlappingBoundaryPeakKeepsTheMoreIntenseOne()
+        {
+            var tol = new PpmTolerance(5);
+            int charge = 2;
+            double s = Constants.C13MinusC12 / charge;
+            double a = 500.0;
+            var left = GetPrecursorFromPeaks(new List<(double, double)> { (a, 100), (a + s, 100) }, a, charge);
+
+            var brighterRight = GetPrecursorFromPeaks(new List<(double, double)> { (a + s, 200), (a + 2 * s, 50) }, a, charge);
+            var merged = PrecursorSet.MergePrecursors(left, brighterRight, charge, tol);
+            Assert.That(merged.EnvelopePeakCount, Is.EqualTo(3));
+            Assert.That(merged.Envelope!.Peaks.Single(p => tol.Within(p.mz, a + s)).intensity, Is.EqualTo(200));
+
+            var dimmerRight = GetPrecursorFromPeaks(new List<(double, double)> { (a + s, 50), (a + 2 * s, 50) }, a, charge);
+            merged = PrecursorSet.MergePrecursors(left, dimmerRight, charge, tol);
+            Assert.That(merged.EnvelopePeakCount, Is.EqualTo(3));
+            Assert.That(merged.Envelope!.Peaks.Single(p => tol.Within(p.mz, a + s)).intensity, Is.EqualTo(100));
+        }
+
+        [Test]
+        public static void MergePrecursors_TakesMassFromTheMoreIntenseSide()
+        {
+            var tol = new PpmTolerance(5);
+            int charge = 2;
+            double s = Constants.C13MinusC12 / charge;
+            var left = GetLadderPrecursor(500, 500, 2, charge, 100);
+            var right = GetLadderPrecursor(500.7, 500 + 2 * s, 2, charge, 400);
+
+            var merged = PrecursorSet.MergePrecursors(left, right, charge, tol);
+
+            Assert.That(merged.MonoisotopicPeakMz, Is.EqualTo(500.7).Within(1e-6));
+            Assert.That(merged.Intensity, Is.EqualTo(1000).Within(1e-6), "Summed-intensity precursors keep summing");
+        }
+
+        [Test]
+        public static void MergePrecursors_MostAbundantIntensityStaysMostAbundant()
+        {
+            var tol = new PpmTolerance(5);
+            int charge = 2;
+            double s = Constants.C13MinusC12 / charge;
+            double a = 500.0;
+            var leftPeaks = new List<(double, double)> { (a, 100), (a + s, 300) };
+            var rightPeaks = new List<(double, double)> { (a + 2 * s, 200), (a + 3 * s, 50) };
+            var left = GetPrecursorFromPeaks(leftPeaks, a, charge, intensity: 300);
+            var right = GetPrecursorFromPeaks(rightPeaks, a, charge, intensity: 200);
+
+            var merged = PrecursorSet.MergePrecursors(left, right, charge, tol);
+
+            Assert.That(merged.Intensity, Is.EqualTo(300).Within(1e-6));
+        }
+
+        [Test]
+        [TestCase(0.2, 0.3, 0.5)]
+        [TestCase(0.2, null, 0.2)]
+        [TestCase(null, 0.3, 0.3)]
+        [TestCase(null, null, null)]
+        public static void MergePrecursors_CombinesFractionalIntensity(double? leftFraction, double? rightFraction, double? expected)
+        {
+            var tol = new PpmTolerance(5);
+            int charge = 2;
+            double s = Constants.C13MinusC12 / charge;
+            double a = 500.0;
+            var left = GetPrecursorFromPeaks(new List<(double, double)> { (a, 100), (a + s, 100) }, a, charge, fractionalIntensity: leftFraction);
+            var right = GetPrecursorFromPeaks(new List<(double, double)> { (a + 2 * s, 50), (a + 3 * s, 50) }, a, charge, fractionalIntensity: rightFraction);
+
+            var merged = PrecursorSet.MergePrecursors(left, right, charge, tol);
+
+            if (expected is null)
+                Assert.That(merged.FractionalIntensity, Is.Null);
+            else
+                Assert.That(merged.FractionalIntensity, Is.EqualTo(expected.Value).Within(1e-9));
+        }
+
         #endregion
     }
 }
