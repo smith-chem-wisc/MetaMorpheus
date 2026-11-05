@@ -34,7 +34,18 @@ namespace EngineLayer
             LabelPeptidesUniqueToOneGroupAfterFdr = labelPeptidesUniqueToOneGroup;
             _decoyIdentifiers = proteinGroups.SelectMany(p => p.Proteins.Where(b => b.IsDecoy).Select(b => b.Accession.Split('_')[0])).ToHashSet();
 
-            if (CommonParameters.PepQValueThreshold < CommonParameters.QValueThreshold)
+            if (IdentificationRule.IsExplicit(CommonParameters))
+            {
+                // The search named its identification filter: the PSMs are judged as everywhere else. Protein groups are
+                // ranked by PEP only when every PSM was judged on a trained PEP; a match whose PEP was not trained has
+                // PEP 0, which would rank its groups first. Otherwise by q-value, as the filter's fallback is.
+                _filterThreshold = IdentificationRule.Threshold(CommonParameters);
+                _filterType = filteredPsms.Where(p => p?.PsmFdrInfo != null)
+                    .All(p => IdentificationRule.ValueFor(p.PsmFdrInfo, CommonParameters.IdentificationFilter) == FilterType.PepQValue)
+                    ? FilterType.PepQValue
+                    : IdentificationRule.Fallback(CommonParameters.IdentificationFilter);
+            }
+            else if (CommonParameters.PepQValueThreshold < CommonParameters.QValueThreshold)
             {
                 _filterType = FilterType.PepQValue;
                 _filterThreshold = CommonParameters.PepQValueThreshold;
@@ -117,11 +128,14 @@ namespace EngineLayer
         {
             // add each protein groups PSMs
             var peptideToPsmMatching = new Dictionary<IBioPolymerWithSetMods, HashSet<SpectralMatch>>();
-            foreach (var psm in psmList.FilterByQValue(
-                includeHighQValuePsms: false,
-                qValueThreshold: _filterThreshold,
-                filterAtPeptideLevel: false,
-                filterType: _filterType))
+            var confidentPsms = IdentificationRule.IsExplicit(CommonParameters)
+                ? psmList.Where(psm => IdentificationRule.Passes(psm, peptideLevel: false, CommonParameters.IdentificationFilter, _filterThreshold))
+                : psmList.FilterByQValue(
+                    includeHighQValuePsms: false,
+                    qValueThreshold: _filterThreshold,
+                    filterAtPeptideLevel: false,
+                    filterType: _filterType);
+            foreach (var psm in confidentPsms)
             {
                 if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                 {
@@ -275,6 +289,7 @@ namespace EngineLayer
         /// Sorts protein groups based on the filter type.
         /// QValue: Sort by best peptide Q-value (ascending), then by best peptide score (descending) - higher scores are better
         /// PepQValue: Sort by best peptide PEP (ascending) - lower PEP is better
+        /// QValueNotch: as QValue; BestPeptideQValue is the best peptide's q-value notch either way
         /// </summary>
         private List<ProteinGroup> SortProteinGroupsByFilterType(IEnumerable<ProteinGroup> proteinGroups)
         {
@@ -282,6 +297,10 @@ namespace EngineLayer
             {
                 FilterType.PepQValue => proteinGroups
                     .OrderBy(p => p.BestPeptidePEP)
+                    .ThenByDescending(p => p.BestPeptideScore)
+                    .ToList(),
+                FilterType.QValueNotch or FilterType.QValue => proteinGroups
+                    .OrderBy(b => b.BestPeptideQValue)
                     .ThenByDescending(p => p.BestPeptideScore)
                     .ToList(),
                 _ => proteinGroups

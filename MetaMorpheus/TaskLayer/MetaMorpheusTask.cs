@@ -955,7 +955,8 @@ namespace TaskLayer
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
                 rtPredictorName: commonParams.RTPredictorName,
-                retentionTimeRange: commonParams.RetentionTimeRange
+                retentionTimeRange: commonParams.RetentionTimeRange,
+                identificationFilter: commonParams.IdentificationFilter
                 );
 
             return returnParams;
@@ -981,6 +982,10 @@ namespace TaskLayer
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
             try
             {
+                // A named identification filter held to a threshold of 1 would keep every match (0: none). Refuse it
+                // now, before anything is searched.
+                IdentificationRule.ThrowIfThresholdUnusable(CommonParameters);
+
                 var stopWatch = new Stopwatch();
                 stopWatch.Start();
 

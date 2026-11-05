@@ -29,7 +29,7 @@ namespace Test
             var original = new FdrInfo();
             var properties = typeof(FdrInfo).GetProperties();
             for (int i = 0; i < properties.Length; i++)
-                properties[i].SetValue(original, 0.125 * (i + 1));
+                properties[i].SetValue(original, properties[i].PropertyType == typeof(bool) ? true : 0.125 * (i + 1));
 
             FdrInfo clone = original.Clone();
 
