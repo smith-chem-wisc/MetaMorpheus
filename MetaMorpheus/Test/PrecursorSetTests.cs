@@ -635,7 +635,7 @@ namespace Test
             var precursor1 = new Precursor(envelope1);
             var precursor2 = new Precursor(envelope2);
 
-            PrecursorSet set = new PrecursorSet(new PpmTolerance(5))
+            PrecursorSet set = new PrecursorSet(new PpmTolerance(5), applyEnvelopeFiltering: true)
             {
                 precursor1,
                 precursor2,
@@ -762,7 +762,7 @@ namespace Test
             var diffChargeDiffMass = new Precursor(GetEnvelope("PEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTID", 4, 100, 0.05));
             var sameChargeDiffMass = new Precursor(GetEnvelope("PEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTID", 8, 100, 0.05));
 
-            PrecursorSet set = new PrecursorSet(tol)
+            PrecursorSet set = new PrecursorSet(tol, applyEnvelopeFiltering: true)
             {
                 splitLeft,
                 splitRight,
@@ -838,6 +838,148 @@ namespace Test
             Assert.That(survivors.Contains(lowHarmonicPrecursor2), Is.False, "Low harmonic precursor should be filtered out");
             Assert.That(survivors.Contains(diffChargeDiffMass), Is.True, "Different charge and mass precursor should not be filtered out");
             Assert.That(survivors.Contains(sameChargeDiffMass), Is.True, "Same charge different mass precursor should not be filtered out");
+        }
+
+        // Builds an envelope of evenly spaced peaks, listed in m/z order, with an explicit monoisotopic m/z
+        private static Precursor GetLadderPrecursor(double monoMz, double firstPeakMz, int peakCount, int charge, double intensity, double score = 0.5)
+        {
+            double spacing = Constants.C13MinusC12 / charge;
+            var peaks = Enumerable.Range(0, peakCount)
+                .Select(k => (firstPeakMz + k * spacing, intensity))
+                .ToList();
+            var envelope = new IsotopicEnvelope(peaks, monoMz.ToMass(charge), charge, peaks.Sum(p => p.Item2), score);
+            return new Precursor(envelope) { DeconvolutionScore = score };
+        }
+
+        [Test]
+        public static void Sanitize_DoesNotFilterByDefault()
+        {
+            var envelope = GetEnvelope("PEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDE", 5, 100, 0.05);
+            var mostIntense = envelope.Peaks.MaxBy(p => p.intensity).mz;
+            var peaks1 = envelope.Peaks.Where(p => p.mz <= mostIntense).ToList();
+            var peaks2 = envelope.Peaks.Where(p => p.mz > mostIntense).ToList();
+            var splitLeft = new Precursor(new IsotopicEnvelope(peaks1, envelope.MonoisotopicMass, envelope.Charge, peaks1.Sum(p => p.intensity), 0.1));
+            var splitRight = new Precursor(new IsotopicEnvelope(peaks2, envelope.MonoisotopicMass + 1.0, envelope.Charge, peaks2.Sum(p => p.intensity), 0.1));
+
+            var set = new PrecursorSet(new PpmTolerance(5)) { splitLeft, splitRight };
+            set.Sanitize();
+
+            Assert.That(set.ApplyEnvelopeFiltering, Is.False);
+            Assert.That(set.Count, Is.EqualTo(2), "Split envelopes should only be merged when filtering is switched on");
+            Assert.That(new CommonParameters().ApplyPrecursorEnvelopeFiltering, Is.False);
+        }
+
+        [Test]
+        public static void MergeSplitEnvelopes_DoesNotMergeAbuttingSpecies()
+        {
+            // Two peptides whose ladders abut, each starting at its own monoisotopic peak (scan 26 of TaGe_SA_A549_3_snip)
+            int charge = 2;
+            double spacing = Constants.C13MinusC12 / charge;
+            var left = GetLadderPrecursor(446.7105, 446.7105, 2, charge, 100);
+            double rightMono = 446.7105 + 2 * spacing;
+            var right = GetLadderPrecursor(rightMono, rightMono, 3, charge, 200);
+
+            Assert.That(PrecursorSet.AreSequentialAtSpacing(left, right, spacing, new PpmTolerance(5)), Is.False);
+
+            var precursors = new List<Precursor> { left, right };
+            PrecursorSet.MergeSplitEnvelopes(in precursors, new PpmTolerance(5), Constants.C13MinusC12);
+
+            Assert.That(precursors, Has.Count.EqualTo(2));
+            Assert.That(precursors, Does.Contain(left));
+            Assert.That(precursors, Does.Contain(right));
+        }
+
+        [Test]
+        public static void MergeSplitEnvelopes_LooksPastOverlappingNeighbour()
+        {
+            // L and R are halves of one split envelope; X is another species that overlaps L and sorts between them
+            int charge = 2;
+            double spacing = Constants.C13MinusC12 / charge;
+            double m0 = 500.0;
+            var left = GetLadderPrecursor(m0, m0, 6, charge, 300);
+            var overlapping = GetLadderPrecursor(m0 + 0.5, m0 + 0.5, 2, charge, 50);
+            var right = GetLadderPrecursor(m0 + 1.0, m0 + 6 * spacing, 3, charge, 100);
+
+            var precursors = new List<Precursor> { left, overlapping, right };
+            PrecursorSet.MergeSplitEnvelopes(in precursors, new PpmTolerance(5), Constants.C13MinusC12);
+
+            Assert.That(precursors, Has.Count.EqualTo(2));
+            Assert.That(precursors, Does.Contain(overlapping));
+            var merged = precursors.Single(p => !ReferenceEquals(p, overlapping));
+            Assert.That(merged.EnvelopePeakCount, Is.EqualTo(9));
+            Assert.That(merged.MonoisotopicPeakMz, Is.EqualTo(m0).Within(1e-6));
+        }
+
+        [Test]
+        public static void MergeSplitEnvelopes_MergesEachRightOnce()
+        {
+            // Two rights share a first peak; after L takes one, the merged envelope no longer abuts the other
+            int charge = 2;
+            double spacing = Constants.C13MinusC12 / charge;
+            double m0 = 500.0;
+            var left = GetLadderPrecursor(m0, m0, 3, charge, 300);
+            var right1 = GetLadderPrecursor(m0 + 0.9, m0 + 3 * spacing, 2, charge, 100);
+            var right2 = GetLadderPrecursor(m0 + 1.1, m0 + 3 * spacing, 3, charge, 90);
+
+            var precursors = new List<Precursor> { left, right1, right2 };
+            PrecursorSet.MergeSplitEnvelopes(in precursors, new PpmTolerance(5), Constants.C13MinusC12);
+
+            Assert.That(precursors, Has.Count.EqualTo(2), "Only one of the two rights should be merged into left");
+            Assert.That(precursors.Count(p => Math.Abs(p.MonoisotopicPeakMz - m0) < 1e-6), Is.EqualTo(1));
+        }
+
+        [Test]
+        public static void MergePrecursors_CarriesOverBestDeconvolutionScore()
+        {
+            int charge = 3;
+            double spacing = Constants.C13MinusC12 / charge;
+            var left = GetLadderPrecursor(700, 700, 3, charge, 300, score: 0.8);
+            var right = GetLadderPrecursor(700, 700 + 3 * spacing, 3, charge, 100, score: 0.4);
+
+            var merged = PrecursorSet.MergePrecursors(left, right, charge, new PpmTolerance(5));
+
+            Assert.That(merged.DeconvolutionScore, Is.EqualTo(0.8).Within(1e-9));
+        }
+
+        [Test]
+        [TestCase(4, 2)]
+        [TestCase(12, 4)]
+        public static void FilterLowHarmonics_PeaksInApexOrder(int baseCharge, int harmonicCharge)
+        {
+            // Classic lists envelope peaks starting from the apex rather than in m/z order
+            var tol = new PpmTolerance(5);
+            string sequence = "PEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDEPEPTIDE";
+            var mzOrdered = GetEnvelope(sequence, baseCharge, 100, 0.05);
+            var harmonicMzOrdered = GetHarmonicEnvelope(mzOrdered, harmonicCharge);
+
+            var apexOrdered = new IsotopicEnvelope(mzOrdered.Peaks.OrderByDescending(p => p.intensity).ToList(),
+                mzOrdered.MonoisotopicMass, mzOrdered.Charge, mzOrdered.TotalIntensity, 0.5);
+            var harmonicApexOrdered = new IsotopicEnvelope(harmonicMzOrdered.Peaks.OrderByDescending(p => p.intensity).ToList(),
+                harmonicMzOrdered.MonoisotopicMass, harmonicMzOrdered.Charge, harmonicMzOrdered.TotalIntensity, 0.5);
+
+            var basePrecursor = new Precursor(apexOrdered);
+            var harmonicPrecursor = new Precursor(harmonicApexOrdered);
+            var precursors = new List<Precursor> { basePrecursor, harmonicPrecursor };
+            PrecursorSet.RemoveLowHarmonics(in precursors, tol);
+
+            Assert.That(precursors, Does.Contain(basePrecursor));
+            Assert.That(precursors, Does.Not.Contain(harmonicPrecursor));
+        }
+
+        [Test]
+        public static void FilterLowHarmonics_RequiresMajorityOfLowPeaks()
+        {
+            // A z=2 species with 5 peaks, only 2 of which land on a 6-peak z=4 ladder, is not a harmonic
+            var tol = new PpmTolerance(5);
+            double spacing4 = Constants.C13MinusC12 / 4;
+            double h0 = 800.0;
+            var high = GetLadderPrecursor(h0, h0, 6, 4, 100);
+            var low = GetLadderPrecursor(h0 + 2 * spacing4, h0 + 2 * spacing4, 5, 2, 100);
+
+            var precursors = new List<Precursor> { high, low };
+            PrecursorSet.RemoveLowHarmonics(in precursors, tol);
+
+            Assert.That(precursors, Does.Contain(low));
         }
 
         #endregion

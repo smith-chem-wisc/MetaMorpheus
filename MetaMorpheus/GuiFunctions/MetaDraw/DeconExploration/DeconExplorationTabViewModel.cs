@@ -215,7 +215,7 @@ public class DeconExplorationTabViewModel : MetaDrawTabViewModel
 
         if (ApplyPrecursorFiltering)
         {
-            var set = new PrecursorSet(deconTolerance, deconParams.ExpectedIsotopeSpacing);
+            var set = new PrecursorSet(deconTolerance, deconParams.ExpectedIsotopeSpacing, applyEnvelopeFiltering: true);
             foreach (var envelope in results)
             {
                 if (envelope != null)

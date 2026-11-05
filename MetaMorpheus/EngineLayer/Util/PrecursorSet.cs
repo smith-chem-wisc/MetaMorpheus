@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +25,11 @@ namespace EngineLayer.Util
         public double ExpectedIsotopicPeakSpacing { get; }
         public readonly Tolerance DeconPeakTolerance;
         /// <summary>
+        /// When true, <see cref="Sanitize"/> also merges split envelopes and removes low-charge harmonics.
+        /// Off by default until both filters are validated on real top-down and bottom-up data.
+        /// </summary>
+        public bool ApplyEnvelopeFiltering { get; }
+        /// <summary>
         /// This dictionary contains precursors indexed by their integer representation.
         /// The integer representation is calculated as the rounded m/z value multiplied by 100.
         /// </summary>
@@ -38,14 +43,17 @@ namespace EngineLayer.Util
         /// Must be positive.
         /// </param>
         /// <param name="expectedIsotopicPeakSpacing">The expected spacing between isotopic peaks. Used when stitching split envelopes.</param>
-        public PrecursorSet(Tolerance deconPeakTolerance, double expectedIsotopicPeakSpacing = Constants.C13MinusC12)
+        /// <param name="applyEnvelopeFiltering">Whether <see cref="Sanitize"/> merges split envelopes and removes low-charge harmonics.</param>
+        public PrecursorSet(Tolerance deconPeakTolerance, double expectedIsotopicPeakSpacing = Constants.C13MinusC12, bool applyEnvelopeFiltering = false)
         {
             DeconPeakTolerance = deconPeakTolerance;
             PrecursorDictionary = new Dictionary<int, List<Precursor>>();
             ExpectedIsotopicPeakSpacing = expectedIsotopicPeakSpacing;
+            ApplyEnvelopeFiltering = applyEnvelopeFiltering;
         }
 
-        public PrecursorSet(CommonParameters commonParams) : this(commonParams.DeconvolutionMassTolerance, commonParams.PrecursorDeconvolutionParameters.ExpectedIsotopeSpacing) { }
+        public PrecursorSet(CommonParameters commonParams)
+            : this(commonParams.DeconvolutionMassTolerance, commonParams.PrecursorDeconvolutionParameters.ExpectedIsotopeSpacing, commonParams.ApplyPrecursorEnvelopeFiltering) { }
 
         /// <summary>
         /// Indicates whether the set has been modified since the last sanitization.
@@ -126,9 +134,12 @@ namespace EngineLayer.Util
             var allPrecursors = _listPool.Get();
             allPrecursors.AddRange(PrecursorDictionary.Values.SelectMany(list => list));
 
-            MergeSplitEnvelopes(in allPrecursors, DeconPeakTolerance, ExpectedIsotopicPeakSpacing);
-            RemoveLowHarmonics(in allPrecursors, DeconPeakTolerance);
-            RemoveDuplicates(in allPrecursors); 
+            if (ApplyEnvelopeFiltering)
+            {
+                MergeSplitEnvelopes(in allPrecursors, DeconPeakTolerance, ExpectedIsotopicPeakSpacing);
+                RemoveLowHarmonics(in allPrecursors, DeconPeakTolerance);
+            }
+            RemoveDuplicates(in allPrecursors);
             RepopulateDictionary(in allPrecursors); // Call this one last as it cleans and repopulates the dictionary
 
             _listPool.Return(allPrecursors);
@@ -299,12 +310,14 @@ namespace EngineLayer.Util
                                 }
 
                                 mergedSomething = true;
-                                // The new merged precursor is now at position k, so the next iteration will use it as 'left'
+                                // Keep extending from the merged precursor; j already points at the next candidate
+                                left = list[i];
                             }
                             else
                             {
-                                // Short-circuit if we've moved far beyond plausible adjacency
-                                if (left.Envelope!.Peaks.Max(p => p.mz) - right.Envelope.Peaks.Min(p => p.mz) > 2 * spacing)
+                                // The list is sorted by monoisotopic m/z and no peak of an envelope sits below its monoisotopic peak,
+                                // so once a right's monoisotopic peak is well past left's last peak, no later right can abut left
+                                if (right.MonoisotopicPeakMz - left.Envelope!.Peaks.Max(p => p.mz) > 2 * spacing)
                                     break;
 
                                 j++;
@@ -340,7 +353,12 @@ namespace EngineLayer.Util
                 if (pk.mz < rightFirst) rightFirst = pk.mz;
 
             // "Correct expectedIsotopicSpacing" evaluated in m/absCharge space with your PrecursorMassTolerance
-            return tolerance.Within(leftLast + expectedIsotopicSpacing, rightFirst);
+            if (!tolerance.Within(leftLast + expectedIsotopicSpacing, rightFirst))
+                return false;
+
+            // A right envelope that starts at its own monoisotopic peak is a complete envelope of a different species
+            // whose ladder happens to abut left's, not the tail of a split one
+            return !tolerance.Within(right.MonoisotopicPeakMz, rightFirst);
         }
 
 
@@ -397,7 +415,11 @@ namespace EngineLayer.Util
             };
 
             var mergedEnvelope = new IsotopicEnvelope(id, mergedPeaks, monoMass, charge, mergedIntensity, mergedScore);
-            var mergedPrecursor = new Precursor(mergedEnvelope, mergedIntensity, mergedFractionalIntensity);
+            // Carry the better score over; 0 means "no envelope was deconvoluted" and PEP reads it as the worst quality
+            var mergedPrecursor = new Precursor(mergedEnvelope, mergedIntensity, mergedFractionalIntensity)
+            {
+                DeconvolutionScore = Math.Max(left.DeconvolutionScore, right.DeconvolutionScore)
+            };
             return mergedPrecursor;
         }
 
@@ -424,7 +446,8 @@ namespace EngineLayer.Util
                 int zhi = Math.Abs(high.Charge);
                 if (zhi < 2) continue;
 
-                var highPeaks = high.Envelope?.Peaks;
+                // Peaks are aligned by position below, so they must be in m/z order; Classic lists them starting from the apex
+                var highPeaks = high.Envelope?.Peaks.OrderBy(p => p.mz).ToList();
                 if (highPeaks == null || highPeaks.Count < 2) continue;
 
                 for (int j = 0; j < ordered.Count; j++)
@@ -434,7 +457,7 @@ namespace EngineLayer.Util
                     int zlo = Math.Abs(low.Charge);
                     if (zlo < 2 || zhi % zlo != 0 || zlo == zhi) continue;
 
-                    var lowPeaks = low.Envelope?.Peaks;
+                    var lowPeaks = low.Envelope?.Peaks.OrderBy(p => p.mz).ToList();
                     if (lowPeaks == null || lowPeaks.Count < 2) continue;
 
                     int step = zhi / zlo;
@@ -453,7 +476,7 @@ namespace EngineLayer.Util
                         }
 
                         // If majority of low's peaks match, mark as harmonic
-                        if (matches >= lowPeaks.Count / 2 && matches > 1)
+                        if (matches * 2 > lowPeaks.Count && matches > 1)
                         {
                             toRemove.Add(low);
                             break; // No need to check other alignments
