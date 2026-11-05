@@ -170,7 +170,8 @@ namespace Test
                 fragmentationParams: new FragmentationParams(),
                 precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant,
                 rtPredictorName: "SSRCalc3",
-                retentionTimeRange: new DoubleRange(12, 14));
+                retentionTimeRange: new DoubleRange(12, 14),
+                applyPrecursorEnvelopeFiltering: true);
 
             // CustomIons is not a constructor parameter; the constructor reads it from a global dictionary
             typeof(CommonParameters).GetProperty(nameof(CommonParameters.CustomIons))
