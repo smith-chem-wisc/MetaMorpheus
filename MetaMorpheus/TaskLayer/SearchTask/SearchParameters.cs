@@ -179,7 +179,13 @@ namespace TaskLayer
         /// ExperimentalDesign.tsv or TmtDesign.txt. Statistics reads per-sample facts (individual, age, batch) only
         /// from the written SDRF, and the curator's cells are the only record of them (sdrf D50).
         ///
-        /// Set in the task file by a pipeline that re-analyses a deposit; the GUI has no field for it.
+        /// It describes the SDRF's samples only; it is not the experimental design. Quantification, and the SDRF's
+        /// technical replicate, fraction and channels, still come from ExperimentalDesign.tsv or TmtDesign.txt. To make
+        /// that design from an SDRF, the command line's --sdrfDesign writes it beside the spectra files; give it the same
+        /// SDRF, and the design and the written SDRF's sample columns agree.
+        ///
+        /// Give a full path: a relative one is read against the working directory, not the task file's folder. Set in
+        /// the task file by a pipeline that re-analyses a deposit; the GUI has no field for it.
         /// </summary>
         public string InputSdrfPath { get; set; }
     }
