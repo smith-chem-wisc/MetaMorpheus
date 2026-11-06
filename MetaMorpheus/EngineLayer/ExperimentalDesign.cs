@@ -91,7 +91,15 @@ namespace EngineLayer
         public static string WriteExperimentalDesignToFile(List<SpectraFileInfo> spectraFileInfos)
         {
             var dir = Directory.GetParent(spectraFileInfos.First().FullFilePathWithExtension).FullName;
-            var filePath = Path.Combine(dir, GlobalVariables.ExperimentalDesignFileName);
+            return WriteExperimentalDesignToFile(spectraFileInfos, dir);
+        }
+
+        /// <summary>
+        /// Writes the design into <paramref name="directory"/> rather than the folder of its first row.
+        /// </summary>
+        public static string WriteExperimentalDesignToFile(List<SpectraFileInfo> spectraFileInfos, string directory)
+        {
+            var filePath = Path.Combine(directory, GlobalVariables.ExperimentalDesignFileName);
 
             using (StreamWriter output = new StreamWriter(filePath))
             {
