@@ -1652,6 +1652,20 @@ namespace TaskLayer
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetPrecursorLabel()}")] = precursorResultsText;
             string ms2ScanCountResultsText = $"All {GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}: " + Parameters.NumMs2SpectraPerFile.Select(f => f.Value[0]).Sum();
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}")] = ms2ScanCountResultsText;
+
+            // Each file's precursor and MS2 scan counts are plain counts, not FDR results, so a search of two or more
+            // files writes them whether or not it writes the individual-file tables (WriteIndividualFiles). The per-file
+            // PSM, peptide and protein-group counts, which re-run FDR file by file, still come only with those tables.
+            if (Parameters.CurrentRawFileList.Count > 1)
+            {
+                foreach (var (fileName, counts) in Parameters.NumMs2SpectraPerFile)
+                {
+                    ResultsDictionary[(fileName, GlobalVariables.AnalyteType.GetPrecursorLabel())] =
+                        fileName + $" - {GlobalVariables.AnalyteType.GetPrecursorLabel()}: " + counts[1];
+                    ResultsDictionary[(fileName, GlobalVariables.AnalyteType.GetMs2ScanCountLabel())] =
+                        fileName + $" - {GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}: " + counts[0];
+                }
+            }
         }
         private void WritePeptideResults()
         {
@@ -1727,10 +1741,7 @@ namespace TaskLayer
                 // write summary text
                 string psmResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsToWrite.GetFilterTypeString() + " <= " + Math.Round(psmsToWrite.FilterThreshold, 2) + ": " + psmsToWrite.TargetPsmsAboveThreshold;
                 ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = psmResultsText;
-                string precursorResultsText = strippedFileName + $" - {GlobalVariables.AnalyteType.GetPrecursorLabel()}: " + Parameters.NumMs2SpectraPerFile[strippedFileName][1];
-                ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetPrecursorLabel()}")] = precursorResultsText;
-                string ms2ScanCountResultsText = strippedFileName + $" - {GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}: " + Parameters.NumMs2SpectraPerFile[strippedFileName][0];
-                ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}")] = ms2ScanCountResultsText;
+                // this file's precursor and MS2 scan counts are written by WritePsmResults, for every file
             }
         }
         private void WriteIndividualPeptideResults()
