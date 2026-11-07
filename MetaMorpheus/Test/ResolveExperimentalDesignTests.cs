@@ -233,6 +233,37 @@ namespace Test
         }
 
         /// <summary>
+        /// A null answer is closed or redirected stdin. That stops the run like a refusal, but says
+        /// why, and how to proceed without a console.
+        /// </summary>
+        [Test]
+        public static void NoConsoleStopsTheRunAndSaysWhy()
+        {
+            string folder = NewFolder("CmdDesignNoConsole");
+            string spectra = Path.Combine(folder, "file.1.mzML");
+            string designPath = WriteClassicDesign(folder, spectra, valid: false);
+
+            var written = new List<string>();
+            int code = Program.ResolveExperimentalDesign(
+                folder, new List<string> { spectra }, normalizationRequested: false,
+                reportToConsole: true, write: written.Add, readLine: () => null);
+
+            Assert.That(code == Stop);
+            Assert.That(File.Exists(designPath));
+            Assert.That(written.Any(w => w.Contains("not running interactively") && w.Contains(designPath)),
+                "an unanswerable prompt should say so and name the design file");
+
+            written.Clear();
+            Program.ResolveExperimentalDesign(
+                folder, new List<string> { spectra }, normalizationRequested: false,
+                reportToConsole: true, write: written.Add, readLine: () => "n");
+            Assert.That(written.Any(w => w.Contains("not running interactively")), Is.False,
+                "an actual refusal is not a missing console");
+
+            Directory.Delete(folder, true);
+        }
+
+        /// <summary>
         /// At verbosity "none" there is nobody to ask, so the recoverable case recovers itself -- by
         /// continuing without the design, NOT by deleting it. This previously destroyed the file with
         /// no prompt and no record, which meant `-v none` changed what the run did to the user's
