@@ -8,6 +8,7 @@ using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using EngineLayer.DiaLibrarySearch;
 using MassSpectrometry;
+using Omics.BioPolymer;
 using Omics.Modifications;
 using Proteomics;
 using Readers;
@@ -52,7 +53,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
     internal static DiaPrecursorFromTsv PrecursorRow(DiaPrecursorMatch match, string fileName, MslLibrary library, double globalQValue,
         IReadOnlySet<string>? contaminantAccessions = null)
     {
-        var entry = library.GetEntry(match.PrecursorIndex);
+        var entry = library.GetEntry(match.PrecursorIndex, includeFragments: false);
         return new DiaPrecursorFromTsv
         {
             FileName = fileName,
@@ -61,7 +62,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
             PrecursorCharge = match.Charge,
             PrecursorMz = match.PrecursorMz,
             ProteinAccession = entry?.ProteinAccession ?? "",
-            Label = Label(match.IsDecoy, entry?.ProteinAccession, contaminantAccessions),
+            Label = Label(match.IsDecoy, entry?.IsEntrapment ?? false, entry?.ProteinAccession, contaminantAccessions),
             Score = match.Score,
             QValuePrecursorRun = match.QValue,
             QValuePrecursorGlobal = globalQValue,
@@ -80,13 +81,13 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
     internal static DiaPeptideFromTsv PeptideRow(DiaPeptideMatch peptide, DiaPrecursorMatch precursor, string fileName, MslLibrary library,
         IReadOnlySet<string>? contaminantAccessions = null)
     {
-        var entry = library.GetEntry(precursor.PrecursorIndex);
+        var entry = library.GetEntry(precursor.PrecursorIndex, includeFragments: false);
         return new DiaPeptideFromTsv
         {
             FullSequence = peptide.FullSequence,
             BaseSequence = entry?.BaseSequence ?? "",
             ProteinAccession = entry?.ProteinAccession ?? "",
-            Label = Label(peptide.IsDecoy, entry?.ProteinAccession, contaminantAccessions),
+            Label = Label(peptide.IsDecoy, entry?.IsEntrapment ?? false, entry?.ProteinAccession, contaminantAccessions),
             Score = peptide.Score,
             QValuePeptideGlobal = peptide.QValue,
             FileName = fileName,
@@ -95,15 +96,38 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
     }
 
     /// <summary>
-    /// The T/D/C label of a library entry: D for a decoy; C for a target every one of whose proteins is in a contaminant
-    /// database the search was given; otherwise T. With no contaminant database, nothing is C.
+    /// The Decoy/Contaminant/Target label of a library entry, in mzLib's vocabulary (<see cref="DecoyContaminantTargetLabel"/>):
+    /// ET for an entrapment entry (.msl flag bit 3) and ED for its decoy, ahead of everything else; then D for a decoy; C for
+    /// a target every one of whose proteins is in a contaminant database the search was given; otherwise T. With no
+    /// contaminant database, nothing is C.
     /// </summary>
-    internal static string Label(bool isDecoy, string? proteinAccession, IReadOnlySet<string>? contaminantAccessions)
+    internal static string Label(bool isDecoy, bool isEntrapment, string? proteinAccession, IReadOnlySet<string>? contaminantAccessions)
     {
-        if (isDecoy)
-            return "D";
         var accessions = (proteinAccession ?? "").Split('|', StringSplitOptions.RemoveEmptyEntries);
-        return contaminantAccessions is { Count: > 0 } && accessions.Length > 0 && accessions.All(contaminantAccessions.Contains) ? "C" : "T";
+        bool isContaminant = contaminantAccessions is { Count: > 0 } && accessions.Length > 0 && accessions.All(contaminantAccessions.Contains);
+        return DecoyContaminantTargetLabel.For(isDecoy, isContaminant, isEntrapment);
+    }
+
+    /// <summary>
+    /// Opens the library index-only, whatever its size. Reading entries on demand costs a search no time it would notice
+    /// (about 2 s a pass on 4 M reads), and a full load keeps several times the file in memory: 7.1 GB against 1.1 GB for
+    /// a 2 GB library (results/msl_in_dia). A compressed library still opens in full (mzLib).
+    /// </summary>
+    /// <exception cref="MetaMorpheusException">
+    /// A precursor's retention time is run minutes (rt_is_calibrated), not iRT; the search calibrates each run onto library iRT.
+    /// </exception>
+    internal static MslLibrary OpenLibrary(string path)
+    {
+        var library = MslLibrary.LoadIndexOnly(path);
+        int precursors = library.PrecursorCount, inMinutes = 0;
+        for (int i = 0; i < precursors; i++)
+            if (library.GetEntry(i, includeFragments: false)?.RtIsCalibrated == true)
+                inMinutes++;
+        if (inMinutes == 0)
+            return library;
+        library.Dispose();
+        throw new MetaMorpheusException($"{Path.GetFileName(path)} stores retention times as run minutes (rt_is_calibrated) for {inMinutes} of {precursors} " +
+            "precursors. A DIA library search needs library retention times as iRT, since it calibrates each run onto them.");
     }
 
     /// <summary>The target precursors at or below the q-value threshold, which the headline counts and the table lists; never a decoy.</summary>
@@ -131,8 +155,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
 
         string libraryPath = libraries[0].FilePath;
         Status("Loading library...", taskId);
-        // Above 2 GB the whole-file load cannot hold the library in one array (MSL-Q6); index-only reads entries on demand
-        using var library = new FileInfo(libraryPath).Length > int.MaxValue ? MslLibrary.LoadIndexOnly(libraryPath) : MslLibrary.Load(libraryPath);
+        using var library = OpenLibrary(libraryPath);
         var parameters = Parameters.ToEngineParameters();
         string threshold = Parameters.QValueThreshold.ToString(CultureInfo.InvariantCulture);
 
@@ -249,7 +272,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
     {
         Status("Inferring protein groups...", taskId);
         var decoyAccessions = peptides.Where(p => p.Peptide.IsDecoy).ToDictionary(p => p.Peptide.FullSequence,
-            p => (IReadOnlyList<string>)(library.GetEntry(p.Precursor.PrecursorIndex)?.ProteinAccession ?? "").Split('|', StringSplitOptions.RemoveEmptyEntries));
+            p => (IReadOnlyList<string>)(library.GetEntry(p.Precursor.PrecursorIndex, includeFragments: false)?.ProteinAccession ?? "").Split('|', StringSplitOptions.RemoveEmptyEntries));
         var inference = DiaProteinInference.Infer(peptides.Select(p => p.Peptide).ToList(), proteins, CommonParameters, runPath,
             fixedModifications, variableModifications, decoyAccessionsOf: sequence => decoyAccessions.GetValueOrDefault(sequence) is { Count: > 0 } a ? a : null);
         if (!inference.SpectralMatches.Any(m => m.IsDecoy))

@@ -44,8 +44,10 @@ public class DiaLibrarySearchTaskTests
     /// Gives each target the protein accession P00000, P00001, ... and its decoy DECOY_ and the same, as mzLib's library
     /// builder names a decoy protein.
     /// </param>
+    /// <param name="edit">Changes the library's entries before it is written (the run's scans stay as built).</param>
     private (string Mzml, string Library, SyntheticDiaRun Run) WriteInputs(string name, double noisePeaksPerScan = 60,
-        Func<Omics.SpectralMatch.MslSpectralLibrary.MslLibraryEntry, double>? abundance = null, bool accessions = false)
+        Func<Omics.SpectralMatch.MslSpectralLibrary.MslLibraryEntry, double>? abundance = null, bool accessions = false,
+        Action<List<Omics.SpectralMatch.MslSpectralLibrary.MslLibraryEntry>>? edit = null)
     {
         var run = SyntheticDiaRun.Build(300, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0, withMs1: true, noisePeaksPerScan: noisePeaksPerScan,
             abundance: abundance);
@@ -58,6 +60,7 @@ public class DiaLibrarySearchTaskTests
                 run.Library[i + 1].ProteinAccession = $"DECOY_P{i / 2:D5}";
             }
         }
+        edit?.Invoke(run.Library);
         string folder = Path.Combine(_directory, name);
         Directory.CreateDirectory(folder);
         string mzml = Path.Combine(folder, name + ".mzML");
@@ -372,6 +375,83 @@ public class DiaLibrarySearchTaskTests
         foreach (var (accession, label) in precursorTable.Results.Select(r => (r.ProteinAccession, r.Label)).Concat(peptideTable.Results.Select(r => (r.ProteinAccession, r.Label))))
             Assert.That(label, Is.EqualTo(contaminantAccessions.Contains(accession) ? "C" : "T"), accession);
         Assert.That(peptideTable.Results.Count(r => r.Label == "C"), Is.GreaterThan(0));
+    }
+
+    /// <summary>
+    /// The task opens every library index-only, whatever its size. Reading entries on demand costs a search no time it
+    /// would notice, and a full load keeps several times the file in memory: 7.1 GB against 1.1 GB for a 2 GB library
+    /// (results/msl_in_dia).
+    /// </summary>
+    [Test]
+    public void TheTaskOpensEveryLibraryIndexOnly()
+    {
+        var (_, library, run) = WriteInputs("indexOnly");
+
+        using var opened = DiaLibrarySearchTask.OpenLibrary(library);
+
+        Assert.That(opened.IsIndexOnly, Is.True);
+        Assert.That(opened.PrecursorCount, Is.EqualTo(run.Library.Count));
+    }
+
+    /// <summary>
+    /// A library whose retention times are run minutes (.msl rt_is_calibrated) is refused before any run is read. The
+    /// search calibrates each run onto library iRT, so it would read minutes as iRT without a word.
+    /// </summary>
+    [Test]
+    public void ALibraryInRunMinutesIsRefused()
+    {
+        var (mzml, library, run) = WriteInputs("runMinutes", edit: entries => entries[0].RtIsCalibrated = true);
+        string output = Path.Combine(_directory, "runMinutes", "output", "Task1");
+        Directory.CreateDirectory(output);
+
+        var refusal = Assert.Throws<MetaMorpheusException>(() => DiaLibrarySearchTask.OpenLibrary(library));
+        Assert.That(refusal!.Message, Does.Contain($"1 of {run.Library.Count}").And.Contain("iRT"));
+        Assert.That(() => new DiaLibrarySearchTask().RunTask(output, [new DbForTask(library, false)], [mzml], "Task1"),
+            Throws.InstanceOf<MetaMorpheusException>().With.Message.Contains("iRT"));
+    }
+
+    /// <summary>
+    /// The Decoy/Contaminant/Target label is mzLib's (DecoyContaminantTargetLabel). An entrapment precursor (.msl flag bit 3)
+    /// is ET, or ED for a decoy, ahead of D and C. A target whose proteins are all contaminants is C. Any other is T.
+    /// </summary>
+    [TestCase(false, false, "P1", "T")]
+    [TestCase(true, false, "DECOY_P1", "D")]
+    [TestCase(false, true, "Random_P1", "ET")]
+    [TestCase(true, true, "DECOY_Random_P1", "ED")]
+    [TestCase(false, false, "C1", "C")]
+    [TestCase(false, false, "C1|P1", "T")]
+    [TestCase(false, true, "C1", "ET")]
+    public void TheLabelIsMzLibsWithEntrapment(bool isDecoy, bool isEntrapment, string accession, string label) =>
+        Assert.That(DiaLibrarySearchTask.Label(isDecoy, isEntrapment, accession, new HashSet<string> { "C1" }), Is.EqualTo(label));
+
+    /// <summary>
+    /// Entrapment precursors in the library (.msl flag bit 3, set by mzLib's library builder) are searched as targets and
+    /// labelled ET in the precursor and peptide tables, so an entrapment check can read the task's output as it is.
+    /// </summary>
+    [Test]
+    public void EntrapmentPrecursorsAreLabelledEtInTheTables()
+    {
+        static bool IsEntrapment(Omics.SpectralMatch.MslSpectralLibrary.MslLibraryEntry e) => SyntheticDiaRun.Bucket(e, 5) == 1;
+        var (mzml, library, run) = WriteInputs("entrapment", edit: entries =>
+        {
+            foreach (var e in entries.Where(IsEntrapment))
+                e.IsEntrapment = true;
+        });
+        string output = Path.Combine(_directory, "entrapment", "output", "Task1");
+        Directory.CreateDirectory(output);
+
+        new DiaLibrarySearchTask().RunTask(output, [new DbForTask(library, false)], [mzml], "Task1");
+
+        var precursors = new DiaPrecursorFile(Path.Combine(output, "AllDiaPrecursors.tsv"));
+        precursors.LoadResults();
+        var peptides = new DiaPeptideFile(Path.Combine(output, "AllDiaPeptides.tsv"));
+        peptides.LoadResults();
+        var entryOf = run.Library.Where(e => !e.IsDecoy).ToDictionary(e => e.FullSequence + "/" + e.ChargeState);
+        foreach (var (sequence, charge, label) in precursors.Results.Select(r => (r.FullSequence, r.PrecursorCharge, r.Label))
+            .Concat(peptides.Results.Select(r => (r.FullSequence, r.PrecursorCharge, r.Label))))
+            Assert.That(label, Is.EqualTo(IsEntrapment(entryOf[sequence + "/" + charge]) ? "ET" : "T"), sequence);
+        Assert.That(precursors.Results.Count(r => r.Label == "ET"), Is.GreaterThan(0));
+        Assert.That(peptides.Results.Count(r => r.Label == "ET"), Is.GreaterThan(0));
     }
 
     /// <summary>
