@@ -206,6 +206,17 @@ namespace EngineLayer
                 }
             }
 
+            // Both passes below rank groups by their best peptide, so set its score, q-value and PEP first
+            foreach (var pg in proteinGroups)
+            {
+                // Cast rather than OfType: an unexpected ISpectralMatch implementation should throw, not
+                // vanish from the QValue and PEP minimums.
+                var bestPeptidePsms = pg.AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>().ToList();
+                pg.BestPeptideScore = bestPeptidePsms.Max(psm => psm.Score);
+                pg.BestPeptideQValue = bestPeptidePsms.Min(psm => psm.FdrInfo.QValueNotch);
+                pg.BestPeptidePEP = bestPeptidePsms.Min(psm => psm.FdrInfo.PEP);
+            }
+
             // Do Classic protein FDR (all targets, all decoys)
             // order protein groups based on filter type
             var sortedProteinGroups = SortProteinGroupsByFilterType(proteinGroups);
@@ -231,13 +242,6 @@ namespace EngineLayer
                         accessionToProteinGroup.Add(stippedAccession, new List<ProteinGroup> { pg });
                     }
                 }
-
-                // Cast rather than OfType: an unexpected ISpectralMatch implementation should throw, not
-                // vanish from the QValue and PEP minimums.
-                var bestPeptidePsms = pg.AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>().ToList();
-                pg.BestPeptideScore = bestPeptidePsms.Max(psm => psm.Score);
-                pg.BestPeptideQValue = bestPeptidePsms.Min(psm => psm.FdrInfo.QValueNotch);
-                pg.BestPeptidePEP = bestPeptidePsms.Min(psm => psm.FdrInfo.PEP);
             }
 
             // pick the best for each paired accession based on filter type
