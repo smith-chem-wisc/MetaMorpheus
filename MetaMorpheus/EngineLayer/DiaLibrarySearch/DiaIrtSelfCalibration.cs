@@ -218,7 +218,7 @@ public static class DiaIrtSelfCalibration
     }
 
     private static DiaIrtCompositionModel FitIrtComposition(IReadOnlyList<DiaPrecursorMatch> confident, IrtCalibrationModel model, MslLibrary library) =>
-        DiaIrtCompositionModel.Fit(confident.Select(m => (Match: m, Entry: library.GetEntry(m.PrecursorIndex))).Where(a => a.Entry is not null)
+        DiaIrtCompositionModel.Fit(confident.Select(m => (Match: m, Entry: library.GetEntry(m.PrecursorIndex, includeFragments: false))).Where(a => a.Entry is not null)
             .Select(a => new DiaIrtCompositionModel.Anchor(a.Entry!.BaseSequence, model.ToIrt(a.Match.ApexRt).Value - a.Match.LibraryIrt.Value)).ToList());
 
     private static DiaFragmentIntensityModel FitFragmentIntensities(IReadOnlyList<DiaPrecursorMatch> confident, MsDataScan[] scans, MslLibrary library, DiaLibrarySearchParameters parameters)
