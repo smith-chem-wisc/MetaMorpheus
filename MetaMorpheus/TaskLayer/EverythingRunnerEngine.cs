@@ -89,7 +89,8 @@ namespace TaskLayer
                     return;
                 }
                 else if (CurrentXmlDbFilenameList.Where(p => p.IsSpectralLibrary).ToList().Count == CurrentXmlDbFilenameList.Count
-                             && !(TaskList.Count == 1 && TaskList.First().Item2 is SpectralAveragingTask))
+                             && !(TaskList.Count == 1 && TaskList.First().Item2 is SpectralAveragingTask)
+                             && !TaskList.All(t => t.Item2 is DiaLibrarySearchTask)) // a DIA library search needs only its library
                 {
                     Warn("Cannot proceed. No protein database files selected.");
                     FinishedAllTasks(OutputFolder);

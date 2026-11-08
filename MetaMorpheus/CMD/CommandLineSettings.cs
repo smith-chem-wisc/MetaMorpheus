@@ -304,6 +304,9 @@ namespace MetaMorpheusCommandLine
 
                 TruncationSearchTask truncation = new TruncationSearchTask();
                 Toml.WriteFile(truncation, Path.Combine(folderLocation, @"TruncationSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+
+                DiaLibrarySearchTask dia = new DiaLibrarySearchTask();
+                Toml.WriteFile(dia, Path.Combine(folderLocation, @"DiaLibrarySearchTask.toml"), MetaMorpheusTask.tomlConfig);
             }
             catch (Exception e)
             {
