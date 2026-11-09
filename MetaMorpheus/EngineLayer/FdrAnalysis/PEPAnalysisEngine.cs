@@ -27,26 +27,57 @@ namespace EngineLayer
 {
     public class PepAnalysisEngine
     {
+        #region Tree Setup
         private int _randomSeed = 42;
+
+        /// <summary>
+        /// RNA training sets smaller than this get <see cref="GetTreeOptions"/>'s small model. With a few hundred
+        /// examples the 400-tree model fits the training data exactly and returns PEP of only 0 or 1. Protein
+        /// searches keep the 400-tree model at any size: on small protein test sets the small model accepted
+        /// about a third fewer PSMs.
+        /// </summary>
+        public const int SmallTrainingSetThreshold = 1000;
 
         /// <summary>
         /// This method contains the hyper-parameters that will be used when training the machine learning model
         /// </summary>
         /// <returns> Options object to be passed in to the FastTree constructor </returns>
-        public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options BGDTreeOptions =>
-            new Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options
+        public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options BGDTreeOptions => GetTreeOptions(SearchType, int.MaxValue, _randomSeed);
+
+        /// <summary>
+        /// Hyper-parameters for a training set of <paramref name="trainingExampleCount"/> examples (all four
+        /// groups): the established 400-tree model, or, for RNA below <see cref="SmallTrainingSetThreshold"/>,
+        /// a 50-tree model with larger leaves.
+        /// </summary>
+        public static Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options GetTreeOptions(string searchType, int trainingExampleCount, int seed)
+        {
+            bool small = searchType == "RNA" && trainingExampleCount < SmallTrainingSetThreshold;
+            return new Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options
             {
                 NumberOfThreads = 1,
-                NumberOfTrees = 400,
-                MinimumExampleCountPerLeaf = 10,
-                NumberOfLeaves = 20,
-                LearningRate = 0.2,
+                NumberOfTrees = small ? 50 : 400,
+                MinimumExampleCountPerLeaf = small ? 20 : 10,
+                NumberOfLeaves = small ? 8 : 20,
+                LearningRate = small ? 0.1 : 0.2,
                 LabelColumnName = "Label",
                 FeatureColumnName = "Features",
-                Seed = _randomSeed,
-                FeatureSelectionSeed = _randomSeed,
+                Seed = seed,
+                FeatureSelectionSeed = seed,
                 RandomStart = false
             };
+        }
+
+        /// <summary>
+        /// The <see cref="QValueCutoffForPepCalculation"/> the search window starts from. RNA uses 0.05 because short
+        /// oligonucleotides give few decoys, so a stricter cutoff leaves too few positives, and few long ones, to train
+        /// on. PEPAnalysisEngine still raises lower values to 0.005 (0.025 for top-down).
+        /// </summary>
+        public static double DefaultQValueCutoffForPepCalculation(bool isRna, bool isTopDown) =>
+            isRna ? 0.05 : isTopDown ? 0.025 : 0.005;
+
+        #endregion
+
+        #region Semi-Supervised Learning
 
         /// <summary>
         /// The most training rounds any caller gets. <see cref="MaxTrainingRounds"/> is clamped to it, and it is
@@ -133,6 +164,8 @@ namespace EngineLayer
 
             public int GetHashCode(SpectralMatchHypothesis obj) => RuntimeHelpers.GetHashCode(obj);
         }
+
+        #endregion
 
         //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
         //file separately. An individully measured hydrobophicty calculated for a specific PSM sequence is compared to these values by computing
@@ -321,7 +354,12 @@ namespace EngineLayer
             // It also guarantees that each held-out fold, which is evaluated against these same labels, has both classes.
             if (!allGroupsHavePositiveAndNegativeTrainingExamples)
             {
-                return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.";
+                return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples." +
+                    $" Training q-value cutoff {QValueCutoff} ({(UsePeptideLevelQValueForTraining ? "peptide" : "PSM")} level); positives/negatives per group: " +
+                    string.Join(", ", roundZeroData.Select(g => $"{g.Count(p => p.Label)}/{g.Count(p => !p.Label)}")) +
+                    $"; targets with peptide q <= cutoff {AllPsms.Count(p => !p.IsDecoy && p.PeptideFdrInfo?.QValue <= QValueCutoff)}" +
+                    $", with PSM q <= cutoff {AllPsms.Count(p => !p.IsDecoy && p.PsmFdrInfo?.QValue <= QValueCutoff)}" +
+                    $", min target peptide q {AllPsms.Where(p => !p.IsDecoy).Select(p => p.PeptideFdrInfo?.QValue ?? 9).DefaultIfEmpty(9).Min()}";
             }
             Progress($"round 0 features built  ({roundClock.Elapsed.TotalSeconds:F1} s)");
             roundClock.Restart();
@@ -329,7 +367,10 @@ namespace EngineLayer
             MLContext mlContext = new MLContext(seed: _randomSeed);
             TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[numGroups];
 
-            var trainer = mlContext.BinaryClassification.Trainers.FastTree(BGDTreeOptions);
+            int trainingExampleCount = roundZeroData.Sum(g => g.Count());
+            var treeOptions = GetTreeOptions(SearchType, trainingExampleCount, _randomSeed);
+            Progress($"{trainingExampleCount} training examples: {treeOptions.NumberOfTrees} trees, {treeOptions.NumberOfLeaves} leaves");
+            var trainer = mlContext.BinaryClassification.Trainers.FastTree(treeOptions);
             var pipeline = mlContext.Transforms.Concatenate("Features", TrainingVariables)
                 .Append(trainer);
 
@@ -1137,6 +1178,8 @@ namespace EngineLayer
             float fractionalIntensity = 0;
 
             float missedCleavages = 0;
+            float charge = Math.Abs(psm.ScanPrecursorCharge);
+            float notchlessAbsoluteDeltaMass = 0;
             float longestSeq = 0;
             float complementaryIonCount = 0;
             float hydrophobicityZscore = float.NaN;
@@ -1174,6 +1217,9 @@ namespace EngineLayer
                 }
 
                 ambiguity = Math.Min((float)(psm.BestMatchingBioPolymersWithSetMods.Count() - 1), 10);
+                double theoreticalMass = tentativeSpectralMatch.SpecificBioPolymer.MonoisotopicMass;
+                double massDifference = psm.ScanPrecursorMass - theoreticalMass - tentativeSpectralMatch.Notch / MassDiffAcceptor.NotchScalar;
+                notchlessAbsoluteDeltaMass = (float)Math.Abs(massDifference);
                 //ambiguity = 10; // I'm pretty sure that you shouldn't train on ambiguity and its skewing the results
                 longestSeq = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(tentativeSpectralMatch) / normalizationFactor * multiplier, 0);
                 complementaryIonCount = (float)Math.Round(SpectralMatch.GetCountComplementaryIons(tentativeSpectralMatch) / normalizationFactor * multiplier, 0);
@@ -1209,8 +1255,8 @@ namespace EngineLayer
                         }
                         else
                         {
-                            hydrophobicityZscore = (float)Math.Round(GetMobilityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer) * 10.0, 0);
-                            hasHydrophobicity = 1; // CZE mobility is computed from composition and always available
+                            hydrophobicityZscore = (float)Math.Round(GetMobilityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer, out bool mobilityAvailable) * 10.0, 0);
+                            hasHydrophobicity = Convert.ToSingle(mobilityAvailable);
                         }
                     }
                 }
@@ -1280,6 +1326,8 @@ namespace EngineLayer
                 ModsCount = modCount,
                 AbsoluteAverageFragmentMassErrorFromMedian = absoluteFragmentMassError,
                 MissedCleavagesCount = missedCleavages,
+                Charge = charge,
+                NotchlessAbsoluteDeltaMass = notchlessAbsoluteDeltaMass,
                 Ambiguity = ambiguity,
                 LongestFragmentIonSeries = longestSeq,
                 ComplementaryIonCount = complementaryIonCount,
@@ -1549,10 +1597,13 @@ namespace EngineLayer
         }
 
         /// <param name="predictionAvailable">
-        /// False when the retention-time predictor could not produce a value for this peptidoform -- Chronologer
-        /// rejects a sequence longer than 50 residues, shorter than 7, or carrying a non-canonical amino acid
-        /// such as selenocysteine, and any predictor can fail outright. Callers must surface this to the model
-        /// (see PsmData.HasHydrophobicity) rather than letting the returned z-score stand on its own.
+        /// False when the returned z-score carries no information about this peptidoform: either the retention-time
+        /// predictor could not produce a value for it -- Chronologer rejects a sequence longer than 50 residues,
+        /// shorter than 7, or carrying a non-canonical amino acid such as selenocysteine, and any predictor can fail
+        /// outright -- or there is no reference distribution for this file and retention-time bin to compare it
+        /// against, or the z-score itself is NaN or infinite. In every case the z-score saturates at its maximum.
+        /// Callers must surface this to the model (see PsmData.HasHydrophobicity) rather than letting the returned
+        /// z-score stand on its own.
         /// </param>
         private static float GetRetentionTimeEquivalentZscore(SpectralMatch psm, IBioPolymerWithSetMods Peptide, Dictionary<string, Dictionary<int, Tuple<double, double>>> d, IRetentionTimePredictor predictor, out bool predictionAvailable)
         {
@@ -1575,8 +1626,10 @@ namespace EngineLayer
                         double? predicted = predictor.PredictRetentionTimeEquivalent(pep, out _);
                         if (predicted.HasValue)
                         {
-                            predictionAvailable = true;
                             hydrophobicityZscore = Math.Abs(d[Path.GetFileName(psm.FullFilePath)][time].Item1 - predicted.Value) / d[Path.GetFileName(psm.FullFilePath)][time].Item2;
+                            // A NaN or infinite z-score (NaN bin mean, zero or NaN deviation) saturates below
+                            // like a missing value, so it is flagged like one.
+                            predictionAvailable = double.IsFinite(hydrophobicityZscore);
                         }
                         // Otherwise leave the z-score at NaN. It saturates to the maximum below exactly as before,
                         // but predictionAvailable stays false, so HasHydrophobicity tells the model that the value
@@ -1594,8 +1647,15 @@ namespace EngineLayer
             return (float)hydrophobicityZscore;
         }
 
-        private float GetMobilityZScore(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide)
+        /// <param name="mobilityAvailable">
+        /// False when there is no reference distribution for this file and retention-time bin, or the computed
+        /// z-score is NaN or infinite, so the z-score saturates at its maximum and carries no information. Same
+        /// meaning as the predictionAvailable flag of
+        /// <see cref="GetRetentionTimeEquivalentZscore"/>, so HasHydrophobicity means one thing for LC and CZE alike.
+        /// </param>
+        private float GetMobilityZScore(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide, out bool mobilityAvailable)
         {
+            mobilityAvailable = false;
             double mobilityZScore = double.NaN;
 
             if (FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE.ContainsKey(Path.GetFileName(psm.FullFilePath)))
@@ -1606,6 +1666,9 @@ namespace EngineLayer
                     double predictedMobility = 100.0 * GetCifuentesMobility(selectedPeptide);
 
                     mobilityZScore = Math.Abs(FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE[Path.GetFileName(psm.FullFilePath)][time].Item1 - predictedMobility) / FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE[Path.GetFileName(psm.FullFilePath)][time].Item2;
+                    // A NaN or infinite z-score (NaN mobility or bin mean, zero or NaN deviation) saturates below like a
+                    // missing value, so it is flagged like one.
+                    mobilityAvailable = double.IsFinite(mobilityZScore);
                 }
             }
 

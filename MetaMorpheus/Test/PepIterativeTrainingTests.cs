@@ -1,4 +1,4 @@
-using EngineLayer;
+﻿using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using Microsoft.ML;
@@ -342,7 +342,8 @@ namespace Test
 
             string result = engine.ComputePEPValuesForAllPSMs();
 
-            Assert.That(result, Is.EqualTo("Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples."));
+            // The message goes on to give the training counts behind the failure
+            Assert.That(result, Does.StartWith("Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples."));
             Assert.That(Peps(psms), Is.EqualTo(before));
         }
 

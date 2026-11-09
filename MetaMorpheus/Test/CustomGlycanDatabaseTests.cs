@@ -709,7 +709,7 @@ namespace Test
             var glycans = GlycanDatabase.LoadGlycan(path, false, true).ToList();
 
             Assert.That(glycans.Count, Is.EqualTo(4));
-            Assert.That(glycans[0].Kind, Is.EqualTo(GlycanDatabase.String2Kind("HexNAc(1)Hex(1)")));
+            Assert.That(glycans[0].Kind, Is.EqualTo(GlycanDatabase.ParseComposition("HexNAc(1)Hex(1)")));
         }
 
         /// <summary>
@@ -732,7 +732,7 @@ namespace Test
             var glycans = GlycanDatabase.LoadGlycan(path, false, true, warnings.Add).ToList();
 
             Assert.That(glycans.Count, Is.EqualTo(4));
-            Assert.That(glycans[2].Kind, Is.EqualTo(GlycanDatabase.String2Kind("HexNAc(2)Hex(5)")));
+            Assert.That(glycans[2].Kind, Is.EqualTo(GlycanDatabase.ParseComposition("HexNAc(2)Hex(5)")));
             Assert.That(warnings.Count, Is.EqualTo(1));
             Assert.That(warnings[0], Does.Contain("'tail.gdb' at line 2"));
             Assert.That(warnings[0], Does.Contain($"\"{dropped}\""));
@@ -1048,6 +1048,190 @@ namespace Test
             Assert.That(glycans.Count, Is.EqualTo(2));
             Assert.That(warnings.Count, Is.EqualTo(1));
             Assert.That(warnings[0], Does.Contain("'bad.gdb' at line 2"));
+        }
+
+        /// <summary>
+        /// ParseComposition is the one composition parser now. An unknown name is a FormatException saying
+        /// which name, where String2Kind threw a bare KeyNotFoundException.
+        /// </summary>
+        [Test]
+        public static void AnUnknownNameInACompositionIsAFormatExceptionNamingIt()
+        {
+            var ex = Assert.Throws<FormatException>(() => GlycanDatabase.ParseComposition("HexNAc(2)HexNo(1)"));
+
+            Assert.That(ex.Message, Does.Contain("'HexNo'"));
+        }
+
+        /// <summary>
+        /// glyco.txt is now read with ParseComposition. Every ID in it that looks like a composition has to
+        /// parse, or it is demoted to an ordinary modification with a startup warning.
+        /// </summary>
+        [Test]
+        public static void EveryCompositionInTheShippedGlycoTxtParses()
+        {
+            string glycoFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "Mods", "glyco.txt");
+            var ids = File.ReadLines(glycoFile)
+                .Where(l => l.StartsWith("ID"))
+                .Select(l => l.Substring(2).Trim())
+                .Where(id => id.Contains('('))
+                .ToList();
+
+            Assert.That(ids, Is.Not.Empty);
+            foreach (string id in ids)
+            {
+                Assert.That(GlycanDatabase.ParseComposition(id).Sum(c => (int)c), Is.GreaterThan(0), id);
+            }
+        }
+
+        /// <summary>
+        /// A glyco.txt ID that is not a composition is kept as an ordinary modification: no '(' means a single
+        /// residue and is passed over in silence; a '(' that does not parse is said, naming the ID and the
+        /// file, because startup must neither throw nor quietly read it as a different glycan. The ID is cut the
+        /// way a database line is: text after the last ')' is ignored, as String2Kind ignored it, and said.
+        /// </summary>
+        [TestCase("Hex", null, false)]
+        [TestCase("Galactosyl on N-term", null, false)]
+        [TestCase("Hex(1)HexNAc(1)", "Hex(1)HexNAc(1)", false)]
+        [TestCase("Hex(1)HexNo(1)", null, true)]
+        [TestCase("HexNAc(1)Hex(1) on S", "HexNAc(1)Hex(1)", true)]
+        [TestCase("Hex(1)HexNAc(1", "Hex(1)", true)]
+        public static void AGlycoTxtIdIsAGlycanOnlyWhenItParsesAsAComposition(string id, string composition, bool warns)
+        {
+            var warnings = new List<string>();
+            EventHandler<StringEventArgs> listener = (sender, e) => warnings.Add(e.S);
+            GlobalVariables.WarnHandler += listener;
+            byte[] kind;
+            try
+            {
+                kind = GlobalVariables.GlycoModComposition(id, "glyco.txt");
+            }
+            finally
+            {
+                GlobalVariables.WarnHandler -= listener;
+            }
+
+            Assert.That(kind, Is.EqualTo(composition == null ? null : GlycanDatabase.ParseComposition(composition)));
+            var ours = warnings.Where(w => w.Contains($"'{id}'")).ToList();
+            Assert.That(ours, warns ? Has.Count.EqualTo(1) : Is.Empty);
+            if (warns)
+            {
+                Assert.That(ours[0], Does.Contain("glyco.txt")
+                    .And.Contain(composition == null ? "ordinary modification" : "ignoring"));
+            }
+        }
+
+        /// <summary>
+        /// String2Kind is kept for outside callers but is now the database parser, so a bad composition is
+        /// a FormatException naming the problem, not a KeyNotFoundException or a silently truncated glycan.
+        /// </summary>
+        [Test]
+        public static void ObsoleteString2KindIsTheCompositionParser()
+        {
+#pragma warning disable CS0618
+            Assert.That(GlycanDatabase.String2Kind("HexNAc(2)Hex(5)"), Is.EqualTo(GlycanDatabase.ParseComposition("HexNAc(2)Hex(5)")));
+            Assert.Throws<FormatException>(() => GlycanDatabase.String2Kind("HexNAc(2)HexNo(1)"));
+#pragma warning restore CS0618
+        }
+
+        /// <summary>
+        /// The residue cap does not bound a structure's cost: Struct2Glycan enumerates every sub-tree, and a
+        /// complete ternary tree of 40 residues has about 3.9e8 of them. It is refused, from the tree, before
+        /// any is built.
+        /// </summary>
+        [Test]
+        public static void AStructureWithTooManySubtreesIsRefusedBeforeItIsBuilt()
+        {
+            static string Ternary(int depth) => depth == 0 ? "(H)" : "(H" + string.Concat(Enumerable.Repeat(Ternary(depth - 1), 3)) + ")";
+            string bushy = Ternary(3);
+            Assert.That(bushy.Count(c => c == 'H'), Is.EqualTo(GlycanDatabase.MaxMonosaccharidesPerGlycan));
+
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            var ex = Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.PersistCustomGlycan(bushy, Path_("bushy.gdb"), true));
+
+            Assert.That(ex.Message, Does.Contain("sub-trees").And.Contain("composition"));
+            Assert.That(watch.Elapsed.TotalSeconds, Is.LessThan(5), "refused from the count, not after building them");
+            Assert.That(File.Exists(Path_("bushy.gdb")), Is.False);
+        }
+
+        /// <summary>
+        /// A large but real N-glycan is well under the sub-tree limit: 29 residues, a fucose on four antennae,
+        /// 84,106 sub-trees.
+        /// </summary>
+        [Test]
+        public static void ALargeRealisticStructureIsStillAccepted()
+        {
+            string path = Path_("big.gdb");
+
+            GlycanDatabase.PersistCustomGlycan(
+                "(N(N(H(H(N(H(A)(F)))(N(H(A)(F)))(N(H(A))))(H(N(H(A)(F)))(N(H(A)(F)))(N(H(A)))))(F))(F))", path, false);
+
+            Assert.That(File.ReadAllLines(path), Has.Length.EqualTo(1));
+        }
+
+        /// <summary>
+        /// (N(H)(A)) and (N(A)(H)) are one tree with its branches listed in two orders. The second is refused
+        /// as a duplicate, which would otherwise give duplicate glycan boxes. Different trees of one
+        /// composition are still different glycans.
+        /// </summary>
+        [TestCase("(N(H)(A))", "(N(A)(H))", true)]
+        [TestCase("(N(H(A)(F))(N))", "(N(N)(H(F)(A)))", true)]
+        [TestCase("(N(H(A)))", "(N(A(H)))", false)]
+        [TestCase("(N(H)(A))", "(N(H(A)))", false)]
+        public static void AStructureWhoseBranchesAreOnlyReorderedIsADuplicate(string first, string second, bool duplicate)
+        {
+            string path = Path_("trees.gdb");
+            GlycanDatabase.PersistCustomGlycan(first, path, true);
+
+            if (duplicate)
+            {
+                var ex = Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.PersistCustomGlycan(second, path, true));
+                Assert.That(ex.Message, Does.Contain($"already contains \"{first}\""));
+            }
+            else
+            {
+                GlycanDatabase.PersistCustomGlycan(second, path, true);
+                Assert.That(File.ReadAllLines(path), Has.Length.EqualTo(2));
+            }
+        }
+
+        /// <summary>
+        /// The duplicate check reads every structure already in the file as a tree, and that reader assumes
+        /// each '(' opens exactly one monosaccharide. A hand-edited line breaking that rule used to reach it:
+        /// "()" and "(N()(H))" ran it off the end of the string (a raw IndexOutOfRangeException on Add),
+        /// and "(NH)" read as "(N)", so a real "(N)" was refused as its duplicate. Such a line is the
+        /// loader's to report; adding a good glycan beside it must still work.
+        /// </summary>
+        [TestCase("()")]
+        [TestCase("(N()(H))")]
+        [TestCase("(NH)")]
+        [TestCase("((N))")]
+        public static void AMalformedStructureAlreadyInTheFileDoesNotBreakTheDuplicateCheck(string handEdited)
+        {
+            string path = Path_("hand_edited.gdb");
+            File.WriteAllLines(path, new[] { handEdited });
+
+            Assert.DoesNotThrow(() => GlycanDatabase.PersistCustomGlycan("(N)", path, true));
+
+            Assert.That(File.ReadAllLines(path), Is.EqualTo(new[] { handEdited, "(N)" }));
+        }
+
+        /// <summary>
+        /// Juxtaposed residues are refused as malformed where they are typed, not reported as a duplicate
+        /// of the single residue the tree reader would have kept.
+        /// </summary>
+        [TestCase("(NH)")]
+        [TestCase("(N(HA))")]
+        public static void JuxtaposedResiduesAreRefusedOnEntryRatherThanCalledADuplicate(string entry)
+        {
+            string path = Path_("juxtaposed.gdb");
+            GlycanDatabase.PersistCustomGlycan("(N)", path, true);
+            GlycanDatabase.PersistCustomGlycan("(N(H))", path, true);
+
+            var ex = Assert.Throws<MetaMorpheusException>(() => GlycanDatabase.PersistCustomGlycan(entry, path, true));
+
+            Assert.That(ex.Message, Does.Contain("exactly one monosaccharide"));
+            Assert.That(ex.Message, Does.Not.Contain("already contains"));
+            Assert.That(File.ReadAllLines(path), Has.Length.EqualTo(2));
         }
     }
 }

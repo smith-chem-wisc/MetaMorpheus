@@ -52,7 +52,8 @@ namespace GuiFunctions
         /// never set by standalone MetaDraw.
         /// </summary>
         public static bool ShouldShowProFormaColumn(IEnumerable<SpectrumMatchFromTsv> spectralMatches) =>
-            spectralMatches?.Any(p => !string.IsNullOrWhiteSpace(p.ProForma)) == true;
+            !GuiGlobalParamsViewModel.Instance.IsRnaMode
+            && (spectralMatches?.Any(p => !string.IsNullOrWhiteSpace(p.ProForma)) ?? false);
         public Dictionary<string, MsDataFile> MsDataFiles { get; } // key is file name without extension
         private List<SpectrumMatchPlot> CurrentlyDisplayedPlots;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
