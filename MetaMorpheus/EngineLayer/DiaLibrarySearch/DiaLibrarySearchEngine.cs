@@ -132,6 +132,10 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
                     ReportProgress(new ProgressEventArgs((int)(100.0 * done / work.Count), "Searching DIA candidates...", NestedIds));
             });
         var rows = scored.Where(list => list is not null).SelectMany(list => list).ToList();
+        // The lambda above captures these, so they would otherwise live as long as the method: rows alone holds the candidates
+        Array.Clear(scored);
+        work.Clear();
+        work.TrimExcess();
         Status($"timing: extraction and features for {rows.Count} candidate peaks  [{stage.Elapsed:mm\\:ss\\.f}]");
 
         var windowBounds = windows.Select(w => (Low: w.Key.Minimum, High: w.Key.Maximum)).ToArray();
@@ -1181,6 +1185,9 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
         out List<DiaPrecursorMatch> removed, out Dictionary<int, List<(MzLibUtil.RtMinutes ApexRt, double Score)>> losing)
     {
         var clock = System.Diagnostics.Stopwatch.StartNew();
+        // The scores stay in an array beside the candidates until one per precursor is chosen: a copy of every candidate
+        // to carry its score would hold two of each, tens of millions, at once
+        double[] scores = matches.Select(m => m.Score).ToArray();
         if (matches.Count > 0)
         {
             var rescored = TargetDecoyRescorer.Score(
@@ -1202,16 +1209,21 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
                 networkTargetFraction: _parameters.ClassifierNetworkTargetFraction,
                 candidateGroups: matches.Select(m => m.PrecursorIndex).ToList());
             if (rescored.Scores.All(double.IsFinite))
-                matches = matches.Select((m, i) => m with { Score = rescored.Scores[i] }).ToList();
+                scores = rescored.Scores;
         }
         Status($"timing: classifier ({_parameters.ClassifierModel}) trained and scored {matches.Count} rows  [{clock.Elapsed:mm\\:ss\\.f}]");
 
         // One match per precursor: its best-scoring candidate apex, across windows; the others are kept as apex and score
-        var byPrecursor = matches.GroupBy(m => m.PrecursorIndex)
-            .Select(g => g.OrderByDescending(m => m.Score).ThenBy(m => m.ApexRt.Value).ToList()).ToList();
+        var candidates = matches;
+        var byPrecursor = Enumerable.Range(0, candidates.Count).GroupBy(i => candidates[i].PrecursorIndex)
+            .Select(g => g.OrderByDescending(i => scores[i]).ThenBy(i => candidates[i].ApexRt.Value).ToList()).ToList();
         losing = byPrecursor.Where(g => g.Count > 1)
-            .ToDictionary(g => g[0].PrecursorIndex, g => g.Skip(1).Select(m => (m.ApexRt, m.Score)).ToList());
-        matches = byPrecursor.Select(g => g[0]).ToList();
+            .ToDictionary(g => candidates[g[0]].PrecursorIndex, g => g.Skip(1).Select(i => (candidates[i].ApexRt, scores[i])).ToList());
+        matches = byPrecursor.Select(g => candidates[g[0]] with { Score = scores[g[0]] }).ToList();
+        // The losing candidates and their features go now (losing keeps each one's apex and score), so the stages below
+        // hold only the winners. The list is the caller's, which reads it no further.
+        candidates.Clear();
+        candidates.TrimExcess();
 
         // Interference removal, after DIA-NN: a match a better co-eluting match explains is dropped, target or decoy alike
         removed = [];
