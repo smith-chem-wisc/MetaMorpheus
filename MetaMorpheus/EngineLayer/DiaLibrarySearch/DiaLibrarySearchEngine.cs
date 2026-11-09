@@ -1188,29 +1188,8 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
         // The scores stay in an array beside the candidates until one per precursor is chosen: a copy of every candidate
         // to carry its score would hold two of each, tens of millions, at once
         double[] scores = matches.Select(m => m.Score).ToArray();
-        if (matches.Count > 0)
-        {
-            var rescored = TargetDecoyRescorer.Score(
-                matches.Select(m => m.Features).ToList(),
-                matches.Select(m => m.IsDecoy).ToList(),
-                matches.Select(m => m.FullSequence).ToList(),
-                iterations: _parameters.ClassifierLinearIterations,
-                positiveQValue: _parameters.ClassifierTrainingQValue,
-                model: _parameters.ClassifierModel,
-                maxNetworkTrainingRows: _parameters.MaxNetworkTrainingRows,
-                randomSeed: _parameters.ClassifierSeed,
-                networkMembers: _parameters.ClassifierNetworkMembers,
-                networkEpochs: _parameters.ClassifierNetworkEpochs,
-                networkPasses: _parameters.ClassifierNetworkPasses,
-                networkTrainingSample: _parameters.ClassifierNetworkTrainingSample,
-                normalizationGroups: _parameters.ClassifierNormalizationGroups,
-                networkLayers: _parameters.EffectiveClassifierNetworkLayers,
-                networkPositiveQValue: _parameters.ClassifierNetworkPositiveQValue,
-                networkTargetFraction: _parameters.ClassifierNetworkTargetFraction,
-                candidateGroups: matches.Select(m => m.PrecursorIndex).ToList());
-            if (rescored.Scores.All(double.IsFinite))
-                scores = rescored.Scores;
-        }
+        if (matches.Count > 0 && Rescore(matches) is { } rescored)
+            scores = rescored;
         Status($"timing: classifier ({_parameters.ClassifierModel}) trained and scored {matches.Count} rows  [{clock.Elapsed:mm\\:ss\\.f}]");
 
         // One match per precursor: its best-scoring candidate apex, across windows; the others are kept as apex and score
@@ -1298,6 +1277,35 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
         var assigned = targets.Select((m, i) => m with { QValue = qValues[i] }).ToList();
         assigned.AddRange(matches.Where(m => m.IsDecoy));
         return assigned;
+    }
+
+    /// <summary>
+    /// The classifier's score for every candidate, or null when it could not give them all a finite one. A method of its own,
+    /// never inlined, so that the lists it hands the rescorer (one entry per candidate, its features among them) end with its
+    /// frame: left in the caller's, they kept every losing candidate's features alive through the stages after.
+    /// </summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private double[]? Rescore(List<DiaPrecursorMatch> matches)
+    {
+        var rescored = TargetDecoyRescorer.Score(
+            matches.Select(m => m.Features).ToList(),
+            matches.Select(m => m.IsDecoy).ToList(),
+            matches.Select(m => m.FullSequence).ToList(),
+            iterations: _parameters.ClassifierLinearIterations,
+            positiveQValue: _parameters.ClassifierTrainingQValue,
+            model: _parameters.ClassifierModel,
+            maxNetworkTrainingRows: _parameters.MaxNetworkTrainingRows,
+            randomSeed: _parameters.ClassifierSeed,
+            networkMembers: _parameters.ClassifierNetworkMembers,
+            networkEpochs: _parameters.ClassifierNetworkEpochs,
+            networkPasses: _parameters.ClassifierNetworkPasses,
+            networkTrainingSample: _parameters.ClassifierNetworkTrainingSample,
+            normalizationGroups: _parameters.ClassifierNormalizationGroups,
+            networkLayers: _parameters.EffectiveClassifierNetworkLayers,
+            networkPositiveQValue: _parameters.ClassifierNetworkPositiveQValue,
+            networkTargetFraction: _parameters.ClassifierNetworkTargetFraction,
+            candidateGroups: matches.Select(m => m.PrecursorIndex).ToList());
+        return rescored.Scores.All(double.IsFinite) ? rescored.Scores : null;
     }
 
     /// <summary>The fragments a precursor is scored on, most intense first: the fragment rule's if at least three pass it, as the search picks them.</summary>
