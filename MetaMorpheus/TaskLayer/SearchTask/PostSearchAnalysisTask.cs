@@ -1652,6 +1652,20 @@ namespace TaskLayer
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetPrecursorLabel()}")] = precursorResultsText;
             string ms2ScanCountResultsText = $"All {GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}: " + Parameters.NumMs2SpectraPerFile.Select(f => f.Value[0]).Sum();
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}")] = ms2ScanCountResultsText;
+
+            // Each file's precursor and MS2 scan counts are plain counts, not FDR results, so a search of two or more
+            // files writes them whether or not it writes the individual-file tables (WriteIndividualFiles). The per-file
+            // PSM, peptide and protein-group counts, which re-run FDR file by file, still come only with those tables.
+            if (Parameters.CurrentRawFileList.Count > 1)
+            {
+                foreach (var (fileName, counts) in Parameters.NumMs2SpectraPerFile)
+                {
+                    ResultsDictionary[(fileName, GlobalVariables.AnalyteType.GetPrecursorLabel())] =
+                        fileName + $" - {GlobalVariables.AnalyteType.GetPrecursorLabel()}: " + counts[1];
+                    ResultsDictionary[(fileName, GlobalVariables.AnalyteType.GetMs2ScanCountLabel())] =
+                        fileName + $" - {GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}: " + counts[0];
+                }
+            }
         }
         private void WritePeptideResults()
         {
@@ -1727,10 +1741,7 @@ namespace TaskLayer
                 // write summary text
                 string psmResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsToWrite.GetFilterTypeString() + " <= " + Math.Round(psmsToWrite.FilterThreshold, 2) + ": " + psmsToWrite.TargetPsmsAboveThreshold;
                 ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = psmResultsText;
-                string precursorResultsText = strippedFileName + $" - {GlobalVariables.AnalyteType.GetPrecursorLabel()}: " + Parameters.NumMs2SpectraPerFile[strippedFileName][1];
-                ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetPrecursorLabel()}")] = precursorResultsText;
-                string ms2ScanCountResultsText = strippedFileName + $" - {GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}: " + Parameters.NumMs2SpectraPerFile[strippedFileName][0];
-                ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetMs2ScanCountLabel()}")] = ms2ScanCountResultsText;
+                // this file's precursor and MS2 scan counts are written by WritePsmResults, for every file
             }
         }
         private void WriteIndividualPeptideResults()
@@ -2187,7 +2198,7 @@ namespace TaskLayer
                 {
                     foreach (var file in Parameters.FlashLfqResults.Peaks)
                     {
-                        WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.IndividualResultsOutputFolder,
+                        WriteIndividualFilePeaksToTsv(file.Value, Parameters.IndividualResultsOutputFolder,
                             file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.Key.FullFilePathWithExtension });
                     }
                 }
@@ -2556,15 +2567,11 @@ namespace TaskLayer
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
-                string searchType;
-                if (psmList.Where(p => p != null).Any() && psmList[0].DigestionParams.DigestionAgent.Name != null && psmList[0].DigestionParams.DigestionAgent.Name == "top-down")
-                {
-                    searchType = "top-down";
-                }
-                else
-                {
-                    searchType = "standard";
-                }
+                // The feature set PEP trained on (RNA searches wrote the protein set before). Search tasks never
+                // hold crosslink matches, so this is the standard, top-down or RNA set.
+                string searchType = psmList.FirstOrDefault(p => p != null) is SpectralMatch first
+                    ? FdrAnalysisEngine.GetPepSearchType(first)
+                    : "standard";
 
                 string header = "SpecId\tLabel\tScanNr\t";
                 header += String.Join("\t", PsmData.trainingInfos[searchType]);
@@ -2717,6 +2724,26 @@ namespace TaskLayer
             var peaksPath = Path.Combine(outputFolder, fileName + ".tsv");
 
             flashLFQResults.WriteResults(peaksPath, null, null, null, true);
+
+            FinishedWritingFile(peaksPath, nestedIds);
+        }
+
+        /// <summary>
+        /// Writes one spectra file's quantified peaks: the rows AllQuantifiedPeaks.tsv holds for that file, with its
+        /// header and in its order (FlashLfqResults.WriteResults sorts each file's peaks by intensity, highest first).
+        /// </summary>
+        private void WriteIndividualFilePeaksToTsv(List<ChromatographicPeak> peaks, string outputFolder, string fileName, List<string> nestedIds)
+        {
+            var peaksPath = Path.Combine(outputFolder, fileName + ".tsv");
+
+            using (StreamWriter output = new StreamWriter(peaksPath))
+            {
+                output.WriteLine(ChromatographicPeak.TabSeparatedHeader);
+                foreach (var peak in peaks.OrderByDescending(p => p.Intensity))
+                {
+                    output.WriteLine(peak.ToString());
+                }
+            }
 
             FinishedWritingFile(peaksPath, nestedIds);
         }

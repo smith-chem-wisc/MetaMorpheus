@@ -611,7 +611,13 @@ namespace MetaMorpheusCommandLine
             SdrfLabelFreeDesign design;
             try
             {
-                design = SdrfLabelFreeDesign.Read(RestrictSdrfToSearchedFiles(settings, output), new SdrfLabelFreeDesignOptions
+                var sdrf = RestrictSdrfToSearchedFiles(settings, output);
+                if (sdrf is null)
+                {
+                    output.WriteLine("No design file was written.");
+                    return 5;
+                }
+                design = SdrfLabelFreeDesign.Read(sdrf, new SdrfLabelFreeDesignOptions
                 {
                     ConditionColumns = conditionColumns,
                     SearchedFiles = settings.Spectra.Select(Path.GetFullPath).ToList(),
@@ -651,7 +657,13 @@ namespace MetaMorpheusCommandLine
             SdrfIsobaricDesign design;
             try
             {
-                design = SdrfIsobaricDesign.Read(RestrictSdrfToSearchedFiles(settings, output), new SdrfIsobaricDesignOptions
+                var sdrf = RestrictSdrfToSearchedFiles(settings, output);
+                if (sdrf is null)
+                {
+                    output.WriteLine("No design file was written.");
+                    return 5;
+                }
+                design = SdrfIsobaricDesign.Read(sdrf, new SdrfIsobaricDesignOptions
                 {
                     Tag = tag,
                     PlexColumn = settings.SdrfPlexColumn,
@@ -701,6 +713,12 @@ namespace MetaMorpheusCommandLine
         /// report, only the lists that have entries, SharedStem first: it means one searched file whose rows name
         /// two different acquired files, which only the depositor can resolve.
         ///
+        /// The design reader sees only the kept rows, so when rows were dropped two of its notes describe the kept rows,
+        /// not the file: its line numbers, and its "every row of the SDRF is searched", which it gives when it dropped
+        /// no row itself. Both are said here, before its report (pcruzparri's review of #2949). When no row is kept,
+        /// nothing is handed to the reader, whose "The SDRF has no rows" would point at the SDRF rather than at the -s
+        /// files: the join's own lists are printed, and null is returned for the caller to refuse the design.
+        ///
         /// An SDRF without comment[data file] cannot be joined, so it is returned as given, and the design reader
         /// refuses it with its own report, as before. Throws, as the readers did, when the file cannot be read.
         /// </summary>
@@ -716,10 +734,13 @@ namespace MetaMorpheusCommandLine
 
             var lists = new (string Name, IReadOnlyList<string> Entries)[]
             {
-                ("SharedStem (every row is kept; only the depositor can say which acquired file is right)", scope.SharedStem),
+                ("SharedStem (its rows name different acquired files and every one is kept, so the design is refused; " +
+                 "if they list one run under two names, such as X.raw and X.mzML, keep one row, and otherwise only the " +
+                 "depositor can say which file is right)", scope.SharedStem),
                 ("SearchedWithoutRow", scope.SearchedWithoutRow),
                 ("DroppedDataFiles (the search does not read them)", scope.DroppedDataFiles),
-                ("Ambiguous (claimed by two or more searched files; the first, in name order, is kept)", scope.Ambiguous),
+                ("Ambiguous (claimed by two or more searched files; the first, in name order, keeps the rows, so the " +
+                 "others have none and the design is refused)", scope.Ambiguous),
             };
             int rowsRead = sdrf.Results.Count;
             int rowsKept = scope.Document.Results.Count;
@@ -733,9 +754,18 @@ namespace MetaMorpheusCommandLine
                         output.WriteLine($"  {name}: {entry}");
                     }
                 }
+                if (rowsKept == 0 && rowsRead > 0)
+                {
+                    output.WriteLine("No SDRF row names a spectra file given with -s, so there is no design to read. " +
+                        "Check that -s names the files this SDRF describes.");
+                    return null;
+                }
                 if (rowsKept < rowsRead)
                 {
                     output.WriteLine("  Line numbers in the design report below count the kept rows, not the lines of the SDRF file.");
+                    output.WriteLine($"  The report reads only the kept rows: where it says every row of the SDRF is searched, it means " +
+                        $"the kept rows. {rowsRead - rowsKept} row(s) were set aside, so a gap in replicate or fraction numbers " +
+                        "may be a sample whose file is not searched.");
                 }
             }
 

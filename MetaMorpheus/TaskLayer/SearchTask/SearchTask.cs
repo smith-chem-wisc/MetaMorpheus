@@ -856,7 +856,7 @@ namespace TaskLayer
             List<string> blanks;
             try
             {
-                scope = SdrfSearchScope.Restrict(new SdrfDocument(path), currentRawFileList,
+                scope = SdrfSearchScope.Restrict(PostSearchAnalysisTask.OpenInputSdrf(path), currentRawFileList,
                     PostSearchAnalysisTask.AcquiredFileNames(currentRawFileList, AcquiredSpectraFiles));
                 // The writer's own rule, so this names what the writer will refuse, in its words.
                 problems = PostSearchAnalysisTask.InputSdrfJoinProblems(scope);
