@@ -66,7 +66,8 @@ namespace EngineLayer
             IFragmentationParams fragmentationParams = null,
             PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic,
                 string rtPredictorName = RTPredictorNames.Chronologer,
-            DoubleRange retentionTimeRange = null)
+            DoubleRange retentionTimeRange = null,
+            bool applyPrecursorEnvelopeFiltering = false)
 
         {
             retentionTimeRange ??= new DoubleRange(0, double.MaxValue);
@@ -112,6 +113,7 @@ namespace EngineLayer
             AddTruncations = addTruncations;
             DIAparameters = diaParameters;
             RetentionTimeRange = retentionTimeRange;
+            ApplyPrecursorEnvelopeFiltering = applyPrecursorEnvelopeFiltering;
 
             // product maximum charge state of 10 is a preexisting hard-coded value in MetaMorpheus
             if (deconvolutionMaxAssumedChargeState > 0) // positive mode
@@ -222,6 +224,12 @@ namespace EngineLayer
         public bool UseMostAbundantPrecursorIntensity { get; set; }
 
         /// <summary>
+        /// Merge split precursor envelopes and remove low-charge harmonics after precursor deconvolution.
+        /// Off by default until both filters are validated on real top-down and bottom-up data.
+        /// </summary>
+        public bool ApplyPrecursorEnvelopeFiltering { get; set; }
+
+        /// <summary>
         /// Which precursor mass is used to select theoretical proteoform candidates during search.
         /// Defaults to <see cref="EngineLayer.PrecursorMassMatchMode.Monoisotopic"/>.
         /// </summary>
@@ -304,7 +312,8 @@ namespace EngineLayer
                                 FragmentationParameters,
                                 PrecursorMassMatchMode,
                                 RTPredictorName,
-                                 RetentionTimeRange);
+                                 RetentionTimeRange,
+                                ApplyPrecursorEnvelopeFiltering);
         }
 
         /// <summary>
@@ -358,7 +367,8 @@ namespace EngineLayer
                                 FragmentationParameters,
                                 PrecursorMassMatchMode,
                                 RTPredictorName,
-                                 RetentionTimeRange);
+                                 RetentionTimeRange,
+                                ApplyPrecursorEnvelopeFiltering);
 
             // CustomIons is not a constructor parameter — the constructor reads it from the global
             // dissociation-type dictionary — so copy it across explicitly. GlycoSearchEngine branches on
