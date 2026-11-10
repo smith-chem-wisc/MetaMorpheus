@@ -19,8 +19,21 @@ namespace Test.MetaDraw;
 
 [TestFixture]
 [ExcludeFromCodeCoverage]
-public class ChimeraGroupViewModelTests
+public partial class ChimeraGroupViewModelTests
 {
+
+    /// <summary>
+    /// Matches what MetaDrawSettingsViewModel does to its own host, without touching the WPF view model.
+    /// </summary>
+    private static DeconvolutionParameters TestPrecursorDeconParameters
+    {
+        get
+        {
+            var host = new DeconHostViewModel();
+            host.SetAllPrecursorMaxChargeState(60);
+            return host.PrecursorDeconvolutionParameters.Parameters;
+        }
+    }
     public static ChimeraTestCase OneProteinTwoProteoformChimeraGroup;
     public static ChimeraTestCase TwoProteinsTwoProteoformChimeraGroup;
     public static List<SpectrumMatchFromTsv> AllMatches;
@@ -41,7 +54,7 @@ public class ChimeraGroupViewModelTests
         var testMs1Scan = DataFile.GetOneBasedScan(900);
         var testMs2Scan = DataFile.GetOneBasedScan(901);
         var testPsms = AllMatches.Where(p => p.Ms2ScanNumber == testMs2Scan.OneBasedScanNumber);
-        var group = new ChimeraGroupViewModel(testPsms, testMs1Scan, testMs2Scan);
+        var group = new ChimeraGroupViewModel(testPsms, testMs1Scan, testMs2Scan, TestPrecursorDeconParameters);
         var ions = group.AssignFragmentIonColors()
             .ToDictionary(p => p.Key, p => p.Value.Select(m => m.Item1).ToList());
         OneProteinTwoProteoformChimeraGroup = new ChimeraTestCase(group, ions);
@@ -49,7 +62,7 @@ public class ChimeraGroupViewModelTests
         var testMs1Scan2 = DataFile.GetOneBasedScan(1243);
         var testMs2Scan2 = DataFile.GetOneBasedScan(1246);
         var testPsms2 = AllMatches.Where(p => p.Ms2ScanNumber == testMs2Scan2.OneBasedScanNumber && p.QValue <= 0.01);
-        var group2 = new ChimeraGroupViewModel(testPsms2, testMs1Scan2, testMs2Scan2);
+        var group2 = new ChimeraGroupViewModel(testPsms2, testMs1Scan2, testMs2Scan2, TestPrecursorDeconParameters);
         var ions2 = group2.AssignFragmentIonColors()
             .ToDictionary(p => p.Key, p => p.Value.Select(m => m.Item1).ToList());
 
@@ -59,7 +72,6 @@ public class ChimeraGroupViewModelTests
     [OneTimeSetUp]
     public static void OneTimeSetup()
     {
-        MessageBoxHelper.SuppressMessageBoxes = true;
         GlobalVariables.AnalyteType = AnalyteType.Proteoform;
         // Ensure the export directory exists in a new state
         if (Directory.Exists(TestExportDirectory))
@@ -284,99 +296,6 @@ public class ChimeraGroupViewModelTests
                     $"Matched fragment ion {ion} should be in expected ions for color {color}.");
             }
 
-        }
-    }
-
-    [Test]
-    public void ChimeraGroupViewModel_AssignIonColors_UsesLetterOption()
-    {
-        // Arrange
-        var allPsms = ChimeraGroupViewModelTests.AllMatches;
-        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel();
-        vm.ProcessChimeraData(allPsms, dataFiles);
-        var group = vm.ChimeraGroupViewModels[0];
-
-        // Act
-        group.AssignIonColors(useLetterOnly: true);
-
-        // Assert
-        foreach (var kvp in group.PrecursorIonsByColor)
-        {
-            foreach (var tuple in kvp.Value)
-            {
-                // If annotation is not "Miso", it should contain a letter from the Letters list
-                if (!tuple.Item2.Contains("Miso"))
-                {
-                    Assert.That(tuple.Item2, Is.Not.Empty, "Annotation should not be empty when using letter only.");
-                    Assert.That(tuple.Item2.Length, Is.EqualTo(1), "Annotation should be a single letter when using letter only.");
-                    Assert.That("ABCDEFGHIJKLMNOPQRSTUVWXYZ".Contains(tuple.Item2), Is.True, "Annotation should be a letter.");
-                }
-            }
-        }
-    }
-
-    [Test]
-    public void AssignIonColors_ProduceExpectedAnnotations()
-    {
-        // Arrange
-        var allPsms = ChimeraGroupViewModelTests.AllMatches;
-        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-        var vm = new ChimeraAnalysisTabViewModel();
-        vm.ProcessChimeraData(allPsms, dataFiles);
-        var group = vm.ChimeraGroupViewModels[0];
-
-        // Act
-        group.AssignIonColors(useLetterOnly: false);
-
-        // Assert
-        foreach (var kvp in group.PrecursorIonsByColor)
-        {
-            foreach (var tuple in kvp.Value)
-            {
-                // If annotation is not "Miso", it should contain the expected details
-                if (!tuple.Item2.Contains("Miso"))
-                {
-                    Assert.That(tuple.Item2, Does.Contain("Charge ="), "Annotation should contain charge info.");
-                    Assert.That(tuple.Item2, Does.Contain("m/z ="), "Annotation should contain m/z info.");
-                    Assert.That(tuple.Item2, Does.Contain("Mono Mass ="), "Annotation should contain mono mass info.");
-                    Assert.That(tuple.Item2, Does.Contain("Protein ="), "Annotation should contain protein info.");
-                }
-            }
-        }
-    }
-
-    [Test]
-    public void AssignIonColors_ProduceLetterOnlyAnnotations()
-    {
-        // Arrange
-        var allPsms = ChimeraGroupViewModelTests.AllMatches;
-        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraGroupViewModelTests.DataFile } };
-
-        var vm = new ChimeraAnalysisTabViewModel()
-        {
-            UseLetterOnly = true
-        };
-        vm.ProcessChimeraData(allPsms, dataFiles);
-
-        var group = vm.ChimeraGroupViewModels[0];
-
-        // Act
-        group.AssignIonColors(useLetterOnly: true);
-
-        // Assert
-        foreach (var kvp in group.PrecursorIonsByColor)
-        {
-            foreach (var tuple in kvp.Value)
-            {
-                // If annotation is not "Miso", it should be a single uppercase letter
-                if (!tuple.Item2.Contains("Miso"))
-                {
-                    Assert.That(tuple.Item2, Is.Not.Empty, "Annotation should not be empty when using letter only.");
-                    Assert.That(tuple.Item2.Length, Is.EqualTo(1), "Annotation should be a single letter when using letter only.");
-                    Assert.That("ABCDEFGHIJKLMNOPQRSTUVWXYZ".Contains(tuple.Item2), Is.True, "Annotation should be a letter.");
-                }
-            }
         }
     }
 

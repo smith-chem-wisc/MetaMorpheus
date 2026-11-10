@@ -153,7 +153,8 @@ public class ChimeraAnalysisTabViewModel : MetaDrawTabViewModel
             try
             {
                 var orderedGroup = group.OrderByDescending(p => p.Score); 
-                var groupVm = new ChimeraGroupViewModel(orderedGroup, ms1Scan, ms2Scan);
+                var groupVm = new ChimeraGroupViewModel(orderedGroup, ms1Scan, ms2Scan,
+                    MetaDrawSettingsViewModel.Instance.DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters);
                 if (groupVm.ChimericPsms.Count > 0)
                     toReturn.Add(groupVm);
             }
