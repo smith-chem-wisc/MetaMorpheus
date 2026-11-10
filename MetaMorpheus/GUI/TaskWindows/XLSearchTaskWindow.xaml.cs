@@ -285,17 +285,11 @@ namespace MetaMorpheusGUI
             int MaxPeptideLength = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int MaxModificationIsoforms = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
-            // this window has no semi-specific control, so keep the loaded task's search mode rather than resetting it to Full
-            var (searchModeType, fragmentationTerminus) = TaskWindowSearchMode.Preserve(TheTask.CommonParameters.DigestionParams);
-            DigestionParams digestionParamsToSave = new DigestionParams(
-                protease: protease.Name,
-                maxMissedCleavages: MaxMissedCleavages,
-                minPeptideLength: MinPeptideLength,
-                maxPeptideLength: MaxPeptideLength,
-                maxModificationIsoforms: MaxModificationIsoforms,
-                initiatorMethionineBehavior: InitiatorMethionineBehavior,
-                searchModeType: searchModeType,
-                fragmentationTerminus: fragmentationTerminus);
+            // pass only what this window shows; it has no control for MaxModsForPeptide or the search mode, so those and every
+            // other digestion setting are kept from the loaded task
+            DigestionParams digestionParamsToSave = TaskWindowDigestionParams.ForSave(TheTask.CommonParameters.DigestionParams,
+                protease.Name, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms,
+                initiatorMethionineBehavior: InitiatorMethionineBehavior);
 
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
@@ -357,6 +351,7 @@ namespace MetaMorpheusGUI
                 ms3childScanDissociationType: ms3childDissociationType,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
+                maxThreadsToUsePerFile: int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture),
                 listOfModsVariable: listOfModsVariable,
                 listOfModsFixed: listOfModsFixed,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
