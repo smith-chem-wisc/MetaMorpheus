@@ -160,7 +160,12 @@ public class DatabaseLoadingEngine(
             GlobalVariables.AddMods(ProteinDbLoader.GetPtmListFromProteinXml(fileName), true, true);
             // TODO: Add in variant params when fixed in MzLib. 
             List<string> modTypesToExclude = GlobalVariables.AllRnaModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-            rnaList = RnaDbLoader.LoadRnaXML(fileName, generateTargets, decoyType, isContaminant, GlobalVariables.AllRnaModsKnown, modTypesToExclude, out unknownMods, commonParameters.MaxThreadsToUsePerFile, decoyIdentifier: decoyIdentifier);
+            // Named: LoadRnaXML orders (maxHeterozygousVariants, minAlleleDepth, maxThreads), unlike
+            // LoadProteinXML, so a positional thread count bound to maxHeterozygousVariants. See #2762.
+            rnaList = RnaDbLoader.LoadRnaXML(fileName, generateTargets, decoyType, isContaminant,
+                GlobalVariables.AllRnaModsKnown, modTypesToExclude, out unknownMods,
+                maxThreads: commonParameters.MaxThreadsToUsePerFile,
+                decoyIdentifier: decoyIdentifier);
         }
 
         emptyEntriesCount = rnaList.Count(p => p.BaseSequence.Length == 0);
