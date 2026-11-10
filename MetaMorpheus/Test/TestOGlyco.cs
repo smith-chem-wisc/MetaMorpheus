@@ -1443,6 +1443,20 @@ namespace Test
 
             Assert.That(proteinGroupFields[0], Is.EqualTo("Q9GZM5"));
 
+            // each file's _QuantifiedPeaks.tsv holds that file's peaks only, as AllQuantifiedPeaks.tsv lists them
+            string[] allPeaks = File.ReadAllLines(Path.Combine(outputFolderWithTask, "AllQuantifiedPeaks.tsv"));
+            int fileNameColumn = Array.IndexOf(allPeaks[0].Split('\t'), "File Name");
+            Assert.That(fileNameColumn, Is.GreaterThanOrEqualTo(0));
+            foreach (string file in new[] { "171025_06subset_1", "171025_06subset_2" })
+            {
+                string[] expectedRows = allPeaks.Skip(1).Where(row => row.Split('\t')[fileNameColumn] == file).ToArray();
+                Assert.That(expectedRows, Is.Not.Empty, $"premise: {file} has quantified peaks");
+
+                string[] perFile = File.ReadAllLines(Path.Combine(outputFolderWithTask, "IndividualFileResults", file, file + "_QuantifiedPeaks.tsv"));
+                Assert.That(perFile[0], Is.EqualTo(allPeaks[0]), $"{file}: same header as AllQuantifiedPeaks.tsv");
+                Assert.That(perFile.Skip(1).ToArray(), Is.EqualTo(expectedRows), $"{file}: its own peaks only, in AllQuantifiedPeaks.tsv's order");
+            }
+
             File.Delete(experimentalDesignFilePath);
             Directory.Delete(outputFolder, true);
         }

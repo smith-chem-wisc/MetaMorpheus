@@ -98,7 +98,8 @@ namespace Test
 
         /// <summary>
         /// WriteIndividualFiles is off by default. A default search of two files writes no per-file PSM, peptide,
-        /// protein group or quantified peak table and no per-file counts in results.txt, but the per-file .mzID
+        /// protein group or quantified peak table and no per-file FDR counts in results.txt (each file's precursor and
+        /// MS2 scan counts are still written), but the per-file .mzID
         /// still lands in "Individual File Results", because WriteMzId governs it. The default task TOML that
         /// CMD -g writes says false. A task TOML without the key reads as off; one that sets it to true still
         /// writes the per-file tables.
@@ -150,7 +151,20 @@ namespace Test
                         .Where(line => line.StartsWith("fileOne - ") || line.StartsWith("fileTwo - ")).ToArray();
 
                 Assert.That(individualFiles("default"), Is.EquivalentTo(new[] { "fileOne.mzID", "fileTwo.mzID" }));
-                Assert.That(perFileCounts("default"), Is.Empty);
+                // Off, results.txt still gives each file's precursor and MS2 scan counts (plain counts), the same lines
+                // the opted-in search writes, but none of the per-file FDR counts.
+                Func<string, string[]> scanCounts = task => perFileCounts(task)
+                    .Where(line => line.Contains(" - Precursors: ") || line.Contains(" - MS2 Scans: ")).ToArray();
+                Assert.That(perFileCounts("default"), Is.EqualTo(scanCounts("default")), "no per-file FDR count without the tables");
+                Assert.That(scanCounts("default"), Has.Length.EqualTo(4), "Precursors and MS2 Scans for each of the two files");
+                Assert.That(scanCounts("default"), Is.EqualTo(scanCounts("optedIn")));
+                string[] defaultResults = File.ReadAllLines(Path.Combine(outputFolder, "default", "results.txt"));
+                foreach (string label in new[] { "Precursors", "MS2 Scans" })
+                {
+                    int all = int.Parse(defaultResults.Single(line => line.StartsWith($"All {label}: ")).Split(": ")[1]);
+                    int sum = scanCounts("default").Where(line => line.Contains($" - {label}: ")).Sum(line => int.Parse(line.Split(": ")[1]));
+                    Assert.That(sum, Is.EqualTo(all), $"the files' {label} sum to the All line");
+                }
 
                 Assert.That(individualFiles("optedIn"), Is.SupersetOf(new[]
                 {
@@ -158,6 +172,56 @@ namespace Test
                     "fileTwo.mzID", "fileTwo_PSMs.psmtsv", "fileTwo_Peptides.psmtsv", "fileTwo_ProteinGroups.tsv", "fileTwo_QuantifiedPeaks.tsv"
                 }));
                 Assert.That(perFileCounts("optedIn"), Has.Some.StartsWith("fileOne - Target PSMs"));
+            }
+            finally
+            {
+                Directory.Delete(subFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// Each file's "_QuantifiedPeaks.tsv" in "Individual File Results" holds that file's peaks only: the rows of
+        /// AllQuantifiedPeaks.tsv whose File Name is that file, in the same order. It used to hold every file's peaks,
+        /// so a search of N files wrote N copies of AllQuantifiedPeaks.tsv (126 copies of 1.49 GB in one search).
+        /// </summary>
+        [Test]
+        public static void IndividualFileQuantifiedPeaksHoldOnlyThatFilesPeaks()
+        {
+            string subFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"IndividualQuantifiedPeaksTest");
+            if (Directory.Exists(subFolder))
+                Directory.Delete(subFolder, true);
+            Directory.CreateDirectory(subFolder);
+            try
+            {
+                SearchTask task = new SearchTask();
+                task.SearchParameters.WriteIndividualFiles = true;
+                task.SearchParameters.CompressIndividualFiles = false;
+                Assert.That(task.SearchParameters.DoLabelFreeQuantification, Is.True, "premise: label-free quantification is on");
+
+                DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "gapdh.fasta"), false);
+                TestDataFile datafile = new TestDataFile(new PeptideWithSetModifications("AAFNSGK", null));
+                string pathOne = Path.Combine(subFolder, "fileOne.mzml");
+                string pathTwo = Path.Combine(subFolder, "fileTwo.mzml");
+                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(datafile, pathOne, false);
+                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(datafile, pathTwo, false);
+
+                string outputFolder = Path.Combine(subFolder, "Results");
+                new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task", task) }, new List<string> { pathOne, pathTwo },
+                    new List<DbForTask> { db }, outputFolder).Run();
+
+                string[] allPeaks = File.ReadAllLines(Path.Combine(outputFolder, "task", "AllQuantifiedPeaks.tsv"));
+                int fileNameColumn = Array.IndexOf(allPeaks[0].Split('\t'), "File Name");
+                Assert.That(fileNameColumn, Is.GreaterThanOrEqualTo(0));
+
+                foreach (string file in new[] { "fileOne", "fileTwo" })
+                {
+                    string[] expectedRows = allPeaks.Skip(1).Where(row => row.Split('\t')[fileNameColumn] == file).ToArray();
+                    Assert.That(expectedRows, Is.Not.Empty, $"premise: {file} has quantified peaks");
+
+                    string[] perFile = File.ReadAllLines(Path.Combine(outputFolder, "task", "Individual File Results", file + "_QuantifiedPeaks.tsv"));
+                    Assert.That(perFile[0], Is.EqualTo(allPeaks[0]), $"{file}: same header as AllQuantifiedPeaks.tsv");
+                    Assert.That(perFile.Skip(1).ToArray(), Is.EqualTo(expectedRows), $"{file}: its own peaks only, in AllQuantifiedPeaks.tsv's order");
+                }
             }
             finally
             {

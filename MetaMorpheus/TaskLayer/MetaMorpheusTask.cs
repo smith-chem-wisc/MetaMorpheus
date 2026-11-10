@@ -1567,6 +1567,88 @@ namespace TaskLayer
                 : parameters.CloneWithNewTotalPartitions(decidedPartitions.Value);
         }
 
+        /// <summary>
+        /// Re-writes TmtDesign.txt, if there is one beside the spectra files, for the files this task wrote, each named
+        /// <c>{file name}{derivedSuffix}.mzML</c> in <paramref name="outputFolder"/>: calibration's -calib and averaging's
+        /// -averaged files. The search looks for it beside the files it searches, so without this a TMT search after
+        /// either task quantified no channel. <paramref name="derivedFilesAre"/> says what the files are in a warning
+        /// ("calibrated", "averaged").
+        /// </summary>
+        protected void UpdateTmtDesignFile(List<string> currentRawFileList, string outputFolder, string derivedSuffix, string derivedFilesAre)
+        {
+            string designPath = Path.Combine(Directory.GetParent(currentRawFileList.First()).FullName, GlobalVariables.TmtExperimentalDesignFileName);
+            if (!File.Exists(designPath))
+            {
+                DeleteEarlierTmtDesign(designPath, outputFolder);
+                return;
+            }
+
+            List<TmtFileInfo> originalDesign = TmtExperimentalDesign.Read(designPath, currentRawFileList, out var errors);
+            if (errors.Any())
+            {
+                Warn($"{GlobalVariables.TmtExperimentalDesignFileName} was not re-written for the {derivedFilesAre} files: " + string.Join(" ", errors));
+                DeleteEarlierTmtDesign(designPath, outputFolder);
+                return;
+            }
+
+            List<TmtFileInfo> derivedDesign = originalDesign
+                .Select(file => new TmtFileInfo(DerivedFilePath(file.FullFilePathWithExtension, outputFolder, derivedSuffix),
+                    file.Plex, file.Fraction, file.TechnicalReplicate, file.Annotations))
+                .ToList();
+
+            if (!SamePath(Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName), designPath))
+            {
+                // Into the output folder by name: a file this task wrote nothing for keeps its original path, so the first
+                // file's folder can be the input folder, and the input design must not be overwritten.
+                _ = TmtExperimentalDesign.Write(derivedDesign, outputFolder);
+                return;
+            }
+
+            // The output folder holds the input design. Its rows describe the input files, which are still there, so they
+            // are kept and the written files' rows are added below them.
+            List<TmtFileInfo> derivedFiles = derivedDesign
+                .Where((file, i) => !SamePath(file.FullFilePathWithExtension, originalDesign[i].FullFilePathWithExtension))
+                .ToList();
+            if (derivedFiles.Any())
+            {
+                _ = TmtExperimentalDesign.AddRows(designPath, derivedFiles);
+            }
+        }
+
+        private static bool SamePath(string a, string b) =>
+            string.Equals(Path.GetFullPath(a), Path.GetFullPath(b), StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Deletes a TmtDesign.txt an earlier run wrote into <paramref name="outputFolder"/>, for a run that writes none.
+        /// Nothing empties a task folder before a run, so the search after this task would read it as describing this
+        /// run's files. The input design <paramref name="inputDesignPath"/> is never deleted, even when the output folder
+        /// is the input folder.
+        /// </summary>
+        private static void DeleteEarlierTmtDesign(string inputDesignPath, string outputFolder)
+        {
+            string earlierDesign = Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName);
+            if (!SamePath(earlierDesign, inputDesignPath))
+            {
+                File.Delete(earlierDesign);
+            }
+        }
+
+        /// <summary>
+        /// The file the next task searches in place of <paramref name="originalFilePath"/>: the <paramref name="derivedSuffix"/>
+        /// mzML this run wrote for it, or the original itself for a file it wrote none for. EverythingRunnerEngine passes
+        /// the original on for any file missing from MyTaskResults.NewSpectra: one calibration could not calibrate (not
+        /// the copy calibration writes to its output folder), a type the task skips, and a file a cancelled run never
+        /// reached. The derived name goes through ToSafeOutputPath, as both tasks' run loops do, so a name trimmed to fit
+        /// the path cap is named trimmed.
+        /// </summary>
+        private string DerivedFilePath(string originalFilePath, string outputFolder, string derivedSuffix)
+        {
+            string derived = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(originalFilePath) + derivedSuffix + ".mzML")
+                .ToSafeOutputPath(derivedSuffix + ".mzML");
+            // ignoring case, as TmtExperimentalDesign.Read matches the design's File column to the spectra files
+            return MyTaskResults.NewSpectra.FirstOrDefault(written => SamePath(written, derived)) ?? originalFilePath;
+        }
+
         protected static void Warn(string v)
         {
             WarnHandler?.Invoke(null, new StringEventArgs(v, null));
