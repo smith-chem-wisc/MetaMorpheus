@@ -1,5 +1,4 @@
-﻿using System;
-using EngineLayer.SpectrumMatch;
+﻿using EngineLayer.SpectrumMatch;
 using System.Collections.Generic;
 using System.Linq;
 using Omics;
@@ -19,12 +18,7 @@ namespace EngineLayer
         private readonly HashSet<string> _decoyIdentifiers;
         private readonly FilterType _filterType;
         private readonly double _filterThreshold;
-        private readonly bool _psmsAlreadyFiltered;
 
-        /// <summary>
-        /// Takes every PSM from the search; the engine keeps those passing the q-value or PEP q-value threshold
-        /// from <paramref name="commonParameters"/>, whichever is stricter.
-        /// </summary>
         /// <param name="labelPeptidesUniqueToOneGroup">
         /// True for the search's own call: after FDR, label each group's peptides unique or shared among the groups it
         /// returns. False for a per-file call, whose groups are subsets of the search's and already carry its labels
@@ -32,33 +26,9 @@ namespace EngineLayer
         /// </param>
         public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, IList<SpectralMatch> filteredPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups,
             CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds,
-            bool labelPeptidesUniqueToOneGroup = true)
-            : this(proteinGroups, filteredPsms, psmsAlreadyFiltered: false, noOneHitWonders, treatModPeptidesAsDifferentPeptides, mergeIndistinguishableProteinGroups,
-                commonParameters, fileSpecificParameters, nestedIds, labelPeptidesUniqueToOneGroup) { }
-
-        /// <summary>
-        /// Takes PSMs the caller has already filtered; they are scored as-is, and their filter type and threshold are used.
-        /// </summary>
-        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, FilteredPsms filteredPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups,
-            CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds,
-            bool labelPeptidesUniqueToOneGroup = true)
-            : this(proteinGroups, filteredPsms.FilteredPsmsList, psmsAlreadyFiltered: true, noOneHitWonders, treatModPeptidesAsDifferentPeptides, mergeIndistinguishableProteinGroups,
-                commonParameters, fileSpecificParameters, nestedIds, labelPeptidesUniqueToOneGroup)
-        {
-            _filterType = filteredPsms.FilterType;
-            _filterThreshold = filteredPsms.FilterThreshold;
-        }
-
-        /// <summary>
-        /// When <paramref name="psmsAlreadyFiltered"/> is true, <paramref name="psms"/> are scored as-is with no q-value
-        /// filtering, for callers that have filtered them already or need every PSM scored.
-        /// </summary>
-        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, IList<SpectralMatch> psms, bool psmsAlreadyFiltered, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups,
-            CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds,
             bool labelPeptidesUniqueToOneGroup = true) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
-            _FilteredPsms = psms;
-            _psmsAlreadyFiltered = psmsAlreadyFiltered;
+            _FilteredPsms = filteredPsms;
             ProteinGroups = proteinGroups;
             NoOneHitWonders = noOneHitWonders;
             TreatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
@@ -66,11 +36,7 @@ namespace EngineLayer
             LabelPeptidesUniqueToOneGroupAfterFdr = labelPeptidesUniqueToOneGroup;
             _decoyIdentifiers = proteinGroups.SelectMany(p => p.Proteins.Where(b => b.IsDecoy).Select(b => b.Accession.Split('_')[0])).ToHashSet();
 
-            // Pre-filtered callers keep their original tie-break: equal thresholds sort by PEP q-value.
-            bool usePepQValue = psmsAlreadyFiltered
-                ? !(CommonParameters.QValueThreshold < CommonParameters.PepQValueThreshold)
-                : CommonParameters.PepQValueThreshold < CommonParameters.QValueThreshold;
-            if (usePepQValue)
+            if (CommonParameters.PepQValueThreshold < CommonParameters.QValueThreshold)
             {
                 _filterType = FilterType.PepQValue;
                 _filterThreshold = CommonParameters.PepQValueThreshold;
@@ -155,15 +121,11 @@ namespace EngineLayer
             var peptideToPsmMatching = new Dictionary<IBioPolymerWithSetMods, HashSet<SpectralMatch>>();
             try
             {
-                var psmsToScore = _psmsAlreadyFiltered
-                    ? psmList
-                    : psmList.FilterByQValue(
-                        includeHighQValuePsms: false,
-                        qValueThreshold: _filterThreshold,
-                        filterAtPeptideLevel: false,
-                        filterType: _filterType);
-
-                foreach (var psm in psmsToScore)
+                foreach (var psm in psmList.FilterByQValue(
+                    includeHighQValuePsms: false,
+                    qValueThreshold: _filterThreshold,
+                    filterAtPeptideLevel: false,
+                    filterType: _filterType))
                 {
                     if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) ||
                         (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
