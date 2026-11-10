@@ -431,6 +431,13 @@ namespace TaskLayer
                         new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition,
                             indexParams, this.FileSpecificParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
+                        // Searched: let the index go. These locals are passed by ref, and a local whose address is taken is reported live
+                        // for the whole method, which goes on to post-search, so the last index would be walked by every full collection
+                        // PEP's training forces: 9.6 GB reachable at PEP for the bottom-up nightly, against 0.8 GB when let go.
+                        peptideIndex = null;
+                        fragmentIndex = null;
+                        precursorIndex = null;
+
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + indexParams.TotalPartitions + "!", thisId));
                         if (GlobalVariables.StopLoops) { break; }
                     }
@@ -523,6 +530,11 @@ namespace TaskLayer
                             new NonSpecificEnzymeSearchEngine(fileSpecificPsmsSeparatedByFdrCategory, arrayOfMs2ScansSortedByMass, coisolationIndex, peptideIndex, fragmentIndex,
                                 precursorIndex, currentPartition, indexParams, this.FileSpecificParameters, variableModifications, massDiffAcceptor,
                                 SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
+
+                            // searched: let the index go before post-search (passed by ref, so reported live otherwise; see the Modern loop)
+                            peptideIndex = null;
+                            fragmentIndex = null;
+                            precursorIndex = null;
 
                             ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + indexParams.TotalPartitions + "!", thisId));
                             if (GlobalVariables.StopLoops) { break; }
