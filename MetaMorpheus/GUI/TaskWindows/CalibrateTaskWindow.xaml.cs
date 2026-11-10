@@ -294,17 +294,14 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                // this window has no semi-specific control, so keep the loaded task's search mode rather than resetting it to Full
-                var (searchModeType, fragmentationTerminus) = TaskWindowSearchMode.Preserve(TheTask.CommonParameters.DigestionParams);
-                digestionParamsToSave = new DigestionParams(
-                    protease: protease.Name,
-                    maxMissedCleavages: maxMissedCleavages,
-                    minPeptideLength: minPeptideLength,
-                    maxPeptideLength: maxPeptideLength,
-                    maxModificationIsoforms: maxModificationIsoforms,
+                // pass only what this window shows; the search mode and every other digestion setting are kept from the loaded task
+                digestionParamsToSave = TaskWindowDigestionParams.ForSave(TheTask.CommonParameters.DigestionParams,
+                    protease.Name, maxMissedCleavages, minPeptideLength, maxPeptideLength, maxModificationIsoforms,
                     maxModsForPeptides: maxModsPerPeptide,
-                    searchModeType: searchModeType,
-                    fragmentationTerminus: fragmentationTerminus);
+                    // the box is filled only for a task with protein digestion parameters; with nothing selected, keep the loaded value
+                    initiatorMethionineBehavior: InitiatorMethionineBehaviorComboBox.SelectedIndex >= 0
+                        ? (InitiatorMethionineBehavior)InitiatorMethionineBehaviorComboBox.SelectedIndex
+                        : null);
             }
 
             var listOfModsVariable = new List<(string, string)>();

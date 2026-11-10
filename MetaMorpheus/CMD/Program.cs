@@ -20,6 +20,9 @@ using SdrfLabelFreeDesign = Readers.SdrfLabelFreeDesign;
 using SdrfLabelFreeDesignOptions = Readers.SdrfLabelFreeDesignOptions;
 using SdrfIsobaricDesign = Readers.SdrfIsobaricDesign;
 using SdrfIsobaricDesignOptions = Readers.SdrfIsobaricDesignOptions;
+using SdrfDocument = Readers.SdrfDocument;
+using SdrfSearchScope = Readers.SdrfSearchScope;
+using SdrfSearchScoping = Readers.SdrfSearchScoping;
 using MzLibIsobaricMassTag = Omics.Modifications.IsobaricMassTag;
 
 namespace MetaMorpheusCommandLine
@@ -557,7 +560,8 @@ namespace MetaMorpheusCommandLine
         /// <summary>
         /// Carries out --sdrfDesign: reads a label-free SDRF with mzLib's SdrfLabelFreeDesign and writes
         /// ExperimentalDesign.tsv beside the first spectra file, which is where a run given the same -s
-        /// looks for it (ResolveExperimentalDesign). The design is checked against exactly those files.
+        /// looks for it (ResolveExperimentalDesign). The design is checked against exactly those files, after
+        /// the SDRF is restricted to them (RestrictSdrfToSearchedFiles).
         ///
         /// Refuses rather than writes anything MetaMorpheus would reject, because an invalid design is
         /// worse than none: a run finding one skips quantification with only a warning. The report is
@@ -607,7 +611,13 @@ namespace MetaMorpheusCommandLine
             SdrfLabelFreeDesign design;
             try
             {
-                design = SdrfLabelFreeDesign.Read(settings.SdrfDesign, new SdrfLabelFreeDesignOptions
+                var sdrf = RestrictSdrfToSearchedFiles(settings, output);
+                if (sdrf is null)
+                {
+                    output.WriteLine("No design file was written.");
+                    return 5;
+                }
+                design = SdrfLabelFreeDesign.Read(sdrf, new SdrfLabelFreeDesignOptions
                 {
                     ConditionColumns = conditionColumns,
                     SearchedFiles = settings.Spectra.Select(Path.GetFullPath).ToList(),
@@ -647,7 +657,13 @@ namespace MetaMorpheusCommandLine
             SdrfIsobaricDesign design;
             try
             {
-                design = SdrfIsobaricDesign.Read(settings.SdrfDesign, new SdrfIsobaricDesignOptions
+                var sdrf = RestrictSdrfToSearchedFiles(settings, output);
+                if (sdrf is null)
+                {
+                    output.WriteLine("No design file was written.");
+                    return 5;
+                }
+                design = SdrfIsobaricDesign.Read(sdrf, new SdrfIsobaricDesignOptions
                 {
                     Tag = tag,
                     PlexColumn = settings.SdrfPlexColumn,
@@ -683,6 +699,77 @@ namespace MetaMorpheusCommandLine
             design.WriteTmtDesign(designPath);
             output.WriteLine("Wrote " + designPath);
             return 0;
+        }
+
+        /// <summary>
+        /// Reads the --sdrfDesign SDRF restricted to the -s files with mzLib's SdrfSearchScope (QP-S35), so that a
+        /// design reader sees only this search's rows, each naming the file this search reads. The join is mzLib's
+        /// (MAP-12): a searched file finds its rows by file stem, ignoring case and the -calib and -averaged suffixes
+        /// MetaMorpheus writes, so a row naming X.raw stands for a search of X.mzML or X-calib.mzML, and an earlier
+        /// search's comment[searched data file] is replaced by this one's. The design readers stay join-free (QP-S18).
+        ///
+        /// No acquired-name map is passed: the -s files are the files the user names, and the suffix rule covers an
+        /// earlier search's derivatives (sdrf 085). What the join could not place is printed before the design
+        /// report, only the lists that have entries, SharedStem first: it means one searched file whose rows name
+        /// two different acquired files, which only the depositor can resolve.
+        ///
+        /// The design reader sees only the kept rows, so when rows were dropped two of its notes describe the kept rows,
+        /// not the file: its line numbers, and its "every row of the SDRF is searched", which it gives when it dropped
+        /// no row itself. Both are said here, before its report (pcruzparri's review of #2949). When no row is kept,
+        /// nothing is handed to the reader, whose "The SDRF has no rows" would point at the SDRF rather than at the -s
+        /// files: the join's own lists are printed, and null is returned for the caller to refuse the design.
+        ///
+        /// An SDRF without comment[data file] cannot be joined, so it is returned as given, and the design reader
+        /// refuses it with its own report, as before. Throws, as the readers did, when the file cannot be read.
+        /// </summary>
+        private static SdrfDocument RestrictSdrfToSearchedFiles(CommandLineSettings settings, TextWriter output)
+        {
+            var sdrf = new SdrfDocument(settings.SdrfDesign);
+            if (!sdrf.Header.Contains(SdrfLabelFreeDesign.DataFileColumn))
+            {
+                return sdrf;
+            }
+
+            SdrfSearchScoping scope = SdrfSearchScope.Restrict(sdrf, settings.Spectra.Select(Path.GetFullPath).ToList());
+
+            var lists = new (string Name, IReadOnlyList<string> Entries)[]
+            {
+                ("SharedStem (its rows name different acquired files and every one is kept, so the design is refused; " +
+                 "if they list one run under two names, such as X.raw and X.mzML, keep one row, and otherwise only the " +
+                 "depositor can say which file is right)", scope.SharedStem),
+                ("SearchedWithoutRow", scope.SearchedWithoutRow),
+                ("DroppedDataFiles (the search does not read them)", scope.DroppedDataFiles),
+                ("Ambiguous (claimed by two or more searched files; the first, in name order, keeps the rows, so the " +
+                 "others have none and the design is refused)", scope.Ambiguous),
+            };
+            int rowsRead = sdrf.Results.Count;
+            int rowsKept = scope.Document.Results.Count;
+            if (rowsKept < rowsRead || lists.Any(l => l.Entries.Count > 0))
+            {
+                output.WriteLine($"SDRF joined to the searched files by mzLib's SdrfSearchScope: {rowsKept} of {rowsRead} SDRF rows kept.");
+                foreach (var (name, entries) in lists)
+                {
+                    foreach (string entry in entries)
+                    {
+                        output.WriteLine($"  {name}: {entry}");
+                    }
+                }
+                if (rowsKept == 0 && rowsRead > 0)
+                {
+                    output.WriteLine("No SDRF row names a spectra file given with -s, so there is no design to read. " +
+                        "Check that -s names the files this SDRF describes.");
+                    return null;
+                }
+                if (rowsKept < rowsRead)
+                {
+                    output.WriteLine("  Line numbers in the design report below count the kept rows, not the lines of the SDRF file.");
+                    output.WriteLine($"  The report reads only the kept rows: where it says every row of the SDRF is searched, it means " +
+                        $"the kept rows. {rowsRead - rowsKept} row(s) were set aside, so a gap in replicate or fraction numbers " +
+                        "may be a sample whose file is not searched.");
+                }
+            }
+
+            return scope.Document;
         }
 
         /// <summary>

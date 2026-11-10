@@ -430,17 +430,12 @@ namespace MetaMorpheusGUI
             int MaxModPerPep = (int.Parse(TxtBoxMaxModPerPep.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
             // Semi-specific peptides (SearchModeType Semi, terminus Both) or fully specific ones; never seeds, which a glyco search cannot use
-            var (searchModeType, fragmentationTerminus) = TaskWindowSearchMode.ForSemiSpecificChoice(SemiSpecificCheckBox.IsChecked == true);
-            DigestionParams digestionParamsToSave = new DigestionParams(
-                protease: protease.Name,
-                maxMissedCleavages: MaxMissedCleavages,
-                minPeptideLength: MinPeptideLength,
-                maxPeptideLength: MaxPeptideLength,
-                maxModificationIsoforms: MaxModificationIsoforms,
+            // Every other digestion setting (SILAC, cleavage-blocking modifications, ...) is kept from the loaded task.
+            DigestionParams digestionParamsToSave = TaskWindowDigestionParams.ForSave(TheTask.CommonParameters.DigestionParams,
+                protease.Name, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms,
                 maxModsForPeptides: MaxModPerPep,
                 initiatorMethionineBehavior: InitiatorMethionineBehavior,
-                searchModeType: searchModeType,
-                fragmentationTerminus: fragmentationTerminus);
+                searchMode: TaskWindowSearchMode.ForSemiSpecificChoice(SemiSpecificCheckBox.IsChecked == true));
 
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
