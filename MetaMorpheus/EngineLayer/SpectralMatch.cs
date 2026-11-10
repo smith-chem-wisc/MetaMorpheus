@@ -640,6 +640,11 @@ namespace EngineLayer
             bool[] cTermSeen = ArrayPool<bool>.Shared.Rent(arrayLength);
             bool[] covered = ArrayPool<bool>.Shared.Rent(arrayLength);
 
+            // a rented array may hold whatever its last user left in it
+            Array.Clear(nTermSeen, 0, arrayLength);
+            Array.Clear(cTermSeen, 0, arrayLength);
+            Array.Clear(covered, 0, arrayLength);
+
             try
             {
                 bool hasNTerm = false;
@@ -752,9 +757,6 @@ namespace EngineLayer
             }
             finally
             {
-                Array.Clear(nTermSeen, 0, arrayLength);
-                Array.Clear(cTermSeen, 0, arrayLength);
-                Array.Clear(covered, 0, arrayLength);
                 ArrayPool<bool>.Shared.Return(nTermSeen);
                 ArrayPool<bool>.Shared.Return(cTermSeen);
                 ArrayPool<bool>.Shared.Return(covered);

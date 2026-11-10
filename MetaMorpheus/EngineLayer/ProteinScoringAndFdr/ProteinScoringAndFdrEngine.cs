@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using Omics;
-using MzLibUtil;
 
 namespace EngineLayer
 {
     public class ProteinScoringAndFdrEngine : MetaMorpheusEngine
     {
-        private static readonly HashSetPool<SpectralMatch> SpectralMatchHashSetPool = new (2048);
         private readonly IList<SpectralMatch> _FilteredPsms;
         private readonly bool NoOneHitWonders;
         private readonly bool TreatModPeptidesAsDifferentPeptides;
@@ -119,54 +117,39 @@ namespace EngineLayer
         {
             // add each protein groups PSMs
             var peptideToPsmMatching = new Dictionary<IBioPolymerWithSetMods, HashSet<SpectralMatch>>();
-            try
+            foreach (var psm in psmList.FilterByQValue(
+                includeHighQValuePsms: false,
+                qValueThreshold: _filterThreshold,
+                filterAtPeptideLevel: false,
+                filterType: _filterType))
             {
-                foreach (var psm in psmList.FilterByQValue(
-                    includeHighQValuePsms: false,
-                    qValueThreshold: _filterThreshold,
-                    filterAtPeptideLevel: false,
-                    filterType: _filterType))
+                if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                 {
-                    if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) ||
-                        (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
+                    foreach (var pepWithSetMods in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer))
                     {
-                        foreach (var pepWithSetMods in psm.BestMatchingBioPolymersWithSetMods.Select(p =>
-                                     p.SpecificBioPolymer))
-                        {
-                            if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<SpectralMatch> psmsForThisPeptide))
-                            {
-                                var set = SpectralMatchHashSetPool.Get();
-                                set.Add(psm);
-                                peptideToPsmMatching.Add(pepWithSetMods, set);
-                            }
-                            else
-                                psmsForThisPeptide.Add(psm);
-                        }
-                    }
-                }
-
-                foreach (var proteinGroup in proteinGroups)
-                {
-                    List<IBioPolymerWithSetMods> pepsToRemove = new();
-                    foreach (var peptide in proteinGroup.AllPeptides)
-                    {
-                        // build PSM list for scoring
-                        if (peptideToPsmMatching.TryGetValue(peptide, out HashSet<SpectralMatch> psms))
-                            proteinGroup.AllPsmsBelowOnePercentFDR.UnionWith(psms);
+                        if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<SpectralMatch> psmsForThisPeptide))
+                            peptideToPsmMatching.Add(pepWithSetMods, new HashSet<SpectralMatch> { psm });
                         else
-                            pepsToRemove.Add(peptide);
+                            psmsForThisPeptide.Add(psm);
                     }
-
-                    proteinGroup.AllPeptides.ExceptWith(pepsToRemove);
-                    proteinGroup.UniquePeptides.ExceptWith(pepsToRemove);
                 }
             }
-            finally            
-            {
-                foreach (var kvp in peptideToPsmMatching)
-                    SpectralMatchHashSetPool.Return(kvp.Value);
-            }
 
+            foreach (var proteinGroup in proteinGroups)
+            {
+                List<IBioPolymerWithSetMods> pepsToRemove = new();
+                foreach (var peptide in proteinGroup.AllPeptides)
+                {
+                    // build PSM list for scoring
+                    if (peptideToPsmMatching.TryGetValue(peptide, out HashSet<SpectralMatch> psms))
+                        proteinGroup.AllPsmsBelowOnePercentFDR.UnionWith(psms);
+                    else
+                        pepsToRemove.Add(peptide);
+                }
+
+                proteinGroup.AllPeptides.ExceptWith(pepsToRemove);
+                proteinGroup.UniquePeptides.ExceptWith(pepsToRemove);
+            }
 
             // score the group
             foreach (var proteinGroup in proteinGroups)
@@ -179,43 +162,32 @@ namespace EngineLayer
                 // merge protein groups that are indistinguishable after scoring
                 var pg = proteinGroups.OrderByDescending(p => p.ProteinGroupScore).ToList();
 
-                // NOTE: The inner merge loop has a known behavioral quirk — once pg[i] is merged
-                // with another group its AllPeptides set grows, so later comparisons within the
-                // same score-tied cluster compare against the already-enlarged group rather than
-                // the original. The result therefore depends on sort order within tied clusters.
-                // Correcting this requires carefully designed regression tests for multi-protein
-                // merges; it is left as a separate, targeted patch.
-
-                // Previously the inner body called pg.Where(score == ...).ToList() on every
-                // iteration of i, rescanning all N groups for each index within a score-tied
-                // cluster — O(N) per i, giving O(N * sum_of_cluster_sizes) in the worst case.
-                // Now we locate each cluster in one forward scan — O(K) — and compute it once.
+                // Within each run of groups that tie on score, every set of groups with the same peptides is merged into one.
                 int idx = 0;
                 while (idx < pg.Count - 1)
                 {
                     double score = pg[idx].ProteinGroupScore;
                     if (score != 0 && score == pg[idx + 1].ProteinGroupScore)
                     {
-                        // find the full extent of this score-tied cluster — one O(K) forward scan
+                        // find the end of this score-tied run
                         int clusterEnd = idx + 1;
                         while (clusterEnd < pg.Count && pg[clusterEnd].ProteinGroupScore == score)
                             clusterEnd++;
 
-                        // shallow copy of the same object references; mutations to cluster[i]
-                        // (via MergeProteinGroupWith) are visible through pg[] as well
                         var cluster = pg.GetRange(idx, clusterEnd - idx);
+
+                        // a merge only joins groups with equal sequence sets, so each group's set is fixed for the whole run
+                        var sequences = cluster.Select(g => new HashSet<string>(g.AllPeptides.Select(x => x.FullSequence + x.DigestionParams.DigestionAgent))).ToList();
 
                         // check to make sure they have the same peptides, then merge them
                         for (int i = 0; i < cluster.Count; i++)
                         {
                             if (cluster[i].ProteinGroupScore == 0) continue; // already merged into another group
-                            var seqs2 = new HashSet<string>(cluster[i].AllPeptides.Select(x => x.FullSequence + x.DigestionParams.DigestionAgent));
                             for (int j = 0; j < cluster.Count; j++)
                             {
                                 if (i == j) continue;
                                 if (cluster[j].ProteinGroupScore == 0) continue; // already merged, skip to avoid reverse-merge zeroing the keeper
-                                var seqs1 = new HashSet<string>(cluster[j].AllPeptides.Select(x => x.FullSequence + x.DigestionParams.DigestionAgent));
-                                if (seqs1.SetEquals(seqs2))
+                                if (sequences[j].SetEquals(sequences[i]))
                                     cluster[i].MergeProteinGroupWith(cluster[j]);
                             }
                         }

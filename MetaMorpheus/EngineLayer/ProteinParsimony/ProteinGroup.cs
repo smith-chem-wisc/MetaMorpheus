@@ -12,6 +12,7 @@ using Omics.BioPolymerGroup;
 using Omics.SpectralMatch;
 using Transcriptomics.Digestion;
 using MzLibUtil;
+using System;
 using System.Buffers;
 
 namespace EngineLayer
@@ -521,7 +522,7 @@ namespace EngineLayer
                 //create a hash set for storing covered one-based residue numbers of protein
                 int proteinLength = protein.BaseSequence.Length;
                 char[] fragmentCoverageArray = ArrayPool<char>.Shared.Rent(proteinLength);
-                protein.BaseSequence.ToLowerInvariant().CopyTo(0, fragmentCoverageArray, 0, proteinLength);
+                protein.BaseSequence.AsSpan().ToLowerInvariant(fragmentCoverageArray);
 
                 //loop through PSMs
                 foreach (SpectralMatch psm in AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>()
@@ -542,12 +543,12 @@ namespace EngineLayer
                         foreach (var position in psm.FragmentCoveragePositionInPeptide)
                         {
                             int proteinPosition = position + pwsm.OneBasedStartResidue - 1;
-                            fragmentCoverageArray[proteinPosition - 1] = char.ToUpper(fragmentCoverageArray[proteinPosition - 1]);
+                            fragmentCoverageArray[proteinPosition - 1] = char.ToUpperInvariant(fragmentCoverageArray[proteinPosition - 1]);
                         }
                     }
                 }
                 FragmentSequenceCoverageDisplayList.Add(new string(fragmentCoverageArray, 0, proteinLength));
-                ArrayPool<char>.Shared.Return(fragmentCoverageArray, true);
+                ArrayPool<char>.Shared.Return(fragmentCoverageArray);
             }
 
             HashSet<int> coveredOneBasedResidues = new HashSet<int>();
@@ -563,7 +564,7 @@ namespace EngineLayer
 
                 int proteinLength = protein.BaseSequence.Length;
                 char[] coverageArray = ArrayPool<char>.Shared.Rent(proteinLength);
-                protein.BaseSequence.ToLowerInvariant().CopyTo(0, coverageArray, 0, proteinLength);
+                protein.BaseSequence.AsSpan().ToLowerInvariant(coverageArray);
 
                 // get residue numbers of each peptide in the protein and identify them as observed if the sequence is unambiguous
                 foreach (var peptide in proteinsWithUnambigSeqPsms[protein])
@@ -572,7 +573,7 @@ namespace EngineLayer
                     {
                         if (coveredOneBasedResidues.Add(i))
                         {
-                            coverageArray[i - 1] = char.ToUpper(coverageArray[i - 1]);
+                            coverageArray[i - 1] = char.ToUpperInvariant(coverageArray[i - 1]);
                             coveredResidues++;
                         }
                     }
@@ -584,7 +585,7 @@ namespace EngineLayer
                 // add the coverage display
                 string sequenceCoverageDisplay = new string(coverageArray, 0, proteinLength);
                 SequenceCoverageDisplayList.Add(sequenceCoverageDisplay);
-                ArrayPool<char>.Shared.Return(coverageArray, true);
+                ArrayPool<char>.Shared.Return(coverageArray);
 
                 // put mods in the sequence coverage display
                 // get mods to display in sequence (only unambiguously identified mods)
