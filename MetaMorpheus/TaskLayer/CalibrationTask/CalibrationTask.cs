@@ -108,7 +108,7 @@ namespace TaskLayer
                 FileSpecificParameters fileSpecificParams = fileSettingsList[spectraFileIndex] == null
                     ? new()
                     : fileSettingsList[spectraFileIndex].Clone();
-                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParams);
+                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParams, originalUncalibratedFilePath);
 
                 // load the file. Calibration works on the unfiltered spectra: this used to read the file filtered through the
                 // file manager and then read every scan again, unfiltered, into the same object, which is the state it kept.
@@ -207,6 +207,7 @@ namespace TaskLayer
 
             // re-write experimental design (if it has been defined) with new calibrated file names
             UpdateExperimentalDesignFile(currentRawFileList, outputFolder);
+            UpdateTmtDesignFile(currentRawFileList, outputFolder, CalibSuffix, "calibrated");
 
             // finished calibrating all files for the task
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));

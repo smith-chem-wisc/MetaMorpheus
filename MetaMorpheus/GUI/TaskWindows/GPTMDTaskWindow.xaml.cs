@@ -126,6 +126,7 @@ namespace MetaMorpheusGUI
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             WriteDecoysCheckBox.IsChecked = task.GptmdParameters.WriteDecoys;
+            AlternativeSitesForDatabaseModsCheckBox.IsChecked = task.GptmdParameters.AddAlternativeSitesForDatabaseMods;
 
             TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
@@ -562,18 +563,11 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                // this window has no semi-specific control, so keep the loaded task's search mode rather than resetting it to Full
-                var (searchModeType, fragmentationTerminus) = TaskWindowSearchMode.Preserve(TheTask.CommonParameters.DigestionParams);
-                digestionParamsToSave = new DigestionParams(
-                    protease: protease.Name,
-                    maxMissedCleavages: maxMissedCleavages,
-                    minPeptideLength: minPeptideLength,
-                    maxPeptideLength: maxPeptideLength,
-                    maxModificationIsoforms: maxModificationIsoforms,
+                // pass only what this window shows; the search mode and every other digestion setting are kept from the loaded task
+                digestionParamsToSave = TaskWindowDigestionParams.ForSave(TheTask.CommonParameters.DigestionParams,
+                    protease.Name, maxMissedCleavages, minPeptideLength, maxPeptideLength, maxModificationIsoforms,
                     maxModsForPeptides: maxModsPerPeptide,
-                    initiatorMethionineBehavior: initiatorMethionineBehavior,
-                    searchModeType: searchModeType,
-                    fragmentationTerminus: fragmentationTerminus);
+                    initiatorMethionineBehavior: initiatorMethionineBehavior);
             }
 
             CommonParameters commonParamsToSave = new CommonParameters(
@@ -608,6 +602,7 @@ namespace MetaMorpheusGUI
             }
             TheTask.GptmdParameters.GptmdFilters = FilterOptions.Where(f => f.IsSelected).Select(f => f.Filter).ToList();
             TheTask.GptmdParameters.WriteDecoys = WriteDecoysCheckBox.IsChecked.Value;
+            TheTask.GptmdParameters.AddAlternativeSitesForDatabaseMods = AlternativeSitesForDatabaseModsCheckBox.IsChecked.Value;
             TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;

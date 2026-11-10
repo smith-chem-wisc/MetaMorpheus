@@ -48,7 +48,7 @@ namespace EngineLayer.FdrAnalysis
                 new []
                 { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", 
                     "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian","MissedCleavagesCount",
-                    "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount"
+                    "Ambiguity", "LongestFragmentIonSeries", "Charge", "NotchlessAbsoluteDeltaMass"
                 }
             }
         }.ToImmutableDictionary();
@@ -89,6 +89,8 @@ namespace EngineLayer.FdrAnalysis
             { "PrecursorFractionalIntensity", 1 },
             { "InternalIonCount", 1},
             { "PrecursorDeconvolutionScore", 1 },
+            { "Charge", 1 },
+            { "NotchlessAbsoluteDeltaMass", -1 },
             }.ToImmutableDictionary();
 
         /// <summary>
@@ -197,9 +199,14 @@ namespace EngineLayer.FdrAnalysis
         public float HasSpectralAngle { get; set; }
 
         /// <summary>
-        /// 1 when the retention-time predictor produced a value for this peptidoform, 0 when it could not.
-        /// Chronologer declines a sequence longer than 50 residues, shorter than 7, or carrying a non-canonical
-        /// amino acid such as selenocysteine; any predictor can also fail outright.
+        /// 1 when <see cref="HydrophobicityZScore"/> was actually computed for this peptidoform, 0 when it is only the
+        /// saturated maximum standing in for a missing value. That happens in three cases:
+        /// - the retention-time predictor could not produce a value. Chronologer declines a sequence longer than 50
+        ///   residues, shorter than 7, or carrying a non-canonical amino acid such as selenocysteine; any predictor
+        ///   can also fail outright.
+        /// - there is no reference distribution for this file and retention-time bin (for LC or CZE), so there is
+        ///   nothing to compare the prediction against.
+        /// - the computed z-score is NaN or infinite (a NaN prediction or bin mean, or a zero or NaN deviation).
         ///
         /// Companion to <see cref="HydrophobicityZScore"/> in the same way <see cref="HasSpectralAngle"/> is the
         /// companion to <see cref="SpectralAngle"/>: it lets the model distinguish "predicted, and disagrees with
@@ -226,5 +233,20 @@ namespace EngineLayer.FdrAnalysis
 
         [LoadColumn(29)]
         public float PrecursorDeconvolutionScore { get; set; }
+
+        /// <summary>
+        /// Absolute precursor charge.
+        /// </summary>
+        [LoadColumn(31)]
+        public float Charge { get; set; }
+
+        /// <summary>
+        /// Absolute precursor mass error in tenths of a ppm after removing the nearest whole number of 13C
+        /// spacings (the notch), capped at 100. Separates a candidate one isotope off from one that differs
+        /// by a near-isobaric substitution (RNA C/U, 0.984 Da), which the notch alone cannot.
+        /// </summary>
+        [LoadColumn(32)]
+        public float NotchlessAbsoluteDeltaMass { get; set; }
+
     }
 }

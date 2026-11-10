@@ -13,7 +13,6 @@ using Omics;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
-using IsobaricMassTag = EngineLayer.IsobaricMassTag;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Readers;
@@ -23,6 +22,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Chemistry;
 
@@ -157,6 +157,11 @@ namespace TaskLayer
             SearchParameters.MassDiffAcceptorType = LegacyMostAbundantEquivalent;
         }
 
+        // Compiled optimized from the start. This method runs once per search, so the runtime would otherwise run it as
+        // unoptimized code, which keeps every local alive until it is overwritten: each searched file's scans, matches and
+        // search engine then stayed reachable through the rest of the run, about 0.6 GB per file on a TMT11 .raw file. It
+        // left that code only when one of its own loops ran hot, which the reporter ion loop used to do.
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId,
             FileSpecificParameters[] fileSettingsList)
         {
@@ -170,12 +175,12 @@ namespace TaskLayer
             WarnAboutSdrfGaps(currentRawFileList);
 
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
-            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
+            var fileSpecificCommonParams = fileSettingsList.Select((b, i) => SetAllFileSpecificCommonParams(CommonParameters, b, currentRawFileList[i]));
 
             // start loading first spectra file in the background
             string fileToLoad = currentRawFileList[0];
             var instrumentModelsByFile = new Dictionary<string, CvParam>(StringComparer.OrdinalIgnoreCase);
-            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(fileToLoad, SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
+            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(fileToLoad, SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0], fileToLoad)));
             nextFileLoadingTask.Start();
 
             if (SearchParameters.DoLabelFreeQuantification)
@@ -235,6 +240,8 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // start loading proteins in the background
+            // one view of each database for every index key this task builds; see SnapshotDatabases
+            List<FileInfo> databasesAsLoaded = IndexingEngine.SnapshotDatabases(dbFilenameList);
             var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, SearchParameters.DecoyType, SearchParameters.SearchTarget, localizeableModificationTypes, SearchParameters.TCAmbiguity, SearchParameters.WriteTargetDecoyFasta, OutputFolder);
             var proteinLoadingTask = dbLoader.RunAsync();
             List<IBioPolymer> bioPolymerList = null!;
@@ -298,7 +305,7 @@ namespace TaskLayer
                 // mark the file as in-progress
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
-                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex], origDataFile);
 
                 // The theory side is governed by SearchParameters.MassDiffAcceptorType, while the observed precursor
                 // mass comes from PrecursorMassMatchMode. Keep them aligned so a most-abundant acceptor actually
@@ -343,7 +350,7 @@ namespace TaskLayer
                 if (origDataFile != currentRawFileList.Last())
                 {
                     int nextFileIndex = spectraFileIndex + 1;
-                    nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(currentRawFileList[nextFileIndex], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[nextFileIndex])));
+                    nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(currentRawFileList[nextFileIndex], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[nextFileIndex], currentRawFileList[nextFileIndex])));
                     nextFileLoadingTask.Start();
                 }
 
@@ -378,16 +385,18 @@ namespace TaskLayer
 
                 if (SearchParameters.DoMultiplexQuantification)
                 {
-                    IsobaricMassTag massTag = IsobaricMassTag.GetIsobaricMassTag(SearchParameters.MultiplexModId);
-                    if (massTag == null) // Should probably warn/update results if null
+                    if (!IsobaricMassTag.TryGetIsobaricMassTag(SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var massTag))
                     {
                         throw new MetaMorpheusException("Could not find isobaric mass tag with the name " + SearchParameters.MultiplexModId);
                     }
 
-                    foreach (var scan in arrayOfMs2ScansSortedByMass)
-                    {
-                        scan.SetIsobaricMassTagReporterIonIntensities(massTag);
-                    }
+                    // Reporter ions come from the scans as the file stores them, read again here. The loaded copy is
+                    // trimmed (MS2 when TrimMsMsPeaks is on, MS3 always) and a LowCID search bins its MS2 spectra in
+                    // place; either can remove a reporter ion, which would then be quantified as 0. Only the scans they
+                    // are read from are read again, one at a time where the file allows it, so that no second copy of the
+                    // whole file is held while the next one loads.
+                    MyFileManager.SetReporterIonIntensitiesFromStoredScans(origDataFile, myMsDataFile, arrayOfMs2ScansSortedByMass,
+                        massTag, combinedParams.MaxThreadsToUsePerFile);
                 }
 
                 // modern search
@@ -406,7 +415,7 @@ namespace TaskLayer
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
                             SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, indexParams, FileSpecificParameters,
-                            SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), SearchParameters.TCAmbiguity, new List<string> { taskId });
+                            SearchParameters.MaxFragmentSize, false, databasesAsLoaded, SearchParameters.TCAmbiguity, new List<string> { taskId });
                         FragmentIndex fragmentIndex = null;
                         List<int>[] precursorIndex = null;
 
@@ -503,7 +512,7 @@ namespace TaskLayer
                             Status("Getting fragment dictionary...", new List<string> { taskId });
                             var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
                                 SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, indexParams, FileSpecificParameters,
-                                SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), SearchParameters.TCAmbiguity, new List<string> { taskId });
+                                SearchParameters.MaxFragmentSize, true, databasesAsLoaded, SearchParameters.TCAmbiguity, new List<string> { taskId });
                             lock (indexLock)
                             {
                                 GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
@@ -716,13 +725,45 @@ namespace TaskLayer
             // early (#2817's isobaric one did) would otherwise drop it for every TMT search.
             WarnAboutProteomeXchangeAccession();
 
-            // This check only warns, so it must never be what stops a search: a design another
+            // These checks only warn, so they must never be what stops a search: a design another
             // program holds open (Excel locks what it opens) is reported, not thrown.
-            string designPath = Path.Combine(
-                Path.GetDirectoryName(currentRawFileList.First()) ?? string.Empty,
-                GlobalVariables.ExperimentalDesignFileName);
+            string designDirectory = Path.GetDirectoryName(currentRawFileList.First()) ?? string.Empty;
 
-            if (!File.Exists(designPath))
+            // An isobaric search's samples live in TmtDesign.txt, one per channel, and the SDRF is
+            // written one row per channel from it. ExperimentalDesign.tsv is not consulted, so its
+            // absence is not a gap worth naming. No early return: a check added below this branch
+            // has to run for isobaric searches too (#2817 review: one did not).
+            var channelFiles = new Dictionary<string, TmtFileInfo>(StringComparer.OrdinalIgnoreCase);
+            IsobaricMassTagType? tagType = null;
+            if (SearchParameters.DoMultiplexQuantification)
+                channelFiles = WarnAboutIsobaricSdrfGaps(designDirectory, currentRawFileList, out tagType);
+            else
+                WarnAboutLabelFreeSdrfGaps(designDirectory, currentRawFileList);
+
+            // An input SDRF governs label-free and isobaric searches alike (sdrf D50). After the branch, because which of
+            // its rows are copied depends on which files get channel rows.
+            if (!string.IsNullOrWhiteSpace(SearchParameters.InputSdrfPath))
+                WarnAboutInputSdrf(currentRawFileList, channelFiles, tagType);
+        }
+
+        /// <summary>
+        /// The ExperimentalDesign.tsv and SILAC half of <see cref="WarnAboutSdrfGaps"/>, for every search
+        /// that is not isobaric.
+        /// </summary>
+        private void WarnAboutLabelFreeSdrfGaps(string designDirectory, List<string> currentRawFileList)
+        {
+            string designPath = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
+            bool sampleColumnsCopied = !string.IsNullOrWhiteSpace(SearchParameters.InputSdrfPath);
+
+            if (!File.Exists(designPath) && sampleColumnsCopied)
+            {
+                // The input SDRF gives the sample columns, conditions and biological replicates included; the design
+                // would give only the technical replicate and fraction (QuantProject 037 B4).
+                Warn("SDRF output is on with an input SDRF, but there is no " + GlobalVariables.ExperimentalDesignFileName +
+                     " beside the spectra files (" + designPath + "). The sample columns will be copied from the input " +
+                     "SDRF; technical replicate and fraction will say 'not available'.");
+            }
+            else if (!File.Exists(designPath))
             {
                 Warn("SDRF output is on, but there is no " + GlobalVariables.ExperimentalDesignFileName +
                      " beside the spectra files (" + designPath + "). The search parameters will be " +
@@ -736,29 +777,165 @@ namespace TaskLayer
                     ExperimentalDesign.ReadExperimentalDesign(designPath, currentRawFileList, out var designErrors);
                     if (designErrors.Any())
                         Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
-                             " cannot be used as it stands, so the SDRF will describe the search only: " +
+                             " cannot be used as it stands, so the SDRF will " +
+                             (sampleColumnsCopied ? "give no technical replicates or fractions: " : "describe the search only: ") +
                              string.Join("; ", designErrors));
                 }
                 catch (Exception e) when (e is IOException or UnauthorizedAccessException)
                 {
                     Warn("SDRF output is on, but " + GlobalVariables.ExperimentalDesignFileName +
                          " could not be read before the search (" + e.Message + "). If it is still " +
-                         "unreadable when the SDRF is written, the SDRF will describe the search only.");
+                         "unreadable when the SDRF is written, the SDRF will " +
+                         (sampleColumnsCopied ? "give no technical replicates or fractions." : "describe the search only."));
                 }
             }
 
-            // Labelled runs do not yet express comment[label]: SDRF wants one row per sample per
-            // channel. SILAC has no channel-to-sample mapping at all; isobaric runs have one in
-            // TmtDesign.txt, but the SDRF writer does not read it yet. Guessing would invent an
+            // SILAC cannot express comment[label]: SDRF wants one row per sample per channel, and
+            // MetaMorpheus has no channel-to-sample mapping for SILAC. Guessing would invent an
             // experimental design.
             // Turnover labels are copied into SilacLabels only further down RunSpecific, after this check.
-            if (SearchParameters.DoMultiplexQuantification
-                || SearchParameters.SilacLabels?.Any() == true
+            if (SearchParameters.SilacLabels?.Any() == true
                 || SearchParameters.StartTurnoverLabel is not null
                 || SearchParameters.EndTurnoverLabel is not null)
-                Warn("SDRF output on a labelled search: comment[label] is not filled in yet, because " +
-                     "the SDRF is written one row per file, not one row per channel. Every other column " +
+                Warn("SDRF output on a SILAC search: comment[label] is not filled in, because " +
+                     "MetaMorpheus has no map of which sample carries which label. Every other column " +
                      "will be written.");
+        }
+
+        /// <summary>
+        /// The isobaric half of <see cref="WarnAboutSdrfGaps"/>. Without a usable TmtDesign.txt the
+        /// SDRF falls back to one row per file with no channel or sample, which is worth knowing
+        /// before a long TMT search rather than after it. Returns the files the SDRF writes channel rows for, keyed by
+        /// full path as the writer keys them, with the tag type; every other file is described once.
+        /// </summary>
+        private Dictionary<string, TmtFileInfo> WarnAboutIsobaricSdrfGaps(string designDirectory,
+            List<string> currentRawFileList, out IsobaricMassTagType? tagType)
+        {
+            string tmtDesignPath = Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName);
+            var channelFiles = new Dictionary<string, TmtFileInfo>(StringComparer.OrdinalIgnoreCase);
+            tagType = null;
+
+            // Not with an input SDRF: its source names are copied, not built from the design's sample names, so no
+            // name is scoped to its plex or channel and no made-up name is numbered. And a file described once then
+            // takes one input row, so an input written a row per channel is refused (QuantProject 067 R1), which
+            // WarnAboutInputSdrf names file by file.
+            bool sourceNamesCopied = !string.IsNullOrWhiteSpace(SearchParameters.InputSdrfPath);
+            string describedOnce = sourceNamesCopied
+                ? "the SDRF can describe each file only once, by one row of the input SDRF; an input with a row per " +
+                  "channel is refused, and no " + PostSearchAnalysisTask.SdrfFileName + " is then written"
+                : "the SDRF will describe each file once, without its channels or samples";
+
+            if (!File.Exists(tmtDesignPath))
+            {
+                Warn("SDRF output is on for an isobaric search, but there is no " +
+                     GlobalVariables.TmtExperimentalDesignFileName + " beside the spectra files (" + tmtDesignPath +
+                     "), so " + describedOnce + ".");
+                return channelFiles;
+            }
+
+            var files = TmtExperimentalDesign.Read(tmtDesignPath, currentRawFileList, out var designErrors);
+            if (designErrors.Any())
+            {
+                Warn("SDRF output is on, but " + GlobalVariables.TmtExperimentalDesignFileName +
+                     " cannot be used as it stands, so " + describedOnce + ": " + string.Join("; ", designErrors));
+                return channelFiles;
+            }
+
+            if (!IsobaricMassTag.TryGetTagType(SearchParameters.MultiplexModId, out var type))
+            {
+                Warn("SDRF output is on, but the multiplex label '" + SearchParameters.MultiplexModId + "' is not " +
+                     "an isobaric tag MetaMorpheus recognises, so " + describedOnce + ".");
+                return channelFiles;
+            }
+            tagType = type;
+
+            // The gate the SDRF writer applies file by file: no PRIDE channel terms (DiLeu), a plex with no
+            // annotated channels, or a channel off the searched plex.
+            var reasons = files
+                .Select(f => PostSearchAnalysisTask.ChannelRowsUnusableReason(f, type))
+                .Where(r => r is not null)
+                .Distinct()
+                .ToList();
+            if (reasons.Any())
+                Warn("SDRF output is on, but " + (sourceNamesCopied
+                         ? "the SDRF can describe these files only once, by one row of the input SDRF each"
+                         : "the SDRF will describe these files once, without their channels or samples") +
+                     ": " + string.Join("; ", reasons) + ".");
+
+            var usableFiles = files
+                .Where(f => PostSearchAnalysisTask.ChannelRowsUnusableReason(f, type) is null)
+                .ToList();
+            foreach (var file in usableFiles)
+                channelFiles[Path.GetFullPath(file.FullFilePathWithExtension)] = file;
+
+            var reusedSampleNames = PostSearchAnalysisTask.SampleNamesReusedForDifferentSamples(usableFiles);
+            if (reusedSampleNames.Any() && !sourceNamesCopied)
+                Warn("SDRF output is on. " + PostSearchAnalysisTask.ReusedSampleNamesWarning(reusedSampleNames,
+                    PostSearchAnalysisTask.SampleNamesRepeatedWithinAPlex(usableFiles)));
+
+            PostSearchAnalysisTask.IsobaricSourceNames(usableFiles,
+                files.Except(usableFiles).Select(f => f.FullFilePathWithExtension).ToList(), out var numbered);
+            if (numbered.Any() && !sourceNamesCopied)
+                Warn("SDRF output is on. " + PostSearchAnalysisTask.NumberedSourceNamesWarning(numbered));
+
+            return channelFiles;
+        }
+
+        /// <summary>
+        /// The input SDRF half of <see cref="WarnAboutSdrfGaps"/> (sdrf D50). The writer copies each searched file's
+        /// sample columns from the input SDRF, and writes no SDRF when it cannot: the input is unreadable, a searched
+        /// file has no row in it, a file described once has several (an input with a row per channel, when the channels
+        /// cannot be written), a channel has none or several, or a row to be copied has a blank sample fact, which
+        /// mzLib's builder refuses. Each is named here, cell by cell, while it can still be fixed (QuantProject 037 B4,
+        /// 054 B7, 067 R1). Only the rows the writer will copy are checked for blanks (067 R3): those of the searched
+        /// files, and of those only the annotated channels' (<paramref name="channelFiles"/>).
+        /// </summary>
+        private void WarnAboutInputSdrf(List<string> currentRawFileList,
+            IReadOnlyDictionary<string, TmtFileInfo> channelFiles, IsobaricMassTagType? tagType)
+        {
+            string path = SearchParameters.InputSdrfPath.Trim();
+            string consequence = "so no " + PostSearchAnalysisTask.SdrfFileName + " will be written";
+
+            SdrfSearchScoping scope;
+            List<string> problems;
+            List<string> blanks;
+            try
+            {
+                scope = SdrfSearchScope.Restrict(PostSearchAnalysisTask.OpenInputSdrf(path), currentRawFileList,
+                    PostSearchAnalysisTask.AcquiredFileNames(currentRawFileList, AcquiredSpectraFiles));
+                // The writer's own rule, so this names what the writer will refuse, in its words.
+                problems = PostSearchAnalysisTask.InputSdrfJoinProblems(scope);
+                blanks = PostSearchAnalysisTask.InputRowsToCopy(scope, currentRawFileList, channelFiles, tagType, problems)
+                    .SelectMany(row => BlankSampleFacts(scope.Document, row))
+                    .ToList();
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or MzLibException or ArgumentException)
+            {
+                Warn($"SDRF output is on, but the input SDRF {path} cannot be read ({e.Message}), {consequence}.");
+                return;
+            }
+
+            if (problems.Any())
+                Warn($"SDRF output is on, but the input SDRF {path} cannot describe this search, {consequence}: " +
+                     string.Join("; ", problems) + ".");
+
+            if (blanks.Any())
+                Warn($"SDRF output is on, but these sample facts are blank in the input SDRF {path}, {consequence} until " +
+                     "they are filled with a value or a reserved word such as 'not available' (a blank comment[...] is " +
+                     "written blank): " + string.Join("; ", blanks) + ".");
+        }
+
+        /// <summary>
+        /// The blank sample facts of one input row, each as <c>file ('source name'): column</c>. The copied cells are
+        /// <see cref="SdrfSampleCopy"/>'s to choose; of those, mzLib's builder refuses a blank in any but a
+        /// comment[...] column, which it writes blank.
+        /// </summary>
+        private static IEnumerable<string> BlankSampleFacts(SdrfDocument scoped, SdrfRow row)
+        {
+            var copy = SdrfSampleCopy.FromRow(scoped, row);
+            return copy.Cells
+                .Where(c => string.IsNullOrWhiteSpace(c.Value) && !c.Key.StartsWith("comment[", StringComparison.Ordinal))
+                .Select(c => $"{row["comment[searched data file]"]} ('{copy.SourceName}'): {c.Key}");
         }
 
         /// <summary>

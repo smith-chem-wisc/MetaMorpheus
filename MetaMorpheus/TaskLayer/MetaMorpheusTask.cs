@@ -11,6 +11,7 @@ using Omics.Modifications;
 using Omics.SpectrumMatch;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using Readers.SpectralLibrary;
 using SpectralAveraging;
 using System;
@@ -30,8 +31,9 @@ using Transcriptomics;
 using Transcriptomics.Digestion;
 using EngineLayer.Util;
 using EngineLayer.DIA;
-using EngineLayer.SpectrumMatch;
 using Omics.Fragmentation;
+using EngineLayer.Deconvolution;
+using TaskLayer.Util;
 
 namespace TaskLayer
 {
@@ -65,6 +67,27 @@ namespace TaskLayer
             || (digestionParams.SearchModeType == CleavageSpecificity.Semi && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C);
 
         /// <summary>
+        /// Whether these settings make digestion return seed oligos rather than oligos: the rnase singleN or singleC,
+        /// SearchModeType None with any terminus, or Semi (from SearchModeType or the rnase's own specificity) with a single
+        /// terminus.
+        /// </summary>
+        /// <remarks>
+        /// Since mzLib 1.0.592 (#1318) nucleic acid digestion follows <c>SearchModeType</c> as protein digestion does.
+        /// With None, <c>RnaDigestionParams</c> swaps the rnase for singleN (terminus N or FivePrime) or singleC and keeps the
+        /// named one as <c>SpecificRnase</c>, so the rnase's specificity covers None and a named singleN or singleC alike.
+        /// Semi with FivePrime or ThreePrime gives the longest oligo from each cleavage site, fixed at that end. mzLib's
+        /// <c>Rnase.GetUnmodifiedOligos</c> takes Semi from SearchModeType or, failing that, from the rnase, so an rnase
+        /// defined as semi (rnase_custom.tsv allows it) does the same under SearchModeType Full. Each leaves the other end
+        /// to a search engine that decides it from the precursor mass. Semi with Both asks for semi-specific oligos, not
+        /// seeds; mzLib 1.0.595 does not digest it for nucleic acids yet, and this rule does not refuse it.
+        /// </remarks>
+        public static bool AsksForSeeds(RnaDigestionParams digestionParams) =>
+            digestionParams.Rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
+            || ((digestionParams.SearchModeType == CleavageSpecificity.Semi || digestionParams.Rnase.CleavageSpecificity == CleavageSpecificity.Semi)
+                && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C
+                    or FragmentationTerminus.FivePrime or FragmentationTerminus.ThreePrime);
+
+        /// <summary>
         /// Why this task cannot run with its digestion settings, or null when it can. The GUI's Run button and the command
         /// line check it for every task before a run starts; the task itself assumes its settings are valid.
         /// </summary>
@@ -78,15 +101,41 @@ namespace TaskLayer
         /// <param name="taskName">The name the user knows the task by, included in the message when given.</param>
         public string GetSeedDigestionRefusal(string taskName = null)
         {
-            if (CommonParameters?.DigestionParams is not DigestionParams digestionParams // RNA digestion has no protein seed request
-                || TaskType == MyTask.Average // averaging does not digest, so its digestion settings are never used
-                || this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific } // the non-specific search engine trims seeds
-                || !AsksForSeeds(digestionParams))
+            if (TaskType == MyTask.Average // averaging does not digest, so its digestion settings are never used
+                || this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific }) // the non-specific search engine trims seeds
             {
                 return null;
             }
 
             string which = taskName == null ? "This task" : $"Task \"{taskName}\"";
+            IDigestionParams digestion = CommonParameters?.DigestionParams; // null CommonParameters: nothing to check
+            if (digestion is RnaDigestionParams rnaDigestionParams)
+            {
+                if (!AsksForSeeds(rnaDigestionParams))
+                {
+                    return null;
+                }
+
+                // Name what AsksForSeeds decided on. Rnase, not SpecificRnase: a task file saved before mzLib 1.0.592 has no
+                // SpecificRnase, so it reads back as top-down there while Rnase is singleN or singleC.
+                Rnase rnase = rnaDigestionParams.Rnase;
+                string terminus = $"FragmentationTerminus {rnaDigestionParams.FragmentationTerminus}";
+                string setting = rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
+                    ? rnaDigestionParams.SearchModeType == CleavageSpecificity.None
+                        ? "has SearchModeType None (non-specific)"
+                        : $"uses the rnase {rnase.Name}"
+                    : rnaDigestionParams.SearchModeType == CleavageSpecificity.Semi
+                        ? $"has SearchModeType Semi with {terminus}"
+                        : $"uses the semi-specific rnase {rnase.Name} with {terminus}";
+                return $"Cannot proceed. {which} {setting}, which gives seed oligos that only a non-specific search could use, " +
+                       "and non-specific search is not yet implemented for nucleic acids. Choose a fully specific rnase with SearchModeType Full.";
+            }
+
+            if (digestion is not DigestionParams digestionParams || !AsksForSeeds(digestionParams))
+            {
+                return null;
+            }
+
             return digestionParams.SearchModeType == CleavageSpecificity.None
                 ? $"Cannot proceed. {which} has SearchModeType None (non-specific), which gives seed peptides that only the non-specific search can use. " +
                   "Use a Search task with the non-specific search type, or choose fully or semi-specific digestion."
@@ -239,10 +288,6 @@ namespace TaskLayer
                         ? $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};MaxValue"
                         : $"{range.Minimum.ToString("R", CultureInfo.InvariantCulture)};{range.Maximum.ToString("R", CultureInfo.InvariantCulture)}")
                     .FromToml(tomlString => ParseRetentionTimeRange(tomlString.Value))))
-            .ConfigureType<Protease>(type => type
-                .WithConversionFor<TomlString>(convert => convert
-                    .ToToml(custom => custom.ToString())
-                    .FromToml(tmlString => ProteaseDictionary.Dictionary[tmlString.Value])))
             .ConfigureType<List<string>>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => string.Join("\t", custom))
@@ -264,19 +309,9 @@ namespace TaskLayer
                         tmlTable.ContainsKey("Protease")
                             ? ReadProteinDigestionParams(tmlTable)
                             : tmlTable.Get<RnaDigestionParams>())))
-            .ConfigureType<DigestionParams>(type => type
-                .IgnoreProperty(p => p.DigestionAgent)
-                .IgnoreProperty(p => p.SpecificDigestionAgent)
-                .IgnoreProperty(p => p.MaxMods)
-                .IgnoreProperty(p => p.MaxLength)
-                .IgnoreProperty(p => p.MinLength))
-            .ConfigureType<RnaDigestionParams>(type => type
-                .IgnoreProperty(p => p.DigestionAgent)
-                .IgnoreProperty(p => p.SpecificDigestionAgent))
-            .ConfigureType<Rnase>(type => type
-                .WithConversionFor<TomlString>(convert => convert
-                    .ToToml(custom => custom.Name)
-                    .FromToml(tmlString => RnaseDictionary.Dictionary[tmlString.Value])))
+            // Protease, Rnase, DigestionParams and RnaDigestionParams. Defined in EngineLayer, because the index
+            // cache key writes digestion parameters with the same configuration; see DigestionTomlSettings.
+            .ConfigureDigestionTypes()
             // Switch on DeconvolutionParameters
             .ConfigureType<DeconvolutionParameters>(type => type
                 .WithConversionFor<TomlTable>(c => c
@@ -285,6 +320,9 @@ namespace TaskLayer
                         "ClassicDeconvolution" => tmlTable.Get<ClassicDeconvolutionParameters>(),
                         "IsoDecDeconvolution" => tmlTable.Get<IsoDecDeconvolutionParameters>(),
                         "Multiple" => tmlTable.Get<MultipleDeconParameters>(),
+                        "FromFile" => tmlTable.ContainsKey("FeatureFileMap")
+                            ? tmlTable.Get<FeatureMappedFromFileDeconvolutionParameters>()
+                            : tmlTable.Get<FromFileDeconvolutionParameters>(),
                         _ => throw new MetaMorpheusException($"Toml Parsing Failure - Unknown Deconvolution Type: {tmlTable.Get<string>("DeconvolutionType")}")
                     })))
             // Ignore all properties that are not user settable, instantiate with defaults. If the toml differs, defaults will be overridden. 
@@ -311,6 +349,14 @@ namespace TaskLayer
                     Polarity.Positive,
                     new Averagine(),
                     1.0033548381)))
+            .ConfigureType<FromFileDeconvolutionParameters>(type => type
+                .CreateInstance(() => new FromFileDeconvolutionParameters(string.Empty, 1, 20))
+                .IgnoreProperty(p => p.Features))
+            .ConfigureType<FeatureMappedFromFileDeconvolutionParameters>(type => type
+                .CreateInstance(() => new FeatureMappedFromFileDeconvolutionParameters()))
+            .ConfigureType<SearchFeatureFileMap>(type => type
+                .WithConversionFor<TomlTable>(convert => convert
+                    .FromToml(table => SearchFeatureFileMap.FromString(Toml.WriteString(table)))))
 
             // Convert average residue models to simple strings instead of tables, Nett makes all objects tables by default
             // The base class AverageResidue is used for Toml Reading. The derived classes are used for toml writing. 
@@ -445,13 +491,7 @@ namespace TaskLayer
         public CommonParameters CommonParameters { get; set; }
         public List<(string FileName, CommonParameters Parameters)> FileSpecificParameters { get; set; }
 
-        public const string IndexFolderName = "DatabaseIndex";
-        public const string IndexEngineParamsFileName = "indexEngine.params";
-        public const string PeptideIndexFileName = "peptideIndex.ind";
-        public const string FragmentIndexFileName = "fragmentIndex.bin";
-        public const string SecondIndexEngineParamsFileName = "secondIndexEngine.params";
-        public const string SecondFragmentIndexFileName = "secondFragmentIndex.bin";
-        public const string PrecursorIndexFileName = "precursorIndex.bin";
+        #region Deconvolution
 
         public static List<Ms2ScanWithSpecificMass>[] _GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
@@ -502,7 +542,7 @@ namespace TaskLayer
                             if (commonParameters.DoPrecursorDeconvolution)
                             {
                                 foreach (IsotopicEnvelope envelope in ms2scan.GetIsolatedMassesAndCharges(
-                                    precursorSpectrum.MassSpectrum, commonParameters.PrecursorDeconvolutionParameters))
+                                    precursorSpectrum, commonParameters.PrecursorDeconvolutionParameters))
                                 {
                                     double? intensity = null;
                                     if (commonParameters.UseMostAbundantPrecursorIntensity)
@@ -759,18 +799,29 @@ namespace TaskLayer
             return parentScans;
         }
 
-        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
+        #endregion
+
+        /// <summary>
+        /// Sets all file-specific common parameters for a given raw file path, using the provided common parameters and file-specific parameters. Any non-null file specific parameter will override the value in the common params. 
+        /// </summary>
+        /// <param name="commonParams">The template to override</param>
+        /// <param name="fileSpecificParams">Specific parameters to override common paramms. Null when no file specific toml is next to the raw file.</param>
+        /// <param name="rawFilePath"></param>
+        /// <returns></returns>
+        /// <exception cref="MetaMorpheusException"></exception>
+        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams, string rawFilePath)
         {
-            if (fileSpecificParams == null)
+            // If no toml next to raw files and we are not doing file specific decon 
+            if (fileSpecificParams == null && commonParams.PrecursorDeconvolutionParameters is not FeatureMappedFromFileDeconvolutionParameters)
             {
                 return commonParams;
             }
 
             // set file-specific digestion parameters
-            int minPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinLength;
-            int maxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxLength;
-            int maxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
-            int maxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxMods;
+            int minPeptideLength = fileSpecificParams?.MinPeptideLength ?? commonParams.DigestionParams.MinLength;
+            int maxPeptideLength = fileSpecificParams?.MaxPeptideLength ?? commonParams.DigestionParams.MaxLength;
+            int maxMissedCleavages = fileSpecificParams?.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
+            int maxModsForPeptide = fileSpecificParams?.MaxModsForPeptide ?? commonParams.DigestionParams.MaxMods;
 
             // set file-specific digestion params based upon the type of digestion params
             IDigestionParams fileSpecificDigestionParams;
@@ -781,7 +832,7 @@ namespace TaskLayer
                     // this list silently falls back to its constructor default for every file with file-specific settings;
                     // the glycopeptide and SILAC flags used to be (see FileSpecificDigestionParamsTests).
                     fileSpecificDigestionParams = new DigestionParams(
-                        protease: (fileSpecificParams.DigestionAgent ?? digestionParams.SpecificProtease).Name,
+                        protease: (fileSpecificParams?.DigestionAgent ?? digestionParams.SpecificProtease).Name,
                         maxMissedCleavages: maxMissedCleavages, minPeptideLength: minPeptideLength,
                         maxPeptideLength: maxPeptideLength, maxModsForPeptides: maxModsForPeptide,
                         maxModificationIsoforms: digestionParams.MaxModificationIsoforms,
@@ -790,11 +841,12 @@ namespace TaskLayer
                         searchModeType: digestionParams.SearchModeType,
                         generateUnlabeledProteinsForSilac: digestionParams.GeneratehUnlabeledProteinsForSilac,
                         keepNGlycopeptide: digestionParams.KeepNGlycopeptide,
-                        keepOGlycopeptide: digestionParams.KeepOGlycopeptide);
+                        keepOGlycopeptide: digestionParams.KeepOGlycopeptide,
+                        respectCleavageBlockingModifications: digestionParams.RespectCleavageBlockingModifications);
                     break;
                 case RnaDigestionParams:
                     fileSpecificDigestionParams = new RnaDigestionParams(
-                        rnase: (fileSpecificParams.DigestionAgent ?? commonParams.DigestionParams.DigestionAgent).Name,
+                        rnase: (fileSpecificParams?.DigestionAgent ?? commonParams.DigestionParams.DigestionAgent).Name,
                         maxMissedCleavages: maxMissedCleavages, minLength: minPeptideLength,
                         maxLength: maxPeptideLength, maxMods: maxModsForPeptide,
                         maxModificationIsoforms: commonParams.DigestionParams.MaxModificationIsoforms,
@@ -807,17 +859,53 @@ namespace TaskLayer
 
             // must be set in this manner as CommonParameters constructor will pull from this dictionary, then clear dictionary
             fileSpecificDigestionParams.ProductsFromDissociationType()[DissociationType.Custom] =
-                fileSpecificParams.CustomIons ?? commonParams.CustomIons;
+                fileSpecificParams?.CustomIons ?? commonParams.CustomIons;
 
             // set the rest of the file-specific parameters
-            Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
-            Tolerance productMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
-            Tolerance productMassTolerance_LowRes = fileSpecificParams.ProductMassTolerance_LowRes ?? commonParams.ProductMassTolerance_LowRes;
-            DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
-            string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
+            Tolerance precursorMassTolerance = fileSpecificParams?.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
+            Tolerance productMassTolerance = fileSpecificParams?.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+            Tolerance productMassTolerance_LowRes = fileSpecificParams?.ProductMassTolerance_LowRes ?? commonParams.ProductMassTolerance_LowRes;
+            DissociationType dissociationType = fileSpecificParams?.DissociationType ?? commonParams.DissociationType;
+            string separationType = fileSpecificParams?.SeparationType ?? commonParams.SeparationType;
 
-            DeconvolutionParameters precursorDeconParams = fileSpecificParams.PrecursorDeconvolutionParameters ?? commonParams.PrecursorDeconvolutionParameters;
-            DeconvolutionParameters productDeconParams = fileSpecificParams.ProductDeconvolutionParameters ?? commonParams.ProductDeconvolutionParameters;
+            DeconvolutionParameters precursorDeconParams = fileSpecificParams?.PrecursorDeconvolutionParameters ?? commonParams.PrecursorDeconvolutionParameters;
+
+            // mzLib loads a native FromFile feature file lazily on first use. Force that load here, before
+            // scan processing, so a missing/unreadable/unrecognized/malformed/empty source is diagnosed once
+            // and isolated to its own raw file; the memoized verdict keeps the 4-5 later calls for this raw
+            // from retrying a transiently-loadable file and contradicting the fallback already warned about.
+            // Deliberately not applied to the task-wide embedded map resolved below: that route must keep
+            // surfacing its own resolution errors.
+            if (fileSpecificParams?.PrecursorDeconvolutionParameters is FromFileDeconvolutionParameters fileSpecificFromFile)
+            {
+                FileSpecificDeconvolutionPreflight.PreflightDecision preflight =
+                    FileSpecificDeconvolutionPreflight.Resolve(fileSpecificParams, fileSpecificFromFile, rawFilePath);
+
+                if (!preflight.Succeeded)
+                {
+                    string rawPathForWarning = rawFilePath ?? "<unknown raw file>";
+                    if (preflight.TryConsumeWarning())
+                    {
+                        string featurePath = string.IsNullOrWhiteSpace(fileSpecificFromFile.FilePath)
+                            ? "<not set>"
+                            : fileSpecificFromFile.FilePath;
+                        Warn($"File-specific precursor deconvolution for '{rawPathForWarning}' cannot use " +
+                             $"feature file '{featurePath}': {preflight.FailureReason}. Falling back to the task-wide precursor " +
+                             $"deconvolution parameters ({commonParams.PrecursorDeconvolutionParameters?.GetType().Name ?? "none"}).");
+                    }
+
+                    precursorDeconParams = commonParams.PrecursorDeconvolutionParameters;
+                }
+            }
+
+            if (precursorDeconParams is FeatureMappedFromFileDeconvolutionParameters mapped)
+            {
+                if (rawFilePath == null)
+                    throw new MetaMorpheusException("Raw file path must be provided for feature-mapped file specific deconvolution parameters.");
+                else
+                    precursorDeconParams = mapped.ToDeconvolutionParameters(rawFilePath);
+            }
+            DeconvolutionParameters productDeconParams = fileSpecificParams?.ProductDeconvolutionParameters ?? commonParams.ProductDeconvolutionParameters;
 
             // DoPrecursorDeconvolution and DoProductDeconvolution flow from CommonParameters only;
             // file-specific PrecursorDeconvolutionParameters / ProductDeconvolutionParameters are stored
@@ -867,7 +955,8 @@ namespace TaskLayer
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
                 rtPredictorName: commonParams.RTPredictorName,
-                retentionTimeRange: commonParams.RetentionTimeRange);
+                retentionTimeRange: commonParams.RetentionTimeRange
+                );
 
             return returnParams;
         }
@@ -908,7 +997,7 @@ namespace TaskLayer
                         {
                             TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificTomlPath, tomlConfig);
                             fileSettingsList[i] = new FileSpecificParameters(fileSpecificSettings);
-                            FileSpecificParameters.Add((currentRawDataFilepathList[i], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i])));
+                            FileSpecificParameters.Add((currentRawDataFilepathList[i], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i], rawFilePath)));
                         }
                         catch (MetaMorpheusException e)
                         {
@@ -923,7 +1012,7 @@ namespace TaskLayer
                     }
                     else // just used common parameters for file specific.
                     {
-                        FileSpecificParameters.Add((currentRawDataFilepathList[i], CommonParameters));
+                        FileSpecificParameters.Add((currentRawDataFilepathList[i], SetAllFileSpecificCommonParams(CommonParameters, null, rawFilePath)));
                     }
                 }
 
@@ -974,16 +1063,16 @@ namespace TaskLayer
                 file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilepathList.Select(b => '\t' + b)));
                 file.WriteLine("Databases:");
 
+                // One line per database (they used to run together on one line), each naming the file's content
+                // as well as its path: the same path can hold a different database from one run to the next.
                 foreach (var proteinDb in currentProteinDbFilenameList)
                 {
-                    if (proteinDb.IsContaminant)
-                    {
-                        file.Write(string.Join(Environment.NewLine, '\t' + "Contaminants " + proteinDb.FilePath + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()));
-                    }
-                    else
-                    {
-                        file.Write(string.Join(Environment.NewLine, '\t' + proteinDb.FilePath + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()));
-                    }
+                    string line = '\t' + (proteinDb.IsContaminant ? "Contaminants " : "") + proteinDb.FilePath
+                        + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()
+                        + " (" + proteinDb.IdentityText() + ")";
+                    if (proteinDb.DerivedFromText() is { } derivedFrom)
+                        line += "; " + derivedFrom;
+                    file.WriteLine(line);
                 }
             }
             FinishedWritingFile(proseFilePath, new List<string> { displayName });
@@ -1348,6 +1437,8 @@ namespace TaskLayer
 
         #endregion
 
+        #region IO 
+
         protected static void WritePsmsToTsv(IEnumerable<SpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned, bool writePeptideLevelResults = false)
         {
             
@@ -1396,12 +1487,15 @@ namespace TaskLayer
             return spectrumFilePath;
         }
 
+        #endregion
+
+        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList);
+
+        #region Event Handlers
         protected void ReportProgress(ProgressEventArgs v)
         {
             OutProgressHandler?.Invoke(this, v);
         }
-
-        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList);
 
         protected void FinishedWritingFile(string path, List<string> nestedIDs)
         {
@@ -1473,6 +1567,88 @@ namespace TaskLayer
                 : parameters.CloneWithNewTotalPartitions(decidedPartitions.Value);
         }
 
+        /// <summary>
+        /// Re-writes TmtDesign.txt, if there is one beside the spectra files, for the files this task wrote, each named
+        /// <c>{file name}{derivedSuffix}.mzML</c> in <paramref name="outputFolder"/>: calibration's -calib and averaging's
+        /// -averaged files. The search looks for it beside the files it searches, so without this a TMT search after
+        /// either task quantified no channel. <paramref name="derivedFilesAre"/> says what the files are in a warning
+        /// ("calibrated", "averaged").
+        /// </summary>
+        protected void UpdateTmtDesignFile(List<string> currentRawFileList, string outputFolder, string derivedSuffix, string derivedFilesAre)
+        {
+            string designPath = Path.Combine(Directory.GetParent(currentRawFileList.First()).FullName, GlobalVariables.TmtExperimentalDesignFileName);
+            if (!File.Exists(designPath))
+            {
+                DeleteEarlierTmtDesign(designPath, outputFolder);
+                return;
+            }
+
+            List<TmtFileInfo> originalDesign = TmtExperimentalDesign.Read(designPath, currentRawFileList, out var errors);
+            if (errors.Any())
+            {
+                Warn($"{GlobalVariables.TmtExperimentalDesignFileName} was not re-written for the {derivedFilesAre} files: " + string.Join(" ", errors));
+                DeleteEarlierTmtDesign(designPath, outputFolder);
+                return;
+            }
+
+            List<TmtFileInfo> derivedDesign = originalDesign
+                .Select(file => new TmtFileInfo(DerivedFilePath(file.FullFilePathWithExtension, outputFolder, derivedSuffix),
+                    file.Plex, file.Fraction, file.TechnicalReplicate, file.Annotations))
+                .ToList();
+
+            if (!SamePath(Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName), designPath))
+            {
+                // Into the output folder by name: a file this task wrote nothing for keeps its original path, so the first
+                // file's folder can be the input folder, and the input design must not be overwritten.
+                _ = TmtExperimentalDesign.Write(derivedDesign, outputFolder);
+                return;
+            }
+
+            // The output folder holds the input design. Its rows describe the input files, which are still there, so they
+            // are kept and the written files' rows are added below them.
+            List<TmtFileInfo> derivedFiles = derivedDesign
+                .Where((file, i) => !SamePath(file.FullFilePathWithExtension, originalDesign[i].FullFilePathWithExtension))
+                .ToList();
+            if (derivedFiles.Any())
+            {
+                _ = TmtExperimentalDesign.AddRows(designPath, derivedFiles);
+            }
+        }
+
+        private static bool SamePath(string a, string b) =>
+            string.Equals(Path.GetFullPath(a), Path.GetFullPath(b), StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Deletes a TmtDesign.txt an earlier run wrote into <paramref name="outputFolder"/>, for a run that writes none.
+        /// Nothing empties a task folder before a run, so the search after this task would read it as describing this
+        /// run's files. The input design <paramref name="inputDesignPath"/> is never deleted, even when the output folder
+        /// is the input folder.
+        /// </summary>
+        private static void DeleteEarlierTmtDesign(string inputDesignPath, string outputFolder)
+        {
+            string earlierDesign = Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName);
+            if (!SamePath(earlierDesign, inputDesignPath))
+            {
+                File.Delete(earlierDesign);
+            }
+        }
+
+        /// <summary>
+        /// The file the next task searches in place of <paramref name="originalFilePath"/>: the <paramref name="derivedSuffix"/>
+        /// mzML this run wrote for it, or the original itself for a file it wrote none for. EverythingRunnerEngine passes
+        /// the original on for any file missing from MyTaskResults.NewSpectra: one calibration could not calibrate (not
+        /// the copy calibration writes to its output folder), a type the task skips, and a file a cancelled run never
+        /// reached. The derived name goes through ToSafeOutputPath, as both tasks' run loops do, so a name trimmed to fit
+        /// the path cap is named trimmed.
+        /// </summary>
+        private string DerivedFilePath(string originalFilePath, string outputFolder, string derivedSuffix)
+        {
+            string derived = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(originalFilePath) + derivedSuffix + ".mzML")
+                .ToSafeOutputPath(derivedSuffix + ".mzML");
+            // ignoring case, as TmtExperimentalDesign.Read matches the design's File column to the spectra files
+            return MyTaskResults.NewSpectra.FirstOrDefault(written => SamePath(written, derived)) ?? originalFilePath;
+        }
+
         protected static void Warn(string v)
         {
             WarnHandler?.Invoke(null, new StringEventArgs(v, null));
@@ -1513,6 +1689,8 @@ namespace TaskLayer
             StartingSingleTaskHander?.Invoke(this, new SingleTaskEventArgs(displayName));
         }
 
+        #endregion
+
         private static IEnumerable<Type> GetSubclassesAndItself(Type type)
         {
             yield return type;
@@ -1549,6 +1727,15 @@ namespace TaskLayer
             Warn($"{engineName} engine Crashed! Error written to {outPath}");
         }
 
+        #region Peptide Indexing
+
+        public const string IndexFolderName = "DatabaseIndex";
+        public const string IndexEngineParamsFileName = "indexEngine.params";
+        public const string PeptideIndexFileName = "peptideIndex.bin";
+        public const string FragmentIndexFileName = "fragmentIndex.bin";
+        public const string SecondIndexEngineParamsFileName = "secondIndexEngine.params";
+        public const string SecondFragmentIndexFileName = "secondFragmentIndex.bin";
+        public const string PrecursorIndexFileName = "precursorIndex.bin";
         private static void WritePeptideIndex(List<IBioPolymerWithSetMods> peptideIndex, string peptideIndexFileName)
             => WritePeptideIndex(peptideIndex.Cast<PeptideWithSetModifications>().ToList(), peptideIndexFileName);
 
@@ -1842,7 +2029,7 @@ namespace TaskLayer
             }
         }
 
-        private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
+        internal static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
         {
             foreach (var database in dbFilenameList)
             {
@@ -1851,7 +2038,10 @@ namespace TaskLayer
 
                 if (!Directory.Exists(indexDirectory.FullName))
                 {
-                    return null;
+                    // Keep looking, as the loop already does when this folder holds no match. Returning
+                    // here made whether a later database's index is found depend on whether the first
+                    // database happens to have an index folder of its own.
+                    continue;
                 }
 
                 // all directories in the same directory as the bioPolymer database
@@ -2310,7 +2500,7 @@ namespace TaskLayer
             }
         }
 
-
+        #endregion
 
         /// <summary>
         /// Handle ambiguity when two theoretical bioPolymers in the
