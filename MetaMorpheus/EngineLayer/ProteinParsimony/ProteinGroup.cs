@@ -12,7 +12,7 @@ using Omics.BioPolymerGroup;
 using Omics.SpectralMatch;
 using Transcriptomics.Digestion;
 using MzLibUtil;
-using Easy.Common.Extensions;
+using System.Buffers;
 
 namespace EngineLayer
 {
@@ -519,7 +519,9 @@ namespace EngineLayer
             foreach (IBioPolymer protein in ListOfProteinsOrderedByAccession)
             {
                 //create a hash set for storing covered one-based residue numbers of protein
-                HashSet<int> coveredResiduesInProteinOneBased = new();
+                int proteinLength = protein.BaseSequence.Length;
+                char[] fragmentCoverageArray = ArrayPool<char>.Shared.Rent(proteinLength);
+                protein.BaseSequence.ToLowerInvariant().CopyTo(0, fragmentCoverageArray, 0, proteinLength);
 
                 //loop through PSMs
                 foreach (SpectralMatch psm in AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>()
@@ -536,65 +538,56 @@ namespace EngineLayer
 
                     foreach (var pwsm in pwsms)
                     {
-                        //create a hashset to store the covered residues for the peptide, converted to the corresponding indices of the protein
-                        HashSet<int> coveredResiduesInPeptide = new();
                         //add the peptide start position within the protein to each covered index of the psm
                         foreach (var position in psm.FragmentCoveragePositionInPeptide)
                         {
-                            coveredResiduesInPeptide.Add(position + pwsm.OneBasedStartResidue - 1); //subtract one because these are both one based
+                            int proteinPosition = position + pwsm.OneBasedStartResidue - 1;
+                            fragmentCoverageArray[proteinPosition - 1] = char.ToUpper(fragmentCoverageArray[proteinPosition - 1]);
                         }
-
-                        //Add the peptide specific positions, to the overall hashset for the protein
-                        coveredResiduesInProteinOneBased.UnionWith(coveredResiduesInPeptide);
                     }
                 }
-
-                // create upper/lowercase string
-                char[] fragmentCoverageArray = protein.BaseSequence.ToLower().ToCharArray();
-                foreach (var residue in coveredResiduesInProteinOneBased)
-                {
-                    fragmentCoverageArray[residue - 1] = char.ToUpper(fragmentCoverageArray[residue - 1]);
-                }
-
-                FragmentSequenceCoverageDisplayList.Add(new string(fragmentCoverageArray));
+                FragmentSequenceCoverageDisplayList.Add(new string(fragmentCoverageArray, 0, proteinLength));
+                ArrayPool<char>.Shared.Return(fragmentCoverageArray, true);
             }
+
+            HashSet<int> coveredOneBasedResidues = new HashSet<int>();
+            HashSet<(int Key, Modification Value)> modsOnThisProtein = new HashSet<(int Key, Modification Value)>();
 
             //Calculates the coverage at the peptide level... if a peptide is present all of the AAs in the peptide are covered
             foreach (var protein in ListOfProteinsOrderedByAccession)
             {
-                HashSet<int> coveredOneBasedResidues = new HashSet<int>();
+                modsOnThisProtein.Clear();
+                coveredOneBasedResidues.Clear();
+
+                int coveredResidues = 0; 
+
+                int proteinLength = protein.BaseSequence.Length;
+                char[] coverageArray = ArrayPool<char>.Shared.Rent(proteinLength);
+                protein.BaseSequence.ToLowerInvariant().CopyTo(0, coverageArray, 0, proteinLength);
 
                 // get residue numbers of each peptide in the protein and identify them as observed if the sequence is unambiguous
                 foreach (var peptide in proteinsWithUnambigSeqPsms[protein])
                 {
                     for (int i = peptide.OneBasedStartResidue; i <= peptide.OneBasedEndResidue; i++)
                     {
-                        coveredOneBasedResidues.Add(i);
+                        if (coveredOneBasedResidues.Add(i))
+                        {
+                            coverageArray[i - 1] = char.ToUpper(coverageArray[i - 1]);
+                            coveredResidues++;
+                        }
                     }
                 }
 
-                // calculate sequence coverage percent
-                double seqCoverageFract = (double)coveredOneBasedResidues.Count / protein.Length;
-
                 // add the percent coverage
-                SequenceCoverageFraction.Add(seqCoverageFract);
-
-                // convert the observed amino acids to upper case if they are unambiguously observed
-                string sequenceCoverageDisplay = protein.BaseSequence.ToLower();
-                var coverageArray = sequenceCoverageDisplay.ToCharArray();
-                foreach (var obsResidueLocation in coveredOneBasedResidues)
-                {
-                    coverageArray[obsResidueLocation - 1] = char.ToUpper(coverageArray[obsResidueLocation - 1]);
-                }
-
-                sequenceCoverageDisplay = new string(coverageArray);
+                SequenceCoverageFraction.Add((double)coveredResidues / proteinLength);
 
                 // add the coverage display
+                string sequenceCoverageDisplay = new string(coverageArray, 0, proteinLength);
                 SequenceCoverageDisplayList.Add(sequenceCoverageDisplay);
+                ArrayPool<char>.Shared.Return(coverageArray, true);
 
                 // put mods in the sequence coverage display
                 // get mods to display in sequence (only unambiguously identified mods)
-                var modsOnThisProtein = new HashSet<KeyValuePair<int, Modification>>();
                 foreach (var pep in proteinsWithPsmsWithLocalizedMods[protein])
                 {
                     foreach (var mod in pep.AllModsOneIsNterminus)
@@ -603,9 +596,7 @@ namespace EngineLayer
                             && !mod.Value.ModificationType.Contains("Common Variable")
                             && !mod.Value.ModificationType.Contains("Common Fixed"))
                         {
-                            modsOnThisProtein.Add(
-                                new KeyValuePair<int, Modification>(pep.OneBasedStartResidue + mod.Key - 2,
-                                    mod.Value));
+                            modsOnThisProtein.Add((pep.OneBasedStartResidue + mod.Key - 2, mod.Value));
                         }
                     }
                 }
@@ -613,7 +604,7 @@ namespace EngineLayer
                 var tempMods = modsOnThisProtein.OrderBy(p => p.Key).ToList();
                 foreach (var mod in tempMods)
                 {
-                    if (mod.Value.LocationRestriction.Equals("N-terminal."))
+                    if (mod.Value.LocationRestriction.Equals("N-terminal.") || mod.Value.LocationRestriction.Equals("5'-Terminal."))
                     {
                         sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(0, $"[{mod.Value.IdWithMotif}]-");
                     }
@@ -622,7 +613,7 @@ namespace EngineLayer
                         int modStringIndex = sequenceCoverageDisplay.Length - (protein.Length - mod.Key);
                         sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(modStringIndex, $"[{mod.Value.IdWithMotif}]");
                     }
-                    else if (mod.Value.LocationRestriction.Equals("C-terminal."))
+                    else if (mod.Value.LocationRestriction.Equals("C-terminal.") || mod.Value.LocationRestriction.Equals("3'-Terminal."))
                     {
                         sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(sequenceCoverageDisplay.Length, $"-[{mod.Value.IdWithMotif}]");
                     }
