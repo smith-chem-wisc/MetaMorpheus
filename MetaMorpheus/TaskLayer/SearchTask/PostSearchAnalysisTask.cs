@@ -1903,7 +1903,11 @@ namespace TaskLayer
             }
 
             string fileName = $"All{GlobalVariables.AnalyteType.GetBioPolymerLabel()}Groups.tsv";
-            if (Parameters.SearchParameters.DoLabelFreeQuantification)
+            // Named by the quantification that runs. A multiplex search returns from QuantificationAnalysis before
+            // label-free quantification, so its table keeps the plain name even when DoLabelFreeQuantification is on (the
+            // search task window turns it on whenever any quantification is chosen, multiplex included); its intensities
+            // are the per-channel columns, and ProteinGroupQuantification.tsv beside it says it was quantified.
+            if (Parameters.SearchParameters.DoLabelFreeQuantification && !Parameters.SearchParameters.DoMultiplexQuantification)
             {
                 fileName = $"AllQuantified{GlobalVariables.AnalyteType.GetBioPolymerLabel()}Groups.tsv";
             }
