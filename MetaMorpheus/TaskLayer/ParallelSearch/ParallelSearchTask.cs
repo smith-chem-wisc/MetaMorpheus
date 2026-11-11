@@ -82,6 +82,7 @@ public class ParallelSearchTask : SearchTask
     [TomlIgnore] public List<IBioPolymer> BaseBioPolymers { get; private set; } = [];
     [TomlIgnore] public Ms2ScanWithSpecificMass[] AllSortedMs2Scans { get; private set; } = [];
     [TomlIgnore] private SpectralMatch[] BaseSearchPsms = null!; // PSMs from base database search
+    [TomlIgnore] private PerFileTolerances? _perFileTolerances; // null when every file uses the task's tolerances
 
 
     // Optimization caches for FDR alignment and parsimony
@@ -282,6 +283,11 @@ public class ParallelSearchTask : SearchTask
             .SelectMany(p => p.Value)
             .OrderBy(b => b.PrecursorMass)
             .ToArray();
+
+        // Calibrated per-file tolerances: each scan carries its file's index so the one merged search can honour them
+        _perFileTolerances = PerFileTolerances.Create(AllSortedMs2Scans, FileSpecificParameters, CommonParameters, out string? toleranceWarning);
+        if (toleranceWarning != null)
+            Warn(toleranceWarning);
 
         // 4. Perform base database search once and store results
         Status("Performing base database search...", taskId);
@@ -539,8 +545,9 @@ public class ParallelSearchTask : SearchTask
     /// </summary>
      private void PerformSearch(List<IBioPolymer> proteinsToSearch, SpectralMatch[] spectralMatchArray, List<string> nestedIds, out HashSet<int> updatedPsmIndexes, out int peptidesSearched, bool useCopyOnWrite = false)
      {
+         // with per-file tolerances the window is searched at its widest and narrowed per scan inside the engine
          var massDiffAcceptor = GetMassDiffAcceptor(
-             CommonParameters.PrecursorMassTolerance,
+             _perFileTolerances?.WidestPrecursor ?? CommonParameters.PrecursorMassTolerance,
              SearchParameters.MassDiffAcceptorType,
              SearchParameters.CustomMdac);
 
@@ -548,7 +555,8 @@ public class ParallelSearchTask : SearchTask
           var searchEngine = new TransientClassicSearchEngine(
               spectralMatchArray, AllSortedMs2Scans, VariableModifications,
               FixedModifications, proteinsToSearch, massDiffAcceptor, CommonParameters,
-              FileSpecificParameters, nestedIds, copyOnWriteEnabled: useCopyOnWrite);
+              FileSpecificParameters, nestedIds, copyOnWriteEnabled: useCopyOnWrite,
+              perFileTolerances: _perFileTolerances);
 
          var results = searchEngine.Run();
          updatedPsmIndexes = (results as TransientSearchEngineResults)!.UpdatedSpectralMatchIndexes;

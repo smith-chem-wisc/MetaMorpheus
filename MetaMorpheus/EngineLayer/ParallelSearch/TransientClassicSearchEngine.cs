@@ -29,15 +29,21 @@ namespace EngineLayer.ParallelSearch
         private bool _singleThreadMode;
         private readonly ConcurrentDictionary<int, byte> UpdatedIndexes = new();
         private readonly bool _copyOnWriteEnabled;
+        private readonly PerFileTolerances _perFileTolerances;
+        private readonly bool _filterPrecursorPerFile;
+        private readonly double[] _scanPrecursorHalfWidth;
         public TransientClassicSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, 
             List<IBioPolymer> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIds,
-            bool copyOnWriteEnabled = false)
+            bool copyOnWriteEnabled = false, PerFileTolerances perFileTolerances = null)
             : base(globalPsms, arrayOfSortedMS2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, commonParameters, fileSpecificParameters, null, nestedIds, false)
         {
             UpdatedIndexes = new ConcurrentDictionary<int, byte>();
             _singleThreadMode = CommonParameters.MaxThreadsToUsePerFile <= 1;
             _copyOnWriteEnabled = copyOnWriteEnabled;
+            _perFileTolerances = perFileTolerances;
+            _filterPrecursorPerFile = perFileTolerances?.PrecursorVaries == true;
+            _scanPrecursorHalfWidth = perFileTolerances?.ScanPrecursorHalfWidth;
 
             if (!_singleThreadMode)
             {
@@ -76,15 +82,25 @@ namespace EngineLayer.ParallelSearch
                         {
                             Interlocked.Increment(ref peptideCounter);
 
+                            // fragments are generated on the first scan in the precursor window; most peptides have none
                             peptideTheorProducts.Clear();
-                            specificBioPolymer.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts, CommonParameters.FragmentationParameters);
+                            bool fragmented = false;
 
                             // score each scan that has an acceptable precursor mass
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(specificBioPolymer.MonoisotopicMass, SearchMode))
                             {
+                                if (!fragmented)
+                                {
+                                    specificBioPolymer.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts, CommonParameters.FragmentationParameters);
+                                    fragmented = true;
+                                }
+
                                 matchedFragmentIons.Clear();
                                 Ms2ScanWithSpecificMass theScan = ArrayOfSortedMS2Scans[scan.ScanIndex];
                                 int precursorCharge = theScan.PrecursorCharge;
+                                Tolerance scanProductTolerance = _perFileTolerances == null
+                                    ? productTolerance
+                                    : _perFileTolerances.Product[_perFileTolerances.ScanFileIndex[scan.ScanIndex]];
 
                                 // Match Fragment Ions
                                 foreach (var product in peptideTheorProducts)
@@ -100,7 +116,7 @@ namespace EngineLayer.ParallelSearch
 
                                     // is the mass error acceptable?
                                     if (closestExperimentalMass != null
-                                        && productTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass)
+                                        && scanProductTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass)
                                         && Math.Abs(closestExperimentalMass.Charge) <= Math.Abs(precursorCharge))//TODO apply this filter before picking the envelope
                                     {
                                         matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
@@ -290,20 +306,27 @@ namespace EngineLayer.ParallelSearch
             foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMonoisotopicMass))
             {
                 int scanIndex = GetFirstScanWithMassOverOrEqual(allowedIntervalWithNotch.Minimum);
-                if (scanIndex < ArrayOfSortedMS2Scans.Length)
+                // the interval is symmetric about the shifted theoretical mass, so its midpoint is that mass
+                double centre = (allowedIntervalWithNotch.Minimum + allowedIntervalWithNotch.Maximum) / 2;
+                double halfWidthScale = _perFileTolerances?.PrecursorIsPpm == true ? centre : 1.0;
+                for (; scanIndex < ArrayOfSortedMS2Scans.Length; scanIndex++)
                 {
-                    var scanMass = MyScanPrecursorMasses[scanIndex];
-                    while (scanMass <= allowedIntervalWithNotch.Maximum)
+                    double scanMass = MyScanPrecursorMasses[scanIndex];
+                    if (scanMass > allowedIntervalWithNotch.Maximum)
                     {
-                        yield return new ScanWithIndexAndNotchInfo(allowedIntervalWithNotch.Notch, scanIndex);
-                        scanIndex++;
-                        if (scanIndex == ArrayOfSortedMS2Scans.Length)
-                        {
-                            break;
-                        }
-
-                        scanMass = MyScanPrecursorMasses[scanIndex];
+                        break;
                     }
+
+                    // the interval is the widest of all files; narrow it to this scan's file
+                    if (_filterPrecursorPerFile)
+                    {
+                        if (Math.Abs(scanMass - centre) > halfWidthScale * _scanPrecursorHalfWidth[scanIndex])
+                        {
+                            continue;
+                        }
+                    }
+
+                    yield return new ScanWithIndexAndNotchInfo(allowedIntervalWithNotch.Notch, scanIndex);
                 }
             }
         }

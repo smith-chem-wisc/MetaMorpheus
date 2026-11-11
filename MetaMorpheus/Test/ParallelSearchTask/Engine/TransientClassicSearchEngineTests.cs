@@ -3,6 +3,7 @@ using System.Linq;
 using EngineLayer;
 using EngineLayer.ParallelSearch;
 using MassSpectrometry;
+using MzLibUtil;
 using NUnit.Framework;
 using Omics;
 using Omics.Digestion;
@@ -94,6 +95,72 @@ public class TransientClassicSearchEngineTests
             Assert.That(single.AfterTransient[0].BaseSequence, Is.EqualTo(multi.AfterTransient[0].BaseSequence));
             Assert.That(single.Results.PeptidesSearched, Is.EqualTo(multi.Results.PeptidesSearched));
             Assert.That(single.Results.UpdatedSpectralMatchIndexes, Is.EquivalentTo(multi.Results.UpdatedSpectralMatchIndexes));
+        });
+    }
+
+    private static SpectralMatch[] SearchWithFilePrecursorTolerance(double fileTolerancePpm, double otherFileTolerancePpm, out PerFileTolerances perFile)
+    {
+        var commonParameters = CreateCommonParameters(1);
+        var scans = MetaMorpheusTask.GetMs2Scans(new TestDataFile(), null, new CommonParameters())
+            .OrderBy(b => b.PrecursorMass).ToArray();
+        CommonParameters FileParams(double ppm) => new(precursorMassTolerance: new PpmTolerance(ppm),
+            dissociationType: DissociationType.HCD, digestionParams: commonParameters.DigestionParams, scoreCutoff: 1);
+        var perFileParameters = new List<(string FileName, CommonParameters Parameters)>
+        {
+            ("", FileParams(fileTolerancePpm)), ("other", FileParams(otherFileTolerancePpm))
+        };
+        perFile = PerFileTolerances.Create(scans, perFileParameters, commonParameters, out _);
+
+        var psms = new SpectralMatch[scans.Length];
+        var noMods = new List<Modification>();
+        // the acceptor is built from the widest tolerance, as the task does
+        new TransientClassicSearchEngine(psms, scans, noMods, noMods, new List<IBioPolymer> { new Protein("MNNNKQQQ", "Base") },
+            new SinglePpmAroundZeroSearchMode(perFile.WidestPrecursor.Value), commonParameters, perFileParameters,
+            new List<string>(), perFileTolerances: perFile).Run();
+        return psms;
+    }
+
+    [Test]
+    public void PerFilePrecursorTolerance_NarrowsTheWidestWindowForEachScan()
+    {
+        // the scan's file allows 5 ppm even though another file widens the window to 10 ppm: still matched
+        Assert.That(SearchWithFilePrecursorTolerance(5, 10, out var loose)[0], Is.Not.Null);
+        Assert.That(loose.PrecursorVaries, Is.True);
+
+        // the scan's file is effectively exact, so the window widened by the other file must not admit it
+        Assert.That(SearchWithFilePrecursorTolerance(1e-9, 10, out _)[0], Is.Null);
+    }
+
+    [Test]
+    public void PerFileTolerances_AreNotCreatedWhenEveryFileMatchesTheTask()
+    {
+        var commonParameters = CreateCommonParameters(1);
+        var scans = MetaMorpheusTask.GetMs2Scans(new TestDataFile(), null, new CommonParameters()).ToArray();
+        var fileParameters = new List<(string FileName, CommonParameters Parameters)> { ("", commonParameters) };
+
+        Assert.That(PerFileTolerances.Create(scans, fileParameters, commonParameters, out var warning), Is.Null);
+        Assert.That(warning, Is.Null);
+    }
+
+    [Test]
+    public void PerFileTolerances_IgnoreTheTaskUnitsWhenEveryFileHasItsOwnTolerance()
+    {
+        var taskParameters = new CommonParameters(precursorMassTolerance: new AbsoluteTolerance(0.01));
+        var scans = MetaMorpheusTask.GetMs2Scans(new TestDataFile(), null, new CommonParameters()).ToArray();
+        var fileParameters = new List<(string FileName, CommonParameters Parameters)>
+        {
+            ("", new CommonParameters(precursorMassTolerance: new PpmTolerance(3))),
+            ("other", new CommonParameters(precursorMassTolerance: new PpmTolerance(4)))
+        };
+
+        var perFile = PerFileTolerances.Create(scans, fileParameters, taskParameters, out var warning);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(warning, Is.Null);
+            Assert.That(perFile, Is.Not.Null);
+            Assert.That(perFile!.PrecursorIsPpm, Is.True);
+            Assert.That(perFile.ScanPrecursorHalfWidth, Is.EqualTo(new[] { 3e-6 }).Within(1e-15));
         });
     }
 }
