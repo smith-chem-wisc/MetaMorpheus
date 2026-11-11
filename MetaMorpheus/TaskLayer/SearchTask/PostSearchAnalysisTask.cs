@@ -1636,15 +1636,16 @@ namespace TaskLayer
                 includeAmbiguous: true,
                 includeHighQValuePsms: Parameters.SearchParameters.WriteHighQValuePsms);
 
-            // write PSMs
+            // write PSMs; the Percolator file is written from the same sorted list, which it used to sort again the same way
+            List<SpectralMatch> sortedPsms = psmsForPsmResults.OrderByDescending(p => p).ToList();
             string writtenFile = Path.Combine(Parameters.OutputFolder, $"All{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s.{GlobalVariables.AnalyteType.GetSpectralMatchExtension()}");
-            WritePsmsToTsv(psmsForPsmResults.OrderByDescending(p => p).ToList(), writtenFile, writePeptideLevelResults: false);
+            WritePsmsToTsv(sortedPsms, writtenFile, writePeptideLevelResults: false);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write PSMs for percolator
             // percolator native read format is .tab
             writtenFile = Path.Combine(Parameters.OutputFolder, $"All{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s_FormattedForPercolator.tab");
-            WritePsmsForPercolator(psmsForPsmResults.OrderByDescending(p => p).ToList(), writtenFile);
+            WritePsmsForPercolator(sortedPsms, writtenFile);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
