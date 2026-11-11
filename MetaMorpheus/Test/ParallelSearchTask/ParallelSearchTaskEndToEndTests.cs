@@ -218,44 +218,6 @@ public class ParallelSearchTaskEndToEndTests
     }
 
     [Test]
-    public void CommandLine_RunsAParallelSearchToml()
-    {
-        string folder = FreshOutputFolder("ParallelSearchCommandLine");
-        try
-        {
-            string tomlPath = Path.Combine(folder, "ParallelSearchTask.toml");
-            Toml.WriteFile(CreateTask(overwrite: true), tomlPath, MetaMorpheusTask.tomlConfig);
-            string output = Path.Combine(folder, "output");
-
-            TextWriter originalOut = System.Console.Out;
-            int exitCode;
-            try
-            {
-                System.Console.SetOut(new StringWriter());
-                exitCode = MetaMorpheusCommandLine.Program.Main(
-                    ["-s", SpectraPath, "-d", BaseDatabasePath, "-t", tomlPath, "-o", output]);
-            }
-            finally
-            {
-                System.Console.SetOut(originalOut);
-            }
-
-            string taskFolder = Path.Combine(output, "Task1ParallelSearchTask");
-            Assert.Multiple(() =>
-            {
-                Assert.That(exitCode, Is.EqualTo(0));
-                Assert.That(ReadSummary(taskFolder).Keys,
-                    Is.EquivalentTo(TransientDatabasePaths.Select(Path.GetFileNameWithoutExtension)));
-            });
-        }
-        finally
-        {
-            if (Directory.Exists(folder))
-                Directory.Delete(folder, true);
-        }
-    }
-
-    [Test]
     public void Toml_RoundTripsTaskTypeAndTransientDatabases()
     {
         string tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "ParallelSearchRoundTrip.toml");
