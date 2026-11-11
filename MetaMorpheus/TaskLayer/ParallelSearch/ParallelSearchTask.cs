@@ -5,6 +5,7 @@ using EngineLayer.FdrAnalysis;
 using EngineLayer.ParallelSearch;
 using EngineLayer.ParallelSearch.FdrAlignment;
 using EngineLayer.SpectrumMatch;
+using MassSpectrometry;
 using Nett;
 using Omics;
 using Omics.Modifications;
@@ -62,7 +63,7 @@ public class ParallelSearchTask : SearchTask
             else
             {
                 // If someone tries to set a base SearchParameters, convert it
-                ParallelSearchParameters = new ParallelSearchParameters(SearchParameters);
+                ParallelSearchParameters = new ParallelSearchParameters(value);
             }
         }
     }
@@ -101,6 +102,8 @@ public class ParallelSearchTask : SearchTask
         List<DbForTask> dbFilenameList, List<string> currentRawFileList,
         string taskId, FileSpecificParameters[] fileSettingsList)
     {
+        ValidateSettings(fileSettingsList);
+
         MyTaskResults = new MyTaskResults(this);
         PersistentDatabases = dbFilenameList;
 
@@ -112,7 +115,11 @@ public class ParallelSearchTask : SearchTask
 
         // Initialize unified results manager
         _resultsManager = CreateResultsManager(outputFolder);
-        
+        if (_resultsManager.UnreadableSummaryMessage is { } unreadableSummaryMessage)
+        {
+            Warn(unreadableSummaryMessage);
+        }
+
         // Check cache status early for fast-path optimization
         var allDatabaseNames = ParallelSearchParameters.TransientDatabases
             .Select(db => Path.GetFileNameWithoutExtension(db.FilePath))
@@ -172,6 +179,72 @@ public class ParallelSearchTask : SearchTask
     }
 
     #region Initialization
+
+    /// <summary>
+    /// Rejects settings the parallel search cannot honour, before anything is loaded or written.
+    /// The transient search engine skips XCorr scoring for speed, and the
+    /// summary cache and per-database output folders are keyed by database file name.
+    /// </summary>
+    private void ValidateSettings(FileSpecificParameters?[]? fileSettingsList)
+    {
+        var transientDatabases = ParallelSearchParameters.TransientDatabases;
+        if (transientDatabases == null || transientDatabases.Count == 0)
+        {
+            throw new MetaMorpheusException("Parallel search needs at least one transient database. "
+                + "Add transient databases to the task before running it.");
+        }
+
+        var duplicateNames = transientDatabases
+            .GroupBy(db => Path.GetFileNameWithoutExtension(db.FilePath), StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1)
+            .Select(g => $"{g.Key} ({string.Join(", ", g.Select(db => db.FilePath))})")
+            .ToList();
+        if (duplicateNames.Count > 0)
+        {
+            throw new MetaMorpheusException("Parallel search needs every transient database to have a different file name, "
+                + "because results are stored by name. These names are used more than once: "
+                + string.Join("; ", duplicateNames));
+        }
+
+        if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
+        {
+            throw new MetaMorpheusException("Parallel search does not support RNA searches yet.");
+        }
+
+        ValidateDissociationType(CommonParameters.DissociationType, "the task settings");
+        if (fileSettingsList != null)
+        {
+            foreach (var fileSettings in fileSettingsList)
+            {
+                if (fileSettings?.DissociationType is { } fileDissociationType)
+                {
+                    ValidateDissociationType(fileDissociationType, "a file-specific settings file");
+                }
+            }
+        }
+
+        if (SearchParameters.MassDiffAcceptorType.IsMostAbundant()
+            || CommonParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant)
+        {
+            throw new MetaMorpheusException("Parallel search does not support most-abundant precursor matching. "
+                + "Choose a monoisotopic precursor mass tolerance and run again.");
+        }
+    }
+
+    private static void ValidateDissociationType(DissociationType dissociationType, string source)
+    {
+        if (dissociationType == DissociationType.Autodetect)
+        {
+            throw new MetaMorpheusException($"Parallel search does not support autodetecting the dissociation type (set in {source}). "
+                + "Choose a dissociation type and run again.");
+        }
+
+        if (dissociationType == DissociationType.LowCID)
+        {
+            throw new MetaMorpheusException($"Parallel search does not support Low CID dissociation (set in {source}), "
+                + "because it does not score with XCorr. Choose another dissociation type and run again.");
+        }
+    }
 
     private void Initialize(string taskId, List<DbForTask> dbFilenameList,
         List<string> currentRawFileList, FileSpecificParameters[] fileSettingsList,

@@ -22,6 +22,12 @@ public class TransientDatabaseResultsManager
     /// </summary>
     public int CachedAnalysisCount => _analysisCache.Count;
     public string SummaryFilePath => _analysisCache.FilePath;
+
+    /// <summary>
+    /// Set when an existing summary could not be read; says where it was backed up, if anywhere.
+    /// </summary>
+    public string? UnreadableSummaryMessage => _analysisCache.UnreadableFileMessage;
+    public string? UnreadableSummaryBackupPath => _analysisCache.UnreadableFileBackupPath;
     
     /// <summary>
     /// Gets all cached analysis results

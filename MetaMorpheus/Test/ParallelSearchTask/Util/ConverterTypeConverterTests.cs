@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Threading;
 using NUnit.Framework;
 using TaskLayer.ParallelSearch.Util.Converters;
 
@@ -10,16 +12,49 @@ public class ConverterTypeConverterTests
     public void SemiColonDelimitedToDoubleArray_ParsesAndRounds()
     {
         var converter = new SemiColonDelimitedToDoubleArrayTypeConverter();
-        SemiColonDelimitedToDoubleArrayTypeConverter.RoundingPlaces = 3;
-
-        var parsed = (double[])converter.ConvertFromString("1.25;;2.5;3", null!, null!);
-        string written = converter.ConvertToString(new[] { 1.23456, 9.87654 }, null!, null!);
-
-        Assert.Multiple(() =>
+        int originalRoundingPlaces = SemiColonDelimitedToDoubleArrayTypeConverter.RoundingPlaces;
+        try
         {
-            Assert.That(parsed, Is.EquivalentTo(new[] { 1.25, 2.5, 3.0 }));
-            Assert.That(written, Is.EqualTo("1.235;9.877"));
-        });
+            SemiColonDelimitedToDoubleArrayTypeConverter.RoundingPlaces = 3;
+
+            var parsed = (double[])converter.ConvertFromString("1.25;;2.5;3", null!, null!);
+            string written = converter.ConvertToString(new[] { 1.23456, 9.87654 }, null!, null!);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(parsed, Is.EquivalentTo(new[] { 1.25, 2.5, 3.0 }));
+                Assert.That(written, Is.EqualTo("1.235;9.877"));
+            });
+        }
+        finally
+        {
+            SemiColonDelimitedToDoubleArrayTypeConverter.RoundingPlaces = originalRoundingPlaces;
+        }
+    }
+
+    [Test]
+    public void SemiColonDelimitedToDoubleArray_RoundTripsUnderACommaDecimalCulture()
+    {
+        var converter = new SemiColonDelimitedToDoubleArrayTypeConverter();
+        CultureInfo originalCulture = Thread.CurrentThread.CurrentCulture;
+        try
+        {
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("de-DE");
+            var values = new[] { 1.5, 1234.25, -0.125 };
+
+            string written = converter.ConvertToString(values, null!, null!);
+            var readBack = (double[])converter.ConvertFromString(written, null!, null!);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(written, Is.EqualTo("1.5;1234.25;-0.125"));
+                Assert.That(readBack, Is.EqualTo(values));
+            });
+        }
+        finally
+        {
+            Thread.CurrentThread.CurrentCulture = originalCulture;
+        }
     }
 
     [Test]

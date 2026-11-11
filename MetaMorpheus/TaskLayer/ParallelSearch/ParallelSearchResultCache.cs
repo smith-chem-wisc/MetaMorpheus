@@ -26,6 +26,18 @@ public class ParallelSearchResultCache
     public string FilePath => _csvFilePath;
 
     /// <summary>
+    /// Where an existing summary that could not be read was moved by <see cref="InitializeCache"/>,
+    /// or null when there was nothing to move or the move failed.
+    /// </summary>
+    public string? UnreadableFileBackupPath { get; private set; }
+
+    /// <summary>
+    /// A user-facing description of an existing summary that could not be read, or null when it was read
+    /// (or did not exist).
+    /// </summary>
+    public string? UnreadableFileMessage { get; private set; }
+
+    /// <summary>
     /// Helper class for thread-safe reading and writing of database search results to CSV
     /// Manages caching, validation, and tracking of database search results
     /// </summary>
@@ -157,14 +169,54 @@ public class ParallelSearchResultCache
                 }
             }
         }
-        catch
+        catch (Exception readException)
         {
-            // If there's an error reading the cache, start fresh
+            // Start fresh, but keep the unreadable file so the final rewrite does not destroy earlier results
             lock (_cacheLock)
             {
                 _completedDatabases.Clear();
                 _databaseResults.Clear();
             }
+
+            BackUpUnreadableFile(readException);
+        }
+    }
+
+    /// <summary>
+    /// Moves the unreadable summary to the first free <c>name_N.csv</c> beside it (N = 1, 2, ...), so
+    /// checkpoints start a fresh file and the old rows survive for the user to recover.
+    /// </summary>
+    private void BackUpUnreadableFile(Exception readException)
+    {
+        string fileName = Path.GetFileName(_csvFilePath);
+        try
+        {
+            string directory = Path.GetDirectoryName(_csvFilePath) ?? string.Empty;
+            string baseName = Path.GetFileNameWithoutExtension(_csvFilePath);
+            string extension = Path.GetExtension(_csvFilePath);
+
+            int counter = 1;
+            string backupPath;
+            do
+            {
+                backupPath = Path.Combine(directory, $"{baseName}_{counter}{extension}");
+                counter++;
+            } while (File.Exists(backupPath));
+
+            lock (_writeLock)
+            {
+                File.Move(_csvFilePath, backupPath);
+            }
+
+            UnreadableFileBackupPath = backupPath;
+            UnreadableFileMessage = $"Could not read the existing {fileName} ({readException.Message}). "
+                + $"It was moved to {Path.GetFileName(backupPath)} and every transient database will be treated as not yet searched.";
+        }
+        catch (Exception backupException)
+        {
+            UnreadableFileBackupPath = null;
+            UnreadableFileMessage = $"Could not read the existing {fileName} ({readException.Message}), "
+                + $"and could not back it up ({backupException.Message}). It will be overwritten when the task finishes.";
         }
     }
 

@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using CsvHelper;
 using CsvHelper.Configuration;
@@ -15,13 +16,13 @@ public class SemiColonDelimitedToDoubleArrayTypeConverter : DefaultTypeConverter
     {
         var splits = text.Split(';');
         var toReturn = splits.Where(p => p != "");
-        return toReturn.Select(double.Parse).ToArray();
+        return toReturn.Select(p => double.Parse(p, CultureInfo.InvariantCulture)).ToArray();
     }
 
     public override string ConvertToString(object value, IWriterRow row, MemberMapData memberMapData)
     {
         if (value is not IEnumerable<double> list)
             return string.Empty;
-        return string.Join(';', list.Select(p => Math.Round(p, RoundingPlaces)));
+        return string.Join(';', list.Select(p => Math.Round(p, RoundingPlaces).ToString(CultureInfo.InvariantCulture)));
     }
 }
