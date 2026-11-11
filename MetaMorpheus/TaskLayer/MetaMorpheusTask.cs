@@ -1031,6 +1031,16 @@ namespace TaskLayer
             catch (Exception e)
             {
                 MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
+                // A task that failed mid-search keeps no index for its next run (the GUI runs the same object again; the index
+                // kept for the next file is gigabytes) and leaves no cache write running. A write that failed too is not the
+                // failure to report.
+                try
+                {
+                    FinishWritingIndexCache();
+                }
+                catch
+                {
+                }
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
                 e.Data.Add("folder", output_folder);
                 using (StreamWriter file = new StreamWriter(resultsFileName))

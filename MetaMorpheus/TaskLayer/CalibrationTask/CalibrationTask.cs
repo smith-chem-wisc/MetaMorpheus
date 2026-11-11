@@ -71,6 +71,21 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
+            try
+            {
+                return CalibrateFiles(outputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList);
+            }
+            finally
+            {
+                // The searches are done, or the task failed: let the kept digestion products go either way. The task object
+                // outlives its run (the GUI runs the same object again), so after an exception they would stay reachable.
+                _digestionCache?.Release();
+                _digestionCache = null;
+            }
+        }
+
+        private MyTaskResults CalibrateFiles(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        {
             Initialize(taskId, dbFilenameList);
             _filesToCalibrate = currentRawFileList.Count;
             Status("Calibrating...", new List<string> { _taskId });
@@ -200,10 +215,6 @@ namespace TaskLayer
 
             // a task none of whose files could be calibrated still loads the database and writes its prose
             WaitForDatabase();
-
-            // the searches are done: let the kept digestion products go
-            _digestionCache?.Release();
-            _digestionCache = null;
 
             // re-write experimental design (if it has been defined) with new calibrated file names
             UpdateExperimentalDesignFile(currentRawFileList, outputFolder);

@@ -677,23 +677,8 @@ namespace TaskLayer
                 CommonParameters = CommonParameters,
                 DigestionCountDictionary = digestionCountDictionary
             };
-            MyTaskResults postSearchResults;
-            try
-            {
-                postSearchResults = postProcessing.Run();
-            }
-            catch
-            {
-                // post-search failed, and that is the failure to report; the cache write still ends before the task does
-                try
-                {
-                    FinishWritingIndexCache();
-                }
-                catch
-                {
-                }
-                throw;
-            }
+            // if post-search fails, RunTask still ends the cache write before the task does
+            MyTaskResults postSearchResults = postProcessing.Run();
 
             // The cache is complete for the next task, which looks for it, and a failed write fails the task here, with its own
             // exception, after the results are written rather than before them. On a hard disk the write of a mammalian index

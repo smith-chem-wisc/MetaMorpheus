@@ -81,6 +81,66 @@ namespace Test
         }
 
         /// <summary>
+        /// A Modern search that fails part way must keep no index on the task. The GUI runs the same task object again, and the
+        /// index a search keeps for its next file is the whole fragment index; its cache write must not be left running either.
+        /// </summary>
+        [Test]
+        public static void IndexesAreLetGoWhenTheSearchFails()
+        {
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "SearchIndexLetGo-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(folder);
+            string testData = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData");
+            // a copy of the database, so the index is built and kept here, not read from an earlier run's cache
+            string fasta = Path.Combine(folder, "smalldb.fasta");
+            File.Copy(Path.Combine(testData, "smalldb.fasta"), fasta);
+            var spectra = new List<string> { Path.Combine(folder, "fileA.mzML"), Path.Combine(folder, "fileB.mzML") };
+            spectra.ForEach(path => File.Copy(Path.Combine(testData, "SmallCalibratible_Yeast.mzML"), path));
+
+            var searched = new List<WeakReference>();
+            void Watch(object sender, SingleEngineFinishedEventArgs e)
+            {
+                if (sender is ModernSearchEngine engine)
+                {
+                    const BindingFlags Instance = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+                    searched.Add(new WeakReference(typeof(ModernSearchEngine).GetProperty("FragmentIndex", Instance).GetValue(engine)));
+                }
+            }
+            // fail as the second file starts, once the first file's index is built and kept for it
+            void FailAtSecondFile(object sender, StringEventArgs e)
+            {
+                if (e.S == spectra[1])
+                {
+                    throw new InvalidOperationException("the search fails part way");
+                }
+            }
+
+            MetaMorpheusEngine.FinishedSingleEngineHandler += Watch;
+            MetaMorpheusTask.StartingDataFileHandler += FailAtSecondFile;
+            try
+            {
+                var search = new SearchTask
+                {
+                    SearchParameters = new SearchParameters { SearchType = SearchType.Modern },
+                    CommonParameters = new CommonParameters(maxThreadsToUsePerFile: 4, digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 7)),
+                };
+                string output = Path.Combine(folder, "out");
+                Directory.CreateDirectory(output);
+                Assert.That(() => search.RunTask(output, new List<DbForTask> { new(fasta, false) }, spectra, "search"),
+                    Throws.InvalidOperationException.With.Message.EqualTo("the search fails part way"));
+
+                Assert.That(searched, Has.Count.GreaterThanOrEqualTo(1), "the first file was searched");
+                Assert.That(StillReachable(searched), Is.EqualTo(0), "the index is still reachable after the search failed");
+                GC.KeepAlive(search);
+            }
+            finally
+            {
+                MetaMorpheusEngine.FinishedSingleEngineHandler -= Watch;
+                MetaMorpheusTask.StartingDataFileHandler -= FailAtSecondFile;
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
         /// The index objects the task handed the engine, as the engine keeps them. A Modern engine keeps the task's peptide list
         /// itself; its fragment index may still be in the cache write, which goes on through post-search. A non-specific engine
         /// copies the peptides into lists of its own, but keeps the task's fragment and precursor indexes, which it writes before

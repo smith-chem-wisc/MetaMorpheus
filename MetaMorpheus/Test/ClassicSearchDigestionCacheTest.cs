@@ -234,6 +234,54 @@ namespace Test
             Directory.Delete(root, true);
         }
 
+        /// <summary>
+        /// A calibration task that fails part way must let its kept products go too. The GUI runs the same task object again,
+        /// so anything left on it stays reachable until the next run.
+        /// </summary>
+        [Test]
+        public static void KeptProductsAreLetGoWhenCalibrationFails()
+        {
+            string root = Path.Combine(TestContext.CurrentContext.TestDirectory, "ClassicSearchDigestionCacheTest-failure");
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, true);
+            }
+            Directory.CreateDirectory(root);
+            var spectra = new List<string> { Path.Combine(root, "fileA.mzML"), Path.Combine(root, "fileB.mzML") };
+            spectra.ForEach(path => File.Copy(TestData("SmallCalibratible_Yeast.mzML"), path));
+            var databases = new List<DbForTask> { new(TestData("smalldb.fasta"), false) };
+
+            // fail as the second file starts, after the first file's rounds have made the cache and read from it
+            void FailAtSecondFile(object sender, StringEventArgs e)
+            {
+                if (e.S == spectra[1])
+                {
+                    throw new InvalidOperationException("calibration fails part way");
+                }
+            }
+
+            MetaMorpheusTask.StartingDataFileHandler += FailAtSecondFile;
+            ClassicSearchDigestionCache.BudgetOverrideBytes = long.MaxValue;
+            ClassicSearchDigestionCache.MinimumSearchesOverride = 2;
+            try
+            {
+                long served = ClassicSearchDigestionCache.ProteinsServed;
+                var calibration = new CalibrationTask { CommonParameters = new CommonParameters(maxThreadsToUsePerFile: 4) };
+                Assert.That(() => calibration.RunTask(root, databases, spectra, "calibration"),
+                    Throws.InvalidOperationException.With.Message.EqualTo("calibration fails part way"));
+                Assert.That(ClassicSearchDigestionCache.ProteinsServed, Is.GreaterThan(served), "the first file's rounds must have used a cache");
+                Assert.That(ProductsStillReachable(), Is.EqualTo(0), "products still reachable after calibration failed");
+                GC.KeepAlive(calibration);
+            }
+            finally
+            {
+                MetaMorpheusTask.StartingDataFileHandler -= FailAtSecondFile;
+                ClassicSearchDigestionCache.BudgetOverrideBytes = null;
+                ClassicSearchDigestionCache.MinimumSearchesOverride = null;
+            }
+            Directory.Delete(root, true);
+        }
+
         private static int ProductsStillReachable()
         {
             GC.Collect();
