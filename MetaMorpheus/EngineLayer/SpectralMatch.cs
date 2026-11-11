@@ -431,9 +431,14 @@ namespace EngineLayer
             return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr, includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn).Values.Select(v => v?.Trim() ?? string.Empty));
         }
 
+        /// <summary>At least the number of columns a row has (about 60).</summary>
+        internal const int DataDictionaryCapacity = 64;
+
         public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false, bool includeMostAbundantColumn = false)
         {
-            Dictionary<string, string> s = new Dictionary<string, string>();
+            // sized for every column, so the dictionary is not grown four times per row; it is never removed from, so it
+            // still lists the columns in the order they are added
+            Dictionary<string, string> s = new Dictionary<string, string>(DataDictionaryCapacity);
             PsmTsvWriter.AddBasicMatchData(s, psm, includeOneOverK0Column, includeCollisionalEnergyColumn);
             PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned, includeMostAbundantColumn);
             PsmTsvWriter.AddMatchedIonsData(s, psm?.MatchedFragmentIons);

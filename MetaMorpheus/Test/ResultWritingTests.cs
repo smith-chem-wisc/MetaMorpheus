@@ -25,10 +25,11 @@ using UsefulProteomicsDatabases;
 namespace Test
 {
     /// <summary>
-    /// Result writing builds .psmtsv rows on several threads (<see cref="OrderedLines"/>), and prepares each individual
-    /// file's FDR one file ahead of writing its tables (<see cref="PostSearchAnalysisTask.PrepareOneAhead{TItem,TPrepared}"/>).
-    /// Neither may change a byte of any table: these tests hold the rows to one thread's rows in five cultures, and the
-    /// preparations to the order and the one-file lead the individual-file tables rely on.
+    /// Result writing builds .psmtsv rows on several threads (<see cref="OrderedLines"/>), prepares each individual file's FDR
+    /// one file ahead of writing its tables (<see cref="PostSearchAnalysisTask.PrepareOneAhead{TItem,TPrepared}"/>), and
+    /// resolves a column's one-hypothesis case without building a list (<see cref="PsmTsvWriter"/>.Resolve). None of it may
+    /// change a byte of any table: these tests hold the rows to one thread's rows in five cultures, and Resolve to a verbatim
+    /// copy of the code it replaced.
     /// </summary>
     [TestFixture]
     [NonParallelizable] // sets the current culture
@@ -255,6 +256,228 @@ namespace Test
                     }),
                 Throws.TypeOf<IOException>().With.Message.EqualTo("write 2"));
             Assert.That(Volatile.Read(ref finished), Is.EqualTo(4), "the preparation of item 3 had finished when the failure was thrown");
+        }
+
+        #endregion
+
+        #region Resolve
+
+        /// <summary>
+        /// Every Resolve overload against a verbatim copy of the code before the one-element shortcut: random lists of 0-4
+        /// values, with nulls, NaN, infinities, -0.0, near-integers and real modifications, give the same string and value, or
+        /// the same exception.
+        /// </summary>
+        [Test]
+        public static void ResolveAnswersAsBefore()
+        {
+            var random = new Random(20261111);
+            string[] strings = { "A", "B", "PEPTIDE", "", " ", null };
+            int[] ints = { 0, 1, -1, 7, int.MaxValue };
+            double[] doubles = { 0.0, -0.0, 1.0, 1.0004, 0.9996, 2.5, 1e-7, -3.25, 3.0000004, 12345.678901, double.NaN, double.PositiveInfinity, double.NegativeInfinity };
+            List<Modification> known = GlobalVariables.AllModsKnown.Where(m => m.ChemicalFormula != null).Take(40).ToList();
+            List<Modification> noFormula = GlobalVariables.AllModsKnown.Where(m => m.ChemicalFormula == null).Take(3).ToList();
+            List<Modification> modPool = known.Concat(noFormula).Concat(new Modification[] { null }).ToList();
+
+            List<T> Some<T>(T[] pool, int most) => Enumerable.Range(0, random.Next(0, most + 1)).Select(_ => pool[random.Next(pool.Length)]).ToList();
+
+            for (int trial = 0; trial < 3000; trial++)
+            {
+                List<string> s = Some(strings, 4);
+                Same(() => PsmTsvWriter.Resolve(s), () => OldResolve(s), r => $"{r.ResolvedString}|{r.ResolvedValue}");
+                Same(() => PsmTsvWriter.Resolve(s, "ambiguous"), () => OldResolve(s, "ambiguous"), r => $"{r.ResolvedString}|{r.ResolvedValue}");
+                Same(() => PsmTsvWriter.Resolve(s, null), () => OldResolve(s, null), r => $"{r.ResolvedString}|{r.ResolvedValue}");
+
+                List<int> n = Some(ints, 4);
+                Same(() => PsmTsvWriter.Resolve(n), () => OldResolve(n), r => $"{r.ResolvedString}|{r.ResolvedValue}");
+
+                List<double> d = Some(doubles, 4);
+                Same(() => PsmTsvWriter.Resolve(d), () => OldResolve(d),
+                    r => $"{r.ResolvedString}|{(r.ResolvedValue.HasValue ? BitConverter.DoubleToInt64Bits(r.ResolvedValue.Value).ToString() : "null")}");
+
+                // dictionaries of modifications with formulas (as on a peptide: never null values)
+                List<Dictionary<int, Modification>> dicts = Enumerable.Range(0, random.Next(0, 4)).Select(_ => Enumerable.Range(0, random.Next(0, 4))
+                    .Select(k => (position: random.Next(1, 12), mod: known[random.Next(known.Count)])).GroupBy(x => x.position)
+                    .ToDictionary(g => g.Key, g => g.First().mod)).ToList();
+                if (random.Next(3) == 0 && dicts.Count > 1)
+                {
+                    dicts[1] = dicts[0]; // equal dictionaries are the usual ambiguity
+                }
+                Same(() => PsmTsvWriter.Resolve(dicts), () => OldResolve(dicts),
+                    r => $"{r.ResolvedString}|{(r.ResolvedValue == null ? "null" : string.Join(",", r.ResolvedValue.Select(kv => kv.Key + "=" + kv.Value)))}");
+
+                List<IEnumerable<Modification>> modLists = Enumerable.Range(0, random.Next(0, 4)).Select(_ => (IEnumerable<Modification>)Some(modPool.ToArray(), 3)).ToList();
+                if (random.Next(3) == 0 && modLists.Count > 1)
+                {
+                    modLists[1] = modLists[0];
+                }
+                Same(() => PsmTsvWriter.Resolve(modLists), () => OldResolve(modLists),
+                    r => $"{r.ResolvedString}|{r.ResolvedValue?.Formula ?? "null"}");
+            }
+
+            Same(() => PsmTsvWriter.Resolve((IEnumerable<string>)null), () => OldResolve((IEnumerable<string>)null), r => r.ResolvedString);
+        }
+
+        private static void Same<T>(Func<T> now, Func<T> before, Func<T, string> show)
+        {
+            static string Outcome(Func<T> f, Func<T, string> show)
+            {
+                try
+                {
+                    return "returned " + show(f());
+                }
+                catch (Exception e)
+                {
+                    return "threw " + e.GetType().Name;
+                }
+            }
+            Assert.That(Outcome(now, show), Is.EqualTo(Outcome(before, show)));
+        }
+
+        // ---- verbatim copy of PsmTsvWriter.Resolve before the one-element shortcut (master 11313d07e) ----
+
+        private static (string ResolvedString, ChemicalFormula ResolvedValue) OldResolve(IEnumerable<IEnumerable<Modification>> enumerable)
+        {
+            var list = enumerable.ToList();
+            ChemicalFormula firstChemFormula = new ChemicalFormula();
+            foreach (var firstMods in list[0])
+            {
+                if (firstMods == null || firstMods.ChemicalFormula == null)
+                {
+                    return ("unknown", null);
+                }
+                firstChemFormula.Add(firstMods.ChemicalFormula);
+            }
+
+            bool equals = true;
+            List<ChemicalFormula> formulas = new List<ChemicalFormula>();
+            foreach (var anEnum in list)
+            {
+                ChemicalFormula fhere = new ChemicalFormula();
+                foreach (var mod in anEnum)
+                {
+                    if (mod == null || mod.ChemicalFormula == null)
+                    {
+                        return ("unknown", null);
+                    }
+                    fhere.Add(mod.ChemicalFormula);
+                }
+                if (!firstChemFormula.Equals(fhere))
+                {
+                    equals = false;
+                }
+                formulas.Add(fhere);
+            }
+            if (!equals)
+            {
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", formulas.Select(b => b.Formula)));
+                return (returnString, null);
+            }
+            else
+            {
+                return (firstChemFormula.Formula, firstChemFormula);
+            }
+        }
+
+        private static (string ResolvedString, Dictionary<string, int> ResolvedValue) OldResolve(IEnumerable<Dictionary<int, Modification>> enumerable)
+        {
+            var list = enumerable.ToList();
+            Dictionary<string, int> firstDict = list[0].Values.OrderBy(b => b.IdWithMotif).GroupBy(b => b.IdWithMotif).ToDictionary(b => b.Key, b => b.Count());
+
+            bool equals = true;
+            foreach (var dict in list)
+            {
+                Dictionary<string, int> okTest = dict.Values.OrderBy(b => b.IdWithMotif).GroupBy(b => b.IdWithMotif).ToDictionary(b => b.Key, b => b.Count());
+                if (!firstDict.SequenceEqual(okTest))
+                {
+                    equals = false;
+                    break;
+                }
+            }
+            if (!equals)
+            {
+                var returnString = string.Join("|", list.Select(b => string.Join(" ", b.Values.Select(c => c.IdWithMotif).OrderBy(c => c))));
+                returnString = GlobalVariables.CheckLengthOfOutput(returnString);
+                return (returnString, null);
+            }
+            else
+            {
+                return (string.Join(" ", list[0].Values.Select(c => c.IdWithMotif).OrderBy(c => c)), firstDict);
+            }
+        }
+
+        private static (string ResolvedString, double? ResolvedValue) OldResolve(IEnumerable<double> enumerable)
+        {
+            var list = enumerable.ToList();
+            double min = list.Min();
+            double max = list.Max();
+            double avg = list.Average();
+
+            // If all values are within tolerance, check if all are integers
+            if (max - min < PsmTsvWriter.ToleranceForDoubleResolutionF5)
+            {
+                bool allInts = list.All(x => Math.Abs(x - Math.Round(x)) < PsmTsvWriter.ToleranceForDoubleResolutionF2);
+                if (!allInts)
+                    return (avg.ToString("F5", CultureInfo.InvariantCulture), avg);
+
+                int intVal = (int)Math.Round(avg);
+                return (intVal.ToString(CultureInfo.InvariantCulture), intVal);
+            }
+
+            var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))));
+            return (returnString, null);
+        }
+
+        private static (string ResolvedString, int? ResolvedValue) OldResolve(IEnumerable<int> enumerable)
+        {
+            var list = enumerable.ToList();
+            var first = list[0];
+            if (list.All(b => first.Equals(b)))
+            {
+                return (first.ToString(CultureInfo.InvariantCulture), first);
+            }
+            else
+            {
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Select(b => b.ToString(CultureInfo.InvariantCulture))));
+                return (returnString, null);
+            }
+        }
+
+        private static (string ResolvedString, string ResolvedValue) OldResolve(IEnumerable<string> enumerable)
+        {
+            var list = enumerable.ToList();
+            string first = list.FirstOrDefault(b => b != null);
+            // Only first if list is either all null or all equal to the first
+            if (list.All(b => b == null) || list.All(b => first.Equals(b)))
+            {
+                return (first, first);
+            }
+            else
+            {
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list));
+                return (returnString, null);
+            }
+        }
+
+        private static (string ResolvedString, string ResolvedValue) OldResolve(IEnumerable<string> enumerable, string ambiguousIfNull)
+        {
+            var list = enumerable.ToList();
+            string first = list.FirstOrDefault(b => b != null);
+            // Only first if list is either all null or all equal to the first
+            if (list.All(b => b == null) || list.All(b => first.Equals(b)))
+            {
+                return (first, first);
+            }
+            // use only distinct names if all of the base sequences are the same
+            else if (ambiguousIfNull != null)
+            {
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Distinct()));
+                return (returnString, null);
+            }
+            else
+            {
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list));
+                return (returnString, null);
+            }
         }
 
         #endregion

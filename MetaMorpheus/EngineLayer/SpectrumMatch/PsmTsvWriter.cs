@@ -29,17 +29,55 @@ namespace EngineLayer
         /// Notches 1,1,1,1 returns as 1
         /// Notches 1,0,1,0 returns as 1|0|1|0
         /// </summary>
+        /// <summary>
+        /// True when the sequence holds exactly one element, the usual case for a match (one hypothesis), which is then in
+        /// <paramref name="only"/>. Otherwise false, with every element in <paramref name="list"/>, in order, as ToList()
+        /// gives them. Each element is computed once either way, in the same order ToList() computes them.
+        /// The Resolve methods answer one element directly with what their general case returns for it, without the list.
+        /// </summary>
+        private static bool IsSingle<T>(IEnumerable<T> enumerable, out T only, out List<T> list)
+        {
+            ArgumentNullException.ThrowIfNull(enumerable, "source"); // what ToList() throws
+            using IEnumerator<T> e = enumerable.GetEnumerator();
+            if (!e.MoveNext())
+            {
+                only = default;
+                list = new List<T>();
+                return false;
+            }
+            T first = e.Current;
+            if (!e.MoveNext())
+            {
+                only = first;
+                list = null;
+                return true;
+            }
+            list = new List<T> { first, e.Current };
+            while (e.MoveNext())
+            {
+                list.Add(e.Current);
+            }
+            only = default;
+            return false;
+        }
+
         internal static (string ResolvedString, ChemicalFormula ResolvedValue) Resolve(IEnumerable<IEnumerable<Modification>> enumerable)
         {
-            var list = enumerable.ToList();
+            bool single = IsSingle(enumerable, out var onlyMods, out var list);
             ChemicalFormula firstChemFormula = new ChemicalFormula();
-            foreach (var firstMods in list[0])
+            foreach (var firstMods in single ? onlyMods : list[0])
             {
                 if (firstMods == null || firstMods.ChemicalFormula == null)
                 {
                     return ("unknown", null);
                 }
                 firstChemFormula.Add(firstMods.ChemicalFormula);
+            }
+
+            // one element: the loop below would build the same formula again, find it equal, and return this
+            if (single)
+            {
+                return (firstChemFormula.Formula, firstChemFormula);
             }
 
             bool equals = true;
@@ -74,7 +112,12 @@ namespace EngineLayer
 
         internal static (string ResolvedString, Dictionary<string, int> ResolvedValue) Resolve(IEnumerable<Dictionary<int, Modification>> enumerable)
         {
-            var list = enumerable.ToList();
+            if (IsSingle(enumerable, out var onlyDict, out var list))
+            {
+                // what the general case returns for one dictionary: it is always equal to itself
+                return (string.Join(" ", onlyDict.Values.Select(c => c.IdWithMotif).OrderBy(c => c)),
+                    onlyDict.Values.OrderBy(b => b.IdWithMotif).GroupBy(b => b.IdWithMotif).ToDictionary(b => b.Key, b => b.Count()));
+            }
             Dictionary<string, int> firstDict = list[0].Values.OrderBy(b => b.IdWithMotif).GroupBy(b => b.IdWithMotif).ToDictionary(b => b.Key, b => b.Count());
 
             bool equals = true;
@@ -101,7 +144,20 @@ namespace EngineLayer
 
         internal static (string ResolvedString, double? ResolvedValue) Resolve(IEnumerable<double> enumerable)
         {
-            var list = enumerable.ToList();
+            if (IsSingle(enumerable, out double only, out var list))
+            {
+                // the general case with min = max = average = the value; for -0.0, whose average is +0.0, both take the
+                // integer branch and write "0"
+                if (only - only < ToleranceForDoubleResolutionF5)
+                {
+                    if (!(Math.Abs(only - Math.Round(only)) < ToleranceForDoubleResolutionF2))
+                        return (only.ToString("F5", CultureInfo.InvariantCulture), only);
+
+                    int onlyInt = (int)Math.Round(only);
+                    return (onlyInt.ToString(CultureInfo.InvariantCulture), onlyInt);
+                }
+                return (GlobalVariables.CheckLengthOfOutput(only.ToString("F5", CultureInfo.InvariantCulture)), null);
+            }
             double min = list.Min();
             double max = list.Max();
             double avg = list.Average();
@@ -123,7 +179,10 @@ namespace EngineLayer
 
         internal static (string ResolvedString, int? ResolvedValue) Resolve(IEnumerable<int> enumerable)
         {
-            var list = enumerable.ToList();
+            if (IsSingle(enumerable, out int only, out var list))
+            {
+                return (only.ToString(CultureInfo.InvariantCulture), only);
+            }
             var first = list[0];
             if (list.All(b => first.Equals(b)))
             {
@@ -138,7 +197,10 @@ namespace EngineLayer
 
         internal static (string ResolvedString, string ResolvedValue) Resolve(IEnumerable<string> enumerable)
         {
-            var list = enumerable.ToList();
+            if (IsSingle(enumerable, out string only, out var list))
+            {
+                return (only, only); // also for a single null: all null, so the first non-null, null
+            }
             string first = list.FirstOrDefault(b => b != null);
             // Only first if list is either all null or all equal to the first
             if (list.All(b => b == null) || list.All(b => first.Equals(b)))
@@ -154,7 +216,10 @@ namespace EngineLayer
 
         internal static (string ResolvedString, string ResolvedValue) Resolve(IEnumerable<string> enumerable, string ambiguousIfNull)
         {
-            var list = enumerable.ToList();
+            if (IsSingle(enumerable, out string only, out var list))
+            {
+                return (only, only);
+            }
             string first = list.FirstOrDefault(b => b != null);
             // Only first if list is either all null or all equal to the first
             if (list.All(b => b == null) || list.All(b => first.Equals(b)))
