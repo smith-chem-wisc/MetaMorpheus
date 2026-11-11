@@ -25,7 +25,6 @@ namespace EngineLayer.ParallelSearch
     /// </summary>
     public class TransientClassicSearchEngine : ClassicSearchEngine
     {
-        private readonly ReaderWriterLockSlim[] Locks;
         private bool _singleThreadMode;
         private readonly ConcurrentDictionary<int, byte> UpdatedIndexes = new();
         private readonly bool _copyOnWriteEnabled;
@@ -44,16 +43,6 @@ namespace EngineLayer.ParallelSearch
             _perFileTolerances = perFileTolerances;
             _filterPrecursorPerFile = perFileTolerances?.PrecursorVaries == true;
             _scanPrecursorHalfWidth = perFileTolerances?.ScanPrecursorHalfWidth;
-
-            if (!_singleThreadMode)
-            {
-                // Create one lock for each PSM to ensure thread safety
-                Locks = new ReaderWriterLockSlim[SpectralMatches.Length];
-                for (int i = 0; i < Locks.Length; i++)
-                {
-                    Locks[i] = new ReaderWriterLockSlim();
-                }
-            }
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -217,29 +206,15 @@ namespace EngineLayer.ParallelSearch
                 return;
             }
 
-            var lockObj = Locks[scanIndex];
-            // this is thread-safe because even if the score improves from another thread writing to this PSM,
-            // the lock combined with AddOrReplace method will ensure thread safety
+            // Most candidates lose to the match already there, so check without the lock first. The read can
+            // be stale, since another thread may be improving this scan's match, but a stale read only means
+            // taking the lock for a candidate that then loses the same check below.
+            var unlockedPsm = SpectralMatches[scanIndex];
+            if (unlockedPsm != null && thisScore - unlockedPsm.RunnerUpScore <= -SpectralMatch.ToleranceForScoreDifferentiation)
+                return;
 
-            lockObj.EnterReadLock();
-            try
-            {
-                var existingPsm = SpectralMatches[scanIndex];
-                if (existingPsm != null)
-                {
-                    double scoreDiff = thisScore - existingPsm.RunnerUpScore;
-                    if (scoreDiff <= -SpectralMatch.ToleranceForScoreDifferentiation)
-                        return; // Early exit with just read lock
-                }
-            }
-            finally
-            {
-                lockObj.ExitReadLock();
-            }
-
-            // Need to modify, get write lock
-            lockObj.EnterWriteLock();
-            try
+            // The base engine's per-scan locks, as ClassicSearchEngine.AddPeptideCandidateToPsm uses them
+            lock (Locks[scanIndex])
             {
                 var existingPsm = SpectralMatches[scanIndex];
 
@@ -269,11 +244,6 @@ namespace EngineLayer.ParallelSearch
                         CommonParameters.ReportAllAmbiguity, matchedIons);
                 }
             }
-            finally
-            {
-                lockObj.ExitWriteLock();
-            }
-
         }
 
         private SpectralMatch EnsureWritablePsm(int scanIndex, SpectralMatch existingPsm)
