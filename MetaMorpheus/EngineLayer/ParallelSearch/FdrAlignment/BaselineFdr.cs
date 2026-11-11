@@ -1,71 +1,43 @@
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 
 namespace EngineLayer.ParallelSearch.FdrAlignment;
 
 /// <summary>
-/// Baseline values sorted by score, highest first. A transient score is given the value of the
-/// lowest-scoring baseline entry that still scores at least as high; a score above every baseline
-/// score gets the first entry, and one below every baseline score gets the last.
+/// Where a protein group sits in protein FDR's ranking: its best peptide's q-value (or PEP, when FDR filters
+/// on PEP q-value), lower first, then its best peptide's score, higher first. This is the order
+/// <see cref="ProteinScoringAndFdrEngine"/> assigns protein q-values in; the summed protein-group score is not.
 /// </summary>
-public sealed class BaselineScoreLookup<T>
+public readonly record struct ProteinGroupRank(double BestPeptideMetric, double BestPeptideScore)
 {
-    private readonly double[] _scores;
-    private readonly T[] _values;
-
-    public BaselineScoreLookup(IEnumerable<(double Score, T Value)> baseline)
+    public static ProteinGroupRank Of(ProteinGroup group, FilterType filterType)
     {
-        ArgumentNullException.ThrowIfNull(baseline);
-
-        // OrderByDescending is stable, so equal scores keep the order they were given in
-        var sorted = baseline.OrderByDescending(entry => entry.Score).ToArray();
-        _scores = sorted.Select(entry => entry.Score).ToArray();
-        _values = sorted.Select(entry => entry.Value).ToArray();
+        return new ProteinGroupRank(
+            filterType == FilterType.PepQValue ? group.BestPeptidePEP : group.BestPeptideQValue,
+            group.BestPeptideScore);
     }
 
-    public int Count => _scores.Length;
-
-    public bool IsEmpty => _scores.Length == 0;
-
-    public T Find(double score)
+    public static IComparer<ProteinGroupRank> BetterFirst { get; } = Comparer<ProteinGroupRank>.Create((a, b) =>
     {
-        if (IsEmpty)
-            throw new InvalidOperationException("The baseline lookup is empty.");
-
-        // count the baseline entries scoring at least as high as the transient score
-        int low = 0;
-        int high = _scores.Length;
-        while (low < high)
-        {
-            int middle = (low + high) / 2;
-            if (_scores[middle] >= score)
-                low = middle + 1;
-            else
-                high = middle;
-        }
-
-        return _values[Math.Max(low - 1, 0)];
-    }
+        int byMetric = a.BestPeptideMetric.CompareTo(b.BestPeptideMetric);
+        return byMetric != 0 ? byMetric : b.BestPeptideScore.CompareTo(a.BestPeptideScore);
+    });
 }
 
 /// <summary>
-/// The FDR values a transient protein group takes from the baseline.
+/// The FDR values a transient protein group takes from the baseline. Its best-peptide values are its own.
 /// </summary>
-public readonly record struct ProteinGroupFdr(
-    double QValue,
-    double BestPeptideQValue,
-    double BestPeptidePep,
-    int CumulativeTarget,
-    int CumulativeDecoy);
+public readonly record struct ProteinGroupFdr(double QValue, int CumulativeTarget, int CumulativeDecoy);
 
 /// <summary>
-/// Gives transient PSMs, peptides and protein groups the FDR values of baseline items with the same
-/// score, so a transient database's results are judged against the baseline search's FDR instead of
-/// a new calculation. Each item is looked up on its own, so the order items arrive in does not matter.
+/// Gives transient PSMs, peptides and protein groups the FDR values of baseline items that rank the same,
+/// so a transient database's results are judged against the baseline search's FDR instead of a new
+/// calculation on a small subset. Each item is looked up on its own, so the order items arrive in does
+/// not matter.
 /// </summary>
 public static class BaselineFdr
 {
@@ -86,16 +58,14 @@ public static class BaselineFdr
             .Select(psm => (psm.Score, psm.PeptideFdrInfo.Clone())));
     }
 
-    public static BaselineScoreLookup<ProteinGroupFdr> CreateProteinGroupLookup(IEnumerable<ProteinGroup> baselineGroups)
+    /// <param name="filterType">The filter the baseline's protein FDR used (<see cref="ProteinScoringAndFdrEngine.FilterType"/>).</param>
+    public static ProteinGroupFdrLookup CreateProteinGroupLookup(IEnumerable<ProteinGroup> baselineGroups, FilterType filterType)
     {
-        return new BaselineScoreLookup<ProteinGroupFdr>(baselineGroups
+        return new ProteinGroupFdrLookup(baselineGroups
             .Where(group => group is not null)
-            .Select(group => (group.ProteinGroupScore, new ProteinGroupFdr(
-                group.QValue,
-                group.BestPeptideQValue,
-                group.BestPeptidePEP,
-                group.CumulativeTarget,
-                group.CumulativeDecoy))));
+            .Select(group => (ProteinGroupRank.Of(group, filterType),
+                new ProteinGroupFdr(group.QValue, group.CumulativeTarget, group.CumulativeDecoy))),
+            filterType);
     }
 
     public static void AlignPsms(BaselineScoreLookup<FdrInfo> lookup, IEnumerable<SpectralMatch> psms)
@@ -116,17 +86,19 @@ public static class BaselineFdr
             peptide.PeptideFdrInfo = lookup.Find(peptide.Score).Clone();
     }
 
-    public static void AlignProteinGroups(BaselineScoreLookup<ProteinGroupFdr> lookup, IEnumerable<ProteinGroup> groups)
+    /// <summary>
+    /// The groups' best-peptide values must already be set from their own PSMs
+    /// (<see cref="ProteinScoringAndFdrEngine"/>'s PopulateBestPeptideMetrics); they decide where each group ranks.
+    /// </summary>
+    public static void AlignProteinGroups(ProteinGroupFdrLookup lookup, IEnumerable<ProteinGroup> groups)
     {
         if (lookup.IsEmpty)
             return;
 
         foreach (var group in groups)
         {
-            var fdr = lookup.Find(group.ProteinGroupScore);
+            var fdr = lookup.Find(ProteinGroupRank.Of(group, lookup.FilterType));
             group.QValue = fdr.QValue;
-            group.BestPeptideQValue = fdr.BestPeptideQValue;
-            group.BestPeptidePEP = fdr.BestPeptidePep;
             group.CumulativeTarget = fdr.CumulativeTarget;
             group.CumulativeDecoy = fdr.CumulativeDecoy;
         }

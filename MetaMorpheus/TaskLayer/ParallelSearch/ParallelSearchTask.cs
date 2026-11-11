@@ -90,7 +90,7 @@ public class ParallelSearchTask : SearchTask
     // Optimization caches for FDR alignment and parsimony
     [TomlIgnore] private BaselineScoreLookup<FdrInfo> _baselinePsmFdr = new([]);
     [TomlIgnore] private BaselineScoreLookup<FdrInfo> _baselinePeptideFdr = new([]);
-    [TomlIgnore] private BaselineScoreLookup<ProteinGroupFdr> _baselineProteinGroupFdr = new([]);
+    [TomlIgnore] private ProteinGroupFdrLookup _baselineProteinGroupFdr = new([], FilterType.QValue);
     [TomlIgnore] private List<CachedProteinGroup> CachedBaselineProteinGroups { get; set; } = [];
     [TomlIgnore] private readonly Dictionary<string, List<int>> _baselinePeptideKeyToScanIndexes = new(StringComparer.Ordinal);
 
@@ -338,8 +338,7 @@ public class ParallelSearchTask : SearchTask
 
             if (baselineParsimonyResults.ProteinGroups.Count > 0)
             {
-                ProteinScoringAndFdrResults baselineProteinScoringResults =
-                    (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
+                var baselineProteinScoringEngine = new ProteinScoringAndFdrEngine(
                         baselineParsimonyResults.ProteinGroups,
                         baselinePsms,
                         psmsAlreadyFiltered: true, // score every baseline PSM; transient FDR is aligned to it
@@ -348,19 +347,20 @@ public class ParallelSearchTask : SearchTask
                         true,
                         CommonParameters,
                         FileSpecificParameters,
-                        [taskId]).Run();
+                        [taskId]);
+                var baselineProteinScoringResults = (ProteinScoringAndFdrResults)baselineProteinScoringEngine.Run();
 
                 CachedBaselineProteinGroups = baselineProteinScoringResults.SortedAndScoredProteinGroups
                     .Select(p => new CachedProteinGroup(p))
                     .ToList();
 
                 _baselineProteinGroupFdr = BaselineFdr.CreateProteinGroupLookup(baselineProteinScoringResults
-                    .SortedAndScoredProteinGroups);
+                    .SortedAndScoredProteinGroups, baselineProteinScoringEngine.FilterType);
             }
             else
             {
                 CachedBaselineProteinGroups = [];
-                _baselineProteinGroupFdr = new([]);
+                _baselineProteinGroupFdr = new([], FilterType.QValue);
             }
         }
 

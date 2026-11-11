@@ -19,6 +19,11 @@ namespace EngineLayer
         private readonly bool _psmsAlreadyFiltered;
 
         /// <summary>
+        /// Whether protein FDR ranks groups by their best peptide's q-value or by its PEP.
+        /// </summary>
+        public FilterType FilterType => _filterType;
+
+        /// <summary>
         /// Takes every PSM from the search; the engine keeps those passing the q-value or PEP q-value threshold
         /// from <paramref name="commonParameters"/>, whichever is stricter.
         /// </summary>

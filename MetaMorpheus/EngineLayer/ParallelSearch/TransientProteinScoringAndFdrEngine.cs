@@ -16,13 +16,13 @@ public sealed class TransientProteinScoringAndFdrEngine : ProteinScoringAndFdrEn
     private readonly List<ProteinGroup> _baselineProteinGroups;
     private readonly List<ProteinGroup> _transientProteinGroups;
     private readonly IEnumerable<SpectralMatch> _scoringPsms;
-    private readonly BaselineScoreLookup<ProteinGroupFdr> _baselineFdr;
+    private readonly ProteinGroupFdrLookup _baselineFdr;
 
     public TransientProteinScoringAndFdrEngine(
         List<ProteinGroup> baselineProteinGroups,
         List<ProteinGroup> transientProteinGroups,
         List<SpectralMatch> neighborhoodPsms,
-        BaselineScoreLookup<ProteinGroupFdr> baselineFdr,
+        ProteinGroupFdrLookup baselineFdr,
         bool noOneHitWonders,
         bool treatModPeptidesAsDifferentPeptides,
         bool mergeIndistinguishableProteinGroups,
@@ -65,6 +65,11 @@ public sealed class TransientProteinScoringAndFdrEngine : ProteinScoringAndFdrEn
 
         if (!_baselineFdr.IsEmpty)
         {
+            // the baseline groups were ranked under the same parameters, so this only fails on a wiring mistake
+            if (_baselineFdr.FilterType != FilterType)
+                throw new MetaMorpheusException(
+                    $"The baseline protein FDR ranked groups by {_baselineFdr.FilterType}, but this search ranks them by {FilterType}.");
+
             BaselineFdr.AlignProteinGroups(_baselineFdr, filteredTransientGroups);
         }
         else if (filteredTransientGroups.Count > 0)

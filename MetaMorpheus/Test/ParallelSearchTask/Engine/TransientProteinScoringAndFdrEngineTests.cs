@@ -16,7 +16,7 @@ public class TransientProteinScoringAndFdrEngineTests
     [Test]
     public void RunSpecific_UsesBaselineAlignmentForTransientGroups()
     {
-        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters();
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(pepQValueThreshold: 1.0); // q-value filtering, as parallel search runs by default
 
         var baselineGroup = ParallelSearchTestContextFactory.CreateProteinGroup(isDecoy: false, qValue: 0.33, peptideCount: 1);
         baselineGroup.ProteinGroupScore = 250;
@@ -30,11 +30,11 @@ public class TransientProteinScoringAndFdrEngineTests
 
         var alignmentBaselineGroups = new List<ProteinGroup>
         {
-            CreateAlignmentBaselineGroup(score: 200, qValue: 0.01, pepQValue: 0.02, pep: 0.03, cumulativeTarget: 100, cumulativeDecoy: 1),
-            CreateAlignmentBaselineGroup(score: 50, qValue: 0.05, pepQValue: 0.06, pep: 0.07, cumulativeTarget: 80, cumulativeDecoy: 2),
+            CreateAlignmentBaselineGroup(bestPeptideQValue: 0.05, bestPeptideScore: 200, qValue: 0.01, cumulativeTarget: 100, cumulativeDecoy: 1),
+            CreateAlignmentBaselineGroup(bestPeptideQValue: 0.2, bestPeptideScore: 50, qValue: 0.05, cumulativeTarget: 80, cumulativeDecoy: 2),
         };
 
-        var baselineFdr = BaselineFdr.CreateProteinGroupLookup(alignmentBaselineGroups);
+        var baselineFdr = BaselineFdr.CreateProteinGroupLookup(alignmentBaselineGroups, FilterType.QValue);
 
         var engine = new TransientProteinScoringAndFdrEngine(
             new List<ProteinGroup> { baselineGroup },
@@ -58,8 +58,9 @@ public class TransientProteinScoringAndFdrEngineTests
             Assert.That(scoredTransientGroup.ProteinGroupScore, Is.EqualTo(120).Within(1e-10));
             Assert.That(scoredTransientGroup.AllPsmsBelowOnePercentFDR.Count, Is.EqualTo(1));
             Assert.That(scoredTransientGroup.QValue, Is.EqualTo(0.01).Within(1e-10));
-            Assert.That(scoredTransientGroup.BestPeptideQValue, Is.EqualTo(0.02).Within(1e-10));
-            Assert.That(scoredTransientGroup.BestPeptidePEP, Is.EqualTo(0.03).Within(1e-10));
+            // its own best peptide, which is what ranked it, is kept
+            Assert.That(scoredTransientGroup.BestPeptideQValue, Is.EqualTo(0.12).Within(1e-10));
+            Assert.That(scoredTransientGroup.BestPeptideScore, Is.EqualTo(120).Within(1e-10));
             Assert.That(scoredTransientGroup.CumulativeTarget, Is.EqualTo(100));
             Assert.That(scoredTransientGroup.CumulativeDecoy, Is.EqualTo(1));
         });
@@ -71,7 +72,7 @@ public class TransientProteinScoringAndFdrEngineTests
         var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters();
         var (transientGroup, transientPsm) = CreateTransientGroupWithPsm(commonParameters, score: 95, psmQValue: 0.04);
 
-        var baselineFdr = BaselineFdr.CreateProteinGroupLookup([]);
+        var baselineFdr = BaselineFdr.CreateProteinGroupLookup([], FilterType.QValue);
 
         var engine = new TransientProteinScoringAndFdrEngine(
             baselineProteinGroups: [],
@@ -101,22 +102,21 @@ public class TransientProteinScoringAndFdrEngineTests
     }
 
     /// <summary>
-    /// Parsimony hands transient groups over in no particular score order. Here the weaker group comes
-    /// first; each group must still take the baseline values for its own score. Before the alignment
-    /// rewrite the stronger group inherited the weaker group's q-value.
+    /// Parsimony hands transient groups over in no particular order. Here the weaker group comes first;
+    /// each group must still take the baseline values for its own rank (best peptide q-value, then score).
     /// </summary>
     [Test]
-    public void RunSpecific_AlignsEachTransientGroupByItsOwnScore_WhateverOrderParsimonyGaveThem()
+    public void RunSpecific_AlignsEachTransientGroupByItsOwnRank_WhateverOrderParsimonyGaveThem()
     {
-        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters();
-        var (weakGroup, weakPsm) = CreateDistinctTransientGroupWithPsm(commonParameters, "PEPTIDEK", "WEAK", score: 40, scanNumber: 601);
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(pepQValueThreshold: 1.0);
+        var (weakGroup, weakPsm) = CreateDistinctTransientGroupWithPsm(commonParameters, "PEPTIDEK", "WEAK", score: 20, scanNumber: 601);
         var (strongGroup, strongPsm) = CreateDistinctTransientGroupWithPsm(commonParameters, "ELVISLIVESK", "STRONG", score: 120, scanNumber: 602);
 
         var baselineFdr = BaselineFdr.CreateProteinGroupLookup(
         [
-            CreateAlignmentBaselineGroup(score: 200, qValue: 0.01, pepQValue: 0.02, pep: 0.03, cumulativeTarget: 100, cumulativeDecoy: 1),
-            CreateAlignmentBaselineGroup(score: 50, qValue: 0.05, pepQValue: 0.06, pep: 0.07, cumulativeTarget: 80, cumulativeDecoy: 2),
-        ]);
+            CreateAlignmentBaselineGroup(bestPeptideQValue: 0.001, bestPeptideScore: 100, qValue: 0.01, cumulativeTarget: 100, cumulativeDecoy: 1),
+            CreateAlignmentBaselineGroup(bestPeptideQValue: 0.001, bestPeptideScore: 30, qValue: 0.05, cumulativeTarget: 80, cumulativeDecoy: 2),
+        ], FilterType.QValue);
 
         var engine = new TransientProteinScoringAndFdrEngine(
             baselineProteinGroups: [],
@@ -140,6 +140,38 @@ public class TransientProteinScoringAndFdrEngineTests
             Assert.That(strongGroup.CumulativeTarget, Is.EqualTo(100));
             Assert.That(weakGroup.QValue, Is.EqualTo(0.05).Within(1e-10));
             Assert.That(weakGroup.CumulativeTarget, Is.EqualTo(80));
+        });
+    }
+
+    /// <summary>
+    /// Equal q-value and PEP q-value thresholds make protein FDR filter on PEP; a lookup built for q-value
+    /// ranking must not be used to rank groups by PEP.
+    /// </summary>
+    [Test]
+    public void RunSpecific_WithALookupRankedByADifferentFilter_Throws()
+    {
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.01, pepQValueThreshold: 0.01);
+        var (group, psm) = CreateDistinctTransientGroupWithPsm(commonParameters, "PEPTIDEK", "ONLY", score: 20, scanNumber: 603);
+        var baselineFdr = BaselineFdr.CreateProteinGroupLookup(
+            [CreateAlignmentBaselineGroup(bestPeptideQValue: 0.001, bestPeptideScore: 100, qValue: 0.01, cumulativeTarget: 100, cumulativeDecoy: 1)],
+            FilterType.QValue);
+
+        var engine = new TransientProteinScoringAndFdrEngine(
+            baselineProteinGroups: [],
+            transientProteinGroups: [group],
+            neighborhoodPsms: [psm],
+            baselineFdr,
+            noOneHitWonders: false,
+            treatModPeptidesAsDifferentPeptides: true,
+            mergeIndistinguishableProteinGroups: false,
+            commonParameters,
+            fileSpecificParameters: null,
+            nestedIds: []);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(engine.FilterType, Is.EqualTo(FilterType.PepQValue));
+            Assert.That(() => engine.Run(), Throws.TypeOf<MetaMorpheusException>());
         });
     }
 
@@ -176,13 +208,12 @@ public class TransientProteinScoringAndFdrEngineTests
         return (transientGroup, psm);
     }
 
-    private static ProteinGroup CreateAlignmentBaselineGroup(double score, double qValue, double pepQValue, double pep,
+    private static ProteinGroup CreateAlignmentBaselineGroup(double bestPeptideQValue, double bestPeptideScore, double qValue,
         int cumulativeTarget, int cumulativeDecoy)
     {
         var group = ParallelSearchTestContextFactory.CreateProteinGroup(isDecoy: false, qValue: qValue, peptideCount: 1);
-        group.ProteinGroupScore = score;
-        group.BestPeptideQValue = pepQValue;
-        group.BestPeptidePEP = pep;
+        group.BestPeptideQValue = bestPeptideQValue;
+        group.BestPeptideScore = bestPeptideScore;
         group.CumulativeTarget = cumulativeTarget;
         group.CumulativeDecoy = cumulativeDecoy;
         return group;
