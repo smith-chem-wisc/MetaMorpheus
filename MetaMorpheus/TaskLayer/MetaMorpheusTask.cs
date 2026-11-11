@@ -1439,21 +1439,23 @@ namespace TaskLayer
 
         #region IO 
 
-        protected static void WritePsmsToTsv(IEnumerable<SpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned, bool writePeptideLevelResults = false)
+        /// <param name="maxThreads">Threads that build the rows (see <see cref="OrderedLines"/>); the file is the same for any number.</param>
+        protected static void WritePsmsToTsv(IEnumerable<SpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned, bool writePeptideLevelResults = false,
+            int maxThreads = 1)
         {
-            
+            // enumerated once: the column checks below and the rows read the same list
+            IReadOnlyList<SpectralMatch> rows = psms as IReadOnlyList<SpectralMatch> ?? psms.ToList();
             using (StreamWriter output = new StreamWriter(filePath))
             {
-                bool includeOneOverK0Column = psms.Any(p => p.ScanOneOverK0.HasValue);
-                bool includeCollisionalEnergyColumn = psms.Any(p => p.CollisionalEnergy.HasValue);
+                bool includeOneOverK0Column = rows.Any(p => p.ScanOneOverK0.HasValue);
+                bool includeCollisionalEnergyColumn = rows.Any(p => p.CollisionalEnergy.HasValue);
                 // Only emit the most-abundant mass-error column when a run actually used most-abundant
                 // selection (its property is null otherwise), mirroring the data-driven gating above.
-                bool includeMostAbundantColumn = psms.Any(p => p.MostAbundantMassErrorPpm != null);
+                bool includeMostAbundantColumn = rows.Any(p => p.MostAbundantMassErrorPpm != null);
                 output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn));
-                foreach (var psm in psms)
-                {
-                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn));
-                }
+                OrderedLines.Write(output, rows,
+                    psm => psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn),
+                    maxThreads);
             }
         }
 

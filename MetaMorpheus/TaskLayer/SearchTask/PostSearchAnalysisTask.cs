@@ -27,6 +27,7 @@ using Omics.BioPolymer;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
 using EngineLayer.SpectrumMatch;
+using EngineLayer.Util;
 using Omics.Fragmentation;
 using MassSpectrometry.MzSpectra;
 using PredictionClients.Koina.AbstractClasses;
@@ -1621,7 +1622,8 @@ namespace TaskLayer
             }
             else
             {
-                WritePsmsToTsv(psms, filePath, Parameters.SearchParameters.ModsToWriteSelection, writePeptideLevelResults);
+                WritePsmsToTsv(psms, filePath, Parameters.SearchParameters.ModsToWriteSelection, writePeptideLevelResults,
+                    CommonParameters.MaxThreadsToUsePerFile);
             }
         }
         private void WritePsmResults()
@@ -2216,15 +2218,13 @@ namespace TaskLayer
                                                 string.Join('\t', reporterIonLabels);
                 output.WriteLine(headerWithReporterIons);
 
-                // Pre-allocate StringBuilder for reuse
-                var sb = new StringBuilder(256);
-
                 // pre-allocate zero array for efficiency
                 var zeroIntensityString = String.Join('\t', Enumerable.Repeat("0", reporterIonLabels.Count));
 
-                foreach (var psm in psms)
+                // each row is built on its own, so rows can be built on several threads (OrderedLines)
+                string Row(SpectralMatch psm)
                 {
-                    sb.Clear();
+                    var sb = new StringBuilder(256);
                     sb.Append(psm.ToString(Parameters.SearchParameters.ModsToWriteSelection, writePeptideLevelResults).Trim());
                     sb.Append('\t');
 
@@ -2241,8 +2241,10 @@ namespace TaskLayer
                         sb.Append(zeroIntensityString);
                     }
 
-                    output.WriteLine(sb.ToString());
+                    return sb.ToString();
                 }
+
+                OrderedLines.Write(output, psms as IReadOnlyList<SpectralMatch> ?? psms.ToList(), Row, CommonParameters.MaxThreadsToUsePerFile);
             }
         }
         private void CompressIndividualFileResults()
