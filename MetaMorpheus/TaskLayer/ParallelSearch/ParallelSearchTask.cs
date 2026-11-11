@@ -2,9 +2,11 @@
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.Indexing;
 using EngineLayer.ParallelSearch;
 using EngineLayer.ParallelSearch.FdrAlignment;
 using EngineLayer.SpectrumMatch;
+using EngineLayer.Util;
 using MassSpectrometry;
 using Nett;
 using Omics;
@@ -99,6 +101,9 @@ public class ParallelSearchTask : SearchTask
 
     #endregion
 
+    /// <summary> Rough memory for one database searched at once: its copy of the baseline PSM array, its per-scan lock and any PSMs it changes. </summary>
+    private const int TransientBytesPerScan = 128;
+
     protected override MyTaskResults RunSpecific(string outputFolder,
         List<DbForTask> dbFilenameList, List<string> currentRawFileList,
         string taskId, FileSpecificParameters[] fileSettingsList)
@@ -143,27 +148,29 @@ public class ParallelSearchTask : SearchTask
 
         Status($"Starting search of {TotalDatabases} transient databases...", taskId);
 
-        // Determine optimal thread allocation
-        int totalAvailableThreads = Environment.ProcessorCount;
-         int databaseParallelism = Math.Min(ParallelSearchParameters.MaxSearchesInParallel,
-             ParallelSearchParameters.TransientDatabases.Count);
-         int threadsPerDatabase = Math.Max(1, totalAvailableThreads / databaseParallelism);
-         CommonParameters.MaxThreadsToUsePerFile = threadsPerDatabase;
+        // The user's MaxThreadsToUsePerFile is one budget shared by every database searched at once; MaxSearchesInParallel caps how many.
+        // Each worker gets its own copy of the parameters, so the task's own CommonParameters are never changed.
+        int databasesToProcess = Math.Max(1, ParallelSearchParameters.TransientDatabases.Count(db =>
+            ParallelSearchParameters.OverwriteTransientSearchOutputs
+            || !_resultsManager!.HasCachedResults(Path.GetFileNameWithoutExtension(db.FilePath))));
+        long bytesPerDatabase = (long)AllSortedMs2Scans.Length * TransientBytesPerScan;
+        FileParallelismPlan plan = FileParallelism.Decide(databasesToProcess, CommonParameters.MaxThreadsToUsePerFile,
+            IndexPartitioning.AvailableBytes(), bytesPerDatabase, ParallelSearchParameters.MaxSearchesInParallel);
+        ProseCreatedWhileRunning.Append($"transient databases searched in parallel = {plan.FilesInParallel} of {databasesToProcess} " +
+            $"(limited by {plan.LimitedBy}), each with {plan.ThreadsPerFile} threads; ");
+        CommonParameters transientParameters = CommonParameters.CloneWithNewMaxThreadsToUsePerFile(plan.ThreadsPerFile);
 
         // Loop through each transient database
-         try
-         {
-             Parallel.ForEach(ParallelSearchParameters.TransientDatabases,
-                 new ParallelOptions { MaxDegreeOfParallelism = databaseParallelism },
-                 transientDbPath =>
-                 {
-                     ProcessTransientDatabase(transientDbPath, outputFolder, taskId);
-                 });
-         }
-         finally
-         {
-             CompleteCompletedDatabaseWriter();
-         }
+        try
+        {
+            var databases = ParallelSearchParameters.TransientDatabases;
+            FileParallelism.ForEachFile(databases.Count, plan.FilesInParallel,
+                index => ProcessTransientDatabase(databases[index], outputFolder, taskId, transientParameters));
+        }
+        finally
+        {
+            CompleteCompletedDatabaseWriter();
+        }
 
           Finalization:
 
@@ -401,12 +408,19 @@ public class ParallelSearchTask : SearchTask
          var specLoadingNestedIds = new List<string> { taskId, "Spectra Loading" };
          Status("Loading spectra files...", specLoadingNestedIds);
 
-        Parallel.ForEach(currentRawFileList,
-            new ParallelOptions { MaxDegreeOfParallelism = ParallelSearchParameters.MaxSearchesInParallel },
-             rawFile =>
+        // The user's thread budget is shared by the files loaded at once; copies are made here, on one thread.
+        FileParallelismPlan plan = FileParallelism.Decide(currentRawFileList.Count, CommonParameters.MaxThreadsToUsePerFile,
+            0, 0, ParallelSearchParameters.MaxSearchesInParallel);
+        var paramsPerFile = currentRawFileList
+            .Select((rawFile, i) => SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i], rawFile)
+                .CloneWithNewMaxThreadsToUsePerFile(plan.ThreadsPerFile))
+            .ToArray();
+
+        FileParallelism.ForEachFile(currentRawFileList.Count, plan.FilesInParallel,
+             fileIndex =>
              {
-                 var fileParams = SetAllFileSpecificCommonParams(CommonParameters,
-                     fileSettingsList[currentRawFileList.IndexOf(rawFile)], rawFile);
+                 string rawFile = currentRawFileList[fileIndex];
+                 var fileParams = paramsPerFile[fileIndex];
                  var msDataFile = myFileManager.LoadFile(rawFile, fileParams);
                  var ms2Scans = GetMs2Scans(msDataFile, rawFile, fileParams)
                      .OrderBy(b => b.PrecursorMass).ToArray();
@@ -458,7 +472,7 @@ public class ParallelSearchTask : SearchTask
 
     #region Search
 
-    private void ProcessTransientDatabase(DbForTask transientDb, string outputFolder, string taskId)
+    private void ProcessTransientDatabase(DbForTask transientDb, string outputFolder, string taskId, CommonParameters commonParameters)
     {
         if (GlobalVariables.StopLoops)
             return;
@@ -497,7 +511,7 @@ public class ParallelSearchTask : SearchTask
         Status($"Loading transient database {dbName}...", nestedIds);
 
          // Load transient database
-         var transientProteins = LoadTransientDatabase(transientDb, nestedIds, taskId);
+         var transientProteins = LoadTransientDatabase(transientDb, nestedIds, taskId, commonParameters);
 
          if (GlobalVariables.StopLoops)
          {
@@ -512,7 +526,7 @@ public class ParallelSearchTask : SearchTask
 
          // Reuse baseline PSMs with copy-on-write in peptide/proteoform mode.
          SpectralMatch[] psmArray = BaseSearchPsms.ToArray();
-         PerformSearch(transientProteins, psmArray, nestedIds, out HashSet<int> updatedPsmIndexes, out int transientPeptideCount, useCopyOnWrite: true);
+         PerformSearch(transientProteins, psmArray, nestedIds, out HashSet<int> updatedPsmIndexes, out int transientPeptideCount, useCopyOnWrite: true, commonParameters: commonParameters);
 
         Status($"Performing post-search analysis for {dbName}...", nestedIds);
 
@@ -529,7 +543,8 @@ public class ParallelSearchTask : SearchTask
              transientPeptideCount, 
              transientProteins, 
               transientDb,
-              updatedPsmIndexes
+              updatedPsmIndexes,
+              commonParameters
           ).GetAwaiter().GetResult();
 
          _completedDatabaseWriteChannel!.Writer.WriteAsync((analysisContext, dbResults)).AsTask().GetAwaiter().GetResult();
@@ -543,8 +558,9 @@ public class ParallelSearchTask : SearchTask
     /// <summary>
     /// Populates and returns the spectral match array using classic search engine
     /// </summary>
-     private void PerformSearch(List<IBioPolymer> proteinsToSearch, SpectralMatch[] spectralMatchArray, List<string> nestedIds, out HashSet<int> updatedPsmIndexes, out int peptidesSearched, bool useCopyOnWrite = false)
+     private void PerformSearch(List<IBioPolymer> proteinsToSearch, SpectralMatch[] spectralMatchArray, List<string> nestedIds, out HashSet<int> updatedPsmIndexes, out int peptidesSearched, bool useCopyOnWrite = false, CommonParameters? commonParameters = null)
      {
+         commonParameters ??= CommonParameters;
          // with per-file tolerances the window is searched at its widest and narrowed per scan inside the engine
          var massDiffAcceptor = GetMassDiffAcceptor(
              _perFileTolerances?.WidestPrecursor ?? CommonParameters.PrecursorMassTolerance,
@@ -554,7 +570,7 @@ public class ParallelSearchTask : SearchTask
          // Run the classic search engine
           var searchEngine = new TransientClassicSearchEngine(
               spectralMatchArray, AllSortedMs2Scans, VariableModifications,
-              FixedModifications, proteinsToSearch, massDiffAcceptor, CommonParameters,
+              FixedModifications, proteinsToSearch, massDiffAcceptor, commonParameters,
               FileSpecificParameters, nestedIds, copyOnWriteEnabled: useCopyOnWrite,
               perFileTolerances: _perFileTolerances);
 
@@ -574,7 +590,8 @@ public class ParallelSearchTask : SearchTask
         int transientPeptideCount,
         List<IBioPolymer> transientProteins,
         DbForTask transientDatabase,
-        HashSet<int> updatedPsmIndexes)
+        HashSet<int> updatedPsmIndexes,
+        CommonParameters commonParameters)
     {
         bool writeAllResults = !ParallelSearchParameters.WriteTransientResultsOnly;
 
@@ -612,7 +629,7 @@ public class ParallelSearchTask : SearchTask
                 transientProteins,
                 _baselinePeptideKeyToScanIndexes,
                 SearchParameters.ModPeptidesAreDifferent,
-                CommonParameters,
+                commonParameters,
                 FileSpecificParameters,
                 nestedIds);
 
@@ -640,7 +657,7 @@ public class ParallelSearchTask : SearchTask
                             transientPsmsForParsimony,
                             _baselineProteinGroupFdr,
                             SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreDifferent,
-                            true, CommonParameters, FileSpecificParameters, nestedIds).RunAsync();
+                            true, commonParameters, FileSpecificParameters, nestedIds).RunAsync();
 
                 proteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
             }
@@ -677,7 +694,7 @@ public class ParallelSearchTask : SearchTask
             TransientPeptides = transientPeptides,
             ProteinGroups = proteinGroups,
             TransientProteinGroups = transientProteinGroups,
-            CommonParameters = CommonParameters,
+            CommonParameters = commonParameters,
             TotalProteins = totalProteins,
             TransientPeptideCount = transientPeptideCount,
             OutputFolder = outputFolder,
@@ -958,10 +975,10 @@ public class ParallelSearchTask : SearchTask
     #region Transient Protein Handling
 
     private List<IBioPolymer> LoadTransientDatabase(DbForTask transientDbPath,
-        List<string> nestedIds, string taskId)
+        List<string> nestedIds, string taskId, CommonParameters commonParameters)
     {
         var transientDbList = new List<DbForTask> { transientDbPath };
-        var transientDbLoader = new DatabaseLoadingEngine(CommonParameters,
+        var transientDbLoader = new DatabaseLoadingEngine(commonParameters,
             FileSpecificParameters, nestedIds, transientDbList, taskId,
             SearchParameters.DecoyType, SearchParameters.SearchTarget,
             LocalizableModificationTypes);

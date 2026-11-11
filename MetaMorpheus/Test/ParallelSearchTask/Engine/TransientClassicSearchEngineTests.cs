@@ -30,10 +30,8 @@ public class TransientClassicSearchEngineTests
         return new CommonParameters(
             dissociationType: DissociationType.HCD,
             digestionParams: new DigestionParams(protease: ProteaseName, minPeptideLength: 1),
-            scoreCutoff: 1)
-        {
-            MaxThreadsToUsePerFile = threads
-        };
+            scoreCutoff: 1,
+            maxThreadsToUsePerFile: threads);
     }
 
     private static (SpectralMatch[] Baseline, SpectralMatch[] AfterTransient, TransientSearchEngineResults Results) Search(int threads)
