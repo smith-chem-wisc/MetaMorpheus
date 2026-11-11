@@ -25,11 +25,13 @@ internal static class ParallelSearchTestContextFactory
         double score,
         double psmQValue,
         double peptideQValue,
-        int scanNumber = 1)
+        int scanNumber = 1,
+        string baseSequence = "PEPTIDE",
+        double retentionTime = double.NaN)
     {
-        var protein = new Protein("PEPTIDE", isDecoy ? "DECOY" : "TARGET", isDecoy: isDecoy);
+        var protein = new Protein(baseSequence, isDecoy ? "DECOY" : "TARGET", isDecoy: isDecoy);
         var peptide = protein.Digest(new DigestionParams(minPeptideLength: 1), [], []).First();
-        var scan = CreateScan(scanNumber, commonParameters);
+        var scan = CreateScan(scanNumber, commonParameters, retentionTime);
 
         var psm = new PeptideSpectralMatch(peptide, 0, score, scanNumber, scan, commonParameters, new List<MatchedFragmentIon>());
         psm.ResolveAllAmbiguities();
@@ -95,7 +97,7 @@ internal static class ParallelSearchTestContextFactory
         return proteinGroup;
     }
 
-    internal static Ms2ScanWithSpecificMass CreateScan(int scanNumber, CommonParameters commonParameters)
+    internal static Ms2ScanWithSpecificMass CreateScan(int scanNumber, CommonParameters commonParameters, double retentionTime = double.NaN)
     {
         var msDataScan = new MassSpectrometry.MsDataScan(
             new MzSpectrum([1.0], [1.0], false),
@@ -103,7 +105,7 @@ internal static class ParallelSearchTestContextFactory
             scanNumber,
             true,
             Polarity.Positive,
-            double.NaN,
+            retentionTime,
             null,
             null,
             MZAnalyzerType.Orbitrap,

@@ -32,13 +32,54 @@ public class RetentionTimeCollector : IMetricCollector
         yield return PeptideAllRtErrors;
     }
 
-    private static double GetOrPredictRt(string fullSequence, IRetentionPredictable predictable)
+    /// <summary>
+    /// Predicts, in one batched call, every target sequence among <paramref name="matches"/> that is not cached yet.
+    /// One sequence at a time takes the model lock per peptide, so databases searched at once queue on each other.
+    /// </summary>
+    /// <remarks>
+    /// A batched value can differ from another batch's value for the same sequence by float32 rounding (about 1e-5),
+    /// so the first value cached wins and every database reads its predictions back from the cache.
+    /// </remarks>
+    private static void PredictUncachedSequences(IEnumerable<SpectralMatch> matches, int maxThreads)
     {
-        return _sharedPredictionCache.GetOrAdd(fullSequence, _ =>
+        var uncached = new Dictionary<string, IRetentionPredictable>(StringComparer.Ordinal);
+        foreach (var match in matches)
         {
-            double? predicted = _predictor.PredictRetentionTimeEquivalent(predictable, out var failureReason);
-            return predicted.GetValueOrDefault(-1);
-        });
+            foreach (var hypothesis in match.BestMatchingBioPolymersWithSetMods)
+            {
+                if (hypothesis.IsDecoy || hypothesis.SpecificBioPolymer is not IRetentionPredictable predictable)
+                    continue;
+
+                if (!_sharedPredictionCache.ContainsKey(predictable.FullSequence))
+                    uncached.TryAdd(predictable.FullSequence, predictable);
+            }
+        }
+
+        if (uncached.Count == 0)
+            return;
+
+        IReadOnlyList<(double? PredictedValue, IRetentionPredictable Peptide, RetentionTimeFailureReason? FailureReason)> predictions;
+        try
+        {
+            predictions = _predictor.PredictRetentionTimeEquivalents(uncached.Values, maxThreads);
+        }
+        catch (Exception)
+        {
+            // A fault in one batched forward pass fails the whole call; the single-peptide path absorbs faults per peptide.
+            foreach (var (fullSequence, predictable) in uncached)
+                _sharedPredictionCache.TryAdd(fullSequence, _predictor.PredictRetentionTimeEquivalent(predictable, out _) ?? double.NaN);
+            return;
+        }
+
+        // Keyed by each result's own peptide: the predictor interface does not promise results in input order.
+        foreach (var (predictedValue, peptide, _) in predictions)
+            _sharedPredictionCache.TryAdd(peptide.FullSequence, predictedValue ?? double.NaN);
+    }
+
+    /// <summary>The cached prediction for a sequence, or NaN when it could not be predicted.</summary>
+    private static double CachedPrediction(string fullSequence)
+    {
+        return _sharedPredictionCache.TryGetValue(fullSequence, out double predicted) ? predicted : double.NaN;
     }
 
     public Dictionary<string, object> CollectData(TransientDatabaseContext context)
@@ -49,6 +90,11 @@ public class RetentionTimeCollector : IMetricCollector
         var confidentPsms = context.TransientPsms
             .Where(p => p.FdrInfo.QValue <= qValueThreshold)
             .ToList();
+        var confidentPeptides = context.TransientPeptides
+            .Where(p => p.PeptideFdrInfo?.QValue <= qValueThreshold)
+            .ToList();
+
+        PredictUncachedSequences(confidentPsms.Concat(confidentPeptides), context.CommonParameters.MaxThreadsToUsePerFile);
 
         List<double> allPsmRtErrors = new();
         List<double> psmObservedRts = new();
@@ -63,10 +109,9 @@ public class RetentionTimeCollector : IMetricCollector
                 if (hypothesis.IsDecoy)
                     continue;
 
-                string key = hypothesis.SpecificBioPolymer.FullSequence;
-                double predictedRt = GetOrPredictRt(key, hypothesis.SpecificBioPolymer as IRetentionPredictable);
+                double predictedRt = CachedPrediction(hypothesis.SpecificBioPolymer.FullSequence);
 
-                if (predictedRt <= 0)
+                if (!(predictedRt > 0)) // also skips NaN, a sequence that could not be predicted
                     continue;
 
                 double rtError = observedRt - predictedRt;
@@ -79,10 +124,6 @@ public class RetentionTimeCollector : IMetricCollector
         }
 
         // Peptides
-        var confidentPeptides = context.TransientPeptides
-            .Where(p => p.PeptideFdrInfo?.QValue <= qValueThreshold)
-            .ToList();
-
         List<double> allPeptideRtErrors = new();
         List<double> peptideObservedRts = new();
         List<double> peptidePredictedRts = new();
@@ -96,10 +137,9 @@ public class RetentionTimeCollector : IMetricCollector
                 if (hypothesis.IsDecoy)
                     continue;
 
-                string key = hypothesis.SpecificBioPolymer.FullSequence;
-                double predictedRt = GetOrPredictRt(key, hypothesis.SpecificBioPolymer as IRetentionPredictable);
+                double predictedRt = CachedPrediction(hypothesis.SpecificBioPolymer.FullSequence);
 
-                if (predictedRt <= 0)
+                if (!(predictedRt > 0)) // also skips NaN, a sequence that could not be predicted
                     continue;
 
                 double rtError = observedRt - predictedRt;
