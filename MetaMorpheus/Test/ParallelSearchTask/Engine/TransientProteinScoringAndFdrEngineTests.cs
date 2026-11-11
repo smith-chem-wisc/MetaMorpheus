@@ -34,14 +34,13 @@ public class TransientProteinScoringAndFdrEngineTests
             CreateAlignmentBaselineGroup(score: 50, qValue: 0.05, pepQValue: 0.06, pep: 0.07, cumulativeTarget: 80, cumulativeDecoy: 2),
         };
 
-        var alignmentService = new ProteinGroupFdrAlignmentService();
-        alignmentService.BuildBaselineCache(alignmentBaselineGroups);
+        var baselineFdr = BaselineFdr.CreateProteinGroupLookup(alignmentBaselineGroups);
 
         var engine = new TransientProteinScoringAndFdrEngine(
             new List<ProteinGroup> { baselineGroup },
             new List<ProteinGroup> { transientGroup },
             new List<SpectralMatch> { transientPsm },
-            alignmentService,
+            baselineFdr,
             noOneHitWonders: false,
             treatModPeptidesAsDifferentPeptides: true,
             mergeIndistinguishableProteinGroups: true,
@@ -72,14 +71,13 @@ public class TransientProteinScoringAndFdrEngineTests
         var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters();
         var (transientGroup, transientPsm) = CreateTransientGroupWithPsm(commonParameters, score: 95, psmQValue: 0.04);
 
-        var alignmentService = new ProteinGroupFdrAlignmentService();
-        alignmentService.BuildBaselineCache([]);
+        var baselineFdr = BaselineFdr.CreateProteinGroupLookup([]);
 
         var engine = new TransientProteinScoringAndFdrEngine(
             baselineProteinGroups: [],
             transientProteinGroups: [transientGroup],
             neighborhoodPsms: [transientPsm],
-            alignmentService,
+            baselineFdr,
             noOneHitWonders: false,
             treatModPeptidesAsDifferentPeptides: true,
             mergeIndistinguishableProteinGroups: true,

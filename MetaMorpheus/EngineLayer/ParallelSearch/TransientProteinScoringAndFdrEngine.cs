@@ -16,13 +16,13 @@ public sealed class TransientProteinScoringAndFdrEngine : ProteinScoringAndFdrEn
     private readonly List<ProteinGroup> _baselineProteinGroups;
     private readonly List<ProteinGroup> _transientProteinGroups;
     private readonly IEnumerable<SpectralMatch> _scoringPsms;
-    private readonly ProteinGroupFdrAlignmentService _proteinGroupFdrAlignmentService;
+    private readonly BaselineScoreLookup<ProteinGroupFdr> _baselineFdr;
 
     public TransientProteinScoringAndFdrEngine(
         List<ProteinGroup> baselineProteinGroups,
         List<ProteinGroup> transientProteinGroups,
         List<SpectralMatch> neighborhoodPsms,
-        ProteinGroupFdrAlignmentService proteinGroupFdrAlignmentService,
+        BaselineScoreLookup<ProteinGroupFdr> baselineFdr,
         bool noOneHitWonders,
         bool treatModPeptidesAsDifferentPeptides,
         bool mergeIndistinguishableProteinGroups,
@@ -43,12 +43,12 @@ public sealed class TransientProteinScoringAndFdrEngine : ProteinScoringAndFdrEn
         ArgumentNullException.ThrowIfNull(baselineProteinGroups);
         ArgumentNullException.ThrowIfNull(transientProteinGroups);
         ArgumentNullException.ThrowIfNull(neighborhoodPsms);
-        ArgumentNullException.ThrowIfNull(proteinGroupFdrAlignmentService);
+        ArgumentNullException.ThrowIfNull(baselineFdr);
 
         _baselineProteinGroups = baselineProteinGroups;
         _transientProteinGroups = transientProteinGroups;
         _scoringPsms = neighborhoodPsms;
-        _proteinGroupFdrAlignmentService = proteinGroupFdrAlignmentService;
+        _baselineFdr = baselineFdr;
     }
 
     protected override MetaMorpheusEngineResults RunSpecific()
@@ -63,9 +63,9 @@ public sealed class TransientProteinScoringAndFdrEngine : ProteinScoringAndFdrEn
         List<ProteinGroup> filteredTransientGroups = ApplyNoOneHitWondersFilter(_transientProteinGroups);
         PopulateBestPeptideMetrics(filteredTransientGroups);
 
-        if (_proteinGroupFdrAlignmentService.HasBaselineCache)
+        if (!_baselineFdr.IsEmpty)
         {
-            _ = _proteinGroupFdrAlignmentService.ApplyBaseline(filteredTransientGroups);
+            BaselineFdr.AlignProteinGroups(_baselineFdr, filteredTransientGroups);
         }
         else if (filteredTransientGroups.Count > 0)
         {

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using EngineLayer;
-using EngineLayer.ParallelSearch.FdrAlignment;
 using NUnit.Framework;
 using TaskLayer.ParallelSearch.Analysis;
 using TaskLayer.ParallelSearch.Analysis.Collectors;
@@ -119,13 +118,5 @@ public class CollectorColumnAndMetricsTests
             Assert.That(() => left.Add(new TransientDatabaseMetrics("Other")), Throws.TypeOf<MetaMorpheusException>());
             Assert.That(() => left.Add(sameNameText), Throws.TypeOf<MetaMorpheusException>());
         });
-    }
-
-    [Test]
-    public void AlignmentStats_AddCountsFieldByField()
-    {
-        var total = AlignmentStats.Empty + new AlignmentStats(3, 1, 2) + new AlignmentStats(4, 0, 5);
-
-        Assert.That(total, Is.EqualTo(new AlignmentStats(7, 1, 7)));
     }
 }

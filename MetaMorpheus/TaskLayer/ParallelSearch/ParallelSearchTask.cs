@@ -84,9 +84,9 @@ public class ParallelSearchTask : SearchTask
 
 
     // Optimization caches for FDR alignment and parsimony
-    [TomlIgnore] private readonly PsmSpectralMatchFdrAlignmentService _psmFdrAlignmentService = new();
-    [TomlIgnore] private readonly PeptideSpectralMatchFdrAlignmentService _peptideFdrAlignmentService = new();
-    [TomlIgnore] private readonly ProteinGroupFdrAlignmentService _proteinGroupFdrAlignmentService = new();
+    [TomlIgnore] private BaselineScoreLookup<FdrInfo> _baselinePsmFdr = new([]);
+    [TomlIgnore] private BaselineScoreLookup<FdrInfo> _baselinePeptideFdr = new([]);
+    [TomlIgnore] private BaselineScoreLookup<ProteinGroupFdr> _baselineProteinGroupFdr = new([]);
     [TomlIgnore] private List<CachedProteinGroup> CachedBaselineProteinGroups { get; set; } = [];
     [TomlIgnore] private readonly Dictionary<string, List<int>> _baselinePeptideKeyToScanIndexes = new(StringComparer.Ordinal);
 
@@ -231,8 +231,8 @@ public class ParallelSearchTask : SearchTask
             baselineFdrEngine.Run();
         }
 
-        _psmFdrAlignmentService.BuildBaselineCache(baselinePsms);
-        _peptideFdrAlignmentService.BuildBaselineCache(baselinePsms);
+        _baselinePsmFdr = BaselineFdr.CreatePsmLookup(baselinePsms);
+        _baselinePeptideFdr = BaselineFdr.CreatePeptideLookup(baselinePsms);
         BuildBaselinePeptideToScanIndexLookup();
 
         if (SearchParameters.DoParsimony)
@@ -268,13 +268,13 @@ public class ParallelSearchTask : SearchTask
                     .Select(p => new CachedProteinGroup(p))
                     .ToList();
 
-                _proteinGroupFdrAlignmentService.BuildBaselineCache(baselineProteinScoringResults
+                _baselineProteinGroupFdr = BaselineFdr.CreateProteinGroupLookup(baselineProteinScoringResults
                     .SortedAndScoredProteinGroups);
             }
             else
             {
                 CachedBaselineProteinGroups = [];
-                _proteinGroupFdrAlignmentService.BuildBaselineCache([]);
+                _baselineProteinGroupFdr = new([]);
             }
         }
 
@@ -512,12 +512,12 @@ public class ParallelSearchTask : SearchTask
 
         // Apply FDR Alignment to PSMs
         var transientPsms = FilterToTransientDatabaseOnly(psmList, transientProteinAccessions).ToList();
-        _ = _psmFdrAlignmentService.ApplyBaseline(transientPsms);
+        BaselineFdr.AlignPsms(_baselinePsmFdr, transientPsms);
 
         // Collapse to peptides and apply FDR alignment to peptides
         var allPeptides = psmList.CollapseToPeptides(true).ToList();
         var transientPeptides = FilterToTransientDatabaseOnly(allPeptides, transientProteinAccessions).ToList();
-        _ = _peptideFdrAlignmentService.ApplyBaseline(transientPeptides);
+        BaselineFdr.AlignPeptides(_baselinePeptideFdr, transientPeptides);
 
         List<ProteinGroup>? proteinGroups = null;
         if (SearchParameters.DoParsimony && transientPsms.Count > 0)
@@ -557,7 +557,7 @@ public class ParallelSearchTask : SearchTask
                             baselineProteinGroups,
                             transientParsimonyGroups,
                             transientPsmsForParsimony,
-                            _proteinGroupFdrAlignmentService,
+                            _baselineProteinGroupFdr,
                             SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreDifferent,
                             true, CommonParameters, FileSpecificParameters, nestedIds).RunAsync();
 
