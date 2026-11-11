@@ -25,8 +25,10 @@ using UsefulProteomicsDatabases;
 namespace Test
 {
     /// <summary>
-    /// Result writing builds .psmtsv rows on several threads (<see cref="OrderedLines"/>). It may not change a byte of any
-    /// table: these tests hold the rows to one thread's rows, in five cultures.
+    /// Result writing builds .psmtsv rows on several threads (<see cref="OrderedLines"/>), and prepares each individual
+    /// file's FDR one file ahead of writing its tables (<see cref="PostSearchAnalysisTask.PrepareOneAhead{TItem,TPrepared}"/>).
+    /// Neither may change a byte of any table: these tests hold the rows to one thread's rows in five cultures, and the
+    /// preparations to the order and the one-file lead the individual-file tables rely on.
     /// </summary>
     [TestFixture]
     [NonParallelizable] // sets the current culture
@@ -177,6 +179,82 @@ namespace Test
                 CultureInfo.CurrentCulture = original;
                 Directory.Delete(dir, true);
             }
+        }
+
+        #endregion
+
+        #region PrepareOneAhead
+
+        [Test]
+        public static void PreparationsRunOneAheadOfTheWritesAndInOrder()
+        {
+            var events = new ConcurrentQueue<string>();
+            int preparing = 0;
+            int mostPreparing = 0;
+            PostSearchAnalysisTask.PrepareOneAhead(Enumerable.Range(0, 6).ToList(),
+                i =>
+                {
+                    int now = Interlocked.Increment(ref preparing);
+                    InterlockedMax(ref mostPreparing, now);
+                    events.Enqueue("prepare start " + i);
+                    Thread.Sleep(10);
+                    Interlocked.Decrement(ref preparing);
+                    return i * 10;
+                },
+                (i, prepared) =>
+                {
+                    Assert.That(prepared, Is.EqualTo(i * 10));
+                    Thread.Sleep(10);
+                    events.Enqueue("write end " + i);
+                });
+
+            List<string> order = events.ToList();
+            Assert.That(order.Where(e => e.StartsWith("prepare")), Is.EqualTo(Enumerable.Range(0, 6).Select(i => "prepare start " + i)));
+            Assert.That(order.Where(e => e.StartsWith("write")), Is.EqualTo(Enumerable.Range(0, 6).Select(i => "write end " + i)));
+            Assert.That(mostPreparing, Is.EqualTo(1), "preparations never overlap each other");
+            for (int i = 2; i < 6; i++)
+            {
+                Assert.That(order.IndexOf("prepare start " + i), Is.GreaterThan(order.IndexOf("write end " + (i - 2))),
+                    "a preparation starts only once the write two items back has finished: one item ahead, no more");
+            }
+        }
+
+        private static void InterlockedMax(ref int target, int value)
+        {
+            int seen;
+            while (value > (seen = Volatile.Read(ref target)) && Interlocked.CompareExchange(ref target, value, seen) != seen)
+            {
+            }
+        }
+
+        [Test]
+        public static void AFailedPreparationIsThrownAsItselfBeforeItsWrite()
+        {
+            var written = new List<int>();
+            Assert.That(() => PostSearchAnalysisTask.PrepareOneAhead(Enumerable.Range(0, 6).ToList(),
+                    i => i == 3 ? throw new InvalidOperationException("prepare 3") : i,
+                    (i, _) => written.Add(i)),
+                Throws.InvalidOperationException.With.Message.EqualTo("prepare 3"));
+            Assert.That(written, Is.EqualTo(new[] { 0, 1, 2 }));
+        }
+
+        [Test]
+        public static void AFailedWriteWaitsForThePreparationBehindIt()
+        {
+            int finished = 0;
+            Assert.That(() => PostSearchAnalysisTask.PrepareOneAhead(Enumerable.Range(0, 6).ToList(),
+                    i =>
+                    {
+                        Thread.Sleep(i == 3 ? 200 : 0);
+                        Interlocked.Increment(ref finished);
+                        return i;
+                    },
+                    (i, _) =>
+                    {
+                        if (i == 2) throw new IOException("write 2");
+                    }),
+                Throws.TypeOf<IOException>().With.Message.EqualTo("write 2"));
+            Assert.That(Volatile.Read(ref finished), Is.EqualTo(4), "the preparation of item 3 had finished when the failure was thrown");
         }
 
         #endregion
