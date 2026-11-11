@@ -217,6 +217,58 @@ public class ParallelSearchTaskEndToEndTests
         }
     }
 
+    /// <summary>
+    /// The PSM and peptide files follow a normal search's write settings: with decoys and
+    /// high q-value matches turned off, neither appears in the baseline or per-database files.
+    /// </summary>
+    [Test]
+    public void RunTask_PsmAndPeptideFilesHonourTheWriteSettings()
+    {
+        string outputFolder = FreshOutputFolder("ParallelSearchWriteSettings");
+        try
+        {
+            string a549 = Path.GetFileNameWithoutExtension(BaseDatabasePath);
+            var task = new TaskLayer.ParallelSearch.ParallelSearchTask([new DbForTask(BaseDatabasePath, false)]);
+            task.ParallelSearchParameters.WriteTransientResultsOnly = false;
+            task.ParallelSearchParameters.WriteDecoys = false;
+            task.ParallelSearchParameters.WriteHighQValuePsms = false;
+
+            task.RunTask(outputFolder, [new DbForTask(TransientDatabasePaths[0], false)], [SpectraPath], "parallel");
+
+            string[] files =
+            [
+                Path.Combine(outputFolder, "BasePSMs.psmtsv"),
+                Path.Combine(outputFolder, "BasePeptides.psmtsv"),
+                Path.Combine(outputFolder, a549, $"{a549}_AllPSMs.psmtsv"),
+                Path.Combine(outputFolder, a549, "AllPSMs.psmtsv"),
+                Path.Combine(outputFolder, a549, $"{a549}_AllPeptides.psmtsv"),
+                Path.Combine(outputFolder, a549, "AllPeptides.psmtsv"),
+            ];
+
+            Assert.Multiple(() =>
+            {
+                foreach (string file in files)
+                {
+                    string[] lines = File.ReadAllLines(file);
+                    string[] header = lines[0].Split('\t');
+                    int decoyColumn = System.Array.IndexOf(header, "Decoy/Contaminant/Target");
+                    int qValueColumn = System.Array.IndexOf(header, "QValue");
+                    var rows = lines.Skip(1).Select(l => l.Split('\t')).ToList();
+
+                    Assert.That(rows, Is.Not.Empty, file);
+                    Assert.That(rows.Where(r => r[decoyColumn].Contains('D')), Is.Empty, $"decoys written to {file}");
+                    Assert.That(rows.Select(r => double.Parse(r[qValueColumn], System.Globalization.CultureInfo.InvariantCulture)),
+                        Has.All.LessThanOrEqualTo(0.01), $"high q-value matches written to {file}");
+                }
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
+        }
+    }
+
     [Test]
     public void Toml_RoundTripsTaskTypeAndTransientDatabases()
     {

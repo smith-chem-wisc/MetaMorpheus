@@ -360,13 +360,13 @@ public class ParallelSearchTask : SearchTask
         // Write Psms and Peptides from base search
         string psmFile = Path.Combine(outputFolder,
             $"Base{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s.{GlobalVariables.AnalyteType.GetSpectralMatchExtension()}");
-        var psmTask = WritePsmsToTsvAsync(BaseSearchPsms.Where(p => p != null).OrderByDescending(p => p), psmFile, SearchParameters.ModsToWriteSelection, false)
+        var psmTask = WritePsmsToTsvAsync(BaseSearchPsms.Where(p => p != null), psmFile, false)
             .ContinueWith(_ => FinishedWritingFile(psmFile, [taskId]));
 
         var allPeptides = BaseSearchPsms.Where(p => p != null).CollapseToPeptides(true).OrderByDescending(p => p).ToList();
         string peptideFile = Path.Combine(outputFolder,
             $"Base{GlobalVariables.AnalyteType}s.{GlobalVariables.AnalyteType.GetSpectralMatchExtension()}");
-        var peptideTask = WritePsmsToTsvAsync(allPeptides, peptideFile, SearchParameters.ModsToWriteSelection, true)
+        var peptideTask = WritePsmsToTsvAsync(allPeptides, peptideFile, true)
             .ContinueWith(_ => FinishedWritingFile(peptideFile, [taskId]));
 
         Task proteinTask = Task.CompletedTask;
@@ -752,14 +752,14 @@ public class ParallelSearchTask : SearchTask
 
         string transientPsmFile = Path.Combine(outputFolder,
             $"{dbName}_All{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s.{GlobalVariables.AnalyteType.GetSpectralMatchExtension()}");
-        await WritePsmsToTsvAsync(context.TransientPsms, transientPsmFile, SearchParameters.ModsToWriteSelection, false);
+        await WritePsmsToTsvAsync(context.TransientPsms, transientPsmFile, false);
         FinishedWritingFile(transientPsmFile, nestedIds);
 
         if (writeAllResults)
         {
             string psmFile = Path.Combine(outputFolder,
                 $"All{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s.{GlobalVariables.AnalyteType.GetSpectralMatchExtension()}");
-            await WritePsmsToTsvAsync(context.AllPsms, psmFile, SearchParameters.ModsToWriteSelection, false);
+            await WritePsmsToTsvAsync(context.AllPsms, psmFile, false);
             FinishedWritingFile(psmFile, nestedIds);
         }
 
@@ -767,7 +767,7 @@ public class ParallelSearchTask : SearchTask
         {
             string transientPeptideFile = Path.Combine(outputFolder,
             $"{dbName}_All{GlobalVariables.AnalyteType}s.{GlobalVariables.AnalyteType.GetSpectralMatchExtension()}");
-            await WritePsmsToTsvAsync(context.TransientPeptides, transientPeptideFile, SearchParameters.ModsToWriteSelection, true);
+            await WritePsmsToTsvAsync(context.TransientPeptides, transientPeptideFile, true);
             FinishedWritingFile(transientPeptideFile, nestedIds);
         }
 
@@ -775,7 +775,7 @@ public class ParallelSearchTask : SearchTask
         {
             string peptideFile = Path.Combine(outputFolder,
                 $"All{GlobalVariables.AnalyteType}s.{GlobalVariables.AnalyteType.GetSpectralMatchExtension()}");
-            await WritePsmsToTsvAsync(context.AllPeptides, peptideFile, SearchParameters.ModsToWriteSelection, true);
+            await WritePsmsToTsvAsync(context.AllPeptides, peptideFile, true);
             FinishedWritingFile(peptideFile, nestedIds);
         }
 
@@ -857,15 +857,29 @@ public class ParallelSearchTask : SearchTask
         }
     }
 
-    private async Task WritePsmsToTsvAsync(IEnumerable<SpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned, bool writePeptideLevelResults = false)
+    /// <summary>
+    /// Writes PSMs or peptides as a normal search does: the WriteDecoys, WriteContaminants and
+    /// WriteHighQValuePsms filter from <see cref="PostSearchAnalysisTask"/>, sorted best first, then
+    /// <see cref="MetaMorpheusTask.WritePsmsToTsv"/> for the columns (1/K0, collision energy and the
+    /// most-abundant mass error when the data has them). Runs off the caller's thread so the baseline's
+    /// files can be written at the same time.
+    /// </summary>
+    private Task WritePsmsToTsvAsync(IEnumerable<SpectralMatch> psms, string filePath, bool writePeptideLevelResults)
     {
-        await using StreamWriter output = new StreamWriter(filePath);
-        bool includeOneOverK0Column = psms.Any(p => p.ScanOneOverK0.HasValue);
-        await output.WriteLineAsync(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column));
-        foreach (var psm in psms)
+        return Task.Run(() =>
         {
-            await output.WriteLineAsync(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column));
-        }
+            var psmsToWrite = FilteredPsms.Filter(psms,
+                    CommonParameters,
+                    includeDecoys: SearchParameters.WriteDecoys,
+                    includeContaminants: SearchParameters.WriteContaminants,
+                    includeAmbiguous: true,
+                    includeHighQValuePsms: SearchParameters.WriteHighQValuePsms,
+                    filterAtPeptideLevel: writePeptideLevelResults)
+                .OrderByDescending(p => p)
+                .ToList();
+
+            WritePsmsToTsv(psmsToWrite, filePath, SearchParameters.ModsToWriteSelection, writePeptideLevelResults);
+        });
     }
 
     private async Task WriteSpectralLibraryAsync(IEnumerable<SpectralMatch> psms, string outFilePath)

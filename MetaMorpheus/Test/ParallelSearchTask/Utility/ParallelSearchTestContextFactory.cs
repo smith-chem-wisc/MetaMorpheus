@@ -95,7 +95,7 @@ internal static class ParallelSearchTestContextFactory
         return proteinGroup;
     }
 
-    private static Ms2ScanWithSpecificMass CreateScan(int scanNumber, CommonParameters commonParameters)
+    internal static Ms2ScanWithSpecificMass CreateScan(int scanNumber, CommonParameters commonParameters)
     {
         var msDataScan = new MassSpectrometry.MsDataScan(
             new MzSpectrum([1.0], [1.0], false),

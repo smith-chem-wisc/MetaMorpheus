@@ -100,6 +100,67 @@ public class TransientProteinScoringAndFdrEngineTests
         });
     }
 
+    /// <summary>
+    /// Parsimony hands transient groups over in no particular score order. Here the weaker group comes
+    /// first; each group must still take the baseline values for its own score. Before the alignment
+    /// rewrite the stronger group inherited the weaker group's q-value.
+    /// </summary>
+    [Test]
+    public void RunSpecific_AlignsEachTransientGroupByItsOwnScore_WhateverOrderParsimonyGaveThem()
+    {
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters();
+        var (weakGroup, weakPsm) = CreateDistinctTransientGroupWithPsm(commonParameters, "PEPTIDEK", "WEAK", score: 40, scanNumber: 601);
+        var (strongGroup, strongPsm) = CreateDistinctTransientGroupWithPsm(commonParameters, "ELVISLIVESK", "STRONG", score: 120, scanNumber: 602);
+
+        var baselineFdr = BaselineFdr.CreateProteinGroupLookup(
+        [
+            CreateAlignmentBaselineGroup(score: 200, qValue: 0.01, pepQValue: 0.02, pep: 0.03, cumulativeTarget: 100, cumulativeDecoy: 1),
+            CreateAlignmentBaselineGroup(score: 50, qValue: 0.05, pepQValue: 0.06, pep: 0.07, cumulativeTarget: 80, cumulativeDecoy: 2),
+        ]);
+
+        var engine = new TransientProteinScoringAndFdrEngine(
+            baselineProteinGroups: [],
+            transientProteinGroups: [weakGroup, strongGroup],
+            neighborhoodPsms: [weakPsm, strongPsm],
+            baselineFdr,
+            noOneHitWonders: false,
+            treatModPeptidesAsDifferentPeptides: true,
+            mergeIndistinguishableProteinGroups: false,
+            commonParameters,
+            fileSpecificParameters: null,
+            nestedIds: []);
+
+        var results = (ProteinScoringAndFdrResults)engine.Run();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(results.SortedAndScoredProteinGroups, Has.Count.EqualTo(2));
+            Assert.That(strongGroup.ProteinGroupScore, Is.GreaterThan(weakGroup.ProteinGroupScore));
+            Assert.That(strongGroup.QValue, Is.EqualTo(0.01).Within(1e-10));
+            Assert.That(strongGroup.CumulativeTarget, Is.EqualTo(100));
+            Assert.That(weakGroup.QValue, Is.EqualTo(0.05).Within(1e-10));
+            Assert.That(weakGroup.CumulativeTarget, Is.EqualTo(80));
+        });
+    }
+
+    private static (ProteinGroup Group, SpectralMatch Psm) CreateDistinctTransientGroupWithPsm(
+        CommonParameters commonParameters, string sequence, string accession, double score, int scanNumber)
+    {
+        var protein = new Proteomics.Protein(sequence, accession);
+        var peptide = protein.Digest(new Proteomics.ProteolyticDigestion.DigestionParams(minPeptideLength: 1), [], [])
+            .First(p => p.BaseSequence == sequence);
+        var scan = ParallelSearchTestContextFactory.CreateScan(scanNumber, commonParameters);
+        var psm = new PeptideSpectralMatch(peptide, 0, score, scanNumber, scan, commonParameters, new List<Omics.Fragmentation.MatchedFragmentIon>());
+        psm.ResolveAllAmbiguities();
+        psm.SetFdrValues(0, 0, 0.001, 0, 0, 0.001, 0, 0.001);
+
+        var group = new ProteinGroup(
+            new HashSet<IBioPolymer> { protein },
+            new HashSet<IBioPolymerWithSetMods> { peptide },
+            new HashSet<IBioPolymerWithSetMods> { peptide });
+        return (group, psm);
+    }
+
     private static (ProteinGroup Group, SpectralMatch Psm) CreateTransientGroupWithPsm(
         CommonParameters commonParameters,
         double score,
