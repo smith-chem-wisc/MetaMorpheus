@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using EngineLayer.DatabaseLoading;
 using Omics.Modifications;
 using TaskLayer;
+using TaskLayer.ParallelSearch;
 // Aliased rather than imported: `using Readers` collides with IO.ThermoRawFileReader over
 // ThermoRawFileReaderLicence, which this file uses, and CS0104 is not worth a whole namespace.
 using SdrfQuantAudit = Readers.SdrfQuantAudit;
@@ -274,6 +275,11 @@ namespace MetaMorpheusCommandLine
                     case "Average":
                         var AveragingTask = Toml.ReadFile<SpectralAveragingTask>(filePath, MetaMorpheusTask.tomlConfig);
                         taskList.Add(("Task" + (i + 1) + "AveragingTask", AveragingTask));
+                        break;
+
+                    case "ParallelSearch":
+                        var parallelSearchTask = Toml.ReadFile<ParallelSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        taskList.Add(("Task" + (i + 1) + "ParallelSearchTask", parallelSearchTask));
                         break;
 
                     case "Truncation":

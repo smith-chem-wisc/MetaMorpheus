@@ -35,27 +35,40 @@ namespace EngineLayer
         /// </summary>
         private readonly bool _treatModPeptidesAsDifferentPeptides;
 
-        public ProteinParsimonyEngine(List<SpectralMatch> unFilteredPsmsForParsimony, bool modPeptidesAreDifferent, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
+        /// <summary>
+        /// Takes every PSM from the search; the engine filters them for parsimony itself. All of them are kept so that
+        /// protein associations of low-confidence PSMs can be removed when a parsimonious protein explains them.
+        /// </summary>
+        public ProteinParsimonyEngine(List<SpectralMatch> unFilteredPsmsForParsimony, bool modPeptidesAreDifferent, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds)
+            : this(FilteredPsms.Filter(unFilteredPsmsForParsimony,
+                    commonParams: commonParameters,
+                    includeDecoys: true,
+                    includeContaminants: true,
+                    includeAmbiguous: false,
+                    includeHighQValuePsms: false).FilteredPsmsList,
+                unFilteredPsmsForParsimony, modPeptidesAreDifferent, commonParameters, fileSpecificParameters, nestedIds) { }
+
+        /// <summary>
+        /// Takes PSMs the caller has already filtered; they are used as-is and not filtered again.
+        /// </summary>
+        public ProteinParsimonyEngine(FilteredPsms filteredPsms, bool modPeptidesAreDifferent, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds)
+            : this(filteredPsms.FilteredPsmsList, filteredPsms.FilteredPsmsList, modPeptidesAreDifferent, commonParameters, fileSpecificParameters, nestedIds) { }
+
+        /// <param name="psmsForParsimony">PSMs to build parsimony from, used as-is (no q-value filtering here)</param>
+        /// <param name="allPsms">PSMs whose protein associations may be pruned after parsimony</param>
+        protected ProteinParsimonyEngine(List<SpectralMatch> psmsForParsimony, List<SpectralMatch> allPsms, bool modPeptidesAreDifferent, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             _treatModPeptidesAsDifferentPeptides = modPeptidesAreDifferent;
-            _fdrFilteredPsms = new List<SpectralMatch>();
-
-            var filtered = FilteredPsms.Filter(unFilteredPsmsForParsimony,
-                commonParams: CommonParameters,
-                includeDecoys: true,
-                includeContaminants: true,
-                includeAmbiguous: false,
-                includeHighQValuePsms: false);
 
             // parsimony will only use non-ambiguous, high-confidence PSMs
             // KEEP contaminants for use in parsimony!
             if (modPeptidesAreDifferent)
             {
-                _fdrFilteredPsms = filtered.FilteredPsmsList.Where(p => p.FullSequence != null).ToList();
+                _fdrFilteredPsms = psmsForParsimony.Where(p => p.FullSequence != null).ToList();
             }
             else
             {
-                _fdrFilteredPsms = filtered.FilteredPsmsList.Where(p => p.BaseSequence != null).ToList();
+                _fdrFilteredPsms = psmsForParsimony.Where(p => p.BaseSequence != null).ToList();
             }
 
             // peptides to use in parsimony = peptides observed in high-confidence PSMs (including decoys)
@@ -70,7 +83,7 @@ namespace EngineLayer
 
             // we're storing all PSMs (not just FDR-filtered ones) here because we will remove some protein associations
             // from low-confidence PSMs if they can be explained by a parsimonious protein
-            _allPsms = unFilteredPsmsForParsimony;
+            _allPsms = allPsms;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
