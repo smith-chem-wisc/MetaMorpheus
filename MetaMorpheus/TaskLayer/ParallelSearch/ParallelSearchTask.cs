@@ -159,30 +159,6 @@ public class ParallelSearchTask : SearchTask
 
           Finalization:
 
-        // If we have a de novo results path that has not been collected into our results yet, collect it before writing the summary.
-        if (ParallelSearchParameters.DeNovoMappingDataFilePath != null && _resultsManager.TransientDatabaseMetricsDictionary.All(p => p.Value.TotalPredictions == 0))
-        {
-            var collector = new DeNovoMappingCollector(ParallelSearchParameters.DeNovoMappingDataFilePath);
-
-            foreach (var (dbName, metrics) in _resultsManager.TransientDatabaseMetricsDictionary)
-            {
-                var dummyContext = new TransientDatabaseContext { DatabaseName = dbName};
-                 if (!collector.CanCollectData(dummyContext))
-                 {
-                     // Skip this analyzer or log warning
-                     continue;
-                 }
-
-                 var analysisResults = collector.CollectData(dummyContext);
-
-                 // Merge results into the aggregated result
-                 foreach (var kvp in analysisResults)
-                 {
-                     metrics.Results[kvp.Key] = kvp.Value;
-                 }
-             }
-        }
-
         // Rewrite the summary so it holds every database, including rows carried over from an earlier run
         Status("Writing summary...", taskId);
         _resultsManager!.PersistAnalysisCache();
@@ -394,11 +370,6 @@ public class ParallelSearchTask : SearchTask
         if (ParallelSearchParameters.DoParsimony)
         {
             collectors.Add(new ProteinGroupCollector("Homo sapiens"));
-        }
-
-        if (ParallelSearchParameters.DeNovoMappingDataFilePath != null && File.Exists(ParallelSearchParameters.DeNovoMappingDataFilePath))
-        {
-            collectors.Add(new DeNovoMappingCollector(ParallelSearchParameters.DeNovoMappingDataFilePath));
         }
 
         return new TransientDatabaseResultsManager(new MetricAggregator(collectors), analysisCachePath);
