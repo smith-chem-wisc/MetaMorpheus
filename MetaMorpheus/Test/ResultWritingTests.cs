@@ -79,12 +79,15 @@ namespace Test
             Assert.That(cultures, Has.None.EqualTo("de-DE"));
         }
 
+        /// <summary>
+        /// A line that fails in the middle batch (the next batch is being built) or in the last one (nothing is) is thrown
+        /// as its own exception.
+        /// </summary>
         [Test]
-        public static void AFailingLineIsThrownAsItself()
+        public static void AFailingLineIsThrownAsItself([Values(OrderedLines.BatchSize + 7, 3 * OrderedLines.BatchSize - 1)] int failing)
         {
             var items = Enumerable.Range(0, 3 * OrderedLines.BatchSize).ToList();
             using var writer = new StringWriter();
-            int failing = OrderedLines.BatchSize + 7;
             Assert.That(() => OrderedLines.Write(writer, items, i => i == failing ? throw new InvalidOperationException("row " + i) : i.ToString(), 8),
                 Throws.InvalidOperationException.With.Message.EqualTo("row " + failing));
         }
@@ -256,6 +259,24 @@ namespace Test
                     }),
                 Throws.TypeOf<IOException>().With.Message.EqualTo("write 2"));
             Assert.That(Volatile.Read(ref finished), Is.EqualTo(4), "the preparation of item 3 had finished when the failure was thrown");
+        }
+
+        [Test]
+        public static void AFailedLastWriteIsThrownAsItself()
+        {
+            var prepared = new List<int>();
+            Assert.That(() => PostSearchAnalysisTask.PrepareOneAhead(Enumerable.Range(0, 3).ToList(),
+                    i =>
+                    {
+                        lock (prepared) prepared.Add(i);
+                        return i;
+                    },
+                    (i, _) =>
+                    {
+                        if (i == 2) throw new IOException("write 2");
+                    }),
+                Throws.TypeOf<IOException>().With.Message.EqualTo("write 2"));
+            Assert.That(prepared, Is.EqualTo(new[] { 0, 1, 2 }), "nothing is prepared behind the last item");
         }
 
         #endregion

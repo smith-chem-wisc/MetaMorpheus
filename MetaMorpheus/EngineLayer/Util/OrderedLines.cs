@@ -51,7 +51,7 @@ namespace EngineLayer.Util
             {
                 for (int start = 0; start < items.Count; start += BatchSize)
                 {
-                    string[] lines = Result(next);
+                    string[] lines = next.GetAwaiter().GetResult();
                     next = start + BatchSize < items.Count
                         ? Build(items, start + BatchSize, line, maxThreads, culture, uiCulture)
                         : null;
@@ -79,42 +79,34 @@ namespace EngineLayer.Util
             return Task.Run(() =>
             {
                 var lines = new string[count];
-                Parallel.For(0, count, new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
-                    () =>
-                    {
-                        var own = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
-                        CultureInfo.CurrentCulture = culture;
-                        CultureInfo.CurrentUICulture = uiCulture;
-                        return own;
-                    },
-                    (i, _, own) =>
-                    {
-                        lines[i] = line(items[start + i]);
-                        return own;
-                    },
-                    own =>
-                    {
-                        CultureInfo.CurrentCulture = own.Item1;
-                        CultureInfo.CurrentUICulture = own.Item2;
-                    });
+                try
+                {
+                    Parallel.For(0, count, new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
+                        () =>
+                        {
+                            var own = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
+                            CultureInfo.CurrentCulture = culture;
+                            CultureInfo.CurrentUICulture = uiCulture;
+                            return own;
+                        },
+                        (i, _, own) =>
+                        {
+                            lines[i] = line(items[start + i]);
+                            return own;
+                        },
+                        own =>
+                        {
+                            CultureInfo.CurrentCulture = own.Item1;
+                            CultureInfo.CurrentUICulture = own.Item2;
+                        });
+                }
+                catch (AggregateException e) when (e.InnerExceptions.Count == 1)
+                {
+                    // the batch fails with the line's own exception, which awaiting it throws as itself, not the loop's wrapper
+                    ExceptionDispatchInfo.Capture(e.InnerException).Throw();
+                }
                 return lines;
             });
-        }
-
-        /// <summary>
-        /// The batch's lines; a line that failed to build is thrown as its own exception, not wrapped by the task or the loop.
-        /// </summary>
-        private static string[] Result(Task<string[]> batch)
-        {
-            try
-            {
-                return batch.GetAwaiter().GetResult();
-            }
-            catch (AggregateException e) when (e.InnerExceptions.Count == 1)
-            {
-                ExceptionDispatchInfo.Capture(e.InnerException).Throw();
-                throw; // not reached
-            }
         }
     }
 }
