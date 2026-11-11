@@ -1,4 +1,5 @@
 #nullable enable
+using Chromatography.RetentionTimeCalibration;
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using EngineLayer.FdrAnalysis;
@@ -93,6 +94,7 @@ public class ParallelSearchTask : SearchTask
     [TomlIgnore] private ProteinGroupFdrLookup _baselineProteinGroupFdr = new([], FilterType.QValue);
     [TomlIgnore] private List<CachedProteinGroup> CachedBaselineProteinGroups { get; set; } = [];
     [TomlIgnore] private readonly Dictionary<string, List<int>> _baselinePeptideKeyToScanIndexes = new(StringComparer.Ordinal);
+    [TomlIgnore] private Dictionary<string, IrtCalibrationModel> _retentionTimeCalibrations = new();
 
     // Properties to track progress and results across databases
     [TomlIgnore] public int TotalDatabases => ParallelSearchParameters.TransientDatabases.Count;
@@ -320,6 +322,20 @@ public class ParallelSearchTask : SearchTask
         _baselinePsmFdr = BaselineFdr.CreatePsmLookup(baselinePsms);
         _baselinePeptideFdr = BaselineFdr.CreatePeptideLookup(baselinePsms);
         BuildBaselinePeptideToScanIndexLookup();
+
+        // Map Chronologer's % acetonitrile onto each file's minutes once, so every database's RT errors share one scale
+        Status("Calibrating predicted retention times...", taskId);
+        try
+        {
+            _retentionTimeCalibrations = RetentionTimeCollector.FitRetentionTimeCalibrations(baselinePsms,
+                Math.Min(CommonParameters.QValueThreshold, CommonParameters.PepQValueThreshold),
+                CommonParameters.MaxThreadsToUsePerFile, Warn);
+        }
+        catch (Exception e)
+        {
+            // e.g. TorchSharp's native libraries are missing; a missing predictor costs the RT columns, not the search
+            Warn($"Retention time errors are not reported: Chronologer could not run ({e.GetBaseException().Message})");
+        }
 
         if (SearchParameters.DoParsimony)
         {
@@ -694,6 +710,7 @@ public class ParallelSearchTask : SearchTask
             TransientPeptides = transientPeptides,
             ProteinGroups = proteinGroups,
             TransientProteinGroups = transientProteinGroups,
+            RetentionTimeCalibrations = _retentionTimeCalibrations,
             CommonParameters = commonParameters,
             TotalProteins = totalProteins,
             TransientPeptideCount = transientPeptideCount,

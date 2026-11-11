@@ -1,14 +1,24 @@
+#nullable enable
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Chromatography.RetentionTimeCalibration;
 using Chromatography.RetentionTimePrediction;
 using Chromatography.RetentionTimePrediction.Chronologer;
 using EngineLayer;
 using MathNet.Numerics.Statistics;
+using MzLibUtil;
 
 namespace TaskLayer.ParallelSearch.Analysis.Collectors;
 
+/// <summary>
+/// Compares each confident transient identification's retention time with Chronologer's prediction.
+/// Chronologer predicts % acetonitrile, not minutes, so predictions go through a per-file calibration
+/// fitted once on the baseline search (<see cref="FitRetentionTimeCalibrations"/>). Every database uses
+/// the same calibration, so errors are in minutes and comparable between databases.
+/// </summary>
 public class RetentionTimeCollector : IMetricCollector
 {
     private static readonly RetentionTimePredictor _predictor = new ChronologerRetentionTimePredictor();
@@ -30,6 +40,45 @@ public class RetentionTimeCollector : IMetricCollector
         yield return PeptideMeanAbsoluteRtError;
         yield return PeptideRtCorrelationCoefficient;
         yield return PeptideAllRtErrors;
+    }
+
+    /// <summary>
+    /// Fits, for each spectra file, Chronologer's predicted % acetonitrile against observed retention time in minutes,
+    /// using mzLib's robust LOWESS (<see cref="IrtCalibration.Fit"/>). Anchors are the baseline's confident target PSMs,
+    /// one per peptide per file (its best-scoring PSM). A file that cannot be fitted, for example with fewer than 20
+    /// anchors, is left out and warned about; its transient PSMs then get no retention time error.
+    /// </summary>
+    /// <returns>Calibrations keyed by spectra file path.</returns>
+    public static Dictionary<string, IrtCalibrationModel> FitRetentionTimeCalibrations(IEnumerable<SpectralMatch> baselinePsms,
+        double qValueThreshold, int maxThreads, Action<string> warn)
+    {
+        var anchorPsms = baselinePsms
+            .Where(p => !p.IsDecoy && p.FdrInfo?.QValue <= qValueThreshold && p.FullSequence != null && p.FullFilePath != null)
+            .GroupBy(p => (p.FullFilePath, p.FullSequence))
+            .Select(g => g.MaxBy(p => p.Score)!)
+            .ToList();
+
+        PredictUncachedSequences(anchorPsms, maxThreads);
+
+        var calibrations = new Dictionary<string, IrtCalibrationModel>();
+        foreach (var file in anchorPsms.GroupBy(p => p.FullFilePath))
+        {
+            var anchors = file
+                .Select(p => (Rt: new RtMinutes(p.ScanRetentionTime), Irt: new Irt(CachedPrediction(p.FullSequence))))
+                .Where(a => double.IsFinite(a.Rt.Value) && double.IsFinite(a.Irt.Value))
+                .ToList();
+            try
+            {
+                calibrations[file.Key] = IrtCalibration.Fit(anchors);
+            }
+            catch (ArgumentException e)
+            {
+                warn($"Retention time errors are not reported for {Path.GetFileName(file.Key)}: " +
+                     $"Chronologer's predictions could not be calibrated to this file's retention times ({e.Message})");
+            }
+        }
+
+        return calibrations;
     }
 
     /// <summary>
@@ -82,6 +131,24 @@ public class RetentionTimeCollector : IMetricCollector
         return _sharedPredictionCache.TryGetValue(fullSequence, out double predicted) ? predicted : double.NaN;
     }
 
+    /// <summary>The calibration for the file a match came from, or null when that file has none.</summary>
+    private static IrtCalibrationModel? CalibrationFor(TransientDatabaseContext context, SpectralMatch match)
+    {
+        return match.FullFilePath != null && context.RetentionTimeCalibrations != null
+            && context.RetentionTimeCalibrations.TryGetValue(match.FullFilePath, out var calibration)
+            ? calibration
+            : null;
+    }
+
+    /// <summary>A sequence's predicted retention time in minutes on a file's calibration, or NaN when it could not be predicted.</summary>
+    private static double PredictedMinutes(IrtCalibrationModel calibration, string fullSequence)
+    {
+        double predictedAcetonitrile = CachedPrediction(fullSequence);
+        return double.IsNaN(predictedAcetonitrile)
+            ? double.NaN
+            : calibration.ToRtMinutes(new Irt(predictedAcetonitrile)).Value;
+    }
+
     public Dictionary<string, object> CollectData(TransientDatabaseContext context)
     {
         double qValueThreshold = Math.Min(context.CommonParameters.QValueThreshold, context.CommonParameters.PepQValueThreshold);
@@ -103,15 +170,17 @@ public class RetentionTimeCollector : IMetricCollector
         foreach (var psm in confidentPsms)
         {
             double observedRt = psm.ScanRetentionTime;
-            
+            if (CalibrationFor(context, psm) is not { } calibration)
+                continue;
+
             foreach (var hypothesis in psm.BestMatchingBioPolymersWithSetMods)
             {
                 if (hypothesis.IsDecoy)
                     continue;
 
-                double predictedRt = CachedPrediction(hypothesis.SpecificBioPolymer.FullSequence);
+                double predictedRt = PredictedMinutes(calibration, hypothesis.SpecificBioPolymer.FullSequence);
 
-                if (!(predictedRt > 0)) // also skips NaN, a sequence that could not be predicted
+                if (!double.IsFinite(predictedRt))
                     continue;
 
                 double rtError = observedRt - predictedRt;
@@ -131,15 +200,17 @@ public class RetentionTimeCollector : IMetricCollector
         foreach (var peptide in confidentPeptides)
         {
             double observedRt = peptide.ScanRetentionTime;
-            
+            if (CalibrationFor(context, peptide) is not { } calibration)
+                continue;
+
             foreach (var hypothesis in peptide.BestMatchingBioPolymersWithSetMods)
             {
                 if (hypothesis.IsDecoy)
                     continue;
 
-                double predictedRt = CachedPrediction(hypothesis.SpecificBioPolymer.FullSequence);
+                double predictedRt = PredictedMinutes(calibration, hypothesis.SpecificBioPolymer.FullSequence);
 
-                if (!(predictedRt > 0)) // also skips NaN, a sequence that could not be predicted
+                if (!double.IsFinite(predictedRt))
                     continue;
 
                 double rtError = observedRt - predictedRt;

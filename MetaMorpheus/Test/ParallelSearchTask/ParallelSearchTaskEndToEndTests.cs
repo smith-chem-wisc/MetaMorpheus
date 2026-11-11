@@ -270,6 +270,41 @@ public class ParallelSearchTaskEndToEndTests
     }
 
     [Test]
+    public void RunTask_ReportsRetentionTimeErrorsInMinutes()
+    {
+        // The A549 spectra searched against A549 as both base and transient database: the base search gives the
+        // anchors for the per-file Chronologer calibration, the transient search gives identifications to score.
+        string outputFolder = FreshOutputFolder("ParallelSearchRetentionTime");
+        try
+        {
+            string a549 = Path.GetFileNameWithoutExtension(BaseDatabasePath);
+            var task = new TaskLayer.ParallelSearch.ParallelSearchTask([new DbForTask(BaseDatabasePath, false)]);
+
+            task.RunTask(outputFolder, [new DbForTask(BaseDatabasePath, false)], [SpectraPath], "parallel");
+
+            string summaryPath = Path.Combine(outputFolder, TransientDatabaseResultsManager.SummaryResultsFileName);
+            string[] header = File.ReadAllLines(summaryPath)[0].Split(',');
+            var row = ReadSummary(outputFolder)[a549];
+            TestContext.Out.WriteLine($"PSM errors: n={row.Psm_AllRtErrors.Length} mean |error|={row.Psm_MeanAbsoluteRtError} " +
+                $"min={row.Psm_AllRtErrors.DefaultIfEmpty(double.NaN).Min()} max={row.Psm_AllRtErrors.DefaultIfEmpty(double.NaN).Max()}");
+            TestContext.Out.WriteLine($"peptide errors: n={row.Peptide_AllRtErrors.Length} mean |error|={row.Peptide_MeanAbsoluteRtError}");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(header, Does.Contain("Psm_MeanAbsoluteRtError"));
+                Assert.That(header, Does.Not.Contain("Psm_MeanAbsoluteRtError"));
+                Assert.That(row.Psm_AllRtErrors, Is.Not.Empty);
+                Assert.That(row.Peptide_AllRtErrors, Is.Not.Empty);
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
+        }
+    }
+
+    [Test]
     public void Toml_RoundTripsTaskTypeAndTransientDatabases()
     {
         string tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "ParallelSearchRoundTrip.toml");

@@ -1,3 +1,4 @@
+using Chromatography.RetentionTimeCalibration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,7 +55,8 @@ internal static class ParallelSearchTestContextFactory
         List<ProteinGroup>? proteinGroups = null,
         List<ProteinGroup>? transientProteinGroups = null,
         int totalProteins = 0,
-        int transientPeptideCount = 0)
+        int transientPeptideCount = 0,
+        IReadOnlyDictionary<string, IrtCalibrationModel>? retentionTimeCalibrations = null)
     {
         return new TransientDatabaseContext
         {
@@ -68,6 +70,7 @@ internal static class ParallelSearchTestContextFactory
             TransientPeptides = transientPeptides,
             ProteinGroups = proteinGroups,
             TransientProteinGroups = transientProteinGroups,
+            RetentionTimeCalibrations = retentionTimeCalibrations,
             CommonParameters = commonParameters,
             TotalProteins = totalProteins,
             TransientPeptideCount = transientPeptideCount,

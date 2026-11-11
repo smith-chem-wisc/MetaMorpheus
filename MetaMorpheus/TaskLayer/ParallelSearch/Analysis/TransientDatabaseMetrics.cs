@@ -209,12 +209,13 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
 
     #region Retention Time
 
-    [Optional] public double Psm_MeanAbsoluteRtError { get; set; }
+    // Observed minus calibrated predicted retention time, in minutes; NaN when absent
+    [Optional] public double Psm_MeanAbsoluteRtError { get; set; } = double.NaN;
 
     [Optional] [TypeConverter(typeof(SemiColonDelimitedToDoubleArrayTypeConverter))]
     public double[] Psm_AllRtErrors { get; set; } = Array.Empty<double>();
 
-    [Optional] public double Peptide_MeanAbsoluteRtError { get; set; }
+    [Optional] public double Peptide_MeanAbsoluteRtError { get; set; } = double.NaN;
 
     [Optional] [TypeConverter(typeof(SemiColonDelimitedToDoubleArrayTypeConverter))]
     public double[] Peptide_AllRtErrors { get; set; } = Array.Empty<double>();
@@ -458,9 +459,9 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
         Peptide_FragmentPPMErrors = GetValue<double[]>(FragmentIonCollector.Peptide_FragmentPPMErrors) ?? Array.Empty<double>();
 
         // Retention Time metrics
-        Psm_MeanAbsoluteRtError = GetValue<double>(RetentionTimeCollector.PsmMeanAbsoluteRtError);
+        Psm_MeanAbsoluteRtError = GetValue(RetentionTimeCollector.PsmMeanAbsoluteRtError, double.NaN);
         Psm_AllRtErrors = GetValue<double[]>(RetentionTimeCollector.PsmAllRtErrors) ?? Array.Empty<double>();
-        Peptide_MeanAbsoluteRtError = GetValue<double>(RetentionTimeCollector.PeptideMeanAbsoluteRtError);
+        Peptide_MeanAbsoluteRtError = GetValue(RetentionTimeCollector.PeptideMeanAbsoluteRtError, double.NaN);
         Peptide_AllRtErrors = GetValue<double[]>(RetentionTimeCollector.PeptideAllRtErrors) ?? Array.Empty<double>();
     }
 

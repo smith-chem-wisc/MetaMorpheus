@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System.Collections.Generic;
+using Chromatography.RetentionTimeCalibration;
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using Omics;
@@ -26,6 +27,9 @@ public class TransientDatabaseContext : ITransientDatabaseResult
     // Protein data (may be null if parsimony not performed)
     public List<ProteinGroup>? ProteinGroups { get; init; }
     public List<ProteinGroup>? TransientProteinGroups { get; init; }
+
+    // Chronologer % acetonitrile to minutes, per spectra file path, fitted once on the baseline search; null when not fitted
+    public IReadOnlyDictionary<string, IrtCalibrationModel>? RetentionTimeCalibrations { get; init; }
 
     // Parameters and metadata
     public CommonParameters CommonParameters { get; init; } = null!;
