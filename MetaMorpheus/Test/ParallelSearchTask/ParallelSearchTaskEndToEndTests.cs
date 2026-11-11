@@ -106,6 +106,155 @@ public class ParallelSearchTaskEndToEndTests
         }
     }
 
+    private static string FreshOutputFolder(string name)
+    {
+        string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, name);
+        if (Directory.Exists(outputFolder))
+            Directory.Delete(outputFolder, true);
+        Directory.CreateDirectory(outputFolder);
+        return outputFolder;
+    }
+
+    [Test]
+    public void RunTask_WithEveryOutputEnabled_WritesAllAndTransientFilesAndCompressesThem()
+    {
+        // The spectra come from the A549 database, so searching it as a transient database
+        // gives transient identifications and transient protein groups.
+        string outputFolder = FreshOutputFolder("ParallelSearchAllOutputs");
+        try
+        {
+            string a549 = Path.GetFileNameWithoutExtension(BaseDatabasePath);
+            var task = new TaskLayer.ParallelSearch.ParallelSearchTask(
+            [
+                new DbForTask(BaseDatabasePath, false),
+                new DbForTask(TransientDatabasePaths[1], false)
+            ]);
+            task.ParallelSearchParameters.WriteTransientResultsOnly = false;
+            task.ParallelSearchParameters.WriteSpectralLibrary = true;
+            task.ParallelSearchParameters.WriteTransientSpectralLibrary = true;
+            task.ParallelSearchParameters.CompressTransientSearchOutputs = true;
+
+            task.RunTask(outputFolder, [new DbForTask(TransientDatabasePaths[0], false)], [SpectraPath], "parallel");
+
+            var summary = ReadSummary(outputFolder);
+            string databaseFolder = Path.Combine(outputFolder, a549);
+            string[] writtenFiles = Directory.GetFiles(databaseFolder).Select(Path.GetFileName).ToArray();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(summary.Keys, Has.Count.EqualTo(2));
+                Assert.That(summary[a549].TargetPsmsFromTransientDbAtQValueThreshold, Is.GreaterThan(0));
+                Assert.That(summary[a549].TargetProteinGroupsFromTransientDb, Is.GreaterThan(0));
+                Assert.That(task.TotalMs2Scans, Is.GreaterThan(0));
+
+                // every output is compressed in place
+                Assert.That(writtenFiles, Has.Member($"{a549}_AllPSMs.psmtsv.gz"));
+                Assert.That(writtenFiles, Has.Member("AllPSMs.psmtsv.gz"));
+                Assert.That(writtenFiles, Has.Member($"{a549}_AllPeptides.psmtsv.gz"));
+                Assert.That(writtenFiles, Has.Member("AllPeptides.psmtsv.gz"));
+                Assert.That(writtenFiles, Has.Member($"{a549}_AllProteinGroups.tsv.gz"));
+                Assert.That(writtenFiles, Has.Member("AllProteinGroups.tsv.gz"));
+                Assert.That(writtenFiles, Has.Member($"{a549}_SpectralLibrary.msp.gz"));
+                Assert.That(writtenFiles, Has.Member($"AllPeptidesAnd_{a549}_SpectralLibrary.msp.gz"));
+                Assert.That(writtenFiles, Has.Member("results.txt.gz"));
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
+        }
+    }
+
+    [Test]
+    public void RunTask_ResumeSearchesOnlyNewDatabases_AndOverwriteRedoesExistingOnes()
+    {
+        string outputFolder = FreshOutputFolder("ParallelSearchResume");
+        try
+        {
+            var baseDatabases = new List<DbForTask> { new(BaseDatabasePath, false) };
+            var spectra = new List<string> { SpectraPath };
+            string first = Path.GetFileNameWithoutExtension(TransientDatabasePaths[0]);
+            string second = Path.GetFileNameWithoutExtension(TransientDatabasePaths[1]);
+            string firstPsmFile = Path.Combine(outputFolder, first, $"{first}_AllPSMs.psmtsv");
+
+            // 1: only the first database
+            var onlyFirst = new TaskLayer.ParallelSearch.ParallelSearchTask([new DbForTask(TransientDatabasePaths[0], false)]);
+            onlyFirst.RunTask(outputFolder, baseDatabases, spectra, "parallel");
+            var firstWriteTime = File.GetLastWriteTimeUtc(firstPsmFile);
+            Assert.That(ReadSummary(outputFolder).Keys, Is.EquivalentTo(new[] { first }));
+
+            // 2: both databases, keeping what exists: the first is skipped and the second is searched
+            CreateTask(overwrite: false).RunTask(outputFolder, baseDatabases, spectra, "parallel");
+            Assert.Multiple(() =>
+            {
+                Assert.That(ReadSummary(outputFolder).Keys, Is.EquivalentTo(new[] { first, second }));
+                Assert.That(File.GetLastWriteTimeUtc(firstPsmFile), Is.EqualTo(firstWriteTime));
+                Assert.That(File.Exists(Path.Combine(outputFolder, second, "results.txt")), Is.True);
+            });
+
+            // 3: the first database again, overwriting: its folder is rebuilt and the second row is kept
+            string marker = Path.Combine(outputFolder, first, "left-over.txt");
+            File.WriteAllText(marker, "stale");
+            var overwriteFirst = new TaskLayer.ParallelSearch.ParallelSearchTask([new DbForTask(TransientDatabasePaths[0], false)]);
+            overwriteFirst.ParallelSearchParameters.OverwriteTransientSearchOutputs = true;
+            overwriteFirst.RunTask(outputFolder, baseDatabases, spectra, "parallel");
+
+            string[] summaryLines = File.ReadAllLines(
+                Path.Combine(outputFolder, TransientDatabaseResultsManager.SummaryResultsFileName));
+            Assert.Multiple(() =>
+            {
+                Assert.That(File.Exists(marker), Is.False);
+                Assert.That(File.Exists(firstPsmFile), Is.True);
+                Assert.That(summaryLines.Length, Is.EqualTo(3));
+                Assert.That(ReadSummary(outputFolder).Keys, Is.EquivalentTo(new[] { first, second }));
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
+        }
+    }
+
+    [Test]
+    public void CommandLine_RunsAParallelSearchToml()
+    {
+        string folder = FreshOutputFolder("ParallelSearchCommandLine");
+        try
+        {
+            string tomlPath = Path.Combine(folder, "ParallelSearchTask.toml");
+            Toml.WriteFile(CreateTask(overwrite: true), tomlPath, MetaMorpheusTask.tomlConfig);
+            string output = Path.Combine(folder, "output");
+
+            TextWriter originalOut = System.Console.Out;
+            int exitCode;
+            try
+            {
+                System.Console.SetOut(new StringWriter());
+                exitCode = MetaMorpheusCommandLine.Program.Main(
+                    ["-s", SpectraPath, "-d", BaseDatabasePath, "-t", tomlPath, "-o", output]);
+            }
+            finally
+            {
+                System.Console.SetOut(originalOut);
+            }
+
+            string taskFolder = Path.Combine(output, "Task1ParallelSearchTask");
+            Assert.Multiple(() =>
+            {
+                Assert.That(exitCode, Is.EqualTo(0));
+                Assert.That(ReadSummary(taskFolder).Keys,
+                    Is.EquivalentTo(TransientDatabasePaths.Select(Path.GetFileNameWithoutExtension)));
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(folder))
+                Directory.Delete(folder, true);
+        }
+    }
+
     [Test]
     public void Toml_RoundTripsTaskTypeAndTransientDatabases()
     {

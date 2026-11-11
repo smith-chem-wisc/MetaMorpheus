@@ -519,7 +519,7 @@ namespace Test
                 {
                     "CalibrationTask.toml", "GptmdTask.toml", "SearchTask.toml",
                     "XLSearchTask.toml", "GlycoSearchTask.toml", "AveragingTask.toml",
-                    "TruncationSearchTask.toml"
+                    "TruncationSearchTask.toml", "ParallelSearchTask.toml"
                 };
 
                 foreach (string name in expected)
