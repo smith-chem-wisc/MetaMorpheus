@@ -147,6 +147,72 @@ public class FragmentIonCollectorTests
     }
 
     [Test]
+    public void CollectData_FiltersPsmsByPsmQValueAndPeptidesByPeptideQValue()
+    {
+        var commonParams = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.01);
+
+        // passes at the PSM level only
+        var psmLevelOnly = ParallelSearchTestContextFactory.CreateSpectralMatch(
+            commonParams, isDecoy: false, score: 10.0, psmQValue: 0.001, peptideQValue: 0.5, scanNumber: 1);
+
+        // passes at the peptide level only
+        var peptideLevelOnly = ParallelSearchTestContextFactory.CreateSpectralMatch(
+            commonParams, isDecoy: false, score: 9.0, psmQValue: 0.5, peptideQValue: 0.001, scanNumber: 2);
+
+        var context = ParallelSearchTestContextFactory.CreateContext(
+            commonParams,
+            allPsms: [psmLevelOnly, peptideLevelOnly],
+            transientPsms: [psmLevelOnly, peptideLevelOnly],
+            allPeptides: [psmLevelOnly, peptideLevelOnly],
+            transientPeptides: [psmLevelOnly, peptideLevelOnly]);
+
+        var result = new FragmentIonCollector().CollectData(context);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((double[])result[FragmentIonCollector.PSM_LongestIonSeriesBidirectional_AllTargets], Has.Length.EqualTo(1));
+            Assert.That((double[])result[FragmentIonCollector.Peptide_LongestIonSeriesBidirectional_AllTargets], Has.Length.EqualTo(1));
+        });
+
+        // only the peptide-level q-value decides which peptides count
+        context = ParallelSearchTestContextFactory.CreateContext(
+            commonParams,
+            allPsms: [psmLevelOnly],
+            transientPsms: [psmLevelOnly],
+            allPeptides: [psmLevelOnly],
+            transientPeptides: [psmLevelOnly]);
+
+        result = new FragmentIonCollector().CollectData(context);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((double[])result[FragmentIonCollector.PSM_LongestIonSeriesBidirectional_AllTargets], Has.Length.EqualTo(1));
+            Assert.That((double[])result[FragmentIonCollector.Peptide_LongestIonSeriesBidirectional_AllTargets], Is.Empty);
+            Assert.That(result[FragmentIonCollector.Peptide_LongestIonSeriesBidirectionalTargets], Is.EqualTo(double.NaN));
+        });
+    }
+
+    [Test]
+    public void CollectData_PeptideWithoutPeptideFdr_IsNotConfident()
+    {
+        var commonParams = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.01);
+        var peptide = ParallelSearchTestContextFactory.CreateSpectralMatch(
+            commonParams, isDecoy: false, score: 10.0, psmQValue: 0.001, peptideQValue: 0.001);
+        peptide.PeptideFdrInfo = null;
+
+        var context = ParallelSearchTestContextFactory.CreateContext(
+            commonParams,
+            allPsms: [peptide],
+            transientPsms: [peptide],
+            allPeptides: [peptide],
+            transientPeptides: [peptide]);
+
+        var result = new FragmentIonCollector().CollectData(context);
+
+        Assert.That((double[])result[FragmentIonCollector.Peptide_LongestIonSeriesBidirectional_AllTargets], Is.Empty);
+    }
+
+    [Test]
     public void CollectData_ReturnsAllColumnNames()
     {
         var collector = new FragmentIonCollector();

@@ -80,7 +80,7 @@ public class RetentionTimeCollector : IMetricCollector
 
         // Peptides
         var confidentPeptides = context.TransientPeptides
-            .Where(p => p.FdrInfo.QValue <= qValueThreshold)
+            .Where(p => p.PeptideFdrInfo?.QValue <= qValueThreshold)
             .ToList();
 
         List<double> allPeptideRtErrors = new();

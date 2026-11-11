@@ -100,7 +100,7 @@ public class FragmentIonCollector : IMetricCollector
 
         // peptides
         var confidentPeptides = context.TransientPeptides
-            .Where(p => p.FdrInfo.QValue <= qValueThreshold)
+            .Where(p => p.PeptideFdrInfo?.QValue <= qValueThreshold)
             .ToList();
 
         var peptidePpmErrors = confidentPeptides.SelectMany(p => p.MatchedFragmentIons.Select(m => m.MassErrorPpm)).ToArray();

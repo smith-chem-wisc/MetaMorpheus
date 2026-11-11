@@ -53,4 +53,47 @@ public class RetentionTimeCollectorTests
             Assert.That((double[])result[RetentionTimeCollector.PeptideAllRtErrors], Is.Empty);
         });
     }
+
+    [Test]
+    public void CollectData_FiltersPsmsByPsmQValueAndPeptidesByPeptideQValue()
+    {
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.01, pepQValueThreshold: 0.01);
+
+        // passes at the PSM level only
+        var psmLevelOnly = ParallelSearchTestContextFactory.CreateSpectralMatch(commonParameters, isDecoy: false, score: 100, psmQValue: 0.001, peptideQValue: 0.5, scanNumber: 1);
+
+        var context = ParallelSearchTestContextFactory.CreateContext(
+            commonParameters,
+            allPsms: [psmLevelOnly],
+            transientPsms: [psmLevelOnly],
+            allPeptides: [psmLevelOnly],
+            transientPeptides: [psmLevelOnly]);
+
+        var result = new RetentionTimeCollector().CollectData(context);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((double[])result[RetentionTimeCollector.PsmAllRtErrors], Has.Length.EqualTo(1));
+            Assert.That((double[])result[RetentionTimeCollector.PeptideAllRtErrors], Is.Empty);
+            Assert.That(double.IsNaN((double)result[RetentionTimeCollector.PeptideMeanAbsoluteRtError]), Is.True);
+        });
+
+        // passes at the peptide level only
+        var peptideLevelOnly = ParallelSearchTestContextFactory.CreateSpectralMatch(commonParameters, isDecoy: false, score: 100, psmQValue: 0.5, peptideQValue: 0.001, scanNumber: 2);
+
+        context = ParallelSearchTestContextFactory.CreateContext(
+            commonParameters,
+            allPsms: [peptideLevelOnly],
+            transientPsms: [peptideLevelOnly],
+            allPeptides: [peptideLevelOnly],
+            transientPeptides: [peptideLevelOnly]);
+
+        result = new RetentionTimeCollector().CollectData(context);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That((double[])result[RetentionTimeCollector.PsmAllRtErrors], Is.Empty);
+            Assert.That((double[])result[RetentionTimeCollector.PeptideAllRtErrors], Has.Length.EqualTo(1));
+        });
+    }
 }
