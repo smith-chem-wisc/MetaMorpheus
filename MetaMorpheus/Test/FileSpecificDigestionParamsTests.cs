@@ -120,6 +120,31 @@ namespace Test
         }
 
         /// <summary>
+        /// The cleavage-promoting flag (mzLib 1.0.598, #1510) keeps the task's value through a file-specific rebuild, in both
+        /// states.
+        /// </summary>
+        /// <remarks>
+        /// The flag decides whether a protease's cleavage requirement (StcE's O-glycan at P2) is honoured, so dropping it would
+        /// give a file an unconstrained digest while the task reports the constrained one. The true case fails without the
+        /// argument in <see cref="MetaMorpheusTask.SetAllFileSpecificCommonParams"/>.
+        /// </remarks>
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public static void FileSpecificRebuild_KeepsRespectCleavagePromotingModifications(bool respectCleavagePromotingModifications)
+        {
+            var task = new CommonParameters(digestionParams: new DigestionParams("trypsin",
+                respectCleavagePromotingModifications: respectCleavagePromotingModifications));
+
+            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { MaxMissedCleavages = 5 }, null);
+
+            var digestionParams = (DigestionParams)combined.DigestionParams;
+            Assert.That(digestionParams.MaxMissedCleavages, Is.EqualTo(5), "the file-specific override still applies");
+            Assert.That(digestionParams.RespectCleavagePromotingModifications, Is.EqualTo(respectCleavagePromotingModifications),
+                "RespectCleavagePromotingModifications was reset by the file-specific rebuild");
+        }
+
+        /// <summary>
         /// File-specific settings that change only the precursor tolerance must leave every other setting equal to the task's.
         /// Every constructor argument is set away from its default (asserted below), so a dropped one shows; reference-typed
         /// settings must come across as the same instance, as in <see cref="IndexPartitioningTest.CloneWithNewTotalPartitions_PreservesEveryOtherSetting"/>.
