@@ -273,6 +273,13 @@ namespace EngineLayer.ParallelSearch
 
         private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, MassDiffAcceptor searchMode)
         {
+            // a peptide with an unknown residue (X) has no mass and matches no scan, as in ClassicSearchEngine;
+            // a NaN window would otherwise never end the scan loop below and reach every scan
+            if (double.IsNaN(peptideMonoisotopicMass))
+            {
+                yield break;
+            }
+
             foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMonoisotopicMass))
             {
                 int scanIndex = GetFirstScanWithMassOverOrEqual(allowedIntervalWithNotch.Minimum);

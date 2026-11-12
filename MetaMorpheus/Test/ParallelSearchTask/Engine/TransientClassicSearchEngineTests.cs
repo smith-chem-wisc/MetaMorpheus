@@ -96,6 +96,28 @@ public class TransientClassicSearchEngineTests
         });
     }
 
+    [Test]
+    public void PeptideWithAnUnknownResidue_MatchesNoScan()
+    {
+        // XQQQ has a NaN mass (X has none) but its y ions are those of the scan's QQQ, so it would score if it reached the scan
+        var commonParameters = CreateCommonParameters(1);
+        var scans = MetaMorpheusTask.GetMs2Scans(new TestDataFile(), null, new CommonParameters())
+            .OrderBy(b => b.PrecursorMass).ToArray();
+        var noMods = new List<Modification>();
+        var psms = new SpectralMatch[scans.Length];
+
+        var results = (TransientSearchEngineResults)new TransientClassicSearchEngine(psms, scans, noMods, noMods,
+            new List<IBioPolymer> { new Protein("MNNNKXQQQ", "Unknown") }, new SinglePpmAroundZeroSearchMode(5),
+            commonParameters, new List<(string FileName, CommonParameters Parameters)> { ("", commonParameters) },
+            new List<string>()).Run();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(psms, Has.All.Null);
+            Assert.That(results.UpdatedSpectralMatchIndexes, Is.Empty);
+        });
+    }
+
     private static SpectralMatch[] SearchWithFilePrecursorTolerance(double fileTolerancePpm, double otherFileTolerancePpm, out PerFileTolerances perFile)
     {
         var commonParameters = CreateCommonParameters(1);
