@@ -245,6 +245,15 @@ namespace TaskLayer
                 .FirstOrDefault();
         }
 
+        // Blank means "use the mzLib default", but unreadable text must not silently become the default chemistry.
+        private static ChemicalFormula ParseTerminalCap(string value)
+        {
+            ChemicalFormula cap = CommonParameters.TryParseFormula(value);
+            if (cap == null && !string.IsNullOrWhiteSpace(value))
+                throw new MetaMorpheusException($"Invalid RNA terminal cap '{value}'. Expected a chemical formula.");
+            return cap;
+        }
+
         private static DoubleRange ParseRetentionTimeRange(string value)
         {
             string[] bounds = value.Trim().Trim('[', ']').Split(';');
@@ -312,6 +321,11 @@ namespace TaskLayer
             // Protease, Rnase, DigestionParams and RnaDigestionParams. Defined in EngineLayer, because the index
             // cache key writes digestion parameters with the same configuration; see DigestionTomlSettings.
             .ConfigureDigestionTypes()
+            // RNA terminal caps
+            .ConfigureType<ChemicalFormula>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(formula => formula.Formula)
+                    .FromToml(tmlString => ParseTerminalCap(tmlString.Value))))
             // Switch on DeconvolutionParameters
             .ConfigureType<DeconvolutionParameters>(type => type
                 .WithConversionFor<TomlTable>(c => c
@@ -956,8 +970,9 @@ namespace TaskLayer
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
                 rtPredictorName: commonParams.RTPredictorName,
-                retentionTimeRange: commonParams.RetentionTimeRange
-                );
+                retentionTimeRange: commonParams.RetentionTimeRange,
+                fivePrimeTerminus: commonParams.FivePrimeTerminus?.Formula,
+                threePrimeTerminus: commonParams.ThreePrimeTerminus?.Formula);
 
             return returnParams;
         }

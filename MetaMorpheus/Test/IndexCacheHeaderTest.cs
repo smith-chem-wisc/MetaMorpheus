@@ -541,6 +541,34 @@ namespace Test
         }
 
         /// <summary>
+        /// An RNA terminal cap changes the mass of every oligo in the index, so searches that differ only in a cap
+        /// must not share an index. A null cap (the mzLib default) and a protein search are unaffected.
+        /// </summary>
+        [Test]
+        public static void IndexFingerprint_DistinguishesRnaTerminalCaps()
+        {
+            string folder = NewDatabaseFolder(out List<DbForTask> databases);
+
+            try
+            {
+                string Fingerprint(string fivePrime, string threePrime) => MakeEngine(
+                    new CommonParameters(digestionParams: new RnaDigestionParams("RNase T1"), fivePrimeTerminus: fivePrime, threePrimeTerminus: threePrime),
+                    databases, generatePrecursorIndex: false).ToString();
+
+                string defaults = Fingerprint(null, null);
+                Assert.That(Fingerprint("H3O6P2", null), Is.Not.EqualTo(defaults), "5' cap");
+                Assert.That(Fingerprint(null, "O3P"), Is.Not.EqualTo(defaults), "3' cap");
+                Assert.That(Fingerprint("H3O6P2", null), Is.Not.EqualTo(Fingerprint(null, "O3P")));
+                Assert.That(Fingerprint(null, null), Is.EqualTo(defaults), "the same caps give the same key");
+                Assert.That(defaults, Does.Not.Contain("PrimeTerminus"), "unset caps leave existing keys unchanged");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
         /// Builds two indexing engines that differ only in their digestion parameters and asserts their
         /// fingerprints differ. Everything else -- databases, decoy type, fragment size -- is held equal,
         /// so a failure can only come from the digestion settings.

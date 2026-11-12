@@ -886,7 +886,10 @@ namespace Test
 
             foreach (PropertyInfo property in typeof(CommonParameters).GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
-                if (property.Name == nameof(CommonParameters.TotalPartitions) || property.GetIndexParameters().Length > 0)
+                // The terminal caps are RNA-only and this fixture is protein, so they are always null here;
+                // RnaTerminalCapsTests covers their survival through every clone with an RNA digestion.
+                if (property.Name is nameof(CommonParameters.TotalPartitions) or nameof(CommonParameters.FivePrimeTerminus) or nameof(CommonParameters.ThreePrimeTerminus)
+                    || property.GetIndexParameters().Length > 0)
                 {
                     continue;
                 }
