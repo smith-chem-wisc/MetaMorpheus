@@ -17,8 +17,7 @@ public class ProteinGroupCollector : IMetricCollector
     public const string TargetProteinGroupsAtQValueThreshold = "TargetProteinGroupsAtQValueThreshold";
     public const string TargetProteinGroupsFromTransientDb = "TargetProteinGroupsFromTransientDb";
     public const string TargetProteinGroupsFromTransientDbAtQValueThreshold = "TargetProteinGroupsFromTransientDbAtQValueThreshold";
-    public const string ProteinGroupBacterialTargets = "ProteinGroupBacterialTargets";
-    public const string ProteinGroupBacterialDecoys = "ProteinGroupBacterialDecoys";
+    public const string DecoyProteinGroupsFromTransientDbAtQValueThreshold = "DecoyProteinGroupsFromTransientDbAtQValueThreshold";
     public const string ProteinGroupBacterialUnambiguousTargets = "ProteinGroupBacterialUnambiguousTargets";
     public const string ProteinGroupBacterialUnambiguousDecoys = "ProteinGroupBacterialUnambiguousDecoys";
     public const string ProteinGroupTargets = "ProteinGroupTargets";
@@ -48,8 +47,7 @@ public class ProteinGroupCollector : IMetricCollector
         yield return TargetProteinGroupsAtQValueThreshold;
         yield return TargetProteinGroupsFromTransientDb;
         yield return TargetProteinGroupsFromTransientDbAtQValueThreshold;
-        yield return ProteinGroupBacterialTargets;
-        yield return ProteinGroupBacterialDecoys;
+        yield return DecoyProteinGroupsFromTransientDbAtQValueThreshold;
         yield return ProteinGroupBacterialUnambiguousTargets;
         yield return ProteinGroupBacterialUnambiguousDecoys;
         yield return MedianPeptidesPerProteinGroup;
@@ -98,8 +96,7 @@ public class ProteinGroupCollector : IMetricCollector
             [TargetProteinGroupsAtQValueThreshold] = targetsGlobalAtCutoff,
             [TargetProteinGroupsFromTransientDb] = totalTransientTargets,
             [TargetProteinGroupsFromTransientDbAtQValueThreshold] = bacterialTargetsAtCutoff,
-            [ProteinGroupBacterialTargets] = totalTransientTargets,
-            [ProteinGroupBacterialDecoys] = context.TransientProteinGroups!.Count - totalTransientTargets,
+            [DecoyProteinGroupsFromTransientDbAtQValueThreshold] = bacterialDecoysAtCutoff,
             [ProteinGroupBacterialUnambiguousTargets] = unambiguousTargets,
             [ProteinGroupBacterialUnambiguousDecoys] = unambiguousDecoys,
 

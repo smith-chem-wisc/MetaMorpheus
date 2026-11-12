@@ -66,6 +66,7 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
     public int TargetProteinGroupsAtQValueThreshold { get; set; }
     public int TargetProteinGroupsFromTransientDb { get; set; }
     public int TargetProteinGroupsFromTransientDbAtQValueThreshold { get; set; }
+    public int DecoyProteinGroupsFromTransientDbAtQValueThreshold { get; set; }
 
     [Optional] public double MedianPsmsPerProteinGroup { get; set; }
     [Optional] public double MedianPeptidesPerProteinGroup { get; set; }
@@ -145,8 +146,6 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
 
     public int ProteinGroupTargets { get; set; }
     public int ProteinGroupDecoys { get; set; }
-    public int ProteinGroupBacterialTargets { get; set; }
-    public int ProteinGroupBacterialDecoys { get; set; }
     public int ProteinGroupBacterialUnambiguousTargets { get; set; }
     public int ProteinGroupBacterialUnambiguousDecoys { get; set; }
 
@@ -271,6 +270,7 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
         Results[ProteinGroupCollector.TargetProteinGroupsAtQValueThreshold] = TargetProteinGroupsAtQValueThreshold;
         Results[ProteinGroupCollector.TargetProteinGroupsFromTransientDb] = TargetProteinGroupsFromTransientDb;
         Results[ProteinGroupCollector.TargetProteinGroupsFromTransientDbAtQValueThreshold] = TargetProteinGroupsFromTransientDbAtQValueThreshold;
+        Results[ProteinGroupCollector.DecoyProteinGroupsFromTransientDbAtQValueThreshold] = DecoyProteinGroupsFromTransientDbAtQValueThreshold;
         
         // Organism specificity
         Results[PsmPeptideSearchCollector.PsmTargets] = PsmTargets;
@@ -297,8 +297,6 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
         
         Results[ProteinGroupCollector.ProteinGroupTargets] = ProteinGroupTargets;
         Results[ProteinGroupCollector.ProteinGroupDecoys] = ProteinGroupDecoys;
-        Results[ProteinGroupCollector.ProteinGroupBacterialTargets] = ProteinGroupBacterialTargets;
-        Results[ProteinGroupCollector.ProteinGroupBacterialDecoys] = ProteinGroupBacterialDecoys;
         Results[ProteinGroupCollector.ProteinGroupBacterialUnambiguousTargets] = ProteinGroupBacterialUnambiguousTargets;
         Results[ProteinGroupCollector.ProteinGroupBacterialUnambiguousDecoys] = ProteinGroupBacterialUnambiguousDecoys;
 
@@ -378,6 +376,7 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
         TargetProteinGroupsAtQValueThreshold = GetValue<int>(ProteinGroupCollector.TargetProteinGroupsAtQValueThreshold);
         TargetProteinGroupsFromTransientDb = GetValue<int>(ProteinGroupCollector.TargetProteinGroupsFromTransientDb);
         TargetProteinGroupsFromTransientDbAtQValueThreshold = GetValue<int>(ProteinGroupCollector.TargetProteinGroupsFromTransientDbAtQValueThreshold);
+        DecoyProteinGroupsFromTransientDbAtQValueThreshold = GetValue<int>(ProteinGroupCollector.DecoyProteinGroupsFromTransientDbAtQValueThreshold);
         
         // Organism specificity
         PsmTargets = GetValue<int>(PsmPeptideSearchCollector.PsmTargets);
@@ -414,8 +413,6 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
 
         ProteinGroupTargets = GetValue<int>(ProteinGroupCollector.ProteinGroupTargets);
         ProteinGroupDecoys = GetValue<int>(ProteinGroupCollector.ProteinGroupDecoys);
-        ProteinGroupBacterialTargets = GetValue<int>(ProteinGroupCollector.ProteinGroupBacterialTargets);
-        ProteinGroupBacterialDecoys = GetValue<int>(ProteinGroupCollector.ProteinGroupBacterialDecoys);
         ProteinGroupBacterialUnambiguousTargets = GetValue<int>(ProteinGroupCollector.ProteinGroupBacterialUnambiguousTargets);
         ProteinGroupBacterialUnambiguousDecoys = GetValue<int>(ProteinGroupCollector.ProteinGroupBacterialUnambiguousDecoys);
         MedianPeptidesPerProteinGroup = GetValue<double>(ProteinGroupCollector.MedianPeptidesPerProteinGroup);
@@ -518,7 +515,7 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
             await file.WriteLineAsync($"Target protein groups at {qValueThreshold * 100}% FDR: {TargetProteinGroupsAtQValueThreshold}");
             await file.WriteLineAsync($"Target protein groups with transient database proteins: {TargetProteinGroupsFromTransientDb}");
             await file.WriteLineAsync($"Target protein groups with transient database proteins at {qValueThreshold * 100}% FDR: {TargetProteinGroupsFromTransientDbAtQValueThreshold}");
-            await file.WriteLineAsync($"Protein Group Bacterial Targets: {ProteinGroupBacterialTargets}");
+            await file.WriteLineAsync($"Decoy protein groups with transient database proteins at {qValueThreshold * 100}% FDR: {DecoyProteinGroupsFromTransientDbAtQValueThreshold}");
             await file.WriteLineAsync($"Protein Group Bacterial Unambiguous Targets: {ProteinGroupBacterialUnambiguousTargets}");
         }
     }

@@ -53,8 +53,8 @@ public class ProteinGroupCollectorTests
             Assert.That(results[ProteinGroupCollector.TargetProteinGroupsAtQValueThreshold], Is.EqualTo(1));
             Assert.That(results[ProteinGroupCollector.TargetProteinGroupsFromTransientDb], Is.EqualTo(3));
             Assert.That(results[ProteinGroupCollector.TargetProteinGroupsFromTransientDbAtQValueThreshold], Is.EqualTo(1));
-            Assert.That(results[ProteinGroupCollector.ProteinGroupBacterialTargets], Is.EqualTo(3));
-            Assert.That(results[ProteinGroupCollector.ProteinGroupBacterialDecoys], Is.EqualTo(1));
+            Assert.That(results[ProteinGroupCollector.DecoyProteinGroupsFromTransientDbAtQValueThreshold], Is.EqualTo(1));
+            Assert.That(results.ContainsKey("ProteinGroupBacterialTargets"), Is.False);
             Assert.That(results[ProteinGroupCollector.ProteinGroupBacterialUnambiguousTargets], Is.EqualTo(1));
             Assert.That(results[ProteinGroupCollector.ProteinGroupBacterialUnambiguousDecoys], Is.EqualTo(1));
         });
