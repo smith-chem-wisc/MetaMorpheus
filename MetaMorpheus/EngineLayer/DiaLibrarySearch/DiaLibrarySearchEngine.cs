@@ -105,7 +105,9 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
             double irtHigh = scanIrts.Max() + _parameters.IrtHalfWindow + margin;
             using var hits = _library.QueryWindow((float)window.Key.Minimum, (float)window.Key.Maximum, (float)irtLow, (float)irtHigh, includeDecoys: true);
             foreach (var candidate in hits.Entries.ToArray())
-                if (candidate.PrecursorIdx % _parameters.PrecursorSampleStride == _parameters.PrecursorSampleOffset % _parameters.PrecursorSampleStride)
+                // A precursor without a library time (NaN, as mzLib reads a missing one) has no window to search
+                if (float.IsFinite(candidate.Irt)
+                    && candidate.PrecursorIdx % _parameters.PrecursorSampleStride == _parameters.PrecursorSampleOffset % _parameters.PrecursorSampleStride)
                     work.Add((scans, scanIrts, candidate));
         }
 
@@ -132,6 +134,10 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
                     ReportProgress(new ProgressEventArgs((int)(100.0 * done / work.Count), "Searching DIA candidates...", NestedIds));
             });
         var rows = scored.Where(list => list is not null).SelectMany(list => list).ToList();
+        // The lambda above captures these, so they would otherwise live as long as the method: rows alone holds the candidates
+        Array.Clear(scored);
+        work.Clear();
+        work.TrimExcess();
         Status($"timing: extraction and features for {rows.Count} candidate peaks  [{stage.Elapsed:mm\\:ss\\.f}]");
 
         var windowBounds = windows.Select(w => (Low: w.Key.Minimum, High: w.Key.Maximum)).ToArray();
@@ -1181,37 +1187,24 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
         out List<DiaPrecursorMatch> removed, out Dictionary<int, List<(MzLibUtil.RtMinutes ApexRt, double Score)>> losing)
     {
         var clock = System.Diagnostics.Stopwatch.StartNew();
-        if (matches.Count > 0)
-        {
-            var rescored = TargetDecoyRescorer.Score(
-                matches.Select(m => m.Features).ToList(),
-                matches.Select(m => m.IsDecoy).ToList(),
-                matches.Select(m => m.FullSequence).ToList(),
-                iterations: _parameters.ClassifierLinearIterations,
-                positiveQValue: _parameters.ClassifierTrainingQValue,
-                model: _parameters.ClassifierModel,
-                maxNetworkTrainingRows: _parameters.MaxNetworkTrainingRows,
-                randomSeed: _parameters.ClassifierSeed,
-                networkMembers: _parameters.ClassifierNetworkMembers,
-                networkEpochs: _parameters.ClassifierNetworkEpochs,
-                networkPasses: _parameters.ClassifierNetworkPasses,
-                networkTrainingSample: _parameters.ClassifierNetworkTrainingSample,
-                normalizationGroups: _parameters.ClassifierNormalizationGroups,
-                networkLayers: _parameters.EffectiveClassifierNetworkLayers,
-                networkPositiveQValue: _parameters.ClassifierNetworkPositiveQValue,
-                networkTargetFraction: _parameters.ClassifierNetworkTargetFraction,
-                candidateGroups: matches.Select(m => m.PrecursorIndex).ToList());
-            if (rescored.Scores.All(double.IsFinite))
-                matches = matches.Select((m, i) => m with { Score = rescored.Scores[i] }).ToList();
-        }
+        // The scores stay in an array beside the candidates until one per precursor is chosen: a copy of every candidate
+        // to carry its score would hold two of each, tens of millions, at once
+        double[] scores = matches.Select(m => m.Score).ToArray();
+        if (matches.Count > 0 && Rescore(matches) is { } rescored)
+            scores = rescored;
         Status($"timing: classifier ({_parameters.ClassifierModel}) trained and scored {matches.Count} rows  [{clock.Elapsed:mm\\:ss\\.f}]");
 
         // One match per precursor: its best-scoring candidate apex, across windows; the others are kept as apex and score
-        var byPrecursor = matches.GroupBy(m => m.PrecursorIndex)
-            .Select(g => g.OrderByDescending(m => m.Score).ThenBy(m => m.ApexRt.Value).ToList()).ToList();
+        var candidates = matches;
+        var byPrecursor = Enumerable.Range(0, candidates.Count).GroupBy(i => candidates[i].PrecursorIndex)
+            .Select(g => g.OrderByDescending(i => scores[i]).ThenBy(i => candidates[i].ApexRt.Value).ToList()).ToList();
         losing = byPrecursor.Where(g => g.Count > 1)
-            .ToDictionary(g => g[0].PrecursorIndex, g => g.Skip(1).Select(m => (m.ApexRt, m.Score)).ToList());
-        matches = byPrecursor.Select(g => g[0]).ToList();
+            .ToDictionary(g => candidates[g[0]].PrecursorIndex, g => g.Skip(1).Select(i => (candidates[i].ApexRt, scores[i])).ToList());
+        matches = byPrecursor.Select(g => candidates[g[0]] with { Score = scores[g[0]] }).ToList();
+        // The losing candidates and their features go now (losing keeps each one's apex and score), so the stages below
+        // hold only the winners. The list is the caller's, which reads it no further.
+        candidates.Clear();
+        candidates.TrimExcess();
 
         // Interference removal, after DIA-NN: a match a better co-eluting match explains is dropped, target or decoy alike
         removed = [];
@@ -1286,6 +1279,35 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
         var assigned = targets.Select((m, i) => m with { QValue = qValues[i] }).ToList();
         assigned.AddRange(matches.Where(m => m.IsDecoy));
         return assigned;
+    }
+
+    /// <summary>
+    /// The classifier's score for every candidate, or null when it could not give them all a finite one. A method of its own,
+    /// never inlined, so that the lists it hands the rescorer (one entry per candidate, its features among them) end with its
+    /// frame: left in the caller's, they kept every losing candidate's features alive through the stages after.
+    /// </summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private double[]? Rescore(List<DiaPrecursorMatch> matches)
+    {
+        var rescored = TargetDecoyRescorer.Score(
+            matches.Select(m => m.Features).ToList(),
+            matches.Select(m => m.IsDecoy).ToList(),
+            matches.Select(m => m.FullSequence).ToList(),
+            iterations: _parameters.ClassifierLinearIterations,
+            positiveQValue: _parameters.ClassifierTrainingQValue,
+            model: _parameters.ClassifierModel,
+            maxNetworkTrainingRows: _parameters.MaxNetworkTrainingRows,
+            randomSeed: _parameters.ClassifierSeed,
+            networkMembers: _parameters.ClassifierNetworkMembers,
+            networkEpochs: _parameters.ClassifierNetworkEpochs,
+            networkPasses: _parameters.ClassifierNetworkPasses,
+            networkTrainingSample: _parameters.ClassifierNetworkTrainingSample,
+            normalizationGroups: _parameters.ClassifierNormalizationGroups,
+            networkLayers: _parameters.EffectiveClassifierNetworkLayers,
+            networkPositiveQValue: _parameters.ClassifierNetworkPositiveQValue,
+            networkTargetFraction: _parameters.ClassifierNetworkTargetFraction,
+            candidateGroups: matches.Select(m => m.PrecursorIndex).ToList());
+        return rescored.Scores.All(double.IsFinite) ? rescored.Scores : null;
     }
 
     /// <summary>The fragments a precursor is scored on, most intense first: the fragment rule's if at least three pass it, as the search picks them.</summary>

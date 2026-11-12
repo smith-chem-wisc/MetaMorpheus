@@ -2088,6 +2088,36 @@ public class DiaLibrarySearchEngineTests
         Assert.That(sequences, Does.Not.Contain(bare.FullSequence));
     }
 
+    /// <summary>
+    /// An entry without a library time (NaN, as mzLib will read a missing one: MSL 021) has no window to search, so it is
+    /// not scored, rather than scored against every scan with a NaN library iRT. Its neighbour at the same m/z is.
+    /// </summary>
+    [Test]
+    public void AnEntryWithoutALibraryTimeIsNotScored()
+    {
+        var run = SyntheticDiaRun.Build(50, entry => !entry.IsDecoy);
+        var template = run.Library.First(entry => !entry.IsDecoy);
+        var untimed = new MslLibraryEntry
+        {
+            FullSequence = "NANTIME" + template.FullSequence,
+            BaseSequence = "NANTIME" + template.BaseSequence,
+            PrecursorMz = template.PrecursorMz,
+            ChargeState = template.ChargeState,
+            RetentionTime = double.NaN,
+            IsDecoy = false,
+            MatchedFragmentIons = template.MatchedFragmentIons,
+        };
+        string path = Path.Combine(_directory, $"untimed_{Guid.NewGuid():N}.msl");
+        MslLibrary.Save(path, run.Library.Append(untimed).ToList());
+        using var library = MslLibrary.Load(path);
+
+        var matches = Search(library, run.Scans);
+
+        Assert.That(matches.Select(m => m.FullSequence), Does.Contain(template.FullSequence), "its neighbour, at the same m/z, is still scored");
+        Assert.That(matches.Select(m => m.FullSequence), Does.Not.Contain(untimed.FullSequence));
+        Assert.That(matches, Has.All.Matches<DiaPrecursorMatch>(m => double.IsFinite(m.LibraryIrt.Value)));
+    }
+
     /// <summary>Stop, pressed before the search reaches a window, leaves every window unsearched.</summary>
     [Test]
     [NonParallelizable]
