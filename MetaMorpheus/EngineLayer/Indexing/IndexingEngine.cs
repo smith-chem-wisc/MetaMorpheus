@@ -118,6 +118,13 @@ namespace EngineLayer.Indexing
             // only ever compared whole, never parsed.
             sb.AppendLine("digestionParams: " + DescribeDigestionParams(CommonParameters.DigestionParams));
 
+            // RNA terminal caps shift the mass of every oligo that contains a capped end, and so its fragment masses in
+            // the index. They are only written when set, so protein keys (and RNA keys with the default caps) are unchanged.
+            if (CommonParameters.FivePrimeTerminus != null)
+                sb.AppendLine("fivePrimeTerminus: " + CommonParameters.FivePrimeTerminus.Formula);
+            if (CommonParameters.ThreePrimeTerminus != null)
+                sb.AppendLine("threePrimeTerminus: " + CommonParameters.ThreePrimeTerminus.Formula);
+
             sb.AppendLine("maximumFragmentSize" + (int)Math.Round(MaxFragmentSize));
 
             sb.Append("Localizeable mods: " + BioPolymerList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
