@@ -51,6 +51,7 @@ public static class TaskWindowDigestionParams
             generateUnlabeledProteinsForSilac: generateUnlabeledProteinsForSilac ?? kept.GeneratehUnlabeledProteinsForSilac,
             keepNGlycopeptide: kept.KeepNGlycopeptide,
             keepOGlycopeptide: kept.KeepOGlycopeptide,
-            respectCleavageBlockingModifications: kept.RespectCleavageBlockingModifications);
+            respectCleavageBlockingModifications: kept.RespectCleavageBlockingModifications,
+            respectCleavagePromotingModifications: kept.RespectCleavagePromotingModifications);
     }
 }
