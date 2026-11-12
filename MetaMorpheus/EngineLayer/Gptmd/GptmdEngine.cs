@@ -346,7 +346,7 @@ namespace EngineLayer.Gptmd
         /// Same chemical formula, or, when either has none, the same mass within the 0.005 Da that <see cref="ModFits"/>
         /// uses. UniProt's "Phosphoserine" and GPTMD's "Phosphorylation on T" are the same chemistry.
         /// </summary>
-        private static bool IsSameChemistry(Modification a, Modification b)
+        internal static bool IsSameChemistry(Modification a, Modification b)
         {
             if (a.ChemicalFormula != null && b.ChemicalFormula != null)
                 return a.ChemicalFormula.Equals(b.ChemicalFormula);

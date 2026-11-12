@@ -1,23 +1,44 @@
 using Omics.Fragmentation;
+using Omics.Modifications;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EngineLayer.Localization
 {
     /// <summary>
-    /// One candidate placement of a modification on a peptide: a residue.
+    /// A modification placed on one residue of a peptide.
     ///
     /// A mass on a peptide terminus is in exactly the fragments that hold the terminal residue, so it fragments as the
     /// same mass on that residue does, and no spectrum can tell the two apart. The first residue's site therefore stands
     /// for that residue or the peptide N-terminus, and the last residue's site for that residue or the C-terminus.
     /// </summary>
     /// <param name="ResidueIndex">Zero-based index of the residue in the peptide.</param>
-    /// <param name="Residue">The amino acid at <paramref name="ResidueIndex"/>.</param>
-    public readonly record struct LocalizationSite(int ResidueIndex, char Residue);
+    /// <param name="Residue">The residue at <paramref name="ResidueIndex"/>.</param>
+    /// <param name="Modification">The modification placed there, or null for an unidentified mass difference.</param>
+    public readonly record struct LocalizationSite(int ResidueIndex, char Residue, Modification Modification = null);
 
     /// <summary>
-    /// The spectral evidence for each candidate placement of a PSM's modification, collected while the spectra file is
-    /// loaded so that localization probabilities can be computed later, after every file has been read.
+    /// One candidate arrangement of a match's modifications: the site of each modification whose position is in
+    /// question. Modifications whose position is not in question (fixed modifications, terminal modifications) are not
+    /// listed.
+    /// </summary>
+    public sealed class LocalizationPlacement
+    {
+        public LocalizationPlacement(IReadOnlyList<LocalizationSite> sites)
+        {
+            Sites = sites;
+        }
+
+        /// <summary>The sites, in residue order.</summary>
+        public IReadOnlyList<LocalizationSite> Sites { get; }
+
+        public override string ToString() => string.Join(",", Sites.Select(s => $"{s.Residue}{s.ResidueIndex + 1}"));
+    }
+
+    /// <summary>
+    /// The spectral evidence for each candidate placement of a PSM's modifications, collected while the spectra file
+    /// is loaded so that localization probabilities can be computed later, after every file has been read.
     ///
     /// Holds every distinct experimental peak matched by at least one candidate, as its intensity relative to the
     /// spectrum's base peak, and for each candidate which of those peaks it matched. A peak matched by every candidate
@@ -31,19 +52,22 @@ namespace EngineLayer.Localization
         private readonly int _wordsPerCandidate;
 
         internal LocalizationEvidence(double massDifference, bool isProteinNTerminal, bool isProteinCTerminal,
-            LocalizationSite[] sites, double[] scores, float[] peakRelativeIntensities, ulong[] matchMasks)
+            LocalizationPlacement[] placements, double[] scores, float[] peakRelativeIntensities, ulong[] matchMasks)
         {
             MassDifference = massDifference;
             IsProteinNTerminal = isProteinNTerminal;
             IsProteinCTerminal = isProteinCTerminal;
-            Sites = sites;
+            Placements = placements;
             Scores = scores;
             _peakRelativeIntensities = peakRelativeIntensities;
             _matchMasks = matchMasks;
             _wordsPerCandidate = WordsFor(peakRelativeIntensities.Length);
         }
 
-        /// <summary>The mass placed at each candidate site (observed minus theoretical peptide mass).</summary>
+        /// <summary>
+        /// The observed minus the theoretical mass of the match's peptide. For placements of an unidentified mass
+        /// difference this is the mass placed; for placements of identified modifications it is near zero.
+        /// </summary>
         public double MassDifference { get; }
 
         /// <summary>Whether the peptide begins its protein (or begins it after the initiator methionine is removed).</summary>
@@ -53,12 +77,12 @@ namespace EngineLayer.Localization
         public bool IsProteinCTerminal { get; }
 
         /// <summary>The candidate placements, in the order their evidence is indexed.</summary>
-        public IReadOnlyList<LocalizationSite> Sites { get; }
+        public IReadOnlyList<LocalizationPlacement> Placements { get; }
 
-        /// <summary>The MetaMorpheus score of the peptide with the modification at each candidate site.</summary>
+        /// <summary>The MetaMorpheus score of the peptide with each candidate placement.</summary>
         public IReadOnlyList<double> Scores { get; }
 
-        public int CandidateCount => Sites.Count;
+        public int CandidateCount => Placements.Count;
 
         /// <summary>The number of distinct experimental peaks matched by at least one candidate.</summary>
         public int PeakCount => _peakRelativeIntensities.Length;
@@ -98,7 +122,7 @@ namespace EngineLayer.Localization
         private readonly double _basePeakIntensity;
         private readonly Dictionary<(double Mz, double Intensity), int> _peakIndex = new();
         private readonly List<float> _peakRelativeIntensities = new();
-        private readonly List<LocalizationSite> _sites = new();
+        private readonly List<LocalizationPlacement> _placements = new();
         private readonly List<double> _scores = new();
         private readonly List<List<int>> _matchedPeaks = new();
 
@@ -112,7 +136,7 @@ namespace EngineLayer.Localization
         /// Records a candidate placement and the ions it matched. Ions with the same m/z and intensity are one
         /// experimental peak (two products can match one isotopic envelope), so a peak is counted once per candidate.
         /// </summary>
-        public void AddCandidate(LocalizationSite site, double score, IReadOnlyList<MatchedFragmentIon> matchedIons)
+        public void AddCandidate(LocalizationPlacement placement, double score, IReadOnlyList<MatchedFragmentIon> matchedIons)
         {
             var peaks = new List<int>(matchedIons.Count);
             foreach (MatchedFragmentIon ion in matchedIons)
@@ -126,7 +150,8 @@ namespace EngineLayer.Localization
                 }
                 peaks.Add(index);
             }
-            _sites.Add(site);
+
+            _placements.Add(placement);
             _scores.Add(score);
             _matchedPeaks.Add(peaks);
         }
@@ -134,7 +159,7 @@ namespace EngineLayer.Localization
         public LocalizationEvidence Build(double massDifference, bool isProteinNTerminal, bool isProteinCTerminal)
         {
             int words = LocalizationEvidence.WordsFor(_peakRelativeIntensities.Count);
-            var masks = new ulong[words * _sites.Count];
+            var masks = new ulong[words * _placements.Count];
             for (int c = 0; c < _matchedPeaks.Count; c++)
             {
                 foreach (int peak in _matchedPeaks[c])
@@ -144,7 +169,7 @@ namespace EngineLayer.Localization
             }
 
             return new LocalizationEvidence(massDifference, isProteinNTerminal, isProteinCTerminal,
-                _sites.ToArray(), _scores.ToArray(), _peakRelativeIntensities.ToArray(), masks);
+                _placements.ToArray(), _scores.ToArray(), _peakRelativeIntensities.ToArray(), masks);
         }
     }
 }

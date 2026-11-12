@@ -71,7 +71,7 @@ namespace Test
             Assert.That(evidence.CandidateCount, Is.EqualTo(ps.Length));
             for (int r = 0; r < ps.Length; r++)
             {
-                Assert.That(evidence.Sites[r], Is.EqualTo(new LocalizationSite(r, ps.BaseSequence[r])));
+                Assert.That(evidence.Placements[r].Sites, Is.EqualTo(new[] { new LocalizationSite(r, ps.BaseSequence[r]) }));
                 Assert.That(evidence.Scores[r], Is.EqualTo(newPsm.LocalizedScores[r]));
             }
             Assert.That(evidence.MassDifference, Is.EqualTo(21.981943).Within(1e-3));
@@ -122,10 +122,10 @@ namespace Test
 
             // 70 distinct peaks, so the match masks run past one 64-bit word
             var manyIons = Enumerable.Range(0, 70).Select(i => new MatchedFragmentIon(product, 100 + i, 10 + i, 1)).ToList();
-            builder.AddCandidate(new LocalizationSite(0, 'P'), 5, manyIons);
+            builder.AddCandidate(new LocalizationPlacement(new[] { new LocalizationSite(0, 'P') }), 5, manyIons);
 
             // two products matching one peak are one peak; the second candidate matches peak 0 and peak 69 only
-            builder.AddCandidate(new LocalizationSite(1, 'E'), 2, new List<MatchedFragmentIon>
+            builder.AddCandidate(new LocalizationPlacement(new[] { new LocalizationSite(1, 'E') }), 2, new List<MatchedFragmentIon>
             {
                 new MatchedFragmentIon(product, 100, 10, 1),
                 new MatchedFragmentIon(otherProduct, 100, 10, 1),
