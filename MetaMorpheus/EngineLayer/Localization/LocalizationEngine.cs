@@ -1,4 +1,4 @@
-﻿using MassSpectrometry;
+using MassSpectrometry;
 using Omics;
 using Omics.Fragmentation;
 using Omics.Modifications;
@@ -29,6 +29,7 @@ namespace EngineLayer.Localization
         private readonly bool LocalizeMassDifferences;
         private readonly IReadOnlyCollection<Modification> PlaceableModifications;
         private readonly int MaxPlacements;
+        private readonly LocalizationSiteRule SiteRule;
 
         /// <summary>
         /// Localizes the mass difference of each match at each residue.
@@ -42,12 +43,16 @@ namespace EngineLayer.Localization
         /// <see cref="SpectralMatch.LocalizedScores"/>.</param>
         /// <param name="placeableModifications">When not null, collect evidence for every arrangement of each match's
         /// identified modifications. These are the modifications one may be swapped for to reach a residue its own
-        /// motif does not allow, typically the search's variable modifications.</param>
+        /// motif does not allow, typically the search's variable modifications. Under
+        /// <see cref="LocalizationSiteRule.AnyResidue"/> arrangements are collected whether or not it is given.</param>
         /// <param name="maxPlacements">The most arrangements enumerated for one match; a match with more gets no
         /// placement evidence.</param>
+        /// <param name="siteRule">Which residues an identified modification may be moved to: those its motif allows
+        /// (the default), or any residue, for experiments where a modification's chemistry is treated as unknown.</param>
         public LocalizationEngine(IEnumerable<SpectralMatch> allResultingIdentifications, MsDataFile myMsDataFile, CommonParameters commonParameters,
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds,
-            bool localizeMassDifferences, IReadOnlyCollection<Modification> placeableModifications, int maxPlacements = PositionalIsoforms.DefaultMaxPlacements)
+            bool localizeMassDifferences, IReadOnlyCollection<Modification> placeableModifications, int maxPlacements = PositionalIsoforms.DefaultMaxPlacements,
+            LocalizationSiteRule siteRule = LocalizationSiteRule.Motif)
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllResultingIdentifications = allResultingIdentifications;
@@ -55,11 +60,13 @@ namespace EngineLayer.Localization
             LocalizeMassDifferences = localizeMassDifferences;
             PlaceableModifications = placeableModifications;
             MaxPlacements = maxPlacements;
+            SiteRule = siteRule;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            bool placeModifications = PlaceableModifications != null;
+            // any-residue placement swaps nothing, so it needs no list of modifications to swap for
+            bool placeModifications = PlaceableModifications != null || SiteRule == LocalizationSiteRule.AnyResidue;
 
             // Mass differences are localized only for matches with one full sequence. Modifications are also placed for a
             // match ambiguous only in where its modifications sit, as every candidate is one of its arrangements.
@@ -177,7 +184,7 @@ namespace EngineLayer.Localization
             Ms2ScanWithSpecificMass scanWithSpecificMass, List<Product> products, double basePeakIntensity,
             System.Func<Modification, bool> isFixed)
         {
-            if (!PositionalIsoforms.TryEnumerate(peptide, PlaceableModifications, isFixed, MaxPlacements, out var isoforms))
+            if (!PositionalIsoforms.TryEnumerate(peptide, PlaceableModifications, isFixed, MaxPlacements, out var isoforms, SiteRule))
             {
                 return false;
             }

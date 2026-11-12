@@ -141,6 +141,89 @@ namespace Test
             Assert.That(Enumerable.Range(0, evidence.PeakCount).Any(p => evidence.Matches(best, p) && !evidence.Matches(s3, p)));
         }
 
+        private static List<PositionalIsoform> EnumerateAnyResidue(IBioPolymerWithSetMods peptide, params Modification[] fixedMods)
+        {
+            Assert.That(PositionalIsoforms.TryEnumerate(peptide, null, m => fixedMods.Contains(m), PositionalIsoforms.DefaultMaxPlacements,
+                out var isoforms, LocalizationSiteRule.AnyResidue), Is.True);
+            return isoforms;
+        }
+
+        [Test]
+        public static void AnyResiduePutsTheModificationOnEveryResidueAsItself()
+        {
+            var isoforms = EnumerateAnyResidue(Peptide("PESTSK", new() { { 4, PhosphoS } }));
+
+            Assert.That(Placements(isoforms), Is.EquivalentTo(new[] { "P1", "E2", "S3", "T4", "S5", "K6" }));
+            Assert.That(isoforms.All(i => i.Placement.Sites.Single().Modification == PhosphoS));
+        }
+
+        [Test]
+        public static void AnyResidueMovesATerminalModificationAndKeepsTheTerminusForTheTerminalResidue()
+        {
+            var acetylated = Peptide("AKESK", new() { { 1, AcetylNTerm } });
+
+            // under the motif rule a terminal modification stays where it is
+            Assert.That(Placements(Enumerate(acetylated)), Is.EquivalentTo(new[] { "" }));
+
+            // under the any-residue rule it moves; A1 is the N-terminus itself, not a second, identical placement
+            var isoforms = EnumerateAnyResidue(acetylated);
+            Assert.That(Placements(isoforms), Is.EquivalentTo(new[] { "A1", "K2", "E3", "S4", "K5" }));
+            Assert.That(isoforms.Single(i => i.Placement.ToString() == "A1").AllModsOneIsNterminus.Keys, Is.EquivalentTo(new[] { 1 }));
+            Assert.That(isoforms.Single(i => i.Placement.ToString() == "K2").AllModsOneIsNterminus.Keys, Is.EquivalentTo(new[] { 3 }));
+        }
+
+        [Test]
+        public static void AnyResidueLetsATerminalAndAResidueModificationShareTheTerminalResidue()
+        {
+            // the acetyl has keys 1, 3..6 and the phosphate keys 2..6; they may not share a key, but key 1 (the
+            // N-terminus) and key 2 (the side chain of A1) are different positions: 5 x 5 - 4 shared keys
+            var isoforms = EnumerateAnyResidue(Peptide("AKESK", new() { { 1, AcetylNTerm }, { 5, PhosphoS } }));
+
+            Assert.That(isoforms.Count, Is.EqualTo(21));
+            Assert.That(isoforms.Any(i => i.AllModsOneIsNterminus.Count == 2 && i.AllModsOneIsNterminus[1] == AcetylNTerm && i.AllModsOneIsNterminus[2] == PhosphoS));
+            Assert.That(isoforms.All(i => i.AllModsOneIsNterminus.Count == 2));
+        }
+
+        [Test]
+        public static void AnyResidueStillLeavesFixedModificationsWhereTheyAre()
+        {
+            var fixedOnC = Make("Carbamidomethyl", "C", "C2H3N1O1");
+            var isoforms = EnumerateAnyResidue(Peptide("PECSK", new() { { 4, fixedOnC }, { 5, PhosphoS } }), fixedOnC);
+
+            Assert.That(Placements(isoforms), Is.EquivalentTo(new[] { "P1", "E2", "S4", "K5" }));
+            Assert.That(isoforms.All(i => i.AllModsOneIsNterminus[4] == fixedOnC));
+        }
+
+        [Test]
+        public static void AnyResidueFindsAModificationWhereItsMotifSaysItCannotBe()
+        {
+            // the spectrum has the phosphate's mass on K6, which no phosphorylation motif allows; the match reports S3
+            var commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("", commonParameters) };
+            var onK6 = Peptide("PESTSK", new() { { 7, PhosphoS } });
+            var onS3 = Peptide("PESTSK", new() { { 4, PhosphoS } });
+
+            MsDataFile dataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { onK6 });
+            var scan = new Ms2ScanWithSpecificMass(dataFile.GetAllScansList().Last(), onK6.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
+            var products = new List<Product>();
+            onS3.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+
+            string BestPlacement(LocalizationSiteRule rule)
+            {
+                SpectralMatch psm = new PeptideSpectralMatch(onS3, 0, 0, 2, scan, commonParameters, MetaMorpheusEngine.MatchFragmentIons(scan, products, new CommonParameters()));
+                psm.ResolveAllAmbiguities();
+                new LocalizationEngine(new List<SpectralMatch> { psm }, dataFile, commonParameters, fsp, new List<string>(),
+                    localizeMassDifferences: false, placeableModifications: rule == LocalizationSiteRule.Motif ? new[] { PhosphoS, PhosphoT } : null,
+                    siteRule: rule).Run();
+
+                LocalizationEvidence evidence = psm.LocalizationEvidence;
+                return evidence.Placements[Enumerable.Range(0, evidence.CandidateCount).MaxBy(c => evidence.Scores[c])].ToString();
+            }
+
+            Assert.That(BestPlacement(LocalizationSiteRule.Motif), Is.Not.EqualTo("K6"));
+            Assert.That(BestPlacement(LocalizationSiteRule.AnyResidue), Is.EqualTo("K6"));
+        }
+
         [Test]
         public static void EngineLeavesMassDifferenceLocalizationAloneByDefault()
         {
