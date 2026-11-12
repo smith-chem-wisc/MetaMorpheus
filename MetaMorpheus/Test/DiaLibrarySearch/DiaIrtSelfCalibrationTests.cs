@@ -8,6 +8,7 @@ using EngineLayer.DiaLibrarySearch;
 using MzLibUtil;
 using NUnit.Framework;
 using Omics.Fragmentation;
+using Omics.SpectralMatch.MslSpectralLibrary;
 using Readers.SpectralLibrary;
 
 namespace Test.DiaLibrarySearch;
@@ -57,6 +58,38 @@ public class DiaIrtSelfCalibrationTests
         var on = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(DiaNnFragmentFilter: true), new CommonParameters());
         var off = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(DiaNnFragmentFilter: false), new CommonParameters());
         Assert.That(on.Anchors, Is.EqualTo(off.Anchors));
+    }
+
+    /// <summary>
+    /// Targets without a library time (NaN, as mzLib will read a missing one: MSL 021) give calibration no range. The first
+    /// pass's window comes from the 2nd and 98th percentiles of the targets' iRTs, and a sort puts NaN below every number,
+    /// so a library with a fifth of its targets untimed had a NaN window and no anchors. Calibration reads only the targets
+    /// that have a time, so such a library calibrates exactly as one without them.
+    /// </summary>
+    [Test]
+    public void TargetsWithoutALibraryTimeDoNotMoveCalibration()
+    {
+        var run = SyntheticDiaRun.Build(300, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0);
+        using var timedLibrary = MslLibrary.Load(run.WriteLibrary(_directory));
+        var timed = DiaIrtSelfCalibration.Calibrate(run.Scans, timedLibrary, new DiaLibrarySearchParameters(), new CommonParameters());
+
+        var targets = run.Library.Where(entry => !entry.IsDecoy).ToList();
+        run.Library.AddRange(targets.Take(targets.Count / 4).Select((entry, i) => new MslLibraryEntry
+        {
+            FullSequence = "NANTIME" + entry.FullSequence,
+            BaseSequence = "NANTIME" + entry.BaseSequence,
+            PrecursorMz = entry.PrecursorMz,
+            ChargeState = entry.ChargeState,
+            RetentionTime = double.NaN,
+            IsDecoy = false,
+            MatchedFragmentIons = entry.MatchedFragmentIons,
+        }));
+        using var untimedLibrary = MslLibrary.Load(run.WriteLibrary(_directory));
+        Assert.That(untimedLibrary.TargetCount, Is.EqualTo(timedLibrary.TargetCount + targets.Count / 4));
+        var untimed = DiaIrtSelfCalibration.Calibrate(run.Scans, untimedLibrary, new DiaLibrarySearchParameters(), new CommonParameters());
+
+        Assert.That(untimed.IrtHalfWindow, Is.EqualTo(timed.IrtHalfWindow));
+        Assert.That(untimed.Anchors, Is.EqualTo(timed.Anchors));
     }
 
     /// <summary>
