@@ -51,10 +51,11 @@ namespace EngineLayer.Localization
         private readonly ulong[] _matchMasks; // candidate c's bits are words [c * _wordsPerCandidate, (c + 1) * _wordsPerCandidate)
         private readonly int _wordsPerCandidate;
 
-        internal LocalizationEvidence(double massDifference, bool isProteinNTerminal, bool isProteinCTerminal,
+        internal LocalizationEvidence(double massDifference, int peptideLength, bool isProteinNTerminal, bool isProteinCTerminal,
             LocalizationPlacement[] placements, double[] scores, float[] peakRelativeIntensities, ulong[] matchMasks)
         {
             MassDifference = massDifference;
+            PeptideLength = peptideLength;
             IsProteinNTerminal = isProteinNTerminal;
             IsProteinCTerminal = isProteinCTerminal;
             Placements = placements;
@@ -69,6 +70,9 @@ namespace EngineLayer.Localization
         /// difference this is the mass placed; for placements of identified modifications it is near zero.
         /// </summary>
         public double MassDifference { get; }
+
+        /// <summary>The number of residues in the peptide.</summary>
+        public int PeptideLength { get; }
 
         /// <summary>Whether the peptide begins its protein (or begins it after the initiator methionine is removed).</summary>
         public bool IsProteinNTerminal { get; }
@@ -156,7 +160,7 @@ namespace EngineLayer.Localization
             _matchedPeaks.Add(peaks);
         }
 
-        public LocalizationEvidence Build(double massDifference, bool isProteinNTerminal, bool isProteinCTerminal)
+        public LocalizationEvidence Build(double massDifference, int peptideLength, bool isProteinNTerminal, bool isProteinCTerminal)
         {
             int words = LocalizationEvidence.WordsFor(_peakRelativeIntensities.Count);
             var masks = new ulong[words * _placements.Count];
@@ -168,7 +172,7 @@ namespace EngineLayer.Localization
                 }
             }
 
-            return new LocalizationEvidence(massDifference, isProteinNTerminal, isProteinCTerminal,
+            return new LocalizationEvidence(massDifference, peptideLength, isProteinNTerminal, isProteinCTerminal,
                 _placements.ToArray(), _scores.ToArray(), _peakRelativeIntensities.ToArray(), masks);
         }
     }

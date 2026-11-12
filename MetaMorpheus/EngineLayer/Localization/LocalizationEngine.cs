@@ -171,7 +171,7 @@ namespace EngineLayer.Localization
             psm.LocalizedScores = localizedScores;
             if (evidence != null)
             {
-                psm.LocalizationEvidence = evidence.Build(massDifference, IsProteinNTerminal(peptide), IsProteinCTerminal(peptide));
+                psm.LocalizationEvidence = evidence.Build(massDifference, peptide.Length, IsProteinNTerminal(peptide), IsProteinCTerminal(peptide));
             }
         }
 
@@ -203,7 +203,7 @@ namespace EngineLayer.Localization
                 evidence.AddCandidate(isoform.Placement, CalculatePeptideScore(scan, matchedIons), matchedIons);
             }
 
-            psm.LocalizationEvidence = evidence.Build(massDifference, IsProteinNTerminal(peptide), IsProteinCTerminal(peptide));
+            psm.LocalizationEvidence = evidence.Build(massDifference, peptide.Length, IsProteinNTerminal(peptide), IsProteinCTerminal(peptide));
             return true;
         }
 

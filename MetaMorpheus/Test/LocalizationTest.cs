@@ -1,4 +1,4 @@
-﻿using Chemistry;
+using Chemistry;
 using EngineLayer;
 using EngineLayer.Localization;
 using MassSpectrometry;
@@ -132,7 +132,7 @@ namespace Test
                 new MatchedFragmentIon(product, 169, 79, 1),
             });
 
-            LocalizationEvidence evidence = builder.Build(massDifference: 1, isProteinNTerminal: false, isProteinCTerminal: false);
+            LocalizationEvidence evidence = builder.Build(massDifference: 1, peptideLength: 2, isProteinNTerminal: false, isProteinCTerminal: false);
 
             Assert.That(evidence.PeakCount, Is.EqualTo(70));
             Assert.That(evidence.CandidateCount, Is.EqualTo(2));

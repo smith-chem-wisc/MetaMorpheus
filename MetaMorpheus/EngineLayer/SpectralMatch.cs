@@ -70,6 +70,12 @@ namespace EngineLayer
         /// </summary>
         public Localization.LocalizationEvidence LocalizationEvidence { get; internal set; }
 
+        /// <summary>
+        /// The probability of each candidate placement of this match's modifications, and the localization q-value of
+        /// the best. Null unless localization probabilities were computed for this match.
+        /// </summary>
+        public Localization.LocalizationProbabilities LocalizationProbabilities { get; internal set; }
+
         #region Scan metadata — delegated to ScanMetadata record
 
         /// <summary>
@@ -566,6 +572,7 @@ namespace EngineLayer
             ModsIdentified = psm.ModsIdentified;
             LocalizedScores = psm.LocalizedScores;
             LocalizationEvidence = psm.LocalizationEvidence;
+            LocalizationProbabilities = psm.LocalizationProbabilities;
             ScanPrecursorMostAbundantMass = psm.ScanPrecursorMostAbundantMass;
             IsMostAbundantMode = psm.IsMostAbundantMode;
             PrecursorAveragine = psm.PrecursorAveragine;
