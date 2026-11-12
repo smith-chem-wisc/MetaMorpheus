@@ -18,15 +18,15 @@ namespace EngineLayer.ClassicSearch
     public class ClassicSearchEngine : MetaMorpheusEngine
     {
         private readonly SpectralLibrary SpectralLibrary;
-        private readonly MassDiffAcceptor SearchMode;
-        private readonly List<IBioPolymer> Proteins;
-        private readonly List<Modification> FixedModifications;
-        private readonly List<Modification> VariableModifications;
+        protected readonly MassDiffAcceptor SearchMode;
+        protected readonly List<IBioPolymer> Proteins;
+        protected readonly List<Modification> FixedModifications;
+        protected readonly List<Modification> VariableModifications;
         private readonly List<SilacLabel> SilacLabels;
         private readonly (SilacLabel StartLabel, SilacLabel EndLabel)? TurnoverLabels;
-        private readonly SpectralMatch[] SpectralMatches;
-        private readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
-        private readonly double[] MyScanPrecursorMasses;
+        protected readonly SpectralMatch[] SpectralMatches;
+        protected readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
+        protected readonly double[] MyScanPrecursorMasses;
         private readonly bool WriteSpectralLibrary;
         private readonly bool WriteDigestionCounts;
         private readonly object[] Locks;
