@@ -152,6 +152,32 @@ namespace Test.DatabaseTests
             Assert.That(BaseSequences(collision), Is.EquivalentTo(BaseSequences(notBlocking)));
         }
 
+        /// <summary>
+        /// Likewise with mzLib's opt-in RespectCleavagePromotingModifications on: StcE cuts RPPITQ|SSL only when Thr5, at P2,
+        /// carries an O-glycan, so RPPITQ is yielded only glycosylated.
+        /// </summary>
+        [Test]
+        public static void CollisionDigestionKeepsModifiedFormsWhenModificationsPromoteCleavage()
+        {
+            var promoting = new DigestionParams("StcE", 0, 1, 64, 1024, InitiatorMethionineBehavior.Retain, 1,
+                respectCleavagePromotingModifications: true);
+            Assert.That(DatabaseLoadingEngine.GetCollisionDigestionParams(promoting), Is.SameAs(promoting));
+
+            ModificationMotif.TryGetMotif("T", out ModificationMotif threonine);
+            var oGlycan = new Modification(_originalId: "HexNAc", _modificationType: "O-linked glycosylation", _target: threonine,
+                _locationRestriction: "Anywhere.", _monoisotopicMass: 203.079373);
+            var protein = new Protein("RPPITQSSL", "promoting",
+                oneBasedModifications: new Dictionary<int, List<Modification>> { { 5, new List<Modification> { oGlycan } } });
+            HashSet<string> BaseSequences(IDigestionParams p) =>
+                protein.Digest(p, new List<Modification>(), new List<Modification>()).Select(pep => pep.BaseSequence).ToHashSet();
+
+            // why: digesting with MaxMods = 0 would not see RPPITQ's base sequence at all
+            HashSet<string> withoutModifiedForms = BaseSequences(new DigestionParams("StcE", 0, 1, 64, 1024,
+                InitiatorMethionineBehavior.Retain, 0, respectCleavagePromotingModifications: true));
+            Assert.That(BaseSequences(promoting), Does.Contain("RPPITQ"));
+            Assert.That(withoutModifiedForms, Does.Not.Contain("RPPITQ"));
+        }
+
         #region comparison
 
         /// <summary>

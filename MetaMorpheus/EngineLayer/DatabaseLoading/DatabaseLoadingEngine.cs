@@ -391,10 +391,15 @@ public class DatabaseLoadingEngine(
     /// discount them, so a product can be yielded with no unmodified form at all, and MaxMods = 0 would miss its base
     /// sequence. The parameters are returned unchanged.
     /// </para>
+    /// <para>
+    /// The same holds with <see cref="DigestionParams.RespectCleavagePromotingModifications"/> on: a product ending at a
+    /// cut that needs a modification it carries itself (StcE's O-glycan at P2) is yielded only in that modified form.
+    /// </para>
     /// </remarks>
     public static IDigestionParams GetCollisionDigestionParams(IDigestionParams digestionParams)
     {
-        if (digestionParams is DigestionParams { RespectCleavageBlockingModifications: true })
+        if (digestionParams is DigestionParams { RespectCleavageBlockingModifications: true }
+            or DigestionParams { RespectCleavagePromotingModifications: true })
         {
             return digestionParams;
         }
