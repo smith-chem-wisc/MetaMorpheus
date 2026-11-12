@@ -477,14 +477,14 @@ public class ParallelSearchTask : SearchTask
         var collectors = new List<IMetricCollector>
         {
             new BasicMetricCollector(),
-            new PsmPeptideSearchCollector("Homo sapiens"),
+            new PsmPeptideSearchCollector(ParallelSearchParameters.ForegroundOrganismName),
             new FragmentIonCollector(),
             new RetentionTimeCollector(),
         };
 
         if (ParallelSearchParameters.DoParsimony)
         {
-            collectors.Add(new ProteinGroupCollector("Homo sapiens"));
+            collectors.Add(new ProteinGroupCollector(ParallelSearchParameters.ForegroundOrganismName));
         }
 
         return new TransientDatabaseResultsManager(new MetricAggregator(collectors), analysisCachePath);

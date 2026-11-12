@@ -1,6 +1,7 @@
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using TaskLayer.ParallelSearch;
 using TaskLayer.ParallelSearch.Analysis;
 using TaskLayer.ParallelSearch.Analysis.Collectors;
 using Test.ParallelSearchTask.Utility;
@@ -25,7 +26,7 @@ public class PsmPeptideSearchCollectorTests
             TransientProteinAccessions = new HashSet<string>(),
         };
 
-        var collector = new PsmPeptideSearchCollector();
+        var collector = new PsmPeptideSearchCollector(new ParallelSearchParameters().ForegroundOrganismName);
 
         Assert.That(collector.CanCollectData(context), Is.False);
     }
