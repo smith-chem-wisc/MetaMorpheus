@@ -1,3 +1,4 @@
+using Transcriptomics.Digestion;
 using EngineLayer;
 using GuiFunctions.Util;
 using MassSpectrometry;
@@ -119,6 +120,31 @@ namespace Test
         }
 
         /// <summary>
+        /// The cleavage-promoting flag (mzLib 1.0.598, #1510) keeps the task's value through a file-specific rebuild, in both
+        /// states.
+        /// </summary>
+        /// <remarks>
+        /// The flag decides whether a protease's cleavage requirement (StcE's O-glycan at P2) is honoured, so dropping it would
+        /// give a file an unconstrained digest while the task reports the constrained one. The true case fails without the
+        /// argument in <see cref="MetaMorpheusTask.SetAllFileSpecificCommonParams"/>.
+        /// </remarks>
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public static void FileSpecificRebuild_KeepsRespectCleavagePromotingModifications(bool respectCleavagePromotingModifications)
+        {
+            var task = new CommonParameters(digestionParams: new DigestionParams("trypsin",
+                respectCleavagePromotingModifications: respectCleavagePromotingModifications));
+
+            var combined = MetaMorpheusTask.SetAllFileSpecificCommonParams(task, new FileSpecificParameters { MaxMissedCleavages = 5 }, null);
+
+            var digestionParams = (DigestionParams)combined.DigestionParams;
+            Assert.That(digestionParams.MaxMissedCleavages, Is.EqualTo(5), "the file-specific override still applies");
+            Assert.That(digestionParams.RespectCleavagePromotingModifications, Is.EqualTo(respectCleavagePromotingModifications),
+                "RespectCleavagePromotingModifications was reset by the file-specific rebuild");
+        }
+
+        /// <summary>
         /// File-specific settings that change only the precursor tolerance must leave every other setting equal to the task's.
         /// Every constructor argument is set away from its default (asserted below), so a dropped one shows; reference-typed
         /// settings must come across as the same instance, as in <see cref="IndexPartitioningTest.CloneWithNewTotalPartitions_PreservesEveryOtherSetting"/>.
@@ -155,7 +181,8 @@ namespace Test
                 productMassTolerance_LowRes: new AbsoluteTolerance(0.44),
                 deconvolutionMassTolerance: new PpmTolerance(7),
                 maxThreadsToUsePerFile: 2,
-                digestionParams: new DigestionParams(protease: "Asp-N", maxMissedCleavages: 3, minPeptideLength: 6),
+                // RNA digestion, because the terminal caps only exist for RNA and would be null (and so untested) otherwise
+                digestionParams: new RnaDigestionParams("RNase T1", maxMissedCleavages: 3, minLength: 6),
                 listOfModsVariable: new List<(string, string)> { ("Common Biological", "Phosphorylation on S") },
                 listOfModsFixed: new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C") },
                 assumeOrphanPeaksAreZ1Fragments: false,
@@ -170,7 +197,9 @@ namespace Test
                 fragmentationParams: new FragmentationParams(),
                 precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant,
                 rtPredictorName: "SSRCalc3",
-                retentionTimeRange: new DoubleRange(12, 14));
+                retentionTimeRange: new DoubleRange(12, 14),
+                fivePrimeTerminus: "H3O6P2",
+                threePrimeTerminus: "O3P");
 
             // CustomIons is not a constructor parameter; the constructor reads it from a global dictionary
             typeof(CommonParameters).GetProperty(nameof(CommonParameters.CustomIons))
@@ -198,14 +227,18 @@ namespace Test
 
                 // the rebuild always constructs new digestion parameters, so they are compared field by field
                 bool byValue = property.PropertyType.IsValueType || property.PropertyType == typeof(string)
-                    || property.Name == nameof(CommonParameters.DigestionParams);
+                    || property.Name == nameof(CommonParameters.DigestionParams)
+                    // rebuilt from their formula text, so equal rather than the same instance
+                    || property.Name is nameof(CommonParameters.FivePrimeTerminus) or nameof(CommonParameters.ThreePrimeTerminus);
 
                 if (byValue ? Equals(a, def) : ReferenceEquals(a, def))
                 {
                     indistinguishable.Add(property.Name);
                 }
 
-                bool equal = a == null || byValue ? Equals(a, b) : ReferenceEquals(a, b);
+                // ChemicalFormula implements IEquatable<ChemicalFormula> but does not override object.Equals
+                bool equal = a is Chemistry.ChemicalFormula formula ? formula.Equals(b as Chemistry.ChemicalFormula)
+                    : a == null || byValue ? Equals(a, b) : ReferenceEquals(a, b);
                 if (!equal)
                 {
                     mismatches.Add($"{property.Name}: '{a}' -> '{b}'");

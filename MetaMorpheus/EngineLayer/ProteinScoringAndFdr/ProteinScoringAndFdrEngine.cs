@@ -113,7 +113,7 @@ namespace EngineLayer
             return proteinGroupName;
         }
 
-        private void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<SpectralMatch> psmList)
+        protected void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<SpectralMatch> psmList)
         {
             // add each protein groups PSMs
             var peptideToPsmMatching = new Dictionary<IBioPolymerWithSetMods, HashSet<SpectralMatch>>();
@@ -161,23 +161,42 @@ namespace EngineLayer
             {
                 // merge protein groups that are indistinguishable after scoring
                 var pg = proteinGroups.OrderByDescending(p => p.ProteinGroupScore).ToList();
-                for (int i = 0; i < (pg.Count - 1); i++)
+
+                // Within each run of groups that tie on score, every set of groups with the same peptides is merged into one.
+                int idx = 0;
+                while (idx < pg.Count - 1)
                 {
-                    if (pg[i].ProteinGroupScore == pg[i + 1].ProteinGroupScore && pg[i].ProteinGroupScore != 0)
+                    double score = pg[idx].ProteinGroupScore;
+                    if (score != 0 && score == pg[idx + 1].ProteinGroupScore)
                     {
-                        var pgsWithThisScore = pg.Where(p => p.ProteinGroupScore == pg[i].ProteinGroupScore).ToList();
+                        // find the end of this score-tied run
+                        int clusterEnd = idx + 1;
+                        while (clusterEnd < pg.Count && pg[clusterEnd].ProteinGroupScore == score)
+                            clusterEnd++;
+
+                        var cluster = pg.GetRange(idx, clusterEnd - idx);
+
+                        // a merge only joins groups with equal sequence sets, so each group's set is fixed for the whole run
+                        var sequences = cluster.Select(g => new HashSet<string>(g.AllPeptides.Select(x => x.FullSequence + x.DigestionParams.DigestionAgent))).ToList();
 
                         // check to make sure they have the same peptides, then merge them
-                        foreach (var p in pgsWithThisScore)
+                        for (int i = 0; i < cluster.Count; i++)
                         {
-                            var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.FullSequence + x.DigestionParams.DigestionAgent));
-                            var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.FullSequence + x.DigestionParams.DigestionAgent));
-
-                            if (p != pg[i] && seqs1.SetEquals(seqs2))
+                            if (cluster[i].ProteinGroupScore == 0) continue; // already merged into another group
+                            for (int j = 0; j < cluster.Count; j++)
                             {
-                                pg[i].MergeProteinGroupWith(p);
+                                if (i == j) continue;
+                                if (cluster[j].ProteinGroupScore == 0) continue; // already merged, skip to avoid reverse-merge zeroing the keeper
+                                if (sequences[j].SetEquals(sequences[i]))
+                                    cluster[i].MergeProteinGroupWith(cluster[j]);
                             }
                         }
+
+                        idx = clusterEnd;
+                    }
+                    else
+                    {
+                        idx++;
                     }
                 }
             }
@@ -192,19 +211,49 @@ namespace EngineLayer
             }
         }
 
-        private List<ProteinGroup> DoProteinFdr(List<ProteinGroup> proteinGroups)
+        protected List<ProteinGroup> ApplyNoOneHitWondersFilter(List<ProteinGroup> proteinGroups)
         {
-            if (NoOneHitWonders)
+            if (!NoOneHitWonders)
             {
-                if (TreatModPeptidesAsDifferentPeptides)
-                {
-                    proteinGroups = proteinGroups.Where(p => p.AllPeptides.GroupBy(x => x.FullSequence).Count() > 1).ToList();
-                }
-                else
-                {
-                    proteinGroups = proteinGroups.Where(p => p.AllPeptides.GroupBy(x => x.BaseSequence).Count() > 1).ToList();
-                }
+                return proteinGroups;
             }
+
+            // GroupBy(...).Count() > 1 always builds a full dictionary over all peptides.
+            // Distinct().Skip(1).Any() short-circuits as soon as a second distinct value is
+            // found, avoiding the allocation for groups with many redundant sequences.
+            // Semantics are identical: both return true iff there are >= 2 distinct values.
+            if (TreatModPeptidesAsDifferentPeptides)
+            {
+                return proteinGroups.Where(p => p.AllPeptides.Select(x => x.FullSequence).Distinct().Skip(1).Any()).ToList();
+            }
+
+            return proteinGroups.Where(p => p.AllPeptides.Select(x => x.BaseSequence).Distinct().Skip(1).Any()).ToList();
+        }
+
+        protected static void PopulateBestPeptideMetrics(IEnumerable<ProteinGroup> proteinGroups)
+        {
+            foreach (var pg in proteinGroups)
+            {
+                if (pg.AllPsmsBelowOnePercentFDR.Count == 0)
+                {
+                    pg.BestPeptideScore = 0;
+                    pg.BestPeptideQValue = 1;
+                    pg.BestPeptidePEP = 1;
+                    continue;
+                }
+
+                // Cast rather than OfType: an unexpected ISpectralMatch implementation should throw, not
+                // vanish from the QValue and PEP minimums.
+                var bestPeptidePsms = pg.AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>().ToList();
+                pg.BestPeptideScore = bestPeptidePsms.Max(psm => psm.Score);
+                pg.BestPeptideQValue = bestPeptidePsms.Min(psm => psm.FdrInfo.QValueNotch);
+                pg.BestPeptidePEP = bestPeptidePsms.Min(psm => psm.FdrInfo.PEP);
+            }
+        }
+
+        protected virtual List<ProteinGroup> DoProteinFdr(List<ProteinGroup> proteinGroups)
+        {
+            proteinGroups = ApplyNoOneHitWondersFilter(proteinGroups);
 
             // Do Classic protein FDR (all targets, all decoys)
             // order protein groups based on filter type
@@ -232,17 +281,19 @@ namespace EngineLayer
                     }
                 }
 
-                // Cast rather than OfType: an unexpected ISpectralMatch implementation should throw, not
-                // vanish from the QValue and PEP minimums.
-                var bestPeptidePsms = pg.AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>().ToList();
-                pg.BestPeptideScore = bestPeptidePsms.Max(psm => psm.Score);
-                pg.BestPeptideQValue = bestPeptidePsms.Min(psm => psm.FdrInfo.QValueNotch);
-                pg.BestPeptidePEP = bestPeptidePsms.Min(psm => psm.FdrInfo.PEP);
             }
+
+            PopulateBestPeptideMetrics(proteinGroups);
 
             // pick the best for each paired accession based on filter type
             // this compares target-decoy pairs for each protein and saves the best scoring group
             List<ProteinGroup> rescuedProteins = new List<ProteinGroup>();
+            // Collect all groups to remove across all accessions first, then do a single O(N) pass.
+            // The original per-iteration Except(pgList).ToList() rebuilt the full list on every
+            // loop iteration — O(M*N) total. Batching reduces this to O(M+N).
+            // HashSet<ProteinGroup> uses reference equality by default (ProteinGroup does not
+            // override GetHashCode/Equals(object)), which matches the original Except semantics.
+            var toRemove = new HashSet<ProteinGroup>();
             foreach (var accession in accessionToProteinGroup)
             {
                 if (accession.Value.Count > 1)
@@ -251,9 +302,11 @@ namespace EngineLayer
                     var pgToUse = pgList.First(); // pick best (lowest QValue or lowest PEP) and remove the rest
                     pgList.Remove(pgToUse);
                     rescuedProteins.AddRange(pgList); // save the remaining protein groups
-                    proteinGroups = proteinGroups.Except(pgList).ToList(); // remove the remaining protein groups
+                    foreach (var pg in pgList)
+                        toRemove.Add(pg);
                 }
             }
+            proteinGroups = proteinGroups.Where(pg => !toRemove.Contains(pg)).ToList();
 
             sortedProteinGroups = SortProteinGroupsByFilterType(proteinGroups);
             AssignQValuesToProteins(sortedProteinGroups);
