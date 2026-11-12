@@ -631,7 +631,13 @@ public class ParallelSearchTask : SearchTask
         //DebugStatus("Disambiguation complete", nestedIds, dbName, postAnalysisStopwatch);
 
         // Apply FDR Alignment to PSMs
-        var transientPsms = FilterToTransientDatabaseOnly(psmList, transientProteinAccessions).ToList();
+        // Only scans the transient search changed can hold a transient protein, so only those are checked and sorted.
+        // Taking them in scan order first keeps ties in the same order as the full sorted list.
+        var transientPsms = FilterToTransientDatabaseOnly(
+                updatedPsmIndexes.Order().Select(i => allPsms[i]).Where(p => p != null),
+                transientProteinAccessions)
+            .OrderByDescending(p => p)
+            .ToList();
         BaselineFdr.AlignPsms(_baselinePsmFdr, transientPsms);
 
         // Collapse to peptides and apply FDR alignment to peptides
@@ -1012,7 +1018,7 @@ public class ParallelSearchTask : SearchTask
     /// <summary>
     /// Filters spectral matches to only include those that match exclusively to transient database proteins
     /// </summary>
-    private IEnumerable<SpectralMatch> FilterToTransientDatabaseOnly(List<SpectralMatch> spectralMatches,
+    private IEnumerable<SpectralMatch> FilterToTransientDatabaseOnly(IEnumerable<SpectralMatch> spectralMatches,
         HashSet<string> transientProteinAccessions, bool allowAmbiguous = true)
     {
         foreach (var psm in spectralMatches)
