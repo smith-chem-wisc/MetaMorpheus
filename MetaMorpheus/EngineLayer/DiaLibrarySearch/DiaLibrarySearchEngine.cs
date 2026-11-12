@@ -105,7 +105,9 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
             double irtHigh = scanIrts.Max() + _parameters.IrtHalfWindow + margin;
             using var hits = _library.QueryWindow((float)window.Key.Minimum, (float)window.Key.Maximum, (float)irtLow, (float)irtHigh, includeDecoys: true);
             foreach (var candidate in hits.Entries.ToArray())
-                if (candidate.PrecursorIdx % _parameters.PrecursorSampleStride == _parameters.PrecursorSampleOffset % _parameters.PrecursorSampleStride)
+                // A precursor without a library time (NaN, as mzLib reads a missing one) has no window to search
+                if (float.IsFinite(candidate.Irt)
+                    && candidate.PrecursorIdx % _parameters.PrecursorSampleStride == _parameters.PrecursorSampleOffset % _parameters.PrecursorSampleStride)
                     work.Add((scans, scanIrts, candidate));
         }
 
