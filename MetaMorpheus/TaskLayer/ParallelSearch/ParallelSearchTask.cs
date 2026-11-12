@@ -233,6 +233,12 @@ public class ParallelSearchTask : SearchTask
             }
         }
 
+        if (SearchParameters.SearchType != SearchType.Classic)
+        {
+            throw new MetaMorpheusException($"Parallel search only runs a classic search, but the search type is set to {SearchParameters.SearchType}. "
+                + "Set the search type to Classic and run again.");
+        }
+
         if (SearchParameters.MassDiffAcceptorType.IsMostAbundant()
             || CommonParameters.PrecursorMassMatchMode == PrecursorMassMatchMode.MostAbundant)
         {
@@ -561,7 +567,7 @@ public class ParallelSearchTask : SearchTask
               transientDb,
               updatedPsmIndexes,
               commonParameters
-          ).GetAwaiter().GetResult();
+          );
 
          _completedDatabaseWriteChannel!.Writer.WriteAsync((analysisContext, dbResults)).AsTask().GetAwaiter().GetResult();
 
@@ -596,7 +602,7 @@ public class ParallelSearchTask : SearchTask
          ReportProgress(new(100, "Finished Classic Search...", nestedIds));
      }
 
-    private async Task<(TransientDatabaseContext Context, TransientDatabaseMetrics Metrics)> PerformPostSearchAnalysis(
+    private (TransientDatabaseContext Context, TransientDatabaseMetrics Metrics) PerformPostSearchAnalysis(
         SpectralMatch[] allPsms,
         string outputFolder,
         List<string> nestedIds,
@@ -650,7 +656,7 @@ public class ParallelSearchTask : SearchTask
                 nestedIds);
 
             ProteinParsimonyResults proteinAnalysisResults =
-                (ProteinParsimonyResults)await transientParsimonyEngine.RunAsync();
+                (ProteinParsimonyResults)transientParsimonyEngine.Run();
             List<ProteinGroup> transientParsimonyGroups = proteinAnalysisResults.ProteinGroups;
             List<SpectralMatch> transientPsmsForParsimony = transientParsimonyEngine.NeighborhoodPsms;
 
@@ -667,13 +673,13 @@ public class ParallelSearchTask : SearchTask
                     .ToList();
 
                 ProteinScoringAndFdrResults proteinScoringAndFdrResults =
-                        (ProteinScoringAndFdrResults)await new TransientProteinScoringAndFdrEngine(
+                        (ProteinScoringAndFdrResults)new TransientProteinScoringAndFdrEngine(
                             baselineProteinGroups,
                             transientParsimonyGroups,
                             transientPsmsForParsimony,
                             _baselineProteinGroupFdr,
                             SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreDifferent,
-                            true, commonParameters, FileSpecificParameters, nestedIds).RunAsync();
+                            true, commonParameters, FileSpecificParameters, nestedIds).Run();
 
                 proteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
             }
@@ -691,7 +697,7 @@ public class ParallelSearchTask : SearchTask
             // Count bioPolymer groups that contain at least one transient database bioPolymer
             transientProteinGroups =
                 FilterProteinGroupsToTransientDatabaseOnly(proteinGroups, transientProteinAccessions)
-                .Select(p => new CachedProteinGroup(p).CreateRuntimeCopy())
+                .Select(CachedProteinGroup.DeepCopy)
                 .ToList();
         }
 
@@ -727,7 +733,7 @@ public class ParallelSearchTask : SearchTask
 
         #endregion
 
-        return await Task.FromResult((analysisContext, aggregatedResult));
+        return (analysisContext, aggregatedResult);
     }
 
     #endregion

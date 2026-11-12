@@ -9,11 +9,14 @@ namespace TaskLayer.ParallelSearch;
 /// </summary>
 internal class CachedProteinGroup(ProteinGroup proteinGroup)
 {
-    private ProteinGroup ProteinGroup { get; } = BuildCached(proteinGroup);
+    private ProteinGroup ProteinGroup { get; } = DeepCopy(proteinGroup);
 
-    private static ProteinGroup BuildCached(ProteinGroup pg)
+    /// <summary>
+    /// Copies a group so that writing it, which changes the group, leaves the original untouched.
+    /// </summary>
+    public static ProteinGroup DeepCopy(ProteinGroup pg)
     {
-        var cached = new ProteinGroup(
+        var copy = new ProteinGroup(
             [..pg.Proteins],
             [..pg.AllPeptides],
             [..pg.UniquePeptides])
@@ -30,38 +33,14 @@ internal class CachedProteinGroup(ProteinGroup proteinGroup)
             // SampleGroupResults (quant + occupancy) is derived from this and rebuilt on read, so it is not copied
             OccupancySitesToReport = pg.OccupancySitesToReport,
         };
-        cached.SequenceCoverageFraction.AddRange(pg.SequenceCoverageFraction);
-        cached.SequenceCoverageDisplayList.AddRange(pg.SequenceCoverageDisplayList);
-        cached.SequenceCoverageDisplayListWithMods.AddRange(pg.SequenceCoverageDisplayListWithMods);
-        cached.FragmentSequenceCoverageDisplayList.AddRange(pg.FragmentSequenceCoverageDisplayList);
-        return cached;
+        copy.SequenceCoverageFraction.AddRange(pg.SequenceCoverageFraction);
+        copy.SequenceCoverageDisplayList.AddRange(pg.SequenceCoverageDisplayList);
+        copy.SequenceCoverageDisplayListWithMods.AddRange(pg.SequenceCoverageDisplayListWithMods);
+        copy.FragmentSequenceCoverageDisplayList.AddRange(pg.FragmentSequenceCoverageDisplayList);
+        return copy;
     }
 
     public ProteinGroup GetProteinGroup() => ProteinGroup;
 
-    public ProteinGroup CreateRuntimeCopy()
-    {
-        var copy = new ProteinGroup(
-            [..ProteinGroup.Proteins],
-            [..ProteinGroup.AllPeptides],
-            [..ProteinGroup.UniquePeptides])
-        {
-            AllPsmsBelowOnePercentFDR = [..ProteinGroup.AllPsmsBelowOnePercentFDR],
-            ProteinGroupScore = ProteinGroup.ProteinGroupScore,
-            BestPeptideScore = ProteinGroup.BestPeptideScore,
-            BestPeptideQValue = ProteinGroup.BestPeptideQValue,
-            BestPeptidePEP = ProteinGroup.BestPeptidePEP,
-            QValue = ProteinGroup.QValue,
-            CumulativeTarget = ProteinGroup.CumulativeTarget,
-            CumulativeDecoy = ProteinGroup.CumulativeDecoy,
-            DisplayModsOnPeptides = ProteinGroup.DisplayModsOnPeptides,
-            // SampleGroupResults (quant + occupancy) is derived from this and rebuilt on read, so it is not copied
-            OccupancySitesToReport = ProteinGroup.OccupancySitesToReport,
-        };
-        copy.SequenceCoverageFraction.AddRange(ProteinGroup.SequenceCoverageFraction);
-        copy.SequenceCoverageDisplayList.AddRange(ProteinGroup.SequenceCoverageDisplayList);
-        copy.SequenceCoverageDisplayListWithMods.AddRange(ProteinGroup.SequenceCoverageDisplayListWithMods);
-        copy.FragmentSequenceCoverageDisplayList.AddRange(ProteinGroup.FragmentSequenceCoverageDisplayList);
-        return copy;
-    }
+    public ProteinGroup CreateRuntimeCopy() => DeepCopy(ProteinGroup);
 }

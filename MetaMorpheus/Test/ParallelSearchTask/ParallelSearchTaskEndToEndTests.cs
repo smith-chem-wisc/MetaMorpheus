@@ -292,7 +292,6 @@ public class ParallelSearchTaskEndToEndTests
             Assert.Multiple(() =>
             {
                 Assert.That(header, Does.Contain("Psm_MeanAbsoluteRtError"));
-                Assert.That(header, Does.Not.Contain("Psm_MeanAbsoluteRtError"));
                 Assert.That(row.Psm_AllRtErrors, Is.Not.Empty);
                 Assert.That(row.Peptide_AllRtErrors, Is.Not.Empty);
             });

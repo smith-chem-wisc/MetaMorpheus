@@ -157,6 +157,19 @@ public class ParallelSearchTaskValidationTests
     }
 
     [Test]
+    [TestCase(SearchType.Modern)]
+    [TestCase(SearchType.NonSpecific)]
+    public void RunTask_WithNonClassicSearchType_IsRejected(SearchType searchType)
+    {
+        var task = CreateTask();
+        task.ParallelSearchParameters.SearchType = searchType;
+
+        var exception = RunAndExpectRejection(task, $"{nameof(RunTask_WithNonClassicSearchType_IsRejected)}_{searchType}");
+
+        Assert.That(exception.Message, Does.Contain("classic search").And.Contain(searchType.ToString()));
+    }
+
+    [Test]
     public void RunTask_WithMostAbundantPrecursorMatchMode_IsRejected()
     {
         var task = CreateTask(new CommonParameters(precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant));
