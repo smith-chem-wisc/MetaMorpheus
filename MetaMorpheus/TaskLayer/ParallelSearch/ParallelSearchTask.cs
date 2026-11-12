@@ -94,6 +94,7 @@ public class ParallelSearchTask : SearchTask
     [TomlIgnore] private ProteinGroupFdrLookup _baselineProteinGroupFdr = new([], FilterType.QValue);
     [TomlIgnore] private List<CachedProteinGroup> CachedBaselineProteinGroups { get; set; } = [];
     [TomlIgnore] private readonly Dictionary<string, List<int>> _baselinePeptideKeyToScanIndexes = new(StringComparer.Ordinal);
+    [TomlIgnore] private readonly Dictionary<IBioPolymer, List<int>> _baselineProteinToScanIndexes = new(ReferenceEqualityComparer.Instance);
     [TomlIgnore] private Dictionary<string, IrtCalibrationModel> _retentionTimeCalibrations = new();
 
     // Properties to track progress and results across databases
@@ -327,7 +328,7 @@ public class ParallelSearchTask : SearchTask
 
         _baselinePsmFdr = BaselineFdr.CreatePsmLookup(baselinePsms);
         _baselinePeptideFdr = BaselineFdr.CreatePeptideLookup(baselinePsms);
-        BuildBaselinePeptideToScanIndexLookup();
+        BuildBaselineScanIndexLookups();
 
         // Map Chronologer's % acetonitrile onto each file's minutes once, so every database's RT errors share one scale
         Status("Calibrating predicted retention times...", taskId);
@@ -656,6 +657,7 @@ public class ParallelSearchTask : SearchTask
                 updatedPsmIndexes,
                 transientProteins,
                 _baselinePeptideKeyToScanIndexes,
+                _baselineProteinToScanIndexes,
                 SearchParameters.ModPeptidesAreDifferent,
                 commonParameters,
                 FileSpecificParameters,
@@ -1056,9 +1058,10 @@ public class ParallelSearchTask : SearchTask
             .Where(pg => pg.Proteins.Any(p => transientProteinAccessions.Contains(p.Accession)));
     }
 
-    private void BuildBaselinePeptideToScanIndexLookup()
+    private void BuildBaselineScanIndexLookups()
     {
         _baselinePeptideKeyToScanIndexes.Clear();
+        _baselineProteinToScanIndexes.Clear();
 
         for (int scanIndex = 0; scanIndex < BaseSearchPsms.Length; scanIndex++)
         {
@@ -1067,8 +1070,21 @@ public class ParallelSearchTask : SearchTask
                 continue;
 
             HashSet<string> keysSeenForScan = new(StringComparer.Ordinal);
+            HashSet<IBioPolymer> proteinsSeenForScan = new(ReferenceEqualityComparer.Instance);
             foreach (var hypothesis in psm.BestMatchingBioPolymersWithSetMods)
             {
+                IBioPolymer protein = hypothesis.SpecificBioPolymer.Parent;
+                if (proteinsSeenForScan.Add(protein))
+                {
+                    if (!_baselineProteinToScanIndexes.TryGetValue(protein, out var proteinScanIndexes))
+                    {
+                        proteinScanIndexes = [];
+                        _baselineProteinToScanIndexes.Add(protein, proteinScanIndexes);
+                    }
+
+                    proteinScanIndexes.Add(scanIndex);
+                }
+
                 string peptideKey = TransientProteinParsimonyEngine.GetParsimonyPeptideKey(
                     hypothesis.SpecificBioPolymer,
                     SearchParameters.ModPeptidesAreDifferent);
