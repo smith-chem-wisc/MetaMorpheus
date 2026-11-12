@@ -346,6 +346,9 @@
 	  <Component Id="src_CsvHelper.dll" Guid="79F28320-5AF2-4825-9B9B-AC0776E753C1">
 	  	<File Id="src_CsvHelper.dll" Name="CsvHelper.dll" Source="$(var.GUI_TargetDir)CsvHelper.dll" />
 	  </Component>
+	  <Component Id="src_FluentFTP.dll" Guid="BB8D505C-416F-471D-BDBE-C577F5EC646F">
+	  	<File Id="src_FluentFTP.dll" Name="FluentFTP.dll" Source="$(var.GUI_TargetDir)FluentFTP.dll" />
+	  </Component>
 	  <Component Id="src_msvcp110.dll" Guid="36947FB1-E7F0-4580-A15C-66CB25D566C4">
 	  	<File Id="src_msvcp110.dll" Name="msvcp110.dll" Source="$(var.GUI_TargetDir)msvcp110.dll" />
 	  </Component>
