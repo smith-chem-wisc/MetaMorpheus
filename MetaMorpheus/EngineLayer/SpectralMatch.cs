@@ -64,6 +64,12 @@ namespace EngineLayer
         public Dictionary<string, int> ModsIdentified { get; private set; } // these should never be null under normal circumstances
         public List<double> LocalizedScores { get; internal set; }
 
+        /// <summary>
+        /// The evidence for each candidate placement of this match's mass difference, from which localization
+        /// probabilities are computed. Null unless the localization engine ran on this match.
+        /// </summary>
+        public Localization.LocalizationEvidence LocalizationEvidence { get; internal set; }
+
         #region Scan metadata — delegated to ScanMetadata record
 
         /// <summary>
@@ -559,6 +565,7 @@ namespace EngineLayer
             PsmCount = psm.PsmCount;
             ModsIdentified = psm.ModsIdentified;
             LocalizedScores = psm.LocalizedScores;
+            LocalizationEvidence = psm.LocalizationEvidence;
             ScanPrecursorMostAbundantMass = psm.ScanPrecursorMostAbundantMass;
             IsMostAbundantMode = psm.IsMostAbundantMode;
             PrecursorAveragine = psm.PrecursorAveragine;

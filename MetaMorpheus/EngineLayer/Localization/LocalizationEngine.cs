@@ -60,6 +60,10 @@ namespace EngineLayer.Localization
                         // or this engine localizes a ~1-2 Da modification that does not exist.
                         double massDifference = psm.GetObservedMonoisotopicMass(peptide.MonoisotopicMass, CommonParameters) - peptide.MonoisotopicMass;
 
+                        // the evidence for each placement is kept, relative to the base peak, for localization probabilities
+                        double basePeakIntensity = scan.MassSpectrum.YofPeakWithHighestY ?? 0;
+                        var evidence = basePeakIntensity > 0 ? new LocalizationEvidenceBuilder(basePeakIntensity) : null;
+
                         // this section will iterate through all residues of the peptide and try to localize the mass-diff at each residue and report a score for each residue
                         var localizedScores = new List<double>();
                         for (int r = 0; r < peptide.Length; r++)
@@ -76,9 +80,12 @@ namespace EngineLayer.Localization
                             double localizedScore = CalculatePeptideScore(scan, matchedIons);
 
                             localizedScores.Add(localizedScore);
+                            // the first and last residues also stand for the peptide termini, which fragment identically
+                            evidence?.AddCandidate(new LocalizationSite(r, peptide.BaseSequence[r]), localizedScore, matchedIons);
                         }
 
                         psm.LocalizedScores = localizedScores;
+                        psm.LocalizationEvidence = evidence?.Build(massDifference, IsProteinNTerminal(peptide), IsProteinCTerminal(peptide));
 
                         // report search progress (PSM mass differences localized so far out of total)
                         psmsSearched++;
@@ -93,6 +100,23 @@ namespace EngineLayer.Localization
                 });
 
             return new LocalizationEngineResults(this);
+        }
+
+        /// <summary>
+        /// Whether the peptide begins its protein, counting a peptide that begins after a removed initiator methionine.
+        /// </summary>
+        internal static bool IsProteinNTerminal(IBioPolymerWithSetMods peptide)
+        {
+            return peptide.OneBasedStartResidue == 1
+                || (peptide.OneBasedStartResidue == 2 && peptide.Parent?.BaseSequence is { Length: > 0 } sequence && sequence[0] == 'M');
+        }
+
+        /// <summary>
+        /// Whether the peptide ends its protein.
+        /// </summary>
+        internal static bool IsProteinCTerminal(IBioPolymerWithSetMods peptide)
+        {
+            return peptide.Parent != null && peptide.OneBasedEndResidue == peptide.Parent.Length;
         }
     }
 }
