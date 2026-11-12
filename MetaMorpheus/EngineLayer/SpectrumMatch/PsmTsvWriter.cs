@@ -304,7 +304,7 @@ namespace EngineLayer
             s[SpectrumMatchFromTsvHeader.Accession] = pepWithModsIsNull ? " " : sm.Accession != null ? sm.Accession : Resolve(pepsWithMods.Select(b => b.Parent.Accession), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.Name] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.FullName), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.GeneName] = geneString;
-            s[SpectrumMatchFromTsvHeader.OrganismName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.Organism)).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.OrganismName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.Organism)).ResolvedString?.Trim() ?? " ";
 
             if (sm is PeptideSpectralMatch psm || sm is null && GlobalVariables.AnalyteType != AnalyteType.Oligo)
             {
