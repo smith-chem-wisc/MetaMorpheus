@@ -2089,7 +2089,7 @@ public class DiaLibrarySearchEngineTests
     }
 
     /// <summary>
-    /// An entry without a library time (NaN, as mzLib will read a missing one: MSL 021) has no window to search, so it is
+    /// An entry without a library time (NaN, as mzLib reads a missing one) has no window to search, so it is
     /// not scored, rather than scored against every scan with a NaN library iRT. Its neighbour at the same m/z is.
     /// </summary>
     [Test]
