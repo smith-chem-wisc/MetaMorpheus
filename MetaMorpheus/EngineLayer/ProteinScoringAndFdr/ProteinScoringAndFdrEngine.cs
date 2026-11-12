@@ -56,11 +56,7 @@ namespace EngineLayer
             LabelPeptidesUniqueToOneGroupAfterFdr = labelPeptidesUniqueToOneGroup;
             _decoyIdentifiers = proteinGroups.SelectMany(p => p.Proteins.Where(b => b.IsDecoy).Select(b => b.Accession.Split('_')[0])).ToHashSet();
 
-            // Pre-filtered callers keep their original tie-break: equal thresholds sort by PEP q-value.
-            bool usePepQValue = psmsAlreadyFiltered
-                ? !(CommonParameters.QValueThreshold < CommonParameters.PepQValueThreshold)
-                : CommonParameters.PepQValueThreshold < CommonParameters.QValueThreshold;
-            if (usePepQValue)
+            if (CommonParameters.PepQValueThreshold < CommonParameters.QValueThreshold)
             {
                 _filterType = FilterType.PepQValue;
                 _filterThreshold = CommonParameters.PepQValueThreshold;

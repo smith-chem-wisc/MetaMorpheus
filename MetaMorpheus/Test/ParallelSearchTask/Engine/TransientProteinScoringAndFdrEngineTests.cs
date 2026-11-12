@@ -144,13 +144,13 @@ public class TransientProteinScoringAndFdrEngineTests
     }
 
     /// <summary>
-    /// Equal q-value and PEP q-value thresholds make protein FDR filter on PEP; a lookup built for q-value
-    /// ranking must not be used to rank groups by PEP.
+    /// A PEP q-value threshold below the q-value threshold makes protein FDR rank groups by PEP; a lookup built
+    /// for q-value ranking must not be used to rank them.
     /// </summary>
     [Test]
     public void RunSpecific_WithALookupRankedByADifferentFilter_Throws()
     {
-        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.01, pepQValueThreshold: 0.01);
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.01, pepQValueThreshold: 0.005);
         var (group, psm) = CreateDistinctTransientGroupWithPsm(commonParameters, "PEPTIDEK", "ONLY", score: 20, scanNumber: 603);
         var baselineFdr = BaselineFdr.CreateProteinGroupLookup(
             [CreateAlignmentBaselineGroup(bestPeptideQValue: 0.001, bestPeptideScore: 100, qValue: 0.01, cumulativeTarget: 100, cumulativeDecoy: 1)],
@@ -172,6 +172,28 @@ public class TransientProteinScoringAndFdrEngineTests
         {
             Assert.That(engine.FilterType, Is.EqualTo(FilterType.PepQValue));
             Assert.That(() => engine.Run(), Throws.TypeOf<MetaMorpheusException>());
+        });
+    }
+
+    /// <summary>
+    /// Both constructors pick the filter the same way: PEP q-value only when its threshold is strictly lower,
+    /// so equal thresholds rank by q-value, as a regular search does.
+    /// </summary>
+    [Test]
+    [TestCase(0.01, 0.01, FilterType.QValue)]
+    [TestCase(0.01, 1.0, FilterType.QValue)]
+    [TestCase(0.01, 0.005, FilterType.PepQValue)]
+    public void FilterType_IsTheSameWithOrWithoutPreFilteredPsms(double qValueThreshold, double pepQValueThreshold, FilterType expected)
+    {
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold, pepQValueThreshold);
+
+        var filtering = new ProteinScoringAndFdrEngine([], new List<SpectralMatch>(), false, true, false, commonParameters, null, []);
+        var preFiltered = new ProteinScoringAndFdrEngine([], new List<SpectralMatch>(), psmsAlreadyFiltered: true, false, true, false, commonParameters, null, []);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(filtering.FilterType, Is.EqualTo(expected));
+            Assert.That(preFiltered.FilterType, Is.EqualTo(expected));
         });
     }
 
