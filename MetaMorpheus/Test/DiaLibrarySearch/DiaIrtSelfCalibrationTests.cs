@@ -61,7 +61,7 @@ public class DiaIrtSelfCalibrationTests
     }
 
     /// <summary>
-    /// Targets without a library time (NaN, as mzLib will read a missing one: MSL 021) give calibration no range. The first
+    /// Targets without a library time (NaN, as mzLib reads a missing one) give calibration no range. The first
     /// pass's window comes from the 2nd and 98th percentiles of the targets' iRTs, and a sort puts NaN below every number,
     /// so a library with a fifth of its targets untimed had a NaN window and no anchors. Calibration reads only the targets
     /// that have a time, so such a library calibrates exactly as one without them.

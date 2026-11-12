@@ -144,7 +144,7 @@ public static class DiaIrtSelfCalibration
         if (ms2Rts.Length == 0)
             throw new MetaMorpheusException("Could not calibrate retention time: the run has no DIA MS2 scans.");
 
-        // Only targets with a library time set the range: a missing one reads as NaN (MSL 021), which a sort puts below every
+        // Only targets with a library time set the range: a missing one reads as NaN, which a sort puts below every
         // number, so a few percent of them made the first pass's window NaN
         double[] targetIrts = library.QueryMzWindow(0, float.MaxValue).ToArray()
             .Where(e => e.IsDecoy == 0 && float.IsFinite(e.Irt)).Select(e => (double)e.Irt).Order().ToArray();
