@@ -146,6 +146,30 @@ public class ParallelSearchTaskValidationTests
     }
 
     [Test]
+    public void RunTask_WithFileSpecificDigestionOrFragmentationThatDiffersFromTheTask_IsRejectedAndNamesThem()
+    {
+        // the transient engine digests and fragments with the task's settings, so a file asking for ETD or
+        // different missed cleavages would be searched as HCD with the task's digestion and no warning
+        string spectraFolder = Path.Combine(ValidationFolder, "FileSpecificDigestion");
+        Directory.CreateDirectory(spectraFolder);
+        string spectraCopy = Path.Combine(spectraFolder, Path.GetFileName(SpectraPath));
+        File.Copy(SpectraPath, spectraCopy, true);
+        File.WriteAllText(Path.ChangeExtension(spectraCopy, ".toml"),
+            $"DissociationType = \"ETD\"{Environment.NewLine}MaxMissedCleavages = 5{Environment.NewLine}");
+
+        var task = CreateTask(new CommonParameters(dissociationType: DissociationType.HCD));
+        var exception = RunAndExpectRejection(task,
+            nameof(RunTask_WithFileSpecificDigestionOrFragmentationThatDiffersFromTheTask_IsRejectedAndNamesThem), [spectraCopy]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exception.Message, Does.Contain(Path.GetFileName(spectraCopy)));
+            Assert.That(exception.Message, Does.Contain("DissociationType (ETD for the file, HCD for the task)"));
+            Assert.That(exception.Message, Does.Contain("MaxMissedCleavages (5 for the file, 2 for the task)"));
+        });
+    }
+
+    [Test]
     public void RunTask_WithMostAbundantMassDiffAcceptor_IsRejected()
     {
         var task = CreateTask();

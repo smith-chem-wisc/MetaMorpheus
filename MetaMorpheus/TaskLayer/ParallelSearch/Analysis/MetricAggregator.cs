@@ -29,10 +29,10 @@ public class MetricAggregator
         {
             try
             {
+                // a collector without the data it needs (no protein groups without parsimony, say) leaves its columns
+                // at their defaults; that is expected, not an error
                 if (!collector.CanCollectData(context))
                 {
-                    // Skip this collector or log warning
-                    result.Errors.Add($"Skipping analyzer {collector.CollectorName} due to insufficient data.");
                     continue;
                 }
 
@@ -46,7 +46,7 @@ public class MetricAggregator
             }
             catch (Exception ex)
             {
-                // Log error but continue with other collectors
+                // keep going with the other collectors; the task warns about the failure and does not cache the row
                 result.Errors.Add($"{collector.CollectorName}: {ex.Message}");
             }
         }

@@ -111,7 +111,7 @@ public class ParallelSearchTask : SearchTask
         List<DbForTask> dbFilenameList, List<string> currentRawFileList,
         string taskId, FileSpecificParameters[] fileSettingsList)
     {
-        ValidateSettings(fileSettingsList);
+        ValidateSettings(fileSettingsList, currentRawFileList);
 
         MyTaskResults = new MyTaskResults(this);
         PersistentDatabases = dbFilenameList;
@@ -196,7 +196,7 @@ public class ParallelSearchTask : SearchTask
     /// The transient search engine skips XCorr scoring for speed, and the
     /// summary cache and per-database output folders are keyed by database file name.
     /// </summary>
-    private void ValidateSettings(FileSpecificParameters?[]? fileSettingsList)
+    private void ValidateSettings(FileSpecificParameters?[]? fileSettingsList, List<string>? currentRawFileList)
     {
         var transientDatabases = ParallelSearchParameters.TransientDatabases;
         if (transientDatabases == null || transientDatabases.Count == 0)
@@ -225,11 +225,30 @@ public class ParallelSearchTask : SearchTask
         ValidateDissociationType(CommonParameters.DissociationType, "the task settings");
         if (fileSettingsList != null)
         {
-            foreach (var fileSettings in fileSettingsList)
+            for (int i = 0; i < fileSettingsList.Length; i++)
             {
-                if (fileSettings?.DissociationType is { } fileDissociationType)
+                var fileSettings = fileSettingsList[i];
+                if (fileSettings is null)
+                {
+                    continue;
+                }
+
+                if (fileSettings.DissociationType is { } fileDissociationType)
                 {
                     ValidateDissociationType(fileDissociationType, "a file-specific settings file");
+                }
+
+                // the transient engine digests and fragments with the task's settings for every file; only the
+                // tolerances and deconvolution are applied per file
+                var unhonoured = FileSettingsTheSearchCannotHonour(fileSettings);
+                if (unhonoured.Count > 0)
+                {
+                    string fileName = currentRawFileList != null && i < currentRawFileList.Count
+                        ? Path.GetFileName(currentRawFileList[i])
+                        : $"spectra file {i + 1}";
+                    throw new MetaMorpheusException($"Parallel search uses the task's digestion and fragmentation settings for every file, "
+                        + $"but the file-specific settings for {fileName} change {string.Join(", ", unhonoured)}. "
+                        + "Remove these from the file-specific settings, or set them on the task, and run again.");
                 }
             }
         }
@@ -246,6 +265,41 @@ public class ParallelSearchTask : SearchTask
             throw new MetaMorpheusException("Parallel search does not support most-abundant precursor matching. "
                 + "Choose a monoisotopic precursor mass tolerance and run again.");
         }
+    }
+
+    /// <summary>
+    /// File-specific settings that differ from the task's and that the transient search would silently ignore,
+    /// each described as "setting (file value, task value)".
+    /// </summary>
+    private List<string> FileSettingsTheSearchCannotHonour(FileSpecificParameters fileSettings)
+    {
+        var taskDigestion = CommonParameters.DigestionParams;
+        var unhonoured = new List<string>();
+        void Check<T>(string name, T? fileValue, T taskValue) where T : struct
+        {
+            if (fileValue.HasValue && !EqualityComparer<T>.Default.Equals(fileValue.Value, taskValue))
+            {
+                unhonoured.Add($"{name} ({fileValue.Value} for the file, {taskValue} for the task)");
+            }
+        }
+
+        Check(nameof(TaskLayer.FileSpecificParameters.DissociationType), fileSettings.DissociationType, CommonParameters.DissociationType);
+        if (fileSettings.DigestionAgent != null && fileSettings.DigestionAgent.Name != taskDigestion.DigestionAgent.Name)
+        {
+            unhonoured.Add($"{nameof(TaskLayer.FileSpecificParameters.DigestionAgent)} ({fileSettings.DigestionAgent.Name} for the file, "
+                + $"{taskDigestion.DigestionAgent.Name} for the task)");
+        }
+        Check(nameof(TaskLayer.FileSpecificParameters.MinPeptideLength), fileSettings.MinPeptideLength, taskDigestion.MinLength);
+        Check(nameof(TaskLayer.FileSpecificParameters.MaxPeptideLength), fileSettings.MaxPeptideLength, taskDigestion.MaxLength);
+        Check(nameof(TaskLayer.FileSpecificParameters.MaxMissedCleavages), fileSettings.MaxMissedCleavages, taskDigestion.MaxMissedCleavages);
+        Check(nameof(TaskLayer.FileSpecificParameters.MaxModsForPeptide), fileSettings.MaxModsForPeptide, taskDigestion.MaxMods);
+        if (fileSettings.CustomIons != null && CommonParameters.DissociationType == DissociationType.Custom
+            && !fileSettings.CustomIons.ToHashSet().SetEquals(CommonParameters.CustomIons ?? []))
+        {
+            unhonoured.Add(nameof(TaskLayer.FileSpecificParameters.CustomIons));
+        }
+
+        return unhonoured;
     }
 
     private static void ValidateDissociationType(DissociationType dissociationType, string source)
@@ -867,7 +921,11 @@ public class ParallelSearchTask : SearchTask
             CompressTransientDatabaseOutput(outputFolder);
         }
 
-        _resultsManager!.AppendCheckpoint(metrics);
+        if (!_resultsManager!.AppendCheckpoint(metrics))
+        {
+            Warn($"Metrics for {dbName} could not all be computed, so it is left out of {TransientDatabaseResultsManager.SummaryResultsFileName} "
+                + $"and will be searched again on a rerun: {string.Join("; ", metrics.Errors)}");
+        }
         MarkDatabaseCompleted();
         UpdateProgress(TotalDatabases, nestedIds[0]);
         ReportProgress(new(100, $"Finished {dbName}", nestedIds));
@@ -972,6 +1030,13 @@ public class ParallelSearchTask : SearchTask
         var directoryInfo = new DirectoryInfo(outputFolder);
         foreach (FileInfo fileToCompress in directoryInfo.GetFiles())
         {
+            // an existing .gz is either what this loop just wrote or an earlier run's output that it has just replaced;
+            // CompressFile deletes a .gz it is handed, which would throw away the fresh result
+            if (fileToCompress.Extension.Equals(".gz", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
             bool compressed = false;
             int maxRetries = 10;
             int retryCount = 0;

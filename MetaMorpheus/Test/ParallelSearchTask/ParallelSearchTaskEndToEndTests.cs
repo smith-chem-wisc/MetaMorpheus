@@ -124,17 +124,27 @@ public class ParallelSearchTaskEndToEndTests
         try
         {
             string a549 = Path.GetFileNameWithoutExtension(BaseDatabasePath);
-            var task = new TaskLayer.ParallelSearch.ParallelSearchTask(
-            [
-                new DbForTask(BaseDatabasePath, false),
-                new DbForTask(TransientDatabasePaths[1], false)
-            ]);
-            task.ParallelSearchParameters.WriteTransientResultsOnly = false;
-            task.ParallelSearchParameters.WriteSpectralLibrary = true;
-            task.ParallelSearchParameters.WriteTransientSpectralLibrary = true;
-            task.ParallelSearchParameters.CompressTransientSearchOutputs = true;
+            TaskLayer.ParallelSearch.ParallelSearchTask CreateCompressingTask()
+            {
+                var task = new TaskLayer.ParallelSearch.ParallelSearchTask(
+                [
+                    new DbForTask(BaseDatabasePath, false),
+                    new DbForTask(TransientDatabasePaths[1], false)
+                ]);
+                task.ParallelSearchParameters.WriteTransientResultsOnly = false;
+                task.ParallelSearchParameters.WriteSpectralLibrary = true;
+                task.ParallelSearchParameters.WriteTransientSpectralLibrary = true;
+                task.ParallelSearchParameters.CompressTransientSearchOutputs = true;
+                return task;
+            }
 
+            var task = CreateCompressingTask();
             task.RunTask(outputFolder, [new DbForTask(TransientDatabasePaths[0], false)], [SpectraPath], "parallel");
+
+            // rerun with the summary gone: every database is searched again into a folder that still holds the
+            // first run's .gz files, and compressing the fresh outputs must not delete them
+            File.Delete(Path.Combine(outputFolder, TransientDatabaseResultsManager.SummaryResultsFileName));
+            CreateCompressingTask().RunTask(outputFolder, [new DbForTask(TransientDatabasePaths[0], false)], [SpectraPath], "parallel");
 
             var summary = ReadSummary(outputFolder);
             string databaseFolder = Path.Combine(outputFolder, a549);

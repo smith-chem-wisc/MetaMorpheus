@@ -35,6 +35,26 @@ public class TransientDatabaseResultsManagerTests
     }
 
     [Test]
+    public void AppendCheckpoint_LeavesOutARowWithCollectorErrors_SoARerunRetriesIt()
+    {
+        var aggregator = new TaskLayer.ParallelSearch.Analysis.MetricAggregator(new List<TaskLayer.ParallelSearch.Analysis.IMetricCollector>());
+        string summaryPath = Path.Combine(_testOutputDir, "cache.csv");
+        var manager = new TransientDatabaseResultsManager(aggregator, summaryPath);
+        var failed = new TaskLayer.ParallelSearch.Analysis.TransientDatabaseMetrics("Failed");
+        failed.Errors.Add("Thrower: Expected test failure");
+        var succeeded = new TaskLayer.ParallelSearch.Analysis.TransientDatabaseMetrics("Succeeded");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(manager.AppendCheckpoint(failed), Is.False);
+            Assert.That(manager.AppendCheckpoint(succeeded), Is.True);
+            Assert.That(manager.HasCachedResults("Failed"), Is.False);
+            Assert.That(manager.HasCachedResults("Succeeded"), Is.True);
+            Assert.That(new TransientDatabaseResultsManager(aggregator, summaryPath).HasCachedResults("Failed"), Is.False);
+        });
+    }
+
+    [Test]
     public void HasCachedResults_WithNoCache_ReturnsFalse()
     {
         var aggregator = new TaskLayer.ParallelSearch.Analysis.MetricAggregator(new List<TaskLayer.ParallelSearch.Analysis.IMetricCollector>());

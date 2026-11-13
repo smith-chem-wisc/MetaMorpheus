@@ -64,6 +64,24 @@ public class MetricAggregatorTests
         });
     }
 
+    [Test]
+    public void RunAnalysis_WhenCollectorHasNoData_SkipsItWithoutAnError()
+    {
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters();
+        var psm = ParallelSearchTestContextFactory.CreateSpectralMatch(commonParameters, isDecoy: false, score: 100, psmQValue: 0.001, peptideQValue: 0.001);
+        var context = ParallelSearchTestContextFactory.CreateContext(commonParameters, allPsms: [psm], transientPsms: [psm],
+            allPeptides: [psm], transientPeptides: [psm]);
+
+        // no protein groups in the context, so the protein group collector cannot run
+        var result = new MetricAggregator([new ProteinGroupCollector(), new BasicMetricCollector()]).RunAnalysis(context);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Errors, Is.Empty);
+            Assert.That(result.TargetPsmsAtQValueThreshold, Is.EqualTo(1));
+        });
+    }
+
     private sealed class ThrowingCollector : IMetricCollector
     {
         public string CollectorName => "Thrower";
