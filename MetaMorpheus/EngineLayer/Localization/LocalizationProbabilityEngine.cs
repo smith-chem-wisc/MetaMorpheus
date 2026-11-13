@@ -30,7 +30,11 @@ namespace EngineLayer.Localization
     ///
     /// The likelihood takes, over the peaks some placements match and others do not, F(I) for each peak a placement
     /// explains and 1 - F(I) for each it does not, where F is <see cref="MatchedPeakIntensityModel"/> learned per spectra
-    /// file from confident unmodified matches. Peaks every placement matches cancel.
+    /// file from confident unmodified matches. Peaks every placement matches cancel. That is PTMiner's likelihood
+    /// (<see cref="LocalizationLikelihood.PtminerCdf"/>); it counts explaining a peak fainter than the median matched
+    /// peak against a placement. <see cref="LocalizationLikelihood.IntensityRatio"/> instead scores each predicted
+    /// fragment as a likelihood ratio against chance (<see cref="PeakIntensityRatioModel"/>); <see cref="Likelihood"/>
+    /// chooses.
     ///
     /// The prior is the product, over a placement's sites, of how often that modification occurs on that residue in
     /// that position (anywhere, peptide or protein terminal), learned by expectation maximization from the confident
@@ -75,6 +79,15 @@ namespace EngineLayer.Localization
         public double MinRelativeIntensity { get; init; } = MatchedPeakIntensityModel.DefaultMinRelativeIntensity;
         public MatchedPeakIntensityDistribution IntensityDistribution { get; init; } = MatchedPeakIntensityDistribution.Empirical;
 
+        /// <summary>
+        /// The likelihood a candidate's spectrum is scored with. <see cref="LocalizationLikelihood.IntensityRatio"/> falls
+        /// back to <see cref="LocalizationLikelihood.PtminerCdf"/>, with a warning, when the evidence carries no
+        /// unexplained peaks or predicted-fragment counts to learn it from.
+        /// </summary>
+        public LocalizationLikelihood Likelihood { get; init; } = DefaultLikelihood;
+
+        public const LocalizationLikelihood DefaultLikelihood = LocalizationLikelihood.IntensityRatio;
+
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             var matches = AllMatches.Where(m => m.LocalizationEvidence != null).ToList();
@@ -86,13 +99,27 @@ namespace EngineLayer.Localization
 
             Status("Computing localization probabilities...");
 
-            // F, per spectra file where the file has enough confident unmodified peaks, else from every file
-            var models = FitIntensityModels(matches, out MatchedPeakIntensityModel pooled);
-            results.TrainingPeaks = pooled.TrainingPeakCount;
-            if (pooled.TrainingPeakCount < MinTrainingPeaks)
+            // F (and the intensity-ratio model), per spectra file where the file has enough confident unmodified peaks,
+            // else from every file
+            var models = FitIntensityModels(matches, out FileModels pooled);
+            results.TrainingPeaks = pooled.Cdf.TrainingPeakCount;
+            if (pooled.Cdf.TrainingPeakCount < MinTrainingPeaks)
             {
-                Warn($"Localization probabilities were not computed: only {pooled.TrainingPeakCount} matched peaks of confident unmodified matches to learn peak intensities from, and at least {MinTrainingPeaks} are needed.");
+                Warn($"Localization probabilities were not computed: only {pooled.Cdf.TrainingPeakCount} matched peaks of confident unmodified matches to learn peak intensities from, and at least {MinTrainingPeaks} are needed.");
                 return results;
+            }
+
+            LocalizationLikelihood likelihood = Likelihood;
+            if (likelihood == LocalizationLikelihood.IntensityRatio && !pooled.Ratio.IsTrained)
+            {
+                Warn("The intensity-ratio likelihood could not be learned (the confident unmodified matches recorded no unexplained peaks or predicted fragments); localization probabilities use PTMiner's likelihood instead.");
+                likelihood = LocalizationLikelihood.PtminerCdf;
+            }
+            results.Likelihood = likelihood;
+            if (likelihood == LocalizationLikelihood.IntensityRatio)
+            {
+                results.FragmentObservationProbability = pooled.Ratio.ObservationProbability;
+                results.MeanChanceCoverage = pooled.Ratio.MeanCoverage;
             }
 
             // each candidate's log likelihood, and the prior class of each of its sites
@@ -101,8 +128,11 @@ namespace EngineLayer.Localization
             Parallel.For(0, matches.Count, new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile }, i =>
             {
                 SpectralMatch psm = matches[i];
-                var model = models.TryGetValue(psm.FullFilePath ?? "", out var fileModel) ? fileModel : pooled;
-                scored[i] = new ScoredMatch(psm, LogLikelihoods(psm.LocalizationEvidence, model), IsConfident(psm) && !psm.IsDecoy);
+                FileModels model = models.TryGetValue(psm.FullFilePath ?? "", out var fileModel) ? fileModel : pooled;
+                double[] logLikelihoods = likelihood == LocalizationLikelihood.IntensityRatio
+                    ? LogLikelihoodRatios(psm.LocalizationEvidence, model.Ratio)
+                    : LogLikelihoods(psm.LocalizationEvidence, model.Cdf);
+                scored[i] = new ScoredMatch(psm, logLikelihoods, IsConfident(psm) && !psm.IsDecoy);
             });
             foreach (ScoredMatch match in scored)
             {
@@ -120,38 +150,71 @@ namespace EngineLayer.Localization
             return results;
         }
 
-        /// <summary>
-        /// Fits F to the matched peaks of confident target matches that carry no modification but fixed ones and whose
-        /// peptide explains the precursor: every peak all their candidates match.
-        /// </summary>
-        private Dictionary<string, MatchedPeakIntensityModel> FitIntensityModels(List<SpectralMatch> matches, out MatchedPeakIntensityModel pooled)
+        /// <summary>The peak-intensity models of one spectra file, or of every file pooled.</summary>
+        private sealed record FileModels(MatchedPeakIntensityModel Cdf, PeakIntensityRatioModel Ratio);
+
+        /// <summary>What confident unmodified matches of one spectra file offer to learn from.</summary>
+        private sealed class TrainingData
         {
-            var peaksByFile = new Dictionary<string, List<double>>();
+            public List<double> MatchedPeaks { get; } = new();
+            public List<IReadOnlyList<float>> NoiseCoverages { get; } = new();
+            public long PredictedFragments { get; set; }
+            public long ObservedFragments { get; set; }
+        }
+
+        /// <summary>
+        /// Fits F, and the intensity-ratio model, to confident target matches that carry no modification but fixed ones
+        /// and whose peptide explains the precursor: F and f_m to every peak all their candidates match, f_n to the
+        /// peaks they left unexplained, and d to the fraction of their predicted fragments matched at or above the floor.
+        /// </summary>
+        private Dictionary<string, FileModels> FitIntensityModels(List<SpectralMatch> matches, out FileModels pooled)
+        {
+            var dataByFile = new Dictionary<string, TrainingData>();
             foreach (SpectralMatch psm in matches.Where(m => !m.IsDecoy && IsConfident(m) && IsUnmodified(m)))
             {
                 LocalizationEvidence evidence = psm.LocalizationEvidence;
                 string file = psm.FullFilePath ?? "";
-                if (!peaksByFile.TryGetValue(file, out var peaks))
+                if (!dataByFile.TryGetValue(file, out var data))
                 {
-                    peaksByFile[file] = peaks = new List<double>();
+                    dataByFile[file] = data = new TrainingData();
                 }
+                int observed = 0;
                 for (int p = 0; p < evidence.PeakCount; p++)
                 {
                     if (evidence.IsSharedByAllCandidates(p))
                     {
-                        peaks.Add(evidence.PeakRelativeIntensity(p));
+                        data.MatchedPeaks.Add(evidence.PeakRelativeIntensity(p));
+                        if (evidence.PeakRelativeIntensity(p) >= MinRelativeIntensity)
+                        {
+                            observed++;
+                        }
                     }
+                }
+                if (evidence.NoiseCoverage != null)
+                {
+                    data.NoiseCoverages.Add(evidence.NoiseCoverage);
+                }
+                if (evidence.HasPredictedFragmentCounts && evidence.CandidateCount == 1)
+                {
+                    data.PredictedFragments += evidence.PredictedFragmentCount(0);
+                    data.ObservedFragments += Math.Min(observed, evidence.PredictedFragmentCount(0));
                 }
             }
 
-            pooled = new MatchedPeakIntensityModel(peaksByFile.Values.SelectMany(p => p), MinRelativeIntensity, IntensityDistribution);
-            var models = new Dictionary<string, MatchedPeakIntensityModel>();
-            foreach (var (file, peaks) in peaksByFile)
+            FileModels Fit(IEnumerable<TrainingData> data) => new(
+                new MatchedPeakIntensityModel(data.SelectMany(d => d.MatchedPeaks), MinRelativeIntensity, IntensityDistribution),
+                new PeakIntensityRatioModel(data.SelectMany(d => d.MatchedPeaks), data.SelectMany(d => d.NoiseCoverages),
+                    data.Sum(d => d.PredictedFragments), data.Sum(d => d.ObservedFragments), MinRelativeIntensity));
+
+            pooled = Fit(dataByFile.Values);
+            var models = new Dictionary<string, FileModels>();
+            foreach (var (file, data) in dataByFile)
             {
-                var model = new MatchedPeakIntensityModel(peaks, MinRelativeIntensity, IntensityDistribution);
-                if (model.TrainingPeakCount >= MinTrainingPeaksPerFile)
+                FileModels model = Fit(new[] { data });
+                if (model.Cdf.TrainingPeakCount >= MinTrainingPeaksPerFile)
                 {
-                    models[file] = model;
+                    // a file whose ratio model cannot be learned on its own borrows the pooled one
+                    models[file] = model.Ratio.IsTrained ? model : model with { Ratio = pooled.Ratio };
                 }
             }
             return models;
@@ -186,6 +249,50 @@ namespace EngineLayer.Localization
                 for (int c = 0; c < evidence.CandidateCount; c++)
                 {
                     logLikelihoods[c] += evidence.Matches(c, p) ? logMatched : logUnmatched;
+                }
+            }
+            return logLikelihoods;
+        }
+
+        /// <summary>
+        /// Each candidate's log likelihood ratio under <see cref="LocalizationLikelihood.IntensityRatio"/>: over the peaks
+        /// at or above the floor that some candidates match and others do not, log((1 - d) + d f_m(I) / (q f_n(I))) for
+        /// each candidate that explains the peak; and log(1 - d) for each fragment a candidate predicts within the scan's
+        /// range but does not match at or above the floor. Peaks every candidate matches count the same for each and are
+        /// left out of the first sum. q is the match's own chance-peak coverage (see <see cref="PeakIntensityRatioModel"/>).
+        /// </summary>
+        internal static double[] LogLikelihoodRatios(LocalizationEvidence evidence, PeakIntensityRatioModel model)
+        {
+            int candidates = evidence.CandidateCount;
+            var logLikelihoods = new double[candidates];
+            var observed = new int[candidates];
+            double coverage = model.CoverageOf(evidence);
+            for (int p = 0; p < evidence.PeakCount; p++)
+            {
+                double intensity = evidence.PeakRelativeIntensity(p);
+                if (intensity < model.MinRelativeIntensity)
+                {
+                    continue;
+                }
+
+                bool shared = evidence.IsSharedByAllCandidates(p);
+                double explained = shared ? 0 : model.LogExplainedPeak(intensity, coverage);
+                for (int c = 0; c < candidates; c++)
+                {
+                    if (evidence.Matches(c, p))
+                    {
+                        observed[c]++;
+                        logLikelihoods[c] += explained;
+                    }
+                }
+            }
+
+            if (evidence.HasPredictedFragmentCounts)
+            {
+                double logMissing = model.LogMissingFragment;
+                for (int c = 0; c < candidates; c++)
+                {
+                    logLikelihoods[c] += Math.Max(0, evidence.PredictedFragmentCount(c) - observed[c]) * logMissing;
                 }
             }
             return logLikelihoods;
@@ -511,6 +618,9 @@ namespace EngineLayer.Localization
         }
 
         public int TrainingPeaks { get; set; }
+        public LocalizationLikelihood Likelihood { get; set; }
+        public double FragmentObservationProbability { get; set; } = double.NaN;
+        public double MeanChanceCoverage { get; set; } = double.NaN;
         public int Chemistries { get; set; }
         public int ChemistriesLearned { get; set; }
         public int Iterations { get; set; }
@@ -523,6 +633,11 @@ namespace EngineLayer.Localization
             var sb = new StringBuilder(base.ToString());
             sb.AppendLine();
             sb.AppendLine($"Matched peaks learned from: {TrainingPeaks}");
+            sb.AppendLine($"Likelihood: {Likelihood}");
+            if (Likelihood == LocalizationLikelihood.IntensityRatio)
+            {
+                sb.AppendLine($"Fragment observation probability d: {FragmentObservationProbability.ToString("F3", CultureInfo.InvariantCulture)}; mean chance-peak coverage q: {MeanChanceCoverage.ToString("G3", CultureInfo.InvariantCulture)}");
+            }
             sb.AppendLine($"Chemistries with a learned prior: {ChemistriesLearned} of {Chemistries}, after {Iterations} iterations");
             sb.AppendLine($"Confident matches with more than one placement: {MatchesInQuestion}; localized at 1% FLR: {MatchesAtOnePercentFlr}");
             sb.Append(Prior);

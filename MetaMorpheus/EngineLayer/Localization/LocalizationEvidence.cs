@@ -1,3 +1,6 @@
+using Chemistry;
+using MassSpectrometry;
+using MzLibUtil;
 using Omics.Fragmentation;
 using Omics.Modifications;
 using System;
@@ -50,9 +53,11 @@ namespace EngineLayer.Localization
         private readonly float[] _peakRelativeIntensities;
         private readonly ulong[] _matchMasks; // candidate c's bits are words [c * _wordsPerCandidate, (c + 1) * _wordsPerCandidate)
         private readonly int _wordsPerCandidate;
+        private readonly int[] _predictedFragmentCounts;
 
         internal LocalizationEvidence(double massDifference, int peptideLength, bool isProteinNTerminal, bool isProteinCTerminal,
-            LocalizationPlacement[] placements, double[] scores, float[] peakRelativeIntensities, ulong[] matchMasks)
+            LocalizationPlacement[] placements, double[] scores, float[] peakRelativeIntensities, ulong[] matchMasks,
+            int[] predictedFragmentCounts = null, float[] noiseCoverage = null)
         {
             MassDifference = massDifference;
             PeptideLength = peptideLength;
@@ -63,6 +68,8 @@ namespace EngineLayer.Localization
             _peakRelativeIntensities = peakRelativeIntensities;
             _matchMasks = matchMasks;
             _wordsPerCandidate = WordsFor(peakRelativeIntensities.Length);
+            _predictedFragmentCounts = predictedFragmentCounts;
+            NoiseCoverage = noiseCoverage;
         }
 
         /// <summary>
@@ -114,6 +121,22 @@ namespace EngineLayer.Localization
             return true;
         }
 
+        /// <summary>Whether the number of fragments each candidate predicted within the scan's range was recorded.</summary>
+        public bool HasPredictedFragmentCounts => _predictedFragmentCounts != null;
+
+        /// <summary>
+        /// The number of theoretical fragments the candidate predicts within the scan's range, matched or not, for the
+        /// missing-fragment term of <see cref="LocalizationLikelihood.IntensityRatio"/>.
+        /// </summary>
+        public int PredictedFragmentCount(int candidate) => _predictedFragmentCounts[candidate];
+
+        /// <summary>
+        /// The peaks no candidate explains, as a histogram over <see cref="PeakIntensityRatioModel"/>'s intensity bins
+        /// in which each peak adds the fraction of the fragment mass range its tolerance window covers: bin b holds the
+        /// chance that a predicted fragment lands on an unexplained peak of that intensity. Null when not recorded.
+        /// </summary>
+        public IReadOnlyList<float> NoiseCoverage { get; }
+
         internal static int WordsFor(int peakCount) => (peakCount + 63) >> 6;
     }
 
@@ -129,6 +152,8 @@ namespace EngineLayer.Localization
         private readonly List<LocalizationPlacement> _placements = new();
         private readonly List<double> _scores = new();
         private readonly List<List<int>> _matchedPeaks = new();
+        private readonly List<int> _predictedFragmentCounts = new();
+        private float[] _noiseCoverage;
 
         /// <param name="basePeakIntensity">The intensity of the most intense peak in the spectrum.</param>
         public LocalizationEvidenceBuilder(double basePeakIntensity)
@@ -140,7 +165,9 @@ namespace EngineLayer.Localization
         /// Records a candidate placement and the ions it matched. Ions with the same m/z and intensity are one
         /// experimental peak (two products can match one isotopic envelope), so a peak is counted once per candidate.
         /// </summary>
-        public void AddCandidate(LocalizationPlacement placement, double score, IReadOnlyList<MatchedFragmentIon> matchedIons)
+        /// <param name="predictedFragments">The number of theoretical fragments the candidate predicts within the scan's
+        /// range, or -1 when not known; the counts are kept only when every candidate gives one.</param>
+        public void AddCandidate(LocalizationPlacement placement, double score, IReadOnlyList<MatchedFragmentIon> matchedIons, int predictedFragments = -1)
         {
             var peaks = new List<int>(matchedIons.Count);
             foreach (MatchedFragmentIon ion in matchedIons)
@@ -158,6 +185,49 @@ namespace EngineLayer.Localization
             _placements.Add(placement);
             _scores.Add(score);
             _matchedPeaks.Add(peaks);
+            _predictedFragmentCounts.Add(predictedFragments);
+        }
+
+        /// <summary>Sets the unexplained-peak coverage histogram directly (see <see cref="LocalizationEvidence.NoiseCoverage"/>).</summary>
+        public void SetNoiseCoverage(float[] coverage)
+        {
+            if (coverage.Length != PeakIntensityRatioModel.BinCount)
+            {
+                throw new ArgumentException($"Expected {PeakIntensityRatioModel.BinCount} bins.", nameof(coverage));
+            }
+            _noiseCoverage = coverage;
+        }
+
+        /// <summary>
+        /// Records, once every candidate is added, the isotopic envelopes of the scan that no candidate matched: each
+        /// adds to its intensity bin the width of its tolerance window over the span of fragment masses that can be
+        /// observed, so that bin b holds the chance a predicted fragment lands on an unexplained envelope of that
+        /// intensity. Envelopes outside the span, or of a charge the matching does not admit, are left out.
+        /// </summary>
+        public void RecordUnmatchedEnvelopes(IReadOnlyList<IsotopicEnvelope> envelopes, Tolerance tolerance, double lowestMass, double highestMass, int maxCharge)
+        {
+            var coverage = new float[PeakIntensityRatioModel.BinCount];
+            double span = highestMass - lowestMass;
+            if (envelopes != null && span > 0)
+            {
+                foreach (IsotopicEnvelope envelope in envelopes)
+                {
+                    double mass = envelope.MonoisotopicMass;
+                    if (mass < lowestMass || mass > highestMass || Math.Abs(envelope.Charge) > Math.Abs(maxCharge))
+                    {
+                        continue;
+                    }
+                    // the key a matched envelope has (see MetaMorpheusEngine.MatchFragmentIons)
+                    double intensity = envelope.Peaks.First().intensity;
+                    if (_peakIndex.ContainsKey((Math.Round(mass.ToMz(envelope.Charge), 6), intensity)))
+                    {
+                        continue;
+                    }
+                    double width = tolerance.GetMaximumValue(mass) - tolerance.GetMinimumValue(mass);
+                    coverage[PeakIntensityRatioModel.BinOf(intensity / _basePeakIntensity)] += (float)(width / span);
+                }
+            }
+            _noiseCoverage = coverage;
         }
 
         public LocalizationEvidence Build(double massDifference, int peptideLength, bool isProteinNTerminal, bool isProteinCTerminal)
@@ -172,8 +242,9 @@ namespace EngineLayer.Localization
                 }
             }
 
+            int[] predicted = _predictedFragmentCounts.All(n => n >= 0) ? _predictedFragmentCounts.ToArray() : null;
             return new LocalizationEvidence(massDifference, peptideLength, isProteinNTerminal, isProteinCTerminal,
-                _placements.ToArray(), _scores.ToArray(), _peakRelativeIntensities.ToArray(), masks);
+                _placements.ToArray(), _scores.ToArray(), _peakRelativeIntensities.ToArray(), masks, predicted, _noiseCoverage);
         }
     }
 }
