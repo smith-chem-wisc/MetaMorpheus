@@ -527,6 +527,11 @@ namespace TaskLayer
                 return scansWithPrecursors;
             }
 
+            // Tallied across threads and reported once per file below; a damaged raw file can have thousands of these.
+            int emptyPrecursorScanCount = 0;
+            int unrefinablePrecursorScanCount = 0;
+            string firstUnrefinableReason = null;
+
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (partitionRange, loopState) =>
                 {
@@ -546,13 +551,27 @@ namespace TaskLayer
                             if (precursorSpectrum is null)
                                 goto PrecursorFromScanHeader;
 
+                            // A precursor MS1 that exists but holds no peaks (e.g. zero-filled by a damaged file
+                            // transfer) has nothing to refine or deconvolute, so treat it like a missing one and
+                            // fall back on the scan header rather than letting mzLib throw.
+                            if (precursorSpectrum.MassSpectrum.Size == 0)
+                            {
+                                System.Threading.Interlocked.Increment(ref emptyPrecursorScanCount);
+                                goto PrecursorFromScanHeader;
+                            }
+
                             try
                             {
                                 ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
                             }
                             catch (MzLibException ex)
                             {
-                                Warn("Could not get precursor ion for MS2 scan #" + ms2scan.OneBasedScanNumber + "; " + ex.Message);
+                                // Drop this scan, but leave an empty entry: callers read every slot and a null one
+                                // used to crash the whole task.
+                                System.Threading.Interlocked.Increment(ref unrefinablePrecursorScanCount);
+                                System.Threading.Interlocked.CompareExchange(ref firstUnrefinableReason,
+                                    "MS2 scan #" + ms2scan.OneBasedScanNumber + ": " + ex.Message, null);
+                                scansWithPrecursors[i] = new List<Ms2ScanWithSpecificMass>();
                                 continue;
                             }
 
@@ -704,6 +723,20 @@ namespace TaskLayer
                     }
                 });
 
+            string fileName = Path.GetFileName(fullFilePath);
+            if (emptyPrecursorScanCount > 0)
+            {
+                Warn(fileName + ": " + emptyPrecursorScanCount + " MS2 scan(s) have a precursor MS1 scan with no peaks; " +
+                    (commonParameters.UseProvidedPrecursorInfo
+                        ? "their precursor was taken from the scan header where it had a charge state, otherwise they were skipped."
+                        : "they were skipped because the scan-header precursor is not in use.") +
+                    " The spectra file may be damaged.");
+            }
+            if (unrefinablePrecursorScanCount > 0)
+            {
+                Warn(fileName + ": " + unrefinablePrecursorScanCount + " MS2 scan(s) were skipped because their precursor ion could not be determined (first: " + firstUnrefinableReason + ").");
+            }
+
             return scansWithPrecursors;
         }
 
@@ -736,8 +769,9 @@ namespace TaskLayer
                 return new List<Ms2ScanWithSpecificMass>();
             }
 
-            var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
-            var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber))
+            // A slot is left null when the scan loop is stopped part-way (GlobalVariables.StopLoops); skip those.
+            var childScanNumbers = new HashSet<int>(scansWithPrecursors.Where(p => p != null).SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
+            var parentScans = scansWithPrecursors.Where(p => p != null && p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber))
                 .SelectMany(v => v)
                 .OrderBy(p => p.OneBasedScanNumber)
                 .ToArray();
@@ -807,11 +841,12 @@ namespace TaskLayer
                 return parentScans;
             }
 
-            var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
-            
+            // A slot is left null when the scan loop is stopped part-way (GlobalVariables.StopLoops); skip those.
+            var childScanNumbers = new HashSet<int>(scansWithPrecursors.Where(p => p != null).SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
+
             for (int i = 0; i < scansWithPrecursors.Length; i++)
             {
-                if (scansWithPrecursors[i].Any() && !childScanNumbers.Contains(scansWithPrecursors[i].First().OneBasedScanNumber))
+                if (scansWithPrecursors[i] != null && scansWithPrecursors[i].Any() &&!childScanNumbers.Contains(scansWithPrecursors[i].First().OneBasedScanNumber))
                 {
                     parentScans.Add(scansWithPrecursors[i].First());
                     precursors.Add(scansWithPrecursors[i].Select(p => (p.PrecursorMass, p.PrecursorCharge, p.PrecursorMonoisotopicPeakMz)).ToList());
