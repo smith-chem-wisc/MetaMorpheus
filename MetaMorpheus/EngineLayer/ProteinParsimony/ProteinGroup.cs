@@ -324,14 +324,20 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of masses
-            var sequences = ListOfProteinsOrderedByAccession.Select(p => p.BaseSequence).Distinct();
+            var sequences = ListOfProteinsOrderedByAccession.GroupBy(p => p.BaseSequence).Select(g => g.First());
             List<double> masses = new List<double>();
-            foreach (var sequence in sequences)
+            foreach (var biopolymer in sequences)
             {
+                string sequence = biopolymer.BaseSequence;
                 try
                 {
                     if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
-                        masses.Add(new OligoWithSetMods(sequence, GlobalVariables.AllRnaModsKnownDictionary).MonoisotopicMass);
+                    {
+                        // use the RNA's own termini so any user-chosen cap is included
+                        var rna = biopolymer as Transcriptomics.NucleicAcid;
+                        masses.Add(new OligoWithSetMods(sequence, GlobalVariables.AllRnaModsKnownDictionary,
+                            fivePrimeTerminus: rna?.FivePrimeTerminus, threePrimeTerminus: rna?.ThreePrimeTerminus).MonoisotopicMass);
+                    }
                     else
                         masses.Add(new Proteomics.AminoAcidPolymer.Peptide(sequence).MonoisotopicMass);
                 }
