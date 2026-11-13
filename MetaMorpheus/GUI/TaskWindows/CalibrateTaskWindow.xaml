@@ -221,6 +221,9 @@
                                 </ComboBox>
                             </StackPanel>
 
+                            <!-- RNA terminal caps (takes the place of the initiator methionine in RNA mode) -->
+                            <local:RnaTerminalCapsControl x:Name="RnaTerminalCapsControl" Margin="5 5 5 0" Grid.Column="1" Grid.Row="3" />
+
                             <!-- Max Peptide Length -->
                             <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="4">
                                 <Label x:Name="lblMaxPeptideLength" Width="150" >
