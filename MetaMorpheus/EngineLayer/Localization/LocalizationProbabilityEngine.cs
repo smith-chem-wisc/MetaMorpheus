@@ -73,6 +73,7 @@ namespace EngineLayer.Localization
         public int MaxIterations { get; init; } = DefaultMaxIterations;
         public double MassDifferenceClusterTolerance { get; init; } = DefaultMassDifferenceClusterTolerance;
         public double MinRelativeIntensity { get; init; } = MatchedPeakIntensityModel.DefaultMinRelativeIntensity;
+        public MatchedPeakIntensityDistribution IntensityDistribution { get; init; } = MatchedPeakIntensityDistribution.Empirical;
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -143,11 +144,11 @@ namespace EngineLayer.Localization
                 }
             }
 
-            pooled = new MatchedPeakIntensityModel(peaksByFile.Values.SelectMany(p => p), MinRelativeIntensity);
+            pooled = new MatchedPeakIntensityModel(peaksByFile.Values.SelectMany(p => p), MinRelativeIntensity, IntensityDistribution);
             var models = new Dictionary<string, MatchedPeakIntensityModel>();
             foreach (var (file, peaks) in peaksByFile)
             {
-                var model = new MatchedPeakIntensityModel(peaks, MinRelativeIntensity);
+                var model = new MatchedPeakIntensityModel(peaks, MinRelativeIntensity, IntensityDistribution);
                 if (model.TrainingPeakCount >= MinTrainingPeaksPerFile)
                 {
                     models[file] = model;
@@ -284,6 +285,14 @@ namespace EngineLayer.Localization
                 }
                 logPosterior[c] = value;
                 max = Math.Max(max, value);
+            }
+
+            // Without a pseudocount a learned prior can be zero for every candidate a match has (PTMiner sets the prior
+            // of classes it never sees to zero); the spectrum alone then decides.
+            if (double.IsNegativeInfinity(max))
+            {
+                Array.Copy(match.LogLikelihoods, logPosterior, n);
+                max = logPosterior.Max();
             }
 
             double sum = 0;

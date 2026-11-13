@@ -110,6 +110,37 @@ namespace Test
         }
 
         [Test]
+        public static void TheLogNormalDistributionIsFittedToLogIntensities()
+        {
+            // log intensities -3, -2, -1: mean -2, sample standard deviation 1
+            var model = new MatchedPeakIntensityModel(new[] { Math.Exp(-3), Math.Exp(-2), Math.Exp(-1) },
+                distribution: MatchedPeakIntensityDistribution.LogNormal);
+
+            Assert.That(model.CumulativeProbability(Math.Exp(-2)), Is.EqualTo(0.5).Within(1e-12));
+            Assert.That(model.CumulativeProbability(Math.Exp(-1)), Is.EqualTo(MathNet.Numerics.Distributions.Normal.CDF(0, 1, 1)).Within(1e-12));
+            Assert.That(model.CumulativeProbability(1e-300), Is.GreaterThan(0)); // never exactly 0 or 1
+            Assert.That(model.CumulativeProbability(1e300), Is.LessThan(1));
+        }
+
+        [Test]
+        public static void WithoutAPseudocountTheLearnedPriorIsSharperAndStillFinite()
+        {
+            // phospho is seen on S3 only; with no pseudocount T4's prior shrinks toward zero, so an unclear match goes to S3
+            var clear = Enumerable.Range(0, 40).Select(_ => Psm(Evidence(new[] { OnS3, OnT4 }, (0.8, new[] { 0 }), (0.6, new[] { 0 })), modified: true));
+            var unclear = Psm(Evidence(new[] { OnS3, OnT4 }, (0.3, new[] { 0, 1 })), modified: true);
+            var psms = UnmodifiedMatches().Concat(clear).Append(unclear).ToList();
+
+            Run(psms);
+            double withPseudocount = unclear.LocalizationProbabilities.BestProbability;
+
+            new LocalizationProbabilityEngine(psms, Parameters, new List<(string, CommonParameters)>(), new List<string>()) { Pseudocount = 0 }.Run();
+
+            Assert.That(unclear.LocalizationProbabilities.BestPlacement, Is.SameAs(OnS3));
+            Assert.That(unclear.LocalizationProbabilities.BestProbability, Is.GreaterThan(withPseudocount));
+            Assert.That(unclear.LocalizationProbabilities.PlacementProbabilities.All(p => !double.IsNaN(p)));
+        }
+
+        [Test]
         public static void OnlyPeaksThatTellPlacementsApartCount()
         {
             var model = new MatchedPeakIntensityModel(Enumerable.Range(1, 99).Select(i => i / 100.0));

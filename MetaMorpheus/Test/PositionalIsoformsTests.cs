@@ -242,8 +242,10 @@ namespace Test
             new LocalizationEngine(new List<SpectralMatch> { psm }, dataFile, commonParameters, fsp, new List<string>()).Run();
 
             Assert.That(psm.LocalizedScores.Count, Is.EqualTo(6));
-            Assert.That(psm.LocalizationEvidence.CandidateCount, Is.EqualTo(6));
-            Assert.That(psm.LocalizationEvidence.Placements.All(p => p.Sites.Single().Modification == null));
+            // the peptide explains the precursor, so there is no mass difference to place: one unmodified placement,
+            // not six that match the same peaks and would each look 1/6 likely
+            Assert.That(psm.LocalizationEvidence.CandidateCount, Is.EqualTo(1));
+            Assert.That(psm.LocalizationEvidence.Placements.Single().Sites, Is.Empty);
         }
     }
 }

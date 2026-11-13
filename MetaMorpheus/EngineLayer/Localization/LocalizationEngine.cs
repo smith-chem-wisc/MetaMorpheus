@@ -118,13 +118,14 @@ namespace EngineLayer.Localization
 
                         // the evidence for each placement is kept, relative to the base peak, for localization probabilities
                         double basePeakIntensity = scan.MassSpectrum.YofPeakWithHighestY ?? 0;
-                        bool placeThisMatchesModifications = placeModifications && CommonParameters.PrecursorMassTolerance.Within(observedMass, peptide.MonoisotopicMass);
+                        bool precursorExplained = CommonParameters.PrecursorMassTolerance.Within(observedMass, peptide.MonoisotopicMass);
+                        bool placeThisMatchesModifications = placeModifications && precursorExplained;
 
                         if (LocalizeMassDifferences && psm.FullSequence != null)
                         {
                             bool keepEvidence = KeepMassDifferenceEvidence && basePeakIntensity > 0 && !placeThisMatchesModifications;
                             LocalizeMassDifference(psm, peptide, massDifference, scan, scanWithSpecificMass, products,
-                                keepEvidence ? new LocalizationEvidenceBuilder(basePeakIntensity) : null);
+                                keepEvidence ? new LocalizationEvidenceBuilder(basePeakIntensity) : null, precursorExplained);
                         }
 
                         if (placeThisMatchesModifications && basePeakIntensity > 0)
@@ -153,11 +154,21 @@ namespace EngineLayer.Localization
         /// <summary>
         /// Scores the mass difference at each residue into <see cref="SpectralMatch.LocalizedScores"/>, and when
         /// <paramref name="evidence"/> is given, keeps what each placement matched. The first and last residues also
-        /// stand for the peptide termini, which fragment identically.
+        /// stand for the peptide termini, which fragment identically. When the peptide already explains the precursor
+        /// there is no mass difference to place: the evidence is then the unmodified peptide alone.
         /// </summary>
         private void LocalizeMassDifference(SpectralMatch psm, IBioPolymerWithSetMods peptide, double massDifference, MsDataScan scan,
-            Ms2ScanWithSpecificMass scanWithSpecificMass, List<Product> products, LocalizationEvidenceBuilder evidence)
+            Ms2ScanWithSpecificMass scanWithSpecificMass, List<Product> products, LocalizationEvidenceBuilder evidence, bool precursorExplained)
         {
+            if (evidence != null && precursorExplained)
+            {
+                peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, products, CommonParameters.FragmentationParameters);
+                var ions = MatchFragmentIons(scanWithSpecificMass, products, CommonParameters);
+                evidence.AddCandidate(new LocalizationPlacement(System.Array.Empty<LocalizationSite>()), CalculatePeptideScore(scan, ions), ions);
+                psm.LocalizationEvidence = evidence.Build(massDifference, peptide.Length, IsProteinNTerminal(peptide), IsProteinCTerminal(peptide));
+                evidence = null;
+            }
+
             var localizedScores = new List<double>();
             for (int r = 0; r < peptide.Length; r++)
             {
