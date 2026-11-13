@@ -719,7 +719,8 @@ namespace TaskLayer
 
             // includeAmbiguous: false is the unambiguous filter the design calls for. A PSM that could be
             // more than one peptide would otherwise have its channel intensities credited to whichever
-            // candidate happened to sort first.
+            // candidate happened to sort first. A PSM ambiguous only in where its modifications sit is kept here
+            // and decided once the groups are known, below: it is one peptide whatever the site.
             //
             // includeContaminants follows WriteContaminants, the same switch ProteinGroupIsWritten reads
             // below. Passing true unconditionally made the quantified set wider than the written set at
@@ -732,7 +733,7 @@ namespace TaskLayer
                 includeDecoys: false,
                 includeContaminants: includeContaminants,
                 includeAmbiguous: false,
-                includeAmbiguousMods: false,
+                includeAmbiguousMods: true,
                 includeHighQValuePsms: false);
 
             static bool CarriesReporterIons(SpectralMatch psm) =>
@@ -741,17 +742,25 @@ namespace TaskLayer
             // Reporter ions come from the label. Intensities are read at the reporter m/z of every scan, so a
             // peptide that carries no label -- a protein N-terminus acetylated before labelling, with no
             // lysine -- has values too, and they are the signal of whatever was co-isolated with it.
-            // Quantifying such a match credits that signal to its peptide and protein. The filter above
-            // leaves one sequence per match, so every candidate it names carries the same modifications.
+            // Quantifying such a match credits that signal to its peptide and protein. It is asked only of a
+            // match with one sequence, or with candidates that differ only in where their modifications sit
+            // (IsOnePeptide), so every candidate it names carries the same modifications.
             static bool CarriesMultiplexLabel(SpectralMatch psm) =>
                 psm.GetIdentifiedBioPolymersWithSetMods().All(peptide => peptide.AllModsOneIsNterminus.Values
                     .Any(mod => mod.ModificationType == "Multiplex Label"));
 
-            static bool IsQuantifiable(SpectralMatch psm) => CarriesReporterIons(psm) && CarriesMultiplexLabel(psm);
+            // A PSM ambiguous in its full sequence is kept only when it is ambiguous in nothing but where its
+            // modifications sit (mzLib quantifies it as a LocalizationAmbiguousPeptide); different peptides, or
+            // different modifications, stay out as before.
+            static bool IsOnePeptide(SpectralMatch psm) =>
+                psm.FullSequence != null || LocalizationAmbiguousPeptide.SiteFreeIdentityOrNull(psm) != null;
+
+            static bool IsQuantifiable(SpectralMatch psm) =>
+                CarriesReporterIons(psm) && IsOnePeptide(psm) && CarriesMultiplexLabel(psm);
 
             var filteredPsms = FilterMatches(Parameters.SearchParameters.WriteContaminants);
 
-            var withReporterIons = filteredPsms.Where(CarriesReporterIons).ToList();
+            var withReporterIons = filteredPsms.Where(CarriesReporterIons).Where(IsOnePeptide).ToList();
             var quantifiablePsms = withReporterIons.Where(CarriesMultiplexLabel).ToList();
             int unlabelledPsms = withReporterIons.Count - quantifiablePsms.Count;
 
@@ -800,7 +809,24 @@ namespace TaskLayer
                 return;
             }
 
+            // A localization-ambiguous PSM is unique to the one group all its candidates belong to and counts for it,
+            // as in label-free quantification; one whose candidates span groups, or belong to none, would be credited
+            // by guessing which group it measured, so it is left out. Judged among every group, as the engine judges
+            // uniqueness.
+            var groupsOfPsm = new Dictionary<SpectralMatch, int>();
+            foreach (var proteinGroup in ProteinGroups)
+            {
+                foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>().Where(psm => psm.FullSequence == null))
+                {
+                    groupsOfPsm[psm] = groupsOfPsm.GetValueOrDefault(psm) + 1;
+                }
+            }
+            quantifiablePsms.RemoveAll(psm => psm.FullSequence == null && groupsOfPsm.GetValueOrDefault(psm) != 1);
+
+            // The peptide rows of single sequences. mzLib builds the localization-ambiguous rows from the PSMs
+            // themselves; listing their candidates here would add an empty row for each site.
             var peptides = quantifiablePsms
+                .Where(psm => psm.FullSequence != null)
                 .SelectMany(psm => psm.GetIdentifiedBioPolymersWithSetMods())
                 .Distinct()
                 .ToList();
