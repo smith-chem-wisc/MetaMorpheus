@@ -210,11 +210,13 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
 
     // Observed minus calibrated predicted retention time, in minutes; NaN when absent
     [Optional] public double Psm_MeanAbsoluteRtError { get; set; } = double.NaN;
+    [Optional] public double Psm_RtCorrelationCoefficient { get; set; } = double.NaN;
 
     [Optional] [TypeConverter(typeof(SemiColonDelimitedToDoubleArrayTypeConverter))]
     public double[] Psm_AllRtErrors { get; set; } = Array.Empty<double>();
 
     [Optional] public double Peptide_MeanAbsoluteRtError { get; set; } = double.NaN;
+    [Optional] public double Peptide_RtCorrelationCoefficient { get; set; } = double.NaN;
 
     [Optional] [TypeConverter(typeof(SemiColonDelimitedToDoubleArrayTypeConverter))]
     public double[] Peptide_AllRtErrors { get; set; } = Array.Empty<double>();
@@ -352,8 +354,10 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
 
         // Retention Time metrics
         Results[RetentionTimeCollector.PsmMeanAbsoluteRtError] = Psm_MeanAbsoluteRtError;
+        Results[RetentionTimeCollector.PsmRtCorrelationCoefficient] = Psm_RtCorrelationCoefficient;
         Results[RetentionTimeCollector.PsmAllRtErrors] = Psm_AllRtErrors;
         Results[RetentionTimeCollector.PeptideMeanAbsoluteRtError] = Peptide_MeanAbsoluteRtError;
+        Results[RetentionTimeCollector.PeptideRtCorrelationCoefficient] = Peptide_RtCorrelationCoefficient;
         Results[RetentionTimeCollector.PeptideAllRtErrors] = Peptide_AllRtErrors;
     }
 
@@ -457,8 +461,10 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
 
         // Retention Time metrics
         Psm_MeanAbsoluteRtError = GetValue(RetentionTimeCollector.PsmMeanAbsoluteRtError, double.NaN);
+        Psm_RtCorrelationCoefficient = GetValue(RetentionTimeCollector.PsmRtCorrelationCoefficient, double.NaN);
         Psm_AllRtErrors = GetValue<double[]>(RetentionTimeCollector.PsmAllRtErrors) ?? Array.Empty<double>();
         Peptide_MeanAbsoluteRtError = GetValue(RetentionTimeCollector.PeptideMeanAbsoluteRtError, double.NaN);
+        Peptide_RtCorrelationCoefficient = GetValue(RetentionTimeCollector.PeptideRtCorrelationCoefficient, double.NaN);
         Peptide_AllRtErrors = GetValue<double[]>(RetentionTimeCollector.PeptideAllRtErrors) ?? Array.Empty<double>();
     }
 
