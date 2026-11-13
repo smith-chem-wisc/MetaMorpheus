@@ -392,104 +392,32 @@ namespace MetaMorpheusCommandLine
             write ??= Console.WriteLine;
             readLine ??= Console.ReadLine;
 
-            string pathToExperDesign = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
-            string pathToTmtDesign = Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName);
+            // The rule is shared with the GUI's Run button (EngineLayer.ExperimentalDesignCheck); this only shows it.
+            var check = ExperimentalDesignCheck.Check(designDirectory, startingRawFilenameList, normalizationRequested);
 
-            bool hasClassicDesign = File.Exists(pathToExperDesign);
-            bool hasTmtDesign = File.Exists(pathToTmtDesign);
-
-            // Only one may be present. Two files carrying replicate structure can drift apart, and
-            // nothing here could say which of them the user meant.
-            if (hasClassicDesign && hasTmtDesign)
+            if (check.Verdict != ExperimentalDesignVerdict.AskToContinueWithoutDesign)
             {
                 if (reportToConsole)
                 {
-                    write("Both ExperimentalDesign and TmtDesign.txt were found. Only one design file type may be present.");
-                }
-
-                return 5;
-            }
-
-            if (!hasClassicDesign && !hasTmtDesign)
-            {
-                // A design is optional until something needs it. Normalization is that something.
-                if (normalizationRequested)
-                {
-                    if (reportToConsole)
+                    foreach (string message in check.Messages)
                     {
-                        write("No experimental design file present. Normalization requires a design (ExperimentalDesign.tsv or TmtDesign.txt).");
-                    }
-
-                    return 5;
-                }
-
-                return 0;
-            }
-
-            string designPath = hasClassicDesign ? pathToExperDesign : pathToTmtDesign;
-            List<string> errors;
-            var warnings = new List<string>();
-
-            if (hasClassicDesign)
-            {
-                var design = ExperimentalDesign.ReadExperimentalDesign(designPath, startingRawFilenameList, out errors);
-                if (!errors.Any())
-                {
-                    warnings = ExperimentalDesign.GetWarningsInExperimentalDesign(design);
-                }
-            }
-            else
-            {
-                var tmtFiles = TmtExperimentalDesign.Read(designPath, startingRawFilenameList, out errors);
-                if (!errors.Any())
-                {
-                    warnings = TmtExperimentalDesign.GetWarningsInDesign(tmtFiles);
-                }
-            }
-
-            if (!errors.Any())
-            {
-                if (reportToConsole)
-                {
-                    write("Read " + Path.GetFileName(designPath) + " successfully");
-                    foreach (string warning in warnings)
-                    {
-                        write(warning);
+                        write(message);
                     }
                 }
 
-                return 0;
+                return check.Verdict == ExperimentalDesignVerdict.Proceed ? 0 : 5;
             }
 
-            // Normalizing against a design that could not be read would silently produce different
-            // numbers, so this is the one case that cannot be recovered from.
-            if (normalizationRequested)
-            {
-                if (reportToConsole)
-                {
-                    foreach (string error in errors)
-                    {
-                        write(error);
-                    }
-                }
-
-                return 5;
-            }
-
-            // Otherwise the run continues without reading the design, leaving the file alone. It used
-            // to be deleted -- silently at verbosity none, and on a y/n whose question was about
-            // continuing rather than about deletion. Deleting an input the user cannot be asked about
-            // is a lot to infer from a verbosity flag, and #2256 is a user who lost their design that
-            // way. The GUI side stops deleting in #2780; the CLI and the GUI have to agree about
-            // whether a design that fails to parse is the user's file or ours to discard.
+            // An unreadable design nothing needs: the run may continue without it, and the file is left alone. It used to
+            // be deleted -- silently at verbosity none, and on a y/n whose question was about continuing rather than about
+            // deletion (#2256). At verbosity none there is nobody to ask, so the run continues.
             if (!reportToConsole)
             {
                 return 0;
             }
 
-            write((hasClassicDesign ? "An experimental design file" : "A TMT design file")
-                + " was found, but an error occurred reading it. Continue without an experimental design? y/n");
-            write("First error: " + errors.First());
+            write(check.Question + " y/n");
+            write("First error: " + check.Errors.First());
 
             string answer = readLine();
             if (answer?.ToLowerInvariant() == "y" || answer?.ToLowerInvariant() == "yes")
