@@ -645,7 +645,7 @@ namespace EngineLayer
 
         //This function changes the LFQ (apex) intensities of the peaks to be SILAC intensities that only use intensities from MS1 scans where both heavy and light were quantified (only requires 2 for missed cleavages)
         //TODO: unclear how this affects data quality when deuterium shift is in play. A retention time calibration may be necessary.
-        private static void CalculateSilacIntensities(Dictionary<SpectraFileInfo, List<ChromatographicPeak>> peakDictionary, Dictionary<string, List<FlashLFQ.Peptide>> unlabeledToPeptidesDictionary)
+        internal static void CalculateSilacIntensities(Dictionary<SpectraFileInfo, List<ChromatographicPeak>> peakDictionary, Dictionary<string, List<FlashLFQ.Peptide>> unlabeledToPeptidesDictionary)
         {
             foreach (KeyValuePair<SpectraFileInfo, List<ChromatographicPeak>> kvp in peakDictionary)
             {
@@ -653,6 +653,12 @@ namespace EngineLayer
                 Dictionary<string, ChromatographicPeak> sequenceToPeakDictionary = new Dictionary<string, ChromatographicPeak>();
                 foreach (ChromatographicPeak peak in kvp.Value)
                 {
+                    //MBR decoys share their donor's full sequence, so they'd be merged into the target peak below.
+                    //FlashLFQ keeps them in Peaks for FDR; mirror the filtering it does in FlashLFQResults.CalculatePeptideResults.
+                    if (IsDecoyOrRandomRtPeak(peak))
+                    {
+                        continue;
+                    }
                     //sometimes chromatographic peaks are separated (elute on both sides of the gradient, random blips, etc)
                     //in these situations, we want to use both chromatographic peaks for quantification, not just a single one.
                     string fullSequence = peak.Identifications.First().ModifiedSequence;
@@ -716,6 +722,16 @@ namespace EngineLayer
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// True for peaks FlashLFQ retains only to estimate MBR FDR: decoy identifications and random-retention-time MBR peaks.
+        /// These must not contribute intensity to a SILAC channel.
+        /// </summary>
+        private static bool IsDecoyOrRandomRtPeak(ChromatographicPeak peak)
+        {
+            return peak.DecoyPeptide
+                || (peak is MbrChromatographicPeak mbrPeak && mbrPeak.RandomRt);
         }
 
         public static (SilacLabel updatedLabel, char nextHeavyLabel) UpdateAminoAcidLabel(SilacLabel currentLabel, char heavyLabel)
