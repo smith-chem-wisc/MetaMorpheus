@@ -91,20 +91,39 @@ namespace EngineLayer
         /// </summary>
         private List<ProteinGroup> RunProteinParsimonyEngine(out int hypothesesAdded, out int hypothesesRemoved)
         {
-            hypothesesAdded = 0; 
+            hypothesesAdded = 0;
             hypothesesRemoved = 0;
-
-            // parsimonious list of proteins built by this protein parsimony engine
-            HashSet<IBioPolymer> parsimoniousProteinList = new();
-
-            // list of peptides that can only be digestion products of one protein in the proteome (considering different protease digestion rules)
-            HashSet<IBioPolymerWithSetMods> uniquePeptides = new();
 
             // if there are no peptides observed, there are no proteins; return an empty list of protein groups
             if (_fdrFilteredPeptides.Count == 0)
             {
                 return new List<ProteinGroup>();
             }
+
+            // stage 5's trim can resolve PSMs that were ambiguous going in; repeat until it resolves none
+            HashSet<IBioPolymerWithSetMods> uniquePeptides;
+            do
+            {
+                uniquePeptides = RunParsimonyPass(ref hypothesesAdded, ref hypothesesRemoved);
+            } while (AddPsmsResolvedByTrimming());
+
+            // construct protein groups
+            List<ProteinGroup> proteinGroups = ConstructProteinGroups(uniquePeptides);
+
+            // finished with parsimony
+            return proteinGroups;
+        }
+
+        /// <summary>
+        /// One pass of parsimony stages 0-5 over <see cref="_fdrFilteredPeptides"/>. Returns the database-level unique peptides.
+        /// </summary>
+        private HashSet<IBioPolymerWithSetMods> RunParsimonyPass(ref int hypothesesAdded, ref int hypothesesRemoved)
+        {
+            // parsimonious list of proteins built by this protein parsimony engine
+            HashSet<IBioPolymer> parsimoniousProteinList = new();
+
+            // list of peptides that can only be digestion products of one protein in the proteome (considering different protease digestion rules)
+            HashSet<IBioPolymerWithSetMods> uniquePeptides = new();
 
             // Parsimony stage 0: create peptide-protein associations if needed because the user wants a modification-agnostic parsimony
             // this is needed for edge cases digesting a protein .xml from UniProt that has peptide sequences shared between proteins
@@ -515,11 +534,38 @@ namespace EngineLayer
                 }
             }
 
-            // construct protein groups
-            List<ProteinGroup> proteinGroups = ConstructProteinGroups(uniquePeptides);
+            return uniquePeptides;
+        }
 
-            // finished with parsimony
-            return proteinGroups;
+        /// <summary>
+        /// Stage 5 can resolve a PSM that was ambiguous when <see cref="_fdrFilteredPeptides"/> was built. Adds PSMs that
+        /// now pass the constructor's filter, and their peptides, so parsimony and the groups see them and scoring, the
+        /// protein table and both quantification paths read the same peptide set. Returns whether any were added.
+        /// </summary>
+        private bool AddPsmsResolvedByTrimming()
+        {
+            var alreadyUsed = new HashSet<SpectralMatch>(_fdrFilteredPsms);
+            var resolved = FilteredPsms.Filter(_allPsms,
+                    commonParams: CommonParameters,
+                    includeDecoys: true,
+                    includeContaminants: true,
+                    includeAmbiguous: false,
+                    includeHighQValuePsms: false)
+                .FilteredPsmsList
+                .Where(p => !alreadyUsed.Contains(p)
+                    && (_treatModPeptidesAsDifferentPeptides ? p.FullSequence != null : p.BaseSequence != null))
+                .ToList();
+
+            foreach (var psm in resolved)
+            {
+                _fdrFilteredPsms.Add(psm);
+                foreach (var peptide in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer))
+                {
+                    _fdrFilteredPeptides.Add(peptide);
+                }
+            }
+
+            return resolved.Count > 0;
         }
 
         /// <summary>

@@ -1130,5 +1130,47 @@ namespace Test
             // clean up
             Directory.Delete(folderPath, true);
         }
+
+        /// <summary>
+        /// A PSM that is ambiguous when parsimony starts is excluded from it, but parsimony's own
+        /// trimming can leave it unambiguous. Its peptide must then join the group its proteins landed
+        /// in, so the protein table and quantification both credit it there rather than UNDEFINED.
+        /// </summary>
+        [Test]
+        public static void QuantifiedPeptideResolvedByParsimonyGetsItsProteinGroup()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestIssue2218");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            string database = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "hela_snip_for_unitTest.fasta");
+
+            var searchTask = new SearchTask();
+
+            new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("Task", searchTask) },
+                new List<string> { spectraFile },
+                new List<DbForTask> { new DbForTask(database, false) },
+                outputFolder).Run();
+
+            string[] lines = File.ReadAllLines(Path.Combine(outputFolder, "Task", "AllQuantifiedPeptides.tsv"));
+            int proteinGroupColumn = Array.IndexOf(lines[0].Split('\t'), "Protein Groups");
+            Assert.That(proteinGroupColumn, Is.GreaterThanOrEqualTo(0));
+
+            // this is the peptide parsimony disambiguates; it belongs to the beta-tubulin group
+            var tubulin = lines.Skip(1)
+                .Select(line => line.Split('\t'))
+                .Single(cells => cells[1] == "EAESCDCLQGFQLTHSLGGGTGSGMGTLLISK");
+            Assert.That(tubulin[proteinGroupColumn], Does.Contain("P04350"));
+
+            string[] groupLines = File.ReadAllLines(Path.Combine(outputFolder, "Task", "AllQuantifiedProteinGroups.tsv"));
+            string[] header = groupLines[0].Split('\t');
+            var tubulinGroup = groupLines.Skip(1)
+                .Select(line => line.Split('\t'))
+                .Single(cells => cells[Array.IndexOf(header, "Protein Accession")].Contains("P04350"));
+            Assert.That(tubulinGroup[Array.IndexOf(header, "Unique Peptides")], Does.Contain("EAESCDCLQGFQLTHSLGGGTGSGMGTLLISK"));
+            Assert.That(tubulinGroup[Array.IndexOf(header, "Number of Peptides")], Is.EqualTo("2"));
+            Assert.That(tubulinGroup[Array.IndexOf(header, "Number of Unique Peptides")], Is.EqualTo("2"));
+
+            Directory.Delete(outputFolder, true);
+        }
     }
 }
