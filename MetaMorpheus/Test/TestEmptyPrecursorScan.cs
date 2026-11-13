@@ -42,15 +42,35 @@ namespace Test
             return new GenericMsDataFile(scans, new SourceFile("no nativeID format", "mzML format", null, null, null));
         }
 
+        /// <summary>
+        /// Scan 1: MS1 with peaks. Scan 2: MS2 of scan 1.
+        /// Scans 3 and 4: MS2s of scan 1 with no isolation m/z, so mzLib cannot refine their precursor
+        /// even though the MS1 has peaks.
+        /// </summary>
+        private static MsDataFile FileWithUnrefinablePrecursors()
+        {
+            var ms1WithPeaks = new MzSpectrum(new[] { 499.0, PrecursorMz, 500.75, 501.25 }, new[] { 10.0, 1000.0, 600.0, 200.0 }, false);
+            var ms2Peaks = new MzSpectrum(new[] { 175.119, 276.155, 389.239, 502.323 }, new[] { 100.0, 200.0, 300.0, 400.0 }, false);
+
+            var scans = new[]
+            {
+                Ms1(ms1WithPeaks, 1, 1.0),
+                Ms2(new MzSpectrum(ms2Peaks.XArray, ms2Peaks.YArray, false), 2, 1.01, precursorScanNumber: 1),
+                Ms2(new MzSpectrum(ms2Peaks.XArray, ms2Peaks.YArray, false), 3, 1.02, precursorScanNumber: 1, isolationMz: null),
+                Ms2(new MzSpectrum(ms2Peaks.XArray, ms2Peaks.YArray, false), 4, 1.03, precursorScanNumber: 1, isolationMz: null),
+            };
+            return new GenericMsDataFile(scans, new SourceFile("no nativeID format", "mzML format", null, null, null));
+        }
+
         private static MsDataScan Ms1(MzSpectrum spectrum, int scanNumber, double rt) =>
             new MsDataScan(spectrum, scanNumber, 1, true, Polarity.Positive, rt, new MzRange(300, 2000), "ms1",
                 MZAnalyzerType.Orbitrap, spectrum.SumOfAllY, 1.0, null, "scan=" + scanNumber);
 
-        private static MsDataScan Ms2(MzSpectrum spectrum, int scanNumber, double rt, int precursorScanNumber) =>
+        private static MsDataScan Ms2(MzSpectrum spectrum, int scanNumber, double rt, int precursorScanNumber, double? isolationMz = PrecursorMz) =>
             new MsDataScan(spectrum, scanNumber, 2, true, Polarity.Positive, rt, new MzRange(100, 2000), "ms2",
                 MZAnalyzerType.Orbitrap, spectrum.SumOfAllY, 1.0, null, "scan=" + scanNumber,
                 selectedIonMz: PrecursorMz, selectedIonChargeStateGuess: PrecursorCharge, selectedIonIntensity: 1000,
-                isolationMZ: PrecursorMz, isolationWidth: 2, dissociationType: DissociationType.HCD,
+                isolationMZ: isolationMz, isolationWidth: 2, dissociationType: DissociationType.HCD,
                 oneBasedPrecursorScanNumber: precursorScanNumber, selectedIonMonoisotopicGuessMz: PrecursorMz);
 
         /// <summary>Runs the action and returns the warnings it raised that name this test's file.</summary>
@@ -121,6 +141,32 @@ namespace Test
             Assert.DoesNotThrow(() => scans = MetaMorpheusTask.GetMs2ScansWrapByScanNum(FileWithAnEmptyMs1(), "EmptyMs1Xl.mzML",
                 new CommonParameters(), out _));
             Assert.That(scans.Select(s => s.OneBasedScanNumber), Is.EquivalentTo(new[] { 2, 4 }));
+        }
+
+        [Test]
+        public static void UnrefinablePrecursorsAreSkippedWithOneSummaryWarning()
+        {
+            const string fileName = "UnrefinablePrecursor.mzML";
+            List<Ms2ScanWithSpecificMass>[] slots = null;
+
+            // one thread, so the first scan to fail (and the one named in the warning) is scan 3
+            var warnings = WarningsFor(fileName, () =>
+                slots = MetaMorpheusTask._GetMs2Scans(FileWithUnrefinablePrecursors(), fileName, new CommonParameters(maxThreadsToUsePerFile: 1)));
+
+            // the dropped scans leave empty slots, not null ones
+            Assert.That(slots, Has.Length.EqualTo(3));
+            Assert.That(slots, Has.None.Null);
+            Assert.That(slots[1], Is.Empty);
+            Assert.That(slots[2], Is.Empty);
+
+            // the scan with an isolation m/z is unaffected
+            Assert.That(slots[0].Select(s => s.OneBasedScanNumber), Does.Contain(2));
+
+            // one summary warning for the file, with the count and the first reason, not one per scan
+            Assert.That(warnings, Has.Count.EqualTo(1));
+            Assert.That(warnings[0], Does.StartWith(fileName + ": 2 MS2 scan(s) were skipped because their precursor ion could not be determined"));
+            Assert.That(warnings[0], Does.Contain("(first: MS2 scan #3: "));
+            Assert.That(warnings[0], Does.Contain("isolation m/z"));
         }
     }
 }
