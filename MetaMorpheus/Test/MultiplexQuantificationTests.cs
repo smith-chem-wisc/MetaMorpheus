@@ -1486,14 +1486,24 @@ namespace Test
             return psm;
         }
 
-        /// <summary>Residues 1-7 of <paramref name="protein"/> with an oxidation (formula O) on residue <paramref name="residue"/> of the peptide.</summary>
+        /// <summary>
+        /// Residues 1-7 of <paramref name="protein"/> (ending in K) with an oxidation (formula O) on residue
+        /// <paramref name="residue"/> of the peptide, and TMT11 on its N-terminus and its lysine, as a TMT search fixes them:
+        /// only a labelled match is quantified by its channels.
+        /// </summary>
         private static IBioPolymerWithSetMods OxidizedAt(Protein protein, int residue)
         {
             ModificationMotif.TryGetMotif("M", out var motif);
             var oxidation = new Modification(_originalId: "Oxidation", _modificationType: "Test", _target: motif,
                 _locationRestriction: "Anywhere.", _chemicalFormula: Chemistry.ChemicalFormula.ParseFormula("O"));
+            var mods = new Dictionary<int, Modification>
+            {
+                { 1, Tmt11Labels.Single(m => m.IdWithMotif == "TMT11 on X") },
+                { residue + 1, oxidation },
+                { 8, Tmt11Labels.Single(m => m.IdWithMotif == "TMT11 on K") },
+            };
             return new PeptideWithSetModifications(protein, new DigestionParams(), 1, 7, Omics.Digestion.CleavageSpecificity.Full, "", 0,
-                new Dictionary<int, Modification> { { residue + 1, oxidation } }, 0);
+                mods, 0);
         }
 
         /// <summary>The first peptide <paramref name="protein"/> digests to under default settings.</summary>
