@@ -132,8 +132,12 @@ public class TransientDatabaseResultsManager
         var analysisResult = _metricAggregator.RunAnalysis(context);
 
         // Cache analysis results in memory immediately; durable checkpointing happens
-        // after per-database output files are written successfully.
-        _analysisCache.Add(analysisResult);
+        // after per-database output files are written successfully. A result with collector errors is not cached, so
+        // the summary written at the end of the run leaves it out too and a rerun searches the database again.
+        if (analysisResult.Errors.Count == 0)
+        {
+            _analysisCache.Add(analysisResult);
+        }
 
         return analysisResult;
     }

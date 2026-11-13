@@ -77,6 +77,9 @@ public sealed class ConfidenceCutoff
 
     public bool Passes(SpectralMatch match) => Passes(match.GetFdrInfo(PeptideLevel));
 
+    // on the q-value path FilteredPsms also holds the notch q-value to the threshold
     public bool Passes(FdrInfo? fdrInfo) =>
-        fdrInfo != null && (UsesPepQValue ? fdrInfo.PEP_QValue : fdrInfo.QValue) <= Threshold;
+        fdrInfo != null && (UsesPepQValue
+            ? fdrInfo.PEP_QValue <= Threshold
+            : fdrInfo.QValue <= Threshold && fdrInfo.QValueNotch <= Threshold);
 }

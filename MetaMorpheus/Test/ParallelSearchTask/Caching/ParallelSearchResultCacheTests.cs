@@ -3,6 +3,7 @@ using System.Text;
 using NUnit.Framework;
 using TaskLayer.ParallelSearch;
 using TaskLayer.ParallelSearch.Analysis;
+using TaskLayer.ParallelSearch.Analysis.Collectors;
 
 namespace Test.ParallelSearchTask.Caching;
 
@@ -206,6 +207,38 @@ public class ParallelSearchResultCacheTests
                 Assert.That(cache.UnreadableFileMessage, Is.Null);
                 Assert.That(cache.UnreadableFileBackupPath, Is.Null);
                 Assert.That(cache.Contains("DbReadable"), Is.True);
+            });
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Test]
+    public void AddAndWrite_ThenInitializeCache_KeepsTheRetentionTimeCorrelationCoefficients()
+    {
+        string path = GetTempCsvPath();
+        try
+        {
+            var metrics = new TransientDatabaseMetrics("DbRt");
+            metrics.Results[RetentionTimeCollector.PsmRtCorrelationCoefficient] = 0.91;
+            metrics.Results[RetentionTimeCollector.PeptideRtCorrelationCoefficient] = 0.87;
+            Assert.That(new ParallelSearchResultCache(path).AddAndWrite(metrics), Is.True);
+
+            var cache = new ParallelSearchResultCache(path);
+            cache.InitializeCache();
+            Assert.That(cache.TryGetValue("DbRt", out var loaded), Is.True);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(loaded!.Psm_RtCorrelationCoefficient, Is.EqualTo(0.91).Within(1e-9));
+                Assert.That(loaded.Peptide_RtCorrelationCoefficient, Is.EqualTo(0.87).Within(1e-9));
+                Assert.That((double)loaded.Results[RetentionTimeCollector.PsmRtCorrelationCoefficient], Is.EqualTo(0.91).Within(1e-9));
+                Assert.That((double)loaded.Results[RetentionTimeCollector.PeptideRtCorrelationCoefficient], Is.EqualTo(0.87).Within(1e-9));
             });
         }
         finally

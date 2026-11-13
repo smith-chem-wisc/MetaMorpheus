@@ -208,8 +208,10 @@ public sealed class TransientProteinParsimonyEngine : ProteinParsimonyEngine
 
         // every baseline protein matched so far brings all its baseline scans, so it competes in parsimony with its full
         // support rather than with only the peptide it shares. Proteins reached only through those added scans are not
-        // expanded again; they bear on how baseline peptides are shared among baseline proteins, and groups without a
-        // transient protein are filtered out after parsimony.
+        // expanded again, so they enter with only the peptides on those scans. Without their full support they can
+        // still claim a peptide shared with a transient protein and leave that transient scan ambiguous; this errs
+        // toward fewer unambiguous transient matches, never more. Groups without a transient protein are filtered out
+        // after parsimony.
         for (int i = firstBaselineClone; i < neighborhoodPsms.Count; i++)
         {
             AddBaselineProteins(neighborhoodPsms[i]);

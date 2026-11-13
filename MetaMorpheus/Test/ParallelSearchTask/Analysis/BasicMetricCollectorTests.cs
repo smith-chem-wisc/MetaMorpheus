@@ -103,4 +103,31 @@ public class BasicMetricCollectorTests
             Assert.That(result[BasicMetricCollector.TargetPeptidesFromTransientDbAtQValueThreshold], Is.EqualTo(expectedConfident));
         });
     }
+
+    [Test]
+    public void CollectData_OnTheQValuePath_AlsoHoldsTheNotchQValueToTheThreshold()
+    {
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters();
+        // every q-value passes, but the notch q-value passes for the first half only
+        var psms = Enumerable.Range(0, 150).Select(i =>
+        {
+            var psm = ParallelSearchTestContextFactory.CreateSpectralMatch(commonParameters, isDecoy: false, score: 10,
+                psmQValue: 0.005, peptideQValue: 0.005, scanNumber: i + 1);
+            double notch = i < 75 ? 0.005 : 0.05;
+            psm.SetFdrValues(0, 0, 0.005, 0, 0, notch, 0, 0.005);
+            psm.PeptideFdrInfo.QValueNotch = notch;
+            return psm;
+        }).ToList();
+        var context = ParallelSearchTestContextFactory.CreateContext(commonParameters, allPsms: psms, transientPsms: psms,
+            allPeptides: psms, transientPeptides: psms);
+
+        var result = new BasicMetricCollector().CollectData(context);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result[BasicMetricCollector.TargetPsmsAtQValueThreshold], Is.EqualTo(75));
+            Assert.That(result[BasicMetricCollector.TargetPsmsFromTransientDbAtQValueThreshold], Is.EqualTo(75));
+            Assert.That(result[BasicMetricCollector.TargetPeptidesFromTransientDbAtQValueThreshold], Is.EqualTo(75));
+        });
+    }
 }

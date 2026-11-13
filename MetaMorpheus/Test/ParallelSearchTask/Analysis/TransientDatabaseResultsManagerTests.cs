@@ -55,6 +55,29 @@ public class TransientDatabaseResultsManagerTests
     }
 
     [Test]
+    public void ProcessDatabase_WhenACollectorFails_TheRowIsLeftOutOfTheSummaryWrittenAtTheEnd()
+    {
+        var aggregator = new TaskLayer.ParallelSearch.Analysis.MetricAggregator(
+            new List<TaskLayer.ParallelSearch.Analysis.IMetricCollector> { new ThrowingCollector() });
+        string summaryPath = Path.Combine(_testOutputDir, "cache.csv");
+        var manager = new TransientDatabaseResultsManager(aggregator, summaryPath);
+        var commonParameters = Utility.ParallelSearchTestContextFactory.CreateCommonParameters();
+        var context = Utility.ParallelSearchTestContextFactory.CreateContext(commonParameters, allPsms: [], transientPsms: [],
+            allPeptides: [], transientPeptides: []);
+
+        var result = manager.ProcessDatabase(context);
+        bool appended = manager.AppendCheckpoint(result);
+        manager.PersistAnalysisCache();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Errors, Is.Not.Empty);
+            Assert.That(appended, Is.False);
+            Assert.That(new TransientDatabaseResultsManager(aggregator, summaryPath).HasCachedResults(context.DatabaseName), Is.False);
+        });
+    }
+
+    [Test]
     public void HasCachedResults_WithNoCache_ReturnsFalse()
     {
         var aggregator = new TaskLayer.ParallelSearch.Analysis.MetricAggregator(new List<TaskLayer.ParallelSearch.Analysis.IMetricCollector>());
@@ -157,5 +180,25 @@ public class TransientDatabaseResultsManagerTests
         bool removed = manager.RemoveFromCache("NonExistent");
 
         Assert.That(removed, Is.False);
+    }
+
+    private sealed class ThrowingCollector : TaskLayer.ParallelSearch.Analysis.IMetricCollector
+    {
+        public string CollectorName => "Thrower";
+
+        public IEnumerable<string> GetOutputColumns()
+        {
+            yield return "Unreachable";
+        }
+
+        public Dictionary<string, object> CollectData(TaskLayer.ParallelSearch.Analysis.TransientDatabaseContext context)
+        {
+            throw new InvalidOperationException("Expected test failure");
+        }
+
+        public bool CanCollectData(TaskLayer.ParallelSearch.Analysis.TransientDatabaseContext context)
+        {
+            return true;
+        }
     }
 }
