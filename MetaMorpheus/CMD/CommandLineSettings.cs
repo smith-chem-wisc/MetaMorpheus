@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TaskLayer;
+using TaskLayer.ParallelSearch;
 
 namespace MetaMorpheusCommandLine
 {
@@ -304,6 +305,9 @@ namespace MetaMorpheusCommandLine
 
                 TruncationSearchTask truncation = new TruncationSearchTask();
                 Toml.WriteFile(truncation, Path.Combine(folderLocation, @"TruncationSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+
+                ParallelSearchTask parallelSearch = new ParallelSearchTask();
+                Toml.WriteFile(parallelSearch, Path.Combine(folderLocation, @"ParallelSearchTask.toml"), MetaMorpheusTask.tomlConfig);
             }
             catch (Exception e)
             {

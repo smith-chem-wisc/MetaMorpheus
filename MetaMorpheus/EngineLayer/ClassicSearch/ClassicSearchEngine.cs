@@ -29,7 +29,10 @@ namespace EngineLayer.ClassicSearch
         protected readonly double[] MyScanPrecursorMasses;
         private readonly bool WriteSpectralLibrary;
         private readonly bool WriteDigestionCounts;
-        private readonly object[] Locks;
+        /// <summary>
+        /// One lock per scan, guarding that scan's entry in <see cref="SpectralMatches"/>.
+        /// </summary>
+        protected readonly object[] Locks;
         public readonly ConcurrentDictionary<(string Accession, string BaseSequence), int> DigestionCountDictionary; // Used to track the amount of digestion products from each protein when the option is enabled.
 
         public ClassicSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
