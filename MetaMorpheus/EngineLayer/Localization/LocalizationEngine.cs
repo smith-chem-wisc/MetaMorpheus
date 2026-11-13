@@ -63,6 +63,14 @@ namespace EngineLayer.Localization
             SiteRule = siteRule;
         }
 
+        /// <summary>
+        /// Whether to keep, on each match, the <see cref="LocalizationEvidence"/> of its mass-difference placements, for
+        /// <see cref="LocalizationProbabilityEngine"/>. On by default; a search that computes no probabilities turns it
+        /// off to save the memory. Placing identified modifications collects evidence and nothing else, so it is kept
+        /// whatever this says.
+        /// </summary>
+        public bool KeepMassDifferenceEvidence { get; init; } = true;
+
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             // any-residue placement swaps nothing, so it needs no list of modifications to swap for
@@ -114,7 +122,7 @@ namespace EngineLayer.Localization
 
                         if (LocalizeMassDifferences && psm.FullSequence != null)
                         {
-                            bool keepEvidence = basePeakIntensity > 0 && !placeThisMatchesModifications;
+                            bool keepEvidence = KeepMassDifferenceEvidence && basePeakIntensity > 0 && !placeThisMatchesModifications;
                             LocalizeMassDifference(psm, peptide, massDifference, scan, scanWithSpecificMass, products,
                                 keepEvidence ? new LocalizationEvidenceBuilder(basePeakIntensity) : null);
                         }

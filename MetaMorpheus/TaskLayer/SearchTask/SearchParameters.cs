@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UsefulProteomicsDatabases;
 using EngineLayer;
+using EngineLayer.Localization;
 using Omics.Modifications;
 
 namespace TaskLayer
@@ -68,6 +69,20 @@ namespace TaskLayer
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
+
+        /// <summary>
+        /// Estimate, for each match, the probability of each placement of its modifications (and, in an open search, of
+        /// its mass difference), and a localization q-value: the false localization rate of the confident matches as
+        /// sure of their placement as it is (PTMiner, An et al., MCP 2019). Off by default: it reads every spectra file
+        /// a second time and keeps each match's matched peaks until the end of the search.
+        /// </summary>
+        public bool DoLocalizationProbabilities { get; set; }
+
+        /// <summary>
+        /// With <see cref="DoLocalizationProbabilities"/>, which residues an identified modification may be placed on:
+        /// those its motif allows (the default), or any residue, for experiments where its chemistry is unknown.
+        /// </summary>
+        public LocalizationSiteRule LocalizationSiteRule { get; set; }
         public bool DoLabelFreeQuantification { get; set; }
         public bool UseSharedPeptidesForLFQ { get; set; }
         public bool DoMultiplexQuantification { get; set; }

@@ -600,9 +600,11 @@ namespace TaskLayer
         {
             try
             {
-                if (Parameters.SearchParameters.DoLocalizationAnalysis)
+                bool localizeMassDifferences = Parameters.SearchParameters.DoLocalizationAnalysis;
+                bool computeProbabilities = Parameters.SearchParameters.DoLocalizationProbabilities;
+                if (localizeMassDifferences || computeProbabilities)
                 {
-                    Status("Running mass-difference localization analysis...", Parameters.SearchTaskId);
+                    Status(localizeMassDifferences ? "Running mass-difference localization analysis..." : "Collecting localization evidence...", Parameters.SearchTaskId);
                     for (int spectraFileIndex = 0;
                          spectraFileIndex < Parameters.CurrentRawFileList.Count;
                          spectraFileIndex++)
@@ -616,12 +618,30 @@ namespace TaskLayer
                         new LocalizationEngine(
                                 Parameters.AllSpectralMatches.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(),
                                 myMsDataFile, combinedParams, this.FileSpecificParameters,
-                                new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile })
+                                new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile },
+                                localizeMassDifferences,
+                                // every arrangement of a match's modifications, each swappable for a variable modification
+                                placeableModifications: computeProbabilities ? Parameters.VariableModifications : null,
+                                siteRule: Parameters.SearchParameters.LocalizationSiteRule)
+                            {
+                                KeepMassDifferenceEvidence = computeProbabilities
+                            }
                             .Run();
                         Parameters.MyFileManager.DoneWithFile(origDataFile);
                         ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!",
                             new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile }));
                     }
+                }
+
+                if (computeProbabilities)
+                {
+                    // confident by the search's own identification filter, so the matches learned from and ranked are
+                    // the ones the search reports
+                    FilteredPsms identified = FilteredPsms.Filter(Parameters.AllSpectralMatches, CommonParameters,
+                        includeDecoys: false, includeContaminants: true, includeAmbiguous: true, includeAmbiguousMods: true);
+                    new LocalizationProbabilityEngine(Parameters.AllSpectralMatches, CommonParameters, this.FileSpecificParameters,
+                            new List<string> { Parameters.SearchTaskId }, identified.PassesThreshold)
+                        .Run();
                 }
 
                 // count different modifications observed

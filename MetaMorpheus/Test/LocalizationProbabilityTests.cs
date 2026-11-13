@@ -186,6 +186,52 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable] // listens to every engine that finishes
+        [TestCase(true)]
+        [TestCase(false)]
+        public static void AClosedSearchComputesLocalizationProbabilitiesOnlyWhenAsked(bool doLocalizationProbabilities)
+        {
+            var results = new List<LocalizationProbabilityResults>();
+            void Collect(object sender, SingleEngineFinishedEventArgs e)
+            {
+                if (e.MyResults is LocalizationProbabilityResults r)
+                {
+                    lock (results) { results.Add(r); }
+                }
+            }
+
+            var task = new TaskLayer.SearchTask
+            {
+                SearchParameters = new TaskLayer.SearchParameters { DoLocalizationProbabilities = doLocalizationProbabilities, WriteMzId = false }
+            };
+            string folder = System.IO.Path.Combine(TestContext.CurrentContext.TestDirectory, $"LocalizationProbabilitySearch{doLocalizationProbabilities}");
+            System.IO.Directory.CreateDirectory(folder);
+            string spectra = System.IO.Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            string database = System.IO.Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+
+            MetaMorpheusEngine.FinishedSingleEngineHandler += Collect;
+            try
+            {
+                task.RunTask(folder, new List<EngineLayer.DatabaseLoading.DbForTask> { new(database, false) }, new List<string> { spectra }, "");
+            }
+            finally
+            {
+                MetaMorpheusEngine.FinishedSingleEngineHandler -= Collect;
+                System.IO.Directory.Delete(folder, true);
+            }
+
+            if (!doLocalizationProbabilities)
+            {
+                Assert.That(results, Is.Empty);
+                return;
+            }
+            Assert.That(results, Has.Count.EqualTo(1));
+            TestContext.WriteLine(results[0]);
+            // the unmodified matches of a closed search are enough to learn peak intensities from
+            Assert.That(results[0].TrainingPeaks, Is.GreaterThanOrEqualTo(LocalizationProbabilityEngine.DefaultMinTrainingPeaks));
+        }
+
+        [Test]
         public static void TooFewUnmodifiedPeaksLeavesProbabilitiesUncomputed()
         {
             var target = Psm(Evidence(new[] { OnS3, OnT4 }, (0.8, new[] { 0 })), modified: true);
