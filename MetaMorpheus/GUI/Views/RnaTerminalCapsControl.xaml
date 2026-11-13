@@ -1,0 +1,75 @@
+<UserControl x:Class="MetaMorpheusGUI.RnaTerminalCapsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="40" d:DesignWidth="450"
+             Visibility="{Binding Converter={StaticResource CollapseOnProteinModeConverter}}">
+
+    <!-- Two equal columns so both caps share one line at any width; the combos shrink instead of wrapping. -->
+    <Grid VerticalAlignment="Center">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid Grid.Column="0" Margin="0 0 10 0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Label Content="5' Cap:" />
+            <ComboBox x:Name="FivePrimeComboBox" Grid.Column="1" MinWidth="70" VerticalAlignment="Center"
+                      ItemsSource="{Binding FivePrimeOptions}"
+                      SelectedItem="{Binding SelectedFivePrimeOption}"
+                      ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                <ComboBox.ItemContainerStyle>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="ToolTip" Value="{Binding ToolTip}" />
+                    </Style>
+                </ComboBox.ItemContainerStyle>
+                <ComboBox.ToolTip>
+                    <TextBlock>
+                        Chemical cap placed on the 5' end of each RNA in the database.
+                        <LineBreak />
+                        Default uses the mzLib value.
+                    </TextBlock>
+                </ComboBox.ToolTip>
+            </ComboBox>
+            <TextBox x:Name="FivePrimeCustomTextBox" Grid.Column="2" Width="50" Margin="5 0 0 0" VerticalAlignment="Center"
+                     Text="{Binding FivePrimeCustomFormula, UpdateSourceTrigger=PropertyChanged}"
+                     Visibility="{Binding IsFivePrimeCustom, Converter={StaticResource bool2VisConverter}}"
+                     ToolTip="Chemical formula, e.g. O-3P-1" />
+        </Grid>
+        <Grid Grid.Column="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Label Content="3' Cap:" />
+            <ComboBox x:Name="ThreePrimeComboBox" Grid.Column="1" MinWidth="70" VerticalAlignment="Center"
+                      ItemsSource="{Binding ThreePrimeOptions}"
+                      SelectedItem="{Binding SelectedThreePrimeOption}"
+                      ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                <ComboBox.ItemContainerStyle>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="ToolTip" Value="{Binding ToolTip}" />
+                    </Style>
+                </ComboBox.ItemContainerStyle>
+                <ComboBox.ToolTip>
+                    <TextBlock>
+                        Chemical cap placed on the 3' end of each RNA in the database.
+                        <LineBreak />
+                        Default uses the mzLib value.
+                    </TextBlock>
+                </ComboBox.ToolTip>
+            </ComboBox>
+            <TextBox x:Name="ThreePrimeCustomTextBox" Grid.Column="2" Width="50" Margin="5 0 0 0" VerticalAlignment="Center"
+                     Text="{Binding ThreePrimeCustomFormula, UpdateSourceTrigger=PropertyChanged}"
+                     Visibility="{Binding IsThreePrimeCustom, Converter={StaticResource bool2VisConverter}}"
+                     ToolTip="Chemical formula, e.g. H2O4P" />
+        </Grid>
+    </Grid>
+</UserControl>

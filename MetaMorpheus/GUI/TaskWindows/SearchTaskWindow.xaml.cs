@@ -42,6 +42,7 @@ namespace MetaMorpheusGUI
         private CustomFragmentationWindow CustomFragmentationWindow;
         private MassDifferenceAcceptorSelectionViewModel _massDifferenceAcceptorViewModel;
         private FragmentationParamsViewModel _fragmentationParamsViewModel;
+        private RnaTerminalCapsViewModel _rnaTerminalCapsViewModel;
         private string _defaultMultiplexType = "TMT10";
         private DeconHostViewModel DeconHostViewModel;
 
@@ -473,6 +474,8 @@ namespace MetaMorpheusGUI
 
             _fragmentationParamsViewModel = new FragmentationParamsViewModel(task.CommonParameters, task.SearchParameters);
             FragmentationParametersControl.DataContext = _fragmentationParamsViewModel;
+            _rnaTerminalCapsViewModel = new RnaTerminalCapsViewModel(task.CommonParameters);
+            RnaTerminalCapsControl.DataContext = _rnaTerminalCapsViewModel;
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -519,6 +522,11 @@ namespace MetaMorpheusGUI
             string separationType = SeparationTypeComboBox.SelectedItem.ToString();
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode && !_rnaTerminalCapsViewModel.Validate(out string terminalCapError))
+            {
+                System.Windows.MessageBox.Show(terminalCapError, "Invalid terminal cap", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
             CustomFragmentationWindow.Close();
 
             FragmentationTerminus fragmentationTerminus = GetFragmentationTerminus();
@@ -675,6 +683,8 @@ namespace MetaMorpheusGUI
                 precursorMassTolerance: PrecursorMassTolerance,
                 productMassTolerance: ProductMassTolerance,
                 digestionParams: digestionParamsToSave,
+                fivePrimeTerminus: _rnaTerminalCapsViewModel.FivePrimeTerminus,
+                threePrimeTerminus: _rnaTerminalCapsViewModel.ThreePrimeTerminus,
                 separationType: separationType,
                 trimMs1Peaks: TrimMs1Peaks,
                 trimMsMsPeaks: TrimMsMsPeaks,

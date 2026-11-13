@@ -1960,7 +1960,8 @@ namespace MetaMorpheusGUI
                         }
                         catch (Exception e)
                         {
-                            NotificationHandler(null, new StringEventArgs("Cannot read task toml: " + e.Message, null));
+                            // Nett wraps a converter's exception in several layers; the innermost message says what is wrong
+                            NotificationHandler(null, new StringEventArgs("Cannot read task toml: " + e.GetBaseException().Message, null));
                         }
                     }
                     break;

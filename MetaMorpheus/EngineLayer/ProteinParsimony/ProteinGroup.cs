@@ -324,14 +324,20 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of masses
-            var sequences = ListOfProteinsOrderedByAccession.Select(p => p.BaseSequence).Distinct();
+            var sequences = ListOfProteinsOrderedByAccession.GroupBy(p => p.BaseSequence).Select(g => g.First());
             List<double> masses = new List<double>();
-            foreach (var sequence in sequences)
+            foreach (var biopolymer in sequences)
             {
+                string sequence = biopolymer.BaseSequence;
                 try
                 {
                     if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
-                        masses.Add(new OligoWithSetMods(sequence, GlobalVariables.AllRnaModsKnownDictionary).MonoisotopicMass);
+                    {
+                        // use the RNA's own termini so any user-chosen cap is included
+                        var rna = biopolymer as Transcriptomics.NucleicAcid;
+                        masses.Add(new OligoWithSetMods(sequence, GlobalVariables.AllRnaModsKnownDictionary,
+                            fivePrimeTerminus: rna?.FivePrimeTerminus, threePrimeTerminus: rna?.ThreePrimeTerminus).MonoisotopicMass);
+                    }
                     else
                         masses.Add(new Proteomics.AminoAcidPolymer.Peptide(sequence).MonoisotopicMass);
                 }
@@ -436,11 +442,9 @@ namespace EngineLayer
             sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
             sb.Append("\t");
 
-            // decoy / contaminant / target, with entrapment written ET or ED. Entrapment is read from the
-            // members, not IsEntrapment: mzLib's MergeWith keeps the surviving group's flags, so a real
-            // protein merged with its entrapment partner would otherwise read T here and ET in the per-file
-            // tables, which rebuild the group through the constructor.
-            sb.Append(DecoyContaminantTargetLabel.For(IsDecoy, IsContaminant, Proteins.Any(p => p.IsEntrapment)));
+            // decoy / contaminant / target, with entrapment written ET or ED. Each flag is true when any
+            // member is, and MergeWith recomputes all three from the merged members (mzLib 1.0.597, #1526).
+            sb.Append(DecoyContaminantTargetLabel.For(IsDecoy, IsContaminant, IsEntrapment));
             sb.Append("\t");
 
             // cumulative target
