@@ -70,11 +70,10 @@ public class FragmentIonCollector : IMetricCollector
 
     public Dictionary<string, object> CollectData(TransientDatabaseContext context)
     {
-        double qValueThreshold = Math.Min(context.CommonParameters.QValueThreshold, context.CommonParameters.PepQValueThreshold);
 
         // Psms
         var confidentPsms = context.TransientPsms
-            .Where(p => p.FdrInfo.QValue <= qValueThreshold)
+            .Where(context.PsmCutoff.Passes)
             .ToList();
 
         var psmPpmErrors = confidentPsms.SelectMany(p => p.MatchedFragmentIons.Select(m => m.MassErrorPpm)).ToArray();
@@ -100,7 +99,7 @@ public class FragmentIonCollector : IMetricCollector
 
         // peptides
         var confidentPeptides = context.TransientPeptides
-            .Where(p => p.PeptideFdrInfo?.QValue <= qValueThreshold)
+            .Where(context.PeptideCutoff.Passes)
             .ToList();
 
         var peptidePpmErrors = confidentPeptides.SelectMany(p => p.MatchedFragmentIons.Select(m => m.MassErrorPpm)).ToArray();

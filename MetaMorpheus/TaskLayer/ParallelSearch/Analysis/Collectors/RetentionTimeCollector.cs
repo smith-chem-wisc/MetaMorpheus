@@ -151,14 +151,13 @@ public class RetentionTimeCollector : IMetricCollector
 
     public Dictionary<string, object> CollectData(TransientDatabaseContext context)
     {
-        double qValueThreshold = Math.Min(context.CommonParameters.QValueThreshold, context.CommonParameters.PepQValueThreshold);
 
         // Psms
         var confidentPsms = context.TransientPsms
-            .Where(p => p.FdrInfo.QValue <= qValueThreshold)
+            .Where(context.PsmCutoff.Passes)
             .ToList();
         var confidentPeptides = context.TransientPeptides
-            .Where(p => p.PeptideFdrInfo?.QValue <= qValueThreshold)
+            .Where(context.PeptideCutoff.Passes)
             .ToList();
 
         PredictUncachedSequences(confidentPsms.Concat(confidentPeptides), context.CommonParameters.MaxThreadsToUsePerFile);

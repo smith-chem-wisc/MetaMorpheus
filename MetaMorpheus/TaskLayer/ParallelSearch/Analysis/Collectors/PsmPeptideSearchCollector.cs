@@ -98,11 +98,10 @@ public class PsmPeptideSearchCollector : IMetricCollector
 
     public Dictionary<string, object> CollectData(TransientDatabaseContext context)
     {
-        double qValueThreshold = Math.Min(context.CommonParameters.QValueThreshold, context.CommonParameters.PepQValueThreshold);
-        var globalPsmMetrics = AnalyzeSpectralMatches(context.AllPsms, qValueThreshold);
-        var globalPeptideMetrics = AnalyzeSpectralMatches(context.AllPeptides, qValueThreshold, isPeptideLevel: true);
-        var psmMetrics = AnalyzeSpectralMatches(context.TransientPsms, qValueThreshold);
-        var peptideMetrics = AnalyzeSpectralMatches(context.TransientPeptides, qValueThreshold, isPeptideLevel: true);
+        var globalPsmMetrics = AnalyzeSpectralMatches(context.AllPsms, context.PsmCutoff);
+        var globalPeptideMetrics = AnalyzeSpectralMatches(context.AllPeptides, context.PeptideCutoff);
+        var psmMetrics = AnalyzeSpectralMatches(context.TransientPsms, context.PsmCutoff);
+        var peptideMetrics = AnalyzeSpectralMatches(context.TransientPeptides, context.PeptideCutoff);
 
         return new Dictionary<string, object>
         {
@@ -140,7 +139,7 @@ public class PsmPeptideSearchCollector : IMetricCollector
 
     private (int Targets, int Decoys, int UnambiguousTargets, int UnambiguousDecoys,
         List<double> TargetScores, List<double> DecoyScores, List<double> DeltaScores, List<double> PrecursorMassErrors, List<int> PrecursorPeakCounts, List<double> PrecursorDeconScores, List<double> PrecursorFractionalIntensity)
-        AnalyzeSpectralMatches(List<SpectralMatch> spectralMatches, double qValueThreshold, bool isPeptideLevel = false)
+        AnalyzeSpectralMatches(List<SpectralMatch> spectralMatches, ConfidenceCutoff cutoff)
     {
         int targets = 0, decoys = 0, unambiguousTargets = 0, unambiguousDecoys = 0;
         List<double> targetScores = [];
@@ -153,11 +152,7 @@ public class PsmPeptideSearchCollector : IMetricCollector
 
         foreach (var psm in spectralMatches)
         {
-            double qValue = isPeptideLevel
-                ? psm.PeptideFdrInfo?.QValue ?? 1.0
-                : psm.GetFdrInfo(false)?.QValue ?? 1.0;
-
-            if (qValue > qValueThreshold) continue;
+            if (!cutoff.Passes(psm)) continue;
 
             bool isOrganismAmbiguous = false;
             foreach (var match in psm.BestMatchingBioPolymersWithSetMods)

@@ -67,7 +67,7 @@ public class ProteinGroupCollector : IMetricCollector
 
     public Dictionary<string, object> CollectData(TransientDatabaseContext context)
     {
-        double qValueThreshold = Math.Min(context.CommonParameters.QValueThreshold, context.CommonParameters.PepQValueThreshold);
+        double qValueThreshold = context.ProteinGroupQValueThreshold;
         var totalTargets = context.ProteinGroups!.Count(p => !p.IsDecoy);
         var totalDecoys = context.ProteinGroups!.Count(p => p.IsDecoy);
         var totalTransientTargets = context.TransientProteinGroups!.Count(p => !p.IsDecoy);

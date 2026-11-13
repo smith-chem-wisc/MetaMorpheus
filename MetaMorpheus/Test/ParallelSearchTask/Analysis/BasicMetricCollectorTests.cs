@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using TaskLayer.ParallelSearch.Analysis;
 using TaskLayer.ParallelSearch.Analysis.Collectors;
@@ -71,6 +72,35 @@ public class BasicMetricCollectorTests
             Assert.That(result[BasicMetricCollector.TargetPeptidesAtQValueThreshold], Is.EqualTo(1));
             Assert.That(result[BasicMetricCollector.TargetPeptidesFromTransientDb], Is.EqualTo(1));
             Assert.That(result[BasicMetricCollector.TargetPeptidesFromTransientDbAtQValueThreshold], Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    [TestCase(120, 60)] // PEP filtering: counted by PEP q-value at the PEP q-value threshold, as FilteredPsms does
+    [TestCase(50, 50)]  // fewer than 100 matches: FilteredPsms does not filter, so every match counts
+    public void CollectData_WithAPepQValueThresholdBelowTheQValueThreshold_FiltersAsFilteredPsmsDoes(int matchCount, int expectedConfident)
+    {
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 1.0, pepQValueThreshold: 0.01);
+        // q-values all above 0.01, PEP q-values passing for the first half only
+        var psms = Enumerable.Range(0, matchCount).Select(i =>
+        {
+            var psm = ParallelSearchTestContextFactory.CreateSpectralMatch(commonParameters, isDecoy: false, score: 10,
+                psmQValue: 0.5, peptideQValue: 0.5, scanNumber: i + 1);
+            double pepQValue = i < matchCount / 2 ? 0.001 : 0.5;
+            psm.SetFdrValues(0, 0, 0.5, 0, 0, 0.5, 0, pepQValue);
+            psm.PeptideFdrInfo.PEP_QValue = pepQValue;
+            return psm;
+        }).ToList();
+        var context = ParallelSearchTestContextFactory.CreateContext(commonParameters, allPsms: psms, transientPsms: psms,
+            allPeptides: psms, transientPeptides: psms);
+
+        var result = new BasicMetricCollector().CollectData(context);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result[BasicMetricCollector.TargetPsmsAtQValueThreshold], Is.EqualTo(expectedConfident));
+            Assert.That(result[BasicMetricCollector.TargetPsmsFromTransientDbAtQValueThreshold], Is.EqualTo(expectedConfident));
+            Assert.That(result[BasicMetricCollector.TargetPeptidesFromTransientDbAtQValueThreshold], Is.EqualTo(expectedConfident));
         });
     }
 }

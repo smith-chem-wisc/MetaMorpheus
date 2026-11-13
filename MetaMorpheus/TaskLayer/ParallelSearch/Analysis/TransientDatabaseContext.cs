@@ -38,4 +38,13 @@ public class TransientDatabaseContext : ITransientDatabaseResult
 
     public string OutputFolder { get; init; } = string.Empty;
     public List<string> NestedIds { get; init; } = [];
+
+    // the confidence cutoffs a normal search would use for these results, decided once and shared by every collector
+    private ConfidenceCutoff? _psmCutoff;
+    private ConfidenceCutoff? _peptideCutoff;
+    private double? _proteinGroupQValueThreshold;
+    public ConfidenceCutoff PsmCutoff => _psmCutoff ??= ConfidenceCutoff.For(AllPsms, CommonParameters, peptideLevel: false);
+    public ConfidenceCutoff PeptideCutoff => _peptideCutoff ??= ConfidenceCutoff.For(AllPeptides, CommonParameters, peptideLevel: true);
+    public double ProteinGroupQValueThreshold =>
+        _proteinGroupQValueThreshold ??= ConfidenceCutoff.ProteinGroupThreshold(AllPsms, CommonParameters);
 }

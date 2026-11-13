@@ -47,7 +47,8 @@ public class BasicMetricCollector : IMetricCollector
 
     public Dictionary<string, object> CollectData(TransientDatabaseContext context)
     {
-        double qValueThreshold = Math.Min(context.CommonParameters.QValueThreshold, context.CommonParameters.PepQValueThreshold);
+        var psmCutoff = context.PsmCutoff;
+        var peptideCutoff = context.PeptideCutoff;
 
         return new Dictionary<string, object>
         {
@@ -55,13 +56,13 @@ public class BasicMetricCollector : IMetricCollector
             [TransientProteinCount] = context.TransientProteinAccessions.Count,
             [TransientPeptideCount] = context.TransientPeptideCount,
 
-            [TargetPsmsAtQValueThreshold] = context.AllPsms.Count(p => !p.IsDecoy && p.GetFdrInfo(false)?.QValue <= qValueThreshold),
+            [TargetPsmsAtQValueThreshold] = context.AllPsms.Count(p => !p.IsDecoy && psmCutoff.Passes(p)),
             [TargetPsmsFromTransientDb] = context.TransientPsms.Count(p => !p.IsDecoy),
-            [TargetPsmsFromTransientDbAtQValueThreshold] = context.TransientPsms.Count(p => !p.IsDecoy && p.GetFdrInfo(false)?.QValue <= qValueThreshold),
+            [TargetPsmsFromTransientDbAtQValueThreshold] = context.TransientPsms.Count(p => !p.IsDecoy && psmCutoff.Passes(p)),
 
-            [TargetPeptidesAtQValueThreshold] = context.AllPeptides.Count(p => !p.IsDecoy && p.PeptideFdrInfo?.QValue <= qValueThreshold),
+            [TargetPeptidesAtQValueThreshold] = context.AllPeptides.Count(p => !p.IsDecoy && peptideCutoff.Passes(p)),
             [TargetPeptidesFromTransientDb] = context.TransientPeptides.Count(p => !p.IsDecoy),
-            [TargetPeptidesFromTransientDbAtQValueThreshold] = context.TransientPeptides.Count(p => !p.IsDecoy && p.PeptideFdrInfo?.QValue <= qValueThreshold)
+            [TargetPeptidesFromTransientDbAtQValueThreshold] = context.TransientPeptides.Count(p => !p.IsDecoy && peptideCutoff.Passes(p))
         };
     }
 }
