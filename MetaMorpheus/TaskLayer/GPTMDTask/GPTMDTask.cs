@@ -214,9 +214,9 @@ namespace TaskLayer
                 };
                 newDb.RecordIdentity();
                 MyTaskResults.NewDatabases.Add(newDb);
-                if(dbFilenameList.Any(p=>p.IsSpectralLibrary))
+                if (dbFilenameList.AnySpectralLibrary())
                 {
-                    MyTaskResults.NewDatabases.Add(dbFilenameList.First(p => p.IsSpectralLibrary));
+                    MyTaskResults.NewDatabases.Add(dbFilenameList.SpectralLibraries().First());
                 }
                 MyTaskResults.AddTaskSummaryText("Modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
                 MyTaskResults.AddTaskSummaryText("Mods types and counts:");
