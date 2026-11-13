@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -14,6 +14,7 @@ using Readers;
 using Annotation = OxyPlot.Annotations.Annotation;
 using FontWeights = OxyPlot.FontWeights;
 using HorizontalAlignment = OxyPlot.HorizontalAlignment;
+using LineSeries = OxyPlot.Series.LineSeries;
 using TextAnnotation = OxyPlot.Annotations.TextAnnotation;
 using VerticalAlignment = OxyPlot.VerticalAlignment;
 
@@ -253,7 +254,9 @@ namespace GuiFunctions
             var envelope = envIon.Envelope!;
             var product = envIon.NeutralTheoreticalProduct;
 
-            // Find the tallest peak in the envelope
+            double intensitySign = (useLiteralPassedValues && envIon.Intensity < 0) ? -1 : 1;
+
+            // Find the tallest peak in the envelope (by absolute intensity)
             var tallestPeak = envelope.Peaks.MaxBy(p => p.intensity);
             if (tallestPeak.intensity == 0)
                 return;
@@ -261,10 +264,11 @@ namespace GuiFunctions
             // Annotate all peaks in the envelope
             foreach (var (envMz, envIntensity) in envelope.Peaks)
             {
+                double displayIntensity = envIntensity * intensitySign;
                 bool isTallest = Math.Abs(envMz - tallestPeak.mz) < 0.001 && Math.Abs(envIntensity - tallestPeak.intensity) < 0.001;
 
                 // Draw peak marker (colored)
-                DrawPeak(envMz, envIntensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, null);
+                DrawPeak(envMz, displayIntensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, null);
 
                 // Draw TEXT annotation only on tallest peak
                 if (isTallest)
@@ -287,8 +291,8 @@ namespace GuiFunctions
                         FontSize = MetaDrawSettings.AnnotatedFontSize,
                         FontWeight = MetaDrawSettings.AnnotationBold ? FontWeights.Bold : 2.0,
                         StrokeThickness = 0,
-                        TextPosition = new DataPoint(envMz, envIntensity),
-                        TextVerticalAlignment = envIntensity < 0 ? VerticalAlignment.Top : VerticalAlignment.Bottom,
+                        TextPosition = new DataPoint(envMz, displayIntensity),
+                        TextVerticalAlignment = displayIntensity < 0 ? VerticalAlignment.Top : VerticalAlignment.Bottom,
                         TextHorizontalAlignment = HorizontalAlignment.Center,
                     };
 
@@ -296,7 +300,7 @@ namespace GuiFunctions
                         ? HiddenAnnotationColor
                         : ionColor;
 
-                    DrawPeak(envMz, envIntensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, peakAnnotation);
+                    DrawPeak(envMz, displayIntensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, peakAnnotation);
                 }
             }
         }
@@ -462,7 +466,9 @@ namespace GuiFunctions
                 sumOfLibraryIntensities += libraryIon.Intensity;
             }
 
-            double multiplier = -1 * sumOfMatchedIonIntensities / sumOfLibraryIntensities;
+            double multiplier = sumOfLibraryIntensities == 0
+                ? -1
+                : -1 * sumOfMatchedIonIntensities / sumOfLibraryIntensities;
 
             List<MatchedFragmentIon> mirroredLibraryIons = new List<MatchedFragmentIon>();
 
@@ -487,6 +493,97 @@ namespace GuiFunctions
             Model.Axes[1].AbsoluteMaximum = -min * 2;
             Model.Axes[1].Zoom(min, -min);
             Model.Axes[1].LabelFormatter = DrawnSequence.YAxisLabelFormatter;
+        }
+
+        /// <summary>
+        /// Draws a second spectrum's raw peaks with inverted (negative) intensities for mirror plot comparison.
+        /// Each peak is drawn as a vertical line from zero to its negated intensity value.
+        /// </summary>
+        protected void DrawInvertedSpectrum(MsDataScan scan)
+        {
+            var yArray = scan.MassSpectrum.YArray;
+            var xArray = scan.MassSpectrum.XArray;
+
+            var invertedSeries = new LineSeries
+            {
+                Color = MetaDrawSettings.UnannotatedPeakColor,
+                StrokeThickness = MetaDrawSettings.StrokeThicknessUnannotated,
+                LineStyle = LineStyle.Solid
+            };
+
+            for (int i = 0; i < xArray.Length; i++)
+            {
+                double mz = xArray[i];
+                double intensity = -yArray[i];
+                invertedSeries.Points.Add(new DataPoint(mz - 0.0001, 0));
+                invertedSeries.Points.Add(new DataPoint(mz, intensity));
+                invertedSeries.Points.Add(new DataPoint(mz + 0.0001, 0));
+            }
+            Model.Series.Add(invertedSeries);
+        }
+
+        /// <summary>
+        /// Mirrors a set of fragment ions below the zero axis (negative Y) for mirror plot comparison.
+        /// Creates new MatchedFragmentIon objects with negated intensities and annotates them
+        /// using the existing annotation pipeline with useLiteralPassedValues.
+        /// </summary>
+        protected void AnnotateMirrorIons(bool isBetaPeptide, List<MatchedFragmentIon> mirrorIons, SpectrumMatchFromTsv bottomPsm, MsDataScan mirrorScan)
+        {
+            var mirroredIons = new List<MatchedFragmentIon>(mirrorIons.Count);
+            foreach (var ion in mirrorIons)
+            {
+                var product = new Product(
+                    ion.NeutralTheoreticalProduct.ProductType,
+                    ion.NeutralTheoreticalProduct.Terminus,
+                    ion.NeutralTheoreticalProduct.NeutralMass,
+                    ion.NeutralTheoreticalProduct.FragmentNumber,
+                    ion.NeutralTheoreticalProduct.ResiduePosition,
+                    ion.NeutralTheoreticalProduct.NeutralLoss,
+                    ion.NeutralTheoreticalProduct.SecondaryProductType,
+                    ion.NeutralTheoreticalProduct.SecondaryFragmentNumber);
+
+                mirroredIons.Add(new MatchedFragmentIonWithEnvelope(product, ion.Mz,
+                    -ion.Intensity, ion.Charge, null));
+            }
+
+            if (MetaDrawSettings.AnnotateIsotopicEnvelopes && mirrorScan != null)
+            {
+                var savedScan = Scan;
+                var savedPsm = SpectrumMatch;
+                Scan = mirrorScan;
+                SpectrumMatch = bottomPsm;
+                PopulateEnvelopesForScanIfNeeded(mirrorScan, mirroredIons);
+                Scan = savedScan;
+                SpectrumMatch = savedPsm;
+            }
+
+            AnnotateMatchedIons(isBetaPeptide, mirroredIons, useLiteralPassedValues: true);
+        }
+
+        /// <summary>
+        /// Adjusts plot axes to accommodate a mirror plot with two spectra:
+        /// Y-axis is made symmetric around zero covering both scans' max intensities,
+        /// X-axis covers the union of both scan windows.
+        /// Applies YAxisLabelFormatter for absolute-value display on negative labels.
+        /// </summary>
+        protected void AdjustMirrorAxes(MsDataScan scanA, MsDataScan scanB)
+        {
+            double maxA = scanA.MassSpectrum.YArray.Max();
+            double maxB = scanB.MassSpectrum.YArray.Max();
+            double maxAbs = Math.Max(maxA, maxB) * 1.3;
+
+            var yAxis = Model.Axes[1];
+            yAxis.AbsoluteMinimum = -maxAbs * 2;
+            yAxis.AbsoluteMaximum = maxAbs * 2;
+            yAxis.Zoom(-maxAbs, maxAbs);
+            yAxis.LabelFormatter = DrawnSequence.YAxisLabelFormatter;
+
+            double xMin = Math.Min(scanA.ScanWindowRange.Minimum, scanB.ScanWindowRange.Minimum);
+            double xMax = Math.Max(scanA.ScanWindowRange.Maximum, scanB.ScanWindowRange.Maximum);
+            var xAxis = Model.Axes[0];
+            xAxis.AbsoluteMinimum = xMin - 100;
+            xAxis.AbsoluteMaximum = xMax + 100;
+            xAxis.Zoom(xMin, xMax);
         }
 
         protected void AnnotateProperties(LibrarySpectrum librarySpectrum = null)
@@ -638,6 +735,149 @@ namespace GuiFunctions
                 Font = "Arial",
                 FontSize = MetaDrawSettings.SpectrumDescriptionFontSize,
                 TextColor = OxyColors.Black, 
+            };
+
+            Model.Annotations.Add(annotation);
+        }
+
+        internal void AnnotatePropertiesBottom(SpectrumMatchFromTsv psm)
+        {
+            StringBuilder text = new StringBuilder();
+            if (MetaDrawSettings.SpectrumDescription["Precursor Charge: "])
+            {
+                text.Append("Precursor Charge: ");
+                text.Append(psm.PrecursorCharge);
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Precursor Mass: "])
+            {
+                text.Append("Precursor Mass: ");
+                text.Append(psm.PrecursorMass.ToString("F3"));
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Theoretical Mass: "])
+            {
+                text.Append("Theoretical Mass: ");
+                text.Append(
+                    double.TryParse(psm.MonoisotopicMassString, NumberStyles.Any, CultureInfo.InvariantCulture,
+                        out var monoMass)
+                        ? monoMass.ToString("F3")
+                        : psm.MonoisotopicMassString);
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Protein Accession: "])
+            {
+                text.Append("Accession: ");
+                if (psm.Accession.Length > 10)
+                {
+                    text.Append("\r\n   " + psm.Accession);
+                }
+                else
+                    text.Append(psm.Accession);
+
+                text.Append("\r\n");
+            }
+
+            if (psm.Name != null && MetaDrawSettings.SpectrumDescription["Protein: "])
+            {
+                if (GuiGlobalParamsViewModel.Instance.IsRnaMode)
+                    text.Append("Transcript: ");
+                else
+                    text.Append("Protein: ");
+
+                text.Append(psm.Name);
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Retention Time: "])
+            {
+                text.Append("Retention Time: ");
+                text.Append(psm.RetentionTime);
+                text.Append("\r\n");
+            }
+
+            if (psm.OneOverK0 != null && MetaDrawSettings.SpectrumDescription["1/K\u2080: "])
+            {
+                text.Append("1/K\u2080: ");
+                text.Append(psm.OneOverK0);
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Decoy/Contaminant/Target: "])
+            {
+                text.Append("Decoy/Contaminant/Target: ");
+                text.Append(psm.DecoyContamTarget);
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Sequence Length: "])
+            {
+                text.Append("Sequence Length: ");
+                text.Append(psm.BaseSeq.Length.ToString("F3").Split('.')[0]);
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Ambiguity Level: "])
+            {
+                text.Append("Ambiguity Level: ");
+                text.Append(psm.AmbiguityLevel);
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Score: "])
+            {
+                text.Append("Score: ");
+                text.Append(psm.Score.ToString("F3"));
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Q-Value: "])
+            {
+                text.Append("Q-Value: ");
+                text.Append(psm.QValue.ToString("E2"));
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["PEP: "])
+            {
+                text.Append("PEP: ");
+                text.Append(psm.PEP.ToString("F3"));
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["PEP Q-Value: "])
+            {
+                text.Append("PEP Q-Value: ");
+                text.Append(psm.PEP_QValue.ToString("F3"));
+                text.Append("\r\n");
+            }
+
+            double fontSize = MetaDrawSettings.SpectrumDescriptionFontSize;
+            string annotationText = text.ToString();
+            double averageCharWidth = 0.48;
+            int maxLineLength = Math.Min(annotationText.Split('\n').Max(line => line.Length), MaxCharactersPerDescriptionLine);
+            double estimatedWidth = fontSize * averageCharWidth * maxLineLength;
+            double xOffset = -estimatedWidth - 10 - (fontSize / 3);
+
+            double lineSpacing = 1.2;
+            double lineHeight = fontSize * lineSpacing;
+            int lineCount = annotationText.Split('\n').Length;
+            double textHeight = lineCount * lineHeight;
+
+            var annotation = new PlotTextAnnotation()
+            {
+                Text = text.ToString(),
+                XPosition = PlotTextAnnotation.RelativeToX.Right,
+                YPosition = PlotTextAnnotation.RelativeToY.Bottom,
+                FontWeight = 450,
+                X = xOffset,
+                Y = -(textHeight + 15),
+                Font = "Arial",
+                FontSize = MetaDrawSettings.SpectrumDescriptionFontSize,
+                TextColor = OxyColors.Black,
             };
 
             Model.Annotations.Add(annotation);
