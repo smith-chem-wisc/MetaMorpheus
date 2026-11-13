@@ -67,6 +67,27 @@ namespace TaskLayer
             || (digestionParams.SearchModeType == CleavageSpecificity.Semi && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C);
 
         /// <summary>
+        /// Whether these settings make digestion return seed oligos rather than oligos: the rnase singleN or singleC,
+        /// SearchModeType None with any terminus, or Semi (from SearchModeType or the rnase's own specificity) with a single
+        /// terminus.
+        /// </summary>
+        /// <remarks>
+        /// Since mzLib 1.0.592 (#1318) nucleic acid digestion follows <c>SearchModeType</c> as protein digestion does.
+        /// With None, <c>RnaDigestionParams</c> swaps the rnase for singleN (terminus N or FivePrime) or singleC and keeps the
+        /// named one as <c>SpecificRnase</c>, so the rnase's specificity covers None and a named singleN or singleC alike.
+        /// Semi with FivePrime or ThreePrime gives the longest oligo from each cleavage site, fixed at that end. mzLib's
+        /// <c>Rnase.GetUnmodifiedOligos</c> takes Semi from SearchModeType or, failing that, from the rnase, so an rnase
+        /// defined as semi (rnase_custom.tsv allows it) does the same under SearchModeType Full. Each leaves the other end
+        /// to a search engine that decides it from the precursor mass. Semi with Both asks for semi-specific oligos, not
+        /// seeds; mzLib 1.0.595 does not digest it for nucleic acids yet, and this rule does not refuse it.
+        /// </remarks>
+        public static bool AsksForSeeds(RnaDigestionParams digestionParams) =>
+            digestionParams.Rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
+            || ((digestionParams.SearchModeType == CleavageSpecificity.Semi || digestionParams.Rnase.CleavageSpecificity == CleavageSpecificity.Semi)
+                && digestionParams.FragmentationTerminus is FragmentationTerminus.N or FragmentationTerminus.C
+                    or FragmentationTerminus.FivePrime or FragmentationTerminus.ThreePrime);
+
+        /// <summary>
         /// Why this task cannot run with its digestion settings, or null when it can. The GUI's Run button and the command
         /// line check it for every task before a run starts; the task itself assumes its settings are valid.
         /// </summary>
@@ -80,15 +101,41 @@ namespace TaskLayer
         /// <param name="taskName">The name the user knows the task by, included in the message when given.</param>
         public string GetSeedDigestionRefusal(string taskName = null)
         {
-            if (CommonParameters?.DigestionParams is not DigestionParams digestionParams // RNA digestion has no protein seed request
-                || TaskType == MyTask.Average // averaging does not digest, so its digestion settings are never used
-                || this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific } // the non-specific search engine trims seeds
-                || !AsksForSeeds(digestionParams))
+            if (TaskType == MyTask.Average // averaging does not digest, so its digestion settings are never used
+                || this is SearchTask { SearchParameters.SearchType: SearchType.NonSpecific }) // the non-specific search engine trims seeds
             {
                 return null;
             }
 
             string which = taskName == null ? "This task" : $"Task \"{taskName}\"";
+            IDigestionParams digestion = CommonParameters?.DigestionParams; // null CommonParameters: nothing to check
+            if (digestion is RnaDigestionParams rnaDigestionParams)
+            {
+                if (!AsksForSeeds(rnaDigestionParams))
+                {
+                    return null;
+                }
+
+                // Name what AsksForSeeds decided on. Rnase, not SpecificRnase: a task file saved before mzLib 1.0.592 has no
+                // SpecificRnase, so it reads back as top-down there while Rnase is singleN or singleC.
+                Rnase rnase = rnaDigestionParams.Rnase;
+                string terminus = $"FragmentationTerminus {rnaDigestionParams.FragmentationTerminus}";
+                string setting = rnase.CleavageSpecificity is CleavageSpecificity.SingleN or CleavageSpecificity.SingleC
+                    ? rnaDigestionParams.SearchModeType == CleavageSpecificity.None
+                        ? "has SearchModeType None (non-specific)"
+                        : $"uses the rnase {rnase.Name}"
+                    : rnaDigestionParams.SearchModeType == CleavageSpecificity.Semi
+                        ? $"has SearchModeType Semi with {terminus}"
+                        : $"uses the semi-specific rnase {rnase.Name} with {terminus}";
+                return $"Cannot proceed. {which} {setting}, which gives seed oligos that only a non-specific search could use, " +
+                       "and non-specific search is not yet implemented for nucleic acids. Choose a fully specific rnase with SearchModeType Full.";
+            }
+
+            if (digestion is not DigestionParams digestionParams || !AsksForSeeds(digestionParams))
+            {
+                return null;
+            }
+
             return digestionParams.SearchModeType == CleavageSpecificity.None
                 ? $"Cannot proceed. {which} has SearchModeType None (non-specific), which gives seed peptides that only the non-specific search can use. " +
                   "Use a Search task with the non-specific search type, or choose fully or semi-specific digestion."
@@ -198,6 +245,15 @@ namespace TaskLayer
                 .FirstOrDefault();
         }
 
+        // Blank means "use the mzLib default", but unreadable text must not silently become the default chemistry.
+        private static ChemicalFormula ParseTerminalCap(string value)
+        {
+            ChemicalFormula cap = CommonParameters.TryParseFormula(value);
+            if (cap == null && !string.IsNullOrWhiteSpace(value))
+                throw new MetaMorpheusException($"Invalid RNA terminal cap '{value}'. Expected a chemical formula.");
+            return cap;
+        }
+
         private static DoubleRange ParseRetentionTimeRange(string value)
         {
             string[] bounds = value.Trim().Trim('[', ']').Split(';');
@@ -265,6 +321,11 @@ namespace TaskLayer
             // Protease, Rnase, DigestionParams and RnaDigestionParams. Defined in EngineLayer, because the index
             // cache key writes digestion parameters with the same configuration; see DigestionTomlSettings.
             .ConfigureDigestionTypes()
+            // RNA terminal caps
+            .ConfigureType<ChemicalFormula>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(formula => formula.Formula)
+                    .FromToml(tmlString => ParseTerminalCap(tmlString.Value))))
             // Switch on DeconvolutionParameters
             .ConfigureType<DeconvolutionParameters>(type => type
                 .WithConversionFor<TomlTable>(c => c
@@ -795,7 +856,8 @@ namespace TaskLayer
                         generateUnlabeledProteinsForSilac: digestionParams.GeneratehUnlabeledProteinsForSilac,
                         keepNGlycopeptide: digestionParams.KeepNGlycopeptide,
                         keepOGlycopeptide: digestionParams.KeepOGlycopeptide,
-                        respectCleavageBlockingModifications: digestionParams.RespectCleavageBlockingModifications);
+                        respectCleavageBlockingModifications: digestionParams.RespectCleavageBlockingModifications,
+                        respectCleavagePromotingModifications: digestionParams.RespectCleavagePromotingModifications);
                     break;
                 case RnaDigestionParams:
                     fileSpecificDigestionParams = new RnaDigestionParams(
@@ -908,8 +970,9 @@ namespace TaskLayer
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
                 rtPredictorName: commonParams.RTPredictorName,
-                retentionTimeRange: commonParams.RetentionTimeRange
-                );
+                retentionTimeRange: commonParams.RetentionTimeRange,
+                fivePrimeTerminus: commonParams.FivePrimeTerminus?.Formula,
+                threePrimeTerminus: commonParams.ThreePrimeTerminus?.Formula);
 
             return returnParams;
         }
@@ -1518,6 +1581,88 @@ namespace TaskLayer
             return decidedPartitions.Value <= parameters.TotalPartitions
                 ? parameters
                 : parameters.CloneWithNewTotalPartitions(decidedPartitions.Value);
+        }
+
+        /// <summary>
+        /// Re-writes TmtDesign.txt, if there is one beside the spectra files, for the files this task wrote, each named
+        /// <c>{file name}{derivedSuffix}.mzML</c> in <paramref name="outputFolder"/>: calibration's -calib and averaging's
+        /// -averaged files. The search looks for it beside the files it searches, so without this a TMT search after
+        /// either task quantified no channel. <paramref name="derivedFilesAre"/> says what the files are in a warning
+        /// ("calibrated", "averaged").
+        /// </summary>
+        protected void UpdateTmtDesignFile(List<string> currentRawFileList, string outputFolder, string derivedSuffix, string derivedFilesAre)
+        {
+            string designPath = Path.Combine(Directory.GetParent(currentRawFileList.First()).FullName, GlobalVariables.TmtExperimentalDesignFileName);
+            if (!File.Exists(designPath))
+            {
+                DeleteEarlierTmtDesign(designPath, outputFolder);
+                return;
+            }
+
+            List<TmtFileInfo> originalDesign = TmtExperimentalDesign.Read(designPath, currentRawFileList, out var errors);
+            if (errors.Any())
+            {
+                Warn($"{GlobalVariables.TmtExperimentalDesignFileName} was not re-written for the {derivedFilesAre} files: " + string.Join(" ", errors));
+                DeleteEarlierTmtDesign(designPath, outputFolder);
+                return;
+            }
+
+            List<TmtFileInfo> derivedDesign = originalDesign
+                .Select(file => new TmtFileInfo(DerivedFilePath(file.FullFilePathWithExtension, outputFolder, derivedSuffix),
+                    file.Plex, file.Fraction, file.TechnicalReplicate, file.Annotations))
+                .ToList();
+
+            if (!SamePath(Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName), designPath))
+            {
+                // Into the output folder by name: a file this task wrote nothing for keeps its original path, so the first
+                // file's folder can be the input folder, and the input design must not be overwritten.
+                _ = TmtExperimentalDesign.Write(derivedDesign, outputFolder);
+                return;
+            }
+
+            // The output folder holds the input design. Its rows describe the input files, which are still there, so they
+            // are kept and the written files' rows are added below them.
+            List<TmtFileInfo> derivedFiles = derivedDesign
+                .Where((file, i) => !SamePath(file.FullFilePathWithExtension, originalDesign[i].FullFilePathWithExtension))
+                .ToList();
+            if (derivedFiles.Any())
+            {
+                _ = TmtExperimentalDesign.AddRows(designPath, derivedFiles);
+            }
+        }
+
+        private static bool SamePath(string a, string b) =>
+            string.Equals(Path.GetFullPath(a), Path.GetFullPath(b), StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Deletes a TmtDesign.txt an earlier run wrote into <paramref name="outputFolder"/>, for a run that writes none.
+        /// Nothing empties a task folder before a run, so the search after this task would read it as describing this
+        /// run's files. The input design <paramref name="inputDesignPath"/> is never deleted, even when the output folder
+        /// is the input folder.
+        /// </summary>
+        private static void DeleteEarlierTmtDesign(string inputDesignPath, string outputFolder)
+        {
+            string earlierDesign = Path.Combine(outputFolder, GlobalVariables.TmtExperimentalDesignFileName);
+            if (!SamePath(earlierDesign, inputDesignPath))
+            {
+                File.Delete(earlierDesign);
+            }
+        }
+
+        /// <summary>
+        /// The file the next task searches in place of <paramref name="originalFilePath"/>: the <paramref name="derivedSuffix"/>
+        /// mzML this run wrote for it, or the original itself for a file it wrote none for. EverythingRunnerEngine passes
+        /// the original on for any file missing from MyTaskResults.NewSpectra: one calibration could not calibrate (not
+        /// the copy calibration writes to its output folder), a type the task skips, and a file a cancelled run never
+        /// reached. The derived name goes through ToSafeOutputPath, as both tasks' run loops do, so a name trimmed to fit
+        /// the path cap is named trimmed.
+        /// </summary>
+        private string DerivedFilePath(string originalFilePath, string outputFolder, string derivedSuffix)
+        {
+            string derived = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(originalFilePath) + derivedSuffix + ".mzML")
+                .ToSafeOutputPath(derivedSuffix + ".mzML");
+            // ignoring case, as TmtExperimentalDesign.Read matches the design's File column to the spectra files
+            return MyTaskResults.NewSpectra.FirstOrDefault(written => SamePath(written, derived)) ?? originalFilePath;
         }
 
         protected static void Warn(string v)

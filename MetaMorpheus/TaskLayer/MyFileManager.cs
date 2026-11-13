@@ -1,10 +1,13 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
+using MzLibUtil;
+using Omics.Modifications;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using Readers;
 using System.Reflection.Metadata.Ecma335;
 
@@ -71,6 +74,128 @@ namespace TaskLayer
             }
             return storedScanFor;
         }
+
+        /// <summary>
+        /// Sets each scan's reporter ion intensities from the scan they are read from (<see cref="Ms2ScanWithSpecificMass.ReporterIonScan"/>)
+        /// as <paramref name="filePath"/> stores it. Those scans are read one at a time through the reader's dynamic connection,
+        /// so no second copy of the whole file is held beside <paramref name="loaded"/>. A file that cannot be read so is read
+        /// whole and paired by position (<see cref="PairWithStoredScans"/>): a format other than .raw, .mzML and .mgf; an MGF
+        /// that repeats a SCANS= value, or an mzML whose native IDs repeat a scan= number (a Waters conversion), which their
+        /// scan index refuses; and a file whose read by scan number returns another scan
+        /// than the loaded one, as an mzML does whose native IDs do not number its spectra from 1.
+        /// </summary>
+        /// <returns>True when the scans were read one at a time, false when the file was read whole.</returns>
+        public static bool SetReporterIonIntensitiesFromStoredScans(string filePath, MsDataFile loaded,
+            IReadOnlyCollection<Ms2ScanWithSpecificMass> scans, IsobaricMassTag massTag, int maxThreads)
+        {
+            // One reader for both ways: an mzML reader holds the whole file's XML from the moment it is made, so a second one
+            // for the whole-file read would hold it twice.
+            MsDataFile stored = MsDataFileReader.GetDataFile(filePath);
+            if (TrySetReporterIonIntensitiesScanByScan(stored, scans, massTag))
+            {
+                return true;
+            }
+
+            var storedScanFor = PairWithStoredScans(loaded, stored.LoadAllStaticData(null, maxThreads));
+            foreach (var scan in scans)
+            {
+                scan.SetIsobaricMassTagReporterIonIntensities(massTag, storedScanFor);
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Reads each reporter ion scan by its scan number and keeps it only if it is the loaded scan: the same scan number,
+        /// MS order, native ID and retention time. At the first one that is not, it stops and returns false, and the caller
+        /// reads the file whole, which sets every scan again. The lowest- and highest-numbered are checked first: in a file
+        /// numbered otherwise than by position (a slice of a run, or native IDs with gaps) one of them is not the loaded scan,
+        /// so such a file is read whole without first being read in part.
+        /// </summary>
+        private static bool TrySetReporterIonIntensitiesScanByScan(MsDataFile stored, IEnumerable<Ms2ScanWithSpecificMass> scans, IsobaricMassTag massTag)
+        {
+            if (stored is not (ThermoRawFileReader or Mzml or Mgf))
+            {
+                return false;
+            }
+
+            // Any failure falls back to the whole-file read, which is how master read every file. The reader's dynamic
+            // connection builds its own scan index, apart from the whole-file read, and throws more than MzLibException:
+            // an MGF that repeats a SCANS= value (MzLibException); an mzML whose native IDs repeat a scan= number, as a
+            // Waters conversion's function=1 ... scan=1 and function=2 ... scan=1 do (ArgumentException); a non-numeric
+            // scan= (FormatException); XML the index reader cannot parse (XmlException).
+            try
+            {
+                stored.InitiateDynamicConnection();
+            }
+            catch (Exception)
+            {
+                CloseQuietly(stored); // it may have opened the file before it threw
+                return false;
+            }
+
+            try
+            {
+                var bySpectrum = scans.GroupBy(scan => scan.ReporterIonScan, ReferenceEqualityComparer.Instance).ToList();
+                if (bySpectrum.Count == 0)
+                {
+                    return true;
+                }
+                MsDataScan lowest = bySpectrum.Select(group => (MsDataScan)group.Key).MinBy(scan => scan.OneBasedScanNumber);
+                MsDataScan highest = bySpectrum.Select(group => (MsDataScan)group.Key).MaxBy(scan => scan.OneBasedScanNumber);
+                if (!IsTheLoadedScan(stored, lowest, out _) || !IsTheLoadedScan(stored, highest, out _))
+                {
+                    return false;
+                }
+
+                var storedScanFor = new Dictionary<MsDataScan, MsDataScan>(ReferenceEqualityComparer.Instance);
+                foreach (var scansOfOneSpectrum in bySpectrum)
+                {
+                    MsDataScan loadedScan = (MsDataScan)scansOfOneSpectrum.Key;
+                    if (!IsTheLoadedScan(stored, loadedScan, out MsDataScan storedScan))
+                    {
+                        return false;
+                    }
+
+                    // one spectrum at a time, so only the scan being read is held
+                    storedScanFor.Clear();
+                    storedScanFor.Add(loadedScan, storedScan);
+                    foreach (var scan in scansOfOneSpectrum)
+                    {
+                        scan.SetIsobaricMassTagReporterIonIntensities(massTag, storedScanFor);
+                    }
+                }
+                return true;
+            }
+            catch (Exception)
+            {
+                return false; // e.g. an MGF asked for a scan number its index does not hold
+            }
+            finally
+            {
+                stored.CloseDynamicConnection();
+            }
+        }
+
+        private static void CloseQuietly(MsDataFile stored)
+        {
+            try
+            {
+                stored.CloseDynamicConnection();
+            }
+            catch (Exception)
+            {
+                // nothing was opened to close
+            }
+        }
+
+        private static bool IsTheLoadedScan(MsDataFile stored, MsDataScan loadedScan, out MsDataScan storedScan)
+        {
+            storedScan = stored.GetOneBasedScanFromDynamicConnection(loadedScan.OneBasedScanNumber);
+            return storedScan != null && Identity(storedScan).Equals(Identity(loadedScan));
+        }
+
+        private static (int ScanNumber, int MsnOrder, string NativeId, double RetentionTime) Identity(MsDataScan scan) =>
+            (scan.OneBasedScanNumber, scan.MsnOrder, scan.NativeId, scan.RetentionTime);
 
         internal void DoneWithFile(string origDataFile)
         {

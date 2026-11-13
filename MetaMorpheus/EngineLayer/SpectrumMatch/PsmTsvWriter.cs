@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using Chemistry;
 using Omics;
+using Omics.BioPolymer;
 using Omics.Fragmentation;
 using Omics.Modifications;
 using Proteomics;
@@ -238,7 +239,7 @@ namespace EngineLayer
             s[SpectrumMatchFromTsvHeader.Accession] = pepWithModsIsNull ? " " : sm.Accession != null ? sm.Accession : Resolve(pepsWithMods.Select(b => b.Parent.Accession), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.Name] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.FullName), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.GeneName] = geneString;
-            s[SpectrumMatchFromTsvHeader.OrganismName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.Organism)).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.OrganismName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.Organism)).ResolvedString?.Trim() ?? " ";
 
             if (sm is PeptideSpectralMatch psm || sm is null && GlobalVariables.AnalyteType != AnalyteType.Oligo)
             {
@@ -264,7 +265,7 @@ namespace EngineLayer
 
             string theoreticalsSearched = " ";
             s[SpectrumMatchFromTsvHeader.TheoreticalsSearched] = theoreticalsSearched;
-            s[SpectrumMatchFromTsvHeader.DecoyContaminantTarget] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.IsDecoy ? "D" : b.Parent.IsContaminant ? "C" : "T")).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.DecoyContaminantTarget] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => DecoyContaminantTargetLabel.For(b.Parent))).ResolvedString;
         }
 
         /// <summary>

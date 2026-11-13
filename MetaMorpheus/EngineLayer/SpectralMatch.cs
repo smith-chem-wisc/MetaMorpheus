@@ -10,6 +10,7 @@ using Omics;
 using Omics.SpectralMatch;
 using System;
 using Omics.Digestion;
+using System.Buffers;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.SpectrumMatch;
 using System.Globalization;
@@ -284,7 +285,8 @@ namespace EngineLayer
 
         public void AddOrReplace(IBioPolymerWithSetMods pwsm, double newScore, int notch, bool reportAllAmbiguity, List<MatchedFragmentIon> matchedFragmentIons)
         {
-            if (newScore - Score > ToleranceForScoreDifferentiation) //if new score beat the old score, overwrite it
+            double scoreDiff = newScore - Score;
+            if (scoreDiff > ToleranceForScoreDifferentiation) //if new score beat the old score, overwrite it
             {
                 _BestMatchingBioPolymersWithSetMods.Clear();
                 _BestMatchingBioPolymersWithSetMods.Add(new(notch, pwsm, matchedFragmentIons, newScore));
@@ -296,7 +298,7 @@ namespace EngineLayer
                 Score = newScore;
                 Notch = notch;
             }
-            else if (newScore - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
+            else if (scoreDiff > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {
                 _BestMatchingBioPolymersWithSetMods.Add(new(notch, pwsm, matchedFragmentIons, newScore));
 
@@ -484,6 +486,55 @@ namespace EngineLayer
 
         #endregion
 
+        #region Quantification
+
+        /// <summary>
+        /// What this match identifies with the modification sites left out: the base sequence, and each modification by
+        /// what it is, sorted. Two positional isomers (oxidation on M3, or on M5) give the same string. Null when the
+        /// candidates differ in base sequence or in their modifications. A modification is what it is by its type, its
+        /// name without the residue (<see cref="Modification.OriginalId"/>, so Phosphorylation on S and on T are one
+        /// modification) and its chemical formula. A formula alone does not say what a modification is: Hydroxylation on
+        /// P and Oxidation on M are both one oxygen, and a match that cannot tell them apart is ambiguous in which
+        /// modification it carries, not only in where. A modification with no formula is compared by its mass, which
+        /// every modification on a scored peptide has: the peptide's mass is the sum of them.
+        /// </summary>
+        public string GetSiteFreeIdentity()
+        {
+            if (BaseSequence == null)
+            {
+                return null;
+            }
+
+            var modificationsOfEachCandidate = _BestMatchingBioPolymersWithSetMods
+                .Select(b => string.Join(";", b.SpecificBioPolymer.AllModsOneIsNterminus.Values
+                    .Select(m => m.ModificationType + ":" + (m.OriginalId ?? m.IdWithMotif) + " "
+                        + (m.ChemicalFormula?.Formula ?? m.MonoisotopicMass.Value.ToString("F5", CultureInfo.InvariantCulture)))
+                    .OrderBy(key => key, StringComparer.Ordinal)))
+                .Distinct()
+                .Take(2)
+                .ToList();
+
+            return modificationsOfEachCandidate.Count == 1 ? BaseSequence + " " + modificationsOfEachCandidate[0] : null;
+        }
+
+        /// <summary>
+        /// True when the match is ambiguous ONLY in where its modifications sit: two or more full sequences, one base
+        /// sequence, one resolved mass, and the same modifications on every candidate (<see cref="GetSiteFreeIdentity"/>).
+        /// A match ambiguous in which modifications it carries is not.
+        /// </summary>
+        public bool IsLocalizationAmbiguous =>
+            FullSequence == null && BioPolymerWithSetModsMonoisotopicMass.HasValue && GetSiteFreeIdentity() != null;
+
+        /// <summary>
+        /// The candidates' full sequences, each once, in ordinal order: the sites a localization-ambiguous match leaves
+        /// open. Empty unless <see cref="IsLocalizationAmbiguous"/>.
+        /// </summary>
+        public IEnumerable<string> GetLocalizationCandidates() => IsLocalizationAmbiguous
+            ? _BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.FullSequence).Distinct().OrderBy(s => s, StringComparer.Ordinal)
+            : Enumerable.Empty<string>();
+
+        #endregion
+
         #region Silac
 
         protected SpectralMatch(SpectralMatch psm, List<SpectralMatchHypothesis> bestMatchingPeptides)
@@ -582,91 +633,134 @@ namespace EngineLayer
         {
             if (string.IsNullOrEmpty(this.BaseSequence) ||
                 !this.MatchedFragmentIons.Any()) return;
-            //Pull C terminal and N terminal Fragments and amino acid numbers
-            var nTermFragmentAAPositions = this.MatchedFragmentIons.Where(p =>
-                    p.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime)
-                .Select(j => j.NeutralTheoreticalProduct.AminoAcidPosition).Distinct().ToList();
+            int sequenceLength = this.BaseSequence.Length;
+            int arrayLength = sequenceLength + 3;
 
-            var cTermFragmentAAPositions = this.MatchedFragmentIons.Where(p =>
-                    p.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime)
-                .Select(j => j.NeutralTheoreticalProduct.AminoAcidPosition).Distinct().ToList();
+            bool[] nTermSeen = ArrayPool<bool>.Shared.Rent(arrayLength);
+            bool[] cTermSeen = ArrayPool<bool>.Shared.Rent(arrayLength);
+            bool[] covered = ArrayPool<bool>.Shared.Rent(arrayLength);
 
-            //Create a hashset to store the covered amino acid positions
-            HashSet<int> fragmentCoveredAminoAcids = new();
+            // a rented array may hold whatever its last user left in it
+            Array.Clear(nTermSeen, 0, arrayLength);
+            Array.Clear(cTermSeen, 0, arrayLength);
+            Array.Clear(covered, 0, arrayLength);
 
-            //Check N term frags first
-            if (nTermFragmentAAPositions.Any())
+            try
             {
-                nTermFragmentAAPositions.Sort();
+                bool hasNTerm = false;
+                bool hasCTerm = false;
 
-                //if the final NFragment is present, last AA is covered
-                if (nTermFragmentAAPositions.Contains(this.BaseSequence.Length - 1))
+                foreach (var matchedIon in this.MatchedFragmentIons)
                 {
-                    fragmentCoveredAminoAcids.Add(this.BaseSequence.Length);
-                }
-
-                // if the first NFragment is present, first AA is covered
-                if (nTermFragmentAAPositions.Contains(1))
-                {
-                    fragmentCoveredAminoAcids.Add(1);
-                }
-
-                //Check all amino acids except for the last one in the list
-                for (int i = 0; i < nTermFragmentAAPositions.Count - 1; i++)
-                {
-                    //sequential AA, second one is covered
-                    if (nTermFragmentAAPositions[i + 1] - nTermFragmentAAPositions[i] == 1)
+                    int aaPosition = matchedIon.NeutralTheoreticalProduct.AminoAcidPosition;
+                    if (aaPosition < 1 || aaPosition > sequenceLength)
                     {
-                        fragmentCoveredAminoAcids.Add(nTermFragmentAAPositions[i + 1]);
+                        continue;
                     }
 
-                    //check to see if the position is covered from both directions, inclusive
-                    if (cTermFragmentAAPositions.Contains(nTermFragmentAAPositions[i + 1]))
+                    if (matchedIon.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.N or FragmentationTerminus.FivePrime)
                     {
-                        fragmentCoveredAminoAcids.Add(nTermFragmentAAPositions[i + 1]);
+                        nTermSeen[aaPosition] = true;
+                        hasNTerm = true;
                     }
-
-                    //check to see if the position is covered from both directions, exclusive
-                    if (cTermFragmentAAPositions.Contains(nTermFragmentAAPositions[i + 1] + 2))
+                    else if (matchedIon.NeutralTheoreticalProduct.Terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime)
                     {
-                        fragmentCoveredAminoAcids.Add(nTermFragmentAAPositions[i + 1] + 1);
+                        cTermSeen[aaPosition] = true;
+                        hasCTerm = true;
                     }
                 }
 
+                if (hasNTerm)
+                {
+                    if (sequenceLength > 1 && nTermSeen[sequenceLength - 1])
+                    {
+                        covered[sequenceLength] = true;
+                    }
+
+                    if (nTermSeen[1])
+                    {
+                        covered[1] = true;
+                    }
+
+                    int prevN = 0;
+                    for (int pos = 1; pos <= sequenceLength; pos++)
+                    {
+                        if (!nTermSeen[pos])
+                        {
+                            continue;
+                        }
+
+                        if (prevN != 0)
+                        {
+                            if (pos - prevN == 1)
+                            {
+                                covered[pos] = true;
+                            }
+
+                            if (hasCTerm)
+                            {
+                                if (cTermSeen[pos])
+                                {
+                                    covered[pos] = true;
+                                }
+
+                                if (pos + 2 <= sequenceLength && cTermSeen[pos + 2])
+                                {
+                                    covered[pos + 1] = true;
+                                }
+                            }
+                        }
+
+                        prevN = pos;
+                    }
+                }
+
+                if (hasCTerm)
+                {
+                    if (sequenceLength >= 2 && cTermSeen[2])
+                    {
+                        covered[1] = true;
+                    }
+
+                    if (cTermSeen[sequenceLength])
+                    {
+                        covered[sequenceLength] = true;
+                    }
+
+                    int prevC = 0;
+                    for (int pos = 1; pos <= sequenceLength; pos++)
+                    {
+                        if (!cTermSeen[pos])
+                        {
+                            continue;
+                        }
+
+                        if (prevC != 0 && pos - prevC == 1)
+                        {
+                            covered[prevC] = true;
+                        }
+
+                        prevC = pos;
+                    }
+                }
+
+                var fragmentCoveredAminoAcidsList = new List<int>();
+                for (int pos = 1; pos <= sequenceLength; pos++)
+                {
+                    if (covered[pos])
+                    {
+                        fragmentCoveredAminoAcidsList.Add(pos);
+                    }
+                }
+
+                this.FragmentCoveragePositionInPeptide = fragmentCoveredAminoAcidsList;
             }
-
-            //Check C term frags
-            if (cTermFragmentAAPositions.Any())
+            finally
             {
-                cTermFragmentAAPositions.Sort();
-
-                //if the second AA is present, the first AA is covered
-                if (cTermFragmentAAPositions.Contains(2))
-                {
-                    fragmentCoveredAminoAcids.Add(1);
-                }
-
-                //if the last AA is present, the final AA is covered
-                if (cTermFragmentAAPositions.Contains(this.BaseSequence.Length))
-                {
-                    fragmentCoveredAminoAcids.Add(this.BaseSequence.Length);
-                }
-
-                //check all amino acids except for the last one in the list
-                for (int i = 0; i < cTermFragmentAAPositions.Count - 1; i++)
-                {
-                    //sequential AA, the first one is covered
-                    if (cTermFragmentAAPositions[i + 1] - cTermFragmentAAPositions[i] == 1)
-                    {
-                        fragmentCoveredAminoAcids.Add(cTermFragmentAAPositions[i]);
-                    }
-                }
+                ArrayPool<bool>.Shared.Return(nTermSeen);
+                ArrayPool<bool>.Shared.Return(cTermSeen);
+                ArrayPool<bool>.Shared.Return(covered);
             }
-
-            //store in PSM
-            var fragmentCoveredAminoAcidsList = fragmentCoveredAminoAcids.ToList();
-            fragmentCoveredAminoAcidsList.Sort();
-            this.FragmentCoveragePositionInPeptide = fragmentCoveredAminoAcidsList;
         }
 
         /// <summary>

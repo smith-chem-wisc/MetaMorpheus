@@ -1,6 +1,7 @@
 using EngineLayer;
 using EngineLayer.FdrAnalysis;
 using GuiFunctions;
+using GuiFunctions.Util;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -41,6 +42,7 @@ namespace MetaMorpheusGUI
         private CustomFragmentationWindow CustomFragmentationWindow;
         private MassDifferenceAcceptorSelectionViewModel _massDifferenceAcceptorViewModel;
         private FragmentationParamsViewModel _fragmentationParamsViewModel;
+        private RnaTerminalCapsViewModel _rnaTerminalCapsViewModel;
         private string _defaultMultiplexType = "TMT10";
         private DeconHostViewModel DeconHostViewModel;
 
@@ -358,6 +360,15 @@ namespace MetaMorpheusGUI
                 QValueThresholdTextBox.Text = "0.01";
             }
 
+            // A task still at the bottom-up default starts from the default for its search type
+            double pepTrainingQ = task.CommonParameters.QValueCutoffForPepCalculation;
+            if (pepTrainingQ == PepAnalysisEngine.DefaultQValueCutoffForPepCalculation(false, false))
+            {
+                pepTrainingQ = PepAnalysisEngine.DefaultQValueCutoffForPepCalculation(GuiGlobalParamsViewModel.Instance.IsRnaMode,
+                    task.CommonParameters.DigestionParams.DigestionAgent.Name == "top-down");
+            }
+            PepTrainingQValueTextBox.Text = pepTrainingQ.ToString(CultureInfo.InvariantCulture);
+
             if (task.CommonParameters.PepQValueThreshold < 1)
             {
                 PepQValueThresholdTextBox.Text = task.CommonParameters.PepQValueThreshold.ToString(CultureInfo.InvariantCulture);
@@ -463,6 +474,8 @@ namespace MetaMorpheusGUI
 
             _fragmentationParamsViewModel = new FragmentationParamsViewModel(task.CommonParameters, task.SearchParameters);
             FragmentationParametersControl.DataContext = _fragmentationParamsViewModel;
+            _rnaTerminalCapsViewModel = new RnaTerminalCapsViewModel(task.CommonParameters);
+            RnaTerminalCapsControl.DataContext = _rnaTerminalCapsViewModel;
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -509,6 +522,11 @@ namespace MetaMorpheusGUI
             string separationType = SeparationTypeComboBox.SelectedItem.ToString();
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode && !_rnaTerminalCapsViewModel.Validate(out string terminalCapError))
+            {
+                System.Windows.MessageBox.Show(terminalCapError, "Invalid terminal cap", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
             CustomFragmentationWindow.Close();
 
             FragmentationTerminus fragmentationTerminus = GetFragmentationTerminus();
@@ -550,16 +568,12 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                digestionParamsToSave = new DigestionParams(
-                    protease: protease.Name,
-                    maxMissedCleavages: maxMissedCleavages,
-                    minPeptideLength: minPeptideLengthValue,
-                    maxPeptideLength: maxPeptideLengthValue,
-                    maxModificationIsoforms: maxModificationIsoformsValue,
-                    initiatorMethionineBehavior: initiatorMethionineBehavior,
+                // pass only what this window shows; every other digestion setting is kept from the loaded task
+                digestionParamsToSave = TaskWindowDigestionParams.ForSave(TheTask.CommonParameters.DigestionParams,
+                    protease.Name, maxMissedCleavages, minPeptideLengthValue, maxPeptideLengthValue, maxModificationIsoformsValue,
                     maxModsForPeptides: maxModsForPeptideValue,
-                    searchModeType: searchModeType,
-                    fragmentationTerminus: fragmentationTerminus,
+                    initiatorMethionineBehavior: initiatorMethionineBehavior,
+                    searchMode: (searchModeType, fragmentationTerminus),
                     generateUnlabeledProteinsForSilac: CheckBoxQuantifyUnlabeledForSilac.IsChecked.Value);
             }
                 
@@ -661,6 +675,7 @@ namespace MetaMorpheusGUI
                 useProvidedPrecursorInfo: useProvidedPrecursorInfo,
                 qValueThreshold: !PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(QValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 pepQValueThreshold: PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(PepQValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
+                qValueCutoffForPepCalculation: double.Parse(PepTrainingQValueTextBox.Text, CultureInfo.InvariantCulture),
                 scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,
@@ -668,6 +683,8 @@ namespace MetaMorpheusGUI
                 precursorMassTolerance: PrecursorMassTolerance,
                 productMassTolerance: ProductMassTolerance,
                 digestionParams: digestionParamsToSave,
+                fivePrimeTerminus: _rnaTerminalCapsViewModel.FivePrimeTerminus,
+                threePrimeTerminus: _rnaTerminalCapsViewModel.ThreePrimeTerminus,
                 separationType: separationType,
                 trimMs1Peaks: TrimMs1Peaks,
                 trimMsMsPeaks: TrimMsMsPeaks,
@@ -950,6 +967,8 @@ namespace MetaMorpheusGUI
                     case "top-down":
                         if (UpdateGUISettings.UseTopDownRecommendedSettings())
                         {
+                            PepTrainingQValueTextBox.Text = PepAnalysisEngine.DefaultQValueCutoffForPepCalculation(isRnaMode, true)
+                                .ToString(CultureInfo.InvariantCulture);
                             DeconHostViewModel.DoPrecursorDeconvolution = true;
                             DeconHostViewModel.UseProvidedPrecursors = false;
                             if (isRnaMode)

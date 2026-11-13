@@ -92,7 +92,8 @@ namespace Test
             Assert.That(proteinGroup1.UniquePeptides.Count, Is.EqualTo(1));
             Assert.That(proteinGroup1.AllPeptides.Count, Is.EqualTo(2));
             var proteinGroup2 = proteinGroups.Where(h => h.ProteinGroupName == "2|3").First();
-            Assert.That(proteinGroup2.UniquePeptides.Count, Is.EqualTo(0));
+            // PEPR from trypsin is shared with group 1; PEPR from Arg-C is in proteins 2 and 3 only, so unique to this group
+            Assert.That(proteinGroup2.UniquePeptides, Is.EquivalentTo(new[] { pepA_2A, pepA_3A }));
             Assert.That(proteinGroup2.AllPeptides.Count, Is.EqualTo(4));
         }
 
@@ -518,7 +519,8 @@ namespace Test
                 Assert.That(proteinGroups.ElementAt(0).UniquePeptides.Count, Is.EqualTo(1));
                 Assert.That(proteinGroups.ElementAt(0).UniquePeptides.ElementAt(0).FullSequence, Is.EqualTo("ABC"));
                 Assert.That(proteinGroups.ElementAt(1).ProteinGroupName, Is.EqualTo("2|3"));
-                Assert.That(proteinGroups.ElementAt(1).UniquePeptides.Count, Is.EqualTo(0));
+                // ABC from test6 is in proteins 2 and 3 only, which form this one group, so it is unique to the group
+                Assert.That(proteinGroups.ElementAt(1).UniquePeptides, Is.EquivalentTo(new[] { pepA_2Dp2, pepA_3Dp2 }));
                 Assert.That(proteinGroups.ElementAt(1).AllPeptides.Count, Is.EqualTo(2));
             }
             else
@@ -527,7 +529,8 @@ namespace Test
                 Assert.That(proteinGroups.ElementAt(1).UniquePeptides.Count, Is.EqualTo(1));
                 Assert.That(proteinGroups.ElementAt(1).UniquePeptides.ElementAt(0).FullSequence, Is.EqualTo("ABC"));
                 Assert.That(proteinGroups.ElementAt(0).ProteinGroupName, Is.EqualTo("2|3"));
-                Assert.That(proteinGroups.ElementAt(0).UniquePeptides.Count, Is.EqualTo(0));
+                // ABC from test6 is in proteins 2 and 3 only, which form this one group, so it is unique to the group
+                Assert.That(proteinGroups.ElementAt(0).UniquePeptides, Is.EquivalentTo(new[] { pepA_2Dp2, pepA_3Dp2 }));
                 Assert.That(proteinGroups.ElementAt(0).AllPeptides.Count, Is.EqualTo(2));
             }
         }
@@ -867,7 +870,8 @@ namespace Test
             Assert.That(proteinGroup1.UniquePeptides.Count, Is.EqualTo(1));
             Assert.That(proteinGroup1.AllPeptides.Count, Is.EqualTo(1));
             var proteinGroup2 = proteinGroups.Where(h => h.ProteinGroupName == "4").First();
-            Assert.That(proteinGroup2.UniquePeptides.Count, Is.EqualTo(0));
+            // unique to its group: no other group lists its peptides (the protein that also has them formed none)
+            Assert.That(proteinGroup2.UniquePeptides, Is.EquivalentTo(proteinGroup2.AllPeptides));
             Assert.That(proteinGroup2.AllPeptides.Count, Is.EqualTo(2));
         }
 

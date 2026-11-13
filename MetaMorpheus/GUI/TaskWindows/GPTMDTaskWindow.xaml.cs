@@ -83,6 +83,8 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private RnaTerminalCapsViewModel _rnaTerminalCapsViewModel;
+
         private void UpdateFieldsFromTask(GptmdTask task)
         {
             GlobalVariables.AnalyteType = task.CommonParameters.DetermineAnalyteType();
@@ -126,6 +128,7 @@ namespace MetaMorpheusGUI
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             WriteDecoysCheckBox.IsChecked = task.GptmdParameters.WriteDecoys;
+            AlternativeSitesForDatabaseModsCheckBox.IsChecked = task.GptmdParameters.AddAlternativeSitesForDatabaseMods;
 
             TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
@@ -223,6 +226,8 @@ namespace MetaMorpheusGUI
             {
                 filter.IsSelected = TheTask.GptmdParameters.GptmdFilters.Any(f => f.GetType() == filter.Filter.GetType());
             }
+            _rnaTerminalCapsViewModel = new RnaTerminalCapsViewModel(task.CommonParameters);
+            RnaTerminalCapsControl.DataContext = _rnaTerminalCapsViewModel;
         }
 
         private void PopulateChoices()
@@ -467,6 +472,11 @@ namespace MetaMorpheusGUI
             int maxModsPerPeptide = int.Parse(MaxModsPerPeptideTextBox.Text, CultureInfo.InvariantCulture);
             InitiatorMethionineBehavior initiatorMethionineBehavior = (InitiatorMethionineBehavior)InitiatorMethionineBehaviorComboBox.SelectedIndex;
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode && !_rnaTerminalCapsViewModel.Validate(out string terminalCapError))
+            {
+                System.Windows.MessageBox.Show(terminalCapError, "Invalid terminal cap", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
             CustomFragmentationWindow.Close();
 
             Tolerance productMassTolerance;
@@ -562,18 +572,11 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                // this window has no semi-specific control, so keep the loaded task's search mode rather than resetting it to Full
-                var (searchModeType, fragmentationTerminus) = TaskWindowSearchMode.Preserve(TheTask.CommonParameters.DigestionParams);
-                digestionParamsToSave = new DigestionParams(
-                    protease: protease.Name,
-                    maxMissedCleavages: maxMissedCleavages,
-                    minPeptideLength: minPeptideLength,
-                    maxPeptideLength: maxPeptideLength,
-                    maxModificationIsoforms: maxModificationIsoforms,
+                // pass only what this window shows; the search mode and every other digestion setting are kept from the loaded task
+                digestionParamsToSave = TaskWindowDigestionParams.ForSave(TheTask.CommonParameters.DigestionParams,
+                    protease.Name, maxMissedCleavages, minPeptideLength, maxPeptideLength, maxModificationIsoforms,
                     maxModsForPeptides: maxModsPerPeptide,
-                    initiatorMethionineBehavior: initiatorMethionineBehavior,
-                    searchModeType: searchModeType,
-                    fragmentationTerminus: fragmentationTerminus);
+                    initiatorMethionineBehavior: initiatorMethionineBehavior);
             }
 
             CommonParameters commonParamsToSave = new CommonParameters(
@@ -582,6 +585,8 @@ namespace MetaMorpheusGUI
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "GPTMDTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                 digestionParams: digestionParamsToSave,
+                fivePrimeTerminus: _rnaTerminalCapsViewModel.FivePrimeTerminus,
+                threePrimeTerminus: _rnaTerminalCapsViewModel.ThreePrimeTerminus,
                     dissociationType: dissociationType,
                     scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                     precursorMassTolerance: precursorMassTolerance,
@@ -608,6 +613,7 @@ namespace MetaMorpheusGUI
             }
             TheTask.GptmdParameters.GptmdFilters = FilterOptions.Where(f => f.IsSelected).Select(f => f.Filter).ToList();
             TheTask.GptmdParameters.WriteDecoys = WriteDecoysCheckBox.IsChecked.Value;
+            TheTask.GptmdParameters.AddAlternativeSitesForDatabaseMods = AlternativeSitesForDatabaseModsCheckBox.IsChecked.Value;
             TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;

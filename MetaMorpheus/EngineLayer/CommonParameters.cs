@@ -1,3 +1,4 @@
+using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
 using Omics.Fragmentation;
@@ -66,7 +67,9 @@ namespace EngineLayer
             IFragmentationParams fragmentationParams = null,
             PrecursorMassMatchMode precursorMassMatchMode = PrecursorMassMatchMode.Monoisotopic,
                 string rtPredictorName = RTPredictorNames.Chronologer,
-            DoubleRange retentionTimeRange = null)
+            DoubleRange retentionTimeRange = null,
+            string fivePrimeTerminus = null,
+            string threePrimeTerminus = null)
 
         {
             retentionTimeRange ??= new DoubleRange(0, double.MaxValue);
@@ -146,6 +149,11 @@ namespace EngineLayer
 
             RTPredictorName = rtPredictorName;
 
+            // Terminal caps only mean something for RNA; null means "use mzLib's default cap".
+            bool isRna = digestionParams is RnaDigestionParams;
+            FivePrimeTerminus = isRna ? TryParseFormula(fivePrimeTerminus) : null;
+            ThreePrimeTerminus = isRna ? TryParseFormula(threePrimeTerminus) : null;
+
             CustomIons = digestionParams.ProductsFromDissociationType()[DissociationType.Custom];
 
             // reset custom fragmentation product types to default empty list
@@ -161,7 +169,7 @@ namespace EngineLayer
         //    If you forget this, and the user uses file-specific parameters, your settings will be overwritten by default values!
 
         public string TaskDescriptor { get; private set; }
-        public int MaxThreadsToUsePerFile { get; private set; }
+        public int MaxThreadsToUsePerFile { get; set; }
         public IEnumerable<(string, string)> ListOfModsFixed { get; private set; }
         public IEnumerable<(string, string)> ListOfModsVariable { get; private set; }
         public bool DoPrecursorDeconvolution { get; set; }
@@ -229,6 +237,38 @@ namespace EngineLayer
         public DIAparameters? DIAparameters { get; set; } //only for DIA analysis involving pseudo ms2 scan generation
         public IFragmentationParams FragmentationParameters { get; set; }
         public string RTPredictorName { get; private set; }
+
+        /// <summary>
+        /// The 5' cap applied to every RNA loaded from a database (e.g. O-3P-1).
+        /// Null in protein mode, and in RNA mode when the mzLib default should be used.
+        /// </summary>
+        public ChemicalFormula FivePrimeTerminus { get; private set; }
+
+        /// <summary>
+        /// The 3' cap applied to every RNA loaded from a database (e.g. OH).
+        /// Null in protein mode, and in RNA mode when the mzLib default should be used.
+        /// </summary>
+        public ChemicalFormula ThreePrimeTerminus { get; private set; }
+
+        /// <summary>
+        /// Parses a chemical formula, returning null (the mzLib default cap) if the text is blank or cannot be understood.
+        /// </summary>
+        public static ChemicalFormula TryParseFormula(string formula)
+        {
+            if (string.IsNullOrWhiteSpace(formula))
+                return null;
+            try
+            {
+                // An empty formula ("C0", "H-1H") is the same as no cap. Test the text, not AtomCount: it is a signed
+                // sum, so valid caps that net to zero atoms ("H-1Na", "O-1S") must be kept.
+                var parsed = ChemicalFormula.ParseFormula(formula.Trim());
+                return parsed.Formula.Length == 0 ? null : parsed;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
 
         public CommonParameters Clone()
         {
@@ -304,7 +344,9 @@ namespace EngineLayer
                                 FragmentationParameters,
                                 PrecursorMassMatchMode,
                                 RTPredictorName,
-                                 RetentionTimeRange);
+                                 RetentionTimeRange,
+                                 FivePrimeTerminus?.Formula,
+                                 ThreePrimeTerminus?.Formula);
         }
 
         /// <summary>
@@ -358,7 +400,9 @@ namespace EngineLayer
                                 FragmentationParameters,
                                 PrecursorMassMatchMode,
                                 RTPredictorName,
-                                 RetentionTimeRange);
+                                 RetentionTimeRange,
+                                 FivePrimeTerminus?.Formula,
+                                 ThreePrimeTerminus?.Formula);
 
             // CustomIons is not a constructor parameter — the constructor reads it from the global
             // dissociation-type dictionary — so copy it across explicitly. GlycoSearchEngine branches on

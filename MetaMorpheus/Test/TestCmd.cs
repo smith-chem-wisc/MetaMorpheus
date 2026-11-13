@@ -1380,6 +1380,173 @@ namespace Test
             Assert.That(written.ToString(), Does.Contain("Searched file 'stray.raw' has no SDRF row"));
         }
 
+        /// <summary>Renames the empty spectra files a test SDRF helper wrote, so the search reads another name than the SDRF gives.</summary>
+        private static void RenameSpectra(string data, params (string From, string To)[] renames)
+        {
+            foreach (var (from, to) in renames)
+            {
+                File.Move(Path.Combine(data, from), Path.Combine(data, to));
+            }
+        }
+
+        /// <summary>
+        /// QP-S35: --sdrfDesign joins the -s files to the SDRF's rows with mzLib's SdrfSearchScope before reading the
+        /// design, so an SDRF naming the acquired X.raw is read for a search of X.mzML, or of the X-calib.mzML or
+        /// X-averaged.mzML an earlier MetaMorpheus run wrote. Refused before ("has no SDRF row"). The design names the
+        /// searched files, and MetaMorpheus reads it back for them. Nothing was set aside, so nothing more is printed.
+        /// </summary>
+        [TestCase(".mzML")]
+        [TestCase("-calib.mzML")]
+        [TestCase("-averaged.mzML")]
+        [TestCase("-calib-averaged.mzML")]
+        public static void TestSdrfDesignReadsAnSdrfNamingTheRawFileForASearchOfItsMzml(string searchedSuffix)
+        {
+            var (sdrf, data) = WriteLabelFreeSdrf(("a1.raw", "WT", "DMSO", 1, 1), ("b1.raw", "KO", "DMSO", 1, 1));
+            RenameSpectra(data, ("a1.raw", "a1" + searchedSuffix), ("b1.raw", "b1" + searchedSuffix));
+            var settings = SdrfDesignSettings(sdrf, data, "genotype");
+
+            var written = new StringWriter();
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(0), written.ToString());
+            var searched = settings.Spectra.Select(Path.GetFullPath).ToList();
+            var readBack = ExperimentalDesign.ReadExperimentalDesign(
+                Path.Combine(data, GlobalVariables.ExperimentalDesignFileName), searched, out var errors);
+            Assert.That(errors, Is.Empty);
+            Assert.That(readBack.Select(f => (f.FilenameWithoutExtension, f.Condition)),
+                Is.EquivalentTo(new[] { ("a1" + Path.GetFileNameWithoutExtension(searchedSuffix), "WT"), ("b1" + Path.GetFileNameWithoutExtension(searchedSuffix), "KO") }));
+            Assert.That(written.ToString(), Does.Not.Contain("SdrfSearchScope"), "with nothing set aside, the join prints nothing");
+            Assert.That(Program.ResolveExperimentalDesign(data, searched, normalizationRequested: true, reportToConsole: false), Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// What the join could not place is printed with the design report, SharedStem first: it means one search file
+        /// whose rows name two different acquired files, which only the depositor can resolve. Only the lists that
+        /// have entries are printed, and the report's line numbers are said to count the kept rows when rows were dropped.
+        /// </summary>
+        [Test]
+        public static void TestSdrfDesignPrintsWhatTheJoinSetAsideSharedStemFirst()
+        {
+            // a1 is listed twice, as a1.raw and as a1.mzML (PXD001587's pattern); z9.raw is not searched; stray has no row.
+            var (sdrf, data) = WriteLabelFreeSdrf(
+                ("a1.raw", "WT", "DMSO", 1, 1), ("z9.raw", "WT", "DMSO", 2, 1), ("a1.mzML", "WT", "DMSO", 1, 1));
+            File.Delete(Path.Combine(data, "a1.raw"));
+            File.Delete(Path.Combine(data, "z9.raw"));
+            File.WriteAllText(Path.Combine(data, "stray.mzML"), string.Empty);
+            var settings = SdrfDesignSettings(sdrf, data, "genotype");
+
+            var written = new StringWriter();
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(5), written.ToString());
+            var lines = written.ToString().Split(Environment.NewLine).ToList();
+            int sharedStem = lines.FindIndex(l => l.Contains("SharedStem") && l.EndsWith("a1.mzML: a1.raw, a1.mzML"));
+            int withoutRow = lines.FindIndex(l => l.Contains("SearchedWithoutRow") && l.EndsWith("stray.mzML"));
+            int dropped = lines.FindIndex(l => l.Contains("DroppedDataFiles") && l.EndsWith("z9.raw"));
+            int report = lines.FindIndex(l => l.StartsWith("Label-free design REFUSED"));
+            Assert.That(sharedStem, Is.GreaterThanOrEqualTo(0), written.ToString());
+            Assert.That(withoutRow, Is.GreaterThan(sharedStem), "SharedStem is printed first");
+            Assert.That(dropped, Is.GreaterThan(sharedStem), "SharedStem is printed first");
+            Assert.That(report, Is.GreaterThan(Math.Max(withoutRow, dropped)), "the join's lists come with, and before, the design report");
+            Assert.That(written.ToString(), Does.Not.Contain("Ambiguous"), "an empty list is not printed");
+            Assert.That(written.ToString(), Does.Contain("2 of 3 SDRF rows kept").And.Contain("count the kept rows, not the lines of the SDRF file"));
+        }
+
+        /// <summary>
+        /// An SDRF with no comment[data file] cannot be joined (SdrfSearchScope throws), so it is read as given and
+        /// refused by the design reader, which names the missing column, exactly as before the join was added.
+        /// </summary>
+        [Test]
+        public static void TestSdrfDesignWithNoDataFileColumnIsRefusedByTheReaderAsBefore()
+        {
+            var (sdrf, data) = WriteLabelFreeSdrf(("a1.raw", "WT", "DMSO", 1, 1));
+            File.WriteAllText(sdrf, File.ReadAllText(sdrf).Replace("comment[data file]", "comment[file uri]"));
+            var settings = SdrfDesignSettings(sdrf, data, "genotype");
+
+            var written = new StringWriter();
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(5), written.ToString());
+            Assert.That(written.ToString(), Does.Contain("The SDRF has neither 'comment[searched data file]' nor 'comment[data file]'"));
+        }
+
+        /// <summary>
+        /// An SDRF that lists each run twice, as X.raw and as X.mzML with the same sample, is refused for a search of
+        /// either name: each spectra file finds both rows (SharedStem), so the reader sees one file named by two rows.
+        /// Master read it, matching the searched name exactly. The refusal is kept, as the search-time InputSdrfPath
+        /// join refuses it too, and the SharedStem line says how to fix it (pcruzparri's review of #2949). Label-free
+        /// and TMT alike.
+        /// </summary>
+        [TestCase(false, ".mzML")]
+        [TestCase(false, ".raw")]
+        [TestCase(true, ".mzML")]
+        public static void TestSdrfDesignRefusesAnSdrfListingARunUnderTwoNamesAndSaysHowToFixIt(bool tmt, string searched)
+        {
+            string other = searched == ".raw" ? ".mzML" : ".raw";
+            var (sdrf, data) = tmt
+                ? WriteTmt6Sdrf(("a1.raw", "p1"), ("a1.mzML", "p1"))
+                : WriteLabelFreeSdrf(("a1.raw", "WT", "DMSO", 1, 1), ("a1.mzML", "WT", "DMSO", 1, 1),
+                    ("b1.raw", "KO", "DMSO", 1, 1), ("b1.mzML", "KO", "DMSO", 1, 1));
+            foreach (string file in Directory.GetFiles(data, "*" + other))
+            {
+                File.Delete(file);
+            }
+            var settings = tmt
+                ? TmtSdrfDesignSettings(sdrf, data, "TMT6", plexColumn: "comment[plex]")
+                : SdrfDesignSettings(sdrf, data, "genotype");
+
+            var written = new StringWriter();
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(5), written.ToString());
+            Assert.That(written.ToString(), Does.Contain("SharedStem").And.Contain("such as X.raw and X.mzML, keep one row")
+                .And.Contain("No design file was written"));
+        }
+
+        /// <summary>
+        /// A search of part of an SDRF: the reader sees only the kept rows, so it cannot tell that rows were set aside,
+        /// and says a gap in replicate numbers is how the SDRF numbers its samples. The join's block says, before the
+        /// report, that the gap may be a sample whose file is not searched (pcruzparri's review of #2949). The design
+        /// written is the same as master's.
+        /// </summary>
+        [Test]
+        public static void TestSdrfDesignOfPartOfAnSdrfSaysAGapMayBeASampleNotSearched()
+        {
+            var (sdrf, data) = WriteLabelFreeSdrf(
+                ("r1.raw", "WT", "DMSO", 1, 1), ("r2.raw", "WT", "DMSO", 2, 1), ("r3.raw", "WT", "DMSO", 3, 1));
+            File.Delete(Path.Combine(data, "r2.raw"));
+            var settings = SdrfDesignSettings(sdrf, data, "genotype");
+
+            var written = new StringWriter();
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(0), written.ToString());
+            Assert.That(written.ToString(), Does.Contain("2 of 3 SDRF rows kept")
+                .And.Contain("1 row(s) were set aside, so a gap in replicate or fraction numbers may be a sample whose file is not searched"));
+        }
+
+        /// <summary>
+        /// When the SDRF names none of the -s files, no row is kept, and the design is refused with the join's own lists,
+        /// which point at the -s files. The reader is not handed an empty document, whose "The SDRF has no rows" would
+        /// point at the SDRF (pcruzparri's review of #2949). Label-free and TMT alike; exit 5, as before.
+        /// </summary>
+        [TestCase(false)]
+        [TestCase(true)]
+        public static void TestSdrfDesignOfFilesTheSdrfDoesNotNameIsRefusedNamingTheFiles(bool tmt)
+        {
+            var (sdrf, data) = tmt
+                ? WriteTmt6Sdrf(("a1.raw", "p1"))
+                : WriteLabelFreeSdrf(("a1.raw", "WT", "DMSO", 1, 1));
+            File.Delete(Path.Combine(data, "a1.raw"));
+            File.WriteAllText(Path.Combine(data, "other.raw"), string.Empty);
+            var settings = tmt
+                ? TmtSdrfDesignSettings(sdrf, data, "TMT6", plexColumn: "comment[plex]")
+                : SdrfDesignSettings(sdrf, data, "genotype");
+
+            var written = new StringWriter();
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(5), written.ToString());
+            Assert.That(written.ToString(), Does.Contain("SearchedWithoutRow: other.raw")
+                .And.Contain("No SDRF row names a spectra file given with -s")
+                .And.Contain("No design file was written")
+                .And.Not.Contain("The SDRF has no rows"));
+        }
+
         [Test]
         public static void TestSdrfDesignNeverOverwritesADesignFile()
         {
@@ -1651,6 +1818,42 @@ namespace Test
                 "the sample, condition and replicate the SDRF gives, as written");
 
             Assert.That(Program.ResolveExperimentalDesign(data, searched, normalizationRequested: true, reportToConsole: false), Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// QP-S35's measured case (PXReprise, PXD034564): the experiment.sdrf.tsv a Calibrate -> Search wrote names the
+        /// acquired X.raw and, in comment[searched data file], the X-calib.mzML that search read. A new search of the
+        /// .raw files was refused, because the reader keys on comment[searched data file] (MAP-12). SdrfSearchScope
+        /// replaces the earlier search's column with this one's, so the design is read. And a TMT search of X-calib.mzML
+        /// against an SDRF naming only X.raw is read too.
+        /// </summary>
+        [TestCase(true, ".raw")]
+        [TestCase(false, "-calib.mzML")]
+        public static void TestSdrfTmtDesignJoinsTheSearchedFilesToTheSdrf(bool earlierSearchWroteCalib, string searchedSuffix)
+        {
+            var (sdrf, data) = WriteTmt6Sdrf(("pool1_f1.raw", "pool1"), ("pool2_f1.raw", "pool2"));
+            if (earlierSearchWroteCalib)
+            {
+                const int dataFile = 6; // WriteIsobaricSdrf's comment[data file]
+                File.WriteAllLines(sdrf, File.ReadAllLines(sdrf).Select((line, i) =>
+                {
+                    var cells = line.Split('\t').ToList();
+                    cells.Insert(dataFile + 1, i == 0 ? "comment[searched data file]" : Path.GetFileNameWithoutExtension(cells[dataFile]) + "-calib.mzML");
+                    return string.Join("\t", cells);
+                }));
+            }
+            RenameSpectra(data, ("pool1_f1.raw", "pool1_f1" + searchedSuffix), ("pool2_f1.raw", "pool2_f1" + searchedSuffix));
+            var settings = TmtSdrfDesignSettings(sdrf, data, "TMT6", plexColumn: "comment[plex]");
+
+            var written = new StringWriter();
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(0), written.ToString());
+            var searched = settings.Spectra.Select(Path.GetFullPath).ToList();
+            var readBack = TmtExperimentalDesign.Read(Path.Combine(data, GlobalVariables.TmtExperimentalDesignFileName), searched, out var errors);
+            Assert.That(errors, Is.Empty);
+            Assert.That(readBack.Select(f => (Path.GetFileName(f.FullFilePathWithExtension), f.Plex)),
+                Is.EquivalentTo(new[] { ("pool1_f1" + searchedSuffix, "pool1"), ("pool2_f1" + searchedSuffix, "pool2") }));
+            Assert.That(readBack.All(f => f.Annotations.Count == 6));
         }
 
         /// <summary>The plex can come from the file name or be the one plex every file belongs to.</summary>

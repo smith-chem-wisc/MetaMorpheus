@@ -168,6 +168,49 @@ namespace EngineLayer.Util
         }
 
         /// <summary>
+        /// Runs <paramref name="work"/> while holding <paramref name="threads"/> of this budget's threads, for work that sets its own
+        /// thread count rather than taking items from <see cref="Run"/>, such as loading a spectra file. Without it, a file loading
+        /// while other files searched ran its threads on top of a budget the searches already filled, so a task ran more threads than
+        /// MaxThreadsToUsePerFile allows: with a budget of 32 and six files at once, up to 32 + 5 x 5 = 57.
+        /// </summary>
+        /// <remarks>
+        /// The work waits until it holds every thread it asked for. While it waits it counts as a file below its share, so files
+        /// already searching give threads back after their current scan, as they do for a file that starts searching later. Once it
+        /// holds them it stops asking, like a file that has handed out all its work: it does not count toward anyone's share, so files
+        /// searching are never told to give back threads it would not take. Asking for no more than a file's share
+        /// (<see cref="FileParallelism"/>'s ThreadsPerFile never is) means the wait ends as soon as the searches give way; asking for
+        /// more can wait until other files finish.
+        /// </remarks>
+        /// <param name="threads"> Threads the work runs on; capped at <see cref="TotalThreads"/>, and below 1 means 1. </param>
+        /// <returns> What <paramref name="work"/> returns. Its exceptions propagate, and its threads are returned either way. </returns>
+        public T RunHolding<T>(int threads, Func<T> work)
+        {
+            int wanted = Math.Clamp(threads, 1, TotalThreads);
+            Share share = Join();
+            try
+            {
+                while (share.Threads < wanted && !GlobalVariables.StopLoops)
+                {
+                    if (!share.TryTakeThread())
+                    {
+                        share.WaitForChange(WaitBeforeLookingAgain);
+                    }
+                }
+                share.FinishHandingOutWork();
+                return work();
+            }
+            finally
+            {
+                share.FinishHandingOutWork();
+                while (share.Threads > 0)
+                {
+                    share.ReturnThread();
+                }
+                share.Leave();
+            }
+        }
+
+        /// <summary>
         /// Must be called under the lock.
         /// </summary>
         private int CountSearching()

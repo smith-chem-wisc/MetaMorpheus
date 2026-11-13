@@ -251,6 +251,65 @@ namespace Test
         }
 
         /// <summary>
+        /// A LowCID search loads without a filter, so nothing is trimmed, but GetMs2Scans bins each MS2 spectrum in place for
+        /// XCorr, and the search read its reporter ions from the binned spectrum: every reporter of every PSM was written as 0.
+        /// They are read from the stored scans, here from the mzML and from an MGF written from it.
+        /// </summary>
+        [TestCase("mzML")]
+        [TestCase("mgf")]
+        public static void LowCidReporterIons_AreReadFromTheStoredScan_NotTheBinnedOne(string format)
+        {
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT11_LowCID_SearchTask.toml"), MetaMorpheusTask.tomlConfig);
+            Assert.That(searchTask.CommonParameters.DissociationType, Is.EqualTo(DissociationType.LowCID));
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsLowCid_" + format);
+
+            try
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+                Directory.CreateDirectory(folder);
+                string spectra = TestFile("VA084TQ_6.mzML");
+                if (format == "mgf")
+                {
+                    spectra = Path.Combine(folder, "VA084TQ_6.mgf");
+                    MgfMethods.WriteMgf(MsDataFileReader.GetDataFile(TestFile("VA084TQ_6.mzML")).LoadAllStaticData(), spectra);
+                }
+                string outputFolder = Path.Combine(folder, "output");
+                new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", searchTask) },
+                    new List<string> { spectra }, new List<DbForTask> { new DbForTask(TestFile("mouseTMT.fasta"), false) },
+                    outputFolder).Run();
+
+                string[] lines = File.ReadAllLines(Path.Combine(outputFolder, "search", "AllPSMs.psmtsv"));
+                string[] header = lines[0].Split('\t');
+                int scanColumn = System.Array.IndexOf(header, "Scan Number");
+                int channels = tag.ReporterIonMzs.Length;
+                var written = lines.Skip(1).Select(l => l.Split('\t'))
+                    .Select(c => (scan: int.Parse(c[scanColumn], CultureInfo.InvariantCulture), reporters: c[^channels..]))
+                    .ToList();
+
+                var stored = MsDataFileReader.GetDataFile(spectra).LoadAllStaticData();
+                var binned = new MyFileManager(true).LoadFile(spectra, searchTask.CommonParameters);
+                _ = MetaMorpheusTask.GetMs2Scans(binned, spectra, searchTask.CommonParameters).ToList();
+
+                Assert.That(written, Is.Not.Empty);
+                Assert.That(written.Any(w => !Formatted(Extract(stored, w.scan, tag)).SequenceEqual(Formatted(Extract(binned, w.scan, tag)))),
+                    Is.True, "the fixture only means anything if binning changes the reporters of some PSM's scan");
+
+                Assert.Multiple(() =>
+                {
+                    foreach (var (scan, reporters) in written)
+                    {
+                        Assert.That(reporters, Is.EqualTo(Formatted(Extract(stored, scan, tag))), $"scan {scan}");
+                    }
+                });
+            }
+            finally
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
         /// Pairing is by position, so it is checked: a position whose two scans have different scan numbers is left out, and
         /// a scan with no pair is read from its loaded spectrum, as master read every scan. Here the second read is the mzML
         /// the MGF was written from, which holds the repeated scan once, so every position after the repeat disagrees.
@@ -295,5 +354,277 @@ namespace Test
                 if (Directory.Exists(folder)) Directory.Delete(folder, true);
             }
         }
+
+        /// <summary>
+        /// Writes <paramref name="mzml"/> unindexed, with its native IDs renumbered to number its spectra from
+        /// <paramref name="firstScan"/>. VA084TQ_6.mzML is a slice of a run (scan=31006 to scan=31014), so a read by scan
+        /// number does not find the loaded scan in it; a whole run converted from .raw numbers its spectra from 1. Numbered
+        /// from 0, a read by scan number finds a scan, but the next one.
+        /// </summary>
+        private static string WriteMzmlNumberedFrom(string mzml, string path, int firstScan)
+        {
+            string text = File.ReadAllText(mzml);
+            int start = text.IndexOf("<mzML ", System.StringComparison.Ordinal);
+            int end = text.IndexOf("</mzML>", System.StringComparison.Ordinal) + "</mzML>".Length;
+            int first = int.Parse(System.Text.RegularExpressions.Regex.Match(text, @"scan=(\d+)").Groups[1].Value, CultureInfo.InvariantCulture);
+            string renumbered = System.Text.RegularExpressions.Regex.Replace(text[start..end], @"scan=(\d+)",
+                m => "scan=" + (int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture) - first + firstScan).ToString(CultureInfo.InvariantCulture));
+            File.WriteAllText(path, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + renumbered);
+            return path;
+        }
+
+        /// <summary>
+        /// One of the spectra files the tests below search: VA084TQ_6.mzML itself, or written from it in <paramref name="folder"/>.
+        /// </summary>
+        private static string Fixture(string fixture, string folder) => fixture switch
+        {
+            "mzML" => TestFile("VA084TQ_6.mzML"),
+            "mzMLNumberedFromOne" => WriteMzmlNumberedFrom(TestFile("VA084TQ_6.mzML"), Path.Combine(folder, "VA084TQ_6.mzML"), 1),
+            "mzMLNumberedFromZero" => WriteMzmlNumberedFrom(TestFile("VA084TQ_6.mzML"), Path.Combine(folder, "VA084TQ_6.mzML"), 0),
+            "mzMLWithTwoIdsSwapped" => SwapSpectrumIds(WriteMzmlNumberedFrom(TestFile("VA084TQ_6.mzML"), Path.Combine(folder, "VA084TQ_6.mzML"), 1), 3, 4),
+            "mgf" => WriteMgf(TestFile("VA084TQ_6.mzML"), Path.Combine(folder, "VA084TQ_6.mgf")),
+            "mgfWithRepeatedScan" => WriteMgfWithRepeatedScan(TestFile("VA084TQ_6.mzML"), Path.Combine(folder, "VA084TQ_6.mgf")),
+            "mzMLWithARepeatedScanNumber" => ReplaceSpectrumId(WriteMzmlNumberedFrom(TestFile("VA084TQ_6.mzML"), Path.Combine(folder, "VA084TQ_6.mzML"), 1), 9, "function=2 process=0 scan=8"),
+            "mzMLWithANonNumericScanNumber" => ReplaceSpectrumId(WriteMzmlNumberedFrom(TestFile("VA084TQ_6.mzML"), Path.Combine(folder, "VA084TQ_6.mzML"), 1), 9, "controllerType=0 controllerNumber=1 scan=x9"),
+            _ => throw new System.ArgumentException(fixture)
+        };
+
+        /// <summary>
+        /// Gives the spectrum numbered <paramref name="scan"/> the native ID <paramref name="id"/>. The whole-file read numbers
+        /// spectra by position and loads either file below; the dynamic connection's scan index reads the number from the
+        /// native ID and throws: on a repeated scan= number, as a Waters conversion writes (function=1 ... scan=1 and
+        /// function=2 ... scan=1), an ArgumentException; on a non-numeric one, a FormatException.
+        /// </summary>
+        private static string ReplaceSpectrumId(string mzml, int scan, string id)
+        {
+            File.WriteAllText(mzml, File.ReadAllText(mzml).Replace($"id=\"controllerType=0 controllerNumber=1 scan={scan}\"", $"id=\"{id}\""));
+            return mzml;
+        }
+
+        /// <summary>
+        /// Swaps the native IDs of two spectra, so every scan number is found by a read by scan number, two of them in the
+        /// other's spectrum.
+        /// </summary>
+        private static string SwapSpectrumIds(string mzml, int a, int b)
+        {
+            string Id(int scan) => $"id=\"controllerType=0 controllerNumber=1 scan={scan}\"";
+            File.WriteAllText(mzml, File.ReadAllText(mzml).Replace(Id(a), "SWAPPED").Replace(Id(b), Id(a)).Replace("SWAPPED", Id(b)));
+            return mzml;
+        }
+
+        private static string WriteMgf(string mzml, string mgf)
+        {
+            MgfMethods.WriteMgf(MsDataFileReader.GetDataFile(mzml).LoadAllStaticData(), mgf);
+            return mgf;
+        }
+
+        /// <summary>
+        /// A LowCID search bins each MS2 spectrum in place for XCorr, so reporter ions read from the loaded spectrum are wrong.
+        /// Read one scan at a time from the file, they are the stored scan's: here an mzML numbered from scan 1, read that way
+        /// (see the test below). #2922's LowCidReporterIons_AreReadFromTheStoredScan_NotTheBinnedOne covers the MGF, which is
+        /// read that way too, and the slice mzML, which is read whole.
+        /// </summary>
+        [TestCase("mzMLNumberedFromOne")]
+        public static void LowCidReporterIons_ReadOneScanAtATime_AreTheStoredScans(string fixture)
+        {
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT11_LowCID_SearchTask.toml"), MetaMorpheusTask.tomlConfig);
+            Assert.That(searchTask.CommonParameters.DissociationType, Is.EqualTo(DissociationType.LowCID));
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsLowCid_" + fixture);
+
+            try
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+                Directory.CreateDirectory(folder);
+                string spectra = Fixture(fixture, folder);
+                string outputFolder = Path.Combine(folder, "output");
+                new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("search", searchTask) },
+                    new List<string> { spectra }, new List<DbForTask> { new DbForTask(TestFile("mouseTMT.fasta"), false) },
+                    outputFolder).Run();
+
+                string[] lines = File.ReadAllLines(Path.Combine(outputFolder, "search", "AllPSMs.psmtsv"));
+                string[] header = lines[0].Split('\t');
+                int scanColumn = System.Array.IndexOf(header, "Scan Number");
+                int channels = tag.ReporterIonMzs.Length;
+                var written = lines.Skip(1).Select(l => l.Split('\t'))
+                    .Select(c => (scan: int.Parse(c[scanColumn], CultureInfo.InvariantCulture), reporters: c[^channels..]))
+                    .ToList();
+
+                var stored = MsDataFileReader.GetDataFile(spectra).LoadAllStaticData();
+                var binned = new MyFileManager(true).LoadFile(spectra, searchTask.CommonParameters);
+                _ = MetaMorpheusTask.GetMs2Scans(binned, spectra, searchTask.CommonParameters).ToList();
+
+                Assert.That(written, Is.Not.Empty);
+                Assert.That(written.Any(w => !Formatted(Extract(stored, w.scan, tag)).SequenceEqual(Formatted(Extract(binned, w.scan, tag)))),
+                    Is.True, "the fixture only means anything if binning changes the reporters of some PSM's scan");
+
+                Assert.Multiple(() =>
+                {
+                    foreach (var (scan, reporters) in written)
+                    {
+                        Assert.That(reporters, Is.EqualTo(Formatted(Extract(stored, scan, tag))), $"scan {scan}");
+                    }
+                });
+            }
+            finally
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// The search read the whole file again to take reporter ions from it, a second copy beside the loaded one while the
+        /// next file loaded. It now reads only the scans reporter ions come from, one at a time, where a read by scan number
+        /// returns the loaded scan, and the file whole where it does not: VA084TQ_6.mzML (a slice, numbered from scan=31006),
+        /// the same numbered from scan=0 or with two spectra's native IDs swapped (a read by scan number returns another
+        /// spectrum), an MGF that repeats a SCANS= value, and an mzML whose scan index the dynamic connection cannot build (a
+        /// repeated or non-numeric scan= number; the folder's deletion also shows the file was closed). Either way the values
+        /// are the ones the whole-file read gives.
+        /// </summary>
+        [TestCase("mzMLNumberedFromOne", true)]
+        [TestCase("mgf", true)]
+        [TestCase("mzML", false)]
+        [TestCase("mzMLNumberedFromZero", false)]
+        [TestCase("mzMLWithTwoIdsSwapped", false)]
+        [TestCase("mgfWithRepeatedScan", false)]
+        [TestCase("mzMLWithARepeatedScanNumber", false)]
+        [TestCase("mzMLWithANonNumericScanNumber", false)]
+        public static void StoredScans_AreReadOneAtATime_WhereAReadByScanNumberFindsTheLoadedScan(string fixture, bool oneAtATime)
+        {
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsOneAtATime_" + fixture);
+
+            try
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+                Directory.CreateDirectory(folder);
+                string spectra = Fixture(fixture, folder);
+                var loaded = new MyFileManager(true).LoadFile(spectra, searchTask.CommonParameters);
+                var ms2Scans = MetaMorpheusTask.GetMs2Scans(loaded, spectra, searchTask.CommonParameters).ToList();
+                Assert.That(ms2Scans, Is.Not.Empty);
+
+                Assert.That(MyFileManager.SetReporterIonIntensitiesFromStoredScans(spectra, loaded, ms2Scans, tag, 1), Is.EqualTo(oneAtATime));
+                var read = ms2Scans.Select(s => Formatted(s.IsobaricMassTagReporterIonIntensities)).ToList();
+
+                var storedScanFor = MyFileManager.PairWithStoredScans(loaded, MsDataFileReader.GetDataFile(spectra).LoadAllStaticData());
+                var fromLoaded = new List<string[]>();
+                var fromWholeFile = new List<string[]>();
+                foreach (var scan in ms2Scans)
+                {
+                    scan.SetIsobaricMassTagReporterIonIntensities(tag);
+                    fromLoaded.Add(Formatted(scan.IsobaricMassTagReporterIonIntensities));
+                    scan.SetIsobaricMassTagReporterIonIntensities(tag, storedScanFor);
+                    fromWholeFile.Add(Formatted(scan.IsobaricMassTagReporterIonIntensities));
+                }
+
+                Assert.That(fromWholeFile, Is.Not.EqualTo(fromLoaded), "the fixture only means anything if trimming removes a reporter");
+                Assert.That(read, Is.EqualTo(fromWholeFile));
+            }
+            finally
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// MS3 reporter scans read one at a time: MS3_TMT11_Mouse_snip.mzML is a slice (scan=28207 on), so it is read whole;
+        /// renumbered from scan 1, a read by scan number finds each loaded MS3 child, and the values are the whole-file read's.
+        /// The load keeps 10 peaks in each of 10 windows, as in the MS3 test above, so trimming removes reporters.
+        /// </summary>
+        [Test]
+        public static void Ms3ReporterIons_AreReadOneAtATime_FromTheStoredChildScans()
+        {
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag("TMT11", GlobalVariables.AllModsKnown, out var tag), Is.True);
+            var commonParameters = new CommonParameters(dissociationType: DissociationType.CID,
+                ms3childScanDissociationType: DissociationType.HCD, trimMsMsPeaks: false,
+                numberOfPeaksToKeepPerWindow: 10, numberOfWindows: 10);
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsOneAtATime_Ms3");
+
+            try
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+                Directory.CreateDirectory(folder);
+                string mzml = WriteMzmlNumberedFrom(TestFile("MS3_TMT11_Mouse_snip.mzML"), Path.Combine(folder, "MS3_TMT11_Mouse_snip.mzML"), 1);
+                var loaded = new MyFileManager(true).LoadFile(mzml, commonParameters);
+                var ms2Scans = MetaMorpheusTask.GetMs2Scans(loaded, mzml, commonParameters).ToList();
+                Assert.That(ms2Scans.Any(s => s.ReporterIonScan.MsnOrder == 3), Is.True);
+
+                Assert.That(MyFileManager.SetReporterIonIntensitiesFromStoredScans(mzml, loaded, ms2Scans, tag, 1), Is.True);
+                var read = ms2Scans.Select(s => Formatted(s.IsobaricMassTagReporterIonIntensities)).ToList();
+
+                var storedScanFor = MyFileManager.PairWithStoredScans(loaded, MsDataFileReader.GetDataFile(mzml).LoadAllStaticData());
+                var fromLoaded = new List<string[]>();
+                var fromWholeFile = new List<string[]>();
+                foreach (var scan in ms2Scans)
+                {
+                    scan.SetIsobaricMassTagReporterIonIntensities(tag);
+                    fromLoaded.Add(Formatted(scan.IsobaricMassTagReporterIonIntensities));
+                    scan.SetIsobaricMassTagReporterIonIntensities(tag, storedScanFor);
+                    fromWholeFile.Add(Formatted(scan.IsobaricMassTagReporterIonIntensities));
+                }
+
+                Assert.That(fromWholeFile, Is.Not.EqualTo(fromLoaded), "the fixture only means anything if trimming removes a reporter");
+                Assert.That(read, Is.EqualTo(fromWholeFile));
+            }
+            finally
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// A file with no scans to set has nothing to read: it counts as read one at a time, and nothing is read whole.
+        /// </summary>
+        [Test]
+        public static void NoScans_NothingIsRead_AndItCountsAsOneAtATime()
+        {
+            string mzml = TestFile("VA084TQ_6.mzML");
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag("TMT11", GlobalVariables.AllModsKnown, out var tag), Is.True);
+            var loaded = MsDataFileReader.GetDataFile(mzml).LoadAllStaticData();
+
+            Assert.That(MyFileManager.SetReporterIonIntensitiesFromStoredScans(mzml, loaded, new List<Ms2ScanWithSpecificMass>(), tag, 1), Is.True);
+        }
+
+        /// <summary>
+        /// An MGF's read by scan number throws for a number its SCANS= index does not hold. That is caught, and the file is
+        /// read whole: here the highest-numbered loaded scan is renumbered past every SCANS= value, so it is left unpaired and
+        /// read from its loaded spectrum, and every other scan from its stored block.
+        /// </summary>
+        [Test]
+        public static void Mgf_AskedForAScanNumberItDoesNotHold_IsReadWhole()
+        {
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
+            string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsMgfMissingScan");
+
+            try
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+                Directory.CreateDirectory(folder);
+                string mgf = Fixture("mgf", folder);
+                var loaded = new MyFileManager(true).LoadFile(mgf, searchTask.CommonParameters);
+                var ms2Scans = MetaMorpheusTask.GetMs2Scans(loaded, mgf, searchTask.CommonParameters).ToList();
+                Assert.That(ms2Scans, Is.Not.Empty);
+                ms2Scans.Select(s => s.ReporterIonScan).MaxBy(s => s.OneBasedScanNumber).SetOneBasedScanNumber(999999);
+
+                Assert.That(MyFileManager.SetReporterIonIntensitiesFromStoredScans(mgf, loaded, ms2Scans, tag, 1), Is.False);
+                var read = ms2Scans.Select(s => Formatted(s.IsobaricMassTagReporterIonIntensities)).ToList();
+
+                var storedScanFor = MyFileManager.PairWithStoredScans(loaded, MsDataFileReader.GetDataFile(mgf).LoadAllStaticData());
+                var fromWholeFile = new List<string[]>();
+                foreach (var scan in ms2Scans)
+                {
+                    scan.SetIsobaricMassTagReporterIonIntensities(tag, storedScanFor);
+                    fromWholeFile.Add(Formatted(scan.IsobaricMassTagReporterIonIntensities));
+                }
+                Assert.That(read, Is.EqualTo(fromWholeFile));
+            }
+            finally
+            {
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+
     }
 }

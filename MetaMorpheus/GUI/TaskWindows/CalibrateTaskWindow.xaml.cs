@@ -69,6 +69,8 @@ namespace MetaMorpheusGUI
 
         internal CalibrationTask TheTask { get; private set; }
 
+        private RnaTerminalCapsViewModel _rnaTerminalCapsViewModel;
+
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
             GlobalVariables.AnalyteType = task.CommonParameters.DetermineAnalyteType();
@@ -184,6 +186,8 @@ namespace MetaMorpheusGUI
             {
                 ye.VerifyCheckState();
             }
+            _rnaTerminalCapsViewModel = new RnaTerminalCapsViewModel(task.CommonParameters);
+            RnaTerminalCapsControl.DataContext = _rnaTerminalCapsViewModel;
         }
 
         private void PopulateChoices()
@@ -281,6 +285,11 @@ namespace MetaMorpheusGUI
             int maxModsPerPeptide = int.Parse(MaxModsPerPeptideTextBox.Text, CultureInfo.InvariantCulture);
             //bool addTruncations = addTruncations.
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            if (GuiGlobalParamsViewModel.Instance.IsRnaMode && !_rnaTerminalCapsViewModel.Validate(out string terminalCapError))
+            {
+                System.Windows.MessageBox.Show(terminalCapError, "Invalid terminal cap", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
             CustomFragmentationWindow.Close();
             IDigestionParams digestionParamsToSave;
             if (isRnaMode)
@@ -294,17 +303,14 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                // this window has no semi-specific control, so keep the loaded task's search mode rather than resetting it to Full
-                var (searchModeType, fragmentationTerminus) = TaskWindowSearchMode.Preserve(TheTask.CommonParameters.DigestionParams);
-                digestionParamsToSave = new DigestionParams(
-                    protease: protease.Name,
-                    maxMissedCleavages: maxMissedCleavages,
-                    minPeptideLength: minPeptideLength,
-                    maxPeptideLength: maxPeptideLength,
-                    maxModificationIsoforms: maxModificationIsoforms,
+                // pass only what this window shows; the search mode and every other digestion setting are kept from the loaded task
+                digestionParamsToSave = TaskWindowDigestionParams.ForSave(TheTask.CommonParameters.DigestionParams,
+                    protease.Name, maxMissedCleavages, minPeptideLength, maxPeptideLength, maxModificationIsoforms,
                     maxModsForPeptides: maxModsPerPeptide,
-                    searchModeType: searchModeType,
-                    fragmentationTerminus: fragmentationTerminus);
+                    // the box is filled only for a task with protein digestion parameters; with nothing selected, keep the loaded value
+                    initiatorMethionineBehavior: InitiatorMethionineBehaviorComboBox.SelectedIndex >= 0
+                        ? (InitiatorMethionineBehavior)InitiatorMethionineBehaviorComboBox.SelectedIndex
+                        : null);
             }
 
             var listOfModsVariable = new List<(string, string)>();
@@ -356,6 +362,8 @@ namespace MetaMorpheusGUI
                     taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "CalibrateTask",
                     maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                     digestionParams: digestionParamsToSave,
+                    fivePrimeTerminus: _rnaTerminalCapsViewModel.FivePrimeTerminus,
+                    threePrimeTerminus: _rnaTerminalCapsViewModel.ThreePrimeTerminus,
                     dissociationType: dissociationType,
                     scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                     listOfModsFixed: listOfModsFixed,
@@ -380,6 +388,8 @@ namespace MetaMorpheusGUI
                     taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "CalibrateTask",
                     maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                     digestionParams: digestionParamsToSave,
+                    fivePrimeTerminus: _rnaTerminalCapsViewModel.FivePrimeTerminus,
+                    threePrimeTerminus: _rnaTerminalCapsViewModel.ThreePrimeTerminus,
                     dissociationType: dissociationType,
                     scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                     listOfModsFixed: listOfModsFixed,

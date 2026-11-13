@@ -190,6 +190,9 @@
                                     </ComboBox>
                                 </StackPanel>
 
+                                <!-- RNA terminal caps (takes the place of the initiator methionine in RNA mode) -->
+                                <local:RnaTerminalCapsControl x:Name="RnaTerminalCapsControl" Margin="5 5 5 0" Grid.Column="1" Grid.Row="3" />
+
                                 <!-- Separation type -->
                                 <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="4">
                                     <Label x:Name="separationTypeLabel" Content="Separation Type:" Width="150" />
@@ -731,6 +734,9 @@
                                             records which sample each file came from, and nothing in a search knows that. Without
                                             it the search still runs, a warning names what is missing, and those columns say
                                             "not available".
+                                            <LineBreak/>
+                                            A TMT or iTRAQ search reads TmtDesign.txt instead, and writes one row for each sample
+                                            in each channel.
                                         </TextBlock>
                                     </CheckBox.ToolTip>
                                 </CheckBox>
@@ -1147,8 +1153,8 @@
                                         </StackPanel>
                                     </GroupBox>
                                     <GroupBox Header="Posterior Error Probability">
-                                        <StackPanel Margin="2">
-                                            <CheckBox Margin="3 0 0 0" x:Name="IterativePepTrainingCheckBox" Content="Iterative PEP training">
+                                        <StackPanel Margin="2" Orientation="Horizontal">
+                                            <CheckBox Margin="5 0 10 0" x:Name="IterativePepTrainingCheckBox" Content="Iterative PEP training"  VerticalAlignment="Center">
                                                 <ToolTipService.ToolTip>
                                                     <ToolTip ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                         <TextBlock>
@@ -1159,6 +1165,19 @@
                                                     </ToolTip>
                                                 </ToolTipService.ToolTip>
                                             </CheckBox>
+                                            <StackPanel Orientation="Horizontal" Margin="10 0" VerticalAlignment="Center">
+                                                <Label Content="PEP training q-value:" Width="120" />
+                                                <local:DoubleTextBoxControl x:Name="PepTrainingQValueTextBox" Width="45"
+                                                         ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                    <TextBox.ToolTip>
+                                                        <TextBlock>
+                                                            Targets with a q-value at or below this value are the positive examples the PEP model trains on.
+                                                            <LineBreak />
+                                                            Defaults: 0.005 for bottom-up, 0.025 for top-down and 0.05 for RNA. Values below 0.005 (0.025 for top-down) are raised to it.
+                                                        </TextBlock>
+                                                    </TextBox.ToolTip>
+                                                </local:DoubleTextBoxControl>
+                                            </StackPanel>
                                         </StackPanel>
                                     </GroupBox>
                                     <GroupBox Header="Mass Difference Histogram Analysis">

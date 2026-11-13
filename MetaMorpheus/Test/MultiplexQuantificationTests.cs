@@ -30,6 +30,14 @@ namespace Test
         private static readonly string[] Tmt11Channels =
             { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" };
 
+        /// <summary>
+        /// TMT11 on lysine and on the peptide N-terminus, fixed as a TMT search fixes them. Only a peptide that carries
+        /// the label is quantified by its channels, so the hand-built matches below are digested with it.
+        /// </summary>
+        private static readonly List<Modification> Tmt11Labels = GlobalVariables.AllModsKnown
+            .Where(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif is "TMT11 on K" or "TMT11 on X")
+            .ToList();
+
         /// <summary>The staged spectra file's name without extension, which every sample column carries.</summary>
         private const string StagedMzmlName = "VA084TQ_6";
 
@@ -414,6 +422,86 @@ namespace Test
         }
 
         /// <summary>
+        /// A TMT search's peptide tables carry peptide-level q-values, as every other search's do, so the rows that pass
+        /// the 1% filter are the peptides results.txt counts. The multiplex writer used to drop the peptide-level flag and
+        /// write each peptide's best PSM's PSM-level values instead: on PXD034564, 44,037 target rows passed against
+        /// results.txt's 43,114. Two copies of one file give every peptide two PSMs, so PSM-level values show.
+        /// </summary>
+        [Test]
+        public static void TmtSearch_PeptideTablesCarryPeptideLevelQValues()
+        {
+            string root = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtPeptideLevelQValues");
+            string dataFolder = Path.Combine(root, "data");
+            string outputFolder = Path.Combine(root, "out");
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+
+            try
+            {
+                string first = StageMzml(dataFolder);
+                string second = Path.Combine(dataFolder, "VA084TQ_6_copy.mzML");
+                File.Copy(first, second);
+
+                var searchTask = Toml.ReadFile<SearchTask>(
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                    MetaMorpheusTask.tomlConfig);
+                searchTask.SearchParameters.WriteIndividualFiles = true; // the per-file peptide tables go through the same writer
+                new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("search", searchTask) },
+                    new List<string> { first, second },
+                    new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\mouseTmt.fasta"), false) },
+                    outputFolder).Run();
+
+                string searchOut = Path.Combine(outputFolder, "search");
+                var results = File.ReadAllLines(Path.Combine(searchOut, "results.txt"));
+
+                AssertPeptideTableMatchesItsSummaryLine(Path.Combine(searchOut, "AllPeptides.psmtsv"),
+                    results, "All target peptides with ");
+                foreach (string fileName in new[] { first, second }.Select(Path.GetFileNameWithoutExtension))
+                {
+                    AssertPeptideTableMatchesItsSummaryLine(Path.Combine(searchOut, "Individual File Results", fileName + "_Peptides.psmtsv"),
+                        results, fileName + " - Target peptides with ");
+                }
+            }
+            finally
+            {
+                if (Directory.Exists(root)) Directory.Delete(root, true);
+            }
+        }
+
+        private static void AssertPeptideTableMatchesItsSummaryLine(string peptideTable, string[] results, string summaryPrefix)
+        {
+            // e.g. "All target peptides with pep q-value <= 0.01: 123"; the filter named is the one the count used
+            string summary = results.SingleOrDefault(l => l.StartsWith(summaryPrefix))
+                ?? throw new AssertionException($"no \"{summaryPrefix}\" line in results.txt:{Environment.NewLine}{string.Join(Environment.NewLine, results)}");
+            string filter = summary[summaryPrefix.Length..summary.IndexOf(" <= ")];
+            double threshold = double.Parse(summary[(summary.IndexOf(" <= ") + 4)..summary.LastIndexOf(':')], System.Globalization.CultureInfo.InvariantCulture);
+            int reported = int.Parse(summary[(summary.LastIndexOf(':') + 1)..]);
+
+            var lines = File.ReadAllLines(peptideTable);
+            var header = lines[0].Split('\t');
+            int label = Array.IndexOf(header, "Decoy/Contaminant/Target");
+            int cumulativeTarget = Array.IndexOf(header, "Cumulative Target");
+            var rows = lines.Skip(1).Select(l => l.Split('\t')).ToList();
+            double Value(string[] row, string column) =>
+                double.Parse(row[Array.IndexOf(header, column)], System.Globalization.CultureInfo.InvariantCulture);
+            Func<string[], bool> passes = filter switch
+            {
+                "pep q-value" => r => Value(r, "PEP_QValue") <= threshold,
+                "q-value notch" => r => Value(r, "QValue Notch") <= threshold,
+                "q-value" => r => Value(r, "QValue") <= threshold && Value(r, "QValue Notch") <= threshold,
+                _ => throw new AssertionException($"unknown filter in \"{summary}\""),
+            };
+
+            int passing = rows.Count(r => r[label] == "T" && passes(r));
+            Assert.That(reported, Is.GreaterThan(0), $"{Path.GetFileName(peptideTable)}: the search must find peptides");
+            Assert.That(passing, Is.EqualTo(reported),
+                $"{Path.GetFileName(peptideTable)}: its rows passing 1% must be the peptides results.txt counts");
+            // a peptide-level cumulative count counts peptides, so it can never exceed the peptides written
+            Assert.That(rows.Max(r => int.Parse(r[cumulativeTarget])), Is.LessThanOrEqualTo(rows.Count),
+                $"{Path.GetFileName(peptideTable)}: its cumulative target count must count peptides, not PSMs");
+        }
+
+        /// <summary>
         /// A TMT search with no design file is still a legitimate search — there is simply no
         /// channel-to-sample mapping to quantify against. It must complete and still write the
         /// reporter ion columns, without any quantification files appearing.
@@ -481,7 +569,8 @@ namespace Test
                 CurrentRawFileList = currentRawFileList,
                 AllSpectralMatches = allSpectralMatches ?? new List<SpectralMatch>(),
                 OutputFolder = outputFolder,
-                SearchTaskId = "MultiplexGuardTest"
+                SearchTaskId = "MultiplexGuardTest",
+                SearchTaskResults = new MyTaskResults(task)
             };
 
             task.GetType().GetProperty("Parameters").SetValue(task, parameters);
@@ -802,8 +891,8 @@ namespace Test
                 var proteinA = new Protein("PEPTIDEKPEPTIDER", "PROTEINA", "ORGANISM");
                 var proteinB = new Protein("PEPTIDEKPEPTIDER", "PROTEINB", "ORGANISM");
                 var digestionParams = new DigestionParams();
-                var fromA = proteinA.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
-                var fromB = proteinB.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
+                var fromA = proteinA.Digest(digestionParams, Tmt11Labels, new List<Modification>()).First();
+                var fromB = proteinB.Digest(digestionParams, Tmt11Labels, new List<Modification>()).First();
 
                 var psm = SharedPeptidePsm(rawPath, fromA, fromB);
 
@@ -1232,7 +1321,7 @@ namespace Test
 
                 var protein = new Protein("PEPTIDEKPEPTIDER", "PROTEINA", "ORGANISM");
                 var peptides = protein
-                    .Digest(new DigestionParams(), new List<Modification>(), new List<Modification>())
+                    .Digest(new DigestionParams(), Tmt11Labels, new List<Modification>())
                     .Cast<IBioPolymerWithSetMods>()
                     .ToList();
                 var withReporters = peptides.First(p => p.BaseSequence == "PEPTIDEK");
@@ -1261,6 +1350,105 @@ namespace Test
                 Assert.That(rawLines.Skip(1).Select(line => line.Split('\t')[sequenceColumn]),
                     Is.EqualTo(new[] { quantifiable.FullSequence }),
                     "and the per-PSM snapshot must show that same one match");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// A match whose peptide carries no label is left out, though its scan has reporter ion intensities: a peptide
+        /// without the label releases no reporter ions, so the values are a co-isolated peptide's. On a real TMT search
+        /// such peptides are protein N-termini acetylated before labelling, with no lysine (227 of PXD034564's 1% PSMs).
+        /// Both matches here are targets below threshold with reporter ions, so the label is the only difference.
+        /// The count is said in a warning and in results.txt, because the .psmtsv still shows the match's reporter
+        /// columns.
+        /// </summary>
+        [Test]
+        public static void MatchWithoutTheLabel_IsLeftOutOfQuantificationAndCounted()
+        {
+            string folder = StageFolder("TmtGuardUnlabelled");
+            try
+            {
+                string rawPath = RawPathIn(folder);
+                string output = StageOutput(folder);
+                WriteDesign(folder, ValidDesignRows(rawPath));
+
+                var protein = new Protein("PEPTIDEKPEPTIDER", "PROTEINA", "ORGANISM");
+                var labelled = protein
+                    .Digest(new DigestionParams(), Tmt11Labels, new List<Modification>())
+                    .First(p => p.BaseSequence == "PEPTIDEK");
+                var unlabelled = protein
+                    .Digest(new DigestionParams(), new List<Modification>(), new List<Modification>())
+                    .First(p => p.BaseSequence == "PEPTIDER");
+                Assert.That(unlabelled.AllModsOneIsNterminus, Is.Empty,
+                    "the fixture only means anything if this peptide really carries no label");
+
+                var quantifiable = ReporterIonPsm(rawPath, labelled);
+                var unquantifiable = ReporterIonPsm(rawPath, unlabelled, scanNumber: 2);
+                Assert.That(unquantifiable.IsobaricMassTagReporterIonIntensities, Is.Not.Empty,
+                    "and if its scan really carries reporter ion intensities");
+
+                var group = GroupOf(protein, new IBioPolymerWithSetMods[] { labelled, unlabelled },
+                    new[] { quantifiable, unquantifiable });
+
+                var (warnings, parameters) = RunMultiplexAnalysis(
+                    new List<string> { rawPath }, output,
+                    allSpectralMatches: new List<SpectralMatch> { quantifiable, unquantifiable },
+                    proteinGroups: new List<ProteinGroup> { group });
+
+                Assert.That(parameters.MultiplexQuantificationResults, Is.Not.Null,
+                    "one match carries the label, so the run must still happen");
+                Assert.That(parameters.MultiplexQuantificationResults.PeptideIntensities.Keys,
+                    Is.EquivalentTo(new[] { labelled }),
+                    "only the labelled match may reach the peptide table");
+
+                var rawLines = File.ReadAllLines(Path.Combine(output, QuantificationWriter.RawFileName));
+                int sequenceColumn = System.Array.IndexOf(rawLines[0].Split('\t'), "FullSequence");
+                Assert.That(rawLines.Skip(1).Select(line => line.Split('\t')[sequenceColumn]),
+                    Is.EqualTo(new[] { quantifiable.FullSequence }),
+                    "and the per-PSM snapshot must show that same one match");
+
+                const string count = "1 spectral match(es) carried reporter ion intensities but no multiplex label";
+                Assert.That(warnings, Has.One.Contains(count));
+                Assert.That(parameters.SearchTaskResults.ToString(), Does.Contain(count),
+                    "the count reaches results.txt too");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// When every match with reporter ions lacks the label -- a TMT search run without the label as a fixed
+        /// modification looks like this -- nothing is quantified, and the warning names the label rather than saying
+        /// that no match carried reporter ions, which would be untrue.
+        /// </summary>
+        [Test]
+        public static void NoMatchCarriesTheLabel_WarnsNamingTheLabelAndSkips()
+        {
+            string folder = StageFolder("TmtGuardNoLabel");
+            try
+            {
+                string rawPath = RawPathIn(folder);
+                WriteDesign(folder, ValidDesignRows(rawPath));
+
+                var protein = new Protein("PEPTIDEKPEPTIDER", "PROTEINA", "ORGANISM");
+                var peptide = protein
+                    .Digest(new DigestionParams(), new List<Modification>(), new List<Modification>())
+                    .First();
+                var psm = ReporterIonPsm(rawPath, peptide);
+
+                var (warnings, parameters) = RunMultiplexAnalysis(
+                    new List<string> { rawPath }, StageOutput(folder),
+                    allSpectralMatches: new List<SpectralMatch> { psm },
+                    proteinGroups: new List<ProteinGroup> { GroupOf(protein, new[] { peptide }, new[] { psm }) });
+
+                Assert.That(parameters.MultiplexQuantificationResults, Is.Null);
+                Assert.That(warnings, Has.One.Contains("but none carried a multiplex label modification"));
+                Assert.That(warnings, Has.None.Contains("No spectral matches carried reporter ion intensities"));
             }
             finally
             {
@@ -1310,7 +1498,7 @@ namespace Test
 
         /// <summary>The first peptide <paramref name="protein"/> digests to under default settings.</summary>
         private static IBioPolymerWithSetMods FirstPeptideOf(Protein protein) =>
-            protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+            protein.Digest(new DigestionParams(), Tmt11Labels, new List<Modification>()).First();
 
         /// <summary>
         /// A protein group over one protein, with every one of its peptides unique to it.
