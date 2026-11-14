@@ -1849,6 +1849,8 @@ namespace TaskLayer
                     includeDecoys: false,
                     includeContaminants: false,
                     includeAmbiguous: false,
+                    // a library spectrum is named by its full sequence: a match with none (two or more sites or forms) has no spectrum
+                    includeAmbiguousMods: false,
                     includeHighQValuePsms: false);
 
 
@@ -1929,6 +1931,8 @@ namespace TaskLayer
                     includeDecoys: false,
                     includeContaminants: false,
                     includeAmbiguous: false,
+                    // a library spectrum is named by its full sequence: a match with none (two or more sites or forms) has no spectrum
+                    includeAmbiguousMods: false,
                     includeHighQValuePsms: false);
 
                 //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
