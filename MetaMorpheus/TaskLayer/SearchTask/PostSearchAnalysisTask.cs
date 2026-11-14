@@ -1855,7 +1855,9 @@ namespace TaskLayer
 
 
             //group psms by peptide and charge, then write highest scoring PSM to dictionary
+            //a psm whose candidates differ in mass has no one precursor m/z to store (see SpectralMatch.ToLibrarySpectrum)
             Dictionary<(string, int), SpectralMatch> psmSeqChargeDictionary = peptidesForSpectralLibrary
+                .Where(p => p.BioPolymerWithSetModsMonoisotopicMass.HasValue)
                 .GroupBy(p => (p.FullSequence, p.ScanPrecursorCharge))
                 .ToDictionary(
                     // Key is a (FullSequence, Charge) tuple
@@ -1880,12 +1882,7 @@ namespace TaskLayer
                         }
                         else
                         {
-                            updatedLibrarySpectra.Add(new LibrarySpectrum(
-                                bestPsm.FullSequence,
-                                bestPsm.ScanPrecursorMonoisotopicPeakMz,
-                                bestPsm.ScanPrecursorCharge,
-                                bestPsm.MatchedFragmentIons,
-                                bestPsm.ScanRetentionTime));
+                            updatedLibrarySpectra.Add(bestPsm.ToLibrarySpectrum());
                         }
                         // once the spectrum is added, it is removed from the dictionary
                         // later we will add the remaining spectra to the updated library
@@ -1900,12 +1897,7 @@ namespace TaskLayer
                 // if we don't a spectrum in the original library, we add it to the updated library
                 foreach (var bestPsm in psmSeqChargeDictionary.Values)
                 {
-                    updatedLibrarySpectra.Add(new LibrarySpectrum(
-                        bestPsm.FullSequence,
-                        bestPsm.ScanPrecursorMonoisotopicPeakMz,
-                        bestPsm.ScanPrecursorCharge,
-                        bestPsm.MatchedFragmentIons,
-                        bestPsm.ScanRetentionTime));
+                    updatedLibrarySpectra.Add(bestPsm.ToLibrarySpectrum());
                 }
 
                 string updatedSpectralLibrary = UpdateSpectralLibrary(updatedLibrarySpectra, Parameters.OutputFolder);
@@ -1936,18 +1928,16 @@ namespace TaskLayer
                     includeHighQValuePsms: false);
 
                 //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
-                var fullSeqChargeGrouping = peptidesForSpectralLibrary.GroupBy(p => (p.FullSequence, p.ScanPrecursorCharge));
+                //a psm whose candidates differ in mass has no one precursor m/z to store (see SpectralMatch.ToLibrarySpectrum)
+                var fullSeqChargeGrouping = peptidesForSpectralLibrary
+                    .Where(p => p.BioPolymerWithSetModsMonoisotopicMass.HasValue)
+                    .GroupBy(p => (p.FullSequence, p.ScanPrecursorCharge));
                 List<LibrarySpectrum> spectraLibrary = new();
                 foreach (var matchGroup in fullSeqChargeGrouping)
                 {
                     SpectralMatch bestPsm = matchGroup.MaxBy(p => p.Score);
                     if (bestPsm == null) continue;
-                    spectraLibrary.Add(new LibrarySpectrum(
-                        bestPsm.FullSequence,
-                        bestPsm.ScanPrecursorMonoisotopicPeakMz,
-                        bestPsm.ScanPrecursorCharge,
-                        bestPsm.MatchedFragmentIons,
-                        bestPsm.ScanRetentionTime));
+                    spectraLibrary.Add(bestPsm.ToLibrarySpectrum());
                 }
 
                 WriteSpectrumLibrary(spectraLibrary, Parameters.OutputFolder);
