@@ -442,16 +442,12 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
                     windowCosine = weighted / weights;
             }
 
-            // Mass accuracy of the fragments seen at the apex
+            // Mass accuracy of the fragments seen at the apex, from the peaks their intensities were read from
             var apexSpectrum = scans[reachable[apex]].MassSpectrum;
             var ppmErrors = new List<double>();
             for (int f = 0; f < fragments.Count; f++)
-            {
-                if (apexIntensities[f] <= 0)
-                    continue;
-                double observed = apexSpectrum.XArray[apexSpectrum.GetClosestPeakIndex(fragments[f].Mz)];
-                ppmErrors.Add(Math.Abs(observed - fragments[f].Mz) / fragments[f].Mz * 1e6);
-            }
+                if (apexIntensities[f] > 0)
+                    ppmErrors.Add(ppm[f][apex]);
 
             var (peakStart, peakEnd) = FragmentCoElution.PeakBounds(summed, apex);
 
@@ -490,13 +486,7 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
             double top3Cosine = SpectralSimilarity.CosineOfAlignedVectors(top3.Select(f => apexIntensities[f]).ToArray(), top3.Select(f => libraryIntensities[f]).ToArray());
             double top1Present = apexIntensities[byRank[0]] > 0 ? 1 : 0;
             double top2Present = byRank.Length > 1 && apexIntensities[byRank[1]] > 0 ? 1 : 0;
-            double top1Ppm = _parameters.FragmentTolerancePpm;
-            if (top1Present > 0)
-            {
-                var top1 = fragments[byRank[0]];
-                double observedTop1 = apexSpectrum.XArray[apexSpectrum.GetClosestPeakIndex(top1.Mz)];
-                top1Ppm = Math.Abs(observedTop1 - top1.Mz) / top1.Mz * 1e6;
-            }
+            double top1Ppm = top1Present > 0 ? ppm[byRank[0]][apex] : _parameters.FragmentTolerancePpm;
 
             // Detectable fragments: the library pattern scaled to the apex by least squares, against the apex scan's noise
             // (its 25th-percentile intensity); fragments expected below 3x noise are not held against the precursor
