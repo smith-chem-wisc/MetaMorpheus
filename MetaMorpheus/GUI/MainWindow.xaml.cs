@@ -951,49 +951,36 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            // check that experimental design is defined if normalization is enabled
+            // check the design files as the command line does (EngineLayer.ExperimentalDesignCheck): both kinds, and
+            // never both at once; a design is required when a search task normalizes
             var searchTasks = PreRunTasks
                 .Where(p => p.metaMorpheusTask.TaskType == MyTask.Search)
                 .Select(p => (SearchTask)p.metaMorpheusTask);
 
-            string pathToExperDesign = Directory.GetParent(spectraFilePathsToUse.First()).FullName;
-            pathToExperDesign = Path.Combine(pathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
+            var designCheck = ExperimentalDesignCheck.Check(Directory.GetParent(spectraFilePathsToUse.First()).FullName,
+                spectraFilePathsToUse, searchTasks.Any(p => p.SearchParameters.Normalize));
 
-            if (!File.Exists(pathToExperDesign))
+            if (designCheck.Verdict == ExperimentalDesignVerdict.Refuse)
             {
-                if (searchTasks.Any(p => p.SearchParameters.Normalize))
+                string reason = string.Join("\n", designCheck.Messages);
+                if (designCheck.Problem == ExperimentalDesignProblem.MissingForNormalization)
                 {
-                    MessageBox.Show("Experimental design must be defined for normalization!\n" +
-                    "Click the \"Set Experimental Design\" button in the the spectra files tab");
-                    return;
+                    reason += "\nClick the \"Set Experimental Design\" or \"Set TMT Experimental Design\" button in the spectra files tab.";
                 }
+                MessageBox.Show(reason);
+                return;
             }
-            else
+
+            if (designCheck.Verdict == ExperimentalDesignVerdict.AskToContinueWithoutDesign)
             {
-                ExperimentalDesign.ReadExperimentalDesign(pathToExperDesign, spectraFilePathsToUse, out var errors);
+                // Proceed without reading the file rather than deleting it (#2780): the prompt only offers to continue
+                // without an experimental design, and PostSearchAnalysisTask resolves the design from the used files itself.
+                var result = MessageBox.Show(designCheck.Question + "\nThe error was: " + designCheck.Errors.First(), "Error",
+                    MessageBoxButton.YesNo);
 
-                if (errors.Any())
+                if (result != MessageBoxResult.Yes)
                 {
-                    if (searchTasks.Any(p => p.SearchParameters.Normalize))
-                    {
-                        MessageBox.Show(errors.First());
-                        return;
-                    }
-                    else
-                    {
-                        // Proceed without reading the file rather than deleting it. The prompt only ever
-                        // offered to continue without an experimental design, and deleting was both
-                        // undisclosed and irreversible -- and it did not affect the run either way, since
-                        // PostSearchAnalysisTask resolves the design from the used-file list itself.
-                        var result = MessageBox.Show("An experimental design file was found, but an error " +
-                            "occurred reading it. Do you wish to continue without an experimental design?" +
-                            "\nThe error was: " + errors.First(), "Error", MessageBoxButton.YesNo);
-
-                        if (result != MessageBoxResult.Yes)
-                        {
-                            return;
-                        }
-                    }
+                    return;
                 }
             }
 
