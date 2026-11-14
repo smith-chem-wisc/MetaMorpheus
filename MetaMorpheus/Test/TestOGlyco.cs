@@ -357,7 +357,7 @@ namespace Test
         public static void GlycoTest_MotifExist()
         {
             string baseSeq = "AFGQFFSPGEVIYNKTDRAG";
-            var exist = GlycoSpectralMatch.MotifExist(baseSeq, new string[] { "Nxt", "Nxs" });
+            var exist = GlycoSpectralMatch.MotifExist(new PeptideWithSetModifications(baseSeq, null), new string[] { "Nxt", "Nxs" });
             Assert.That(exist);
         }
 

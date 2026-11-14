@@ -112,6 +112,28 @@ namespace Test
         }
 
         [Test]
+        public static void GlyTest_ModificationSites_SequonCutByTheProtease()
+        {
+            // Trypsin cuts the sequon NKS between K and S, so PEPTIDENK ends before the S. The N is still in a sequon in
+            // the protein, which is where the glycan was attached.
+            var digestionParams = new DigestionParams(minPeptideLength: 5);
+            var cut = new Protein("AAAKPEPTIDENKSAMPLER", "accession")
+                .Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .Single(p => p.BaseSequence == "PEPTIDENK");
+            var sites = GlycoSpectralMatch.GetPossibleModSites(cut, new string[] { "Nxs", "Nxt" });
+            Assert.That(sites.Keys, Is.EquivalentTo(new[] { 9 }));
+            Assert.That(sites[9], Is.EqualTo("Nxs"));
+            Assert.That(GlycoSpectralMatch.MotifExist(cut, new string[] { "Nxt", "Nxs" }), Is.True);
+
+            // A sequon that runs off the end of the protein is not a sequon.
+            var atTheEnd = new Protein("AAAKPEPTIDENK", "accession")
+                .Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .Single(p => p.BaseSequence == "PEPTIDENK");
+            Assert.That(GlycoSpectralMatch.GetPossibleModSites(atTheEnd, new string[] { "Nxs", "Nxt" }), Is.Empty);
+            Assert.That(GlycoSpectralMatch.MotifExist(atTheEnd, new string[] { "Nxt", "Nxs" }), Is.False);
+        }
+
+        [Test]
         public static void GlyTest_GlyGetTheoreticalFragments()
         {
             Protein pep = new Protein("TKPREEQYNSTYR", "accession");
