@@ -273,19 +273,17 @@ namespace TaskLayer
                     betaPeaks: bestCsm.BetaPeptide.MatchedFragmentIons));
             }
 
+            // Single peptides carry no crosslinker, so their theoretical precursor m/z is their own (SpectralMatch.ToLibrarySpectrum).
+            // A psm whose candidates differ in mass has no one precursor m/z to store.
             foreach (var singlePsmGroup in singlePsms.Where(c =>
                     !c.IsDecoy
                     && c.FdrInfo.QValueNotch < 0.05)
+                .Where(c => c.BioPolymerWithSetModsMonoisotopicMass.HasValue)
                 .GroupBy(c => (c.FullSequence, c.ScanPrecursorCharge)))
             {
                 CrosslinkSpectralMatch bestPsm = singlePsmGroup.MaxBy(c => c.Score);
                 if (bestPsm == null) continue;
-                librarySpectra.Add(new LibrarySpectrum(
-                    sequence: bestPsm.FullSequence,
-                    precursorMz: bestPsm.ScanPrecursorMonoisotopicPeakMz,
-                    chargeState: bestPsm.ScanPrecursorCharge,
-                    peaks: bestPsm.MatchedFragmentIons,
-                    rt: bestPsm.ScanRetentionTime));
+                librarySpectra.Add(bestPsm.ToLibrarySpectrum());
             }
 
             WriteSpectrumLibrary(librarySpectra, outputFolder);
