@@ -145,6 +145,9 @@ public class DatabaseLoadingEngine(
     {
         decoyIdentifier ??= GlobalVariables.DecoyIdentifier;
         List<RNA> rnaList;
+        // null (the default, and always the case in protein mode) leaves mzLib's default cap in place
+        var fivePrimeTerm = commonParameters?.FivePrimeTerminus;
+        var threePrimeTerm = commonParameters?.ThreePrimeTerminus;
 
         string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
         bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
@@ -153,14 +156,24 @@ public class DatabaseLoadingEngine(
         if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
         {
             unknownMods = null;
-            rnaList = RnaDbLoader.LoadRnaFasta(fileName, generateTargets, decoyType, isContaminant, out var dbErrors);
+            rnaList = RnaDbLoader.LoadRnaFasta(fileName, generateTargets, decoyType, isContaminant, out var dbErrors,
+                fivePrimeTerm, threePrimeTerm);
         }
         else
         {
             GlobalVariables.AddMods(ProteinDbLoader.GetPtmListFromProteinXml(fileName), true, true);
             // TODO: Add in variant params when fixed in MzLib. 
             List<string> modTypesToExclude = GlobalVariables.AllRnaModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-            rnaList = RnaDbLoader.LoadRnaXML(fileName, generateTargets, decoyType, isContaminant, GlobalVariables.AllRnaModsKnown, modTypesToExclude, out unknownMods, commonParameters.MaxThreadsToUsePerFile, decoyIdentifier: decoyIdentifier);
+            rnaList = RnaDbLoader.LoadRnaXML(fileName, generateTargets, decoyType, isContaminant, GlobalVariables.AllRnaModsKnown, modTypesToExclude, out unknownMods, commonParameters.MaxThreadsToUsePerFile, fivePrimeTerm: fivePrimeTerm, threePrimeTerm: threePrimeTerm, decoyIdentifier: decoyIdentifier);
+
+            // The XML loader accepts the termini but does not apply them (it passes null to the entry parser), so apply a requested cap explicitly.
+            foreach (var rna in rnaList)
+            {
+                if (fivePrimeTerm != null)
+                    rna.FivePrimeTerminus = fivePrimeTerm;
+                if (threePrimeTerm != null)
+                    rna.ThreePrimeTerminus = threePrimeTerm;
+            }
         }
 
         emptyEntriesCount = rnaList.Count(p => p.BaseSequence.Length == 0);
