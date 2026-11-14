@@ -75,7 +75,8 @@ namespace Test
                 new[] { TmtExperimentalDesign.Header }.Concat(rows));
         }
 
-        private static void RunTmtSearch(string stagedMzmlPath, string outputFolder, bool doParsimony = true)
+        private static void RunTmtSearch(string stagedMzmlPath, string outputFolder, bool doParsimony = true,
+            bool doLabelFreeQuantification = false)
         {
             var searchTask = Toml.ReadFile<SearchTask>(
                 Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
@@ -85,6 +86,9 @@ namespace Test
             // groups, so there would be nothing to quantify onto. Turning it on is what a user doing
             // protein-level TMT would do.
             searchTask.SearchParameters.DoParsimony = doParsimony;
+            // The toml turns label-free quantification off; the search task window turns it on whenever any
+            // quantification is chosen, multiplex included.
+            searchTask.SearchParameters.DoLabelFreeQuantification = doLabelFreeQuantification;
 
             var taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
             string fasta = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\mouseTmt.fasta");
@@ -824,6 +828,45 @@ namespace Test
             finally
             {
                 Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// A TMT search set up in the search task window carries DoLabelFreeQuantification = true, because the window
+        /// turns it on whenever any quantification is chosen; a task file (the stock TMT toml, PXReprise's) carries
+        /// false. Label-free quantification never runs on a multiplex search, so the protein table is named
+        /// AllProteinGroups.tsv either way, the name every reader of isobaric output looks for, and no label-free
+        /// table is written. Before, the window's search wrote AllQuantifiedProteinGroups.tsv for the same groups.
+        /// </summary>
+        [TestCase(true)]
+        [TestCase(false)]
+        public static void TmtSearch_NamesItsProteinTableAllProteinGroupsWhateverTheLabelFreeSwitch(bool doLabelFreeQuantification)
+        {
+            string root = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtMultiplexTableName" + doLabelFreeQuantification);
+            string dataFolder = Path.Combine(root, "data");
+            string outputFolder = Path.Combine(root, "out");
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+
+            try
+            {
+                string stagedMzml = StageMzml(dataFolder);
+                WriteTmtDesign(dataFolder, stagedMzml);
+
+                RunTmtSearch(stagedMzml, outputFolder, doLabelFreeQuantification: doLabelFreeQuantification);
+
+                string searchOut = Path.Combine(outputFolder, "search");
+                Assert.That(File.Exists(Path.Combine(searchOut, "AllProteinGroups.tsv")), Is.True);
+                Assert.That(File.Exists(Path.Combine(searchOut, "AllQuantifiedProteinGroups.tsv")), Is.False,
+                    "label-free quantification did not run, so no table is named for it");
+                Assert.That(File.Exists(Path.Combine(searchOut, "AllQuantifiedPeptides.tsv")), Is.False);
+                Assert.That(File.Exists(Path.Combine(searchOut, "AllQuantifiedPeaks.tsv")), Is.False);
+                Assert.That(File.Exists(Path.Combine(searchOut, QuantificationWriter.ProteinGroupFileName)), Is.True,
+                    "the search was quantified, and its isobaric tables say so");
+                AssertProteinTableKeepsItsColumnsAndGainsChannelIntensities(searchOut);
+            }
+            finally
+            {
+                if (Directory.Exists(root)) Directory.Delete(root, true);
             }
         }
 

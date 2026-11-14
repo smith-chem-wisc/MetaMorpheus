@@ -1,4 +1,5 @@
-﻿using Omics.Fragmentation;
+﻿using Omics.BioPolymer;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
@@ -266,7 +267,7 @@ namespace EngineLayer.GlycoSearch
                 }
             }
 
-            sb.Append((IsDecoy) ? "D" : (IsContaminant) ? "C" : "T"); sb.Append("\t");
+            sb.Append(PsmTsvWriter.Resolve(BestMatchingBioPolymersWithSetMods.Select(b => DecoyContaminantTargetLabel.For(b.SpecificBioPolymer.Parent))).ResolvedString); sb.Append("\t");
 
 
             sb.Append(FdrInfo!=null? FdrInfo.QValue.ToString() : "-1" );  sb.Append("\t");

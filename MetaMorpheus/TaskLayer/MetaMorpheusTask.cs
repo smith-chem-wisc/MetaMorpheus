@@ -245,6 +245,15 @@ namespace TaskLayer
                 .FirstOrDefault();
         }
 
+        // Blank means "use the mzLib default", but unreadable text must not silently become the default chemistry.
+        private static ChemicalFormula ParseTerminalCap(string value)
+        {
+            ChemicalFormula cap = CommonParameters.TryParseFormula(value);
+            if (cap == null && !string.IsNullOrWhiteSpace(value))
+                throw new MetaMorpheusException($"Invalid RNA terminal cap '{value}'. Expected a chemical formula.");
+            return cap;
+        }
+
         private static DoubleRange ParseRetentionTimeRange(string value)
         {
             string[] bounds = value.Trim().Trim('[', ']').Split(';');
@@ -312,6 +321,11 @@ namespace TaskLayer
             // Protease, Rnase, DigestionParams and RnaDigestionParams. Defined in EngineLayer, because the index
             // cache key writes digestion parameters with the same configuration; see DigestionTomlSettings.
             .ConfigureDigestionTypes()
+            // RNA terminal caps
+            .ConfigureType<ChemicalFormula>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(formula => formula.Formula)
+                    .FromToml(tmlString => ParseTerminalCap(tmlString.Value))))
             // Switch on DeconvolutionParameters
             .ConfigureType<DeconvolutionParameters>(type => type
                 .WithConversionFor<TomlTable>(c => c
@@ -505,6 +519,11 @@ namespace TaskLayer
                 return scansWithPrecursors;
             }
 
+            // Tallied across threads and reported once per file below; a damaged raw file can have thousands of these.
+            int emptyPrecursorScanCount = 0;
+            int unrefinablePrecursorScanCount = 0;
+            string firstUnrefinableReason = null;
+
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (partitionRange, loopState) =>
                 {
@@ -524,13 +543,27 @@ namespace TaskLayer
                             if (precursorSpectrum is null)
                                 goto PrecursorFromScanHeader;
 
+                            // A precursor MS1 that exists but holds no peaks (e.g. zero-filled by a damaged file
+                            // transfer) has nothing to refine or deconvolute, so treat it like a missing one and
+                            // fall back on the scan header rather than letting mzLib throw.
+                            if (precursorSpectrum.MassSpectrum.Size == 0)
+                            {
+                                System.Threading.Interlocked.Increment(ref emptyPrecursorScanCount);
+                                goto PrecursorFromScanHeader;
+                            }
+
                             try
                             {
                                 ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
                             }
                             catch (MzLibException ex)
                             {
-                                Warn("Could not get precursor ion for MS2 scan #" + ms2scan.OneBasedScanNumber + "; " + ex.Message);
+                                // Drop this scan, but leave an empty entry: callers read every slot and a null one
+                                // used to crash the whole task.
+                                System.Threading.Interlocked.Increment(ref unrefinablePrecursorScanCount);
+                                System.Threading.Interlocked.CompareExchange(ref firstUnrefinableReason,
+                                    "MS2 scan #" + ms2scan.OneBasedScanNumber + ": " + ex.Message, null);
+                                scansWithPrecursors[i] = new List<Ms2ScanWithSpecificMass>();
                                 continue;
                             }
 
@@ -682,6 +715,20 @@ namespace TaskLayer
                     }
                 });
 
+            string fileName = Path.GetFileName(fullFilePath);
+            if (emptyPrecursorScanCount > 0)
+            {
+                Warn(fileName + ": " + emptyPrecursorScanCount + " MS2 scan(s) have a precursor MS1 scan with no peaks; " +
+                    (commonParameters.UseProvidedPrecursorInfo
+                        ? "their precursor was taken from the scan header where it had a charge state, otherwise they were skipped."
+                        : "they were skipped because the scan-header precursor is not in use.") +
+                    " The spectra file may be damaged.");
+            }
+            if (unrefinablePrecursorScanCount > 0)
+            {
+                Warn(fileName + ": " + unrefinablePrecursorScanCount + " MS2 scan(s) were skipped because their precursor ion could not be determined (first: " + firstUnrefinableReason + ").");
+            }
+
             return scansWithPrecursors;
         }
 
@@ -714,8 +761,9 @@ namespace TaskLayer
                 return new List<Ms2ScanWithSpecificMass>();
             }
 
-            var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
-            var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber))
+            // A slot is left null when the scan loop is stopped part-way (GlobalVariables.StopLoops); skip those.
+            var childScanNumbers = new HashSet<int>(scansWithPrecursors.Where(p => p != null).SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
+            var parentScans = scansWithPrecursors.Where(p => p != null && p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber))
                 .SelectMany(v => v)
                 .OrderBy(p => p.OneBasedScanNumber)
                 .ToArray();
@@ -785,11 +833,12 @@ namespace TaskLayer
                 return parentScans;
             }
 
-            var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
-            
+            // A slot is left null when the scan loop is stopped part-way (GlobalVariables.StopLoops); skip those.
+            var childScanNumbers = new HashSet<int>(scansWithPrecursors.Where(p => p != null).SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
+
             for (int i = 0; i < scansWithPrecursors.Length; i++)
             {
-                if (scansWithPrecursors[i].Any() && !childScanNumbers.Contains(scansWithPrecursors[i].First().OneBasedScanNumber))
+                if (scansWithPrecursors[i] != null && scansWithPrecursors[i].Any() &&!childScanNumbers.Contains(scansWithPrecursors[i].First().OneBasedScanNumber))
                 {
                     parentScans.Add(scansWithPrecursors[i].First());
                     precursors.Add(scansWithPrecursors[i].Select(p => (p.PrecursorMass, p.PrecursorCharge, p.PrecursorMonoisotopicPeakMz)).ToList());
@@ -956,8 +1005,9 @@ namespace TaskLayer
                 fragmentationParams: commonParams.FragmentationParameters,
                 precursorMassMatchMode: commonParams.PrecursorMassMatchMode,
                 rtPredictorName: commonParams.RTPredictorName,
-                retentionTimeRange: commonParams.RetentionTimeRange
-                );
+                retentionTimeRange: commonParams.RetentionTimeRange,
+                fivePrimeTerminus: commonParams.FivePrimeTerminus?.Formula,
+                threePrimeTerminus: commonParams.ThreePrimeTerminus?.Formula);
 
             return returnParams;
         }
@@ -1450,21 +1500,23 @@ namespace TaskLayer
 
         #region IO 
 
-        protected static void WritePsmsToTsv(IEnumerable<SpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned, bool writePeptideLevelResults = false)
+        /// <param name="maxThreads">Threads that build the rows (see <see cref="OrderedLines"/>); the file is the same for any number.</param>
+        protected static void WritePsmsToTsv(IEnumerable<SpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned, bool writePeptideLevelResults = false,
+            int maxThreads = 1)
         {
-            
+            // enumerated once: the column checks below and the rows read the same list
+            IReadOnlyList<SpectralMatch> rows = psms as IReadOnlyList<SpectralMatch> ?? psms.ToList();
             using (StreamWriter output = new StreamWriter(filePath))
             {
-                bool includeOneOverK0Column = psms.Any(p => p.ScanOneOverK0.HasValue);
-                bool includeCollisionalEnergyColumn = psms.Any(p => p.CollisionalEnergy.HasValue);
+                bool includeOneOverK0Column = rows.Any(p => p.ScanOneOverK0.HasValue);
+                bool includeCollisionalEnergyColumn = rows.Any(p => p.CollisionalEnergy.HasValue);
                 // Only emit the most-abundant mass-error column when a run actually used most-abundant
                 // selection (its property is null otherwise), mirroring the data-driven gating above.
-                bool includeMostAbundantColumn = psms.Any(p => p.MostAbundantMassErrorPpm != null);
+                bool includeMostAbundantColumn = rows.Any(p => p.MostAbundantMassErrorPpm != null);
                 output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn));
-                foreach (var psm in psms)
-                {
-                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn));
-                }
+                OrderedLines.Write(output, rows,
+                    psm => psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn),
+                    maxThreads);
             }
         }
 

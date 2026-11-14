@@ -135,10 +135,12 @@ namespace Test
 
         /// <summary>
         /// A search never builds that two-member group directly: parsimony makes one group per protein and
-        /// scoring merges indistinguishable groups with mzLib's MergeWith, which keeps the surviving group's
-        /// flags. The survivor is the first accession alphabetically, so a real accession that sorts before
-        /// "Random_" survived and the combined table read T while the per-file table, built through the
-        /// constructor, read ET. Both orders, and the decoy pair, must agree with the any-member rule.
+        /// scoring merges indistinguishable groups with mzLib's MergeWith. Before mzLib 1.0.597 (#1526)
+        /// MergeWith kept the surviving group's flags. The survivor is the first accession alphabetically, so
+        /// a real accession that sorts before "Random_" survived and the combined table read T while the
+        /// per-file table, built through the constructor, read ET. The table now reads the group's own
+        /// IsEntrapment, so this test also guards the merge. Both orders, and the decoy pair, must agree with
+        /// the any-member rule.
         /// </summary>
         [TestCase("P12345", false, "ET")]
         [TestCase("Z12345", false, "ET")]
