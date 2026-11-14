@@ -209,8 +209,9 @@ namespace TaskLayer
         /// <param name="MyTaskResults"></param>
         private void WriteSummary(List<GlycoSpectralMatch> targetPsms, GlycoSearchParameters glycoSearchParameters, MyTaskResults MyTaskResults)
         {
-            var gsms = targetPsms.Where(p => p.Routes != null).ToList();
-            var Level1gsms = gsms.Where(p => p.LocalizationLevel == LocalizationLevel.Level1).ToList();
+            // An N-glycan search's PSMs carry NGlycan, not Routes, and are never localized, so none is Level 1.
+            var gsms = targetPsms.Where(p => p.Routes != null || p.NGlycan != null).ToList();
+            var Level1gsms = gsms.Where(p => p.Routes != null && p.LocalizationLevel == LocalizationLevel.Level1).ToList();
             MyTaskResults.AddTaskSummaryText("All target PSMs within 1% FDR: " + (targetPsms?.
                            Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
             MyTaskResults.AddTaskSummaryText("All target protein groups within 1% FDR: " + (ProteinGroups?.
