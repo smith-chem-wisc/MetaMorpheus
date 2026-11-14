@@ -16,13 +16,8 @@ using TaskLayer;
 // ThermoRawFileReaderLicence, which this file uses, and CS0104 is not worth a whole namespace.
 using SdrfQuantAudit = Readers.SdrfQuantAudit;
 using SdrfQuantAuditor = Readers.SdrfQuantAuditor;
-using SdrfLabelFreeDesign = Readers.SdrfLabelFreeDesign;
-using SdrfLabelFreeDesignOptions = Readers.SdrfLabelFreeDesignOptions;
-using SdrfIsobaricDesign = Readers.SdrfIsobaricDesign;
-using SdrfIsobaricDesignOptions = Readers.SdrfIsobaricDesignOptions;
-using SdrfDocument = Readers.SdrfDocument;
-using SdrfSearchScope = Readers.SdrfSearchScope;
-using SdrfSearchScoping = Readers.SdrfSearchScoping;
+using SdrfSearchDesign = Readers.SdrfSearchDesign;
+using SdrfSearchDesignOptions = Readers.SdrfSearchDesignOptions;
 using MzLibIsobaricMassTag = Omics.Modifications.IsobaricMassTag;
 
 namespace MetaMorpheusCommandLine
@@ -558,18 +553,23 @@ namespace MetaMorpheusCommandLine
         }
 
         /// <summary>
-        /// Carries out --sdrfDesign: reads a label-free SDRF with mzLib's SdrfLabelFreeDesign and writes
-        /// ExperimentalDesign.tsv beside the first spectra file, which is where a run given the same -s
-        /// looks for it (ResolveExperimentalDesign). The design is checked against exactly those files, after
-        /// the SDRF is restricted to them (RestrictSdrfToSearchedFiles).
+        /// Carries out --sdrfDesign: reads the SDRF for exactly the -s files with mzLib's SdrfSearchDesign, and writes
+        /// ExperimentalDesign.tsv (label-free) or TmtDesign.txt (with --sdrfTag) beside the first spectra file, which is
+        /// where a run given the same -s looks for it (ResolveExperimentalDesign).
         ///
-        /// Refuses rather than writes anything MetaMorpheus would reject, because an invalid design is
-        /// worse than none: a run finding one skips quantification with only a warning. The report is
-        /// printed whatever the verbosity, as for --auditSdrf: it is what was asked for, and it is the
-        /// only record of a biological replicate number added where the SDRF gives none.
+        /// SdrfSearchDesign is the one reading every SDRF route shares, so a pipeline that checks an SDRF before a search
+        /// (PXReprise) and this switch cannot disagree about it: it restricts the SDRF to the searched files with
+        /// SdrfSearchScope (a row naming X.raw stands for a search of X.mzML, X-calib.mzML or X-averaged.mzML), then reads
+        /// the kept rows with the label-free or isobaric reader, whose rules decide the design. Its report says what the
+        /// join set aside and what the reader added, noted or refused.
+        ///
+        /// Refuses rather than writes anything MetaMorpheus would reject, because an invalid design is worse than none: a
+        /// run finding one skips quantification with only a warning. The report is printed whatever the verbosity, as for
+        /// --auditSdrf: it is what was asked for, and it is the only record of a biological replicate number added where
+        /// the SDRF gives none.
         /// </summary>
-        /// <returns>0 when the design was written; 4 when the SDRF could not be read; 5 when the design
-        /// was refused or a design file is already there.</returns>
+        /// <returns>0 when the design was written; 4 when the SDRF could not be read; 5 when the design was refused or a
+        /// design file is already there.</returns>
         public static int WriteDesignFromSdrf(CommandLineSettings settings, TextWriter output)
         {
             // -o is not honoured: a design anywhere else is one the run never reads. Said rather than
@@ -580,10 +580,16 @@ namespace MetaMorpheusCommandLine
             }
 
             string designDirectory = Directory.GetParent(Path.GetFullPath(settings.Spectra.First())).FullName;
-            string designPath = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
+            bool isobaric = settings.SdrfTag != null;
+            string designPath = Path.Combine(designDirectory,
+                isobaric ? GlobalVariables.TmtExperimentalDesignFileName : GlobalVariables.ExperimentalDesignFileName);
 
             // Never overwrite a design: it may be the user's own, and a run with both kinds present exits 5.
-            foreach (string existing in new[] { designPath, Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName) })
+            foreach (string existing in new[]
+                     {
+                         Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName),
+                         Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName)
+                     })
             {
                 if (File.Exists(existing))
                 {
@@ -592,185 +598,74 @@ namespace MetaMorpheusCommandLine
                 }
             }
 
-            // A bare name is the column's own name: 'genotype' means 'factor value[genotype]'. The prefix is
-            // matched in any case and written lowercase, as the SDRF specification names it, so
-            // 'Factor Value[genotype]' is that column too rather than 'factor value[Factor Value[genotype]]'.
-            // mzLib matches column names exactly, so the name inside the brackets is passed as given.
-            const string factorValuePrefix = "factor value[";
-            var conditionColumns = settings.SdrfConditionColumns?
-                .Select(c => c.StartsWith(factorValuePrefix, StringComparison.OrdinalIgnoreCase)
-                    ? factorValuePrefix + c.Substring(factorValuePrefix.Length)
-                    : factorValuePrefix + c + "]")
-                .ToList();
-
-            if (settings.SdrfTag != null)
+            // validated already, so a kit given is one MetaMorpheus knows
+            MzLibIsobaricMassTag tag = null;
+            if (isobaric)
             {
-                return WriteTmtDesignFromSdrf(settings, conditionColumns, Path.Combine(designDirectory, GlobalVariables.TmtExperimentalDesignFileName), output);
+                MzLibIsobaricMassTag.TryGetIsobaricMassTag(settings.SdrfTag, out tag);
             }
 
-            SdrfLabelFreeDesign design;
-            try
-            {
-                var sdrf = RestrictSdrfToSearchedFiles(settings, output);
-                if (sdrf is null)
-                {
-                    output.WriteLine("No design file was written.");
-                    return 5;
-                }
-                design = SdrfLabelFreeDesign.Read(sdrf, new SdrfLabelFreeDesignOptions
-                {
-                    ConditionColumns = conditionColumns,
-                    SearchedFiles = settings.Spectra.Select(Path.GetFullPath).ToList(),
-                });
-            }
-            catch (Exception e)
-            {
-                output.WriteLine("The SDRF file could not be read: " + settings.SdrfDesign + Environment.NewLine + e.Message);
-                return 4;
-            }
+            var design = SdrfSearchDesign.Read(settings.SdrfDesign, settings.Spectra.Select(Path.GetFullPath).ToList(),
+                SdrfDesignOptions(settings, tag));
 
             output.WriteLine(design.Report());
 
             if (!design.IsValid)
             {
                 output.WriteLine("No design file was written.");
-                return 5;
-            }
 
-            design.WriteExperimentalDesignTsv(designPath);
-            output.WriteLine("Wrote " + designPath);
-            return 0;
-        }
-
-        /// <summary>
-        /// The isobaric half of --sdrfDesign: reads a TMT, iTRAQ or DiLeu SDRF with mzLib's SdrfIsobaricDesign,
-        /// for the kit --sdrfTag names and the plex source given, and writes TmtDesign.txt where a run given the
-        /// same -s looks for it. Refuses rather than writes anything MetaMorpheus would reject, as the label-free
-        /// half does; channel and replicate numbers are copied as the SDRF gives them, never renumbered.
-        /// </summary>
-        /// <returns>0 when the design was written; 4 when the SDRF could not be read; 5 when it was refused.</returns>
-        private static int WriteTmtDesignFromSdrf(CommandLineSettings settings, List<string> conditionColumns, string designPath, TextWriter output)
-        {
-            // validated already, so the kit is known
-            MzLibIsobaricMassTag.TryGetIsobaricMassTag(settings.SdrfTag, out var tag);
-
-            SdrfIsobaricDesign design;
-            try
-            {
-                var sdrf = RestrictSdrfToSearchedFiles(settings, output);
-                if (sdrf is null)
+                // Where a refusal can be answered by stating a grouping, mzLib's report names its option; say which
+                // switch that is. Only a line printed or not hangs on the report's words.
+                foreach (var (option, sw) in new[]
+                         {
+                             (nameof(SdrfSearchDesignOptions.SingleCondition), "--sdrfSingleCondition"),
+                             (nameof(SdrfSearchDesignOptions.UnknownFactorIsOwnCondition), "--sdrfUnknownFactorIsCondition"),
+                         })
                 {
-                    output.WriteLine("No design file was written.");
-                    return 5;
+                    if (design.Refusals.Any(r => r.Contains("(" + option + ")")))
+                    {
+                        output.WriteLine($"On the command line, {option} is {sw}.");
+                    }
                 }
-                design = SdrfIsobaricDesign.Read(sdrf, new SdrfIsobaricDesignOptions
-                {
-                    Tag = tag,
-                    PlexColumn = settings.SdrfPlexColumn,
-                    PlexFileNamePattern = settings.SdrfPlexPattern,
-                    SinglePlex = settings.SdrfSinglePlex,
-                    ConditionColumns = conditionColumns,
-                    SearchedFiles = settings.Spectra.Select(Path.GetFullPath).ToList(),
-                });
-            }
-            catch (Exception e)
-            {
-                output.WriteLine("The SDRF file could not be read: " + settings.SdrfDesign + Environment.NewLine + e.Message);
-                return 4;
-            }
 
-            output.WriteLine(design.Report());
-
-            if (!design.IsValid)
-            {
-                output.WriteLine("No design file was written.");
-                return 5;
+                // Neither the join nor a reader ran only when the file itself could not be read: the settings were
+                // checked before, so the other such refusals (no searched file, a plex source without a kit) cannot
+                // arise here. Told apart by what ran, never by the report's words.
+                return design.LabelFree is null && design.Isobaric is null && design.Scoping is null ? 4 : 5;
             }
 
             // MetaMorpheus has no TMT16 multiplex label: TMTpro 16-plex is searched with TMT18, the same
             // reagent. TmtDesign.txt names no kit, and TMT16's channels are TMT18's first sixteen, so the
             // file is one a TMT18 run reads as is. Said, so the search is not set to a label that is not there.
-            if (tag.TagType == Omics.Modifications.IsobaricMassTagType.TMT16)
+            if (tag?.TagType == Omics.Modifications.IsobaricMassTagType.TMT16)
             {
                 output.WriteLine("TMT16 is searched in MetaMorpheus with its TMT18 multiplex label (TMTpro, the same reagent). "
                     + "This design is read as is by such a run; channels 134C and 135N stay empty.");
             }
 
-            design.WriteTmtDesign(designPath);
+            design.WriteDesign(designPath);
             output.WriteLine("Wrote " + designPath);
             return 0;
         }
 
         /// <summary>
-        /// Reads the --sdrfDesign SDRF restricted to the -s files with mzLib's SdrfSearchScope (QP-S35), so that a
-        /// design reader sees only this search's rows, each naming the file this search reads. The join is mzLib's
-        /// (MAP-12): a searched file finds its rows by file stem, ignoring case and the -calib and -averaged suffixes
-        /// MetaMorpheus writes, so a row naming X.raw stands for a search of X.mzML or X-calib.mzML, and an earlier
-        /// search's comment[searched data file] is replaced by this one's. The design readers stay join-free (QP-S18).
-        ///
-        /// No acquired-name map is passed: the -s files are the files the user names, and the suffix rule covers an
-        /// earlier search's derivatives (sdrf 085). What the join could not place is printed before the design
-        /// report, only the lists that have entries, SharedStem first: it means one searched file whose rows name
-        /// two different acquired files, which only the depositor can resolve.
-        ///
-        /// The design reader sees only the kept rows, so when rows were dropped two of its notes describe the kept rows,
-        /// not the file: its line numbers, and its "every row of the SDRF is searched", which it gives when it dropped
-        /// no row itself. Both are said here, before its report (pcruzparri's review of #2949). When no row is kept,
-        /// nothing is handed to the reader, whose "The SDRF has no rows" would point at the SDRF rather than at the -s
-        /// files: the join's own lists are printed, and null is returned for the caller to refuse the design.
-        ///
-        /// An SDRF without comment[data file] cannot be joined, so it is returned as given, and the design reader
-        /// refuses it with its own report, as before. Throws, as the readers did, when the file cannot be read.
+        /// What the command line tells SdrfSearchDesign that the SDRF alone cannot say: the kit and where each file's plex
+        /// is written (isobaric only), and how the condition is built. The condition columns are passed as given, and
+        /// mzLib names them: 'genotype' is 'factor value[genotype]', the 'factor value[' prefix in any case is the
+        /// specification's, and any other name with a '[' (such as 'characteristics[cell type]') is that column. With
+        /// none, every factor value column makes the condition. A single condition and files whose factor nobody stated
+        /// are groupings only the user can state (ruled 2026-11-11): never defaults.
         /// </summary>
-        private static SdrfDocument RestrictSdrfToSearchedFiles(CommandLineSettings settings, TextWriter output)
+        private static SdrfSearchDesignOptions SdrfDesignOptions(CommandLineSettings settings, MzLibIsobaricMassTag tag) => new()
         {
-            var sdrf = new SdrfDocument(settings.SdrfDesign);
-            if (!sdrf.Header.Contains(SdrfLabelFreeDesign.DataFileColumn))
-            {
-                return sdrf;
-            }
-
-            SdrfSearchScoping scope = SdrfSearchScope.Restrict(sdrf, settings.Spectra.Select(Path.GetFullPath).ToList());
-
-            var lists = new (string Name, IReadOnlyList<string> Entries)[]
-            {
-                ("SharedStem (its rows name different acquired files and every one is kept, so the design is refused; " +
-                 "if they list one run under two names, such as X.raw and X.mzML, keep one row, and otherwise only the " +
-                 "depositor can say which file is right)", scope.SharedStem),
-                ("SearchedWithoutRow", scope.SearchedWithoutRow),
-                ("DroppedDataFiles (the search does not read them)", scope.DroppedDataFiles),
-                ("Ambiguous (claimed by two or more searched files; the first, in name order, keeps the rows, so the " +
-                 "others have none and the design is refused)", scope.Ambiguous),
-            };
-            int rowsRead = sdrf.Results.Count;
-            int rowsKept = scope.Document.Results.Count;
-            if (rowsKept < rowsRead || lists.Any(l => l.Entries.Count > 0))
-            {
-                output.WriteLine($"SDRF joined to the searched files by mzLib's SdrfSearchScope: {rowsKept} of {rowsRead} SDRF rows kept.");
-                foreach (var (name, entries) in lists)
-                {
-                    foreach (string entry in entries)
-                    {
-                        output.WriteLine($"  {name}: {entry}");
-                    }
-                }
-                if (rowsKept == 0 && rowsRead > 0)
-                {
-                    output.WriteLine("No SDRF row names a spectra file given with -s, so there is no design to read. " +
-                        "Check that -s names the files this SDRF describes.");
-                    return null;
-                }
-                if (rowsKept < rowsRead)
-                {
-                    output.WriteLine("  Line numbers in the design report below count the kept rows, not the lines of the SDRF file.");
-                    output.WriteLine($"  The report reads only the kept rows: where it says every row of the SDRF is searched, it means " +
-                        $"the kept rows. {rowsRead - rowsKept} row(s) were set aside, so a gap in replicate or fraction numbers " +
-                        "may be a sample whose file is not searched.");
-                }
-            }
-
-            return scope.Document;
-        }
+            Tag = tag,
+            PlexColumn = settings.SdrfPlexColumn,
+            PlexFileNamePattern = settings.SdrfPlexPattern,
+            SinglePlex = settings.SdrfSinglePlex,
+            ConditionColumns = settings.SdrfConditionColumns?.ToList(),
+            SingleCondition = settings.SdrfSingleCondition,
+            UnknownFactorIsOwnCondition = settings.SdrfUnknownFactorIsCondition,
+        };
 
         /// <summary>
         /// Prints what one SDRF document says about quantification, and runs nothing else.
