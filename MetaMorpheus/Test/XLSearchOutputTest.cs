@@ -1,4 +1,6 @@
-﻿using NUnit.Framework;
+﻿using Chemistry;
+using NUnit.Framework;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
 using TaskLayer;
@@ -87,6 +89,16 @@ namespace Test
 
             var list = Directory.GetFiles(outputFolder, "*.*", SearchOption.AllDirectories);
             string matchingvalue = list.Where(p => p.Contains("SpectralLibrary")).First().ToString();
+
+            // A single peptide carries no crosslinker, so it is stored at its own theoretical precursor m/z.
+            // Crosslinked pairs (named with their link positions) still store the measured m/z.
+            var singlePeptides = SpectralLibraryPrecursorMzTests.ReadMspPrecursors(matchingvalue).Where(p => !p.Name.Contains('(')).ToList();
+            Assert.That(singlePeptides, Is.Not.Empty);
+            foreach (var (fullSequence, charge, precursorMz) in singlePeptides)
+            {
+                double theoreticalMz = new PeptideWithSetModifications(fullSequence, GlobalVariables.AllModsKnownDictionary).MonoisotopicMass.ToMz(charge);
+                Assert.That(precursorMz, Is.EqualTo(theoreticalMz).Within(1e-6), fullSequence);
+            }
 
             Directory.Delete(outputFolder, true);
         }
