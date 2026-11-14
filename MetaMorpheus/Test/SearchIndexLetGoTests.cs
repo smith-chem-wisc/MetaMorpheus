@@ -8,6 +8,7 @@ using Omics.Digestion;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -28,10 +29,13 @@ namespace Test
         /// termini): no index a search engine was given may still be reachable when post-search's first FDR finishes.
         /// GenerateIndexes hands the indexes back through ref locals of SearchTask.RunSpecific, and a local whose address is
         /// taken is reported live for the whole method, post-search included, so the last ones searched stayed reachable.
+        /// Needs an optimized build: see <see cref="RequireOptimizedSearchTask"/>.
         /// </summary>
         [Test]
         public static void IndexesAreLetGoBeforePostSearch([Values(SearchType.Modern, SearchType.NonSpecific)] SearchType searchType)
         {
+            RequireOptimizedSearchTask();
+
             string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "SearchIndexLetGo-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(folder);
             string testData = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData");
@@ -83,6 +87,7 @@ namespace Test
         /// <summary>
         /// A Modern search that fails part way must keep no index on the task. The GUI runs the same task object again, and the
         /// index a search keeps for its next file is the whole fragment index; its cache write must not be left running either.
+        /// Runs in Debug too: it looks once RunSpecific has thrown, when no frame of the task's is left to hold anything.
         /// </summary>
         [Test]
         public static void IndexesAreLetGoWhenTheSearchFails()
@@ -157,6 +162,25 @@ namespace Test
             else
             {
                 yield return typeof(ModernSearchEngine).GetField("PeptideIndex", Instance).GetValue(engine);
+            }
+        }
+
+        /// <summary>
+        /// Skips a test that looks while <see cref="SearchTask"/>'s RunSpecific is still running, unless TaskLayer is JIT-optimized
+        /// (a Release build). Unoptimized code reports every local and JIT temporary live until the method returns. In a Debug
+        /// build that keeps the last index searched reachable through post-search, which runs inside RunSpecific, even after
+        /// RunSpecific clears its index locals: the JIT copies those locals (their address is taken) into temporaries for the
+        /// search engine's constructor call, and nothing clears those. RunSpecific asks to be optimized
+        /// (MethodImplOptions.AggressiveOptimization), but a Debug build's DebuggableAttribute overrides that. A debugger set to
+        /// suppress JIT optimization defeats it the same way.
+        /// </summary>
+        private static void RequireOptimizedSearchTask()
+        {
+            DebuggableAttribute debuggable = typeof(SearchTask).Assembly.GetCustomAttribute<DebuggableAttribute>();
+            if (debuggable != null && debuggable.IsJITOptimizerDisabled)
+            {
+                Assert.Ignore("Needs an optimized (Release) build of TaskLayer. In a Debug build SearchTask.RunSpecific's frame keeps " +
+                    "the last index searched reachable while post-search runs inside it, so this lifetime check cannot pass there.");
             }
         }
 
