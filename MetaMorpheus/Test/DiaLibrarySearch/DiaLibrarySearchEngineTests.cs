@@ -90,6 +90,37 @@ public class DiaLibrarySearchEngineTests
         Assert.That(results.Matches.Count(m => !m.IsDecoy && m.QValue <= 0.01), Is.LessThanOrEqualTo(Math.Max(1, results.Matches.Count / 100)));
     }
 
+    /// <summary>
+    /// An entry without a library time (NaN, as mzLib reads a missing one) passes any iRT window of the library query, but
+    /// it has no window of scans to search, so it is not scored, rather than scored against every scan with a NaN library
+    /// iRT. Its neighbour at the same m/z is.
+    /// </summary>
+    [Test]
+    public void AnEntryWithoutALibraryTimeIsNotScored()
+    {
+        var run = SyntheticDiaRun.Build(50, entry => !entry.IsDecoy);
+        var template = run.Library.First(entry => !entry.IsDecoy);
+        var untimed = new MslLibraryEntry
+        {
+            FullSequence = "NANTIME" + template.FullSequence,
+            BaseSequence = "NANTIME" + template.BaseSequence,
+            PrecursorMz = template.PrecursorMz,
+            ChargeState = template.ChargeState,
+            RetentionTime = double.NaN,
+            IsDecoy = false,
+            MatchedFragmentIons = template.MatchedFragmentIons,
+        };
+        string path = Path.Combine(_directory, $"untimed_{Guid.NewGuid():N}.msl");
+        MslLibrary.Save(path, run.Library.Append(untimed).ToList());
+        using var library = MslLibrary.Load(path);
+
+        var matches = Search(library, run.Scans);
+
+        Assert.That(matches.Select(m => m.FullSequence), Does.Contain(template.FullSequence), "its neighbour, at the same m/z, is still scored");
+        Assert.That(matches.Select(m => m.FullSequence), Does.Not.Contain(untimed.FullSequence));
+        Assert.That(matches, Has.All.Matches<DiaPrecursorMatch>(m => double.IsFinite(m.LibraryIrt.Value)));
+    }
+
     /// <summary>When only the decoys elute, no target may pass: every real signal belongs to a decoy.</summary>
     [Test]
     public void ARunOfDecoysReportsNoTargets()

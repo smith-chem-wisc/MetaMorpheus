@@ -183,10 +183,12 @@ namespace TaskLayer
 
             if (Parameters.GlycoSearchParameters.WriteSpectrumLibrary)
             {
+                // A glycopeptide's glycans are modifications on it, so its theoretical precursor m/z includes them
+                // (SpectralMatch.ToLibrarySpectrum). A gsm whose candidates differ in mass has no one precursor m/z to store.
                 List<LibrarySpectrum> spectrumLibrary = new List<LibrarySpectrum>();
-                foreach (var gsm in filteredPsms)
+                foreach (var gsm in filteredPsms.Where(g => g.BioPolymerWithSetModsMonoisotopicMass.HasValue))
                 {
-                    spectrumLibrary.Add(new LibrarySpectrum(gsm.FullSequence, gsm.ScanPrecursorMonoisotopicPeakMz, gsm.ScanPrecursorCharge, gsm.MatchedFragmentIons,gsm.ScanRetentionTime,gsm.IsDecoy));
+                    spectrumLibrary.Add(gsm.ToLibrarySpectrum());
                 }
                 WriteSpectrumLibrary(spectrumLibrary, OutputFolder);
             }

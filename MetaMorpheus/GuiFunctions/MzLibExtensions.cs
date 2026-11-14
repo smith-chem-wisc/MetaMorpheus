@@ -153,9 +153,11 @@ namespace GuiFunctions
                 return new PeptideWithSetModifications(fullSequence ?? sm.FullSequence, GlobalVariables.AllModsKnownDictionary, oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue);
             else
             {
-                // Determine termini based on position in parent sequence, future versions would read it from the SM. 
-                IHasChemicalFormula fivePrimeTerminus = sm.PreviousResidue == "-" ? NucleicAcid.DefaultFivePrimeTerminus : Rnase.DefaultFivePrimeTerminus;
-                IHasChemicalFormula threePrimeTerminus = sm.NextResidue == "-" ? NucleicAcid.DefaultThreePrimeTerminus : Rnase.DefaultThreePrimeTerminus;
+                // The match carries its termini (written by the search, which includes any user-chosen cap).
+                // Fall back to the defaults by position in the parent sequence if it does not.
+                var osm = sm as OsmFromTsv;
+                IHasChemicalFormula fivePrimeTerminus = osm?.FivePrimeTerminus ?? (sm.PreviousResidue == "-" ? NucleicAcid.DefaultFivePrimeTerminus : Rnase.DefaultFivePrimeTerminus);
+                IHasChemicalFormula threePrimeTerminus = osm?.ThreePrimeTerminus ?? (sm.NextResidue == "-" ? NucleicAcid.DefaultThreePrimeTerminus : Rnase.DefaultThreePrimeTerminus);
 
                 return new OligoWithSetMods(fullSequence ?? sm.FullSequence, GlobalVariables.AllRnaModsKnownDictionary,
                     oneBaseStartResidue: startResidue, oneBasedEndResidue: endResidue, fivePrimeTerminus: fivePrimeTerminus, threePrimeTerminus: threePrimeTerminus);

@@ -94,6 +94,9 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
 
         foreach (var candidate in candidates)
         {
+            // A precursor without a library time (NaN, as mzLib reads a missing one) has no window to search
+            if (!float.IsFinite(candidate.Irt))
+                continue;
             var entry = _library.GetEntry(candidate.PrecursorIdx);
             if (entry is null || entry.MatchedFragmentIons.Count == 0)
                 continue;

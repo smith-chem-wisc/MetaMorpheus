@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Omics;
 using Omics.SpectralMatch;
+using Omics.SpectrumMatch;
 using System;
 using Omics.Digestion;
 using System.Buffers;
@@ -238,6 +239,20 @@ namespace EngineLayer
             }
         }
 
+        /// <summary>
+        /// This match as a spectral library entry: its full sequence, the scan's charge, its matched fragment ions and
+        /// retention time, and the theoretical precursor m/z of the form it identified (that form's monoisotopic mass at
+        /// the scan's charge). It is not the m/z the scan measured. When the instrument takes a 13C peak for the
+        /// monoisotopic peak, a mass-difference notch still accepts the match, and the measured m/z is then about
+        /// 1.003 Da / z high; a library search would look for the precursor there.
+        /// Null when the match's candidates differ in mass: it then names no one form, so it has no precursor m/z.
+        /// </summary>
+        public LibrarySpectrum ToLibrarySpectrum() =>
+            BioPolymerWithSetModsMonoisotopicMass is { } monoisotopicMass
+                ? new LibrarySpectrum(FullSequence, monoisotopicMass.ToMz(ScanPrecursorCharge), ScanPrecursorCharge,
+                    MatchedFragmentIons, ScanRetentionTime, IsDecoy)
+                : null;
+
         #region GPTMD
 
         /// <summary>
@@ -433,9 +448,14 @@ namespace EngineLayer
             return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr, includeOneOverK0Column, includeCollisionalEnergyColumn, includeMostAbundantColumn).Values.Select(v => v?.Trim() ?? string.Empty));
         }
 
+        /// <summary>At least the number of columns a row has (about 60).</summary>
+        internal const int DataDictionaryCapacity = 64;
+
         public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false, bool includeOneOverK0Column = false, bool includeCollisionalEnergyColumn = false, bool includeMostAbundantColumn = false)
         {
-            Dictionary<string, string> s = new Dictionary<string, string>();
+            // sized for every column, so the dictionary is not grown four times per row; it is never removed from, so it
+            // still lists the columns in the order they are added
+            Dictionary<string, string> s = new Dictionary<string, string>(DataDictionaryCapacity);
             PsmTsvWriter.AddBasicMatchData(s, psm, includeOneOverK0Column, includeCollisionalEnergyColumn);
             PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned, includeMostAbundantColumn);
             PsmTsvWriter.AddMatchedIonsData(s, psm?.MatchedFragmentIons);
