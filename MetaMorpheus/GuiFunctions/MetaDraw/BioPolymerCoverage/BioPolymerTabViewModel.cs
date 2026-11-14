@@ -3,6 +3,7 @@ using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using MzLibUtil;
 using Omics;
+using Omics.BioPolymerGroup;
 using Proteomics.ProteolyticDigestion;
 using Readers;
 using System;
@@ -33,14 +34,17 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
     public BioPolymerTabViewModel(MetaDrawLogic metaDrawLogic, string exportDirectory = null)
     {
         IsDatabaseLoaded = false;
+        IsProteinGroupsLoaded = false;
         _metaDrawLogic = metaDrawLogic;
         _allBioPolymers = new Dictionary<string, IBioPolymer>();
         AllGroups = new ObservableCollection<BioPolymerGroupViewModel>();
         DatabasePaths = new ObservableCollection<string>();
         ExportDirectory = exportDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
-        LoadDatabaseCommand = new RelayCommand(LoadDatabase);
-        ResetDatabaseCommand = new RelayCommand(ResetDatabase);
+        LoadDataCommand = new RelayCommand(LoadData);
+        ResetDataCommand = new RelayCommand(ResetData);
+        ResetDataBaseCommand = new RelayCommand(ResetDatabase);
+        ResetProteinGroupsCommand = new RelayCommand(ResetProteinGroups);
         ExportImageCommand = new RelayCommand(ExportImage);
 
         BindingOperations.EnableCollectionSynchronization(AllGroups, ThreadLocker);
@@ -87,15 +91,11 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
         }
     }
 
-    public ICommand LoadDatabaseCommand { get; set; }
-    public ICommand ResetDatabaseCommand { get; set; }
-
     private async void LoadDatabase()
     {
         if (DatabasePaths.Count == 0)
             return;
 
-        IsLoading = true;
         try
         {
             // This is needed to set the proper analyte type in the Engine.Run() method. 
@@ -133,10 +133,6 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
             }
         }
         catch (Exception e) { MessageBoxHelper.Warn($"An error occurred while loading the database(s):\n{e}"); }
-        finally
-        {
-            IsLoading = false;
-        }
     }
 
     private void ResetDatabase()
@@ -144,10 +140,119 @@ public class BioPolymerTabViewModel : MetaDrawTabViewModel
         DatabasePaths.Clear();
         OnPropertyChanged(nameof(DatabaseName));
         OnPropertyChanged(nameof(DatabasePathsTooltip));
+
         _allBioPolymers.Clear();
         AllGroups.Clear();
         FilteredGroups.Clear();
         IsDatabaseLoaded = false;
+    }
+
+    #endregion
+
+    #region Protein Group Handling
+
+    // ==================================================
+    // TODO: Change this behavior once Mzlib supports all of our protein/transcript group files (Working on that PR)
+    // ==================================================
+
+    // In Mzlib, the quantified protein and transcript group file types also load non-quantified protein and transcript groups, so we can use the same list for both.
+    public static List<SupportedFileType> SupportedProteinGroupFileTypes = new()
+    {
+        SupportedFileType.MetaMorpheusQuantifiedProteinGroups,
+        SupportedFileType.MetaMorpheusQuantifiedTranscriptGroups
+    };
+
+    private bool _isProteinGroupsLoaded;
+    public bool IsProteinGroupsLoaded
+    {
+        get => _isProteinGroupsLoaded;
+        set
+        {
+            _isProteinGroupsLoaded = value;
+            OnPropertyChanged(nameof(IsProteinGroupsLoaded));
+        }
+    }
+    private string? _proteinGroupsFilePath;
+    public string? ProteinGroupsFilePath
+    {
+        get => _proteinGroupsFilePath;
+        set
+        {
+            if (_proteinGroupsFilePath == value)
+                return;
+
+            _proteinGroupsFilePath = value;
+            OnPropertyChanged(nameof(ProteinGroupsFilePath));
+            OnPropertyChanged(nameof(ProteinGroupName));
+            OnPropertyChanged(nameof(HasProteinGroupsFile));
+        }
+    }
+
+    public bool HasProteinGroupsFile => !string.IsNullOrWhiteSpace(ProteinGroupsFilePath);
+
+    public string? ProteinGroupName
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(ProteinGroupsFilePath))
+                return "Add Protein Groups File...";
+            return Path.GetFileNameWithoutExtension(ProteinGroupsFilePath);
+        }
+    }
+
+    public List<ProteinGroupFromTsv> Groups { get; set; }
+
+    private async void LoadProteinGroups()
+    {
+        if (string.IsNullOrWhiteSpace(ProteinGroupsFilePath) || !File.Exists(ProteinGroupsFilePath))
+            return;
+
+        try
+        {
+            var type = ProteinGroupsFilePath.ParseFileType();
+            if (!SupportedProteinGroupFileTypes.Contains(type))
+                return;
+
+            var file = (ProteinGroupFromTsvFile)await Task.Run(() => FileReader.ReadResultFile(ProteinGroupsFilePath));
+            var groups = file.Results.ToList();
+            Groups = groups;
+            IsProteinGroupsLoaded = true;
+        }
+        catch (Exception e) { MessageBoxHelper.Warn($"An error occurred while loading the Protein Groups:\n{e}"); }
+    }
+
+    private void ResetProteinGroups()
+    {
+        ProteinGroupsFilePath = null;
+
+        Groups?.Clear();
+        IsProteinGroupsLoaded = false;
+    }
+
+    #endregion
+
+    #region Commands and Command Methods
+
+    public ICommand LoadDataCommand { get; set; }
+    public ICommand ResetDataCommand { get; set; }
+    public ICommand ResetProteinGroupsCommand { get; set; }
+    public ICommand ResetDataBaseCommand { get; set; }
+
+    public async void LoadData()
+    {
+        IsLoading = true;
+
+        var dbLoadTask = Task.Run(() => LoadDatabase());
+        var proteinGroupsLoadTask = Task.Run(() => LoadProteinGroups());
+
+        await Task.WhenAll(dbLoadTask, proteinGroupsLoadTask);
+        IsLoading = false;
+    }
+
+    public void ResetData()
+    {
+        ResetDatabase();
+        ResetProteinGroups();
     }
 
     #endregion

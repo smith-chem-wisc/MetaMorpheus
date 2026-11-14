@@ -51,14 +51,37 @@
                     </Label>
                 </DockPanel>
 
-                <DockPanel Grid.Row="1" Margin="5 2">
+                <!-- Select protein group file -->
+                <DockPanel Grid.Row="1" LastChildFill="True" Grid.ColumnSpan="3" Margin="5 2">
+                    <Label Width="98" >
+                        <Label.Content>
+                            <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
+                                                     ConverterParameter="Protein Groups:"/>
+                        </Label.Content>
+                    </Label>
+
+                    <Button Content="Reset" HorizontalAlignment="Right" DockPanel.Dock="Right"
+                        VerticalAlignment="Center" Width="40" Height="26"
+                        IsEnabled="{Binding HasProteinGroupsFile}"
+                        Command="{Binding ResetProteinGroupsCommand}" />
+
+                    <Button Name="SelectProteinGroupsButton" Content="Add" HorizontalAlignment="Right" DockPanel.Dock="Right"
+                        VerticalAlignment="Center" Width="40" Height="26" Margin="5 0"
+                        Click="SelectProteinGroupsButton_OnClick" />
+
+                    <Label BorderThickness="1" ToolTip="{Binding ProteinGroupsFilePath}">
+                        <TextBlock TextTrimming="CharacterEllipsis" Text="{Binding ProteinGroupName}" />
+                    </Label>
+                </DockPanel>
+
+                <DockPanel Grid.Row="2" Margin="5 2">
                     <Label Content="Color By:" DockPanel.Dock="Left" />
                     <ComboBox Width="120" Margin="5 0" DockPanel.Dock="Left" HorizontalAlignment="Left"
                               SelectedValue="{Binding CoverageMapViewModel.ColorBy}"
                               ItemsSource="{Binding CoverageMapViewModel.AllColorByTypes}" />
                 </DockPanel>
 
-                <DockPanel Grid.Row="2" Margin="5 0 10 0" HorizontalAlignment="Stretch"
+                <DockPanel Grid.Row="3" Margin="5 0 10 0" HorizontalAlignment="Stretch"
                            Visibility="{Binding CoverageMapViewModel.IsNumericColorMode, Converter={StaticResource bool2VisConverter}}">
                     <Label Content="Color Gradient:" DockPanel.Dock="Left" />
                     <ComboBox Width="100" Height="22" Margin="0 0 5 0"
@@ -72,11 +95,11 @@
 
 
                 <!-- Load Button and Search Bar -->
-                <Border Grid.Row="3" Grid.ColumnSpan="3" BorderBrush="Black" 
+                <Border Grid.Row="4" Grid.ColumnSpan="3" BorderBrush="Black"
                     BorderThickness="0,0,0,1" Margin="5 2" >
                     <DockPanel  LastChildFill="True" Margin="0 0 0 2">
                         <Button Name="LoadDatabase" Content="Load Files" Width="80" 
-                                Command="{Binding LoadDatabaseCommand}"/>
+                                Command="{Binding LoadDataCommand}"/>
                         
                         <TextBox Width="140"  DockPanel.Dock="Right" VerticalContentAlignment="Center"
                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
