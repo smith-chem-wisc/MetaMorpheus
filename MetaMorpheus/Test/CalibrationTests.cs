@@ -646,9 +646,18 @@ namespace Test
             File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "SmallCalibratible_Yeast.mzML"), second, true);
             WriteTmtDesignBeside(first, second);
 
+            // Cancel once the first file's last calibration round has acquired its points: all that is left of that file is its
+            // output, which does not look at StopLoops, and the loop looks at it before it starts the second file. Not at
+            // FinishedDataFile: a calibrated file is reported once its background write is done, by which time the loop is
+            // already on the next file.
             bool stopLoops = GlobalVariables.StopLoops;
-            EventHandler<StringEventArgs> stopAfterTheFirstFile = (_, _) => GlobalVariables.StopLoops = true;
-            MetaMorpheusTask.FinishedDataFileHandler += stopAfterTheFirstFile;
+            int calibrationRounds = 0;
+            EventHandler<SingleEngineFinishedEventArgs> stopAfterTheFirstFile = (sender, _) =>
+            {
+                if (sender is CalibrationEngine) { calibrationRounds++; }
+                else if (sender is DataPointAcquisitionEngine && calibrationRounds == 2) { GlobalVariables.StopLoops = true; }
+            };
+            MetaMorpheusEngine.FinishedSingleEngineHandler += stopAfterTheFirstFile;
             try
             {
                 new CalibrationTask().RunTask(outputFolder,
@@ -667,7 +676,7 @@ namespace Test
             }
             finally
             {
-                MetaMorpheusTask.FinishedDataFileHandler -= stopAfterTheFirstFile;
+                MetaMorpheusEngine.FinishedSingleEngineHandler -= stopAfterTheFirstFile;
                 GlobalVariables.StopLoops = stopLoops;
                 Directory.Delete(unitTestFolder, true);
             }

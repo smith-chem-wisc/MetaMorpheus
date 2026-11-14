@@ -44,6 +44,21 @@ namespace EngineLayer
             }
         }
 
+        /// <summary>How many intervals <see cref="GetAllowedPrecursorMassIntervalsFromTheoreticalMass"/> yields.</summary>
+        internal int IntervalCount => AcceptableSortedMassShifts.Length;
+
+        /// <summary>
+        /// The <paramref name="j"/>th interval <see cref="GetAllowedPrecursorMassIntervalsFromTheoreticalMass"/> yields, computed
+        /// the same way, without allocating it: the Classic search asks for every interval of every peptide.
+        /// </summary>
+        internal void GetAllowedPrecursorMassInterval(double peptideMonoisotopicMass, int j, out double minimum, out double maximum, out int notch)
+        {
+            notch = NotchIntegers[j];
+            var mass = peptideMonoisotopicMass + AcceptableSortedMassShifts[j];
+            minimum = Tolerance.GetMinimumValue(mass);
+            maximum = Tolerance.GetMaximumValue(mass);
+        }
+
         public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromObservedMass(double peptideMonoisotopicMass)
         {
             for (int j = 0; j < AcceptableSortedMassShifts.Length; j++)

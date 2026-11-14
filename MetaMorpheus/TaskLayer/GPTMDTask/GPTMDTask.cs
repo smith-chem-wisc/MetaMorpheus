@@ -104,6 +104,9 @@ namespace TaskLayer
 
             // Store the psms from each file in one combined list
             List<SpectralMatch> allPsms = new();
+            // every file's search digests the whole database; keep the products for the next file
+            ClassicSearchDigestionCache digestionCache = null;
+            bool digestionCacheDecided = false;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 // Stop if canceled
@@ -161,8 +164,15 @@ namespace TaskLayer
                         break;
                 }
 
+                if (!digestionCacheDecided)
+                {
+                    digestionCacheDecided = true;
+                    digestionCache = ClassicSearchDigestionCache.Create(proteinList, combinedParams.DigestionParams, fixedModifications, variableModifications,
+                        currentRawFileList.Count);
+                }
                 new ClassicSearchEngine(psmArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, null, null, null, 
-                    proteinList, searchMode, combinedParams, this.FileSpecificParameters, null, new List<string> { taskId, "Individual Spectra Files", origDataFile }, writeSpctralLibrary).Run();
+                    proteinList, searchMode, combinedParams, this.FileSpecificParameters, null, new List<string> { taskId, "Individual Spectra Files", origDataFile }, writeSpctralLibrary,
+                    digestionCache: digestionCache).Run();
 
 
                 var psmList = psmArray.Where(p => p != null).ToList();
@@ -176,6 +186,11 @@ namespace TaskLayer
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
             }
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
+
+            // the searches are done: let the kept digestion products go (Release, because this method's frame may keep the
+            // cache object itself reachable until the task ends)
+            digestionCache?.Release();
+            digestionCache = null;
 
             // Run FDR analysis on allPsms
             // GPTMD doesn't work as well if you do FDR on a file-by-file basis. Presumably this is because it takes multiple files to get enough PSMs for all the different notches

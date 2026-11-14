@@ -115,15 +115,16 @@ namespace EngineLayer.FdrAnalysis
                         Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, iterativePepTraining);
 
                         // peptides are ordered by PEP score from good to bad in order to select the best PSM for each peptide
-                        peptides = psms
-                            .OrderBy(p => p.FdrInfo.PEP)
-                            .ThenByDescending(p => p)
+                        // The PSMs are sorted once, for both: the peptide-level pass in between changes neither PEP nor
+                        // anything the default comparer reads, so sorting them again gave this same order.
+                        var psmsByPep = psms.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
+                        peptides = psmsByPep
                             .GroupBy(p => p.FullSequence)
                             .Select(p => p.FirstOrDefault()) // Get the best psm for each peptide based on PEP (default comparer is used to break ties)
                             .ToList();
                         CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
 
-                        psms = psms.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
+                        psms = psmsByPep;
                         CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
                         
                     }
@@ -146,18 +147,15 @@ namespace EngineLayer.FdrAnalysis
                     // but we do want to calculate pep q-values
                     // really, in this case, we only need to run one or the other (i.e., only peptides or psms are passed in)
                     // but there's no mechanism to pass that info to the FDR analysis engine, so we'll do this for now
-                    peptides = psms
-                            .OrderBy(p => p.FdrInfo.PEP)
-                            .ThenByDescending(p => p)
+                    // Sorted once for both passes, as above
+                    var psmsByPep = psms.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
+                    peptides = psmsByPep
                             .GroupBy(p => p.FullSequence)
                             .Select(p => p.FirstOrDefault()) // Get the best psm for each peptide based on PEP (default comparer is used to break ties)
                             .ToList();
                     CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
 
-                    psms = psms
-                        .OrderBy(p => p.FdrInfo.PEP)
-                        .ThenByDescending(p => p)
-                        .ToList();
+                    psms = psmsByPep;
                     CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
                 }
 
@@ -226,35 +224,50 @@ namespace EngineLayer.FdrAnalysis
             double cumulativeDecoy = 0;
 
             //set up arrays for local FDRs
-            //set up arrays for local FDRs
-            var allNotches = psms
-                .SelectMany(p => p.BestMatchingBioPolymersWithSetMods.Select(h => h.Notch))
-                .ToHashSet();
+            var cumulativeTargetPerNotch = NotchDictionary(psms, 0.0);
+            var cumulativeDecoyPerNotch = NotchDictionary(psms, 0.0);
 
-            var cumulativeTargetPerNotch = allNotches.ToDictionary(n => n, _ => 0.0);
-            var cumulativeDecoyPerNotch = allNotches.ToDictionary(n => n, _ => 0.0);
+            // Target and decoy hypotheses of one PSM, counted per notch. Nothing below depends on the order of the
+            // hypotheses or of the notches - each notch's running total gets exactly one addition per PSM, and the
+            // counts are whole numbers - so they are read in the order they were added, which skips the sort
+            // BestMatchingBioPolymersWithSetMods performs on every enumeration, and grouped without LINQ.
+            var notchCounts = new List<(int Notch, int Targets, int Decoys)>(8);
 
             //Assign FDR values to PSMs
-            List<IGrouping<int, SpectralMatchHypothesis>> ambigResultsGroupedByNotch = new(8);
             foreach (var psm in psms)
             {
                 if (GlobalVariables.StopLoops) { break; }
 
                 // Group all hypotheses by notch
-                ambigResultsGroupedByNotch.Clear();
-                ambigResultsGroupedByNotch.AddRange(psm.BestMatchingBioPolymersWithSetMods
-                    .GroupBy(h => h.Notch));
+                var hypotheses = psm.HypothesesInAddedOrder;
+                notchCounts.Clear();
+                for (int h = 0; h < hypotheses.Count; h++)
+                {
+                    int notch = hypotheses[h].Notch;
+                    int group = 0;
+                    while (group < notchCounts.Count && notchCounts[group].Notch != notch)
+                    {
+                        group++;
+                    }
+                    if (group == notchCounts.Count)
+                    {
+                        notchCounts.Add((notch, 0, 0));
+                    }
+                    var counts = notchCounts[group];
+                    notchCounts[group] = hypotheses[h].IsDecoy
+                        ? (counts.Notch, counts.Targets, counts.Decoys + 1)
+                        : (counts.Notch, counts.Targets + 1, counts.Decoys);
+                }
 
                 // Aggregate FDR Counts
-                double totalHits = psm.BestMatchingBioPolymersWithSetMods.Count();
+                double totalHits = hypotheses.Count;
                 double totalTargetHits = 0;
                 double totalDecoyHits = 0;
 
-                foreach (var group in ambigResultsGroupedByNotch)
+                foreach (var (notch, targets, decoys) in notchCounts)
                 {
-                    int notch = group.Key;
-                    double groupTargetHits = group.Count(h => !h.IsDecoy);
-                    double groupDecoyHits = group.Count(h => h.IsDecoy);
+                    double groupTargetHits = targets;
+                    double groupDecoyHits = decoys;
 
                     totalTargetHits += groupTargetHits;
                     totalDecoyHits += groupDecoyHits;
@@ -270,15 +283,15 @@ namespace EngineLayer.FdrAnalysis
                 psm.GetFdrInfo(peptideLevelCalculation).CumulativeDecoy = cumulativeDecoy;
                 psm.GetFdrInfo(peptideLevelCalculation).CumulativeTarget = cumulativeTarget;
 
-                if (ambigResultsGroupedByNotch.Count == 1) // Notch Unambiguous Psm
+                if (notchCounts.Count == 1) // Notch Unambiguous Psm
                 {
-                    int psmNotch = ambigResultsGroupedByNotch.First().Key;
+                    int psmNotch = notchCounts[0].Notch;
                     psm.GetFdrInfo(peptideLevelCalculation).CumulativeDecoyNotch = cumulativeDecoyPerNotch[psmNotch];
                     psm.GetFdrInfo(peptideLevelCalculation).CumulativeTargetNotch = cumulativeTargetPerNotch[psmNotch];
                 }
-                else // Notch Ambiguous Psm 
+                else // Notch Ambiguous Psm
                 {
-                    foreach (var hyp in psm.BestMatchingBioPolymersWithSetMods)
+                    foreach (var hyp in hypotheses)
                     {
                         int psmNotch = hyp.Notch;
                         if (peptideLevelCalculation)
@@ -320,10 +333,7 @@ namespace EngineLayer.FdrAnalysis
         private static void QValueTraditional(List<SpectralMatch> psms, bool peptideLevelAnalysis)
         {
             double qValue = 0;
-            Dictionary<int, double> qValueNotch = psms
-                .SelectMany(p => p.BestMatchingBioPolymersWithSetMods.Select(h => h.Notch))
-                .Distinct()
-                .ToDictionary(p => p, _ => 0.0);
+            Dictionary<int, double> qValueNotch = NotchDictionary(psms, 0.0);
 
             for (int i = 0; i < psms.Count; i++)
             {
@@ -372,10 +382,7 @@ namespace EngineLayer.FdrAnalysis
 
         private static void QValueInverted(List<SpectralMatch> psms, bool peptideLevelAnalysis)
         {
-            Dictionary<int, double> qValueNotch = psms
-                .SelectMany(p => p.BestMatchingBioPolymersWithSetMods.Select(h => h.Notch))
-                .Distinct()
-                .ToDictionary(p => p, _ => 2.0);
+            Dictionary<int, double> qValueNotch = NotchDictionary(psms, 2.0);
             psms.Reverse();
             //this calculation is performed from bottom up. So, we begin the loop by computing qValue
             //and qValueNotch for the last/lowest scoring psm in the bunch
@@ -427,6 +434,25 @@ namespace EngineLayer.FdrAnalysis
                 }
             }
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
+        }
+
+        /// <summary>
+        /// A dictionary from every notch any hypothesis of <paramref name="psms"/> has to <paramref name="initialValue"/>.
+        /// The same keys and values the LINQ it replaces built; it reads each match's hypotheses in the order they were added,
+        /// because a set of notches does not depend on order and BestMatchingBioPolymersWithSetMods sorts on every enumeration.
+        /// </summary>
+        private static Dictionary<int, double> NotchDictionary(List<SpectralMatch> psms, double initialValue)
+        {
+            var notches = new Dictionary<int, double>();
+            foreach (var psm in psms)
+            {
+                var hypotheses = psm.HypothesesInAddedOrder;
+                for (int h = 0; h < hypotheses.Count; h++)
+                {
+                    notches.TryAdd(hypotheses[h].Notch, initialValue);
+                }
+            }
+            return notches;
         }
 
         public static void PepQValueInverted(List<SpectralMatch> psms, bool peptideLevelAnalysis)
