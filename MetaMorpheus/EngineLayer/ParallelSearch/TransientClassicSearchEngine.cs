@@ -4,11 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Chemistry;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.Util;
-using MzLibUtil;
 using Omics;
 using Omics.Fragmentation;
 using Omics.Modifications;
@@ -55,79 +53,67 @@ namespace EngineLayer.ParallelSearch
 
             if (Proteins.Any())
             {
+                // as in ClassicSearchEngine: the scans whose candidates can be scored before their ions are built, decided once
+                bool[] scoreBeforeMatching = new bool[ArrayOfSortedMS2Scans.Length];
+                for (int s = 0; s < scoreBeforeMatching.Length; s++)
+                {
+                    scoreBeforeMatching[s] = CanScoreBeforeMatching(ArrayOfSortedMS2Scans[s], CommonParameters, matchAllCharges: false);
+                }
 
                 Action<int, int> processProteinRange = (start, end) =>
                 {
-                    List<Product> peptideTheorProducts = new();
-                    HashSet<MatchedFragmentIon> matchedFragmentIons = new();
-                    Tolerance productTolerance = CommonParameters.ProductMassTolerance;
+                    var peptideTheorProducts = new List<Product>();
+                    var sortedProductMasses = new SortedProductMasses();
+                    var fragmentMatchScratch = new FragmentMatchScratch();
+                    var acceptableScans = new List<ScanWithIndexAndNotchInfo>();
+                    int peptidesInRange = 0;
                     for (int i = start; i < end; i++)
                     {
                         // Stop loop if canceled
-                        if (GlobalVariables.StopLoops) { return; }
+                        if (GlobalVariables.StopLoops) { break; }
 
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
                         foreach (var specificBioPolymer in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications))
                         {
-                            Interlocked.Increment(ref peptideCounter);
+                            peptidesInRange++;
 
                             // fragments are generated on the first scan in the precursor window; most peptides have none
                             peptideTheorProducts.Clear();
                             bool fragmented = false;
 
-                            // score each scan that has an acceptable precursor mass
-                            foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(specificBioPolymer.MonoisotopicMass, SearchMode))
+                            FillAcceptableScans(specificBioPolymer.MonoisotopicMass, acceptableScans);
+                            foreach (ScanWithIndexAndNotchInfo scan in acceptableScans)
                             {
                                 if (!fragmented)
                                 {
                                     specificBioPolymer.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts, CommonParameters.FragmentationParameters);
+                                    // sorted once per peptide, so that each scan matches all of them in one walk of its masses
+                                    sortedProductMasses.Build(peptideTheorProducts);
                                     fragmented = true;
                                 }
 
-                                matchedFragmentIons.Clear();
                                 Ms2ScanWithSpecificMass theScan = ArrayOfSortedMS2Scans[scan.ScanIndex];
-                                int precursorCharge = theScan.PrecursorCharge;
-                                Tolerance scanProductTolerance = _perFileTolerances == null
-                                    ? productTolerance
-                                    : _perFileTolerances.Product[_perFileTolerances.ScanFileIndex[scan.ScanIndex]];
+                                CommonParameters scoringParameters = _perFileTolerances == null
+                                    ? CommonParameters
+                                    : _perFileTolerances.Parameters[_perFileTolerances.ScanFileIndex[scan.ScanIndex]];
 
-                                // Match Fragment Ions
-                                foreach (var product in peptideTheorProducts)
+                                List<MatchedFragmentIon> matchedIons;
+                                double score;
+                                if (scoreBeforeMatching[scan.ScanIndex])
                                 {
-                                    // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
-                                    if (double.IsNaN(product.NeutralMass))
-                                    {
-                                        continue;
-                                    }
-
-                                    // get the closest peak in the spectrum to the theoretical peak
-                                    var closestExperimentalMass = theScan.GetClosestExperimentalIsotopicEnvelope(product.NeutralMass);
-
-                                    // is the mass error acceptable?
-                                    if (closestExperimentalMass != null
-                                        && scanProductTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass)
-                                        && Math.Abs(closestExperimentalMass.Charge) <= Math.Abs(precursorCharge))//TODO apply this filter before picking the envelope
-                                    {
-                                        matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
-                                            closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
-                                    }
+                                    // the ions are built only when the score reaches the cutoff (null below it)
+                                    score = ScoreFragmentIons(theScan, peptideTheorProducts, sortedProductMasses, scoringParameters,
+                                        CommonParameters.ScoreCutoff, fragmentMatchScratch, out matchedIons);
+                                }
+                                else
+                                {
+                                    matchedIons = MatchFragmentIons(theScan, peptideTheorProducts, scoringParameters);
+                                    score = CalculatePeptideScore(theScan.TheScan, matchedIons);
                                 }
 
-                                if (matchedFragmentIons.Count < CommonParameters.ScoreCutoff)
+                                if (score < CommonParameters.ScoreCutoff)
                                     continue;
 
-                                // Score the peptide-spectrum match
-                                double tic = theScan.TotalIonCurrent;
-                                double score = 0;
-                                foreach (var ion in matchedFragmentIons)
-                                {
-                                    if (ion.NeutralTheoreticalProduct.ProductType != ProductType.D)
-                                    {
-                                        score += 1 + ion.Intensity / tic;
-                                    }
-                                }
-
-                                var matchedIons = matchedFragmentIons.ToList(); // materialize before passing to another thread
                                 AddPeptideCandidateToPsm(scan, score, specificBioPolymer, matchedIons);
                             }
                         }
@@ -142,6 +128,7 @@ namespace EngineLayer.ParallelSearch
                             ReportProgress(new ProgressEventArgs(percentProgress, "Performing classic search... ", NestedIds));
                         }
                     }
+                    Interlocked.Add(ref peptideCounter, peptidesInRange);
                 };
 
                 if (_singleThreadMode)
@@ -150,24 +137,40 @@ namespace EngineLayer.ParallelSearch
                 }
                 else
                 {
-                    var proteinPartioner = Partitioner.Create(0, Proteins.Count);
+                    // ClassicSearchEngine's range size: many small ranges, sized from the threads actually used
+                    int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
+                    int rangeSize = Math.Max(1, Proteins.Count / (64 * Math.Max(1, maxThreadsPerFile)));
                     Parallel.ForEach(
-                        proteinPartioner,
-                        new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
-                        (range, loopState) =>
-                        {
-                            processProteinRange(range.Item1, range.Item2);
-                        });
+                        Partitioner.Create(0, Proteins.Count, rangeSize),
+                        new ParallelOptions { MaxDegreeOfParallelism = maxThreadsPerFile },
+                        range => processProteinRange(range.Item1, range.Item2));
                 }
             }
 
-            foreach (SpectralMatch psm in SpectralMatches.Where(p => p != null && UpdatedIndexes.ContainsKey(p.ScanIndex)))
+            // only the scans this search changed need resolving
+            foreach (int scanIndex in UpdatedIndexes.Keys)
             {
-                psm.ResolveAllAmbiguities();
+                SpectralMatches[scanIndex]?.ResolveAllAmbiguities();
             }
 
             HashSet<int> updatedIndexes = UpdatedIndexes.Keys.ToHashSet();
             return new TransientSearchEngineResults(this, updatedIndexes, peptideCounter);
+        }
+
+        /// <summary>
+        /// The base engine's scan lookup, unless the files' precursor tolerances differ: then the widest window is searched
+        /// and narrowed to each scan's file, which needs each interval's centre.
+        /// </summary>
+        private void FillAcceptableScans(double peptideMonoisotopicMass, List<ScanWithIndexAndNotchInfo> acceptableScans)
+        {
+            if (!_filterPrecursorPerFile)
+            {
+                FindAcceptableScans(peptideMonoisotopicMass, acceptableScans);
+                return;
+            }
+
+            acceptableScans.Clear();
+            acceptableScans.AddRange(GetAcceptableScans(peptideMonoisotopicMass, SearchMode));
         }
 
         private void AddPeptideCandidateToPsm(ScanWithIndexAndNotchInfo scan, double thisScore, IBioPolymerWithSetMods peptide, List<MatchedFragmentIon> matchedIons)

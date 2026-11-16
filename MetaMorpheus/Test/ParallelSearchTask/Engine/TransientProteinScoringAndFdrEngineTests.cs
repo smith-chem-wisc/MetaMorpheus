@@ -215,6 +215,54 @@ public class TransientProteinScoringAndFdrEngineTests
         return (group, psm);
     }
 
+    /// <summary>
+    /// Transient groups are labelled as the base engine labels a normal search's groups: a peptide is unique when no other
+    /// group in the list has it. The baseline groups keep the labels the baseline search gave them.
+    /// </summary>
+    [Test]
+    public void RunSpecific_LabelsTheTransientGroupsPeptidesUniqueToOneGroup_AndLeavesTheBaselineGroups()
+    {
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters();
+        var onlyTransientPsm = ParallelSearchTestContextFactory.CreateSpectralMatch(commonParameters, false, 120, 0.001, 0.001, 501, "PEPTIDE");
+        var sharedPsm = ParallelSearchTestContextFactory.CreateSpectralMatch(commonParameters, false, 110, 0.001, 0.001, 502, "ELVISLIVESK");
+        var onlyTransientPeptide = onlyTransientPsm.BestMatchingBioPolymersWithSetMods.Single().SpecificBioPolymer;
+        var sharedPeptide = sharedPsm.BestMatchingBioPolymersWithSetMods.Single().SpecificBioPolymer;
+
+        // parsimony left nothing unique, as for two indistinguishable proteins merged into one group
+        var transientGroup = new ProteinGroup(
+            new HashSet<IBioPolymer> { onlyTransientPeptide.Parent },
+            new HashSet<IBioPolymerWithSetMods> { onlyTransientPeptide, sharedPeptide },
+            new HashSet<IBioPolymerWithSetMods>());
+        var baselineUniquePeptides = new HashSet<IBioPolymerWithSetMods> { sharedPeptide };
+        var baselineGroup = new ProteinGroup(
+            new HashSet<IBioPolymer> { sharedPeptide.Parent },
+            new HashSet<IBioPolymerWithSetMods> { sharedPeptide },
+            baselineUniquePeptides)
+        {
+            QValue = 0.001,
+        };
+
+        var engine = new TransientProteinScoringAndFdrEngine(
+            [baselineGroup],
+            [transientGroup],
+            [onlyTransientPsm, sharedPsm],
+            BaselineFdr.CreateProteinGroupLookup([], FilterType.QValue),
+            noOneHitWonders: false,
+            treatModPeptidesAsDifferentPeptides: true,
+            mergeIndistinguishableProteinGroups: true,
+            commonParameters,
+            fileSpecificParameters: null,
+            nestedIds: []);
+        engine.Run();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(transientGroup.UniquePeptides, Is.EquivalentTo(new[] { onlyTransientPeptide }));
+            Assert.That(baselineGroup.UniquePeptides, Is.SameAs(baselineUniquePeptides));
+            Assert.That(baselineGroup.UniquePeptides, Is.EquivalentTo(new[] { sharedPeptide }));
+        });
+    }
+
     private static (ProteinGroup Group, SpectralMatch Psm) CreateTransientGroupWithPsm(
         CommonParameters commonParameters,
         double score,

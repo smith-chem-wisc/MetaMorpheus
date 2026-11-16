@@ -106,7 +106,10 @@ namespace EngineLayer
         /// protease: FlashLFQ and the isobaric engine key a peptide on its sequence alone, so they treat that sequence as
         /// shared between the two groups.
         /// </remarks>
-        internal static void LabelPeptidesUniqueToOneGroup(List<ProteinGroup> proteinGroups, bool treatModPeptidesAsDifferentPeptides)
+        /// <param name="groupsToLabel">The groups whose labels are set; null for all of <paramref name="proteinGroups"/>.
+        /// Either way a peptide is unique when no other group in <paramref name="proteinGroups"/> lists it.</param>
+        internal static void LabelPeptidesUniqueToOneGroup(List<ProteinGroup> proteinGroups, bool treatModPeptidesAsDifferentPeptides,
+            IEnumerable<ProteinGroup> groupsToLabel = null)
         {
             (string, object) Sequence(IBioPolymerWithSetMods peptide) =>
                 (treatModPeptidesAsDifferentPeptides ? peptide.FullSequence : peptide.BaseSequence, peptide.DigestionParams?.DigestionAgent);
@@ -120,7 +123,7 @@ namespace EngineLayer
                 }
             }
 
-            foreach (var proteinGroup in proteinGroups)
+            foreach (var proteinGroup in groupsToLabel ?? proteinGroups)
             {
                 proteinGroup.UniquePeptides = new HashSet<IBioPolymerWithSetMods>(
                     proteinGroup.AllPeptides.Where(peptide => groupsListingSequence[Sequence(peptide)] == 1));

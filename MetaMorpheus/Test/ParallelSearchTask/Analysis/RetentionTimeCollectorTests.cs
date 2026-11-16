@@ -51,6 +51,18 @@ public class RetentionTimeCollectorTests
     }
 
     [Test]
+    public void CanCollectData_WithoutRetentionTimeCalibrations_ReturnsFalse()
+    {
+        // Chronologer could not run on the baseline, so no calibration was fitted and nothing can be predicted
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters();
+        var psm = ParallelSearchTestContextFactory.CreateSpectralMatch(commonParameters, isDecoy: false, score: 100, psmQValue: 0.001, peptideQValue: 0.001);
+        var context = ParallelSearchTestContextFactory.CreateContext(commonParameters, allPsms: [psm], transientPsms: [psm],
+            allPeptides: [psm], transientPeptides: [psm], retentionTimeCalibrations: null);
+
+        Assert.That(new RetentionTimeCollector().CanCollectData(context), Is.False);
+    }
+
+    [Test]
     public void CollectData_WithNoConfidentEntries_ReturnsNaNAndEmptyArrays()
     {
         var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.01, pepQValueThreshold: 0.01);

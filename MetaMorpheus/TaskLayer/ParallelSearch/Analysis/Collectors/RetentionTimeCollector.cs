@@ -251,7 +251,9 @@ public class RetentionTimeCollector : IMetricCollector
 
     public bool CanCollectData(TransientDatabaseContext context)
     {
-        return context.AllPsms != null
+        // no calibrations means Chronologer could not run on the baseline, so there is nothing to predict with
+        return context.RetentionTimeCalibrations is { Count: > 0 }
+               && context.AllPsms != null
                && context.TransientPsms != null
                && context.TransientPsms.All(p => p is PeptideSpectralMatch)
                && context.AllPeptides != null

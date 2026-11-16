@@ -17,6 +17,7 @@ public sealed class TransientProteinScoringAndFdrEngine : ProteinScoringAndFdrEn
     private readonly List<ProteinGroup> _transientProteinGroups;
     private readonly IEnumerable<SpectralMatch> _scoringPsms;
     private readonly ProteinGroupFdrLookup _baselineFdr;
+    private readonly bool _treatModPeptidesAsDifferentPeptides;
 
     public TransientProteinScoringAndFdrEngine(
         List<ProteinGroup> baselineProteinGroups,
@@ -48,6 +49,7 @@ public sealed class TransientProteinScoringAndFdrEngine : ProteinScoringAndFdrEn
         _baselineProteinGroups = baselineProteinGroups;
         _transientProteinGroups = transientProteinGroups;
         _scoringPsms = neighborhoodPsms;
+        _treatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
         _baselineFdr = baselineFdr;
     }
 
@@ -81,6 +83,11 @@ public sealed class TransientProteinScoringAndFdrEngine : ProteinScoringAndFdrEn
             .OrderBy(pg => pg.QValue)
             .ThenByDescending(pg => pg.ProteinGroupScore)
             .ToList();
+
+        // as the base engine does after FDR, but only for the transient groups: a peptide is unique when no other group in
+        // the list has it. The baseline groups keep the labels they were given in the baseline search.
+        LabelPeptidesUniqueToOneGroup(analysisResults.SortedAndScoredProteinGroups, _treatModPeptidesAsDifferentPeptides,
+            filteredTransientGroups);
 
         // Calculate sequence coverage only for those results who need it. 
         foreach (var proteinGroup in analysisResults.SortedAndScoredProteinGroups.Where(p => p.SequenceCoverageFraction.IsNullOrEmpty()))

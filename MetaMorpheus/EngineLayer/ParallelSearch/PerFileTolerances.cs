@@ -13,11 +13,11 @@ namespace EngineLayer.ParallelSearch
     /// </summary>
     public class PerFileTolerances
     {
-        private PerFileTolerances(int[] scanFileIndex, Tolerance[] precursor, Tolerance[] product, Tolerance widestPrecursor)
+        private PerFileTolerances(int[] scanFileIndex, CommonParameters[] parameters, Tolerance[] precursor, Tolerance widestPrecursor)
         {
             ScanFileIndex = scanFileIndex;
+            Parameters = parameters;
             Precursor = precursor;
-            Product = product;
             WidestPrecursor = widestPrecursor;
             PrecursorVaries = precursor.Any(p => !SameTolerance(p, precursor[0]));
             PrecursorIsPpm = widestPrecursor is PpmTolerance;
@@ -36,8 +36,10 @@ namespace EngineLayer.ParallelSearch
 
         /// <summary>File index of each scan, aligned with the merged scan array.</summary>
         public int[] ScanFileIndex { get; }
+
+        /// <summary>Each file's parameters, indexed as <see cref="ScanFileIndex"/>; fragment ions are scored with these.</summary>
+        public CommonParameters[] Parameters { get; }
         public Tolerance[] Precursor { get; }
-        public Tolerance[] Product { get; }
 
         /// <summary>The widest precursor tolerance; build the acceptor from it so no file's candidates are missed.</summary>
         public Tolerance WidestPrecursor { get; }
@@ -64,18 +66,18 @@ namespace EngineLayer.ParallelSearch
         {
             warning = null;
             var byFile = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var parametersByFile = new List<CommonParameters>();
             var precursor = new List<Tolerance>();
-            var product = new List<Tolerance>();
             foreach (var (fileName, parameters) in fileParameters)
             {
                 if (byFile.ContainsKey(fileName)) continue;
                 byFile[fileName] = precursor.Count;
+                parametersByFile.Add(parameters);
                 precursor.Add(parameters.PrecursorMassTolerance);
-                product.Add(parameters.ProductMassTolerance);
             }
 
             if (precursor.All(p => SameTolerance(p, taskParams.PrecursorMassTolerance))
-                && product.All(p => SameTolerance(p, taskParams.ProductMassTolerance)))
+                && parametersByFile.All(p => SameTolerance(p.ProductMassTolerance, taskParams.ProductMassTolerance)))
             {
                 return null;
             }
@@ -88,8 +90,8 @@ namespace EngineLayer.ParallelSearch
                     // a scan from a file without an entry uses the task's tolerances
                     index = precursor.Count;
                     byFile[sortedScans[i].FullFilePath ?? string.Empty] = index;
+                    parametersByFile.Add(taskParams);
                     precursor.Add(taskParams.PrecursorMassTolerance);
-                    product.Add(taskParams.ProductMassTolerance);
                 }
                 fileIndex[i] = index;
             }
@@ -102,7 +104,7 @@ namespace EngineLayer.ParallelSearch
             }
 
             Tolerance widest = precursor.OrderByDescending(p => p.Value).First();
-            return new PerFileTolerances(fileIndex, precursor.ToArray(), product.ToArray(), widest);
+            return new PerFileTolerances(fileIndex, parametersByFile.ToArray(), precursor.ToArray(), widest);
         }
 
         private static bool SameTolerance(Tolerance a, Tolerance b) => a.GetType() == b.GetType() && a.Value == b.Value;

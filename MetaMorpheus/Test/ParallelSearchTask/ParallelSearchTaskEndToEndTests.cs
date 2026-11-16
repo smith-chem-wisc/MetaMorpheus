@@ -6,6 +6,7 @@ using Nett;
 using NUnit.Framework;
 using TaskLayer;
 using TaskLayer.ParallelSearch;
+using UsefulProteomicsDatabases;
 
 namespace Test.ParallelSearchTask;
 
@@ -305,6 +306,78 @@ public class ParallelSearchTaskEndToEndTests
                 Assert.That(row.Psm_AllRtErrors, Is.Not.Empty);
                 Assert.That(row.Peptide_AllRtErrors, Is.Not.Empty);
             });
+        }
+        finally
+        {
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
+        }
+    }
+
+    /// <summary>
+    /// Parsimony trims each match's proteins in place, so after it a transient database's PSM and peptide files hold only
+    /// matches that still have a protein from that database.
+    /// </summary>
+    [Test]
+    public void RunTask_TransientFilesHoldOnlyMatchesWithATransientProteinAfterParsimony()
+    {
+        string outputFolder = FreshOutputFolder("ParallelSearchTransientAfterParsimony");
+        try
+        {
+            // each transient protein is the first half of a baseline protein under its own accession, so it has a subset
+            // of that protein's peptides and loses to it in parsimony
+            string transientName = "truncated";
+            string transientPath = Path.Combine(outputFolder, $"{transientName}.fasta");
+            var baseProteins = ProteinDbLoader.LoadProteinFasta(BaseDatabasePath, true, DecoyType.None, false, out _);
+            File.WriteAllLines(transientPath, baseProteins.SelectMany(p => new[]
+            {
+                $">sp|T{p.Accession}|T{p.Accession}_HUMAN truncated OS=Homo sapiens",
+                p.BaseSequence[..(p.BaseSequence.Length / 2)]
+            }));
+            var transientAccessions = baseProteins.Select(p => $"T{p.Accession}").ToHashSet();
+            var task = new TaskLayer.ParallelSearch.ParallelSearchTask([new DbForTask(transientPath, false)]);
+
+            task.RunTask(outputFolder, [new DbForTask(BaseDatabasePath, false)], [SpectraPath], "parallel");
+
+            Assert.Multiple(() =>
+            {
+                foreach (string file in new[] { $"{transientName}_AllPSMs.psmtsv", $"{transientName}_AllPeptides.psmtsv" })
+                {
+                    string[] lines = File.ReadAllLines(Path.Combine(outputFolder, transientName, file));
+                    int accessionColumn = System.Array.IndexOf(lines[0].Split('\t'), "Accession");
+                    var rows = lines.Skip(1).Select(l => l.Split('\t')[accessionColumn]).ToList();
+
+                    Assert.That(rows, Is.Not.Empty, file);
+                    Assert.That(rows.Where(accessions => !accessions.Split('|')
+                            .Any(a => transientAccessions.Contains(a.Replace("DECOY_", "")))),
+                        Is.Empty, $"matches without a transient protein written to {file}");
+                }
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
+        }
+    }
+
+    [Test]
+    public void RunTask_WhenTheBaseSearchFindsNothing_StopsWithAMessage()
+    {
+        string outputFolder = FreshOutputFolder("ParallelSearchEmptyBaseline");
+        try
+        {
+            // a base database whose only protein matches none of the spectra
+            string baseDatabase = Path.Combine(outputFolder, "nomatch.fasta");
+            File.WriteAllText(baseDatabase, ">sp|NOMATCH|NOMATCH_HUMAN No match OS=Homo sapiens\nWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW\n");
+            string runFolder = Path.Combine(outputFolder, "Output");
+            Directory.CreateDirectory(runFolder);
+            var task = new TaskLayer.ParallelSearch.ParallelSearchTask([new DbForTask(TransientDatabasePaths[0], false)]);
+
+            var exception = Assert.Throws<EngineLayer.MetaMorpheusException>(() =>
+                task.RunTask(runFolder, [new DbForTask(baseDatabase, false)], [SpectraPath], "parallel"))!;
+
+            Assert.That(exception.Message, Does.Contain("base database search found no matches"));
         }
         finally
         {

@@ -370,15 +370,19 @@ public class ParallelSearchTask : SearchTask
         var baselinePsms = BaseSearchPsms.Where(p => p != null)
             .OrderByDescending(p => p).ToList();
 
-        if (baselinePsms.Count > 0)
+        // every transient match takes its FDR from the baseline's, so without baseline matches there is nothing to align to
+        if (baselinePsms.Count == 0)
         {
-            int numNotches = GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance,
-                SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac).NumNotches;
-            var baselineFdrEngine = new FdrAnalysisEngine(
-                baselinePsms, numNotches, CommonParameters,
-                FileSpecificParameters, [taskId], "PSM", false, outputFolder);
-            baselineFdrEngine.Run();
+            throw new MetaMorpheusException("The base database search found no matches, so no transient database can be scored. "
+                + "Check that the base databases and the spectra files belong together.");
         }
+
+        int numNotches = GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance,
+            SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac).NumNotches;
+        var baselineFdrEngine = new FdrAnalysisEngine(
+            baselinePsms, numNotches, CommonParameters,
+            FileSpecificParameters, [taskId], "PSM", false, outputFolder);
+        baselineFdrEngine.Run();
 
         _baselinePsmFdr = BaselineFdr.CreatePsmLookup(baselinePsms);
         _baselinePeptideFdr = BaselineFdr.CreatePeptideLookup(baselinePsms);
@@ -756,6 +760,11 @@ public class ParallelSearchTask : SearchTask
         List<ProteinGroup>? transientProteinGroups = null;
         if (proteinGroups is not null)
         {
+            // parsimony trims each match's proteins in place, so a match whose transient protein lost to a baseline protein
+            // is no longer a transient match; the FDR alignment above already holds for those that remain
+            transientPsms = FilterToTransientDatabaseOnly(transientPsms, transientProteinAccessions).ToList();
+            transientPeptides = FilterToTransientDatabaseOnly(transientPeptides, transientProteinAccessions).ToList();
+
             // Count bioPolymer groups that contain at least one transient database bioPolymer
             transientProteinGroups =
                 FilterProteinGroupsToTransientDatabaseOnly(proteinGroups, transientProteinAccessions)
