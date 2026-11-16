@@ -1421,7 +1421,7 @@ namespace Test
         /// <summary>
         /// What the join could not place is printed with the design report, SharedStem first: it means one search file
         /// whose rows name two different acquired files, which only the depositor can resolve. Only the lists that
-        /// have entries are printed, and the report's line numbers are said to count the kept rows when rows were dropped.
+        /// have entries are printed, and the report's line numbers are the SDRF file's own (mzLib #1583).
         /// </summary>
         [Test]
         public static void TestSdrfDesignPrintsWhatTheJoinSetAsideSharedStemFirst()
@@ -1447,7 +1447,9 @@ namespace Test
             Assert.That(dropped, Is.GreaterThan(sharedStem), "SharedStem is printed first");
             Assert.That(report, Is.GreaterThan(Math.Max(withoutRow, dropped)), "the join's lists come with, and before, the design report");
             Assert.That(written.ToString(), Does.Not.Contain("Ambiguous"), "an empty list is not printed");
-            Assert.That(written.ToString(), Does.Contain("2 of 3 SDRF rows kept").And.Contain("count the kept rows, not the lines of the SDRF file"));
+            Assert.That(written.ToString(), Does.Contain("2 of 3 SDRF rows kept").And.Contain("(lines 2, 4)"),
+                "the SDRF file's own lines (a1.raw on line 2, a1.mzML on line 4), not the kept rows' count");
+            Assert.That(written.ToString(), Does.Not.Contain("On the command line"), "no refusal here names an option");
         }
 
         /// <summary>
@@ -1500,9 +1502,8 @@ namespace Test
         }
 
         /// <summary>
-        /// A search of part of an SDRF: the reader sees only the kept rows, so it cannot tell that rows were set aside,
-        /// and says a gap in replicate numbers is how the SDRF numbers its samples. The join's block says, before the
-        /// report, that the gap may be a sample whose file is not searched (pcruzparri's review of #2949). The design
+        /// A search of part of an SDRF: the reader is told how many rows the join set aside (mzLib #1583), so its note says
+        /// a gap in replicate numbers may be a sample whose file is not searched (pcruzparri's review of #2949). The design
         /// written is the same as master's.
         /// </summary>
         [Test]
@@ -1517,7 +1518,7 @@ namespace Test
 
             Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(0), written.ToString());
             Assert.That(written.ToString(), Does.Contain("2 of 3 SDRF rows kept")
-                .And.Contain("1 row(s) were set aside, so a gap in replicate or fraction numbers may be a sample whose file is not searched"));
+                .And.Contain("1 SDRF row(s) were set aside because the search does not read their files, so a missing number may be a sample whose file is not searched"));
         }
 
         /// <summary>
@@ -1542,7 +1543,7 @@ namespace Test
 
             Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(5), written.ToString());
             Assert.That(written.ToString(), Does.Contain("SearchedWithoutRow: other.raw")
-                .And.Contain("No SDRF row names a spectra file given with -s")
+                .And.Contain("No SDRF row names a searched file")
                 .And.Contain("No design file was written")
                 .And.Not.Contain("The SDRF has no rows"));
         }
@@ -1622,6 +1623,150 @@ namespace Test
 
             var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
             Assert.That(thrown.Message, Is.EqualTo("--sdrfCondition is only meaningful with --sdrfDesign."));
+        }
+
+        [Test]
+        public static void TestSdrfSingleConditionWithoutSdrfDesignIsRefused()
+        {
+            var settings = new CommandLineSettings { SdrfSingleCondition = "all", GenerateDefaultTomls = true, OutputFolder = ScratchDataDirectory };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Is.EqualTo("--sdrfSingleCondition is only meaningful with --sdrfDesign."));
+        }
+
+        [Test]
+        public static void TestSdrfUnknownFactorIsConditionWithoutSdrfDesignIsRefused()
+        {
+            var settings = new CommandLineSettings { SdrfUnknownFactorIsCondition = true, GenerateDefaultTomls = true, OutputFolder = ScratchDataDirectory };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Is.EqualTo("--sdrfUnknownFactorIsCondition is only meaningful with --sdrfDesign."));
+        }
+
+        [Test]
+        public static void TestSdrfConditionAndSdrfSingleConditionTogetherAreRefused()
+        {
+            var (sdrf, data) = WriteLabelFreeSdrf(("a1.raw", "WT", "DMSO", 1, 1));
+            var settings = new CommandLineSettings
+            {
+                SdrfDesign = sdrf,
+                _spectra = new[] { data },
+                SdrfConditionColumns = new[] { "genotype" },
+                SdrfSingleCondition = "all",
+            };
+
+            var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
+            Assert.That(thrown.Message, Does.StartWith("--sdrfCondition and --sdrfSingleCondition were both given."));
+        }
+
+        /// <summary>
+        /// Writes a label-free SDRF with no factor value column, and an empty spectra file for each row, into a "data"
+        /// folder. Rows are (file, organism part, biorep), one sample each.
+        /// </summary>
+        private static (string Sdrf, string Data) WriteSdrfWithoutFactorColumns(params (string File, string OrganismPart, int Biorep)[] rows)
+        {
+            string data = Path.Combine(ScratchDataDirectory, "data");
+            Directory.CreateDirectory(data);
+
+            var lines = new List<string>
+            {
+                string.Join("\t", "source name", "characteristics[organism]", "characteristics[organism part]",
+                    "characteristics[biological replicate]", "assay name", "comment[label]", "comment[fraction identifier]",
+                    "comment[technical replicate]", "comment[data file]")
+            };
+            foreach (var r in rows)
+            {
+                lines.Add(string.Join("\t", "mouse " + r.Biorep + " " + r.OrganismPart, "Mus musculus", r.OrganismPart, r.Biorep,
+                    "run " + r.File, "label free sample", 1, 1, r.File));
+                File.WriteAllText(Path.Combine(data, r.File), string.Empty);
+            }
+
+            string sdrf = Path.Combine(ScratchDataDirectory, "nofactor.sdrf.tsv");
+            File.WriteAllLines(sdrf, lines);
+            return (sdrf, data);
+        }
+
+        /// <summary>
+        /// Ruled 2026-11-11 (QP-S42 c): with no --sdrfCondition, every factor value column makes the condition, in the
+        /// SDRF's order, and the report says so. This SDRF (genotype and treatment) was refused before. MetaMorpheus
+        /// reads the design back without error, and a normalizing run's design check passes.
+        /// </summary>
+        [Test]
+        public static void TestSdrfDesignWithNoConditionNamedUsesEveryFactorColumn()
+        {
+            var (sdrf, data) = WriteLabelFreeSdrf(("wt_1.raw", "WT", "DMSO", 1, 1), ("ko_1.raw", "KO", "DMSO", 1, 1));
+            var settings = SdrfDesignSettings(sdrf, data);
+
+            var written = new StringWriter();
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(0), written.ToString());
+            Assert.That(written.ToString(), Does.Contain("every factor value column"));
+            var searched = settings.Spectra.Select(Path.GetFullPath).ToList();
+            var readBack = ExperimentalDesign.ReadExperimentalDesign(
+                Path.Combine(data, GlobalVariables.ExperimentalDesignFileName), searched, out var errors);
+            Assert.That(errors, Is.Empty);
+            Assert.That(readBack.Select(f => f.Condition), Is.EquivalentTo(new[] { "WT_DMSO", "KO_DMSO" }));
+            Assert.That(Program.ResolveExperimentalDesign(data, searched, normalizationRequested: true, reportToConsole: false), Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// Ruled 2026-11-11 (QP-S42 b): an SDRF with no factor value column is refused, never read as one group. The
+        /// refusal names the characteristic that differs (organism part), and the report's option is given its switch.
+        /// --sdrfSingleCondition states one group, and the design is then written and read back.
+        /// </summary>
+        [Test]
+        public static void TestSdrfDesignWithNoFactorColumnIsRefusedUnlessOneConditionIsStated()
+        {
+            var (sdrf, data) = WriteSdrfWithoutFactorColumns(("liver.raw", "liver", 1), ("heart.raw", "heart", 2));
+            string designPath = Path.Combine(data, GlobalVariables.ExperimentalDesignFileName);
+
+            var refused = new StringWriter();
+            Assert.That(Program.WriteDesignFromSdrf(SdrfDesignSettings(sdrf, data), refused), Is.EqualTo(5), refused.ToString());
+            Assert.That(refused.ToString(), Does.Contain("No condition")
+                .And.Contain("'characteristics[organism part]' (liver, heart)")
+                .And.Contain("On the command line, SingleCondition is --sdrfSingleCondition."));
+            Assert.That(File.Exists(designPath), Is.False);
+
+            var settings = new CommandLineSettings { SdrfDesign = sdrf, _spectra = new[] { data }, SdrfSingleCondition = "survey" };
+            settings.ValidateCommandLineSettings();
+            var written = new StringWriter();
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(0), written.ToString());
+            Assert.That(written.ToString(), Does.Contain("one condition, 'survey', as stated"));
+            var readBack = ExperimentalDesign.ReadExperimentalDesign(designPath, settings.Spectra.Select(Path.GetFullPath).ToList(), out var errors);
+            Assert.That(errors, Is.Empty);
+            Assert.That(readBack.Select(f => (f.Condition, f.BiologicalReplicate)), Is.EquivalentTo(new[] { ("survey", 0), ("survey", 1) }));
+        }
+
+        /// <summary>
+        /// Ruled 2026-11-11 (QP-S44): a file whose factor nobody stated is refused by name; with
+        /// --sdrfUnknownFactorIsCondition such files are a condition of their own, and the design is written.
+        /// </summary>
+        [Test]
+        public static void TestSdrfDesignUnknownFactorIsRefusedUnlessStatedAsItsOwnCondition()
+        {
+            var (sdrf, data) = WriteLabelFreeSdrf(("wt_1.raw", "WT", "DMSO", 1, 1), ("x_1.raw", "not available", "DMSO", 1, 1));
+
+            var refused = new StringWriter();
+            Assert.That(Program.WriteDesignFromSdrf(SdrfDesignSettings(sdrf, data, "genotype"), refused), Is.EqualTo(5), refused.ToString());
+            Assert.That(refused.ToString(), Does.Contain("'factor value[genotype]' is 'not available'")
+                .And.Contain("On the command line, UnknownFactorIsOwnCondition is --sdrfUnknownFactorIsCondition."));
+
+            var settings = new CommandLineSettings
+            {
+                SdrfDesign = sdrf,
+                _spectra = new[] { data },
+                SdrfConditionColumns = new[] { "genotype" },
+                SdrfUnknownFactorIsCondition = true,
+            };
+            settings.ValidateCommandLineSettings();
+            var written = new StringWriter();
+
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(0), written.ToString());
+            var readBack = ExperimentalDesign.ReadExperimentalDesign(
+                Path.Combine(data, GlobalVariables.ExperimentalDesignFileName), settings.Spectra.Select(Path.GetFullPath).ToList(), out var errors);
+            Assert.That(errors, Is.Empty);
+            Assert.That(readBack.Select(f => f.Condition), Is.EquivalentTo(new[] { "WT", "not available" }));
         }
 
         /// <summary>

@@ -29,17 +29,55 @@ namespace EngineLayer
         /// Notches 1,1,1,1 returns as 1
         /// Notches 1,0,1,0 returns as 1|0|1|0
         /// </summary>
+        /// <summary>
+        /// True when the sequence holds exactly one element, the usual case for a match (one hypothesis), which is then in
+        /// <paramref name="only"/>. Otherwise false, with every element in <paramref name="list"/>, in order, as ToList()
+        /// gives them. Each element is computed once either way, in the same order ToList() computes them.
+        /// The Resolve methods answer one element directly with what their general case returns for it, without the list.
+        /// </summary>
+        private static bool IsSingle<T>(IEnumerable<T> enumerable, out T only, out List<T> list)
+        {
+            ArgumentNullException.ThrowIfNull(enumerable, "source"); // what ToList() throws
+            using IEnumerator<T> e = enumerable.GetEnumerator();
+            if (!e.MoveNext())
+            {
+                only = default;
+                list = new List<T>();
+                return false;
+            }
+            T first = e.Current;
+            if (!e.MoveNext())
+            {
+                only = first;
+                list = null;
+                return true;
+            }
+            list = new List<T> { first, e.Current };
+            while (e.MoveNext())
+            {
+                list.Add(e.Current);
+            }
+            only = default;
+            return false;
+        }
+
         internal static (string ResolvedString, ChemicalFormula ResolvedValue) Resolve(IEnumerable<IEnumerable<Modification>> enumerable)
         {
-            var list = enumerable.ToList();
+            bool single = IsSingle(enumerable, out var onlyMods, out var list);
             ChemicalFormula firstChemFormula = new ChemicalFormula();
-            foreach (var firstMods in list[0])
+            foreach (var firstMods in single ? onlyMods : list[0])
             {
                 if (firstMods == null || firstMods.ChemicalFormula == null)
                 {
                     return ("unknown", null);
                 }
                 firstChemFormula.Add(firstMods.ChemicalFormula);
+            }
+
+            // one element: the loop below would build the same formula again, find it equal, and return this
+            if (single)
+            {
+                return (firstChemFormula.Formula, firstChemFormula);
             }
 
             bool equals = true;
@@ -74,7 +112,12 @@ namespace EngineLayer
 
         internal static (string ResolvedString, Dictionary<string, int> ResolvedValue) Resolve(IEnumerable<Dictionary<int, Modification>> enumerable)
         {
-            var list = enumerable.ToList();
+            if (IsSingle(enumerable, out var onlyDict, out var list))
+            {
+                // what the general case returns for one dictionary: it is always equal to itself
+                return (string.Join(" ", onlyDict.Values.Select(c => c.IdWithMotif).OrderBy(c => c)),
+                    onlyDict.Values.OrderBy(b => b.IdWithMotif).GroupBy(b => b.IdWithMotif).ToDictionary(b => b.Key, b => b.Count()));
+            }
             Dictionary<string, int> firstDict = list[0].Values.OrderBy(b => b.IdWithMotif).GroupBy(b => b.IdWithMotif).ToDictionary(b => b.Key, b => b.Count());
 
             bool equals = true;
@@ -101,7 +144,20 @@ namespace EngineLayer
 
         internal static (string ResolvedString, double? ResolvedValue) Resolve(IEnumerable<double> enumerable)
         {
-            var list = enumerable.ToList();
+            if (IsSingle(enumerable, out double only, out var list))
+            {
+                // the general case with min = max = average = the value; for -0.0, whose average is +0.0, both take the
+                // integer branch and write "0"
+                if (only - only < ToleranceForDoubleResolutionF5)
+                {
+                    if (!(Math.Abs(only - Math.Round(only)) < ToleranceForDoubleResolutionF2))
+                        return (only.ToString("F5", CultureInfo.InvariantCulture), only);
+
+                    int onlyInt = (int)Math.Round(only);
+                    return (onlyInt.ToString(CultureInfo.InvariantCulture), onlyInt);
+                }
+                return (GlobalVariables.CheckLengthOfOutput(only.ToString("F5", CultureInfo.InvariantCulture)), null);
+            }
             double min = list.Min();
             double max = list.Max();
             double avg = list.Average();
@@ -123,7 +179,10 @@ namespace EngineLayer
 
         internal static (string ResolvedString, int? ResolvedValue) Resolve(IEnumerable<int> enumerable)
         {
-            var list = enumerable.ToList();
+            if (IsSingle(enumerable, out int only, out var list))
+            {
+                return (only.ToString(CultureInfo.InvariantCulture), only);
+            }
             var first = list[0];
             if (list.All(b => first.Equals(b)))
             {
@@ -138,7 +197,10 @@ namespace EngineLayer
 
         internal static (string ResolvedString, string ResolvedValue) Resolve(IEnumerable<string> enumerable)
         {
-            var list = enumerable.ToList();
+            if (IsSingle(enumerable, out string only, out var list))
+            {
+                return (only, only); // also for a single null: all null, so the first non-null, null
+            }
             string first = list.FirstOrDefault(b => b != null);
             // Only first if list is either all null or all equal to the first
             if (list.All(b => b == null) || list.All(b => first.Equals(b)))
@@ -154,7 +216,10 @@ namespace EngineLayer
 
         internal static (string ResolvedString, string ResolvedValue) Resolve(IEnumerable<string> enumerable, string ambiguousIfNull)
         {
-            var list = enumerable.ToList();
+            if (IsSingle(enumerable, out string only, out var list))
+            {
+                return (only, only);
+            }
             string first = list.FirstOrDefault(b => b != null);
             // Only first if list is either all null or all equal to the first
             if (list.All(b => b == null) || list.All(b => first.Equals(b)))
@@ -281,75 +346,110 @@ namespace EngineLayer
 
         internal static void AddMatchedIonsData(Dictionary<string, string> s, List<MatchedFragmentIon> matchedIons)
         {
-            bool nullPsm = matchedIons == null;
-
-            StringBuilder seriesStringBuilder = new StringBuilder();
-            StringBuilder mzStringBuilder = new StringBuilder();
-            StringBuilder fragmentDaErrorStringBuilder = new StringBuilder();
-            StringBuilder fragmentPpmErrorStringBuilder = new StringBuilder();
-            StringBuilder fragmentIntensityStringBuilder = new StringBuilder();
-            List<StringBuilder> stringBuilders = new List<StringBuilder> { seriesStringBuilder, mzStringBuilder, fragmentDaErrorStringBuilder, fragmentPpmErrorStringBuilder, fragmentIntensityStringBuilder };
-
-            if (!nullPsm)
+            if (matchedIons == null)
             {
-                // using ", " instead of "," improves human readability
-                const string delimiter = ", ";
+                s[SpectrumMatchFromTsvHeader.MatchedIonSeries] = " ";
+                s[SpectrumMatchFromTsvHeader.MatchedIonMzRatios] = " ";
+                s[SpectrumMatchFromTsvHeader.MatchedIonMassDiffDa] = " ";
+                s[SpectrumMatchFromTsvHeader.MatchedIonMassDiffPpm] = " ";
+                s[SpectrumMatchFromTsvHeader.MatchedIonIntensities] = " ";
+                s[SpectrumMatchFromTsvHeader.MatchedIonCounts] = " ";
+                return;
+            }
 
-                var matchedIonsGroupedByProductType = matchedIons.GroupBy(x => new { x.NeutralTheoreticalProduct.ProductType, x.NeutralTheoreticalProduct.SecondaryProductType }).ToList();
+            // Sized for the ions up front, so a long row (top-down PSMs carry hundreds of ions) is built in one buffer
+            // instead of a chain of growing chunks
+            StringBuilder seriesStringBuilder = new StringBuilder(16 + matchedIons.Count * 12);
+            StringBuilder mzStringBuilder = new StringBuilder(16 + matchedIons.Count * 28);
+            StringBuilder fragmentDaErrorStringBuilder = new StringBuilder(16 + matchedIons.Count * 24);
+            StringBuilder fragmentPpmErrorStringBuilder = new StringBuilder(16 + matchedIons.Count * 20);
+            StringBuilder fragmentIntensityStringBuilder = new StringBuilder(16 + matchedIons.Count * 24);
 
-                foreach (var productType in matchedIonsGroupedByProductType)
+            // using ", " instead of "," improves human readability
+            const string delimiter = ", ";
+
+            var matchedIonsGroupedByProductType = matchedIons.GroupBy(x => new { x.NeutralTheoreticalProduct.ProductType, x.NeutralTheoreticalProduct.SecondaryProductType }).ToList();
+
+            foreach (var productType in matchedIonsGroupedByProductType)
+            {
+                var products = productType.OrderBy(p => p.NeutralTheoreticalProduct.FragmentNumber)
+                    .ToList();
+
+                seriesStringBuilder.Append('[');
+                mzStringBuilder.Append('[');
+                fragmentDaErrorStringBuilder.Append('[');
+                fragmentPpmErrorStringBuilder.Append('[');
+                fragmentIntensityStringBuilder.Append('[');
+
+                for (int i = 0; i < products.Count; i++)
                 {
-                    var products = productType.OrderBy(p => p.NeutralTheoreticalProduct.FragmentNumber)
-                        .ToList();
+                    MatchedFragmentIon ion = products[i];
 
-                    stringBuilders.ForEach(p => p.Append("["));
+                    double massError = ion.Mz.ToMass(ion.Charge) - ion.NeutralTheoreticalProduct.NeutralMass;
+                    double ppmMassError = massError / ion.NeutralTheoreticalProduct.NeutralMass * 1e6;
 
-                    for (int i = 0; i < products.Count; i++)
+                    string ionLabel = ion.Annotation;
+
+                    // Each value is formatted straight into its builder, with the current culture exactly as
+                    // ToString("F5") would, instead of through a formatted string and a concatenated one per value
+
+                    // append ion label
+                    seriesStringBuilder.Append(ionLabel);
+
+                    // append experimental m/z
+                    mzStringBuilder.Append($"{ionLabel}:{ion.Mz:F5}");
+
+                    // append absolute mass error
+                    fragmentDaErrorStringBuilder.Append($"{ionLabel}:{massError:F5}");
+
+                    // append ppm mass error
+                    fragmentPpmErrorStringBuilder.Append($"{ionLabel}:{ppmMassError:F2}");
+
+                    // append fragment ion intensity
+                    fragmentIntensityStringBuilder.Append($"{ionLabel}:{ion.Intensity:F0}");
+
+                    // append delimiter ", "
+                    if (i < products.Count - 1)
                     {
-                        MatchedFragmentIon ion = products[i];
-                        string ionLabel;
-
-                        double massError = ion.Mz.ToMass(ion.Charge) - ion.NeutralTheoreticalProduct.NeutralMass;
-                        double ppmMassError = massError / ion.NeutralTheoreticalProduct.NeutralMass * 1e6;
-
-                        ionLabel = ion.Annotation;
-
-                        // append ion label
-                        seriesStringBuilder.Append(ionLabel);
-
-                        // append experimental m/z
-                        mzStringBuilder.Append(ionLabel + ":" + ion.Mz.ToString("F5"));
-
-                        // append absolute mass error
-                        fragmentDaErrorStringBuilder.Append(ionLabel + ":" + massError.ToString("F5"));
-
-                        // append ppm mass error
-                        fragmentPpmErrorStringBuilder.Append(ionLabel + ":" + ppmMassError.ToString("F2"));
-
-                        // append fragment ion intensity
-                        fragmentIntensityStringBuilder.Append(ionLabel + ":" + ion.Intensity.ToString("F0"));
-
-                        // append delimiter ", "
-                        if (i < products.Count - 1)
-                        {
-                            stringBuilders.ForEach(p => p.Append(delimiter));
-                        }
+                        seriesStringBuilder.Append(delimiter);
+                        mzStringBuilder.Append(delimiter);
+                        fragmentDaErrorStringBuilder.Append(delimiter);
+                        fragmentPpmErrorStringBuilder.Append(delimiter);
+                        fragmentIntensityStringBuilder.Append(delimiter);
                     }
-
-                    // append product type delimiter
-                    stringBuilders.ForEach(p => p.Append("];"));
                 }
+
+                // append product type delimiter
+                seriesStringBuilder.Append("];");
+                mzStringBuilder.Append("];");
+                fragmentDaErrorStringBuilder.Append("];");
+                fragmentPpmErrorStringBuilder.Append("];");
+                fragmentIntensityStringBuilder.Append("];");
             }
 
             // save ion series strings to output dictionary
-            s[SpectrumMatchFromTsvHeader.MatchedIonSeries] = nullPsm ? " " : seriesStringBuilder.ToString().TrimEnd(';');
-            s[SpectrumMatchFromTsvHeader.MatchedIonMzRatios] = nullPsm ? " " : mzStringBuilder.ToString().TrimEnd(';');
-            s[SpectrumMatchFromTsvHeader.MatchedIonMassDiffDa] = nullPsm ? " " : fragmentDaErrorStringBuilder.ToString().TrimEnd(';');
-            s[SpectrumMatchFromTsvHeader.MatchedIonMassDiffPpm] = nullPsm ? " " : fragmentPpmErrorStringBuilder.ToString().TrimEnd(';');
-            s[SpectrumMatchFromTsvHeader.MatchedIonIntensities] = nullPsm ? " " : fragmentIntensityStringBuilder.ToString().TrimEnd(';');
+            s[SpectrumMatchFromTsvHeader.MatchedIonSeries] = ToStringTrimmingSemicolons(seriesStringBuilder);
+            s[SpectrumMatchFromTsvHeader.MatchedIonMzRatios] = ToStringTrimmingSemicolons(mzStringBuilder);
+            s[SpectrumMatchFromTsvHeader.MatchedIonMassDiffDa] = ToStringTrimmingSemicolons(fragmentDaErrorStringBuilder);
+            s[SpectrumMatchFromTsvHeader.MatchedIonMassDiffPpm] = ToStringTrimmingSemicolons(fragmentPpmErrorStringBuilder);
+            s[SpectrumMatchFromTsvHeader.MatchedIonIntensities] = ToStringTrimmingSemicolons(fragmentIntensityStringBuilder);
 
             // number of matched ions
-            s[SpectrumMatchFromTsvHeader.MatchedIonCounts] = nullPsm ? " " : matchedIons.Count.ToString();
+            s[SpectrumMatchFromTsvHeader.MatchedIonCounts] = matchedIons.Count.ToString();
+        }
+
+        /// <summary>
+        /// The builder's text without its trailing semicolons: what ToString().TrimEnd(';') returns, without building the
+        /// untrimmed string first.
+        /// </summary>
+        private static string ToStringTrimmingSemicolons(StringBuilder builder)
+        {
+            int length = builder.Length;
+            while (length > 0 && builder[length - 1] == ';')
+            {
+                length--;
+            }
+            return builder.ToString(0, length);
         }
 
         internal static void AddMatchScoreData(Dictionary<string, string> s, SpectralMatch peptide, bool writePeptideLevelFdr = false)

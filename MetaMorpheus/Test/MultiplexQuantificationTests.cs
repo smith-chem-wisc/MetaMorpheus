@@ -75,7 +75,8 @@ namespace Test
                 new[] { TmtExperimentalDesign.Header }.Concat(rows));
         }
 
-        private static void RunTmtSearch(string stagedMzmlPath, string outputFolder, bool doParsimony = true)
+        private static void RunTmtSearch(string stagedMzmlPath, string outputFolder, bool doParsimony = true,
+            bool doLabelFreeQuantification = false)
         {
             var searchTask = Toml.ReadFile<SearchTask>(
                 Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
@@ -85,6 +86,9 @@ namespace Test
             // groups, so there would be nothing to quantify onto. Turning it on is what a user doing
             // protein-level TMT would do.
             searchTask.SearchParameters.DoParsimony = doParsimony;
+            // The toml turns label-free quantification off; the search task window turns it on whenever any
+            // quantification is chosen, multiplex included.
+            searchTask.SearchParameters.DoLabelFreeQuantification = doLabelFreeQuantification;
 
             var taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
             string fasta = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\mouseTmt.fasta");
@@ -828,6 +832,45 @@ namespace Test
         }
 
         /// <summary>
+        /// A TMT search set up in the search task window carries DoLabelFreeQuantification = true, because the window
+        /// turns it on whenever any quantification is chosen; a task file (the stock TMT toml, PXReprise's) carries
+        /// false. Label-free quantification never runs on a multiplex search, so the protein table is named
+        /// AllProteinGroups.tsv either way, the name every reader of isobaric output looks for, and no label-free
+        /// table is written. Before, the window's search wrote AllQuantifiedProteinGroups.tsv for the same groups.
+        /// </summary>
+        [TestCase(true)]
+        [TestCase(false)]
+        public static void TmtSearch_NamesItsProteinTableAllProteinGroupsWhateverTheLabelFreeSwitch(bool doLabelFreeQuantification)
+        {
+            string root = Path.Combine(TestContext.CurrentContext.TestDirectory, "TmtMultiplexTableName" + doLabelFreeQuantification);
+            string dataFolder = Path.Combine(root, "data");
+            string outputFolder = Path.Combine(root, "out");
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+
+            try
+            {
+                string stagedMzml = StageMzml(dataFolder);
+                WriteTmtDesign(dataFolder, stagedMzml);
+
+                RunTmtSearch(stagedMzml, outputFolder, doLabelFreeQuantification: doLabelFreeQuantification);
+
+                string searchOut = Path.Combine(outputFolder, "search");
+                Assert.That(File.Exists(Path.Combine(searchOut, "AllProteinGroups.tsv")), Is.True);
+                Assert.That(File.Exists(Path.Combine(searchOut, "AllQuantifiedProteinGroups.tsv")), Is.False,
+                    "label-free quantification did not run, so no table is named for it");
+                Assert.That(File.Exists(Path.Combine(searchOut, "AllQuantifiedPeptides.tsv")), Is.False);
+                Assert.That(File.Exists(Path.Combine(searchOut, "AllQuantifiedPeaks.tsv")), Is.False);
+                Assert.That(File.Exists(Path.Combine(searchOut, QuantificationWriter.ProteinGroupFileName)), Is.True,
+                    "the search was quantified, and its isobaric tables say so");
+                AssertProteinTableKeepsItsColumnsAndGainsChannelIntensities(searchOut);
+            }
+            finally
+            {
+                if (Directory.Exists(root)) Directory.Delete(root, true);
+            }
+        }
+
+        /// <summary>
         /// The one guard that cannot be reached without a real search, and the one a user is most likely
         /// to hit: multiplex quantification rolls up to protein groups, and the stock
         /// TMT-Task1-SearchTaskconfig.toml leaves parsimony off. A design file and reporter ions are
@@ -965,6 +1008,94 @@ namespace Test
                 Assert.That(results.ProteinIntensities.Keys, Is.EquivalentTo(new[] { written }), "only the written group is quantified");
                 Assert.That(results.ProteinIntensities[written].Values, Has.None.GreaterThan(0),
                     "PEPTIDEK is shared with the unwritten group, so it does not count toward the written one");
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// The user's case under TMT: one protein, oxidation on M3 or on M5 explains the spectrum equally well. The
+        /// match is unique to the protein's group, so its reporter ions count for that group, as one peptide row
+        /// standing for both sites (mzLib's LocalizationAmbiguousPeptide). Before, every match without one full
+        /// sequence was filtered out here, and the group got nothing from it.
+        /// </summary>
+        [Test]
+        public static void MatchAmbiguousOnlyInModificationSite_QuantifiesItsGroup()
+        {
+            string folder = StageFolder("TmtLocalizationAmbiguous");
+            try
+            {
+                string rawPath = RawPathIn(folder);
+                WriteDesign(folder, ValidDesignRows(rawPath));
+
+                var protein = new Protein("ACMDMEKGGGR", "PROTEINA", "ORGANISM");
+                var at3 = OxidizedAt(protein, 3);
+                var at5 = OxidizedAt(protein, 5);
+                var psm = SharedPeptidePsm(rawPath, at3, at5);
+                Assume.That(psm.FullSequence, Is.Null, "two full sequences match the scan");
+                Assume.That(psm.BaseSequence, Is.EqualTo("ACMDMEK"));
+
+                var group = GroupOf(protein, new[] { at3, at5 }, new[] { psm });
+
+                // A search always has peptides of one full sequence too, and mzLib refuses a run without any.
+                var otherPeptide = FirstPeptideOf(new Protein("PEPTIDEKPEPTIDER", "PROTEINC", "ORGANISM"));
+                var other = ReporterIonPsm(rawPath, otherPeptide, scanNumber: 2);
+                var otherGroup = GroupOf((Protein)otherPeptide.Parent, new[] { otherPeptide }, new[] { other });
+
+                var (warnings, parameters) = RunMultiplexAnalysis(
+                    new List<string> { rawPath }, StageOutput(folder),
+                    allSpectralMatches: new List<SpectralMatch> { psm, other },
+                    proteinGroups: new List<ProteinGroup> { group, otherGroup });
+
+                var results = parameters.MultiplexQuantificationResults;
+                Assert.That(results, Is.Not.Null, "the match reaches quantification");
+                Assert.That(results.AmbiguousSpectralMatchesExcluded, Is.Zero);
+                Assert.That(warnings, Has.None.Contains("left out of multiplex quantification"));
+                var row = results.PeptideIntensities.Keys.OfType<LocalizationAmbiguousPeptide>().Single();
+                Assert.That(results.PeptideIntensities.Keys.Select(p => p.FullSequence), Has.None.EqualTo(at3.FullSequence),
+                    "no row of its own for a site seen only in the ambiguous match");
+                Assert.That(row.FullSequence.Split('|'), Is.EquivalentTo(new[] { at3.FullSequence, at5.FullSequence }),
+                    "named by both sites, claiming neither");
+                Assert.That(results.ProteinIntensities[group].Values, Has.Some.GreaterThan(0));
+            }
+            finally
+            {
+                Directory.Delete(folder, true);
+            }
+        }
+
+        /// <summary>
+        /// Control: ACMDMEK is in two proteins that are two groups. A match ambiguous in site could be either group's,
+        /// so it stays out, as in label-free quantification.
+        /// </summary>
+        [Test]
+        public static void MatchAmbiguousInSiteAcrossTwoGroups_IsLeftOut()
+        {
+            string folder = StageFolder("TmtLocalizationAmbiguousTwoGroups");
+            try
+            {
+                string rawPath = RawPathIn(folder);
+                WriteDesign(folder, ValidDesignRows(rawPath));
+
+                var proteinA = new Protein("ACMDMEKGGGR", "PROTEINA", "ORGANISM");
+                var proteinB = new Protein("ACMDMEKWWWR", "PROTEINB", "ORGANISM");
+                var candidates = new[] { OxidizedAt(proteinA, 3), OxidizedAt(proteinA, 5), OxidizedAt(proteinB, 3), OxidizedAt(proteinB, 5) };
+                var ambiguous = AmbiguousPsm(rawPath, candidates);
+                var unique = ReporterIonPsm(rawPath, FirstPeptideOf(new Protein("PEPTIDEKPEPTIDER", "PROTEINC", "ORGANISM")), scanNumber: 2);
+
+                var groupA = GroupOf(proteinA, candidates.Take(2), new[] { ambiguous });
+                var groupB = GroupOf(proteinB, candidates.Skip(2), new[] { ambiguous });
+                var (_, parameters) = RunMultiplexAnalysis(
+                    new List<string> { rawPath }, StageOutput(folder),
+                    allSpectralMatches: new List<SpectralMatch> { ambiguous, unique },
+                    proteinGroups: new List<ProteinGroup> { groupA, groupB, GroupOf((Protein)unique.GetIdentifiedBioPolymersWithSetMods().First().Parent, unique.GetIdentifiedBioPolymersWithSetMods(), new[] { unique }) });
+
+                var results = parameters.MultiplexQuantificationResults;
+                Assert.That(results.PeptideIntensities.Keys.OfType<LocalizationAmbiguousPeptide>(), Is.Empty);
+                Assert.That(results.ProteinIntensities[groupA].Values, Has.None.GreaterThan(0));
+                Assert.That(results.ProteinIntensities[groupB].Values, Has.None.GreaterThan(0));
             }
             finally
             {
@@ -1382,6 +1513,40 @@ namespace Test
             psm.SetFdrValues(1, 0, 0.0, 1, 0, 0.0, 0, 0.0);
             psm.ResolveAllAmbiguities();
             return psm;
+        }
+
+        /// <summary>One PSM carrying TMT11 reporter ions whose scan every candidate matches with the same score.</summary>
+        private static SpectralMatch AmbiguousPsm(string rawPath, params IBioPolymerWithSetMods[] candidates)
+        {
+            var scan = ReporterIonScan(rawPath);
+            SpectralMatch psm = new PeptideSpectralMatch(candidates[0], 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            foreach (var candidate in candidates.Skip(1))
+            {
+                psm.AddOrReplace(candidate, 10, 0, true, new List<MatchedFragmentIon>());
+            }
+            psm.SetFdrValues(1, 0, 0.0, 1, 0, 0.0, 0, 0.0);
+            psm.ResolveAllAmbiguities();
+            return psm;
+        }
+
+        /// <summary>
+        /// Residues 1-7 of <paramref name="protein"/> (ending in K) with an oxidation (formula O) on residue
+        /// <paramref name="residue"/> of the peptide, and TMT11 on its N-terminus and its lysine, as a TMT search fixes them:
+        /// only a labelled match is quantified by its channels.
+        /// </summary>
+        private static IBioPolymerWithSetMods OxidizedAt(Protein protein, int residue)
+        {
+            ModificationMotif.TryGetMotif("M", out var motif);
+            var oxidation = new Modification(_originalId: "Oxidation", _modificationType: "Test", _target: motif,
+                _locationRestriction: "Anywhere.", _chemicalFormula: Chemistry.ChemicalFormula.ParseFormula("O"));
+            var mods = new Dictionary<int, Modification>
+            {
+                { 1, Tmt11Labels.Single(m => m.IdWithMotif == "TMT11 on X") },
+                { residue + 1, oxidation },
+                { 8, Tmt11Labels.Single(m => m.IdWithMotif == "TMT11 on K") },
+            };
+            return new PeptideWithSetModifications(protein, new DigestionParams(), 1, 7, Omics.Digestion.CleavageSpecificity.Full, "", 0,
+                mods, 0);
         }
 
         /// <summary>The first peptide <paramref name="protein"/> digests to under default settings.</summary>

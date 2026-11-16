@@ -196,8 +196,8 @@ namespace MetaMorpheusGUI
             var design = BuildDesign();
 
             // A run refuses to start when both design files sit in one folder, because nothing there
-            // could say which of them the user meant (CMD.Program.ResolveExperimentalDesign, and the
-            // main window's own pre-run check). Both writers target the first spectra file's
+            // could say which of them the user meant (EngineLayer.ExperimentalDesignCheck, which the command
+            // line and the main window's Run button both call). Both writers target the first spectra file's
             // directory and the two authoring buttons sit side by side, so warn here rather than let
             // the run be the first place this is discovered.
             var designDirectory = Directory.GetParent(design[0].FullFilePathWithExtension)!.FullName;

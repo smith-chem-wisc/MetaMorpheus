@@ -546,6 +546,51 @@ namespace Test
         }
 
         /// <summary>
+        /// A target group that loses the picked comparison to its own decoy is written with its classic q-value, from one
+        /// ranking of every target and decoy group by best peptide. That ranking must not depend on the order the groups
+        /// come in. Here the filler outscores the decoy, which outscores the target, so the target's classic q-value is
+        /// 1 decoy / 2 targets = 0.5 in either order. The classic pass used to sort before the best-peptide values were
+        /// set, so every group tied at 0 and kept its input order, and a target listed before its decoy got q-value 0.
+        /// </summary>
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public static void TopPickedFdr_RescuedTargetsClassicQValue_DoesNotDependOnInputOrder(bool targetFirst)
+        {
+            Protein fillerProtein = new Protein("FILLR", "filler");
+            Protein targetProtein = new Protein("KFDSA", "protein");
+            Protein decoyProtein = new Protein("ASDFK", "DECOY_protein", isDecoy: true);
+
+            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 5);
+            PeptideWithSetModifications Digest(Protein protein) =>
+                protein.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
+
+            MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
+
+            List<SpectralMatch> psms = new List<SpectralMatch>
+            {
+                new PeptideSpectralMatch(Digest(fillerProtein), 0, 30, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(Digest(decoyProtein), 0, 15.11, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(Digest(targetProtein), 0, 15.1, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>())
+            };
+            psms.ForEach(p => p.ResolveAllAmbiguities());
+            psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0));
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, new CommonParameters(), includeHighQValuePsms: true);
+            var parsimony = (ProteinParsimonyResults)new ProteinParsimonyEngine(filteredPsms.FilteredPsmsList, false, new CommonParameters(), null, new List<string>()).Run();
+
+            ProteinGroup Group(string accession) => parsimony.ProteinGroups.Single(p => p.Proteins.Single().Accession == accession);
+            var groups = targetFirst
+                ? new List<ProteinGroup> { Group("protein"), Group("DECOY_protein"), Group("filler") }
+                : new List<ProteinGroup> { Group("DECOY_protein"), Group("protein"), Group("filler") };
+            var results = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(groups, filteredPsms.FilteredPsmsList, false, true, true,
+                new CommonParameters(), null, new List<string>()).Run();
+
+            var target = results.SortedAndScoredProteinGroups.Single(p => !p.IsDecoy && p.Proteins.Single().Accession == "protein");
+            Assert.That(target.QValue, Is.EqualTo(0.5));
+        }
+
+        /// <summary>
         /// A target group of two indistinguishable proteins, protein1 and protein2, loses the picked target-decoy
         /// comparison under both accessions to a decoy group of DECOY_protein1 and DECOY_protein2. The picked FDR saved
         /// the loser once per accession, so the rescue wrote the target group twice (smith-chem-wisc/MetaMorpheus#2921).

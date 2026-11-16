@@ -57,6 +57,7 @@ namespace EngineLayer
             {
                 DeconvolutedMonoisotopicMasses = new double[0];
             }
+            MassesAreAscendingNumbers = IsAscendingWithoutNaN(DeconvolutedMonoisotopicMasses);
         }
 
         public MsDataScan TheScan { get; }
@@ -111,6 +112,13 @@ namespace EngineLayer
         public IsotopicEnvelope[] ExperimentalFragments { get; private set; }
         public List<Ms2ScanWithSpecificMass> ChildScans { get; set; } // MS2/MS3 scans that are children of this MS2 scan
         private double[] DeconvolutedMonoisotopicMasses;
+
+        /// <summary>
+        /// True when <see cref="DeconvolutedMonoisotopicMasses"/> is non-empty, holds no NaN and never decreases, which is
+        /// what <see cref="GetNeutralExperimentalFragments"/> produces. Only then does a plain lower-bound search agree with
+        /// Array.BinarySearch (which sorts NaN first); any other array keeps using Array.BinarySearch.
+        /// </summary>
+        private readonly bool MassesAreAscendingNumbers;
         public string NativeId { get; }
         public int OneBasedScanNumber => TheScan.OneBasedScanNumber;
         public int? OneBasedPrecursorScanNumber => TheScan.OneBasedPrecursorScanNumber;
@@ -213,25 +221,145 @@ namespace EngineLayer
             return ExperimentalFragments[GetClosestFragmentMass(theoreticalNeutralMass)];
         }
 
+        /// <summary>
+        /// The index into <see cref="ExperimentalFragments"/> of the envelope <see cref="GetClosestExperimentalIsotopicEnvelope"/>
+        /// would return, or -1 when the scan has no deconvoluted fragments (where that method returns null).
+        /// </summary>
+        public int GetClosestExperimentalIsotopicEnvelopeIndex(double theoreticalNeutralMass)
+        {
+            if (DeconvolutedMonoisotopicMasses.Length == 0)
+            {
+                return -1;
+            }
+            return GetClosestFragmentMass(theoreticalNeutralMass);
+        }
+
+        /// <summary>
+        /// The monoisotopic mass of <see cref="ExperimentalFragments"/>[<paramref name="index"/>], read from the scan's own
+        /// sorted mass array. Lets a caller reject a fragment match on mass error without dereferencing the envelope -
+        /// in a search nearly every theoretical product is rejected, and touching the envelope to do it costs a cache miss.
+        /// </summary>
+        public double GetDeconvolutedMonoisotopicMass(int index) => DeconvolutedMonoisotopicMasses[index];
+
         public int GetClosestFragmentMass(double mass)
         {
-            int index = Array.BinarySearch(DeconvolutedMonoisotopicMasses, mass);
+            double[] masses = DeconvolutedMonoisotopicMasses;
+
+            // A search calls this for every theoretical product of every candidate, and Array.BinarySearch<double> is a
+            // call through a generic comparer each time. For a mass that is not in the array, BinarySearch returns the
+            // complement of the first index holding a larger mass, which is exactly the lower bound found here with plain
+            // comparisons. An exact hit is left to BinarySearch, because with repeated masses (real spectra have them) it
+            // may land on any of the equal entries; so is a NaN mass, and any array that is not ascending numbers.
+            if (MassesAreAscendingNumbers && !double.IsNaN(mass))
+            {
+                int lo = 0;
+                int hi = masses.Length;
+                while (lo < hi)
+                {
+                    int mid = (int)((uint)(lo + hi) >> 1);
+                    if (masses[mid] < mass)
+                    {
+                        lo = mid + 1;
+                    }
+                    else
+                    {
+                        hi = mid;
+                    }
+                }
+                if (lo == masses.Length || masses[lo] != mass)
+                {
+                    return ClosestOfNeighbours(masses, mass, lo);
+                }
+            }
+
+            int index = Array.BinarySearch(masses, mass);
             if (index >= 0)
             {
                 return index;
             }
-            index = ~index;
+            return ClosestOfNeighbours(masses, mass, ~index);
+        }
 
-            if (index == DeconvolutedMonoisotopicMasses.Length)
+        /// <summary>
+        /// For each of the first <paramref name="count"/> entries of <paramref name="ascendingMasses"/>, the index
+        /// <see cref="GetClosestFragmentMass"/> returns for it (-1 when the scan has no deconvoluted fragments), written to the
+        /// same position of <paramref name="closestIndices"/>. When the masses ascend, as a peptide's sorted product masses do,
+        /// the lower bounds are found in one forward walk of the scan's mass array: a sequential read the processor can fetch
+        /// ahead, where a binary search per product waits on one cache miss after another. The lower bound of a mass does not
+        /// depend on how it was found, and exact hits, NaN, masses out of order and arrays that are not ascending numbers all
+        /// go to <see cref="GetClosestFragmentMass"/> itself, so every index is the one it would return.
+        /// </summary>
+        public void GetClosestFragmentMasses(double[] ascendingMasses, int count, int[] closestIndices)
+        {
+            double[] masses = DeconvolutedMonoisotopicMasses;
+            if (!MassesAreAscendingNumbers)
+            {
+                for (int k = 0; k < count; k++)
+                {
+                    closestIndices[k] = GetClosestFragmentMass(ascendingMasses[k]); // -1 for an empty array
+                }
+                return;
+            }
+
+            int lo = 0;
+            double previous = double.NegativeInfinity;
+            for (int k = 0; k < count; k++)
+            {
+                double mass = ascendingMasses[k];
+                if (double.IsNaN(mass))
+                {
+                    closestIndices[k] = GetClosestFragmentMass(mass);
+                    continue;
+                }
+                if (mass < previous)
+                {
+                    lo = 0; // out of order: walk again from the start rather than assume
+                }
+                previous = mass;
+
+                while (lo < masses.Length && masses[lo] < mass)
+                {
+                    lo++;
+                }
+                closestIndices[k] = lo < masses.Length && masses[lo] == mass
+                    ? GetClosestFragmentMass(mass)
+                    : ClosestOfNeighbours(masses, mass, lo);
+            }
+        }
+
+        /// <summary>
+        /// Given the index of the first mass larger than <paramref name="mass"/> (masses.Length if none), the index of the
+        /// closer of it and the mass before it; a tie goes to the one before.
+        /// </summary>
+        private static int ClosestOfNeighbours(double[] masses, double mass, int index)
+        {
+            if (index == masses.Length)
             {
                 return index - 1;
             }
-            if (index == 0 || mass - DeconvolutedMonoisotopicMasses[index - 1] > DeconvolutedMonoisotopicMasses[index] - mass)
+            if (index == 0 || mass - masses[index - 1] > masses[index] - mass)
             {
                 return index;
             }
 
             return index - 1;
+        }
+
+        private static bool IsAscendingWithoutNaN(double[] masses)
+        {
+            if (masses.Length == 0 || double.IsNaN(masses[0]))
+            {
+                return false;
+            }
+            for (int i = 1; i < masses.Length; i++)
+            {
+                // written so that a NaN fails it too
+                if (!(masses[i] >= masses[i - 1]))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         //look for IsotopicEnvelopes which are in the range of acceptable mass 

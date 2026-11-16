@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using EngineLayer.DatabaseLoading;
 using UsefulProteomicsDatabases;
 
@@ -53,10 +54,16 @@ namespace TaskLayer
         private List<string> _unsuccessfullyCalibratedFilePaths;
         private string _taskId;
         private List<IBioPolymer> _proteinList;
+        private Task<MetaMorpheusEngineResults> _databaseLoadingTask;
+        // every round of every file searches the whole database; its digestion products are kept for the next search
+        private ClassicSearchDigestionCache _digestionCache;
+        private bool _digestionCacheDecided;
+        private int _filesToCalibrate;
         private List<Modification> _variableModifications;
         private List<Modification> _fixedModifications;
         private MyFileManager _myFileManager;
         private List<DbForTask> _dbFilenameList;
+        private OnePendingFileWrite _calibratedFileWrite;
 
         // Modern Search indexing fields
         private List<IBioPolymerWithSetMods> _peptideIndex;
@@ -64,8 +71,29 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
+            try
+            {
+                return CalibrateFiles(outputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList);
+            }
+            finally
+            {
+                // The searches are done, or the task failed: let the kept digestion products go either way. The task object
+                // outlives its run (the GUI runs the same object again), so after an exception they would stay reachable.
+                _digestionCache?.Release();
+                _digestionCache = null;
+            }
+        }
+
+        private MyTaskResults CalibrateFiles(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        {
             Initialize(taskId, dbFilenameList);
+            _filesToCalibrate = currentRawFileList.Count;
             Status("Calibrating...", new List<string> { _taskId });
+
+            // each calibrated file is written while the next one is calibrated; disposing waits for a write still
+            // running if the task leaves by an exception
+            using var calibratedFileWrite = new OnePendingFileWrite();
+            _calibratedFileWrite = calibratedFileWrite;
 
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
@@ -97,9 +125,13 @@ namespace TaskLayer
                     : fileSettingsList[spectraFileIndex].Clone();
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParams, originalUncalibratedFilePath);
 
-                // load the file
+                // load the file. Calibration works on the unfiltered spectra: this used to read the file filtered through the
+                // file manager and then read every scan again, unfiltered, into the same object, which is the state it kept.
                 Status("Loading spectra file...", new List<string> { _taskId, "Individual Spectra Files" });
-                MsDataFile myMsDataFile = _myFileManager.LoadFile(originalUncalibratedFilePath, combinedParams).LoadAllStaticData();
+                MsDataFile myMsDataFile = MsDataFileReader.GetDataFile(originalUncalibratedFilePath).LoadAllStaticData();
+
+                // the database has been loading while the first file was read
+                WaitForDatabase();
 
                 // First round of calibration
                 Status("Acquiring calibration data points...", new List<string> { _taskId, "Individual Spectra Files" });
@@ -171,13 +203,18 @@ namespace TaskLayer
 
                 // write toml settings for the calibrated file
                 string calibratedTomlFilename = Path.Combine(outputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".toml");
-                CalibrationOutput(myMsDataFile, calibratedNewFullFilePath, fileSpecificParams, calibratedTomlFilename, taskId, originalUncalibratedFilenameWithoutExtension);
+                CalibrationOutput(myMsDataFile, calibratedNewFullFilePath, fileSpecificParams, calibratedTomlFilename, taskId, originalUncalibratedFilenameWithoutExtension,
+                    originalUncalibratedFilePath);
 
-                // finished calibrating this file
+                // finished calibrating this file; it is reported done once its calibrated file is written
                 _myFileManager.DoneWithFile(originalUncalibratedFilePath);
-                FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
             }
+
+            // every calibrated file is complete, and reported, before the task goes on
+            calibratedFileWrite.Finish();
+
+            // a task none of whose files could be calibrated still loads the database and writes its prose
+            WaitForDatabase();
 
             // re-write experimental design (if it has been defined) with new calibrated file names
             UpdateExperimentalDesignFile(currentRawFileList, outputFolder);
@@ -238,8 +275,15 @@ namespace TaskLayer
 
             if (CalibrationParameters.SearchType == SearchType.Classic)
             {
+                if (!_digestionCacheDecided)
+                {
+                    _digestionCacheDecided = true;
+                    // at least three rounds for every file
+                    _digestionCache = ClassicSearchDigestionCache.Create(_proteinList, combinedParameters.DigestionParams, _fixedModifications, _variableModifications,
+                        3 * _filesToCalibrate);
+                }
                 _ = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, _variableModifications, _fixedModifications, null, null, null, _proteinList, searchMode, combinedParameters,
-                    FileSpecificParameters, null, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension }, false).Run();
+                    FileSpecificParameters, null, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension }, false, digestionCache: _digestionCache).Run();
             }
             else // Modern Search
             {
@@ -271,10 +315,19 @@ namespace TaskLayer
 
             //get the deconvoluted ms2scans for the good identifications
             List<Ms2ScanWithSpecificMass> goodScans = new List<Ms2ScanWithSpecificMass>();
-            List<SpectralMatch> unfilteredPsms = allPsmsArray.ToList();
+            // A PSM's slot in allPsmsArray is the index of its scan. Looking each slot up in a map, built with the same
+            // equality List.IndexOf uses and keeping the first slot as IndexOf would, replaces a linear scan per PSM.
+            var slotOfPsm = new Dictionary<SpectralMatch, int>();
+            for (int slot = 0; slot < allPsmsArray.Length; slot++)
+            {
+                if (allPsmsArray[slot] != null)
+                {
+                    slotOfPsm.TryAdd(allPsmsArray[slot], slot);
+                }
+            }
             foreach (SpectralMatch psm in goodIdentifications)
             {
-                goodScans.Add(listOfSortedms2Scans[unfilteredPsms.IndexOf(psm)]);
+                goodScans.Add(listOfSortedms2Scans[slotOfPsm[psm]]);
             }
 
             DataPointAquisitionResults currentResult = (DataPointAquisitionResults)new DataPointAcquisitionEngine(
@@ -293,8 +346,9 @@ namespace TaskLayer
 
 
         /// <summary>
-        /// Writes prose settings and initializes the following private fields used by the calibration engine:
-        /// _taskId, _variableModifications, _fixedModifications, _proteinList, _myFileManager, _unsuccessfullyCalibratedFilePaths
+        /// Initializes the following private fields used by the calibration engine, and starts loading the database:
+        /// _taskId, _variableModifications, _fixedModifications, _myFileManager, _unsuccessfullyCalibratedFilePaths.
+        /// <see cref="WaitForDatabase"/> sets _proteinList and writes the prose settings.
         /// </summary>
         private void Initialize(string taskId, List<DbForTask> dbFilenameList)
         {
@@ -305,10 +359,13 @@ namespace TaskLayer
             };
             _taskId = taskId;
             LoadModifications(_taskId, out _variableModifications, out _fixedModifications, out var localizeableModificationTypes);
-            // load proteins
+            // start loading proteins in the background, while the first spectra file is read
             var dbLoader = new DatabaseLoadingEngine(CommonParameters, this.FileSpecificParameters, [taskId], dbFilenameList, taskId, DecoyType.Reverse, true, localizeableModificationTypes);
-            var loadingResults = dbLoader.Run() as DatabaseLoadingEngineResults;
-            _proteinList = loadingResults!.BioPolymers;
+            _proteinList = null;
+            _databaseLoadingTask = dbLoader.RunAsync();
+            _digestionCache?.Release();
+            _digestionCache = null;
+            _digestionCacheDecided = false;
 
             _myFileManager = new MyFileManager(true);
             _unsuccessfullyCalibratedFilePaths = new List<string>();
@@ -317,6 +374,23 @@ namespace TaskLayer
             // Reset indexes for Modern Search (will be generated on first use)
             _peptideIndex = null;
             _fragmentIndex = null;
+        }
+
+        /// <summary>
+        /// Waits, the first time it is called, for the database <see cref="Initialize"/> started loading, then sets
+        /// _proteinList and writes the prose settings, which name the database. Nothing else writes prose in between,
+        /// so the prose is the same as when the database was loaded before the first file.
+        /// </summary>
+        private void WaitForDatabase()
+        {
+            if (_proteinList != null)
+            {
+                return;
+            }
+
+            // GetResult rather than Result, so a failed load throws its own exception, as it did when loaded synchronously
+            var loadingResults = _databaseLoadingTask.GetAwaiter().GetResult() as DatabaseLoadingEngineResults;
+            _proteinList = loadingResults!.BioPolymers;
 
             // write prose settings
             WriteProse(_fixedModifications, _variableModifications, _proteinList);
@@ -467,6 +541,9 @@ namespace TaskLayer
         private void WriteUncalibratedFile(string originalUncalibratedFilePath, string uncalibratedNewFullFilePath, List<string> unsuccessfullyCalibratedFilePaths,
             DataPointAquisitionResults acquisitionResults, string taskId)
         {
+            // the file before this one is reported done first, as it was when its write happened in the loop
+            _calibratedFileWrite?.Finish();
+
             // if we didn't calibrate, write the uncalibrated file to the output folder as an mzML
             File.Copy(originalUncalibratedFilePath, uncalibratedNewFullFilePath, true);
             // and add it to the list of all unsuccessfully calibrated files
@@ -551,14 +628,26 @@ namespace TaskLayer
             }
         }
 
-        private void CalibrationOutput(MsDataFile msDataFile, string mzFilePath, FileSpecificParameters fileParams, string tomlName, string taskId, string mzFilenameNoExtension)
+        /// <summary>
+        /// Writes the calibrated file in the background and, once it is complete, its toml, and reports both and the
+        /// spectra file as done - in the same order as when the write happened here.
+        /// </summary>
+        private void CalibrationOutput(MsDataFile msDataFile, string mzFilePath, FileSpecificParameters fileParams, string tomlName, string taskId, string mzFilenameNoExtension,
+            string originalUncalibratedFilePath)
         {
-            msDataFile.ExportAsMzML(mzFilePath, CalibrationParameters.WriteIndexedMzml);
-            MyTaskResults.NewSpectra.Add(mzFilePath);
-            Toml.WriteFile(fileParams, tomlName, tomlConfig);
-            FinishedWritingFile(tomlName, new List<string> { taskId, "Individual Spectra Files", mzFilenameNoExtension });
-            FinishedWritingFile(mzFilePath, new List<string> { taskId, "Individual Spectra Files", mzFilenameNoExtension });
-            MyTaskResults.NewFileSpecificTomls.Add(tomlName);
+            _calibratedFileWrite.Start(
+                () => msDataFile.ExportAsMzML(mzFilePath, CalibrationParameters.WriteIndexedMzml),
+                () =>
+                {
+                    MyTaskResults.NewSpectra.Add(mzFilePath);
+                    Toml.WriteFile(fileParams, tomlName, tomlConfig);
+                    FinishedWritingFile(tomlName, new List<string> { taskId, "Individual Spectra Files", mzFilenameNoExtension });
+                    FinishedWritingFile(mzFilePath, new List<string> { taskId, "Individual Spectra Files", mzFilenameNoExtension });
+                    MyTaskResults.NewFileSpecificTomls.Add(tomlName);
+
+                    FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
+                    ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", mzFilenameNoExtension }));
+                });
         }
 
         private static void WriteNewExperimentalDesignFile(string pathToOldExperDesign, string outputFolder, List<string> originalUncalibratedFileNamesWithExtension,
