@@ -16,6 +16,7 @@ using Readers;
 using SpectralAveraging;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using EngineLayer.DatabaseLoading;
@@ -1774,6 +1775,30 @@ namespace Test
             List<string> folderContents = Directory.GetFiles(Path.Combine(outputFolder,"Task")).Select(p => Path.GetFileName(p)).ToList();
             string spectrumLibrary = folderContents.Where(p => p.Contains("SpectralLibrary")).FirstOrDefault();
             Assert.That(spectrumLibrary.Contains(".msp"));
+
+            // The library holds the glycopeptides of AllPSMs.psmtsv, in its order. A glycopeptide's glycans are modifications
+            // on it, so its theoretical mass includes them: each is stored at that mass's m/z, which lies within the search's
+            // 10 ppm precursor tolerance of the m/z its scan measured.
+            string[] psmLines = File.ReadAllLines(Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv"));
+            string[] header = psmLines[0].Split('\t');
+            int fullSequenceIndex = Array.IndexOf(header, SpectrumMatchFromTsvHeader.FullSequence);
+            int chargeIndex = Array.IndexOf(header, SpectrumMatchFromTsvHeader.PrecursorCharge);
+            int measuredMzIndex = Array.IndexOf(header, SpectrumMatchFromTsvHeader.PrecursorMz);
+            int massIndex = Array.IndexOf(header, SpectrumMatchFromTsvHeader.PeptideMonoMass);
+            List<string[]> psms = psmLines.Skip(1).Select(l => l.Split('\t')).Where(p => p[massIndex] != "---").ToList();
+            var stored = SpectralLibraryPrecursorMzTests.ReadMspPrecursors(Path.Combine(outputFolder, "Task", spectrumLibrary));
+            Assert.That(stored, Is.Not.Empty);
+            Assert.That(stored.Count, Is.EqualTo(psms.Count));
+            for (int i = 0; i < stored.Count; i++)
+            {
+                int charge = int.Parse(psms[i][chargeIndex], CultureInfo.InvariantCulture);
+                double theoreticalMz = Chemistry.ClassExtensions.ToMz(double.Parse(psms[i][massIndex], CultureInfo.InvariantCulture), charge);
+                double measuredMz = double.Parse(psms[i][measuredMzIndex], CultureInfo.InvariantCulture);
+                Assert.That(stored[i].Name, Is.EqualTo(psms[i][fullSequenceIndex]));
+                Assert.That(stored[i].Charge, Is.EqualTo(charge));
+                Assert.That(stored[i].PrecursorMz, Is.EqualTo(theoreticalMz).Within(1e-6));
+                Assert.That(Math.Abs(stored[i].PrecursorMz - measuredMz) / measuredMz * 1e6, Is.LessThan(10));
+            }
 
             Directory.Delete(outputFolder, true);
         }
