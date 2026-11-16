@@ -179,13 +179,28 @@ public static class DiaIrtSelfCalibration
                 .ToList();
         }
 
-        // The first pass, sampling more of the library until it finds enough anchors or has searched all of it
-        (List<(RtMinutes, Irt)> Anchors, int Stride) FirstPass(double halfWindow)
+        // The first pass, sampling more of the library until it finds enough anchors or has searched all of it. With mayWiden,
+        // a sample where the window finds no anchor at all is searched over the library's whole iRT range too, and the pass
+        // continues there if that finds enough to fit: a run with dead time then stops searching samples with a window that
+        // cannot work (on PXD071205's 5-min runs, about 38 of calibration's 47 min). A right provisional line either finds
+        // some anchor in its window, or finds none in the wider one too, since widening only adds competitors.
+        double wholeRange = targetIrts[^1] - targetIrts[0];
+        (List<(RtMinutes, Irt)> Anchors, int Stride) FirstPass(double halfWindow, bool mayWiden)
         {
             int stride = FirstPassStride(targetIrts.Length, firstPassTargetCount);
             while (true)
             {
                 var anchors = Anchors(linear, stride, halfWindow);
+                if (mayWiden && anchors.Count == 0)
+                {
+                    var wide = Anchors(linear, stride, wholeRange);
+                    if (wide.Count >= options.MinimumAnchors)
+                    {
+                        anchors = wide;
+                        halfWindow = wholeRange;
+                        mayWiden = false;
+                    }
+                }
                 bool enough = anchors.Count >= Math.Min(desiredAnchors, MaximumAnchors);
                 if (!enough && stride == 1 && parameters.ClassifierModel != StatisticalModels.RescoreModel.LinearDiscriminant)
                 {
@@ -199,14 +214,14 @@ public static class DiaIrtSelfCalibration
             }
         }
 
-        var (found, foundStride) = FirstPass(FirstPassWindowFraction * (highIrt - lowIrt));
+        var (found, foundStride) = FirstPass(FirstPassWindowFraction * (highIrt - lowIrt), mayWiden: true);
         // The provisional line assumes elution spans the run's MS2 time. A run that spends its first minutes before anything
         // elutes, or a short gradient that elutes only part of a whole-proteome library's iRT range, breaks that, and the line
-        // then puts eluting precursors outside the window (PXD071205's 5-min runs: 0.6% inside it, 0 anchors). Too few to fit,
-        // so search once more with a window over the library's whole iRT range, which assumes nothing about where elution is.
-        // A run that found enough never reaches this, so its calibration is unchanged.
+        // then puts eluting precursors outside the window (PXD071205's 5-min runs: 0.6% inside it, 0 anchors). If no sample's
+        // whole-range search found enough either, search once more over the whole range from the first sample, which assumes
+        // nothing about where elution is. A run that found enough never reaches this, so its calibration is unchanged.
         if (found.Count < options.MinimumAnchors)
-            (found, foundStride) = FirstPass(targetIrts[^1] - targetIrts[0]);
+            (found, foundStride) = FirstPass(wholeRange, mayWiden: false);
         int firstPassSearches = searches;
         return LaterRounds(Fit(found, options, windowSds), scans, library, linear, commonParameters, options, foundStride, sampleOffset % foundStride, rounds, windowSds)
             with { FirstPassSearches = firstPassSearches };
