@@ -255,6 +255,9 @@ namespace EngineLayer
         {
             proteinGroups = ApplyNoOneHitWondersFilter(proteinGroups);
 
+            // Both passes below rank groups by their best peptide, so set its score, q-value and PEP first
+            PopulateBestPeptideMetrics(proteinGroups);
+
             // Do Classic protein FDR (all targets, all decoys)
             // order protein groups based on filter type
             var sortedProteinGroups = SortProteinGroupsByFilterType(proteinGroups);
@@ -282,8 +285,6 @@ namespace EngineLayer
                 }
 
             }
-
-            PopulateBestPeptideMetrics(proteinGroups);
 
             // pick the best for each paired accession based on filter type
             // this compares target-decoy pairs for each protein and saves the best scoring group

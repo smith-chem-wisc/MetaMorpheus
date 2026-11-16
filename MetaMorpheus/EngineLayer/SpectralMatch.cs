@@ -286,6 +286,13 @@ namespace EngineLayer
         /// </summary>
         public double[]? IsobaricMassTagReporterIonIntensities { get; private set; }
 
+        /// <summary>
+        /// The same hypotheses as <see cref="BestMatchingBioPolymersWithSetMods"/>, in the order they were added and
+        /// without the sort that property performs on every enumeration. Only for callers whose result does not depend
+        /// on the order, such as counting targets and decoys per notch.
+        /// </summary>
+        internal IReadOnlyList<SpectralMatchHypothesis> HypothesesInAddedOrder => _BestMatchingBioPolymersWithSetMods;
+
         public IEnumerable<SpectralMatchHypothesis> BestMatchingBioPolymersWithSetMods
         {
             get
