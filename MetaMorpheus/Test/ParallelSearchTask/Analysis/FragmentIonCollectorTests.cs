@@ -138,11 +138,17 @@ public class FragmentIonCollectorTests
         var collector = new FragmentIonCollector();
         var result = collector.CollectData(context);
 
+        var allTargets = (double[])result[FragmentIonCollector.PSM_LongestIonSeriesBidirectional_AllTargets];
+        var allDecoys = (double[])result[FragmentIonCollector.PSM_LongestIonSeriesBidirectional_AllDecoys];
+
+        // one confident match on each side, so each array holds one value and the median is that value
         Assert.Multiple(() =>
         {
-            Assert.That(result[FragmentIonCollector.PSM_LongestIonSeriesBidirectionalTargets], Is.Not.Null);
-            Assert.That(result[FragmentIonCollector.PSM_LongestIonSeriesBidirectionalDecoys], Is.Not.Null);
-            Assert.That(result[FragmentIonCollector.PSM_LongestIonSeriesBidirectional_AllTargets], Is.TypeOf<double[]>());
+            Assert.That(allTargets, Has.Length.EqualTo(1));
+            Assert.That(allDecoys, Has.Length.EqualTo(1));
+            Assert.That((double)result[FragmentIonCollector.PSM_LongestIonSeriesBidirectionalTargets], Is.EqualTo(allTargets[0]));
+            Assert.That((double)result[FragmentIonCollector.PSM_LongestIonSeriesBidirectionalDecoys], Is.EqualTo(allDecoys[0]));
+            Assert.That(allTargets[0], Is.Not.NaN);
         });
     }
 

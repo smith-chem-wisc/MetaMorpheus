@@ -1,6 +1,8 @@
 #nullable enable
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using EngineLayer.SpectrumMatch;
 
 namespace EngineLayer.ParallelSearch.FdrAlignment;
@@ -8,9 +10,31 @@ namespace EngineLayer.ParallelSearch.FdrAlignment;
 public sealed class ProteinGroupFdrLookup : BaselineRankLookup<ProteinGroupRank, ProteinGroupFdr>
 {
     public ProteinGroupFdrLookup(IEnumerable<(ProteinGroupRank Rank, ProteinGroupFdr Fdr)> baseline, FilterType filterType)
-        : base(baseline, ProteinGroupRank.BetterFirst)
+        : base(WithQValuesRisingByRank(baseline), ProteinGroupRank.BetterFirst)
     {
         FilterType = filterType;
+    }
+
+    /// <summary>
+    /// Protein FDR's list is the picked groups plus the targets it rescued, which keep the higher q-value of the first,
+    /// classic pass. So the q-values do not rise with rank, and a transient group ranked just below a rescued group
+    /// would get a higher q-value than one ranked further down. Each entry takes the lowest q-value at its rank or
+    /// below, as q-values are made monotone.
+    /// </summary>
+    private static IEnumerable<(ProteinGroupRank Rank, ProteinGroupFdr Fdr)> WithQValuesRisingByRank(
+        IEnumerable<(ProteinGroupRank Rank, ProteinGroupFdr Fdr)> baseline)
+    {
+        ArgumentNullException.ThrowIfNull(baseline);
+
+        // OrderBy is stable, so the base class keeps this order
+        var sorted = baseline.OrderBy(entry => entry.Rank, ProteinGroupRank.BetterFirst).ToArray();
+        double lowestBelow = double.PositiveInfinity;
+        for (int i = sorted.Length - 1; i >= 0; i--)
+        {
+            lowestBelow = Math.Min(lowestBelow, sorted[i].Fdr.QValue);
+            sorted[i] = (sorted[i].Rank, sorted[i].Fdr with { QValue = lowestBelow });
+        }
+        return sorted;
     }
 
     /// <summary>

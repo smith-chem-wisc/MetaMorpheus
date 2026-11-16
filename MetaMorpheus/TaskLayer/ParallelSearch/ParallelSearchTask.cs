@@ -413,8 +413,9 @@ public class ParallelSearchTask : SearchTask
                 includeAmbiguous: false,
                 includeHighQValuePsms: true);
 
+            // every baseline PSM is trimmed to the parsimonious proteins, as in a normal search, not only those parsimony used
             ProteinParsimonyResults baselineParsimonyResults = (ProteinParsimonyResults)new ProteinParsimonyEngine(
-                baselinePsmsForParsimony, SearchParameters.ModPeptidesAreDifferent,
+                baselinePsmsForParsimony, baselinePsms, SearchParameters.ModPeptidesAreDifferent,
                 CommonParameters, FileSpecificParameters, [taskId]).Run();
 
             if (baselineParsimonyResults.ProteinGroups.Count > 0)
@@ -922,7 +923,7 @@ public class ParallelSearchTask : SearchTask
             FinishedWritingFile(spectralLibraryPath, nestedIds);
         }
 
-        await WriteIndividualDatabaseResultsTextAsync(metrics, outputFolder, nestedIds);
+        await WriteIndividualDatabaseResultsTextAsync(context, metrics);
 
         if (ParallelSearchParameters.CompressTransientSearchOutputs)
         {
@@ -940,11 +941,13 @@ public class ParallelSearchTask : SearchTask
         ReportProgress(new(100, $"Finished {dbName}", nestedIds));
     }
 
-    private async Task WriteIndividualDatabaseResultsTextAsync(TransientDatabaseMetrics results, string outputFolder, List<string> nestedIds)
+    private async Task WriteIndividualDatabaseResultsTextAsync(TransientDatabaseContext context, TransientDatabaseMetrics results)
     {
-        var resultsPath = Path.Combine(outputFolder, "results.txt");
-        await results.WriteToTextFileAsync(resultsPath, CommonParameters.QValueThreshold, SearchParameters.DoParsimony);
-        FinishedWritingFile(resultsPath, nestedIds);
+        var resultsPath = Path.Combine(context.OutputFolder, "results.txt");
+        // labelled with the cutoffs the counts were made at, which a normal search would also have chosen
+        await results.WriteToTextFileAsync(resultsPath, context.PsmCutoff, context.PeptideCutoff,
+            context.ProteinGroupQValueThreshold, SearchParameters.DoParsimony);
+        FinishedWritingFile(resultsPath, context.NestedIds);
     }
 
     private async Task WriteProteinGroupsToTsvAsync(List<ProteinGroup> proteinGroups, string filePath)

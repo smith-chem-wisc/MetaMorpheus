@@ -72,6 +72,9 @@ public sealed class ConfidenceCutoff
         };
     }
 
+    /// <summary>What the matches were held to, worded as a normal search's results.txt words it, e.g. "q-value &lt;= 0.01".</summary>
+    public string Label => $"{(UsesPepQValue ? "pep q-value" : "q-value")} <= {Math.Round(Threshold, 2)}";
+
     private static bool PepFilteringRequested(CommonParameters commonParameters) =>
         commonParameters.PepQValueThreshold < commonParameters.QValueThreshold;
 

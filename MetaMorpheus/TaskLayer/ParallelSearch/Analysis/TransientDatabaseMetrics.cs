@@ -493,7 +493,8 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
     /// <summary>
     /// Writes the database results to a text file
     /// </summary>
-    public async Task WriteToTextFileAsync(string filePath, double qValueThreshold, bool doParsimony)
+    public async Task WriteToTextFileAsync(string filePath, ConfidenceCutoff psmCutoff, ConfidenceCutoff peptideCutoff,
+        double proteinGroupQValueThreshold, bool doParsimony)
     {
         await using StreamWriter file = new StreamWriter(filePath);
         await file.WriteLineAsync($"Database: {DatabaseName}");
@@ -502,26 +503,27 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
         await file.WriteLineAsync($"Total peptides from transient database: {TransientPeptideCount}");
         await file.WriteLineAsync();
         
-        await file.WriteLineAsync($"Target PSMs at {qValueThreshold * 100}% FDR: {TargetPsmsAtQValueThreshold}");
+        await file.WriteLineAsync($"Target PSMs with {psmCutoff.Label}: {TargetPsmsAtQValueThreshold}");
         await file.WriteLineAsync($"Target PSMs from transient database: {TargetPsmsFromTransientDb}");
-        await file.WriteLineAsync($"Target PSMs from transient database at {qValueThreshold * 100}% FDR: {TargetPsmsFromTransientDbAtQValueThreshold}");
+        await file.WriteLineAsync($"Target PSMs from transient database with {psmCutoff.Label}: {TargetPsmsFromTransientDbAtQValueThreshold}");
         await file.WriteLineAsync($"PSM Bacterial Targets: {PsmBacterialTargets}");
         await file.WriteLineAsync($"PSM Bacterial Unambiguous Targets: {PsmBacterialUnambiguousTargets}");
         await file.WriteLineAsync();
         
-        await file.WriteLineAsync($"Target peptides at {qValueThreshold * 100}% FDR: {TargetPeptidesAtQValueThreshold}");
+        await file.WriteLineAsync($"Target peptides with {peptideCutoff.Label}: {TargetPeptidesAtQValueThreshold}");
         await file.WriteLineAsync($"Target peptides from transient database: {TargetPeptidesFromTransientDb}");
-        await file.WriteLineAsync($"Target peptides from transient database at {qValueThreshold * 100}% FDR: {TargetPeptidesFromTransientDbAtQValueThreshold}");
+        await file.WriteLineAsync($"Target peptides from transient database with {peptideCutoff.Label}: {TargetPeptidesFromTransientDbAtQValueThreshold}");
         await file.WriteLineAsync($"Peptide Bacterial Targets: {PeptideBacterialTargets}");
         await file.WriteLineAsync($"Peptide Bacterial Unambiguous Targets: {PeptideBacterialUnambiguousTargets}");
 
         if (doParsimony)
         {
+            string proteinGroupLabel = $"q-value <= {Math.Round(proteinGroupQValueThreshold, 2)}";
             await file.WriteLineAsync();
-            await file.WriteLineAsync($"Target protein groups at {qValueThreshold * 100}% FDR: {TargetProteinGroupsAtQValueThreshold}");
+            await file.WriteLineAsync($"Target protein groups with {proteinGroupLabel}: {TargetProteinGroupsAtQValueThreshold}");
             await file.WriteLineAsync($"Target protein groups with transient database proteins: {TargetProteinGroupsFromTransientDb}");
-            await file.WriteLineAsync($"Target protein groups with transient database proteins at {qValueThreshold * 100}% FDR: {TargetProteinGroupsFromTransientDbAtQValueThreshold}");
-            await file.WriteLineAsync($"Decoy protein groups with transient database proteins at {qValueThreshold * 100}% FDR: {DecoyProteinGroupsFromTransientDbAtQValueThreshold}");
+            await file.WriteLineAsync($"Target protein groups with transient database proteins with {proteinGroupLabel}: {TargetProteinGroupsFromTransientDbAtQValueThreshold}");
+            await file.WriteLineAsync($"Decoy protein groups with transient database proteins with {proteinGroupLabel}: {DecoyProteinGroupsFromTransientDbAtQValueThreshold}");
             await file.WriteLineAsync($"Protein Group Bacterial Unambiguous Targets: {ProteinGroupBacterialUnambiguousTargets}");
         }
     }

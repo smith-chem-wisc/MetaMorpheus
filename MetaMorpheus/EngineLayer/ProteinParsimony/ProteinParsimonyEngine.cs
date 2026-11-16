@@ -49,10 +49,11 @@ namespace EngineLayer
                 unFilteredPsmsForParsimony, modPeptidesAreDifferent, commonParameters, fileSpecificParameters, nestedIds) { }
 
         /// <summary>
-        /// Takes PSMs the caller has already filtered; they are used as-is and not filtered again.
+        /// Takes PSMs the caller has already filtered; they are used as-is and not filtered again. As with the constructor
+        /// that filters, <paramref name="allPsms"/> are the PSMs whose protein associations are trimmed after parsimony.
         /// </summary>
-        public ProteinParsimonyEngine(FilteredPsms filteredPsms, bool modPeptidesAreDifferent, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds)
-            : this(filteredPsms.FilteredPsmsList, filteredPsms.FilteredPsmsList, modPeptidesAreDifferent, commonParameters, fileSpecificParameters, nestedIds) { }
+        public ProteinParsimonyEngine(FilteredPsms filteredPsms, List<SpectralMatch> allPsms, bool modPeptidesAreDifferent, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds)
+            : this(filteredPsms.FilteredPsmsList, allPsms, modPeptidesAreDifferent, commonParameters, fileSpecificParameters, nestedIds) { }
 
         /// <param name="psmsForParsimony">PSMs to build parsimony from, used as-is (no q-value filtering here)</param>
         /// <param name="allPsms">PSMs whose protein associations may be pruned after parsimony</param>

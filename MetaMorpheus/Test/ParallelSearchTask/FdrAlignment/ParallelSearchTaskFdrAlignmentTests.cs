@@ -166,6 +166,31 @@ public class ParallelSearchTaskFdrAlignmentTests
         Assert.That(transient.QValue, Is.EqualTo(0.01).Within(1e-10));
     }
 
+    /// <summary>
+    /// A rescued target keeps the higher q-value of protein FDR's first pass, so it can sit above a picked group with a
+    /// lower q-value. A transient group ranked just below it must not get a higher q-value than one ranked further down.
+    /// </summary>
+    [Test]
+    public void ProteinGroupLookup_TakesTheLowestQValueAtOrBelowEachRank()
+    {
+        var lookup = new ProteinGroupFdrLookup(
+        [
+            (new ProteinGroupRank(0.001, 50), new ProteinGroupFdr(0.001, 100, 0)),
+            (new ProteinGroupRank(0.002, 40), new ProteinGroupFdr(0.05, 101, 5)), // rescued: first-pass q-value
+            (new ProteinGroupRank(0.003, 30), new ProteinGroupFdr(0.002, 102, 0)),
+            (new ProteinGroupRank(0.004, 20), new ProteinGroupFdr(0.02, 103, 2)),
+        ], FilterType.QValue);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(lookup.Find(new ProteinGroupRank(0.0025, 35)).QValue, Is.EqualTo(0.002).Within(1e-12));
+            Assert.That(lookup.Find(new ProteinGroupRank(0.0035, 25)).QValue, Is.EqualTo(0.002).Within(1e-12));
+            Assert.That(lookup.Find(new ProteinGroupRank(0.005, 10)).QValue, Is.EqualTo(0.02).Within(1e-12));
+            // the cumulative counts are left as they were
+            Assert.That(lookup.Find(new ProteinGroupRank(0.0025, 35)).CumulativeDecoy, Is.EqualTo(5));
+        });
+    }
+
     [Test]
     public void AlignProteinGroups_WithPepFiltering_RanksByBestPeptidePep()
     {
