@@ -133,6 +133,15 @@ public static class DiaIrtSelfCalibration
     /// </summary>
     public const double CalibrationMs1TolerancePpm = 10;
 
+    /// <summary>
+    /// Whether a whole-range search's anchors say the provisional line is misplaced: more than half of them elute outside
+    /// the window the first pass searched around the line. A whole-range search can find anchors where the window found none
+    /// for another reason, since it searches more of a small sample's precursors, enough to reach 1% q; that alone is no
+    /// sign the line is wrong.
+    /// </summary>
+    internal static bool LineIsMisplaced(IReadOnlyList<(RtMinutes ApexRt, Irt LibraryIrt)> anchors, IrtCalibrationModel provisional, double halfWindow) =>
+        anchors.Count > 0 && anchors.Count(a => Math.Abs(provisional.ToIrt(a.ApexRt).Value - a.LibraryIrt.Value) > halfWindow) > anchors.Count / 2.0;
+
     public static DiaIrtCalibration Calibrate(MsDataScan[] scans, MslLibrary library, DiaLibrarySearchParameters parameters,
         CommonParameters commonParameters, IrtCalibrationOptions? options = null, int firstPassTargetCount = FirstPassTargetCount,
         int desiredAnchors = DesiredAnchors, int rounds = DefaultRounds, double windowSds = DefaultWindowSds, int sampleOffset = 0)
@@ -180,10 +189,11 @@ public static class DiaIrtSelfCalibration
         }
 
         // The first pass, sampling more of the library until it finds enough anchors or has searched all of it. With mayWiden,
-        // a sample where the window finds no anchor at all is searched over the library's whole iRT range too, and the pass
-        // continues there if that finds enough to fit: a run with dead time then stops searching samples with a window that
-        // cannot work (on PXD071205's 5-min runs, about 38 of calibration's 47 min). A right provisional line either finds
-        // some anchor in its window, or finds none in the wider one too, since widening only adds competitors.
+        // a sample where the window finds no anchor at all is searched over the library's whole iRT range too. When that
+        // finds enough to fit, its anchors decide (LineIsMisplaced): if most elute outside the window, the line is wrong and the
+        // pass continues over the whole range, so a run with dead time stops searching samples with a window that cannot work
+        // (PXD071205's 5-min runs: about 38 of calibration's 47 min). If not, the empty sample was only too small to reach 1%
+        // q; the wide anchors are set aside, no later sample is widened, and calibration goes on exactly as without this.
         double wholeRange = targetIrts[^1] - targetIrts[0];
         (List<(RtMinutes, Irt)> Anchors, int Stride) FirstPass(double halfWindow, bool mayWiden)
         {
@@ -196,8 +206,11 @@ public static class DiaIrtSelfCalibration
                     var wide = Anchors(linear, stride, wholeRange);
                     if (wide.Count >= options.MinimumAnchors)
                     {
-                        anchors = wide;
-                        halfWindow = wholeRange;
+                        if (LineIsMisplaced(wide, provisional, halfWindow))
+                        {
+                            anchors = wide;
+                            halfWindow = wholeRange;
+                        }
                         mayWiden = false;
                     }
                 }

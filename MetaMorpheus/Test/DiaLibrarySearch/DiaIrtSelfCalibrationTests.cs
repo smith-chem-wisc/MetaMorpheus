@@ -358,6 +358,30 @@ public class DiaIrtSelfCalibrationTests
                 $"at library iRT {irt}");
     }
 
+    /// <summary>
+    /// A whole-range search can find anchors where the provisional window found none for a reason other than a wrong line: it
+    /// searches more of a small sample's precursors, enough to reach 1% q (on the HeLa runs it did, and switching cost
+    /// held-out half its anchors). So the switch asks the anchors: the line is misplaced only when most of them sit outside
+    /// the window the first pass used.
+    /// </summary>
+    [TestCase(0.0, false)]
+    [TestCase(0.4, false)]
+    [TestCase(0.5, false)]
+    [TestCase(0.6, true)]
+    [TestCase(1.0, true)]
+    public void WideAnchorsSayTheProvisionalLineIsMisplacedWhenMostLieOutsideItsWindow(double outsideFraction, bool misplaced)
+    {
+        var line = Chromatography.RetentionTimeCalibration.IrtCalibration.Line((new RtMinutes(0), new Irt(0)), (new RtMinutes(10), new Irt(100)));
+        const double halfWindow = 10;
+        int outside = (int)Math.Round(outsideFraction * 50);
+        // Each anchor's apex maps to iRT 10 * minutes on the line; library iRT 5 away is inside the window, 40 away is outside
+        var anchors = Enumerable.Range(0, 50)
+            .Select(i => (new RtMinutes(i * 0.2), new Irt(i * 2.0 + (i < outside ? 40 : 5))))
+            .ToList();
+
+        Assert.That(DiaIrtSelfCalibration.LineIsMisplaced(anchors, line, halfWindow), Is.EqualTo(misplaced));
+    }
+
     /// <summary>A run whose provisional line is right takes its first sample, and is never searched over the whole range.</summary>
     [Test]
     public void ARunThatCalibratesOnItsFirstSampleSearchesOnce()
