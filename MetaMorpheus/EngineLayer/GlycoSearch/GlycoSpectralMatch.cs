@@ -1,4 +1,6 @@
-﻿using Omics.Fragmentation;
+﻿using Omics;
+using Omics.BioPolymer;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
@@ -85,7 +87,7 @@ namespace EngineLayer.GlycoSearch
                     }
                     
                     //FullSequence is used here to avoid duplicated modification on same sites?
-                    if (ModificationLocalization.ModFits(modWithMotif, peptide.BaseSequence, r + 1, peptide.Length, r + 1))
+                    if (MotifFits(modWithMotif, peptide, r))
                     {
                         if (!modMotif.ContainsKey(r + 2)) //If the mod site is not in the dictionary, add it.
                         {
@@ -97,7 +99,7 @@ namespace EngineLayer.GlycoSearch
             return modMotif;
         }
 
-        public static bool MotifExist(string baseSeq, string[] motifs)
+        public static bool MotifExist(IBioPolymerWithSetMods peptide, string[] motifs)
         {
             foreach (var mtf in motifs)
             {
@@ -106,10 +108,10 @@ namespace EngineLayer.GlycoSearch
                 {
                     continue;
                 }
-                for (int r = 0; r < baseSeq.Length; r++)
+                for (int r = 0; r < peptide.Length; r++)
                 {
                     //Modification is not considered.                  
-                    if (ModificationLocalization.ModFits(modWithMotif, baseSeq, r + 1, baseSeq.Length, r + 1))
+                    if (MotifFits(modWithMotif, peptide, r))
                     {
                         return true;
                     }
@@ -117,6 +119,15 @@ namespace EngineLayer.GlycoSearch
             }
 
             return false;
+        }
+
+        // The motif is read in the protein, so a sequon the protease cut (N-K|S) is still a site. A peptide made from a
+        // string has no protein and is read alone.
+        private static bool MotifFits(Modification modWithMotif, IBioPolymerWithSetMods peptide, int zeroBasedResidue)
+        {
+            return peptide.Parent == null
+                ? ModificationLocalization.ModFits(modWithMotif, peptide.BaseSequence, zeroBasedResidue + 1, peptide.Length, zeroBasedResidue + 1)
+                : ModificationLocalization.ModFits(modWithMotif, peptide.Parent.BaseSequence, zeroBasedResidue + 1, peptide.Length, peptide.OneBasedStartResidue + zeroBasedResidue);
         }
 
         /// <summary>
@@ -266,7 +277,7 @@ namespace EngineLayer.GlycoSearch
                 }
             }
 
-            sb.Append((IsDecoy) ? "D" : (IsContaminant) ? "C" : "T"); sb.Append("\t");
+            sb.Append(PsmTsvWriter.Resolve(BestMatchingBioPolymersWithSetMods.Select(b => DecoyContaminantTargetLabel.For(b.SpecificBioPolymer.Parent))).ResolvedString); sb.Append("\t");
 
 
             sb.Append(FdrInfo!=null? FdrInfo.QValue.ToString() : "-1" );  sb.Append("\t");
@@ -304,7 +315,7 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(Glycan.GetKindString(glycanBox.Kind)); sb.Append("\t");
 
-                var NSiteExist = MotifExist(BaseSequence, new string[] { "Nxt", "Nxs" });
+                var NSiteExist = MotifExist(BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer, new string[] { "Nxt", "Nxs" });
 
                 sb.Append(NSiteExist); sb.Append("\t");
 
@@ -351,7 +362,7 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(Glycan.GetKindString(NGlycan.First().Kind) + "\t");
 
-                var NSiteExist = MotifExist(BaseSequence, new string[] { "Nxt", "Nxs" });
+                var NSiteExist = MotifExist(BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer, new string[] { "Nxt", "Nxs" });
 
                 sb.Append(NSiteExist); sb.Append("\t");
 

@@ -53,9 +53,9 @@ namespace Test
             typeof(MetaMorpheusTask).GetMethod("WritePeptideIndex", PrivateStatic, new[] { typeof(List<PeptideWithSetModifications>), typeof(string) })
                 .Invoke(null, new object[] { written, path });
             MethodInfo readPeptideIndex = typeof(MetaMorpheusTask)
-                .GetMethod("ReadPeptideIndex", PrivateStatic, new[] { typeof(string), typeof(List<Protein>) });
-            Assert.That(readPeptideIndex, Is.Not.Null, "ReadPeptideIndex(string, List<Protein>) not found; update this test");
-            var read = (List<PeptideWithSetModifications>)readPeptideIndex.Invoke(null, new object[] { path, proteins });
+                .GetMethod("ReadPeptideIndex", PrivateStatic, new[] { typeof(string), typeof(List<Protein>), typeof(int) });
+            Assert.That(readPeptideIndex, Is.Not.Null, "ReadPeptideIndex(string, List<Protein>, int) not found; update this test");
+            var read = (List<PeptideWithSetModifications>)readPeptideIndex.Invoke(null, new object[] { path, proteins, 4 });
 
             Assert.That(read.Count, Is.EqualTo(written.Count));
             for (int i = 0; i < written.Count; i++)

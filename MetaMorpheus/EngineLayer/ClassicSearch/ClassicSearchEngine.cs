@@ -27,15 +27,19 @@ namespace EngineLayer.ClassicSearch
         protected readonly SpectralMatch[] SpectralMatches;
         protected readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
         protected readonly double[] MyScanPrecursorMasses;
+        private readonly SortedMassIndex ScanMassIndex;
+        private readonly DotMassDiffAcceptor DotSearchMode; // the search mode, when it is exactly a DotMassDiffAcceptor
         private readonly bool WriteSpectralLibrary;
         private readonly bool WriteDigestionCounts;
         private readonly object[] Locks;
+        private ClassicSearchDigestionCache DigestionCache;
         public readonly ConcurrentDictionary<(string Accession, string BaseSequence), int> DigestionCountDictionary; // Used to track the amount of digestion products from each protein when the option is enabled.
 
         public ClassicSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
             List<IBioPolymer> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
-            SpectralLibrary spectralLibrary, List<string> nestedIds, bool writeSpectralLibrary, bool writeDigestionCounts = false)
+            SpectralLibrary spectralLibrary, List<string> nestedIds, bool writeSpectralLibrary, bool writeDigestionCounts = false,
+            ClassicSearchDigestionCache digestionCache = null)
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             SpectralMatches = globalPsms;
@@ -53,6 +57,8 @@ namespace EngineLayer.ClassicSearch
             }
 
             SearchMode = searchMode;
+            ScanMassIndex = new SortedMassIndex(MyScanPrecursorMasses);
+            DotSearchMode = searchMode != null && searchMode.GetType() == typeof(DotMassDiffAcceptor) ? (DotMassDiffAcceptor)searchMode : null;
             SpectralLibrary = spectralLibrary;
             WriteSpectralLibrary = writeSpectralLibrary;
             WriteDigestionCounts = writeDigestionCounts;
@@ -70,6 +76,13 @@ namespace EngineLayer.ClassicSearch
             // we have to generate the reverse peptides instead of the usual reverse proteins because we generate decoy spectral
             // library spectra from their corresponding paired target peptides
             Proteins = spectralLibrary == null ? proteinList : proteinList.Where(p => !p.IsDecoy).ToList();
+
+            // Products kept by an earlier search of the same proteins with the same digestion, if the cache serves these
+            // inputs. A spectral-library search sets PairedTargetDecoySequence on its targets, so it never shares them.
+            DigestionCache = spectralLibrary == null && digestionCache != null
+                && digestionCache.Serves(proteinList, commonParameters.DigestionParams, fixedModifications, variableModifications, silacLabels, TurnoverLabels)
+                ? digestionCache
+                : null;
         }
 
         // Override for constructing from Protein
@@ -94,15 +107,30 @@ namespace EngineLayer.ClassicSearch
             if (Proteins.Any())
             {
                 int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
-                var proteinPartioner = Partitioner.Create(0, Proteins.Count);
-                
+                // Many small ranges, sized from the threads actually used. The default cuts 3 ranges per processor
+                // whatever MaxThreadsToUsePerFile is, so on an ordinary 16-thread machine 11 threads share 48 ranges and
+                // the last few run alone for a long tail; proteins differ widely in digestion cost, top-down most of all.
+                int rangeSize = Math.Max(1, Proteins.Count / (64 * Math.Max(1, maxThreadsPerFile)));
+                var proteinPartioner = Partitioner.Create(0, Proteins.Count, rangeSize);
+
+                // The scans whose candidates can be scored before their ions are built (see ScoreFragmentIons), decided once
+                // here: asking for every candidate would read two more objects from a scan that is usually not in cache.
+                bool[] scoreBeforeMatching = new bool[ArrayOfSortedMS2Scans.Length];
+                for (int i = 0; i < scoreBeforeMatching.Length; i++)
+                {
+                    scoreBeforeMatching[i] = CanScoreBeforeMatching(ArrayOfSortedMS2Scans[i], CommonParameters, matchAllCharges: WriteSpectralLibrary);
+                }
+
                 Parallel.ForEach(
                     proteinPartioner,
                     new ParallelOptions { MaxDegreeOfParallelism = maxThreadsPerFile },
                     (range, loopState) =>
                 {
+                    var fragmentMatchScratch = new FragmentMatchScratch();
+                    var acceptableScans = new List<ScanWithIndexAndNotchInfo>();
                     var targetFragmentsForEachDissociationType = new Dictionary<DissociationType, List<Product>>();
                     var decoyFragmentsForEachDissociationType = new Dictionary<DissociationType, List<Product>>();
+                    var sortedMassesForEachDissociationType = new Dictionary<DissociationType, SortedProductMasses>();
 
                     // check if we're supposed to autodetect dissociation type from the scan header or not
                     if (CommonParameters.DissociationType == DissociationType.Autodetect)
@@ -111,12 +139,14 @@ namespace EngineLayer.ClassicSearch
                         {
                             targetFragmentsForEachDissociationType.Add(item.Value, new List<Product>());
                             decoyFragmentsForEachDissociationType.Add(item.Value, new List<Product>());
+                            sortedMassesForEachDissociationType.Add(item.Value, new SortedProductMasses());
                         }
                     }
                     else
                     {
                         targetFragmentsForEachDissociationType.Add(CommonParameters.DissociationType, new List<Product>());
                         decoyFragmentsForEachDissociationType.Add(CommonParameters.DissociationType, new List<Product>());
+                        sortedMassesForEachDissociationType.Add(CommonParameters.DissociationType, new SortedProductMasses());
                     }
 
                     for (int i = range.Item1; i < range.Item2; i++)
@@ -125,7 +155,10 @@ namespace EngineLayer.ClassicSearch
                         if (GlobalVariables.StopLoops) { return; }
 
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
-                        foreach (var specificBioPolymer in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
+                        IEnumerable<IBioPolymerWithSetMods> products = DigestionCache != null
+                            ? DigestionCache.Digest(i, CommonParameters.DigestionParams)
+                            : Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels);
+                        foreach (var specificBioPolymer in products)
                         {
                             if (WriteDigestionCounts)
                                 DigestionCountDictionary.Increment((specificBioPolymer.Parent.Accession, specificBioPolymer.BaseSequence));
@@ -146,7 +179,8 @@ namespace EngineLayer.ClassicSearch
                             }
 
                             // score each scan that has an acceptable precursor mass
-                            foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(specificBioPolymer.MonoisotopicMass, SearchMode))
+                            FindAcceptableScans(specificBioPolymer.MonoisotopicMass, acceptableScans);
+                            foreach (ScanWithIndexAndNotchInfo scan in acceptableScans)
                             {
                                 Ms2ScanWithSpecificMass theScan = ArrayOfSortedMS2Scans[scan.ScanIndex];
                                 var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
@@ -159,17 +193,32 @@ namespace EngineLayer.ClassicSearch
                                 }
 
                                 // check if we've already generated theoretical fragments for this peptide+dissociation type
+                                var sortedProductMasses = sortedMassesForEachDissociationType[dissociationType];
                                 if (peptideTheorProducts.Count == 0)
                                 {
                                     specificBioPolymer.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts, CommonParameters.FragmentationParameters);
+
+                                    // sorted once per peptide, so that each scan below matches all of them in one walk of its masses
+                                    sortedProductMasses.Build(peptideTheorProducts);
                                 }
 
-                                // match theoretical target ions to spectrum
-                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(theScan, peptideTheorProducts, CommonParameters,
-                                        matchAllCharges: WriteSpectralLibrary);
+                                List<MatchedFragmentIon> matchedIons;
+                                double thisScore;
+                                if (scoreBeforeMatching[scan.ScanIndex])
+                                {
+                                    // the same score; the ions are built only if the score reaches the cutoff (null below it)
+                                    thisScore = ScoreFragmentIons(theScan, peptideTheorProducts, sortedProductMasses, CommonParameters,
+                                        CommonParameters.ScoreCutoff, fragmentMatchScratch, out matchedIons);
+                                }
+                                else
+                                {
+                                    // match theoretical target ions to spectrum
+                                    matchedIons = MatchFragmentIons(theScan, peptideTheorProducts, CommonParameters,
+                                            matchAllCharges: WriteSpectralLibrary);
 
-                                // calculate the peptide's score
-                                double thisScore = CalculatePeptideScore(theScan.TheScan, matchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
+                                    // calculate the peptide's score
+                                    thisScore = CalculatePeptideScore(theScan.TheScan, matchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
+                                }
 
                                 AddPeptideCandidateToPsm(scan, thisScore, specificBioPolymer, matchedIons);
 
@@ -192,6 +241,9 @@ namespace EngineLayer.ClassicSearch
                     }
                 });
             }
+
+            // the task decides how long the cache lives; this engine's results must not keep it
+            DigestionCache = null;
 
             foreach (SpectralMatch psm in SpectralMatches.Where(p => p != null))
             {
@@ -220,6 +272,9 @@ namespace EngineLayer.ClassicSearch
             AddPeptideCandidateToPsm(scan, decoyScore, reversedOnTheFlyDecoy, decoyMatchedIons);
         }
 
+        /// <summary>
+        /// <paramref name="matchedIons"/> is only read when the score meets the cutoff, and may be null below it.
+        /// </summary>
         private void AddPeptideCandidateToPsm(ScanWithIndexAndNotchInfo scan, double thisScore, IBioPolymerWithSetMods peptide, List<MatchedFragmentIon> matchedIons)
         {
             bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
@@ -248,39 +303,50 @@ namespace EngineLayer.ClassicSearch
             }
         }
 
-        private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, MassDiffAcceptor searchMode)
+        /// <summary>
+        /// Fills <paramref name="acceptableScans"/> with every scan whose precursor mass lies in one of the search mode's allowed
+        /// intervals around <paramref name="peptideMonoisotopicMass"/>, as (notch, scan index): interval by interval in the order
+        /// the search mode gives them, and scans in mass order within each, the order they are scored in. Filled up front
+        /// rather than yielded one at a time; nothing scoring does changes the search mode or the scans' masses.
+        /// </summary>
+        internal void FindAcceptableScans(double peptideMonoisotopicMass, List<ScanWithIndexAndNotchInfo> acceptableScans)
         {
-            foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMonoisotopicMass))
+            acceptableScans.Clear();
+            if (DotSearchMode != null)
             {
-                int scanIndex = GetFirstScanWithMassOverOrEqual(allowedIntervalWithNotch.Minimum);
-                if (scanIndex < ArrayOfSortedMS2Scans.Length)
+                // the same intervals GetAllowedPrecursorMassIntervalsFromTheoreticalMass yields, without an object for each
+                for (int j = 0; j < DotSearchMode.IntervalCount; j++)
                 {
-                    var scanMass = MyScanPrecursorMasses[scanIndex];
-                    while (scanMass <= allowedIntervalWithNotch.Maximum)
-                    {
-                        yield return new ScanWithIndexAndNotchInfo(allowedIntervalWithNotch.Notch, scanIndex);
-                        scanIndex++;
-                        if (scanIndex == ArrayOfSortedMS2Scans.Length)
-                        {
-                            break;
-                        }
-
-                        scanMass = MyScanPrecursorMasses[scanIndex];
-                    }
+                    DotSearchMode.GetAllowedPrecursorMassInterval(peptideMonoisotopicMass, j, out double minimum, out double maximum, out int notch);
+                    AddScansInInterval(minimum, maximum, notch, acceptableScans);
                 }
+                return;
+            }
+
+            foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in SearchMode.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMonoisotopicMass))
+            {
+                AddScansInInterval(allowedIntervalWithNotch.Minimum, allowedIntervalWithNotch.Maximum, allowedIntervalWithNotch.Notch, acceptableScans);
             }
         }
 
-        private int GetFirstScanWithMassOverOrEqual(double minimum)
+        private void AddScansInInterval(double minimum, double maximum, int notch, List<ScanWithIndexAndNotchInfo> acceptableScans)
         {
-            int index = Array.BinarySearch(MyScanPrecursorMasses, minimum);
-            if (index < 0)
+            int scanIndex = ScanMassIndex.FirstAtOrAbove(minimum);
+            if (scanIndex < ArrayOfSortedMS2Scans.Length)
             {
-                index = ~index;
-            }
+                var scanMass = MyScanPrecursorMasses[scanIndex];
+                while (scanMass <= maximum)
+                {
+                    acceptableScans.Add(new ScanWithIndexAndNotchInfo(notch, scanIndex));
+                    scanIndex++;
+                    if (scanIndex == ArrayOfSortedMS2Scans.Length)
+                    {
+                        break;
+                    }
 
-            // index of the first element that is larger than value
-            return index;
+                    scanMass = MyScanPrecursorMasses[scanIndex];
+                }
+            }
         }
     }
 }

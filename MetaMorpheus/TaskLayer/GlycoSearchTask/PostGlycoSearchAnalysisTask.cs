@@ -183,10 +183,12 @@ namespace TaskLayer
 
             if (Parameters.GlycoSearchParameters.WriteSpectrumLibrary)
             {
+                // A glycopeptide's glycans are modifications on it, so its theoretical precursor m/z includes them
+                // (SpectralMatch.ToLibrarySpectrum). A gsm whose candidates differ in mass has no one precursor m/z to store.
                 List<LibrarySpectrum> spectrumLibrary = new List<LibrarySpectrum>();
-                foreach (var gsm in filteredPsms)
+                foreach (var gsm in filteredPsms.Where(g => g.BioPolymerWithSetModsMonoisotopicMass.HasValue))
                 {
-                    spectrumLibrary.Add(new LibrarySpectrum(gsm.FullSequence, gsm.ScanPrecursorMonoisotopicPeakMz, gsm.ScanPrecursorCharge, gsm.MatchedFragmentIons,gsm.ScanRetentionTime,gsm.IsDecoy));
+                    spectrumLibrary.Add(gsm.ToLibrarySpectrum());
                 }
                 WriteSpectrumLibrary(spectrumLibrary, OutputFolder);
             }
@@ -207,8 +209,9 @@ namespace TaskLayer
         /// <param name="MyTaskResults"></param>
         private void WriteSummary(List<GlycoSpectralMatch> targetPsms, GlycoSearchParameters glycoSearchParameters, MyTaskResults MyTaskResults)
         {
-            var gsms = targetPsms.Where(p => p.Routes != null).ToList();
-            var Level1gsms = gsms.Where(p => p.LocalizationLevel == LocalizationLevel.Level1).ToList();
+            // An N-glycan search's PSMs carry NGlycan, not Routes, and are never localized, so none is Level 1.
+            var gsms = targetPsms.Where(p => p.Routes != null || p.NGlycan != null).ToList();
+            var Level1gsms = gsms.Where(p => p.Routes != null && p.LocalizationLevel == LocalizationLevel.Level1).ToList();
             MyTaskResults.AddTaskSummaryText("All target PSMs within 1% FDR: " + (targetPsms?.
                            Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
             MyTaskResults.AddTaskSummaryText("All target protein groups within 1% FDR: " + (ProteinGroups?.
