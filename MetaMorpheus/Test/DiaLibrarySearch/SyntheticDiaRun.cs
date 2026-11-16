@@ -47,7 +47,10 @@ internal sealed class SyntheticDiaRun
     public static double TrueRtMinutes(double irt) => 0.5 + 0.045 * (irt + 20) + 0.00016 * (irt + 20) * (irt + 20);
 
     /// <summary>A stable bucket for choosing a fraction of entries. string.GetHashCode is randomized per process.</summary>
-    public static int Bucket(MslLibraryEntry entry, int buckets) => entry.FullSequence.Sum(c => c) % buckets;
+    public static int Bucket(MslLibraryEntry entry, int buckets) => Bucket(entry.FullSequence, buckets);
+
+    /// <inheritdoc cref="Bucket(MslLibraryEntry, int)"/>
+    public static int Bucket(string fullSequence, int buckets) => fullSequence.Sum(c => c) % buckets;
 
     private SyntheticDiaRun(List<MslLibraryEntry> library, MsDataScan[] scans, IReadOnlySet<string> planted)
     {
@@ -59,8 +62,14 @@ internal sealed class SyntheticDiaRun
     /// <param name="targetCount">Number of target precursors in the library. Each also gets one decoy.</param>
     /// <param name="plant">Chooses which library entries elute in the run, by full sequence.</param>
     /// <param name="withDecoys">False builds a library with no decoys at all.</param>
+    /// <param name="abundance">Multiplies a planted entry's elution peak; null leaves every peak at the same height.</param>
+    /// <param name="withMs1">Adds an MS1 scan at the start of each cycle: noise, and each planted precursor's M0-M3 isotopes
+    /// (Poisson, lambda = neutral mass / 1800, about averagine) on the same elution profile.</param>
+    /// <param name="withCharge3Siblings">Adds each peptide's 3+ precursor (same fragments, same iRT) where its m/z is inside
+    /// the run's windows, for targets and decoys alike. It elutes with its 2+ sibling when planted.</param>
+    /// <param name="ppmOffset">Shifts every recorded m/z by this many ppm, as a miscalibrated instrument would.</param>
     public static SyntheticDiaRun Build(int targetCount, Func<MslLibraryEntry, bool> plant, bool withDecoys = true,
-        int seed = 42, double noisePeaksPerScan = 60)
+        int seed = 42, double noisePeaksPerScan = 60, Func<MslLibraryEntry, double>? abundance = null, bool withMs1 = false, double ppmOffset = 0, bool withCharge3Siblings = false)
     {
         var random = new Random(seed);
         var library = new List<MslLibraryEntry>();
@@ -78,6 +87,10 @@ internal sealed class SyntheticDiaRun
             library.Add(Entry(sequence, precursorMz, irt, isDecoy: false, random));
             if (withDecoys)
                 library.Add(Entry(new string(sequence.Reverse().ToArray()), precursorMz, irt, isDecoy: true, random));
+            if (withCharge3Siblings)
+                foreach (var twoPlus in library.Skip(library.Count - (withDecoys ? 2 : 1)).ToList())
+                    if (Charge3Sibling(twoPlus) is { } threePlus)
+                        library.Add(threePlus);
         }
 
         var planted = library.Where(plant).ToList();
@@ -85,6 +98,27 @@ internal sealed class SyntheticDiaRun
         int scanNumber = 1;
         for (double rt = 0; rt < RunMinutes; rt += CycleMinutes)
         {
+            if (withMs1)
+            {
+                var ms1Peaks = new List<(double Mz, double Intensity)>();
+                for (int n = 0; n < 200; n++)
+                    ms1Peaks.Add((FirstWindowLowMz + random.NextDouble() * WindowCount * WindowWidth, 50 + random.NextDouble() * 950));
+                foreach (var entry in planted)
+                {
+                    double elution = 1e6 * (abundance?.Invoke(entry) ?? 1) * Math.Exp(-0.5 * Math.Pow((rt - TrueRtMinutes(entry.RetentionTime)) / ElutionSigmaMinutes, 2));
+                    if (elution < 1)
+                        continue;
+                    double lambda = (entry.PrecursorMz - 1.007276) * entry.ChargeState / 1800;
+                    double p = Math.Exp(-lambda);
+                    for (int k = 0; k <= 3; k++, p *= lambda / k)
+                        ms1Peaks.Add((entry.PrecursorMz + k * 1.0033548 / entry.ChargeState, elution * p));
+                }
+                var ms1Ordered = ms1Peaks.OrderBy(p => p.Mz).ToArray();
+                var ms1Spectrum = new MzSpectrum(ms1Ordered.Select(p => p.Mz * (1 + ppmOffset * 1e-6)).ToArray(), ms1Ordered.Select(p => p.Intensity).ToArray(), false);
+                scans.Add(new MsDataScan(ms1Spectrum, scanNumber, 1, true, Polarity.Positive, rt, new MzRange(FirstWindowLowMz, FirstWindowLowMz + WindowCount * WindowWidth),
+                    "synthetic", MZAnalyzerType.Orbitrap, ms1Spectrum.SumOfAllY, 10, null, $"scan={scanNumber}"));
+                scanNumber++;
+            }
             for (int w = 0; w < WindowCount; w++)
             {
                 double low = FirstWindowLowMz + w * WindowWidth;
@@ -94,7 +128,7 @@ internal sealed class SyntheticDiaRun
 
                 foreach (var entry in planted.Where(e => e.PrecursorMz >= low && e.PrecursorMz < low + WindowWidth))
                 {
-                    double elution = 1e5 * Math.Exp(-0.5 * Math.Pow((rt - TrueRtMinutes(entry.RetentionTime)) / ElutionSigmaMinutes, 2));
+                    double elution = 1e5 * (abundance?.Invoke(entry) ?? 1) * Math.Exp(-0.5 * Math.Pow((rt - TrueRtMinutes(entry.RetentionTime)) / ElutionSigmaMinutes, 2));
                     if (elution < 1)
                         continue;
                     foreach (var fragment in entry.MatchedFragmentIons)
@@ -102,7 +136,7 @@ internal sealed class SyntheticDiaRun
                 }
 
                 var ordered = peaks.OrderBy(p => p.Mz).ToArray();
-                var spectrum = new MzSpectrum(ordered.Select(p => p.Mz).ToArray(), ordered.Select(p => p.Intensity).ToArray(), false);
+                var spectrum = new MzSpectrum(ordered.Select(p => p.Mz * (1 + ppmOffset * 1e-6)).ToArray(), ordered.Select(p => p.Intensity).ToArray(), false);
                 scans.Add(Scan(spectrum, scanNumber, rt, isolationMz: low + WindowWidth / 2));
                 scanNumber++;
             }
@@ -130,6 +164,31 @@ internal sealed class SyntheticDiaRun
         string path = Path.Combine(directory, $"synthetic_{Guid.NewGuid():N}.msl");
         MslLibrary.Save(path, Library);
         return path;
+    }
+
+    /// <summary>The same peptide at 3+: its m/z from the 2+ m/z, the same fragments, or null when outside the run's windows.</summary>
+    private static MslLibraryEntry? Charge3Sibling(MslLibraryEntry twoPlus)
+    {
+        const double proton = 1.007276;
+        double mz = ((twoPlus.PrecursorMz - proton) * 2 + 3 * proton) / 3;
+        if (mz < FirstWindowLowMz || mz >= FirstWindowLowMz + WindowCount * WindowWidth)
+            return null;
+        var sibling = new MslLibraryEntry
+        {
+            FullSequence = twoPlus.FullSequence,
+            BaseSequence = twoPlus.BaseSequence,
+            PrecursorMz = mz,
+            ChargeState = 3,
+            RetentionTime = twoPlus.RetentionTime,
+            IsDecoy = twoPlus.IsDecoy,
+        };
+        foreach (var f in twoPlus.MatchedFragmentIons)
+            sibling.MatchedFragmentIons.Add(new MslFragmentIon
+            {
+                Mz = f.Mz, Intensity = f.Intensity, ProductType = f.ProductType, FragmentNumber = f.FragmentNumber,
+                ResiduePosition = f.ResiduePosition, Charge = f.Charge,
+            });
+        return sibling;
     }
 
     private static MslLibraryEntry Entry(string sequence, double precursorMz, double irt, bool isDecoy, Random random)

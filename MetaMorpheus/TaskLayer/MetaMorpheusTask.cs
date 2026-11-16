@@ -1082,6 +1082,16 @@ namespace TaskLayer
             catch (Exception e)
             {
                 MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
+                // A task that failed mid-search keeps no index for its next run (the GUI runs the same object again; the index
+                // kept for the next file is gigabytes) and leaves no cache write running. A write that failed too is not the
+                // failure to report.
+                try
+                {
+                    FinishWritingIndexCache();
+                }
+                catch
+                {
+                }
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
                 e.Data.Add("folder", output_folder);
                 using (StreamWriter file = new StreamWriter(resultsFileName))
@@ -1815,11 +1825,11 @@ namespace TaskLayer
         /// and carry on with whatever proteins remained, returning a plausible index silently built
         /// from a subset of the database; the write side already throws on the first oligo.
         /// </summary>
-        private static List<IBioPolymerWithSetMods> ReadPeptideIndex(string peptideIndexFileName, IEnumerable<IBioPolymer> allKnownBioPolymers)
-            => ReadPeptideIndex(peptideIndexFileName, allKnownBioPolymers.Cast<Protein>().ToList())
+        private static List<IBioPolymerWithSetMods> ReadPeptideIndex(string peptideIndexFileName, IEnumerable<IBioPolymer> allKnownBioPolymers, int maxThreads)
+            => ReadPeptideIndex(peptideIndexFileName, allKnownBioPolymers.Cast<Protein>().ToList(), maxThreads)
                 .Cast<IBioPolymerWithSetMods>().ToList();
 
-        private static List<PeptideWithSetModifications> ReadPeptideIndex(string peptideIndexFileName, List<Protein> allKnownProteins)
+        private static List<PeptideWithSetModifications> ReadPeptideIndex(string peptideIndexFileName, List<Protein> allKnownProteins, int maxThreads)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
             var ser = new NetSerializer.Serializer(messageTypes);
@@ -1847,9 +1857,44 @@ namespace TaskLayer
             var storedDigestParams = GetDigestionParamsFromFile(Path.Combine(Path.GetDirectoryName(peptideIndexFileName), "DigestionParameters.toml"));
 
             // get non-serialized information for the peptides (proteins, mod info)
-            foreach (var peptide in peptideIndex)
+            //
+            // Each peptide is restored from its own fields and three lookups that nothing writes to from here on, so the peptides are
+            // independent of each other and the result does not depend on how they are shared out between threads. Restoring them on
+            // one thread was about half of reading back an index: 7 of 13 s for the bottom-up nightly's 9.25 M peptides, all on one
+            // core. A peptide that cannot be restored stops the read with the exception the one-thread loop threw, the one at the
+            // lowest position, so a stale or damaged cache is reported exactly as before.
+            if (peptideIndex.Count > 0)
             {
-                peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary, storedDigestParams);
+                int firstFailedPosition = int.MaxValue;
+                Exception firstFailure = null;
+                object failureLock = new object();
+                Parallel.ForEach(Partitioner.Create(0, peptideIndex.Count), new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, maxThreads) }, range =>
+                {
+                    for (int i = range.Item1; i < range.Item2; i++)
+                    {
+                        try
+                        {
+                            peptideIndex[i].SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary, storedDigestParams);
+                        }
+                        catch (Exception e)
+                        {
+                            lock (failureLock)
+                            {
+                                if (i < firstFailedPosition)
+                                {
+                                    firstFailedPosition = i;
+                                    firstFailure = e;
+                                }
+                            }
+                            return; // nothing later in this range can be the first failure
+                        }
+                    }
+                });
+
+                if (firstFailure != null)
+                {
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(firstFailure).Throw();
+                }
             }
 
             return peptideIndex;
@@ -2193,8 +2238,19 @@ namespace TaskLayer
             peptideIndex = bioPolymerIndex?.Cast<PeptideWithSetModifications>().ToList();
         }
 
-        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<IBioPolymerWithSetMods> peptideIndex, ref FragmentIndex fragmentIndex, ref List<int>[] precursorIndex, IEnumerable<IBioPolymer> allKnownProteins, string taskId)
+        /// <param name="writeCacheInBackground">Return as soon as the index is built and write its cache on another thread; see
+        /// <see cref="FinishWritingIndexCache"/>, which a caller passing true must reach before its task ends.</param>
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<IBioPolymerWithSetMods> peptideIndex, ref FragmentIndex fragmentIndex, ref List<int>[] precursorIndex, IEnumerable<IBioPolymer> allKnownProteins, string taskId,
+            bool writeCacheInBackground = false)
         {
+            if (writeCacheInBackground && TryReadIndexBeingCached(indexEngine, allKnownProteins, taskId, ref peptideIndex, ref fragmentIndex))
+            {
+                return;
+            }
+
+            // a cache still being written cannot be found yet, so it would be built and written again
+            FinishWritingIndexCache();
+
             bool successfullyReadIndices = false;
 
             // The on-disk peptide index only round-trips peptides: OligoWithSetMods is neither
@@ -2210,7 +2266,7 @@ namespace TaskLayer
                 try
                 {
                     Status("Reading peptide index...", new List<string> { taskId });
-                    peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins);
+                    peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins, indexEngine.CommonParameters.MaxThreadsToUsePerFile);
 
                     Status("Reading fragment index...", new List<string> { taskId });
                     fragmentIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, FragmentIndexFileName));
@@ -2255,29 +2311,194 @@ namespace TaskLayer
                 fragmentIndex = indexResults.FragmentIndex;
                 precursorIndex = indexResults.PrecursorIndex;
 
-                Status("Writing peptide index...", new List<string> { taskId });
-                //ShrinkPeptideIndex(peptideIndex);
-                var peptideIndexFile = Path.Combine(output_folderForIndices, PeptideIndexFileName);
-                WritePeptideIndex(peptideIndex, peptideIndexFile);
-                FinishedWritingFile(peptideIndexFile, new List<string> { taskId });
+                // the write may outlive this call, and a ref parameter cannot be captured
+                List<IBioPolymerWithSetMods> peptidesToWrite = peptideIndex;
+                FragmentIndex fragmentsToWrite = fragmentIndex;
+                List<int>[] precursorsToWrite = precursorIndex;
+                var peptideIndexWritten = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-                Status("Writing fragment index...", new List<string> { taskId });
-                var fragmentIndexFile = Path.Combine(output_folderForIndices, FragmentIndexFileName);
-                WriteFragmentIndex(fragmentIndex, fragmentIndexFile);
-                FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
-
-                if (indexEngine.GeneratePrecursorIndex) //If a precursor index is specified (used for speedy semi and non-specific searches)
+                void WriteIndexCache()
                 {
-                    Status("Writing precursor index...", new List<string> { taskId });
-                    var precursorIndexFile = Path.Combine(output_folderForIndices, PrecursorIndexFileName);
-                    WritePrecursorIndex(precursorIndex, precursorIndexFile);
-                    FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
+                    Status("Writing peptide index...", new List<string> { taskId });
+                    //ShrinkPeptideIndex(peptideIndex);
+                    var peptideIndexFile = Path.Combine(output_folderForIndices, PeptideIndexFileName);
+                    try
+                    {
+                        WritePeptideIndex(peptidesToWrite, peptideIndexFile);
+                    }
+                    catch (Exception e)
+                    {
+                        peptideIndexWritten.TrySetException(e);
+                        throw;
+                    }
+                    // written: the rest of the write must not keep millions of peptides reachable through post-search
+                    peptidesToWrite = null;
+                    FinishedWritingFile(peptideIndexFile, new List<string> { taskId });
+                    peptideIndexWritten.TrySetResult();
+
+                    Status("Writing fragment index...", new List<string> { taskId });
+                    var fragmentIndexFile = Path.Combine(output_folderForIndices, FragmentIndexFileName);
+                    WriteFragmentIndex(fragmentsToWrite, fragmentIndexFile);
+                    FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+
+                    if (indexEngine.GeneratePrecursorIndex) //If a precursor index is specified (used for speedy semi and non-specific searches)
+                    {
+                        Status("Writing precursor index...", new List<string> { taskId });
+                        var precursorIndexFile = Path.Combine(output_folderForIndices, PrecursorIndexFileName);
+                        WritePrecursorIndex(precursorsToWrite, precursorIndexFile);
+                        FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
+                    }
+                }
+
+                if (writeCacheInBackground)
+                {
+                    StartWritingIndexCache(WriteIndexCache);
+
+                    // Kept only when no cache folder matched these settings, so the task's next lookup would find exactly the folder
+                    // being written. After a cached index failed to read, the next lookup can find that folder again, as before.
+                    if (pathToFolderWithIndices == null && !indexEngine.GeneratePrecursorIndex)
+                    {
+                        _indexBeingCached = new IndexBeingCached(indexEngine.ToString(), output_folderForIndices, fragmentIndex,
+                            peptideIndexWritten.Task);
+                    }
+                }
+                else
+                {
+                    WriteIndexCache();
                 }
             }
         }
 
+        /// <summary>
+        /// The index this task built and is writing to its cache in the background, for the task's next lookup of the same settings.
+        /// </summary>
+        private sealed class IndexBeingCached
+        {
+            internal IndexBeingCached(string settings, string folder, FragmentIndex fragmentIndex, Task peptideIndexWritten)
+            {
+                Settings = settings;
+                Folder = folder;
+                FragmentIndex = fragmentIndex;
+                PeptideIndexWritten = peptideIndexWritten;
+            }
+
+            /// <summary>What <see cref="WriteIndexEngineParams"/> wrote, and what <see cref="SameSettings"/> compares.</summary>
+            internal string Settings { get; }
+            internal string Folder { get; }
+            internal FragmentIndex FragmentIndex { get; }
+            /// <summary>Completes once the peptide index is in place under its real name.</summary>
+            internal Task PeptideIndexWritten { get; }
+        }
+
+        private IndexBeingCached _indexBeingCached;
+
+        /// <summary>
+        /// Gives the next file of a Modern search the index the previous file built, without waiting for the whole cache to be
+        /// written and reading it back. The peptides are read from the cache's peptide file, as a lookup that found the finished
+        /// cache would read them, so they are the same objects that lookup returns. The fragment index is the built one itself:
+        /// it is never changed after it is built, and the cache's fragment file holds its two arrays verbatim.
+        ///
+        /// The lookup this replaces would find the folder being written, and only that one: the index was built because no folder
+        /// matched these settings, and a folder this task writes matches them. The cache write still goes on and is still finished
+        /// before the task works out its results. Most of it is the fragment file, 2.3 GB for the bottom-up nightly's mouse
+        /// database against 1.2 GB of peptides, and every file after the first read it back in full.
+        ///
+        /// Anything other than a clean reuse returns false, and the caller then does what it did before: finishes the write, which
+        /// throws if the write failed, and looks the cache up on disk.
+        /// </summary>
+        private bool TryReadIndexBeingCached(IndexingEngine indexEngine, IEnumerable<IBioPolymer> allKnownProteins, string taskId,
+            ref List<IBioPolymerWithSetMods> peptideIndex, ref FragmentIndex fragmentIndex)
+        {
+            IndexBeingCached kept = _indexBeingCached;
+            if (kept == null || indexEngine.GeneratePrecursorIndex || !kept.Settings.Equals(indexEngine.ToString()))
+            {
+                return false;
+            }
+
+            try
+            {
+                kept.PeptideIndexWritten.Wait();
+            }
+            catch (AggregateException)
+            {
+                return false;
+            }
+
+            List<IBioPolymerWithSetMods> peptides;
+            try
+            {
+                Status("Reading peptide index...", new List<string> { taskId });
+                peptides = ReadPeptideIndex(Path.Combine(kept.Folder, PeptideIndexFileName), allKnownProteins, indexEngine.CommonParameters.MaxThreadsToUsePerFile);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+
+            peptideIndex = peptides;
+            fragmentIndex = kept.FragmentIndex;
+            return true;
+        }
+
+        /// <summary>
+        /// The index cache write that GenerateIndexes left running on another thread, or null.
+        /// </summary>
+        private Task _indexCacheWrite;
+
+        /// <summary>
+        /// Writes an index cache on another thread, so the search can use the index while it is written.
+        ///
+        /// The write is the cost of keeping the index for a later task or run, and nothing in this task needs it. It is several
+        /// gigabytes for a mammalian proteome: the bottom-up nightly's mouse database writes 3.5 GB, which took 151 s on a busy
+        /// hard disk and 11 to 16 s on an NVMe drive, all of it before the first spectrum was searched.
+        ///
+        /// The files written are the ones a write on the calling thread makes. The index is not changed while it is searched,
+        /// and nothing the search computes is part of the cache. A write still goes through a temporary file that is moved into
+        /// place only once it is complete, so a write cut short leaves nothing under the real name. An earlier write still
+        /// running is finished first.
+        /// </summary>
+        internal void StartWritingIndexCache(Action write)
+        {
+            FinishWritingIndexCache();
+            _indexCacheWrite = Task.Run(write);
+        }
+
+        /// <summary>
+        /// Stops keeping the index built for the task's next lookup (<see cref="TryReadIndexBeingCached"/>), without waiting for
+        /// its cache write. For a task whose lookups are done and whose write may go on.
+        /// </summary>
+        protected internal void LetGoOfIndexBeingCached()
+        {
+            _indexBeingCached = null;
+        }
+
+        /// <summary>
+        /// Waits for the index cache write left running on another thread, if there is one. If the write failed, this rethrows
+        /// its exception as itself, not wrapped, and only once: the failure a write on the calling thread would have thrown,
+        /// reported later. Every method that looks for a cache folder calls this first, because a cache still being written
+        /// cannot be found. A task that writes in the background calls it before the task ends, so the cache is complete for
+        /// the next task.
+        /// </summary>
+        protected internal void FinishWritingIndexCache()
+        {
+            // the index kept for the next lookup goes with the write that cached it
+            _indexBeingCached = null;
+
+            Task write = _indexCacheWrite;
+            if (write == null)
+            {
+                return;
+            }
+
+            _indexCacheWrite = null;
+            write.GetAwaiter().GetResult();
+        }
+
         public void GenerateIndexes_PeptideOnly(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
         {
+            // a cache still being written cannot be found yet
+            FinishWritingIndexCache();
+
             bool successfullyReadIndices = false;
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
@@ -2286,7 +2507,7 @@ namespace TaskLayer
                 try
                 {
                     Status("Reading peptide index...", new List<string> { taskId });
-                    peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins);
+                    peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins, indexEngine.CommonParameters.MaxThreadsToUsePerFile);
 
                     if (indexEngine.GeneratePrecursorIndex)
                     {
@@ -2315,6 +2536,9 @@ namespace TaskLayer
 
         public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref FragmentIndex secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
         {
+            // a cache still being written cannot be found yet
+            FinishWritingIndexCache();
+
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
             if (!File.Exists(Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName))) //if no indexes exist
             {
