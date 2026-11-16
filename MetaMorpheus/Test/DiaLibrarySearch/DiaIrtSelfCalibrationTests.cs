@@ -309,6 +309,31 @@ public class DiaIrtSelfCalibrationTests
             Assert.That(calibration.Model.ToIrt(new RtMinutes(SyntheticDiaRun.TrueRtMinutes(irt))).Value, Is.EqualTo(irt).Within(2.0), $"at library iRT {irt}");
     }
 
+    /// <summary>
+    /// A run can spend minutes before anything elutes, and a short gradient elutes only part of a whole-proteome library's
+    /// iRT range. PXD071205's 5-min direct-injection Astral runs do both: peptides elute from about 2.5 of 6.8 min. The first
+    /// pass lays the library's iRT range over the whole MS2 time span, so its provisional line then puts every eluting
+    /// precursor outside its window, and it finds nothing. When the first pass finds too few anchors to fit, even over the
+    /// whole library, calibration searches once more with a window over the library's whole iRT range.
+    /// </summary>
+    [Test]
+    public void ElutionAfterDeadTimeIsStillCalibrated()
+    {
+        // Peptides below iRT 30 elute after 10 min of dead time in a 20-min run. The provisional line places them 40 to 68
+        // iRT from where they elute, beyond the first pass's half-window of about 31. 600 targets leave about 160 eluting:
+        // (D+1)/T reaches 1% q only past 100 targets.
+        const double deadMinutes = 10;
+        var run = SyntheticDiaRun.Build(600, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0 && entry.RetentionTime < 30,
+            deadMinutes: deadMinutes);
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+
+        var calibration = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(), new CommonParameters());
+
+        for (double irt = -10; irt <= 20; irt += 10)
+            Assert.That(calibration.Model.ToIrt(new RtMinutes(deadMinutes + SyntheticDiaRun.TrueRtMinutes(irt))).Value, Is.EqualTo(irt).Within(2.0),
+                $"at library iRT {irt}");
+    }
+
     /// <summary>Calibration can be repeated on a disjoint first-pass sample; each sample calibrates the run on its own.</summary>
     [TestCase(1)]
     [TestCase(3)]
