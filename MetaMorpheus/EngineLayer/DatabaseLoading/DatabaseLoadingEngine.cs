@@ -54,7 +54,7 @@ public class DatabaseLoadingEngine(
             Warn(error);
 
         if (bioPolymers.Any(p => p.IsDecoy))
-            scrambled = ScrambleHomologousDecoys(bioPolymers, CommonParameters.DigestionParams);
+            scrambled = ScrambleHomologousDecoys(bioPolymers, CommonParameters.DigestionParams, CommonParameters.MaxThreadsToUsePerFile);
 
         (removed, renamed) = SanitizeBioPolymerDatabase(bioPolymers, TcAmbiguity, out errors);
         foreach (var error in errors)
@@ -305,35 +305,58 @@ public class DatabaseLoadingEngine(
     /// <summary>
     /// Handles Decoy-Target sequence collisions. If a decoy produces any peptides that are identical to target peptides, the decoy sequence is scrambled until no collisions remain.   
     /// </summary>
-    public static int ScrambleHomologousDecoys<TBioPolymer>(List<TBioPolymer> bioPolymers, IDigestionParams digestionParams) where TBioPolymer : IBioPolymer
+    /// <remarks>
+    /// Digestion runs on up to <paramref name="maxThreads"/> threads. Each target's sequences go to that target's own slot
+    /// and are added to the set in database order afterwards, and each decoy's replacement goes to its own slot and is
+    /// applied in database order afterwards, so the outcome does not depend on the thread count: the set is only read
+    /// while decoys are checked, and ScrambleDecoyBioPolymer seeds its own Random for every decoy.
+    /// </remarks>
+    public static int ScrambleHomologousDecoys<TBioPolymer>(List<TBioPolymer> bioPolymers, IDigestionParams digestionParams, int maxThreads = 1) where TBioPolymer : IBioPolymer
     {
         // Sanitize the decoys
         // TODO: Fix this so that it accounts for multi-protease searches. Currently, we only consider the first protease
         // when looking for target/decoy collisions
-        HashSet<string> targetPeptideSequences = new();
-        foreach (var bioPolymer in bioPolymers.Where(p => !p.IsDecoy))
+        // When thinking about decoy collisions, we can ignore modifications, so digest without enumerating them.
+        IDigestionParams collisionParams = GetCollisionDigestionParams(digestionParams);
+        var options = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, maxThreads) };
+
+        // Digestion may add the digestion agent's own modification to the lists it is given, so every call gets its own.
+        var targetSequences = new List<string>?[bioPolymers.Count];
+        Parallel.For(0, bioPolymers.Count, options, i =>
         {
-            // When thinking about decoy collisions, we can ignore modifications
-            foreach (var peptide in bioPolymer.Digest(digestionParams, new List<Modification>(), new List<Modification>()))
+            if (bioPolymers[i].IsDecoy)
+                return;
+            var sequences = new List<string>();
+            foreach (var peptide in bioPolymers[i].Digest(collisionParams, new List<Modification>(), new List<Modification>()))
             {
-                targetPeptideSequences.Add(peptide.BaseSequence);
+                sequences.Add(peptide.BaseSequence);
+            }
+            targetSequences[i] = sequences;
+        });
+
+        HashSet<string> targetPeptideSequences = new();
+        foreach (var sequences in targetSequences)
+        {
+            if (sequences is null)
+                continue;
+            foreach (var sequence in sequences)
+            {
+                targetPeptideSequences.Add(sequence);
             }
         }
 
-        var variable = new List<Modification>();
-        var fixedM = new List<Modification>();
-        int scrambled = 0;
-
         // Now, we iterate through the decoys and scramble the sequences that correspond to target peptides
-        for (int i = 0; i < bioPolymers.Count; i++)
+        var replacements = new TBioPolymer[bioPolymers.Count];
+        var replaced = new bool[bioPolymers.Count];
+        Parallel.For(0, bioPolymers.Count, options, i =>
         {
             var bioPolymer = bioPolymers[i];
             if (!bioPolymer.IsDecoy)
-                continue;
+                return;
 
             // Use a pooled list to avoid repeated allocations in tight loops
-            List<string> peptidesToReplace = null;
-            foreach (var peptide in bioPolymer.Digest(digestionParams, variable, fixedM))
+            List<string>? peptidesToReplace = null;
+            foreach (var peptide in bioPolymer.Digest(collisionParams, new List<Modification>(), new List<Modification>()))
             {
                 if (targetPeptideSequences.Contains(peptide.BaseSequence))
                 {
@@ -344,16 +367,59 @@ public class DatabaseLoadingEngine(
 
             if (peptidesToReplace is { Count: > 0 })
             {
-                bioPolymers[i] = DecoySequenceValidator.ScrambleDecoyBioPolymer(
+                replacements[i] = DecoySequenceValidator.ScrambleDecoyBioPolymer(
                     bioPolymer,
                     digestionParams,
                     forbiddenSequences: targetPeptideSequences,
                     peptidesToReplace);
+                replaced[i] = true;
                 SequencePool.Return(peptidesToReplace);
-                scrambled++;
             }
+        });
+
+        int scrambled = 0;
+        for (int i = 0; i < bioPolymers.Count; i++)
+        {
+            if (!replaced[i])
+                continue;
+            bioPolymers[i] = replacements[i];
+            scrambled++;
         }
         return scrambled;
+    }
+
+    /// <summary>
+    /// The digestion parameters the collision check digests with: <paramref name="digestionParams"/> with no modified forms.
+    /// </summary>
+    /// <remarks>
+    /// The check compares base sequences only. Digestion yields every modified form of a digestion product with that
+    /// product's base sequence, and always yields the unmodified form first (the zero-modification pattern is the first
+    /// one <c>GetVariableModificationPatterns</c> produces, and it is never filtered). So with MaxMods = 0 a database
+    /// digests to exactly the same base sequences, in the same order of first appearance, as with the search's MaxMods -
+    /// one form per digestion product instead of every combination of the database's localized modifications. A
+    /// top-down human database averages 19 forms per product, so this is most of the cost of loading it.
+    /// <para>
+    /// Except with <see cref="DigestionParams.RespectCleavageBlockingModifications"/> on: digestion then enumerates up to
+    /// MaxMods extra missed cleavages and keeps such a product only in a form whose cleavage-blocking modifications
+    /// discount them, so a product can be yielded with no unmodified form at all, and MaxMods = 0 would miss its base
+    /// sequence. The parameters are returned unchanged.
+    /// </para>
+    /// <para>
+    /// The same holds with <see cref="DigestionParams.RespectCleavagePromotingModifications"/> on: a product ending at a
+    /// cut that needs a modification it carries itself (StcE's O-glycan at P2) is yielded only in that modified form.
+    /// </para>
+    /// </remarks>
+    public static IDigestionParams GetCollisionDigestionParams(IDigestionParams digestionParams)
+    {
+        if (digestionParams is DigestionParams { RespectCleavageBlockingModifications: true }
+            or DigestionParams { RespectCleavagePromotingModifications: true })
+        {
+            return digestionParams;
+        }
+
+        IDigestionParams collisionParams = digestionParams.Clone();
+        collisionParams.MaxMods = 0;
+        return collisionParams;
     }
 }
 

@@ -17,6 +17,7 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Readers;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -291,6 +292,9 @@ namespace TaskLayer
             Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>(); // key is filename, value is an int array of length 2, where the first element is the number of MS2 spectra in the file, and the second element is the number of different deconvoluted precursors assigned to those scans
             bool collectedDigestionInformation = false;
             IDictionary<(string Accession, string BaseSequence), int> digestionCountDictionary = null;
+            // a Classic search digests the whole database for every file; keep the products for the next file
+            ClassicSearchDigestionCache digestionCache = null;
+            bool digestionCacheDecided = false;
             int numNotches = 0;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
@@ -417,13 +421,22 @@ namespace TaskLayer
 
                         lock (indexLock)
                         {
-                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, bioPolymerList, taskId);
+                            // the cache is written while this partition is searched; the next lookup, for the next file or partition, waits for it
+                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, bioPolymerList, taskId,
+                                writeCacheInBackground: true);
                         }
 
                         Status("Searching files...", taskId);
 
                         new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition,
                             indexParams, this.FileSpecificParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
+
+                        // Searched: let the index go. These locals are passed by ref, and a local whose address is taken is reported live
+                        // for the whole method, which goes on to post-search, so the last index would be walked by every full collection
+                        // PEP's training forces: 9.6 GB reachable at PEP for the bottom-up nightly, against 0.8 GB when let go.
+                        peptideIndex = null;
+                        fragmentIndex = null;
+                        precursorIndex = null;
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + indexParams.TotalPartitions + "!", thisId));
                         if (GlobalVariables.StopLoops) { break; }
@@ -518,6 +531,11 @@ namespace TaskLayer
                                 precursorIndex, currentPartition, indexParams, this.FileSpecificParameters, variableModifications, massDiffAcceptor,
                                 SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
+                            // searched: let the index go before post-search (passed by ref, so reported live otherwise; see the Modern loop)
+                            peptideIndex = null;
+                            fragmentIndex = null;
+                            precursorIndex = null;
+
                             ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + indexParams.TotalPartitions + "!", thisId));
                             if (GlobalVariables.StopLoops) { break; }
                         }
@@ -555,8 +573,17 @@ namespace TaskLayer
                 else
                 {
                     Status("Starting search...", thisId);
+                    if (!digestionCacheDecided)
+                    {
+                        digestionCacheDecided = true;
+                        digestionCache = spectralLibrary == null
+                            ? ClassicSearchDigestionCache.Create(bioPolymerList, combinedParams.DigestionParams, fixedModifications, variableModifications,
+                                currentRawFileList.Count, SearchParameters.SilacLabels, SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel)
+                            : null;
+                    }
                     var newClassicSearchEngine = new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, bioPolymerList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId, SearchParameters.WriteSpectralLibrary, SearchParameters.WriteDigestionProductCountFile);
+                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, bioPolymerList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId, SearchParameters.WriteSpectralLibrary, SearchParameters.WriteDigestionProductCountFile,
+                       digestionCache);
                     var result = newClassicSearchEngine.Run();
 
                     // The same proteins (all of them) get digested with each classic search engine, therefor we only need to calculate this for the first file that runs
@@ -593,6 +620,15 @@ namespace TaskLayer
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
             }
+
+            // The modern search's last index cache may still be being written. Nothing from here on reads it, so the write goes on
+            // through post-search and is finished when the task ends (below); only the index kept for the next file is let go.
+            LetGoOfIndexBeingCached();
+
+            // the searches are done: let the kept digestion products go before post-search analysis and PEP (Release, because
+            // this method's frame may keep the cache object itself reachable until the task ends)
+            digestionCache?.Release();
+            digestionCache = null;
 
             if (spectralLibrary != null && SearchParameters.UpdateSpectralLibrary == false)
             {
@@ -641,7 +677,13 @@ namespace TaskLayer
                 CommonParameters = CommonParameters,
                 DigestionCountDictionary = digestionCountDictionary
             };
+            // if post-search fails, RunTask still ends the cache write before the task does
             MyTaskResults postSearchResults = postProcessing.Run();
+
+            // The cache is complete for the next task, which looks for it, and a failed write fails the task here, with its own
+            // exception, after the results are written rather than before them. On a hard disk the write of a mammalian index
+            // outlasted the searches of a two-file run: post-search waited 40 s for it on the bottom-up nightly's files.
+            FinishWritingIndexCache();
 
             // Hand the resolved, FDR'd PSM set to a downstream TruncationSearchTask via the shared
             // in-memory task-chain context (decision #1). The consumer dedups to proteoform level, applies
@@ -978,56 +1020,71 @@ namespace TaskLayer
 
         public static void MatchInternalFragmentIons(SpectralMatch[] fileSpecificPsms, Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass, CommonParameters combinedParams, int minInternalFragmentLength)
         {
-            //for each PSM with an ID
-            for (int index = 0; index < fileSpecificPsms.Length; index++)
+            if (fileSpecificPsms.Length == 0)
             {
-                SpectralMatch psm = fileSpecificPsms[index];
-                if (psm != null && psm.BestMatchingBioPolymersWithSetMods.Count() > 0)
+                return;
+            }
+
+            // Each PSM is independent: it reads its own scan and the peptides (shared between PSMs, but only read here),
+            // and writes only its own hypotheses and their matched-ion lists. Small ranges, because the array is sorted
+            // by precursor mass and a PSM costs roughly the square of its sequence length, so a few large ranges would
+            // leave the heaviest end of the array to one thread.
+            Parallel.ForEach(Partitioner.Create(0, fileSpecificPsms.Length, 16),
+                new ParallelOptions { MaxDegreeOfParallelism = combinedParams.MaxThreadsToUsePerFile },
+                range =>
                 {
-                    //Get the scan
-                    Ms2ScanWithSpecificMass scanForThisPsm = arrayOfMs2ScansSortedByMass[index];
-                    DissociationType dissociationType = combinedParams.DissociationType == DissociationType.Autodetect ?
-                    scanForThisPsm.TheScan.DissociationType.Value : combinedParams.DissociationType;
-
-                    //Get the theoretical peptides
-                    List<int> notches = new List<int>();
-                    var ambiguousPeptides = psm.BestMatchingBioPolymersWithSetMods.ToList();
-
-                    //get matched ions for each peptide
-                    List<List<MatchedFragmentIon>> matchedIonsForAllAmbiguousPeptides = new List<List<MatchedFragmentIon>>();
                     List<Product> internalFragments = new List<Product>();
-                    foreach (IBioPolymerWithSetMods peptide in ambiguousPeptides.Select(p => p.SpecificBioPolymer))
+                    for (int index = range.Item1; index < range.Item2; index++)
                     {
-                        internalFragments.Clear();
-                        peptide.FragmentInternally(dissociationType, minInternalFragmentLength, internalFragments);
-                        //TODO: currently, internal and terminal ions can match to the same observed peaks (much like how b- and y-ions can match to the same peaks). Investigate if we should change that...                        
-                        matchedIonsForAllAmbiguousPeptides.Add(MetaMorpheusEngine.MatchFragmentIons(scanForThisPsm, internalFragments, combinedParams));
+                        MatchInternalFragmentIons(fileSpecificPsms[index], arrayOfMs2ScansSortedByMass[index], combinedParams, minInternalFragmentLength, internalFragments);
                     }
+                });
+        }
 
-                    //Find the max number of matched ions
-                    int maxNumMatchedIons = matchedIonsForAllAmbiguousPeptides.Max(x => x.Count);
+        private static void MatchInternalFragmentIons(SpectralMatch psm, Ms2ScanWithSpecificMass scanForThisPsm, CommonParameters combinedParams, int minInternalFragmentLength, List<Product> internalFragments)
+        {
+            //for each PSM with an ID
+            if (psm != null && psm.BestMatchingBioPolymersWithSetMods.Count() > 0)
+            {
+                DissociationType dissociationType = combinedParams.DissociationType == DissociationType.Autodetect ?
+                scanForThisPsm.TheScan.DissociationType.Value : combinedParams.DissociationType;
 
-                    //remove peptides if they have fewer than max-1 matched ions, thus requiring at least two internal ions to disambiguate an ID
-                    //if not removed, then add the matched internal ions
-                    HashSet<IBioPolymerWithSetMods> PeptidesToMatchingInternalFragments = new HashSet<IBioPolymerWithSetMods>();
-                    for (int peptideIndex = 0; peptideIndex < ambiguousPeptides.Count; peptideIndex++)
+                //Get the theoretical peptides
+                var ambiguousPeptides = psm.BestMatchingBioPolymersWithSetMods.ToList();
+
+                //get matched ions for each peptide
+                List<List<MatchedFragmentIon>> matchedIonsForAllAmbiguousPeptides = new List<List<MatchedFragmentIon>>();
+                foreach (IBioPolymerWithSetMods peptide in ambiguousPeptides.Select(p => p.SpecificBioPolymer))
+                {
+                    internalFragments.Clear();
+                    peptide.FragmentInternally(dissociationType, minInternalFragmentLength, internalFragments);
+                    //TODO: currently, internal and terminal ions can match to the same observed peaks (much like how b- and y-ions can match to the same peaks). Investigate if we should change that...
+                    matchedIonsForAllAmbiguousPeptides.Add(MetaMorpheusEngine.MatchFragmentIons(scanForThisPsm, internalFragments, combinedParams));
+                }
+
+                //Find the max number of matched ions
+                int maxNumMatchedIons = matchedIonsForAllAmbiguousPeptides.Max(x => x.Count);
+
+                //remove peptides if they have fewer than max-1 matched ions, thus requiring at least two internal ions to disambiguate an ID
+                //if not removed, then add the matched internal ions
+                HashSet<IBioPolymerWithSetMods> PeptidesToMatchingInternalFragments = new HashSet<IBioPolymerWithSetMods>();
+                for (int peptideIndex = 0; peptideIndex < ambiguousPeptides.Count; peptideIndex++)
+                {
+                    var thisPeptide = ambiguousPeptides[peptideIndex];
+                    //if we should remove the theoretical, remove it
+                    if (matchedIonsForAllAmbiguousPeptides[peptideIndex].Count + 1 < maxNumMatchedIons)
                     {
-                        var thisPeptide = ambiguousPeptides[peptideIndex];
-                        //if we should remove the theoretical, remove it
-                        if (matchedIonsForAllAmbiguousPeptides[peptideIndex].Count + 1 < maxNumMatchedIons)
+                        psm.RemoveThisAmbiguousPeptide(thisPeptide);
+                    }
+                    // otherwise add the matched internal ions to the total ions
+                    else
+                    {
+                        IBioPolymerWithSetMods currentPwsm = thisPeptide.SpecificBioPolymer;
+                        //check that we haven't already added the matched ions for this peptide
+                        if (!PeptidesToMatchingInternalFragments.Contains(currentPwsm))
                         {
-                            psm.RemoveThisAmbiguousPeptide(thisPeptide);
-                        }
-                        // otherwise add the matched internal ions to the total ions
-                        else
-                        {
-                            IBioPolymerWithSetMods currentPwsm = thisPeptide.SpecificBioPolymer;
-                            //check that we haven't already added the matched ions for this peptide
-                            if (!PeptidesToMatchingInternalFragments.Contains(currentPwsm))
-                            {
-                                PeptidesToMatchingInternalFragments.Add(currentPwsm); //record that we've seen this peptide
-                                thisPeptide.MatchedIons.AddRange(matchedIonsForAllAmbiguousPeptides[peptideIndex]); //add the matched ions
-                            }
+                            PeptidesToMatchingInternalFragments.Add(currentPwsm); //record that we've seen this peptide
+                            thisPeptide.MatchedIons.AddRange(matchedIonsForAllAmbiguousPeptides[peptideIndex]); //add the matched ions
                         }
                     }
                 }
