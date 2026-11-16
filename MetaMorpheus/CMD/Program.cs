@@ -636,10 +636,11 @@ namespace MetaMorpheusCommandLine
                 SdrfDesignOptions(settings, tag));
 
             output.WriteLine(design.Report());
+            output.Write(SdrfAutomaticDesign.DefaultPlexNote(design, tag != null,
+                SdrfAutomaticDesign.PlexIsStated(settings.SdrfPlexColumn, settings.SdrfPlexPattern, settings.SdrfSinglePlex)));
 
             if (!design.IsValid)
             {
-                output.Write(SdrfAutomaticDesign.DefaultPlexNote(design));
                 output.WriteLine("No design file was written.");
 
                 output.Write(SwitchesTheReportNames(design, inATaskFileToo: false));

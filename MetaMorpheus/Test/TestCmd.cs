@@ -2036,14 +2036,19 @@ namespace Test
             var (sdrf, data) = WriteTmt6Sdrf(("pool7_f1.raw", "ignored"));
 
             var byPattern = TmtSdrfDesignSettings(sdrf, data, "TMT6", plexPattern: @"^(?<plex>pool\d+)_");
-            Assert.That(Program.WriteDesignFromSdrf(byPattern, new StringWriter()), Is.EqualTo(0));
+            var byPatternOutput = new StringWriter();
+            Assert.That(Program.WriteDesignFromSdrf(byPattern, byPatternOutput), Is.EqualTo(0));
             string designPath = Path.Combine(data, GlobalVariables.TmtExperimentalDesignFileName);
             Assert.That(TmtExperimentalDesign.Read(designPath, byPattern.Spectra.Select(Path.GetFullPath).ToList(), out _).Single().Plex, Is.EqualTo("pool7"));
             File.Delete(designPath);
 
             var single = TmtSdrfDesignSettings(sdrf, data, "TMT6", singlePlex: "only");
-            Assert.That(Program.WriteDesignFromSdrf(single, new StringWriter()), Is.EqualTo(0));
+            var singleOutput = new StringWriter();
+            Assert.That(Program.WriteDesignFromSdrf(single, singleOutput), Is.EqualTo(0));
             Assert.That(TmtExperimentalDesign.Read(designPath, single.Spectra.Select(Path.GetFullPath).ToList(), out _).Single().Plex, Is.EqualTo("only"));
+
+            // A stated plex is the user's, so nothing says MetaMorpheus chose it.
+            Assert.That(byPatternOutput.ToString() + singleOutput.ToString(), Does.Not.Contain("No plex source was named"));
         }
 
         /// <summary>A design MetaMorpheus would reject is refused, with the reason printed, and nothing is written.</summary>
@@ -2073,6 +2078,9 @@ namespace Test
             string designPath = Path.Combine(data, GlobalVariables.TmtExperimentalDesignFileName);
             Assert.That(TmtExperimentalDesign.Read(designPath, settings.Spectra.Select(Path.GetFullPath).ToList(), out _).Single().Plex,
                 Is.EqualTo("pool1"));
+            // mzLib's report says the column was "declared"; the run says MetaMorpheus chose it.
+            Assert.That(written.ToString(),
+                Does.Contain("No plex source was named, so MetaMorpheus read the plex from the SDRF's comment[plex] column."));
         }
 
         /// <summary>No comment[plex] and no plex switch: refused when the SDRF is read, saying comment[plex] was looked for.</summary>

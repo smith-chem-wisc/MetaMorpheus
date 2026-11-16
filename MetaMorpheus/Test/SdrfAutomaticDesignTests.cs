@@ -136,6 +136,7 @@ namespace Test
             Assert.That(task.SearchParameters.DesignWrittenFromSdrf, Is.EqualTo(marker.Describe()));
             Assert.That(SdrfDesignMarker.Sha256Of(sdrf), Is.EqualTo(sdrfSha), "the SDRF is never edited");
             Assert.That(console, Has.Some.StartWith("Wrote " + DesignPath(folder) + " from the SDRF"));
+            Assert.That(string.Join("\n", console), Does.Not.Contain("plex"), "a label-free design has no plex to speak of");
         }
 
         /// <summary>
@@ -501,6 +502,9 @@ namespace Test
             var files = TmtExperimentalDesign.Read(Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName), spectra, out var errors);
             Assert.That(errors, Is.Empty);
             Assert.That(files.Select(f => f.Plex).Distinct(), Is.EqualTo(new[] { "P1" }));
+            // mzLib's report says the column was "declared"; the run says MetaMorpheus chose it.
+            Assert.That(string.Join("\n", console),
+                Does.Contain("No plex source was named, so MetaMorpheus read the plex from the SDRF's comment[plex] column."));
         }
 
         /// <summary>A stated plex column wins over comment[plex].</summary>
@@ -523,6 +527,7 @@ namespace Test
 
             var files = TmtExperimentalDesign.Read(Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName), spectra, out _);
             Assert.That(files.Select(f => f.Plex).Distinct(), Is.EqualTo(new[] { "B9" }));
+            Assert.That(string.Join("\n", console), Does.Not.Contain("No plex source was named"));
         }
 
         /// <summary>No comment[plex] and no plex stated: refused, and the report says comment[plex] was looked for.</summary>

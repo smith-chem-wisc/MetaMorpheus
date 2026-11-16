@@ -143,19 +143,30 @@ namespace TaskLayer
         /// </summary>
         public static (string Column, string Pattern, string SinglePlex) PlexSource(string sdrfPath, string column, string pattern,
             string singlePlex) =>
-            column == null && pattern == null && singlePlex == null
-                ? (DefaultPlexColumnIn(sdrfPath), null, null)
-                : (column, pattern, singlePlex);
+            PlexIsStated(column, pattern, singlePlex)
+                ? (column, pattern, singlePlex)
+                : (DefaultPlexColumnIn(sdrfPath), null, null);
+
+        /// <summary>True when the user stated where the plex is read: a column, a file-name pattern or a single plex.</summary>
+        public static bool PlexIsStated(string column, string pattern, string singlePlex) =>
+            column != null || pattern != null || singlePlex != null;
 
         /// <summary>
-        /// A line for a report mzLib refused because no plex source was declared: the SDRF has no comment[plex], the column
-        /// read when none is named. Empty otherwise.
+        /// A line saying where an isobaric design's plex came from when the user stated none (empty otherwise). mzLib's report
+        /// calls any plex column it is given "declared", so without this line a plex MetaMorpheus chose reads as the user's.
+        /// When the SDRF has no comment[plex], mzLib refuses (no plex source was declared), and the line says comment[plex]
+        /// was looked for; otherwise it says comment[plex] was read.
         /// </summary>
-        public static string DefaultPlexNote(SdrfSearchDesign design) =>
-            design.Refusals.Any(r => r.StartsWith("No plex source was declared", StringComparison.Ordinal))
+        public static string DefaultPlexNote(SdrfSearchDesign design, bool isobaric, bool plexStated)
+        {
+            if (!isobaric || plexStated)
+                return string.Empty;
+            return design.Refusals.Any(r => r.StartsWith("No plex source was declared", StringComparison.Ordinal))
                 ? $"The SDRF has no {DefaultPlexColumn} column, which MetaMorpheus reads for the plex when none is named."
                     + Environment.NewLine
-                : string.Empty;
+                : $"No plex source was named, so MetaMorpheus read the plex from the SDRF's {DefaultPlexColumn} column."
+                    + Environment.NewLine;
+        }
 
         /// <summary>
         /// True for a file the automatic design reads as an SDRF: a name ending <see cref="SdrfFileEnding"/>, or exactly
@@ -285,7 +296,9 @@ namespace TaskLayer
                 UnknownFactorIsOwnCondition = grouping.UnknownIsOwnCondition,
             };
             var design = SdrfSearchDesign.Read(sdrf, spectraFilePaths, options);
-            string report = design.Report() + DefaultPlexNote(design) + wording.ReportHint(design);
+            string report = design.Report()
+                + DefaultPlexNote(design, tag != null, PlexIsStated(stated.PlexColumn, stated.PlexPattern, stated.SinglePlex))
+                + wording.ReportHint(design);
 
             if (!design.IsValid)
             {
