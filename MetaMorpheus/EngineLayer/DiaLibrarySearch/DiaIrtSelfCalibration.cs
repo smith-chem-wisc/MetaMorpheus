@@ -159,9 +159,9 @@ public static class DiaIrtSelfCalibration
         // trained three times over cost most of calibration's time. If the whole library still gives too few, the search's
         // own model gets one try, since on weak data the linear model can find none.
         var linear = parameters with { ClassifierModel = StatisticalModels.RescoreModel.LinearDiscriminant };
-        List<(RtMinutes, Irt)> Anchors(DiaLibrarySearchParameters model, int sampleStride) =>
+        List<(RtMinutes, Irt)> Anchors(DiaLibrarySearchParameters model, int sampleStride, double halfWindow) =>
             ((DiaLibrarySearchResults)new DiaLibrarySearchEngine(scans, library, provisional,
-                model with { IrtHalfWindow = FirstPassWindowFraction * (highIrt - lowIrt), PrecursorSampleStride = sampleStride, PrecursorSampleOffset = sampleOffset % sampleStride },
+                model with { IrtHalfWindow = halfWindow, PrecursorSampleStride = sampleStride, PrecursorSampleOffset = sampleOffset % sampleStride },
                 commonParameters, [], []).Run()).Matches
             .Where(m => !m.IsDecoy && m.QValue <= AnchorQValue)
             .OrderByDescending(m => m.Score)
@@ -169,21 +169,35 @@ public static class DiaIrtSelfCalibration
             .Select(m => (m.ApexRt, m.LibraryIrt))
             .ToList();
 
-        int stride = FirstPassStride(targetIrts.Length, firstPassTargetCount);
-        while (true)
+        // The first pass, sampling more of the library until it finds enough anchors or has searched all of it
+        (List<(RtMinutes, Irt)> Anchors, int Stride) FirstPass(double halfWindow)
         {
-            var anchors = Anchors(linear, stride);
-            bool enough = anchors.Count >= Math.Min(desiredAnchors, MaximumAnchors);
-            if (!enough && stride == 1 && parameters.ClassifierModel != StatisticalModels.RescoreModel.LinearDiscriminant)
+            int stride = FirstPassStride(targetIrts.Length, firstPassTargetCount);
+            while (true)
             {
-                var searchModel = Anchors(parameters, stride);
-                if (searchModel.Count > anchors.Count)
-                    anchors = searchModel;
+                var anchors = Anchors(linear, stride, halfWindow);
+                bool enough = anchors.Count >= Math.Min(desiredAnchors, MaximumAnchors);
+                if (!enough && stride == 1 && parameters.ClassifierModel != StatisticalModels.RescoreModel.LinearDiscriminant)
+                {
+                    var searchModel = Anchors(parameters, stride, halfWindow);
+                    if (searchModel.Count > anchors.Count)
+                        anchors = searchModel;
+                }
+                if (enough || stride == 1)
+                    return (anchors, stride);
+                stride = Math.Max(1, stride / 2);
             }
-            if (enough || stride == 1)
-                return LaterRounds(Fit(anchors, options, windowSds), scans, library, linear, commonParameters, options, stride, sampleOffset % stride, rounds, windowSds);
-            stride = Math.Max(1, stride / 2);
         }
+
+        var (found, foundStride) = FirstPass(FirstPassWindowFraction * (highIrt - lowIrt));
+        // The provisional line assumes elution spans the run's MS2 time. A run that spends its first minutes before anything
+        // elutes, or a short gradient that elutes only part of a whole-proteome library's iRT range, breaks that, and the line
+        // then puts eluting precursors outside the window (PXD071205's 5-min runs: 0.6% inside it, 0 anchors). Too few to fit,
+        // so search once more with a window over the library's whole iRT range, which assumes nothing about where elution is.
+        // A run that found enough never reaches this, so its calibration is unchanged.
+        if (found.Count < options.MinimumAnchors)
+            (found, foundStride) = FirstPass(targetIrts[^1] - targetIrts[0]);
+        return LaterRounds(Fit(found, options, windowSds), scans, library, linear, commonParameters, options, foundStride, sampleOffset % foundStride, rounds, windowSds);
     }
 
     /// <summary>
