@@ -16,6 +16,7 @@ using MzLibUtil;
 using Nett;
 using NUnit.Framework.Legacy;
 using Omics.Modifications;
+using Readers;
 
 namespace Test
 {
@@ -112,6 +113,28 @@ namespace Test
         }
 
         [Test]
+        public static void GlyTest_ModificationSites_SequonCutByTheProtease()
+        {
+            // Trypsin cuts the sequon NKS between K and S, so PEPTIDENK ends before the S. The N is still in a sequon in
+            // the protein, which is where the glycan was attached.
+            var digestionParams = new DigestionParams(minPeptideLength: 5);
+            var cut = new Protein("AAAKPEPTIDENKSAMPLER", "accession")
+                .Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .Single(p => p.BaseSequence == "PEPTIDENK");
+            var sites = GlycoSpectralMatch.GetPossibleModSites(cut, new string[] { "Nxs", "Nxt" });
+            Assert.That(sites.Keys, Is.EquivalentTo(new[] { 9 }));
+            Assert.That(sites[9], Is.EqualTo("Nxs"));
+            Assert.That(GlycoSpectralMatch.MotifExist(cut, new string[] { "Nxt", "Nxs" }), Is.True);
+
+            // A sequon that runs off the end of the protein is not a sequon.
+            var atTheEnd = new Protein("AAAKPEPTIDENK", "accession")
+                .Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .Single(p => p.BaseSequence == "PEPTIDENK");
+            Assert.That(GlycoSpectralMatch.GetPossibleModSites(atTheEnd, new string[] { "Nxs", "Nxt" }), Is.Empty);
+            Assert.That(GlycoSpectralMatch.MotifExist(atTheEnd, new string[] { "Nxt", "Nxs" }), Is.False);
+        }
+
+        [Test]
         public static void GlyTest_GlyGetTheoreticalFragments()
         {
             Protein pep = new Protein("TKPREEQYNSTYR", "accession");
@@ -161,6 +184,28 @@ namespace Test
                     db
                 }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
+        }
+
+        [Test]
+        public static void GlyTest_RunTask_SummaryCountsTheNGlycoPsms()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTNGlycoSummary");
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\Q9C0Y4.fasta"), false);
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\yeast_glycan_25170.mgf");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, outputFolder).Run();
+
+            string[] summary = File.ReadAllLines(Path.Combine(outputFolder, "allResults.txt"));
+            int Count(string label) => int.Parse(summary.First(l => l.Contains(label)).Split(':').Last().Trim());
+            var nGlycoPsms = SpectrumMatchTsvReader.ReadGlycoPsmTsv(Path.Combine(outputFolder, "Task", "nglyco.psmtsv"), out var errors)
+                .Where(p => p.QValue <= 0.01 && p.DecoyContamTarget == "T").ToList();
+            Assert.That(errors, Is.Empty);
+            Assert.That(nGlycoPsms, Is.Not.Empty);
+
+            Assert.That(Count("All target N-Glyco PSMs within"), Is.EqualTo(nGlycoPsms.Count));
+            // An N-glycan PSM is never given a localization level, so none is Level 1.
+            Assert.That(Count("All target Level 1 N-Glyco PSMs within"), Is.EqualTo(nGlycoPsms.Count(p => p.GlycanLocalizationLevel == LocalizationLevel.Level1)));
+            Directory.Delete(outputFolder, true);
         }
 
         [Test]
