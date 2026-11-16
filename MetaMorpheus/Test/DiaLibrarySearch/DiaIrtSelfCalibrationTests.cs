@@ -334,6 +334,42 @@ public class DiaIrtSelfCalibrationTests
                 $"at library iRT {irt}");
     }
 
+    /// <summary>
+    /// A sample where the provisional window finds no anchor at all is searched over the library's whole iRT range too, and
+    /// calibration continues there when that finds enough. A run with dead time then no longer searches the whole library
+    /// with a window that cannot work before it widens. On PXD071205's 5-min runs that cost about 38 of calibration's 47 min.
+    /// Here 3000 targets sampled 500 at a time (stride 6): widening only after the whole library takes 6 or more searches,
+    /// widening at the first empty sample takes 4.
+    /// </summary>
+    [Test]
+    public void AnEmptyProvisionalWindowWidensAtOnce()
+    {
+        const double deadMinutes = 10;
+        var run = SyntheticDiaRun.Build(3000, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0 && entry.RetentionTime < 30,
+            deadMinutes: deadMinutes);
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+
+        var calibration = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(), new CommonParameters(),
+            firstPassTargetCount: 500);
+
+        Assert.That(calibration.FirstPassSearches, Is.LessThanOrEqualTo(4));
+        for (double irt = -10; irt <= 20; irt += 10)
+            Assert.That(calibration.Model.ToIrt(new RtMinutes(deadMinutes + SyntheticDiaRun.TrueRtMinutes(irt))).Value, Is.EqualTo(irt).Within(2.0),
+                $"at library iRT {irt}");
+    }
+
+    /// <summary>A run whose provisional line is right takes its first sample, and is never searched over the whole range.</summary>
+    [Test]
+    public void ARunThatCalibratesOnItsFirstSampleSearchesOnce()
+    {
+        var run = SyntheticDiaRun.Build(300, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0);
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+
+        var calibration = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(), new CommonParameters(), desiredAnchors: 20);
+
+        Assert.That(calibration.FirstPassSearches, Is.EqualTo(1));
+    }
+
     /// <summary>Calibration can be repeated on a disjoint first-pass sample; each sample calibrates the run on its own.</summary>
     [TestCase(1)]
     [TestCase(3)]

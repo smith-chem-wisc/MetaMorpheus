@@ -39,6 +39,12 @@ public sealed record DiaIrtCalibration(IrtCalibrationModel Model, double IrtHalf
     /// </summary>
     public DiaIrtCompositionModel? IrtComposition { get; init; }
 
+    /// <summary>
+    /// How many searches the first pass ran before it had anchors to fit, counting every sample and window it tried. A run
+    /// that calibrates on its first sample takes one; on a whole-proteome library each costs a search of that sample.
+    /// </summary>
+    public int FirstPassSearches { get; init; }
+
     /// <summary>The search's parameters with this calibration applied: its iRT window, its MS1 offset, its fragment intensity table and its iRT composition fit.</summary>
     public DiaLibrarySearchParameters ApplyTo(DiaLibrarySearchParameters parameters) =>
         parameters with { IrtHalfWindow = IrtHalfWindow, Ms1Offset = Ms1Offset, FragmentIntensities = FragmentIntensities, IrtComposition = IrtComposition };
@@ -159,15 +165,19 @@ public static class DiaIrtSelfCalibration
         // trained three times over cost most of calibration's time. If the whole library still gives too few, the search's
         // own model gets one try, since on weak data the linear model can find none.
         var linear = parameters with { ClassifierModel = StatisticalModels.RescoreModel.LinearDiscriminant };
-        List<(RtMinutes, Irt)> Anchors(DiaLibrarySearchParameters model, int sampleStride, double halfWindow) =>
-            ((DiaLibrarySearchResults)new DiaLibrarySearchEngine(scans, library, provisional,
-                model with { IrtHalfWindow = halfWindow, PrecursorSampleStride = sampleStride, PrecursorSampleOffset = sampleOffset % sampleStride },
-                commonParameters, [], []).Run()).Matches
-            .Where(m => !m.IsDecoy && m.QValue <= AnchorQValue)
-            .OrderByDescending(m => m.Score)
-            .Take(MaximumAnchors)
-            .Select(m => (m.ApexRt, m.LibraryIrt))
-            .ToList();
+        int searches = 0;
+        List<(RtMinutes, Irt)> Anchors(DiaLibrarySearchParameters model, int sampleStride, double halfWindow)
+        {
+            searches++;
+            return ((DiaLibrarySearchResults)new DiaLibrarySearchEngine(scans, library, provisional,
+                    model with { IrtHalfWindow = halfWindow, PrecursorSampleStride = sampleStride, PrecursorSampleOffset = sampleOffset % sampleStride },
+                    commonParameters, [], []).Run()).Matches
+                .Where(m => !m.IsDecoy && m.QValue <= AnchorQValue)
+                .OrderByDescending(m => m.Score)
+                .Take(MaximumAnchors)
+                .Select(m => (m.ApexRt, m.LibraryIrt))
+                .ToList();
+        }
 
         // The first pass, sampling more of the library until it finds enough anchors or has searched all of it
         (List<(RtMinutes, Irt)> Anchors, int Stride) FirstPass(double halfWindow)
@@ -197,7 +207,9 @@ public static class DiaIrtSelfCalibration
         // A run that found enough never reaches this, so its calibration is unchanged.
         if (found.Count < options.MinimumAnchors)
             (found, foundStride) = FirstPass(targetIrts[^1] - targetIrts[0]);
-        return LaterRounds(Fit(found, options, windowSds), scans, library, linear, commonParameters, options, foundStride, sampleOffset % foundStride, rounds, windowSds);
+        int firstPassSearches = searches;
+        return LaterRounds(Fit(found, options, windowSds), scans, library, linear, commonParameters, options, foundStride, sampleOffset % foundStride, rounds, windowSds)
+            with { FirstPassSearches = firstPassSearches };
     }
 
     /// <summary>
