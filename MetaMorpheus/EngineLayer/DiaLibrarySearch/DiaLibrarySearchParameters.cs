@@ -202,6 +202,15 @@ namespace EngineLayer.DiaLibrarySearch;
 /// library value.
 /// </param>
 /// <param name="ClassifierModel">The model the rescorer fits in each fold: a linear discriminant, or a small neural-network ensemble (DIA-NN's approach).</param>
+/// <param name="Ms1InterpolatedTraces">
+/// Read the precursor's MS1 traces at each MS2 scan's time by interpolating linearly between the MS1 scans either side,
+/// instead of taking the nearest MS1 scan. When MS1 is sampled faster than a window's MS2 (PXD071205's 5-min Astral runs:
+/// 0.74 s against 1.06 s), the nearest scan drops MS1 points and sits up to half an MS1 interval off. Off by default.
+/// </param>
+/// <param name="Ms1CorrelationSummedCore">
+/// Correlate the MS1 traces (M0, M+1, M+2 and the tight M0) with the summed core fragments instead of the smoothed best core
+/// fragment, a sturdier profile when each fragment has only one to three points across its peak. Off by default.
+/// </param>
 public sealed record DiaLibrarySearchParameters(double FragmentTolerancePpm = 20, double IrtHalfWindow = 20,
     int TopFragmentCount = 12, int ApexHalfWidthScans = 3, int PrecursorSampleStride = 1, int MaxApexCandidates = 30, double ClassifierTrainingQValue = 0.01,
     StatisticalModels.RescoreModel ClassifierModel = StatisticalModels.RescoreModel.NeuralNetworkEnsemble,
@@ -255,7 +264,9 @@ public sealed record DiaLibrarySearchParameters(double FragmentTolerancePpm = 20
     double InterferenceOwnIonShareCeiling = 1,
     bool NeighbourEvidence = true,
     DiaFragmentIntensityModel? FragmentIntensities = null,
-    DiaIrtCompositionModel? IrtComposition = null)
+    DiaIrtCompositionModel? IrtComposition = null,
+    bool Ms1InterpolatedTraces = false,
+    bool Ms1CorrelationSummedCore = false)
 {
     /// <summary>
     /// The MS1 tolerance a search uses: <see cref="Ms1ToleranceSpreadMultiple"/> times the calibrated offset's residual

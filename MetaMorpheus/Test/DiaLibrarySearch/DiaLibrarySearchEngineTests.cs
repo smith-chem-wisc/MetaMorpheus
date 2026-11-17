@@ -894,6 +894,63 @@ public class DiaLibrarySearchEngineTests
     }
 
     /// <summary>
+    /// The precursor's MS1 traces can be read at each MS2 scan's time by interpolating between the MS1 scans either side,
+    /// instead of taking the nearest MS1 scan. On PXD071205's 5-min Astral runs MS1 comes every 0.74 s and a window's MS2
+    /// every 1.06 s, so the nearest scan drops a third of the MS1 points and sits up to half an MS1 interval off. Only MS1
+    /// features change.
+    /// </summary>
+    [Test]
+    public void Ms1TracesCanBeInterpolatedToTheMs2ScanTimes()
+    {
+        Assert.That(new DiaLibrarySearchParameters().Ms1InterpolatedTraces, Is.False);
+        int Column(string name) => Array.IndexOf(DiaPrecursorMatch.FeatureNames, name);
+        var run = SyntheticDiaRun.Build(200, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 2) == 0, noisePeaksPerScan: 3000, withMs1: true);
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+        Dictionary<(int, double), float[]> SearchWith(bool interpolated) => ((DiaLibrarySearchResults)new DiaLibrarySearchEngine(run.Scans, library, EndpointMap,
+            new DiaLibrarySearchParameters(Ms1InterpolatedTraces: interpolated), new CommonParameters(), [], []).Run()).Matches
+            .ToDictionary(m => (m.PrecursorIndex, m.ApexRt.Value), m => m.Features);
+
+        var nearest = SearchWith(false);
+        var interpolated = SearchWith(true);
+        var shared = interpolated.Keys.Where(nearest.ContainsKey).ToList();
+        Assert.That(shared.Count, Is.GreaterThan(nearest.Count * 9 / 10));
+        Assert.That(shared.Count(k => interpolated[k][Column("Ms1Correlation")] != nearest[k][Column("Ms1Correlation")]), Is.GreaterThan(0));
+        var others = Enumerable.Range(0, DiaPrecursorMatch.FeatureNames.Length).Where(c => !DiaPrecursorMatch.FeatureNames[c].StartsWith("Ms1")).ToList();
+        var changed = others.Where(c => shared.Any(k => interpolated[k][c] != nearest[k][c])).Select(c => DiaPrecursorMatch.FeatureNames[c]);
+        Assert.That(changed, Is.Empty, "only MS1 features change");
+    }
+
+    /// <summary>
+    /// The MS1 correlations (M0, M+1, M+2 and the tight M0) can be taken against the summed core fragments instead of the
+    /// smoothed best core fragment. When each fragment has one to three points across its peak (PXD071205's 5-min runs),
+    /// one fragment is a fragile profile: on A1's weak precursors that DIA-NN finds and we score too low, our MS1 against
+    /// DIA-NN's summed top six fragments correlates at a median 0.66, against 0.56 for the engine's own measure. Nothing
+    /// else changes.
+    /// </summary>
+    [Test]
+    public void TheMs1CorrelationsCanBeTakenAgainstTheSummedCore()
+    {
+        Assert.That(new DiaLibrarySearchParameters().Ms1CorrelationSummedCore, Is.False);
+        int Column(string name) => Array.IndexOf(DiaPrecursorMatch.FeatureNames, name);
+        var run = SyntheticDiaRun.Build(200, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 2) == 0, noisePeaksPerScan: 3000, withMs1: true);
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+        Dictionary<(int, double), float[]> SearchWith(bool summedCore) => ((DiaLibrarySearchResults)new DiaLibrarySearchEngine(run.Scans, library, EndpointMap,
+            new DiaLibrarySearchParameters(Ms1CorrelationSummedCore: summedCore), new CommonParameters(), [], []).Run()).Matches
+            .ToDictionary(m => (m.PrecursorIndex, m.ApexRt.Value), m => m.Features);
+
+        var best = SearchWith(false);
+        var summed = SearchWith(true);
+        var shared = summed.Keys.Where(best.ContainsKey).ToList();
+        Assert.That(shared.Count, Is.GreaterThan(best.Count * 9 / 10));
+        string[] ms1Correlations = ["Ms1Correlation", "Ms1IsotopeCorrelation", "Ms1TightCorrelation", "Ms1Isotope2Correlation"];
+        foreach (string name in ms1Correlations)
+            Assert.That(shared.Count(k => summed[k][Column(name)] != best[k][Column(name)]), Is.GreaterThan(0), name);
+        var others = Enumerable.Range(0, DiaPrecursorMatch.FeatureNames.Length).Where(c => !ms1Correlations.Contains(DiaPrecursorMatch.FeatureNames[c])).ToList();
+        var changed = others.Where(c => shared.Any(k => summed[k][c] != best[k][c])).Select(c => DiaPrecursorMatch.FeatureNames[c]);
+        Assert.That(changed, Is.Empty, "only the MS1 correlations change");
+    }
+
+    /// <summary>
     /// DIA-NN's pRT: the precursor's library iRT as a feature, so the classifier can weigh the RT error by where on the
     /// gradient it falls. 0 when off.
     /// </summary>
