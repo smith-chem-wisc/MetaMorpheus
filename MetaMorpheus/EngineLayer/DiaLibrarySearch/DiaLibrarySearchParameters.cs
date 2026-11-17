@@ -4,7 +4,12 @@ using System.Collections.Generic;
 
 namespace EngineLayer.DiaLibrarySearch;
 
-/// <param name="FragmentTolerancePpm">How far an observed peak may sit from a library fragment and still be it.</param>
+/// <param name="FragmentTolerancePpm">
+/// How far an observed peak may sit from a library fragment and still be it. 20 ppm by default, best for Orbitrap MS2: at
+/// 15 ppm PXD022589 (HF-X) lost 5.1% and PXD005573 1 h (QE HF) 1.3% at a matched paired entrapment FDP of 1%. For Orbitrap
+/// Astral MS2 set 10 ppm: PXD071205's 5-min runs gained 10.4% and 7.2% (A1, B1). Neither the run's fragment mass error nor
+/// its spectrum density predicts which a run wants, so the tolerance is set by instrument, not measured.
+/// </param>
 /// <param name="IrtHalfWindow">
 /// How far, in iRT, a precursor's apex may fall from its library iRT. Wide enough here to absorb a run whose true
 /// RT-to-iRT curve bows away from the linear map it was searched with.
@@ -205,7 +210,9 @@ namespace EngineLayer.DiaLibrarySearch;
 /// <param name="Ms1InterpolatedTraces">
 /// Read the precursor's MS1 traces at each MS2 scan's time by interpolating linearly between the MS1 scans either side,
 /// instead of taking the nearest MS1 scan. When MS1 is sampled faster than a window's MS2 (PXD071205's 5-min Astral runs:
-/// 0.74 s against 1.06 s), the nearest scan drops MS1 points and sits up to half an MS1 interval off. Off by default.
+/// 0.74 s against 1.06 s), the nearest scan drops MS1 points and sits up to half an MS1 interval off. On by default: two-seed
+/// means at a matched paired entrapment FDP of 1% gained 1.2% (PXD022589 HF-X) and 1.4% (PXD005573 1 h), the species arm
+/// 0.64% and 0.38%, DIA-NN's own list rose on both, and the 5-min runs gained 2.5% on average (seed 0). Calibration keeps it off.
 /// </param>
 /// <param name="Ms1CorrelationSummedCore">
 /// Correlate the MS1 traces (M0, M+1, M+2 and the tight M0) with the summed core fragments instead of the smoothed best core
@@ -265,7 +272,7 @@ public sealed record DiaLibrarySearchParameters(double FragmentTolerancePpm = 20
     bool NeighbourEvidence = true,
     DiaFragmentIntensityModel? FragmentIntensities = null,
     DiaIrtCompositionModel? IrtComposition = null,
-    bool Ms1InterpolatedTraces = false,
+    bool Ms1InterpolatedTraces = true,
     bool Ms1CorrelationSummedCore = false)
 {
     /// <summary>
