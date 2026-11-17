@@ -1307,7 +1307,8 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
                 ? new DiaNeighbourEvidence.PrecursorIons(ScoredIons(entry), entry.MatchedFragmentIons.Select(f => (double)f.Mz).ToList(), entry.BaseSequence)
                 : null;
             matches = DiaNeighbourEvidence.Apply(matches, IonsOf, windowBounds, windowScans, (_parameters.InterferenceRtToleranceCycles ?? _parameters.ApexHalfWidthScans + 1) * cycleMinutes,
-                _parameters.FragmentTolerancePpm, _parameters.ApexHalfWidthScans, _parameters.MostIntenseFragmentPeak, _parameters.TopFragmentCount, _parameters.ClassifierSeed, CommonParameters.MaxThreadsToUsePerFile, Status);
+                _parameters.FragmentTolerancePpm, _parameters.ApexHalfWidthScans, _parameters.MostIntenseFragmentPeak, _parameters.TopFragmentCount, _parameters.ClassifierSeed, CommonParameters.MaxThreadsToUsePerFile, Status,
+                _parameters.PeptidoformEvidence ? 1.2 * cycleMinutes : null);
             Status($"timing: neighbour evidence over {matches.Count} precursors  [{neighbourClock.Elapsed:mm\\:ss\\.f}]");
         }
 

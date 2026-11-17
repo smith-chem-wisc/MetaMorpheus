@@ -187,7 +187,33 @@ public static class DiaNeighbourEvidence
     /// nothing about which of the two is there.
     /// </summary>
     public static (double Own, double Rival) UniqueEvidence(IReadOnlyList<(double Mz, double Intensity)> own, IReadOnlyList<(double Mz, double Intensity)> rival,
-        MsDataScan scan, double tolerancePpm, bool mostIntensePeak = true) => (0, 0);
+        MsDataScan scan, double tolerancePpm, bool mostIntensePeak = true)
+    {
+        var tolerance = new PpmTolerance(tolerancePpm);
+        double Share(IReadOnlyList<(double Mz, double Intensity)> ions, IReadOnlyList<(double Mz, double Intensity)> others)
+        {
+            double weight = 0, seen = 0;
+            foreach (var (mz, intensity) in ions)
+            {
+                bool shared = false;
+                foreach (var other in others)
+                    if (Math.Abs(other.Mz - mz) <= mz * tolerancePpm * 1e-6) { shared = true; break; }
+                if (shared)
+                    continue;
+                weight += intensity;
+                if (scan.MassSpectrum.Size > 0 && DiaLibrarySearchEngine.FragmentPeakIndex(scan.MassSpectrum, mz, tolerance, mostIntensePeak) >= 0)
+                    seen += intensity;
+            }
+            return weight > 0 ? seen / weight : 0;
+        }
+        return (Share(own, rival), Share(rival, own));
+    }
+
+    /// <summary>The columns appended with peptidoform evidence, in order.</summary>
+    public static readonly string[] PeptidoformColumnNames = ["PeptidoformDifferential", "PeptidoformRivals", "PeptidoformOutscored"];
+
+    /// <summary>Precursors read as rivals on one MS1 signal: within this many ppm of each other, at the same charge.</summary>
+    public const double PeptidoformPpm = 3;
 
     /// <summary>Measures every row down to the provisional floor, each in the window holding its apex, against that window's confident targets.</summary>
     /// <param name="matches">One match per precursor, already scored.</param>
@@ -202,7 +228,8 @@ public static class DiaNeighbourEvidence
     /// <param name="threads">The most threads to read with.</param>
     /// <returns>Each match's columns; null for a match below the floor; zeros for one with no window or nothing on the library.</returns>
     public static double[]?[] MeasureAll(IReadOnlyList<DiaPrecursorMatch> matches, Func<int, PrecursorIons?> ionsOf, IReadOnlyList<(double Low, double High)> windowBounds,
-        IReadOnlyList<MsDataScan[]> windowScans, double rtToleranceMinutes, double tolerancePpm, int apexHalfWidthScans, bool mostIntensePeak, int topFragments, int threads = 1)
+        IReadOnlyList<MsDataScan[]> windowScans, double rtToleranceMinutes, double tolerancePpm, int apexHalfWidthScans, bool mostIntensePeak, int topFragments, int threads = 1,
+        double? peptidoformRtMinutes = null)
     {
         var columns = new double[]?[matches.Count];
         if (matches.Count == 0)
@@ -217,8 +244,10 @@ public static class DiaNeighbourEvidence
             .Select(c => new Neighbour(c.Match.ApexRt.Value, c.Ions!.BaseSequence, c.Ions.Ions.Select(f => f.Mz).ToArray(), c.Ions.Ions.Select(f => f.Intensity).ToArray())).ToArray()).ToArray();
 
         var options = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, threads) };
+        var windowOf = new (int Window, int Scan)[matches.Count];
         Parallel.For(0, matches.Count, options, i =>
         {
+            windowOf[i] = (-1, -1);
             var match = matches[i];
             if (!(match.Score >= floor))
                 return;
@@ -241,8 +270,57 @@ public static class DiaNeighbourEvidence
             columns[i] = library is null
                 ? new double[ColumnNames.Length]
                 : Measure(library.Ions.Take(topFragments).ToList(), library.AllMzs, library.BaseSequence, neighboursOf[own], windowScans[own], ownScan, rtToleranceMinutes, tolerancePpm, apexHalfWidthScans, mostIntensePeak);
+            windowOf[i] = (own, ownScan);
         });
+        if (peptidoformRtMinutes is double rivalRt)
+            AppendPeptidoformColumns(matches, columns, windowOf, ionsOf, windowScans, rivalRt, tolerancePpm, mostIntensePeak, topFragments, options);
         return columns;
+    }
+
+    /// <summary>
+    /// Appends <see cref="PeptidoformColumnNames"/> to each measured row: rivals are the other measured rows on its MS1 signal (same charge,
+    /// within <see cref="PeptidoformPpm"/>, apex within <paramref name="rivalRtMinutes"/>); at the row's apex scan, the worst difference of its
+    /// unique evidence over the rival's, the number of rivals, and whether any outscores it. Zeros for a row with no rival.
+    /// </summary>
+    private static void AppendPeptidoformColumns(IReadOnlyList<DiaPrecursorMatch> matches, double[]?[] columns, (int Window, int Scan)[] windowOf,
+        Func<int, PrecursorIons?> ionsOf, IReadOnlyList<MsDataScan[]> windowScans, double rivalRtMinutes, double tolerancePpm, bool mostIntensePeak, int topFragments,
+        ParallelOptions options)
+    {
+        int[] measured = Enumerable.Range(0, matches.Count).Where(i => columns[i] is not null).OrderBy(i => matches[i].Charge).ThenBy(i => matches[i].PrecursorMz).ToArray();
+        double[] mzs = measured.Select(i => matches[i].PrecursorMz).ToArray();
+        int[] charges = measured.Select(i => matches[i].Charge).ToArray();
+        var ions = new IReadOnlyList<(double Mz, double Intensity)>?[matches.Count];
+        Parallel.ForEach(measured, options, i => ions[i] = ionsOf(matches[i].PrecursorIndex)?.Ions.Take(topFragments).ToList());
+        var extra = new double[matches.Count][];
+        Parallel.For(0, measured.Length, options, k =>
+        {
+            int i = measured[k];
+            extra[i] = new double[PeptidoformColumnNames.Length];
+            var (window, scan) = windowOf[i];
+            if (ions[i] is null || window < 0)
+                return;
+            double low = matches[i].PrecursorMz * (1 - PeptidoformPpm * 1e-6), high = matches[i].PrecursorMz * (1 + PeptidoformPpm * 1e-6);
+            int first = k;
+            while (first > 0 && charges[first - 1] == charges[k] && mzs[first - 1] >= low)
+                first--;
+            double worst = double.PositiveInfinity;
+            int rivals = 0;
+            bool outscored = false;
+            for (int r = first; r < measured.Length && charges[r] == charges[k] && mzs[r] <= high; r++)
+            {
+                int j = measured[r];
+                if (j == i || ions[j] is null || Math.Abs(matches[j].ApexRt.Value - matches[i].ApexRt.Value) > rivalRtMinutes)
+                    continue;
+                var (own, rival) = UniqueEvidence(ions[i]!, ions[j]!, windowScans[window][scan], tolerancePpm, mostIntensePeak);
+                worst = Math.Min(worst, own - rival);
+                rivals++;
+                outscored |= matches[j].Score > matches[i].Score;
+            }
+            if (rivals > 0)
+                extra[i] = [worst, rivals, outscored ? 1 : 0];
+        });
+        foreach (int i in measured)
+            columns[i] = [.. columns[i]!, .. extra[i]];
     }
 
     /// <summary>
@@ -276,9 +354,10 @@ public static class DiaNeighbourEvidence
     /// </summary>
     /// <returns>The matches in their input order, with their scores reassigned.</returns>
     public static List<DiaPrecursorMatch> Apply(IReadOnlyList<DiaPrecursorMatch> matches, Func<int, PrecursorIons?> ionsOf, IReadOnlyList<(double Low, double High)> windowBounds,
-        IReadOnlyList<MsDataScan[]> windowScans, double rtToleranceMinutes, double tolerancePpm, int apexHalfWidthScans, bool mostIntensePeak, int topFragments, int seed, int threads = 1, Action<string>? report = null)
+        IReadOnlyList<MsDataScan[]> windowScans, double rtToleranceMinutes, double tolerancePpm, int apexHalfWidthScans, bool mostIntensePeak, int topFragments, int seed, int threads = 1, Action<string>? report = null,
+        double? peptidoformRtMinutes = null)
     {
-        double[]?[] columns = MeasureAll(matches, ionsOf, windowBounds, windowScans, rtToleranceMinutes, tolerancePpm, apexHalfWidthScans, mostIntensePeak, topFragments, threads);
+        double[]?[] columns = MeasureAll(matches, ionsOf, windowBounds, windowScans, rtToleranceMinutes, tolerancePpm, apexHalfWidthScans, mostIntensePeak, topFragments, threads, peptidoformRtMinutes);
         int[] measured = Enumerable.Range(0, matches.Count).Where(i => columns[i] is not null).ToArray();
         var applied = matches.ToList();
         if (measured.Length == 0)
