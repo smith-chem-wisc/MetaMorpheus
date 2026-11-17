@@ -145,6 +145,12 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
     public static int CountPassingTargets(IEnumerable<DiaPrecursorMatch> matches, double qValueThreshold) =>
         PassingTargets(matches, qValueThreshold).Count();
 
+    /// <summary>
+    /// One run's row of DiaCalibrationSummary.tsv: what its calibration settled on, and the tolerances the search used with it.
+    /// </summary>
+    public static string CalibrationSummaryRow(string fileName, DiaIrtCalibration calibration, DiaLibrarySearchParameters parameters) =>
+        throw new NotImplementedException();
+
     protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId,
         FileSpecificParameters[] fileSettingsList)
     {

@@ -245,6 +245,62 @@ public class DiaLibrarySearchTaskTests
     }
 
     /// <summary>
+    /// DiaCalibrationSummary.tsv: what each run's calibration settled on, one row per run, so a record of the search can say
+    /// which window and tolerances it searched with (PXReprise DIA-Q6). The anchors, rounds and first-pass searches; the
+    /// residual SD in iRT and the iRT half-window it sets; the MS1 offset applied (its median over the retention time) and
+    /// its residual spread; and the MS1 and fragment tolerances the search used.
+    /// </summary>
+    [Test]
+    public void TheTaskWritesEachRunsCalibrationSummary()
+    {
+        var (mzml, library, _) = WriteInputs("summary");
+        string output = Path.Combine(_directory, "summary", "output", "Task1");
+        Directory.CreateDirectory(output);
+        new DiaLibrarySearchTask().RunTask(output, [new DbForTask(library, false)], [mzml], "Task1");
+
+        var lines = File.ReadAllLines(Path.Combine(output, "DiaCalibrationSummary.tsv"));
+        Assert.That(lines[0].Split('\t'), Is.EqualTo(new[] { "File Name", "Anchors", "Rounds", "FirstPassSearches", "ResidualSdIrt", "IrtHalfWindow",
+            "Ms1OffsetPpm", "Ms1SpreadPpm", "Ms1TolerancePpm", "FragmentTolerancePpm" }));
+        Assert.That(lines, Has.Length.EqualTo(2), "one row per run");
+
+        using var msl = Readers.SpectralLibrary.MslLibrary.Load(library);
+        var parameters = new DiaLibrarySearchTaskParameters().ToEngineParameters();
+        var calibration = EngineLayer.DiaLibrarySearch.DiaIrtSelfCalibration.Calibrate(DiaLibrarySearchTask.LoadScans(mzml), msl, parameters, new CommonParameters());
+        Assert.That(calibration.Ms1Offset, Is.Not.Null, "the synthetic run calibrates over several rounds, so it has an MS1 offset to report");
+        var cells = lines[1].Split('\t');
+        double Cell(int i) => double.Parse(cells[i], System.Globalization.CultureInfo.InvariantCulture);
+        Assert.That(cells[0], Is.EqualTo("summary.mzML"));
+        Assert.That(int.Parse(cells[1]), Is.EqualTo(calibration.AnchorCount).And.GreaterThan(0));
+        Assert.That(int.Parse(cells[2]), Is.EqualTo(calibration.Rounds));
+        Assert.That(int.Parse(cells[3]), Is.EqualTo(calibration.FirstPassSearches));
+        Assert.That(Cell(4), Is.EqualTo(calibration.Model.ResidualSd));
+        Assert.That(Cell(5), Is.EqualTo(calibration.IrtHalfWindow));
+        Assert.That(Cell(6), Is.EqualTo(calibration.Ms1Offset!.MedianOffsetPpm));
+        Assert.That(Cell(7), Is.EqualTo(calibration.Ms1Offset!.ResidualSpreadPpm));
+        Assert.That(Cell(8), Is.EqualTo(calibration.ApplyTo(parameters).EffectiveMs1TolerancePpm));
+        Assert.That(Cell(9), Is.EqualTo(parameters.FragmentTolerancePpm));
+    }
+
+    /// <summary>
+    /// A summary cell with nothing to report is left empty rather than written as NaN: no MS1 offset (a single-round
+    /// calibration), or one with no measured spread.
+    /// </summary>
+    [Test]
+    public void ACalibrationSummaryLeavesWhatWasNotMeasuredEmpty()
+    {
+        var model = Chromatography.RetentionTimeCalibration.IrtCalibration.Line((new MzLibUtil.RtMinutes(1), new MzLibUtil.Irt(0)), (new MzLibUtil.RtMinutes(10), new MzLibUtil.Irt(100)));
+        var single = new EngineLayer.DiaLibrarySearch.DiaIrtCalibration(model, 12.5, 600);
+        var row = DiaLibrarySearchTask.CalibrationSummaryRow("a.mzML", single, new DiaLibrarySearchTaskParameters().ToEngineParameters()).Split('\t');
+        Assert.That(row[6], Is.Empty, "no MS1 offset");
+        Assert.That(row[7], Is.Empty, "no MS1 offset, so no spread");
+
+        var constant = single with { Ms1Offset = EngineLayer.DiaLibrarySearch.Ms1OffsetModel.Constant(1.5) };
+        row = DiaLibrarySearchTask.CalibrationSummaryRow("a.mzML", constant, new DiaLibrarySearchTaskParameters().ToEngineParameters()).Split('\t');
+        Assert.That(double.Parse(row[6], System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo(1.5), "a constant offset");
+        Assert.That(row[7], Is.Empty, "a constant offset has no measured spread");
+    }
+
+    /// <summary>
     /// AllDiaPrecursors.tsv (M7 slice 2) is written through mzLib's DiaPrecursorFile, in the schema agreed with dataRepo: one
     /// row per target precursor at the threshold, so its rows are the headline; the run key verbatim; each row's apex scan,
     /// retention in minutes and iRT, and quantity; and, with no contaminant database, "contaminants: not assessed".
