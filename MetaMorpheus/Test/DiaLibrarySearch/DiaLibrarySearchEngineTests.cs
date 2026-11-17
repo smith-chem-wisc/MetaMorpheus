@@ -897,12 +897,13 @@ public class DiaLibrarySearchEngineTests
     /// The precursor's MS1 traces can be read at each MS2 scan's time by interpolating between the MS1 scans either side,
     /// instead of taking the nearest MS1 scan. On PXD071205's 5-min Astral runs MS1 comes every 0.74 s and a window's MS2
     /// every 1.06 s, so the nearest scan drops a third of the MS1 points and sits up to half an MS1 interval off. Only MS1
-    /// features change.
+    /// features change. On by default since 2026-11-17 (two-seed means at a matched paired entrapment FDP of 1%: PXD022589 HF-X
+    /// +1.2%, PXD005573 1 h +1.4%; species arm +0.64% / +0.38%; DIA-NN's own list up on both).
     /// </summary>
     [Test]
     public void Ms1TracesCanBeInterpolatedToTheMs2ScanTimes()
     {
-        Assert.That(new DiaLibrarySearchParameters().Ms1InterpolatedTraces, Is.False);
+        Assert.That(new DiaLibrarySearchParameters().Ms1InterpolatedTraces, Is.True, "adopted 2026-11-17");
         int Column(string name) => Array.IndexOf(DiaPrecursorMatch.FeatureNames, name);
         var run = SyntheticDiaRun.Build(200, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 2) == 0, noisePeaksPerScan: 3000, withMs1: true, staggerMs2: true);
         using var library = MslLibrary.Load(run.WriteLibrary(_directory));
