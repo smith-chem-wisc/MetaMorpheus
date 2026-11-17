@@ -456,25 +456,37 @@ namespace Test
             Assert.That(console, Has.Some.StartWith(UsedAgain + " (" + described + ")"));
         }
 
+        /// <summary>
+        /// Two samples, both biological replicate 1, with two factor columns: genotype (WT, KO) and treatment (DMSO for
+        /// both). Every grouping these tests state keeps the two samples in different conditions; one condition, or
+        /// treatment alone, would make them duplicates, which is refused (QP-S45).
+        /// </summary>
+        private static void WriteTwoFactorSdrf(string folder) =>
+            WriteSdrf(folder, "deposit.sdrf.tsv", LabelFreeHeader.Append("factor value[treatment]").ToArray(), new[]
+            {
+                new[] { "WT 1", "Mus musculus", "liver", "1", "run a1.raw", "label free sample", "1", "1", "a1.raw", "WT", "DMSO" },
+                new[] { "KO 1", "Mus musculus", "liver", "1", "run b1.raw", "label free sample", "1", "1", "b1.raw", "KO", "DMSO" },
+            });
+
         /// <summary>A grouping stated now replaces the one kept, and the marker keeps the new one.</summary>
         [Test]
         public static void AStatedGroupingReplacesTheOneKept()
         {
             string folder = NewFolder("StatedReplaces");
             var spectra = Spectra(folder, "a1.mzML", "b1.mzML");
-            WriteSdrf(folder, ("a1.raw", "WT", 1), ("b1.raw", "KO", 1));
-            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), new List<string>(),
-                settings: new CommandLineSettings { SdrfSingleCondition = "all" }), Is.EqualTo(Continue));
-            Assume.That(Conditions(folder, spectra), Is.All.EqualTo("all"));
+            WriteTwoFactorSdrf(folder);
+            var first = new List<string>();
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), first,
+                settings: new CommandLineSettings { SdrfConditionColumns = new[] { "treatment", "genotype" } }), Is.EqualTo(Continue),
+                string.Join("\n", first));
+            Assert.That(Conditions(folder, spectra), Has.All.Contains("DMSO"), "both columns make the condition");
 
             var console = new List<string>();
             Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), console,
                 settings: new CommandLineSettings { SdrfConditionColumns = new[] { "genotype" } }), Is.EqualTo(Continue), string.Join("\n", console));
 
             Assert.That(Conditions(folder, spectra), Is.EquivalentTo(new[] { "WT", "KO" }));
-            var marker = SdrfDesignMarker.ReadFrom(folder);
-            Assert.That(marker.ConditionColumns, Is.EqualTo(new[] { "genotype" }));
-            Assert.That(marker.SingleCondition, Is.Null);
+            Assert.That(SdrfDesignMarker.ReadFrom(folder).ConditionColumns, Is.EqualTo(new[] { "genotype" }));
             Assert.That(console, Has.None.StartWith(UsedAgain));
         }
 
@@ -487,16 +499,18 @@ namespace Test
         {
             string folder = NewFolder("DeletedDesign");
             var spectra = Spectra(folder, "a1.mzML", "b1.mzML");
-            WriteSdrf(folder, ("a1.raw", "WT", 1), ("b1.raw", "KO", 1));
-            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), new List<string>(),
-                settings: new CommandLineSettings { SdrfSingleCondition = "all" }), Is.EqualTo(Continue));
+            WriteTwoFactorSdrf(folder);
+            var first = new List<string>();
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), first,
+                settings: new CommandLineSettings { SdrfConditionColumns = new[] { "genotype" } }), Is.EqualTo(Continue), string.Join("\n", first));
+            Assert.That(Conditions(folder, spectra), Is.EquivalentTo(new[] { "WT", "KO" }));
             File.Delete(DesignPath(folder));
-            Assume.That(SdrfDesignMarker.ReadFrom(folder).SingleCondition, Is.EqualTo("all"), "the marker is still there");
+            Assume.That(SdrfDesignMarker.ReadFrom(folder).ConditionColumns, Is.EqualTo(new[] { "genotype" }), "the marker is still there");
 
             var console = new List<string>();
             Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), console), Is.EqualTo(Continue), string.Join("\n", console));
 
-            Assert.That(Conditions(folder, spectra), Is.EquivalentTo(new[] { "WT", "KO" }));
+            Assert.That(Conditions(folder, spectra), Has.All.Contains("DMSO"), "every factor value column, treatment included");
             Assert.That(SdrfDesignMarker.ReadFrom(folder).StatesGrouping, Is.False);
             Assert.That(console, Has.None.StartWith(UsedAgain));
         }
