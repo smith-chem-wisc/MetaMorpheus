@@ -460,11 +460,13 @@ namespace Test
                 new[] { "S2", "1", "TMT127N", "p1.raw", "P1", "KO" },
             });
 
-        private static SearchTask Tmt11Search()
+        private static SearchTask Tmt11Search() => MultiplexSearch("TMT11");
+
+        private static SearchTask MultiplexSearch(string label)
         {
             var task = new SearchTask();
             task.SearchParameters.DoMultiplexQuantification = true;
-            task.SearchParameters.MultiplexModId = "TMT11";
+            task.SearchParameters.MultiplexModId = label;
             return task;
         }
 
@@ -550,6 +552,186 @@ namespace Test
             Assert.That(string.Join("\n", console), Does.Contain("No plex source was declared")
                 .And.Contain("The SDRF has no comment[plex] column, which MetaMorpheus reads for the plex when none is named."));
             Assert.That(File.Exists(Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName)), Is.False);
+        }
+
+        /// <summary>TMT16 is searched with MetaMorpheus's TMT18 label; a design made for a TMT16 search says so.</summary>
+        [Test]
+        public static void ATmt16DesignSaysItIsReadByATmt18Search()
+        {
+            string folder = NewFolder("Tmt16");
+            var spectra = Spectra(folder, "p1.mzML");
+            WriteTmtSdrf(folder);
+            var console = new List<string>();
+
+            Assert.That(Resolve(folder, spectra, SearchTasks(MultiplexSearch("TMT16")), console), Is.EqualTo(Continue), string.Join("\n", console));
+
+            Assert.That(File.Exists(Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName)));
+            Assert.That(console, Has.Member(SdrfAutomaticDesign.Tmt16Note));
+        }
+
+        /// <summary>
+        /// One design serves every search task, so a label-free task beside a TMT task is refused, each task named with how
+        /// it quantifies.
+        /// </summary>
+        [Test]
+        public static void SearchTasksThatQuantifyDifferentlyAreRefused()
+        {
+            string folder = NewFolder("TasksQuantifyDifferently");
+            var spectra = Spectra(folder, "p1.mzML");
+            WriteTmtSdrf(folder);
+            var console = new List<string>();
+
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask(), Tmt11Search()), console, normalize: true), Is.EqualTo(Stop));
+
+            Assert.That(console.Last(), Does.StartWith("The search tasks quantify differently (Task1SearchTask: label-free, Task2SearchTask: TMT11), "
+                + "and one experimental design cannot serve them all, so none was made from the SDRF."));
+            Assert.That(File.Exists(DesignPath(folder)), Is.False);
+            Assert.That(File.Exists(Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName)), Is.False);
+        }
+
+        /// <summary>A multiplex label mzLib has no isobaric kit for, or none at all, cannot read the SDRF's channels: refused.</summary>
+        [TestCase("NoSuchKit")]
+        [TestCase((string)null)]
+        public static void AMultiplexLabelMzLibDoesNotKnowIsRefused(string label)
+        {
+            string folder = NewFolder("UnknownKit_" + (label ?? "none"));
+            var spectra = Spectra(folder, "p1.mzML");
+            WriteTmtSdrf(folder);
+            var console = new List<string>();
+
+            Assert.That(Resolve(folder, spectra, SearchTasks(MultiplexSearch(label)), console, normalize: true), Is.EqualTo(Stop));
+
+            Assert.That(console.Last(), Does.StartWith($"The search's multiplex label '{label}' is not an isobaric kit mzLib knows, "
+                + "so the SDRF's channels cannot be read."));
+            Assert.That(File.Exists(Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName)), Is.False);
+        }
+
+        /// <summary>
+        /// Our unedited label-free design, when the search becomes a TMT search: it is removed and the TMT design written in
+        /// its place, so the folder never holds both kinds (which stops a run).
+        /// </summary>
+        [Test]
+        public static void OurDesignOfTheOtherKindIsReplacedWhenTheSearchsLabelChanges()
+        {
+            string folder = NewFolder("LabelChanged");
+            var spectra = Spectra(folder, "p1.mzML");
+            WriteSdrf(folder, ("p1.raw", "WT", 1));
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), new List<string>()), Is.EqualTo(Continue));
+            Assert.That(File.Exists(DesignPath(folder)));
+
+            WriteTmtSdrf(folder);
+            var console = new List<string>();
+            Assert.That(Resolve(folder, spectra, SearchTasks(Tmt11Search()), console), Is.EqualTo(Continue), string.Join("\n", console));
+
+            string tmtDesign = Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName);
+            Assert.That(File.Exists(DesignPath(folder)), Is.False);
+            Assert.That(File.Exists(tmtDesign));
+            Assert.That(SdrfDesignMarker.ReadFrom(folder).DesignFileName, Is.EqualTo(GlobalVariables.TmtExperimentalDesignFileName));
+            Assert.That(console.Last(), Does.StartWith("Wrote " + tmtDesign + " from the SDRF").And.EndWith("again for this run's spectra files."));
+        }
+
+        // ---------------------------------------------------------------- Resolve itself, and the marker
+
+        /// <summary>
+        /// Resolve with nothing stated and the default wording (null for both): the outcome names the SDRF beside the spectra
+        /// and the design it wrote.
+        /// </summary>
+        [Test]
+        public static void TheOutcomeNamesTheSdrfAndTheDesignWritten()
+        {
+            string folder = NewFolder("Outcome");
+            var spectra = Spectra(folder, "a1.mzML");
+            string sdrf = WriteSdrf(folder, ("a1.raw", "WT", 1));
+
+            var outcome = SdrfAutomaticDesign.Resolve(folder, spectra, SearchTasks(new SearchTask()), null, null);
+
+            Assert.That(outcome.Refusal, Is.Null, string.Join("\n", outcome.Messages));
+            Assert.That(outcome.SdrfPath, Is.EqualTo(Path.GetFullPath(sdrf)));
+            Assert.That(outcome.DesignPath, Is.EqualTo(DesignPath(folder)));
+        }
+
+        /// <summary>
+        /// A label-free and an isobaric design both beside the spectra: the run's design check stops on that, and neither is
+        /// MetaMorpheus's to choose between, so nothing is written, nothing removed, and nothing refused here.
+        /// </summary>
+        [Test]
+        public static void BothKindsOfDesignBesideTheSpectraAreLeftAlone()
+        {
+            string folder = NewFolder("BothDesigns");
+            var spectra = Spectra(folder, "a1.mzML");
+            string sdrf = WriteSdrf(folder, ("a1.raw", "WT", 1));
+            string tmtDesign = Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName);
+            File.WriteAllText(DesignPath(folder), "label-free");
+            File.WriteAllText(tmtDesign, "isobaric");
+
+            var outcome = SdrfAutomaticDesign.Resolve(folder, spectra, SearchTasks(new SearchTask()), new SdrfDesignStatements(), new SdrfDesignWording());
+
+            Assert.That(outcome.Refusal, Is.Null);
+            Assert.That(outcome.DesignPath, Is.Null);
+            Assert.That(outcome.SdrfPath, Is.EqualTo(Path.GetFullPath(sdrf)));
+            Assert.That(File.ReadAllText(DesignPath(folder)), Is.EqualTo("label-free"));
+            Assert.That(File.ReadAllText(tmtDesign), Is.EqualTo("isobaric"));
+            Assert.That(File.Exists(SdrfDesignMarker.PathIn(folder)), Is.False);
+        }
+
+        /// <summary>An SDRF that cannot be read, or has no header, has no comment[plex]; the SDRF reader then says why.</summary>
+        [Test]
+        public static void AnUnreadableOrEmptySdrfHasNoDefaultPlexColumn()
+        {
+            string folder = NewFolder("PlexColumnUnread");
+            string empty = Path.Combine(folder, "empty.sdrf.tsv");
+            File.WriteAllText(empty, string.Empty);
+
+            Assert.That(SdrfAutomaticDesign.DefaultPlexColumnIn(Path.Combine(folder, "missing.sdrf.tsv")), Is.Null);
+            Assert.That(SdrfAutomaticDesign.DefaultPlexColumnIn(empty), Is.Null);
+            Assert.That(SdrfAutomaticDesign.DefaultPlexColumnIn(WriteTmtSdrf(folder)), Is.EqualTo(SdrfAutomaticDesign.DefaultPlexColumn));
+        }
+
+        /// <summary>A marker with any value blank or missing is no marker, so the design beside it is the user's.</summary>
+        [TestCase("design")]
+        [TestCase("design sha256")]
+        [TestCase("sdrf")]
+        [TestCase("sdrf sha256")]
+        [TestCase("condition")]
+        public static void AMarkerMissingAValueIsNoMarker(string key)
+        {
+            string folder = NewFolder("MarkerMissing_" + key.Replace(' ', '_'));
+            new SdrfDesignMarker(GlobalVariables.ExperimentalDesignFileName, "abc", "x.sdrf.tsv", "def", "every factor value column").WriteTo(folder);
+            string path = SdrfDesignMarker.PathIn(folder);
+            Assume.That(SdrfDesignMarker.ReadFrom(folder), Is.Not.Null);
+
+            File.WriteAllLines(path, File.ReadAllLines(path).Select(l => l.StartsWith(key + "\t") ? key + "\t " : l));
+            Assert.That(SdrfDesignMarker.ReadFrom(folder), Is.Null, "blank");
+
+            File.WriteAllLines(path, File.ReadAllLines(path).Where(l => !l.StartsWith(key + "\t")));
+            Assert.That(SdrfDesignMarker.ReadFrom(folder), Is.Null, "missing");
+        }
+
+        /// <summary>
+        /// A marker or design held open by another program cannot be read: the marker is then no marker, and the design is not
+        /// known to be unedited, so either way the design is treated as the user's. A design that is gone is not unedited.
+        /// </summary>
+        [Test]
+        public static void AMarkerOrDesignThatCannotBeReadIsNotOurs()
+        {
+            string folder = NewFolder("Locked");
+            var spectra = Spectra(folder, "a1.mzML");
+            WriteSdrf(folder, ("a1.raw", "WT", 1));
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), new List<string>()), Is.EqualTo(Continue));
+            var marker = SdrfDesignMarker.ReadFrom(folder);
+            Assert.That(marker.DescribesUneditedDesignIn(folder), Is.True);
+
+            using (new FileStream(DesignPath(folder), FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                Assert.That(marker.DescribesUneditedDesignIn(folder), Is.False, "design locked");
+            }
+            using (new FileStream(SdrfDesignMarker.PathIn(folder), FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                Assert.That(SdrfDesignMarker.ReadFrom(folder), Is.Null, "marker locked");
+            }
+
+            File.Delete(DesignPath(folder));
+            Assert.That(marker.DescribesUneditedDesignIn(folder), Is.False, "design gone");
         }
 
         // ---------------------------------------------------------------- through Main
