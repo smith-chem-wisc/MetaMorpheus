@@ -1298,6 +1298,27 @@ public class DiaLibrarySearchEngineTests
     }
 
     /// <summary>
+    /// Candidate spacing apart from the co-elution window. Two narrow five-fragment peaks 3 scans apart, as on PXD071205's 5-min
+    /// runs (about 1.6 points per FWHM): each scores on both, since a 7-scan window holds the other, so at the default spacing
+    /// (the half width, 3, as DIA-NN 1.8) the better suppresses the other. At a spacing of 2 both are candidates, and the classifier
+    /// chooses between them on their apex features.
+    /// </summary>
+    [Test]
+    public void CandidateApexesCanBeSpacedMoreCloselyThanTheCoElutionWindow()
+    {
+        var traces = Enumerable.Range(0, 6).Select(_ => new double[30]).ToArray();
+        foreach (var (apex, height) in new[] { (10, 1e4), (13, 6e3) })
+            for (int f = 0; f < 5; f++)
+                for (int s = apex - 3; s <= apex + 3; s++)
+                    traces[f][s] += height * (f + 1) * Math.Exp(-0.5 * (s - apex) * (s - apex) / 0.5);
+
+        Assert.That(DiaLibrarySearchEngine.DiaNnCandidateApexes(traces, 3, 10), Has.Length.EqualTo(1));
+        Assert.That(DiaLibrarySearchEngine.DiaNnCandidateApexes(traces, 3, 10, spacing: 2), Is.EquivalentTo(new[] { 10, 13 }));
+        Assert.That(DiaLibrarySearchEngine.DiaNnCandidateApexes(traces, 3, 10, spacing: 3), Is.EqualTo(DiaLibrarySearchEngine.DiaNnCandidateApexes(traces, 3, 10)));
+        Assert.That(new DiaLibrarySearchParameters().CandidateApexSpacingScans, Is.Null);
+    }
+
+    /// <summary>
     /// A real peak the best-fragment rule loses: AADFIDQALAQK 2+ on PXD005573 1 h, at DIA-NN's RT. All six fragments co-elute (score
     /// 4.9 of 5), but the two top scans are close, and each one's best fragment peaks on the other, so neither is a local maximum of its
     /// own best fragment. The sum of the smoothed traces does not depend on which fragment is best, and it peaks at scan 4.

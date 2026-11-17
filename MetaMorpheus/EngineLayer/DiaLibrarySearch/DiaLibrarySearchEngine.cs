@@ -946,7 +946,7 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
     /// <paramref name="summedCorePeaks"/>, scans where the sum of the smoothed fragments peaks also compete on score for the
     /// <paramref name="maxCount"/> places, if more than <paramref name="halfWidth"/> from every candidate, so none of those moves.
     /// </summary>
-    public static int[] DiaNnCandidateApexes(IReadOnlyList<double[]> core, int halfWidth, int maxCount, double[]? ms1 = null, bool summedCorePeaks = false)
+    public static int[] DiaNnCandidateApexes(IReadOnlyList<double[]> core, int halfWidth, int maxCount, double[]? ms1 = null, bool summedCorePeaks = false, int? spacing = null)
     {
         int n = core.Count == 0 ? 0 : core[0].Length;
         var smoothed = core.Select(FragmentCoElution.Smooth).ToArray();
