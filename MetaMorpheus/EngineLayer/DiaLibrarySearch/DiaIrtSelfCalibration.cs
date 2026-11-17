@@ -125,7 +125,8 @@ public static class DiaIrtSelfCalibration
         parameters with { DiaNnFragmentFilter = false, Ms1Offset = null, Ms1TolerancePpm = Math.Max(parameters.Ms1TolerancePpm, CalibrationMs1TolerancePpm), DiaNnSignalShare = false,
             InterferenceExplainedFragments = CalibrationInterferenceExplainedFragments, ClassifierNetworkLayers = [.. CalibrationNetworkLayers],
             ClassifierTreeBlend = false, CandidatePeaksFromSummedCore = false, NeighbourEvidence = false, FragmentIntensities = null, IrtComposition = null,
-            MaxToleranceCoElution = false, Ms1TightCorrelation = false, SqrtCoElution = false, Ms1PeakEnvelopeTight = false, Ms1PeakSignalFraction = false, Ms1PeakPoints = false, Ms1PeakFeatures = false };
+            MaxToleranceCoElution = false, Ms1TightCorrelation = false, SqrtCoElution = false, Ms1PeakEnvelopeTight = false, Ms1PeakSignalFraction = false, Ms1PeakPoints = false, Ms1PeakFeatures = false,
+            Ms1InterpolatedTraces = false, Ms1CorrelationSummedCore = false };
 
     /// <summary>
     /// MS1 tolerance during calibration, before the run's offset is known: wide enough for an error that drifts up to 3 ppm off

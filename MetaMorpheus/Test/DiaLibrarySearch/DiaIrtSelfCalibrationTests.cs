@@ -108,6 +108,9 @@ public class DiaIrtSelfCalibrationTests
         Assert.That(DiaIrtSelfCalibration.CalibrationParameters(new DiaLibrarySearchParameters()).Ms1PeakSignalFraction, Is.False, "Ms1PeakSignalFraction: calibration was benchmarked without it");
         Assert.That(DiaIrtSelfCalibration.CalibrationParameters(new DiaLibrarySearchParameters()).Ms1PeakPoints, Is.False, "Ms1PeakPoints: calibration was benchmarked without it");
         Assert.That(DiaIrtSelfCalibration.CalibrationParameters(new DiaLibrarySearchParameters()).Ms1PeakFeatures, Is.False, "Ms1PeakFeatures: calibration was benchmarked without it");
+        var ms1Options = DiaIrtSelfCalibration.CalibrationParameters(new DiaLibrarySearchParameters(Ms1InterpolatedTraces: true, Ms1CorrelationSummedCore: true));
+        Assert.That(ms1Options.Ms1InterpolatedTraces, Is.False, "Ms1InterpolatedTraces: calibration was benchmarked without it");
+        Assert.That(ms1Options.Ms1CorrelationSummedCore, Is.False, "Ms1CorrelationSummedCore: calibration was benchmarked without it");
 
         var run = SyntheticDiaRun.Build(300, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0);
         using var library = MslLibrary.Load(run.WriteLibrary(_directory));

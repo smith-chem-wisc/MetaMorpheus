@@ -904,7 +904,7 @@ public class DiaLibrarySearchEngineTests
     {
         Assert.That(new DiaLibrarySearchParameters().Ms1InterpolatedTraces, Is.False);
         int Column(string name) => Array.IndexOf(DiaPrecursorMatch.FeatureNames, name);
-        var run = SyntheticDiaRun.Build(200, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 2) == 0, noisePeaksPerScan: 3000, withMs1: true);
+        var run = SyntheticDiaRun.Build(200, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 2) == 0, noisePeaksPerScan: 3000, withMs1: true, staggerMs2: true);
         using var library = MslLibrary.Load(run.WriteLibrary(_directory));
         Dictionary<(int, double), float[]> SearchWith(bool interpolated) => ((DiaLibrarySearchResults)new DiaLibrarySearchEngine(run.Scans, library, EndpointMap,
             new DiaLibrarySearchParameters(Ms1InterpolatedTraces: interpolated), new CommonParameters(), [], []).Run()).Matches
