@@ -50,8 +50,8 @@ public class DiaIrtSelfCalibrationTests
         Assert.That(calibrationParameters with { DiaNnFragmentFilter = true, Ms1TolerancePpm = search.Ms1TolerancePpm, DiaNnSignalShare = search.DiaNnSignalShare,
                 InterferenceExplainedFragments = search.InterferenceExplainedFragments, ClassifierNetworkLayers = search.ClassifierNetworkLayers,
                 ClassifierTreeBlend = search.ClassifierTreeBlend, CandidatePeaksFromSummedCore = search.CandidatePeaksFromSummedCore, NeighbourEvidence = search.NeighbourEvidence, FragmentIntensities = search.FragmentIntensities, IrtComposition = search.IrtComposition,
-                MaxToleranceCoElution = search.MaxToleranceCoElution, Ms1TightCorrelation = search.Ms1TightCorrelation, SqrtCoElution = search.SqrtCoElution, Ms1PeakEnvelopeTight = search.Ms1PeakEnvelopeTight, Ms1PeakSignalFraction = search.Ms1PeakSignalFraction, Ms1PeakPoints = search.Ms1PeakPoints, Ms1PeakFeatures = search.Ms1PeakFeatures },
-            Is.EqualTo(search), "nothing else changes but calibration's own MS1 tolerance, the signal share, the interference rule, the network, the tree blend and the summed core");
+                MaxToleranceCoElution = search.MaxToleranceCoElution, Ms1TightCorrelation = search.Ms1TightCorrelation, SqrtCoElution = search.SqrtCoElution, Ms1PeakEnvelopeTight = search.Ms1PeakEnvelopeTight, Ms1PeakSignalFraction = search.Ms1PeakSignalFraction, Ms1PeakPoints = search.Ms1PeakPoints, Ms1PeakFeatures = search.Ms1PeakFeatures, Ms1InterpolatedTraces = search.Ms1InterpolatedTraces },
+            Is.EqualTo(search), "nothing else changes but calibration's own MS1 tolerance, the signal share, the interference rule, the network, the tree blend, the summed core and the MS1 features it was benchmarked without");
 
         var run = SyntheticDiaRun.Build(300, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0);
         using var library = MslLibrary.Load(run.WriteLibrary(_directory));
