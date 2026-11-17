@@ -78,8 +78,22 @@ namespace Test
 
         private static int Resolve(string folder, List<string> spectra, List<(string, SearchTask)> tasks, List<string> console,
             bool normalize = false, bool reportToConsole = true, string answer = "n", CommandLineSettings settings = null) =>
+            Resolve(folder, spectra, tasks, console, out _, normalize, reportToConsole, answer, settings);
+
+        /// <summary>As above, and the SDRF for the run, which the command line hands to the runner.</summary>
+        private static int Resolve(string folder, List<string> spectra, List<(string, SearchTask)> tasks, List<string> console,
+            out SdrfForRun runSdrf, bool normalize = false, bool reportToConsole = true, string answer = "n",
+            CommandLineSettings settings = null) =>
             Program.ResolveSdrfDesign(folder, spectra, tasks, settings ?? new CommandLineSettings(), normalize, reportToConsole,
-                console.Add, () => answer);
+                out runSdrf, console.Add, () => answer);
+
+        /// <summary>The task's own SDRF settings, as the user saved them: the automatic design never changes them.</summary>
+        private static void AssertTaskUnchanged(SearchTask task)
+        {
+            Assert.That(task.SearchParameters.InputSdrfPath, Is.Null, "the task's own InputSdrfPath is left as saved");
+            Assert.That(task.SearchParameters.WriteSdrf, Is.False, "the task's own WriteSdrf is left as saved");
+            Assert.That(task.RunSdrf, Is.Null, "only the runner hands a task the run's SDRF");
+        }
 
         private static string DesignPath(string folder) => Path.Combine(folder, GlobalVariables.ExperimentalDesignFileName);
 
@@ -93,10 +107,10 @@ namespace Test
             var task = new SearchTask();
             var console = new List<string>();
 
-            Assert.That(Resolve(folder, spectra, SearchTasks(task), console), Is.EqualTo(Continue));
+            Assert.That(Resolve(folder, spectra, SearchTasks(task), console, out var runSdrf), Is.EqualTo(Continue));
             Assert.That(Directory.GetFiles(folder).Select(Path.GetFileName), Is.EquivalentTo(new[] { "a1.mzML" }));
-            Assert.That(task.SearchParameters.InputSdrfPath, Is.Null);
-            Assert.That(task.SearchParameters.WriteSdrf, Is.False);
+            AssertTaskUnchanged(task);
+            Assert.That(runSdrf, Is.Null);
             Assert.That(console, Is.Empty);
         }
 
@@ -104,8 +118,9 @@ namespace Test
 
         /// <summary>
         /// The SDRF names X.raw and the search reads X.mzML: the design names the searched files, MetaMorpheus reads it back
-        /// without error, a normalizing run's design check passes, the marker holds both sha256s, the search's own SDRF is
-        /// turned on from it, results.txt's line is set, and the SDRF is not touched.
+        /// without error, a normalizing run's design check passes, the marker holds both sha256s, the SDRF comes back for the
+        /// run with results.txt's line, the search's own SDRF is written from it, the task is not changed, and the SDRF is not
+        /// touched.
         /// </summary>
         [Test]
         public static void AnSdrfBesideTheSpectraMakesTheDesignAndItsMarker()
@@ -117,7 +132,7 @@ namespace Test
             var task = new SearchTask();
             var console = new List<string>();
 
-            Assert.That(Resolve(folder, spectra, SearchTasks(task), console), Is.EqualTo(Continue), string.Join("\n", console));
+            Assert.That(Resolve(folder, spectra, SearchTasks(task), console, out var runSdrf), Is.EqualTo(Continue), string.Join("\n", console));
 
             var readBack = ExperimentalDesign.ReadExperimentalDesign(DesignPath(folder), spectra, out var errors);
             Assert.That(errors, Is.Empty);
@@ -130,10 +145,13 @@ namespace Test
             Assert.That(marker.DesignSha256, Is.EqualTo(SdrfDesignMarker.ContentSha256Of(DesignPath(folder))));
             Assert.That((marker.SdrfPath, marker.SdrfSha256), Is.EqualTo((Path.GetFullPath(sdrf), sdrfSha)));
             Assert.That(marker.Condition, Is.EqualTo("every factor value column, factor value[genotype]"));
+            Assert.That(marker.StatesGrouping, Is.False, "nothing was stated, so the marker keeps no grouping");
 
-            Assert.That(task.SearchParameters.InputSdrfPath, Is.EqualTo(Path.GetFullPath(sdrf)));
-            Assert.That(task.SearchParameters.WriteSdrf, Is.True);
-            Assert.That(task.SearchParameters.DesignWrittenFromSdrf, Is.EqualTo(marker.Describe()));
+            Assert.That(runSdrf, Is.EqualTo(new SdrfForRun(Path.GetFullPath(sdrf), marker.Describe())));
+            AssertTaskUnchanged(task);
+            Assert.That(SdrfForRun.InputSdrfPathFor(task.SearchParameters, runSdrf), Is.EqualTo(Path.GetFullPath(sdrf)));
+            Assert.That(SdrfForRun.WritesSdrfFor(task.SearchParameters, runSdrf), Is.True);
+            Assert.That(console, Has.Member("Task1SearchTask writes the search's own SDRF, because an SDRF is beside the spectra files."));
             Assert.That(SdrfDesignMarker.Sha256Of(sdrf), Is.EqualTo(sdrfSha), "the SDRF is never edited");
             Assert.That(console, Has.Some.StartWith("Wrote " + DesignPath(folder) + " from the SDRF"));
             Assert.That(string.Join("\n", console), Does.Not.Contain("plex"), "a label-free design has no plex to speak of");
@@ -175,12 +193,13 @@ namespace Test
 
             var task = new SearchTask();
             var console = new List<string>();
-            Assert.That(Resolve(folder, spectra, SearchTasks(task), console), Is.EqualTo(Continue));
+            Assert.That(Resolve(folder, spectra, SearchTasks(task), console, out var runSdrf), Is.EqualTo(Continue));
 
             Assert.That(File.ReadAllText(DesignPath(folder)), Is.EqualTo(edited));
             Assert.That(console, Has.Some.Contains("was not written by MetaMorpheus from an SDRF, or was edited since, so it is the design"));
-            Assert.That(task.SearchParameters.DesignWrittenFromSdrf, Is.Null);
-            Assert.That(task.SearchParameters.InputSdrfPath, Is.Not.Null, "the SDRF still fills the search's own SDRF");
+            Assert.That(runSdrf.Provenance, Is.Null, "no design was written from the SDRF");
+            Assert.That(runSdrf.SdrfPath, Is.Not.Null, "the SDRF still fills the search's own SDRF");
+            AssertTaskUnchanged(task);
         }
 
         /// <summary>
@@ -237,7 +256,7 @@ namespace Test
             Assert.That(File.Exists(DesignPath(folder)), Is.False);
             Assert.That(File.Exists(SdrfDesignMarker.PathIn(folder)), Is.False);
             Assert.That(string.Join("\n", console), Does.Contain("No condition")
-                .And.Contain("On the command line, SingleCondition is --sdrfSingleCondition; in a search task's settings, SdrfSingleCondition.")
+                .And.Contain("On the command line, SingleCondition is --sdrfSingleCondition.")
                 .And.Contain("Normalization needs an experimental design, so the run stops."));
         }
 
@@ -305,9 +324,10 @@ namespace Test
             var task = new SearchTask();
             var console = new List<string>();
 
-            Assert.That(Resolve(folder, spectra, SearchTasks(task), console, normalize: true), Is.EqualTo(Stop));
+            Assert.That(Resolve(folder, spectra, SearchTasks(task), console, out var runSdrf, normalize: true), Is.EqualTo(Stop));
             Assert.That(console.Single(), Does.StartWith("2 SDRF files are beside the spectra files (deposit.sdrf.tsv, other.sdrf.tsv)"));
-            Assert.That(task.SearchParameters.InputSdrfPath, Is.Null);
+            Assert.That(runSdrf, Is.Null);
+            AssertTaskUnchanged(task);
             Assert.That(File.Exists(DesignPath(folder)), Is.False);
         }
 
@@ -331,10 +351,10 @@ namespace Test
             var task = new SearchTask();
             var console = new List<string>();
 
-            Assert.That(Resolve(folder, spectra, SearchTasks(task), console), Is.EqualTo(Continue), string.Join("\n", console));
+            Assert.That(Resolve(folder, spectra, SearchTasks(task), console, out var runSdrf), Is.EqualTo(Continue), string.Join("\n", console));
 
             Assert.That(File.Exists(DesignPath(folder)), Is.EqualTo(isSdrf));
-            Assert.That(task.SearchParameters.InputSdrfPath, Is.EqualTo(isSdrf ? Path.GetFullPath(renamed) : null));
+            Assert.That(runSdrf?.SdrfPath, Is.EqualTo(isSdrf ? Path.GetFullPath(renamed) : null));
             if (!isSdrf)
             {
                 Assert.That(console, Is.Empty);
@@ -352,69 +372,133 @@ namespace Test
             var task = new SearchTask();
             var console = new List<string>();
 
-            Assert.That(Resolve(folder, spectra, SearchTasks(task), console, normalize: true), Is.EqualTo(Stop));
+            Assert.That(Resolve(folder, spectra, SearchTasks(task), console, out var runSdrf, normalize: true), Is.EqualTo(Stop));
             Assert.That(console.Single(), Does.StartWith("2 SDRF files are beside the spectra files (deposit.sdrf.tsv, sdrf.tsv)"));
-            Assert.That(task.SearchParameters.InputSdrfPath, Is.Null);
+            Assert.That(runSdrf, Is.Null);
             Assert.That(File.Exists(DesignPath(folder)), Is.False);
         }
 
         // ---------------------------------------------------------------- the grouping the user states
 
-        /// <summary>QP-S42 (b): the task file may state one group, and it is recorded as stated.</summary>
+        private static List<string> Conditions(string folder, List<string> spectra) =>
+            ExperimentalDesign.ReadExperimentalDesign(DesignPath(folder), spectra, out _).Select(f => f.Condition).ToList();
+
+        private const string UsedAgain = "The grouping stated when MetaMorpheus last wrote ExperimentalDesign.tsv from the SDRF is used again";
+
+        /// <summary>
+        /// QP-S42 (b): the command line states one group; it is recorded as stated, and the marker keeps it as a key with the
+        /// design it made. The task is not changed.
+        /// </summary>
         [Test]
-        public static void ATaskSettingStatesOneCondition()
+        public static void TheCommandLineStatesOneConditionAndTheMarkerKeepsIt()
         {
-            string folder = NewFolder("TaskSingle");
+            string folder = NewFolder("StatedSingle");
             var spectra = Spectra(folder, "a1.mzML", "b1.mzML");
             WriteSdrfWithNoFactorColumn(folder, ("a1.raw", 1), ("b1.raw", 2));
             var task = new SearchTask();
-            task.SearchParameters.SdrfSingleCondition = "survey";
             var console = new List<string>();
 
-            Assert.That(Resolve(folder, spectra, SearchTasks(task), console), Is.EqualTo(Continue), string.Join("\n", console));
+            Assert.That(Resolve(folder, spectra, SearchTasks(task), console, out var runSdrf,
+                settings: new CommandLineSettings { SdrfSingleCondition = "survey" }), Is.EqualTo(Continue), string.Join("\n", console));
 
-            var readBack = ExperimentalDesign.ReadExperimentalDesign(DesignPath(folder), spectra, out var errors);
-            Assert.That(errors, Is.Empty);
-            Assert.That(readBack.Select(f => f.Condition), Is.All.EqualTo("survey"));
-            Assert.That(SdrfDesignMarker.ReadFrom(folder).Condition, Is.EqualTo("one condition, 'survey', stated by the user"));
-            Assert.That(task.SearchParameters.DesignWrittenFromSdrf, Does.Contain("stated by the user"));
+            Assert.That(Conditions(folder, spectra), Is.All.EqualTo("survey"));
+            var marker = SdrfDesignMarker.ReadFrom(folder);
+            Assert.That(marker.Condition, Is.EqualTo("one condition, 'survey', stated by the user"));
+            Assert.That((marker.SingleCondition, marker.ConditionColumns.Count, marker.UnknownFactorIsOwnCondition), Is.EqualTo(("survey", 0, false)));
+            Assert.That(runSdrf.Provenance, Does.Contain("stated by the user"));
+            Assert.That(console, Has.None.StartWith(UsedAgain), "nothing was kept from before");
+            AssertTaskUnchanged(task);
         }
 
-        /// <summary>One design serves every search task, so tasks that group differently are refused, each named.</summary>
+        /// <summary>
+        /// The grouping a run stated is used again by a later run that states none, and the run says so: here the SDRF has no
+        /// factor column, so without the kept grouping the second run would be refused.
+        /// </summary>
         [Test]
-        public static void SearchTasksThatGroupDifferentlyAreRefused()
+        public static void AGroupingStatedBeforeIsUsedAgainAndSaidSo()
         {
-            string folder = NewFolder("TasksDisagree");
-            var spectra = Spectra(folder, "a1.mzML");
-            WriteSdrf(folder, ("a1.raw", "WT", 1));
-            var first = new SearchTask();
-            var second = new SearchTask();
-            second.SearchParameters.SdrfSingleCondition = "all";
+            string folder = NewFolder("UsedAgain");
+            var spectra = Spectra(folder, "a1.mzML", "b1.mzML");
+            WriteSdrfWithNoFactorColumn(folder, ("a1.raw", 1), ("b1.raw", 2));
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), new List<string>(),
+                settings: new CommandLineSettings { SdrfSingleCondition = "survey" }), Is.EqualTo(Continue));
+
             var console = new List<string>();
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), console), Is.EqualTo(Continue), string.Join("\n", console));
 
-            Assert.That(Resolve(folder, spectra, SearchTasks(first, second), console, normalize: true), Is.EqualTo(Stop));
-            Assert.That(console.Last(), Does.StartWith("The search tasks build the SDRF's condition differently (Task1SearchTask: "
-                + "every factor value column; Task2SearchTask: one condition, 'all')"));
+            Assert.That(Conditions(folder, spectra), Is.All.EqualTo("survey"));
+            Assert.That(console, Has.Member(UsedAgain + " (one condition, 'survey'), as DesignFromSdrf.txt records it. Give --sdrfCondition, "
+                + "--sdrfSingleCondition or --sdrfUnknownFactorIsCondition to state another, or delete the design file to make it again "
+                + "from every factor value column."));
+            Assert.That(SdrfDesignMarker.ReadFrom(folder).SingleCondition, Is.EqualTo("survey"), "kept for the run after");
         }
 
-        /// <summary>The command line's grouping wins over the tasks', and is written into them so their saved settings say so.</summary>
-        [Test]
-        public static void TheCommandLinesGroupingWinsAndIsRecordedInTheTasks()
+        /// <summary>
+        /// The kept grouping is described as it was stated: columns, and files whose factor nobody stated as their own
+        /// condition. Without it the second run is refused, because b1's factor is 'not available'.
+        /// </summary>
+        [TestCase(new[] { "genotype" }, "columns genotype, unknown factors their own condition")]
+        [TestCase(new string[0], "every factor value column, unknown factors their own condition")]
+        public static void AKeptGroupingIsDescribedAsStated(string[] columns, string described)
         {
-            string folder = NewFolder("CommandLineWins");
+            string folder = NewFolder("UsedAgainDescribed_" + columns.Length);
+            var spectra = Spectra(folder, "a1.mzML", "b1.mzML");
+            WriteSdrf(folder, ("a1.raw", "WT", 1), ("b1.raw", "not available", 1));
+            var first = new List<string>();
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), first,
+                settings: new CommandLineSettings { SdrfConditionColumns = columns, SdrfUnknownFactorIsCondition = true }),
+                Is.EqualTo(Continue), string.Join("\n", first));
+
+            var console = new List<string>();
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), console), Is.EqualTo(Continue), string.Join("\n", console));
+
+            Assert.That(Conditions(folder, spectra), Is.EquivalentTo(new[] { "WT", "not available" }));
+            Assert.That(console, Has.Some.StartWith(UsedAgain + " (" + described + ")"));
+        }
+
+        /// <summary>A grouping stated now replaces the one kept, and the marker keeps the new one.</summary>
+        [Test]
+        public static void AStatedGroupingReplacesTheOneKept()
+        {
+            string folder = NewFolder("StatedReplaces");
             var spectra = Spectra(folder, "a1.mzML", "b1.mzML");
             WriteSdrf(folder, ("a1.raw", "WT", 1), ("b1.raw", "KO", 1));
-            var task = new SearchTask();
-            task.SearchParameters.SdrfSingleCondition = "all";
-            var settings = new CommandLineSettings { SdrfConditionColumns = new[] { "genotype" } };
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), new List<string>(),
+                settings: new CommandLineSettings { SdrfSingleCondition = "all" }), Is.EqualTo(Continue));
+            Assume.That(Conditions(folder, spectra), Is.All.EqualTo("all"));
+
             var console = new List<string>();
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), console,
+                settings: new CommandLineSettings { SdrfConditionColumns = new[] { "genotype" } }), Is.EqualTo(Continue), string.Join("\n", console));
 
-            Assert.That(Resolve(folder, spectra, SearchTasks(task), console, settings: settings), Is.EqualTo(Continue), string.Join("\n", console));
+            Assert.That(Conditions(folder, spectra), Is.EquivalentTo(new[] { "WT", "KO" }));
+            var marker = SdrfDesignMarker.ReadFrom(folder);
+            Assert.That(marker.ConditionColumns, Is.EqualTo(new[] { "genotype" }));
+            Assert.That(marker.SingleCondition, Is.Null);
+            Assert.That(console, Has.None.StartWith(UsedAgain));
+        }
 
-            Assert.That(ExperimentalDesign.ReadExperimentalDesign(DesignPath(folder), spectra, out _).Select(f => f.Condition),
-                Is.EquivalentTo(new[] { "WT", "KO" }));
-            Assert.That(task.SearchParameters.SdrfConditionColumns, Is.EqualTo(new[] { "genotype" }));
-            Assert.That(task.SearchParameters.SdrfSingleCondition, Is.Null);
+        /// <summary>
+        /// Deleting the design is the way back to every factor value column: a marker beside no design keeps nothing for the
+        /// next run, which makes the design afresh.
+        /// </summary>
+        [Test]
+        public static void DeletingTheDesignMakesItAgainFromEveryFactorColumn()
+        {
+            string folder = NewFolder("DeletedDesign");
+            var spectra = Spectra(folder, "a1.mzML", "b1.mzML");
+            WriteSdrf(folder, ("a1.raw", "WT", 1), ("b1.raw", "KO", 1));
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), new List<string>(),
+                settings: new CommandLineSettings { SdrfSingleCondition = "all" }), Is.EqualTo(Continue));
+            File.Delete(DesignPath(folder));
+            Assume.That(SdrfDesignMarker.ReadFrom(folder).SingleCondition, Is.EqualTo("all"), "the marker is still there");
+
+            var console = new List<string>();
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), console), Is.EqualTo(Continue), string.Join("\n", console));
+
+            Assert.That(Conditions(folder, spectra), Is.EquivalentTo(new[] { "WT", "KO" }));
+            Assert.That(SdrfDesignMarker.ReadFrom(folder).StatesGrouping, Is.False);
+            Assert.That(console, Has.None.StartWith(UsedAgain));
         }
 
         // ---------------------------------------------------------------- the search's own SDRF, and what reads no design
@@ -430,8 +514,9 @@ namespace Test
             task.SearchParameters.InputSdrfPath = own;
             var console = new List<string>();
 
-            Assert.That(Resolve(folder, spectra, SearchTasks(task), console), Is.EqualTo(Continue));
+            Assert.That(Resolve(folder, spectra, SearchTasks(task), console, out var runSdrf), Is.EqualTo(Continue));
             Assert.That(task.SearchParameters.InputSdrfPath, Is.EqualTo(own));
+            Assert.That(SdrfForRun.InputSdrfPathFor(task.SearchParameters, runSdrf), Is.EqualTo(own), "the task's own SDRF wins");
             Assert.That(console, Has.Some.StartWith($"Task1SearchTask names its own InputSdrfPath ({own}), not the SDRF beside the spectra files"));
         }
 
@@ -445,9 +530,33 @@ namespace Test
             task.SearchParameters.DoLabelFreeQuantification = false;
             var console = new List<string>();
 
-            Assert.That(Resolve(folder, spectra, SearchTasks(task), console, normalize: true), Is.EqualTo(Continue));
+            Assert.That(Resolve(folder, spectra, SearchTasks(task), console, out var runSdrf, normalize: true), Is.EqualTo(Continue));
             Assert.That(File.Exists(DesignPath(folder)), Is.False);
-            Assert.That(task.SearchParameters.InputSdrfPath, Is.Not.Null);
+            Assert.That(runSdrf.SdrfPath, Is.Not.Null);
+            Assert.That(runSdrf.Provenance, Is.Null);
+            Assert.That(SdrfForRun.WritesSdrfFor(task.SearchParameters, runSdrf), Is.True);
+        }
+
+        /// <summary>
+        /// The values a search uses for the run: the task's own input SDRF wins over the run's, and the search writes its
+        /// own SDRF when the task asks for it or the run has an SDRF. Without parameters or a run SDRF, neither.
+        /// </summary>
+        [Test]
+        public static void TheRunsSdrfFillsOnlyWhatTheTaskLeftBlank()
+        {
+            var run = new SdrfForRun(@"C:\deposit\deposit.sdrf.tsv", null);
+            var blank = new SearchParameters { InputSdrfPath = "  " };
+            var own = new SearchParameters { InputSdrfPath = @"C:\curated.sdrf.tsv", WriteSdrf = true };
+
+            Assert.That(SdrfForRun.InputSdrfPathFor(null, null), Is.Null);
+            Assert.That(SdrfForRun.InputSdrfPathFor(blank, null), Is.Null);
+            Assert.That(SdrfForRun.InputSdrfPathFor(blank, run), Is.EqualTo(run.SdrfPath));
+            Assert.That(SdrfForRun.InputSdrfPathFor(own, run), Is.EqualTo(own.InputSdrfPath));
+
+            Assert.That(SdrfForRun.WritesSdrfFor(null, null), Is.False);
+            Assert.That(SdrfForRun.WritesSdrfFor(blank, null), Is.False);
+            Assert.That(SdrfForRun.WritesSdrfFor(blank, run), Is.True);
+            Assert.That(SdrfForRun.WritesSdrfFor(own, null), Is.True);
         }
 
         // ---------------------------------------------------------------- isobaric
@@ -648,6 +757,105 @@ namespace Test
             Assert.That(outcome.Refusal, Is.Null, string.Join("\n", outcome.Messages));
             Assert.That(outcome.SdrfPath, Is.EqualTo(Path.GetFullPath(sdrf)));
             Assert.That(outcome.DesignPath, Is.EqualTo(DesignPath(folder)));
+            Assert.That(outcome.RunSdrf, Is.EqualTo(new SdrfForRun(Path.GetFullPath(sdrf), SdrfDesignMarker.ReadFrom(folder).Describe())));
+        }
+
+        /// <summary>
+        /// With the default wording (no front end names its controls), a kept grouping is used again and the way back to
+        /// every factor value column is named.
+        /// </summary>
+        [Test]
+        public static void TheDefaultWordingSaysHowToGoBackToEveryFactorColumn()
+        {
+            string folder = NewFolder("DefaultWording");
+            var spectra = Spectra(folder, "a1.mzML");
+            WriteSdrf(folder, ("a1.raw", "WT", 1));
+            var stated = new SdrfDesignStatements { SingleCondition = "all" };
+            Assume.That(SdrfAutomaticDesign.Resolve(folder, spectra, SearchTasks(new SearchTask()), stated, null).Refusal, Is.Null);
+
+            var outcome = SdrfAutomaticDesign.Resolve(folder, spectra, SearchTasks(new SearchTask()), null, null);
+
+            Assert.That(outcome.Messages, Has.Member(UsedAgain + " (one condition, 'all'), as DesignFromSdrf.txt records it. "
+                + "To make it again from every factor value column, delete the design file."));
+        }
+
+        /// <summary>
+        /// The marker keeps a stated grouping as keys, columns tab-separated, and reads it back; a marker stating nothing
+        /// writes no grouping key, and a value other than 'true' states no unknown-factor condition.
+        /// </summary>
+        [Test]
+        public static void TheMarkerKeepsTheStatedGroupingAsKeys()
+        {
+            string folder = NewFolder("MarkerGrouping");
+            new SdrfDesignMarker(GlobalVariables.ExperimentalDesignFileName, "abc", "x.sdrf.tsv", "def", "described",
+                new[] { "genotype", "factor value[treatment]" }, "one", true).WriteTo(folder);
+            string text = File.ReadAllText(SdrfDesignMarker.PathIn(folder));
+
+            Assert.That(text, Does.Contain("ConditionColumns\tgenotype\tfactor value[treatment]\n")
+                .And.Contain("SingleCondition\tone\n").And.Contain("UnknownFactorIsOwnCondition\ttrue\n"));
+            var read = SdrfDesignMarker.ReadFrom(folder);
+            Assert.That(read.ConditionColumns, Is.EqualTo(new[] { "genotype", "factor value[treatment]" }));
+            Assert.That((read.SingleCondition, read.UnknownFactorIsOwnCondition, read.StatesGrouping), Is.EqualTo(("one", true, true)));
+
+            File.WriteAllText(SdrfDesignMarker.PathIn(folder), text.Replace("UnknownFactorIsOwnCondition\ttrue", "UnknownFactorIsOwnCondition\tyes"));
+            Assert.That(SdrfDesignMarker.ReadFrom(folder).UnknownFactorIsOwnCondition, Is.False);
+
+            new SdrfDesignMarker(GlobalVariables.ExperimentalDesignFileName, "abc", "x.sdrf.tsv", "def", "described").WriteTo(folder);
+            string none = File.ReadAllText(SdrfDesignMarker.PathIn(folder));
+            // The comment line names the keys, so look for each key followed by its tab.
+            Assert.That(none, Does.Not.Contain("ConditionColumns\t").And.Not.Contain("SingleCondition\t").And.Not.Contain("UnknownFactorIsOwnCondition\t"));
+            var nothing = SdrfDesignMarker.ReadFrom(folder);
+            Assert.That((nothing.ConditionColumns.Count, nothing.SingleCondition, nothing.UnknownFactorIsOwnCondition, nothing.StatesGrouping),
+                Is.EqualTo((0, (string)null, false, false)));
+        }
+
+        // ---------------------------------------------------------------- the runner
+
+        /// <summary>
+        /// The runner copies the marker of a design written from the SDRF into the run's output folder, beside Task Settings,
+        /// from the folder of the spectra the run started from. With no design written from the SDRF (no provenance) or no
+        /// SDRF for the run, nothing is copied; a marker that cannot be copied is warned about. No task runs here: the copy is
+        /// the runner's own, after its tasks.
+        /// </summary>
+        [TestCase(true, true, true)]
+        [TestCase(true, false, false)]
+        [TestCase(false, true, false)]
+        public static void TheRunnerCopiesTheMarkerIntoTheOutputFolder(bool withRunSdrf, bool withProvenance, bool copied)
+        {
+            string folder = NewFolder("RunnerCopies_" + withRunSdrf + withProvenance);
+            var spectra = Spectra(folder, "a1.mzML");
+            new SdrfDesignMarker(GlobalVariables.ExperimentalDesignFileName, "abc", "x.sdrf.tsv", "def", "described").WriteTo(folder);
+            string output = Path.Combine(folder, "output");
+            Directory.CreateDirectory(output);
+            var runSdrf = withRunSdrf ? new SdrfForRun(Path.Combine(folder, "x.sdrf.tsv"), withProvenance ? "provenance" : null) : null;
+
+            var runner = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)>(), spectra, new List<EngineLayer.DatabaseLoading.DbForTask>(),
+                output, runSdrf);
+            runner.Run();
+
+            string copy = Path.Combine(output, SdrfDesignMarker.FileName);
+            Assert.That(File.Exists(copy), Is.EqualTo(copied));
+            if (copied)
+            {
+                Assert.That(File.ReadAllText(copy), Is.EqualTo(File.ReadAllText(SdrfDesignMarker.PathIn(folder))));
+            }
+            Assert.That(runner.Warnings, Is.Empty);
+        }
+
+        [Test]
+        public static void AMarkerTheRunnerCannotCopyIsWarnedAbout()
+        {
+            string folder = NewFolder("RunnerCannotCopy");
+            var spectra = Spectra(folder, "a1.mzML");
+            string output = Path.Combine(folder, "output");
+            Directory.CreateDirectory(output);
+
+            var runner = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)>(), spectra, new List<EngineLayer.DatabaseLoading.DbForTask>(),
+                output, new SdrfForRun(Path.Combine(folder, "x.sdrf.tsv"), "provenance"));
+            runner.Run();
+
+            Assert.That(File.Exists(Path.Combine(output, SdrfDesignMarker.FileName)), Is.False);
+            Assert.That(runner.Warnings, Has.One.StartWith($"Could not copy {SdrfDesignMarker.PathIn(folder)} into the output folder:"));
         }
 
         /// <summary>
@@ -779,8 +987,9 @@ namespace Test
 
         /// <summary>
         /// A whole search with an SDRF beside its spectra: the design and marker are written beside the spectra, the run
-        /// quantifies with it, the search writes its own SDRF, and results.txt records the input SDRF and how the design
-        /// was made.
+        /// quantifies with it, the search writes its own SDRF, results.txt records the input SDRF and how the design was
+        /// made, the marker is copied beside Task Settings, and the task file the run saved is the user's, unchanged: the SDRF
+        /// reached the search for this run only.
         /// </summary>
         [Test]
         public static void MainSearchesWithTheDesignMadeFromTheSdrf()
@@ -805,6 +1014,14 @@ namespace Test
             Assert.That(results, Does.Contain(SdrfDesignMarker.ReadFrom(folder).Describe()));
             Assert.That(Directory.GetFiles(output, "*.sdrf.tsv", SearchOption.AllDirectories), Has.Length.EqualTo(1),
                 "the search's own SDRF, written although the task did not ask for it");
+
+            Assert.That(File.ReadAllText(Path.Combine(output, SdrfDesignMarker.FileName)),
+                Is.EqualTo(File.ReadAllText(SdrfDesignMarker.PathIn(folder))), "the marker, beside Task Settings");
+            string saved = Directory.GetFiles(Path.Combine(output, "Task Settings"), "*config.toml").Single();
+            Assert.That(File.ReadAllText(saved), Does.Not.Contain("RunSdrf").And.Not.Contain(Path.GetFileName(sdrf)));
+            var savedTask = Toml.ReadFile<SearchTask>(saved, MetaMorpheusTask.tomlConfig);
+            Assert.That(savedTask.SearchParameters.InputSdrfPath, Is.Null);
+            Assert.That(savedTask.SearchParameters.WriteSdrf, Is.False);
         }
     }
 }

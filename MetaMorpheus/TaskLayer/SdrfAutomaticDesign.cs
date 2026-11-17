@@ -12,7 +12,8 @@ namespace TaskLayer
     /// <summary>
     /// What the user stated about an SDRF's design, outside the SDRF: the condition (columns, one condition, or files
     /// whose factor nobody stated as their own condition) and where each file's plex is written. The command line fills
-    /// it from its --sdrf... switches; empty means nothing was stated there, and the search tasks' settings are read.
+    /// it from its --sdrf... switches. A grouping left empty here is the one stated when MetaMorpheus last wrote the
+    /// design, kept in its <see cref="SdrfDesignMarker"/>, or else every factor value column.
     /// </summary>
     public sealed record SdrfDesignStatements
     {
@@ -35,20 +36,50 @@ namespace TaskLayer
         /// <summary>Lines added after mzLib's report, saying how to answer a refusal it names (may return empty).</summary>
         public Func<SdrfSearchDesign, string> ReportHint { get; init; } = _ => string.Empty;
 
-        /// <summary>The end of the sentence refusing search tasks that build the condition differently.</summary>
-        public string HowToAgreeOnGrouping { get; init; } =
-            "Make the tasks' SdrfConditionColumns, SdrfSingleCondition and SdrfUnknownFactorIsCondition the same.";
+        /// <summary>
+        /// The end of the line saying a grouping stated for an earlier run is used again: how to state another, or go back
+        /// to every factor value column.
+        /// </summary>
+        public string HowToStateAnotherGrouping { get; init; } =
+            "To make it again from every factor value column, delete the design file.";
+    }
+
+    /// <summary>
+    /// The SDRF beside a run's spectra files, for that run only. The runner (<see cref="EverythingRunnerEngine"/>) hands it
+    /// to every search task as <see cref="MetaMorpheusTask.RunSdrf"/>, as it hands them
+    /// <see cref="MetaMorpheusTask.AcquiredSpectraFiles"/>: it is never written to a task file, and the task's own settings
+    /// stay as the user saved them. A task's own <see cref="SearchParameters.InputSdrfPath"/> still wins.
+    /// </summary>
+    /// <param name="SdrfPath">The SDRF, as a full path.</param>
+    /// <param name="Provenance">
+    /// The line results.txt carries when the run's experimental design was written from this SDRF (which SDRF, by sha256,
+    /// and how the condition was built); null when it was not.
+    /// </param>
+    public sealed record SdrfForRun(string SdrfPath, string Provenance)
+    {
+        /// <summary>The input SDRF a search reads: the task's own when it names one, else the run's SDRF (or null).</summary>
+        public static string InputSdrfPathFor(SearchParameters searchParameters, SdrfForRun runSdrf) =>
+            !string.IsNullOrWhiteSpace(searchParameters?.InputSdrfPath) ? searchParameters.InputSdrfPath : runSdrf?.SdrfPath;
+
+        /// <summary>
+        /// Whether a search writes its own SDRF: when the task asks for it, and whenever the run has an SDRF beside its
+        /// spectra files (QuantProject, ruled 2026-11-07).
+        /// </summary>
+        public static bool WritesSdrfFor(SearchParameters searchParameters, SdrfForRun runSdrf) =>
+            searchParameters?.WriteSdrf == true || runSdrf != null;
     }
 
     /// <summary>What <see cref="SdrfAutomaticDesign.Resolve"/> did, and what a front end has to tell the user.</summary>
     public sealed class SdrfDesignOutcome
     {
-        internal SdrfDesignOutcome(List<string> messages, string refusal, string sdrfPath, string designPath)
+        internal SdrfDesignOutcome(List<string> messages, string refusal, string sdrfPath, string designPath,
+            string provenance = null)
         {
             Messages = messages;
             Refusal = refusal;
             SdrfPath = sdrfPath;
             DesignPath = designPath;
+            RunSdrf = sdrfPath == null ? null : new SdrfForRun(sdrfPath, provenance);
         }
 
         /// <summary>The lines to show, in order (nothing when no SDRF is beside the spectra files).</summary>
@@ -65,6 +96,12 @@ namespace TaskLayer
 
         /// <summary>The design written from the SDRF; null when none was.</summary>
         public string DesignPath { get; }
+
+        /// <summary>
+        /// The SDRF for the run, which a front end passes to <see cref="EverythingRunnerEngine"/>; null when there is none
+        /// (or several). Given even when no design was made from it, so the search's own SDRF still copies its samples.
+        /// </summary>
+        public SdrfForRun RunSdrf { get; }
     }
 
     /// <summary>
@@ -75,18 +112,20 @@ namespace TaskLayer
     /// the run's design check, which then reads the design written here exactly as it reads one the user wrote.
     ///
     /// <list type="bullet">
-    /// <item>The SDRF is handed to every search task as its <see cref="SearchParameters.InputSdrfPath"/>, with
-    /// <see cref="SearchParameters.WriteSdrf"/> on, so the search's own SDRF carries every sample fact the input has. A
-    /// task that names a different SDRF of its own keeps it, and a line says so.</item>
+    /// <item>The SDRF is returned for the run (<see cref="SdrfDesignOutcome.RunSdrf"/>); the front end passes it to the
+    /// runner, which hands it to every search task for that run only, so the search's own SDRF is written and carries
+    /// every sample fact the input has. The tasks themselves are never changed. A task that names a different SDRF of its
+    /// own keeps it, and a line says so.</item>
     /// <item>The design is read with mzLib's SdrfSearchDesign, for exactly the spectra files given. Its condition comes
-    /// from <see cref="SdrfDesignStatements"/> when they state one, else from the search tasks' settings of the same
-    /// names, which must agree. The kit is the search tasks' multiplex label; the plex is read from a stated column,
-    /// pattern or single plex, else from the SDRF's <see cref="DefaultPlexColumn"/>.</item>
+    /// from <see cref="SdrfDesignStatements"/> when they state one, else from the grouping stated when MetaMorpheus last
+    /// wrote this design (kept in its marker, and said when used), else from every factor value column. The kit is the
+    /// search tasks' multiplex label; the plex is read from a stated column, pattern or single plex, else from the SDRF's
+    /// <see cref="DefaultPlexColumn"/>.</item>
     /// <item>The design is written beside the first spectra file with a <see cref="SdrfDesignMarker"/> holding its and
     /// the SDRF's sha256 (QP-S41). A design already there that the marker shows MetaMorpheus wrote, unedited, is written
     /// again for this run's files; any other design there is the user's, is used as is and never touched, and a line says
     /// the SDRF was not read for it.</item>
-    /// <item>A design that cannot be made (refused, unreadable, two SDRFs, search tasks that disagree) is returned as a
+    /// <item>A design that cannot be made (refused, unreadable, two SDRFs, search tasks of different kits) is returned as a
     /// <see cref="SdrfDesignOutcome.Refusal"/>. Nothing is written then, and a design MetaMorpheus wrote before, which
     /// no longer fits, is removed with its marker. The SDRF is never edited.</item>
     /// </list>
@@ -181,8 +220,7 @@ namespace TaskLayer
 
         /// <summary>
         /// Makes the run's design from the SDRF beside the spectra files, when there is one (see the class summary), and says
-        /// what it did. Changes the search tasks (their input SDRF, Write SDRF and grouping settings) and the design files
-        /// beside the spectra; never the SDRF.
+        /// what it did. Changes only the design files beside the spectra; never the search tasks or the SDRF.
         /// </summary>
         /// <param name="designDirectory">The folder of the first spectra file, where a run reads its design.</param>
         /// <param name="spectraFilePaths">Full paths of the spectra files this run will search.</param>
@@ -221,7 +259,7 @@ namespace TaskLayer
             }
 
             string sdrf = Path.GetFullPath(sdrfs[0]);
-            HandSdrfToSearchTasks(sdrf, searchTasks, messages);
+            NoteSdrfForSearchTasks(sdrf, searchTasks, messages);
 
             // A search that quantifies nothing reads no design.
             if (!searchTasks.Any(t => t.Task.SearchParameters.DoLabelFreeQuantification || t.Task.SearchParameters.DoMultiplexQuantification))
@@ -256,10 +294,7 @@ namespace TaskLayer
 
             string removeOurs = ours ? existing : null;
 
-            if (!TryReadGrouping(stated, searchTasks, wording, out var grouping, out string disagreement))
-            {
-                return Refuse(messages, disagreement, null, sdrf, removeOurs, designDirectory);
-            }
+            var grouping = ReadGrouping(stated, ours ? marker : null, wording, messages);
 
             var kits = searchTasks
                 .Select(t => t.Task.SearchParameters.DoMultiplexQuantification ? t.Task.SearchParameters.MultiplexModId ?? string.Empty : null)
@@ -315,12 +350,9 @@ namespace TaskLayer
             design.WriteDesign(designPath);
 
             var newMarker = new SdrfDesignMarker(Path.GetFileName(designPath), SdrfDesignMarker.ContentSha256Of(designPath), sdrf,
-                SdrfDesignMarker.Sha256Of(sdrf), DescribeCondition(design, grouping));
+                SdrfDesignMarker.Sha256Of(sdrf), DescribeCondition(design, grouping),
+                grouping.Columns, grouping.SingleCondition, grouping.UnknownIsOwnCondition);
             newMarker.WriteTo(designDirectory);
-            foreach (var (_, task) in searchTasks)
-            {
-                task.SearchParameters.DesignWrittenFromSdrf = newMarker.Describe();
-            }
 
             messages.Add(report.TrimEnd());
             if (tag?.TagType == Omics.Modifications.IsobaricMassTagType.TMT16)
@@ -328,7 +360,7 @@ namespace TaskLayer
                 messages.Add(Tmt16Note);
             }
             messages.Add($"Wrote {designPath} from the SDRF {sdrf}" + (ours ? ", again for this run's spectra files." : "."));
-            return new SdrfDesignOutcome(messages, null, sdrf, designPath);
+            return new SdrfDesignOutcome(messages, null, sdrf, designPath, newMarker.Describe());
         }
 
         /// <summary>
@@ -359,44 +391,29 @@ namespace TaskLayer
         private sealed record SdrfGrouping(List<string> Columns, string SingleCondition, bool UnknownIsOwnCondition);
 
         /// <summary>
-        /// The stated grouping when there is one; otherwise the search tasks' settings of the same names, which must be the
-        /// same in every task, because one design serves them all. The grouping used is written into every search task, so
-        /// the task files the run writes record it.
+        /// The grouping for the design: the one stated now (the command line's switches) when there is one; otherwise the one
+        /// stated when MetaMorpheus last wrote this design, kept in its <paramref name="ourMarker"/> (a line says it is used
+        /// again, and how to state another); otherwise every factor value column. One design serves the whole run, so the
+        /// grouping belongs with the design, never with a search task (nbollis's review of #2980).
         /// </summary>
-        private static bool TryReadGrouping(SdrfDesignStatements stated, IReadOnlyList<(string Name, SearchTask Task)> searchTasks,
-            SdrfDesignWording wording, out SdrfGrouping grouping, out string disagreement)
+        /// <param name="ourMarker">The marker of a design MetaMorpheus wrote and nobody edited since; null otherwise.</param>
+        private static SdrfGrouping ReadGrouping(SdrfDesignStatements stated, SdrfDesignMarker ourMarker, SdrfDesignWording wording,
+            List<string> messages)
         {
-            disagreement = null;
             if (stated.StatesGrouping)
             {
-                grouping = new SdrfGrouping(stated.ConditionColumns.ToList(), stated.SingleCondition, stated.UnknownFactorIsOwnCondition);
-            }
-            else
-            {
-                var fromTasks = searchTasks
-                    .Select(t => (t.Name, Grouping: new SdrfGrouping(t.Task.SearchParameters.SdrfConditionColumns?.ToList() ?? new List<string>(),
-                        t.Task.SearchParameters.SdrfSingleCondition, t.Task.SearchParameters.SdrfUnknownFactorIsCondition)))
-                    .ToList();
-                string Key(SdrfGrouping g) => string.Join("\u0001", g.Columns) + "\u0002" + g.SingleCondition + "\u0002" + g.UnknownIsOwnCondition;
-                if (fromTasks.Select(s => Key(s.Grouping)).Distinct().Count() > 1)
-                {
-                    grouping = null;
-                    disagreement = "The search tasks build the SDRF's condition differently ("
-                        + string.Join("; ", fromTasks.Select(s => $"{s.Name}: {DescribeGrouping(s.Grouping)}"))
-                        + "), and one experimental design serves them all, so none was made from the SDRF. "
-                        + wording.HowToAgreeOnGrouping;
-                    return false;
-                }
-                grouping = fromTasks[0].Grouping;
+                return new SdrfGrouping(stated.ConditionColumns.ToList(), stated.SingleCondition, stated.UnknownFactorIsOwnCondition);
             }
 
-            foreach (var (_, task) in searchTasks)
+            if (ourMarker?.StatesGrouping == true)
             {
-                task.SearchParameters.SdrfConditionColumns = grouping.Columns.ToList();
-                task.SearchParameters.SdrfSingleCondition = grouping.SingleCondition;
-                task.SearchParameters.SdrfUnknownFactorIsCondition = grouping.UnknownIsOwnCondition;
+                var kept = new SdrfGrouping(ourMarker.ConditionColumns.ToList(), ourMarker.SingleCondition, ourMarker.UnknownFactorIsOwnCondition);
+                messages.Add($"The grouping stated when MetaMorpheus last wrote {ourMarker.DesignFileName} from the SDRF is used again "
+                    + $"({DescribeGrouping(kept)}), as {SdrfDesignMarker.FileName} records it. {wording.HowToStateAnotherGrouping}");
+                return kept;
             }
-            return true;
+
+            return new SdrfGrouping(new List<string>(), null, false);
         }
 
         private static string DescribeGrouping(SdrfGrouping g) =>
@@ -418,21 +435,18 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Gives every search task the SDRF beside the spectra files as its input SDRF, and turns on the search's own SDRF:
-        /// with an input SDRF there, the output SDRF is written whether or not the task asked for it (QuantProject, ruled
-        /// 2026-11-07). A task naming another SDRF of its own keeps it, and a line says so.
+        /// Says what the SDRF beside the spectra files does to each search task in this run, which the runner hands it to
+        /// (<see cref="SdrfForRun"/>): the search's own SDRF is written whether or not the task asked for it (QuantProject,
+        /// ruled 2026-11-07), and a task naming another SDRF of its own keeps it. The tasks are not changed.
         /// </summary>
-        private static void HandSdrfToSearchTasks(string sdrf, IReadOnlyList<(string Name, SearchTask Task)> searchTasks,
+        private static void NoteSdrfForSearchTasks(string sdrf, IReadOnlyList<(string Name, SearchTask Task)> searchTasks,
             List<string> messages)
         {
             foreach (var (name, task) in searchTasks)
             {
                 string own = task.SearchParameters.InputSdrfPath;
-                if (string.IsNullOrWhiteSpace(own))
-                {
-                    task.SearchParameters.InputSdrfPath = sdrf;
-                }
-                else if (!string.Equals(Path.GetFullPath(own.Trim()), sdrf, StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrWhiteSpace(own)
+                    && !string.Equals(Path.GetFullPath(own.Trim()), sdrf, StringComparison.OrdinalIgnoreCase))
                 {
                     messages.Add($"{name} names its own InputSdrfPath ({Path.GetFullPath(own.Trim())}), not the SDRF beside the spectra "
                         + $"files ({sdrf}); the search's SDRF copies its samples from the task's own.");
@@ -440,7 +454,6 @@ namespace TaskLayer
 
                 if (!task.SearchParameters.WriteSdrf)
                 {
-                    task.SearchParameters.WriteSdrf = true;
                     messages.Add($"{name} writes the search's own SDRF, because an SDRF is beside the spectra files.");
                 }
             }

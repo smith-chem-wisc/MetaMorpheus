@@ -296,14 +296,16 @@ namespace MetaMorpheusCommandLine
             bool reportToConsole = settings.Verbosity == CommandLineSettings.VerbosityType.minimal
                 || settings.Verbosity == CommandLineSettings.VerbosityType.normal;
 
-            // An SDRF beside the spectra files makes the design, before the design check reads it.
+            // An SDRF beside the spectra files makes the design, before the design check reads it; the runner hands the
+            // SDRF to the search tasks for this run only.
             int sdrfExitCode = ResolveSdrfDesign(
                 Directory.GetParent(startingRawFilenameList.First()).FullName,
                 startingRawFilenameList,
                 taskList.Where(p => p.Item2.TaskType == MyTask.Search).Select(p => (p.Item1, (SearchTask)p.Item2)).ToList(),
                 settings,
                 searchTasks.Any(p => p.SearchParameters.Normalize),
-                reportToConsole);
+                reportToConsole,
+                out SdrfForRun runSdrf);
 
             if (sdrfExitCode != 0)
             {
@@ -331,7 +333,8 @@ namespace MetaMorpheusCommandLine
                 return digestionExitCode;
             }
 
-            EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, settings.OutputFolder);
+            EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, settings.OutputFolder,
+                runSdrf);
 
             try
             {
@@ -446,7 +449,8 @@ namespace MetaMorpheusCommandLine
         /// <see cref="ResolveExperimentalDesign"/> handles a design file it cannot read (QuantProject's oracle verdict,
         /// 2026-11-07): with normalization asked for, every reason and exit 5; at verbosity none, the run continues; otherwise
         /// every reason and a y/n prompt to continue without a design. Runs before <see cref="ResolveExperimentalDesign"/>,
-        /// which then reads the design written here exactly as it reads one the user wrote.
+        /// which then reads the design written here exactly as it reads one the user wrote. The search tasks are not
+        /// changed: the SDRF comes back as <paramref name="runSdrf"/>, for the runner to hand them for this run only.
         /// </summary>
         /// <param name="designDirectory">The folder of the first spectra file, where a run reads its design.</param>
         /// <param name="startingRawFilenameList">Full paths of the spectra files this run will search.</param>
@@ -454,6 +458,7 @@ namespace MetaMorpheusCommandLine
         /// <param name="settings">The command line, for the --sdrf... switches.</param>
         /// <param name="normalizationRequested">True when any search task normalizes, which makes a design mandatory.</param>
         /// <param name="reportToConsole">True at minimal or normal verbosity.</param>
+        /// <param name="runSdrf">The SDRF beside the spectra files, for <see cref="EverythingRunnerEngine"/>; null with none.</param>
         /// <param name="write">Console writer; defaults to <see cref="Console.WriteLine(string)"/>.</param>
         /// <param name="readLine">Console reader; defaults to <see cref="Console.ReadLine"/>.</param>
         /// <returns>0 to carry on, 5 to stop.</returns>
@@ -464,6 +469,7 @@ namespace MetaMorpheusCommandLine
             CommandLineSettings settings,
             bool normalizationRequested,
             bool reportToConsole,
+            out SdrfForRun runSdrf,
             Action<string> write = null,
             Func<string> readLine = null)
         {
@@ -481,6 +487,7 @@ namespace MetaMorpheusCommandLine
                     SinglePlex = settings.SdrfSinglePlex,
                 },
                 CommandLineWording);
+            runSdrf = outcome.RunSdrf;
 
             if (reportToConsole)
             {
@@ -514,12 +521,12 @@ namespace MetaMorpheusCommandLine
             return answer?.ToLowerInvariant() == "y" || answer?.ToLowerInvariant() == "yes" ? 0 : 5;
         }
 
-        /// <summary>How the command line names the ways to state a grouping: its switches, and the task settings.</summary>
+        /// <summary>How the command line names the ways to state a grouping: its switches.</summary>
         private static readonly SdrfDesignWording CommandLineWording = new()
         {
-            ReportHint = design => SwitchesTheReportNames(design, inATaskFileToo: true),
-            HowToAgreeOnGrouping = "Make the tasks' SdrfConditionColumns, SdrfSingleCondition and SdrfUnknownFactorIsCondition the same, or give "
-                + "--sdrfCondition, --sdrfSingleCondition or --sdrfUnknownFactorIsCondition.",
+            ReportHint = SwitchesTheReportNames,
+            HowToStateAnotherGrouping = "Give --sdrfCondition, --sdrfSingleCondition or --sdrfUnknownFactorIsCondition to state another, "
+                + "or delete the design file to make it again from every factor value column.",
         };
 
         private static void WriteMultiLineIndented(string toWrite)
@@ -643,7 +650,7 @@ namespace MetaMorpheusCommandLine
             {
                 output.WriteLine("No design file was written.");
 
-                output.Write(SwitchesTheReportNames(design, inATaskFileToo: false));
+                output.Write(SwitchesTheReportNames(design));
 
                 // Neither the join nor a reader ran only when the file itself could not be read: the settings were
                 // checked before, so the other such refusals (no searched file, a plex source without a kit) cannot
@@ -673,23 +680,20 @@ namespace MetaMorpheusCommandLine
 
         /// <summary>
         /// Where a refusal can be answered by stating a grouping, mzLib's report names its option; this says which switch
-        /// (and, for a run, which task setting) that is, one line each, or nothing. Only whether a line is printed hangs on
-        /// the report's words.
+        /// that is, one line each, or nothing. Only whether a line is printed hangs on the report's words.
         /// </summary>
-        private static string SwitchesTheReportNames(SdrfSearchDesign design, bool inATaskFileToo)
+        private static string SwitchesTheReportNames(SdrfSearchDesign design)
         {
             var lines = new System.Text.StringBuilder();
-            foreach (var (option, commandLine, taskSetting) in new[]
+            foreach (var (option, sw) in new[]
                      {
-                         (nameof(SdrfSearchDesignOptions.SingleCondition), "--sdrfSingleCondition", nameof(SearchParameters.SdrfSingleCondition)),
-                         (nameof(SdrfSearchDesignOptions.UnknownFactorIsOwnCondition), "--sdrfUnknownFactorIsCondition",
-                             nameof(SearchParameters.SdrfUnknownFactorIsCondition)),
+                         (nameof(SdrfSearchDesignOptions.SingleCondition), "--sdrfSingleCondition"),
+                         (nameof(SdrfSearchDesignOptions.UnknownFactorIsOwnCondition), "--sdrfUnknownFactorIsCondition"),
                      })
             {
                 if (design.Refusals.Any(r => r.Contains("(" + option + ")")))
                 {
-                    lines.AppendLine($"On the command line, {option} is {commandLine}"
-                        + (inATaskFileToo ? $"; in a search task's settings, {taskSetting}." : "."));
+                    lines.AppendLine($"On the command line, {option} is {sw}.");
                 }
             }
             return lines.ToString();

@@ -16,6 +16,10 @@ namespace EngineLayer
     /// sha256 is of its text with line endings ignored (<see cref="ContentSha256Of"/>, ruled 2026-11-13): the GUI's
     /// design windows save Windows line endings, so saving one unchanged is not an edit.
     ///
+    /// The marker also keeps the grouping the user stated, as keys (<see cref="ConditionColumns"/>,
+    /// <see cref="SingleCondition"/>, <see cref="UnknownFactorIsOwnCondition"/>), so that writing the design again for a
+    /// later run uses it without anyone stating it again: the grouping belongs with the design it made, not with a task.
+    ///
     /// A plain text file of tab-separated keys and values beside the design, so a person reading the folder sees why
     /// the design is there.
     /// </summary>
@@ -27,13 +31,20 @@ namespace EngineLayer
         private const string Heading = "# MetaMorpheus wrote the experimental design beside this file from an SDRF. While the design is as written, " +
                                        "MetaMorpheus writes it again for each run; once edited, the design is yours and is never touched.";
 
-        public SdrfDesignMarker(string designFileName, string designSha256, string sdrfPath, string sdrfSha256, string condition)
+        private const string GroupingHeading = "# ConditionColumns, SingleCondition and UnknownFactorIsOwnCondition, when present, are the grouping " +
+                                               "the user stated; a run that states none uses them again.";
+
+        public SdrfDesignMarker(string designFileName, string designSha256, string sdrfPath, string sdrfSha256, string condition,
+            IReadOnlyList<string> conditionColumns = null, string singleCondition = null, bool unknownFactorIsOwnCondition = false)
         {
             DesignFileName = designFileName;
             DesignSha256 = designSha256;
             SdrfPath = sdrfPath;
             SdrfSha256 = sdrfSha256;
             Condition = condition;
+            ConditionColumns = conditionColumns?.ToList() ?? new List<string>();
+            SingleCondition = singleCondition;
+            UnknownFactorIsOwnCondition = unknownFactorIsOwnCondition;
         }
 
         /// <summary>The design's file name: ExperimentalDesign.tsv or TmtDesign.txt.</summary>
@@ -50,6 +61,18 @@ namespace EngineLayer
 
         /// <summary>How the condition was built, in words, with any grouping the user stated.</summary>
         public string Condition { get; }
+
+        /// <summary>The SDRF columns the user named for the condition, in order; empty when none were named.</summary>
+        public IReadOnlyList<string> ConditionColumns { get; }
+
+        /// <summary>The one condition the user stated every sample is; null when none was stated.</summary>
+        public string SingleCondition { get; }
+
+        /// <summary>True when the user stated that files whose factor nobody stated are a condition of their own.</summary>
+        public bool UnknownFactorIsOwnCondition { get; }
+
+        /// <summary>True when the marker keeps a grouping the user stated.</summary>
+        public bool StatesGrouping => ConditionColumns.Count > 0 || SingleCondition != null || UnknownFactorIsOwnCondition;
 
         /// <summary>The marker beside a design in <paramref name="designDirectory"/>.</summary>
         public static string PathIn(string designDirectory) => Path.Combine(designDirectory, FileName);
@@ -86,13 +109,22 @@ namespace EngineLayer
                 "sdrf\t" + SdrfPath,
                 "sdrf sha256\t" + SdrfSha256,
                 "condition\t" + Condition,
+                GroupingHeading,
             };
+            if (ConditionColumns.Count > 0)
+                lines.Add("ConditionColumns\t" + string.Join("\t", ConditionColumns));
+            if (SingleCondition != null)
+                lines.Add("SingleCondition\t" + SingleCondition);
+            if (UnknownFactorIsOwnCondition)
+                lines.Add("UnknownFactorIsOwnCondition\ttrue");
             File.WriteAllText(PathIn(designDirectory), string.Join("\n", lines) + "\n", new UTF8Encoding(false));
         }
 
         /// <summary>
         /// The marker in <paramref name="designDirectory"/>, or null when there is none or it cannot be read as one: a
-        /// marker that is missing a value is no marker, so the design beside it is treated as the user's.
+        /// marker that is missing a value is no marker, so the design beside it is treated as the user's. A grouping key that
+        /// is absent states nothing; ConditionColumns holds the columns tab-separated, and UnknownFactorIsOwnCondition is
+        /// stated only by 'true'.
         /// </summary>
         public static SdrfDesignMarker ReadFrom(string designDirectory)
         {
@@ -121,7 +153,9 @@ namespace EngineLayer
             string condition = Value("condition");
             if (design == null || designSha == null || sdrf == null || sdrfSha == null || condition == null)
                 return null;
-            return new SdrfDesignMarker(design, designSha, sdrf, sdrfSha, condition);
+            var columns = Value("ConditionColumns")?.Split('\t').Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
+            bool unknownIsOwn = string.Equals(Value("UnknownFactorIsOwnCondition"), "true", StringComparison.OrdinalIgnoreCase);
+            return new SdrfDesignMarker(design, designSha, sdrf, sdrfSha, condition, columns, Value("SingleCondition"), unknownIsOwn);
         }
 
         /// <summary>A file's sha256, lowercase hex, read from the bytes on disk.</summary>

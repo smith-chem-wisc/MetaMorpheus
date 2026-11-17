@@ -29,6 +29,18 @@ namespace TaskLayer
         private const string SearchedDataFileColumn = "comment[searched data file]";
 
         /// <summary>
+        /// The input SDRF this search reads: the task's own InputSdrfPath, else the SDRF beside the run's spectra files
+        /// (<see cref="SdrfForRun.InputSdrfPathFor"/>); null when neither.
+        /// </summary>
+        private string InputSdrfPath => SdrfForRun.InputSdrfPathFor(Parameters.SearchParameters, Parameters.RunSdrf);
+
+        /// <summary>
+        /// Whether this search writes its own SDRF: the task asks for it, or the run has an SDRF beside its spectra files
+        /// (<see cref="SdrfForRun.WritesSdrfFor"/>).
+        /// </summary>
+        private bool WritesSdrf => SdrfForRun.WritesSdrfFor(Parameters.SearchParameters, Parameters.RunSdrf);
+
+        /// <summary>
         /// Written per search, into that search's own output folder, and never merged in place.
         /// Repeated searches of one experiment therefore accumulate as separate files that pool by
         /// accession rather than overwriting each other -- and two concurrent searches over the same
@@ -261,7 +273,7 @@ namespace TaskLayer
         /// crash record names them all.
         /// </summary>
         private InvalidDataException InputSdrfRefused(List<string> refusals) =>
-            new("The input SDRF " + Parameters.SearchParameters.InputSdrfPath.Trim() + " cannot describe this search, so no " +
+            new("The input SDRF " + InputSdrfPath.Trim() + " cannot describe this search, so no " +
                 SdrfFileName + " was written: " + string.Join("; ", refusals) + ".");
 
         /// <summary>
@@ -273,7 +285,7 @@ namespace TaskLayer
         /// </summary>
         private SdrfSearchScoping ReadInputSdrfIfGiven()
         {
-            string path = Parameters.SearchParameters.InputSdrfPath;
+            string path = InputSdrfPath;
             if (string.IsNullOrWhiteSpace(path))
                 return null;
 
@@ -883,8 +895,8 @@ namespace TaskLayer
         /// </summary>
         private Dictionary<string, SpectraFileInfo> ReadExperimentalDesignIfPresent()
         {
-            bool sampleColumnsCopied = !string.IsNullOrWhiteSpace(Parameters.SearchParameters?.InputSdrfPath);
-            var byStem = new Dictionary<string, SpectraFileInfo>(StringComparer.OrdinalIgnoreCase);
+            bool sampleColumnsCopied = !string.IsNullOrWhiteSpace(InputSdrfPath);
+            var byStem =new Dictionary<string, SpectraFileInfo>(StringComparer.OrdinalIgnoreCase);
             if (Parameters.CurrentRawFileList.Count == 0) return byStem;
 
             string designPath = Path.Combine(

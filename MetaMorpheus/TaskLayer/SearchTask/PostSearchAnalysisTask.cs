@@ -157,7 +157,7 @@ namespace TaskLayer
                 WriteDigestionCountHistogram();
             }
 
-            if (Parameters.SearchParameters.WriteSdrf)
+            if (WritesSdrf)
             {
                 WriteSdrf();
             }
@@ -638,14 +638,15 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Records in results.txt the SDRF this search was given (<see cref="SearchParameters.InputSdrfPath"/>), by full path
-        /// and sha256, and, when the command line wrote the experimental design from the SDRF beside the spectra files, which
-        /// SDRF and how its condition was built (QuantProject, ruled 2026-11-07 and 2026-11-11). A reader of the results then
-        /// knows what the grouping was read from, and which part of it the user stated rather than the SDRF.
+        /// Records in results.txt the SDRF this search read (the task's <see cref="SearchParameters.InputSdrfPath"/>, else the
+        /// SDRF beside the run's spectra files), by full path and sha256, and, when the run wrote the experimental design from
+        /// the SDRF beside the spectra files, which SDRF and how its condition was built (<see cref="SdrfForRun.Provenance"/>;
+        /// QuantProject, ruled 2026-11-07 and 2026-11-11). A reader of the results then knows what the grouping was read
+        /// from, and which part of it the user stated rather than the SDRF.
         /// </summary>
         private void RecordSdrfProvenance()
         {
-            string input = Parameters.SearchParameters.InputSdrfPath;
+            string input = InputSdrfPath;
             if (!string.IsNullOrWhiteSpace(input))
             {
                 string fullPath = Path.GetFullPath(input.Trim());
@@ -661,9 +662,9 @@ namespace TaskLayer
                 Parameters.SearchTaskResults.AddTaskSummaryText(line);
             }
 
-            if (!string.IsNullOrWhiteSpace(Parameters.SearchParameters.DesignWrittenFromSdrf))
+            if (!string.IsNullOrWhiteSpace(Parameters.RunSdrf?.Provenance))
             {
-                Parameters.SearchTaskResults.AddTaskSummaryText(Parameters.SearchParameters.DesignWrittenFromSdrf);
+                Parameters.SearchTaskResults.AddTaskSummaryText(Parameters.RunSdrf.Provenance);
             }
         }
 

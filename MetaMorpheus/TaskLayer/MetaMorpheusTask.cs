@@ -473,6 +473,15 @@ namespace TaskLayer
         [TomlIgnore]
         public List<string> AcquiredSpectraFiles { get; set; }
 
+        /// <summary>
+        /// The SDRF beside the run's spectra files, for this run only. Set by <see cref="EverythingRunnerEngine"/>, as
+        /// <see cref="AcquiredSpectraFiles"/> is, and never written to the task file, so the task's own settings stay as the
+        /// user saved them. A search reads it as its input SDRF unless the task names its own, and writes its own SDRF
+        /// (<see cref="SdrfForRun"/>). Null when the run has none, or when a task is run on its own.
+        /// </summary>
+        [TomlIgnore]
+        public SdrfForRun RunSdrf { get; set; }
+
         protected MyTaskResults MyTaskResults;
 
         protected MetaMorpheusTask(MyTask taskType)

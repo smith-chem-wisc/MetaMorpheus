@@ -39,6 +39,12 @@ namespace TaskLayer
 
         public SearchParameters SearchParameters { get; set; }
 
+        /// <summary>The input SDRF this search reads: the task's own, else the run's (<see cref="SdrfForRun.InputSdrfPathFor"/>).</summary>
+        private string InputSdrfPathForRun => SdrfForRun.InputSdrfPathFor(SearchParameters, RunSdrf);
+
+        /// <summary>Whether this search writes its own SDRF (<see cref="SdrfForRun.WritesSdrfFor"/>).</summary>
+        private bool WritesSdrfForRun => SdrfForRun.WritesSdrfFor(SearchParameters, RunSdrf);
+
         /// <summary>
         /// Builds the precursor search mode for a <see cref="MassDiffAcceptorType"/>.
         /// </summary>
@@ -659,6 +665,7 @@ namespace TaskLayer
                 ListOfDigestionParams = [.. fileSpecificCommonParams.Select(p => p.DigestionParams)],
                 CurrentRawFileList = currentRawFileList,
                 AcquiredSpectraFiles = AcquiredSpectraFiles,
+                RunSdrf = RunSdrf,
                 InstrumentModelsByFile = instrumentModelsByFile,
                 MyFileManager = myFileManager,
                 NumNotches = numNotches,
@@ -715,7 +722,7 @@ namespace TaskLayer
         /// </summary>
         private void WarnAboutSdrfGaps(List<string> currentRawFileList)
         {
-            if (!SearchParameters.WriteSdrf || currentRawFileList is null || currentRawFileList.Count == 0)
+            if (!WritesSdrfForRun || currentRawFileList is null || currentRawFileList.Count == 0)
                 return;
 
             // First, and in its own method, so that no branch below can skip it. A branch that returns
@@ -739,7 +746,7 @@ namespace TaskLayer
 
             // An input SDRF governs label-free and isobaric searches alike (sdrf D50). After the branch, because which of
             // its rows are copied depends on which files get channel rows.
-            if (!string.IsNullOrWhiteSpace(SearchParameters.InputSdrfPath))
+            if (!string.IsNullOrWhiteSpace(InputSdrfPathForRun))
                 WarnAboutInputSdrf(currentRawFileList, channelFiles, tagType);
         }
 
@@ -750,7 +757,7 @@ namespace TaskLayer
         private void WarnAboutLabelFreeSdrfGaps(string designDirectory, List<string> currentRawFileList)
         {
             string designPath = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
-            bool sampleColumnsCopied = !string.IsNullOrWhiteSpace(SearchParameters.InputSdrfPath);
+            bool sampleColumnsCopied = !string.IsNullOrWhiteSpace(InputSdrfPathForRun);
 
             if (!File.Exists(designPath) && sampleColumnsCopied)
             {
@@ -816,7 +823,7 @@ namespace TaskLayer
             // name is scoped to its plex or channel and no made-up name is numbered. And a file described once then
             // takes one input row, so an input written a row per channel is refused (QuantProject 067 R1), which
             // WarnAboutInputSdrf names file by file.
-            bool sourceNamesCopied = !string.IsNullOrWhiteSpace(SearchParameters.InputSdrfPath);
+            bool sourceNamesCopied = !string.IsNullOrWhiteSpace(InputSdrfPathForRun);
             string describedOnce = sourceNamesCopied
                 ? "the SDRF can describe each file only once, by one row of the input SDRF; an input with a row per " +
                   "channel is refused, and no " + PostSearchAnalysisTask.SdrfFileName + " is then written"
@@ -890,7 +897,7 @@ namespace TaskLayer
         private void WarnAboutInputSdrf(List<string> currentRawFileList,
             IReadOnlyDictionary<string, TmtFileInfo> channelFiles, IsobaricMassTagType? tagType)
         {
-            string path = SearchParameters.InputSdrfPath.Trim();
+            string path = InputSdrfPathForRun.Trim();
             string consequence = "so no " + PostSearchAnalysisTask.SdrfFileName + " will be written";
 
             SdrfSearchScoping scope;

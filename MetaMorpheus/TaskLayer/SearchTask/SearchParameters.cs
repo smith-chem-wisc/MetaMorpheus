@@ -41,7 +41,6 @@ namespace TaskLayer
             WriteDigestionProductCountFile = false;
             WriteTargetDecoyFasta = false;
             WriteSdrf = false;
-            SdrfConditionColumns = new List<string>();
             IterativePepTraining = true;
 
             ModsToWriteSelection = DefaultModsToWriteSelection();
@@ -189,36 +188,5 @@ namespace TaskLayer
         /// the task file by a pipeline that re-analyses a deposit; the GUI has no field for it.
         /// </summary>
         public string InputSdrfPath { get; set; }
-
-        /// <summary>
-        /// How the condition is built when the command line makes the experimental design from the SDRF beside the spectra
-        /// files (the automatic design): the SDRF columns, in order. A bare name such as 'genotype' is 'factor value[genotype]',
-        /// and any name with a '[' is that column. Empty, the condition is built from every factor value column. The
-        /// command line's --sdrfCondition, --sdrfSingleCondition and --sdrfUnknownFactorIsCondition, when given, are used
-        /// instead of these three settings. Each question names its factors per deposit (QuantProject's designation ruling,
-        /// 2026-11-07), so this belongs to the task file a pipeline writes for a deposit.
-        /// </summary>
-        public List<string> SdrfConditionColumns { get; set; }
-
-        /// <summary>
-        /// States that every sample is one condition, with this name, for the automatic design (ruled 2026-11-11): never
-        /// assumed, so an SDRF with no factor value column is refused without it. Factor value columns the SDRF has are set
-        /// aside, and the run names them. Null when not stated; not given with <see cref="SdrfConditionColumns"/>.
-        /// </summary>
-        public string SdrfSingleCondition { get; set; }
-
-        /// <summary>
-        /// States that files whose condition cell in the SDRF says nobody stated it ('not available', 'not applicable', or
-        /// blank) are a condition of their own, for the automatic design (ruled 2026-11-11). Without it they are refused.
-        /// </summary>
-        public bool SdrfUnknownFactorIsCondition { get; set; }
-
-        /// <summary>
-        /// Set by the command line when this run's experimental design was written from the SDRF beside the spectra files:
-        /// the line results.txt carries (which SDRF, by sha256, and how the condition was built). A record of this run, not
-        /// a setting, so it is never written to a task file.
-        /// </summary>
-        [Nett.TomlIgnore]
-        public string DesignWrittenFromSdrf { get; set; }
     }
 }
