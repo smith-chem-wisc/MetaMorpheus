@@ -7,7 +7,7 @@ namespace EngineLayer.DiaLibrarySearch;
 /// <param name="FragmentTolerancePpm">
 /// How far an observed peak may sit from a library fragment and still be it. 20 ppm by default, best for Orbitrap MS2: at
 /// 15 ppm PXD022589 (HF-X) lost 5.1% and PXD005573 1 h (QE HF) 1.3% at a matched paired entrapment FDP of 1%. For Orbitrap
-/// Astral MS2 set 10 ppm: PXD071205's 5-min runs gained 10.4% and 7.2% (A1, B1). Neither the run's fragment mass error nor
+/// Astral MS2 set 10 ppm: PXD071205's four 5-min runs gained 10.4%, 13.3%, 7.2% and 2.5% (A1, A2, B1, B2). Neither the run's fragment mass error nor
 /// its spectrum density predicts which a run wants, so the tolerance is set by instrument, not measured.
 /// </param>
 /// <param name="IrtHalfWindow">
