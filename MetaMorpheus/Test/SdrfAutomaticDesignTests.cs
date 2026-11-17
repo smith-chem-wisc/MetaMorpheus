@@ -313,6 +313,56 @@ namespace Test
             Assert.That(console, Has.Some.EndsWith("was removed: MetaMorpheus wrote it from the SDRF before, and it no longer fits."));
         }
 
+        /// <summary>
+        /// A design MetaMorpheus wrote that it cannot write again (read-only here, as on a data share) is refused, never
+        /// thrown: a normalizing run stops with the reason. The design cannot be removed either, so its marker stays and the
+        /// next run still knows it is MetaMorpheus's, rather than taking it for the user's.
+        /// </summary>
+        [Test]
+        public static void ADesignThatCannotBeWrittenIsRefusedNotThrown()
+        {
+            string folder = NewFolder("ReadOnlyDesign");
+            var spectra = Spectra(folder, "a1.mzML");
+            WriteSdrf(folder, ("a1.raw", "WT", 1));
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), new List<string>()), Is.EqualTo(Continue));
+            File.SetAttributes(DesignPath(folder), FileAttributes.ReadOnly);
+            try
+            {
+                var console = new List<string>();
+                Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), console, normalize: true), Is.EqualTo(Stop));
+
+                Assert.That(console, Has.Some.StartWith(DesignPath(folder) + " could not be removed:"));
+                Assert.That(string.Join("\n", console), Does.Contain("but the experimental design made from it could not be written there:"));
+                Assert.That(File.Exists(SdrfDesignMarker.PathIn(folder)), "the marker stays while the design does");
+            }
+            finally
+            {
+                File.SetAttributes(DesignPath(folder), FileAttributes.Normal);
+            }
+        }
+
+        /// <summary>
+        /// A refused run removes the design MetaMorpheus wrote, and with its marker the grouping it kept; the run says so,
+        /// rather than letting the next run quietly go back to every factor value column.
+        /// </summary>
+        [Test]
+        public static void ARefusalSaysTheKeptGroupingWentWithTheMarker()
+        {
+            string folder = NewFolder("KeptGroupingGone");
+            var spectra = Spectra(folder, "a1.mzML", "b1.mzML");
+            WriteSdrfWithNoFactorColumn(folder, ("a1.raw", 1), ("b1.raw", 2));
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), new List<string>(),
+                settings: new CommandLineSettings { SdrfSingleCondition = "survey" }), Is.EqualTo(Continue));
+
+            var withAStrayFile = spectra.Concat(Spectra(folder, "c1.mzML")).ToList(); // c1 has no row in the SDRF
+            var console = new List<string>();
+            Assert.That(Resolve(folder, withAStrayFile, SearchTasks(new SearchTask()), console), Is.EqualTo(Stop));
+
+            Assert.That(File.Exists(SdrfDesignMarker.PathIn(folder)), Is.False);
+            Assert.That(console, Has.Some.EndsWith("was removed: MetaMorpheus wrote it from the SDRF before, and it no longer fits. "
+                + "The grouping kept with it (one condition, 'survey') went with its marker; state it again for the next run."));
+        }
+
         /// <summary>Which SDRF, when a folder holds two, is not ruled, so none is chosen and none is handed on.</summary>
         [Test]
         public static void TwoSdrfsAreNotChosenBetween()
@@ -340,6 +390,7 @@ namespace Test
         [TestCase("SDRF.TSV", true)]
         [TestCase("my_sdrf.tsv", false)]
         [TestCase("sdrf.tsv.bak", false)]
+        [TestCase("._deposit.sdrf.tsv", false)]
         public static void AnSdrfIsKnownByItsFileName(string name, bool isSdrf)
         {
             // Windows folder names ignore case, so the upper-case name gets a folder of its own.
@@ -376,6 +427,81 @@ namespace Test
             Assert.That(console.Single(), Does.StartWith("2 SDRF files are beside the spectra files (deposit.sdrf.tsv, sdrf.tsv)"));
             Assert.That(runSdrf, Is.Null);
             Assert.That(File.Exists(DesignPath(folder)), Is.False);
+        }
+
+        /// <summary>The AppleDouble file macOS leaves beside a copied SDRF is not a second SDRF: the design is made from the real one.</summary>
+        [Test]
+        public static void AMacOsCopyBesideTheSdrfIsNotASecondSdrf()
+        {
+            string folder = NewFolder("AppleDouble");
+            var spectra = Spectra(folder, "a1.mzML");
+            string sdrf = WriteSdrf(folder, ("a1.raw", "WT", 1));
+            File.WriteAllBytes(Path.Combine(folder, "._deposit.sdrf.tsv"), new byte[] { 0, 5, 22, 7, 0, 2, 0, 0, 77, 97, 99, 32, 79, 83, 32, 88 });
+            var console = new List<string>();
+
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), console, out var runSdrf, normalize: true), Is.EqualTo(Continue),
+                string.Join("\n", console));
+            Assert.That(File.Exists(DesignPath(folder)));
+            Assert.That(runSdrf.SdrfPath, Is.EqualTo(Path.GetFullPath(sdrf)));
+        }
+
+        /// <summary>
+        /// Two SDRFs are refused only where a design would be made from one. Beside the user's own design, that design is read
+        /// as with no SDRF, and neither SDRF goes to the search.
+        /// </summary>
+        [Test]
+        public static void TwoSdrfsBesideTheUsersDesignLeaveItTheDesign()
+        {
+            string folder = NewFolder("TwoWithUsers");
+            var spectra = Spectra(folder, "a1.mzML");
+            WriteSdrf(folder, ("a1.raw", "WT", 1));
+            File.Copy(Path.Combine(folder, "deposit.sdrf.tsv"), Path.Combine(folder, "other.sdrf.tsv"));
+            File.WriteAllLines(DesignPath(folder), new[] { "FileName\tCondition\tBiorep\tFraction\tTechrep", "a1.mzML\tmine\t1\t1\t1" });
+            string users = File.ReadAllText(DesignPath(folder));
+            var console = new List<string>();
+
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), console, out var runSdrf, normalize: true), Is.EqualTo(Continue),
+                string.Join("\n", console));
+            Assert.That(File.ReadAllText(DesignPath(folder)), Is.EqualTo(users));
+            Assert.That(console.Single(), Does.EndWith("so it is the design; the 2 SDRF files beside it are not read."));
+            Assert.That(runSdrf, Is.Null);
+        }
+
+        /// <summary>Two SDRFs beside a design MetaMorpheus wrote: it no longer has one SDRF behind it, so it is removed with its marker.</summary>
+        [Test]
+        public static void TwoSdrfsRemoveTheDesignMetaMorpheusWrote()
+        {
+            string folder = NewFolder("TwoWithOurs");
+            var spectra = Spectra(folder, "a1.mzML");
+            WriteSdrf(folder, ("a1.raw", "WT", 1));
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), new List<string>()), Is.EqualTo(Continue));
+            File.Copy(Path.Combine(folder, "deposit.sdrf.tsv"), Path.Combine(folder, "other.sdrf.tsv"));
+            var console = new List<string>();
+
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), console, out var runSdrf, answer: "y"), Is.EqualTo(Continue));
+            Assert.That(File.Exists(DesignPath(folder)), Is.False);
+            Assert.That(File.Exists(SdrfDesignMarker.PathIn(folder)), Is.False);
+            Assert.That(console, Has.Some.EndsWith("was removed: MetaMorpheus wrote it from the SDRF before, and it no longer fits."));
+            Assert.That(console.Last(), Does.StartWith("2 SDRF files are beside the spectra files (deposit.sdrf.tsv, other.sdrf.tsv)"));
+            Assert.That(runSdrf, Is.Null);
+        }
+
+        /// <summary>A search that quantifies nothing reads no design, so two SDRFs beside it stop nothing; neither goes to the search.</summary>
+        [Test]
+        public static void TwoSdrfsBesideASearchThatQuantifiesNothingStopNothing()
+        {
+            string folder = NewFolder("TwoNoQuant");
+            var spectra = Spectra(folder, "a1.mzML");
+            WriteSdrf(folder, ("a1.raw", "WT", 1));
+            File.Copy(Path.Combine(folder, "deposit.sdrf.tsv"), Path.Combine(folder, "other.sdrf.tsv"));
+            var task = new SearchTask();
+            task.SearchParameters.DoLabelFreeQuantification = false;
+            var console = new List<string>();
+
+            Assert.That(Resolve(folder, spectra, SearchTasks(task), console, out var runSdrf, normalize: true), Is.EqualTo(Continue));
+            Assert.That(console.Single(), Is.EqualTo("2 SDRF files are beside the spectra files (deposit.sdrf.tsv, other.sdrf.tsv), "
+                + "and MetaMorpheus does not choose between them, so neither is given to the search."));
+            Assert.That(runSdrf, Is.Null);
         }
 
         // ---------------------------------------------------------------- the grouping the user states
@@ -710,6 +836,26 @@ namespace Test
                 + "and one experimental design cannot serve them all, so none was made from the SDRF."));
             Assert.That(File.Exists(DesignPath(folder)), Is.False);
             Assert.That(File.Exists(Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName)), Is.False);
+        }
+
+        /// <summary>
+        /// A search task that quantifies nothing reads no design, so it is not counted as label-free beside a TMT task: the
+        /// TMT design is made for the task that quantifies.
+        /// </summary>
+        [Test]
+        public static void ASearchTaskThatQuantifiesNothingDoesNotBlockTheTmtDesign()
+        {
+            string folder = NewFolder("IdOnlyBesideTmt");
+            var spectra = Spectra(folder, "p1.mzML");
+            WriteTmtSdrf(folder);
+            var identificationOnly = new SearchTask();
+            identificationOnly.SearchParameters.DoLabelFreeQuantification = false;
+            var console = new List<string>();
+
+            Assert.That(Resolve(folder, spectra, SearchTasks(identificationOnly, Tmt11Search()), console, normalize: true), Is.EqualTo(Continue),
+                string.Join("\n", console));
+            Assert.That(File.Exists(Path.Combine(folder, GlobalVariables.TmtExperimentalDesignFileName)));
+            Assert.That(string.Join("\n", console), Does.Not.Contain("quantify differently"));
         }
 
         /// <summary>A multiplex label mzLib has no isobaric kit for, or none at all, cannot read the SDRF's channels: refused.</summary>

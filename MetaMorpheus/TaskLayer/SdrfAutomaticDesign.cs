@@ -125,9 +125,12 @@ namespace TaskLayer
     /// the SDRF's sha256 (QP-S41). A design already there that the marker shows MetaMorpheus wrote, unedited, is written
     /// again for this run's files; any other design there is the user's, is used as is and never touched, and a line says
     /// the SDRF was not read for it.</item>
-    /// <item>A design that cannot be made (refused, unreadable, two SDRFs, search tasks of different kits) is returned as a
-    /// <see cref="SdrfDesignOutcome.Refusal"/>. Nothing is written then, and a design MetaMorpheus wrote before, which
-    /// no longer fits, is removed with its marker. The SDRF is never edited.</item>
+    /// <item>A design that cannot be made (refused, unreadable, two SDRFs, search tasks of different kits, or a design or
+    /// marker that cannot be written) is returned as a <see cref="SdrfDesignOutcome.Refusal"/>. Nothing is written then,
+    /// and a design MetaMorpheus wrote before, which no longer fits, is removed with its marker; a grouping the marker kept
+    /// goes with it, and a line says so. The SDRF is never edited.</item>
+    /// <item>Two SDRFs are never chosen between, but they are refused only where a design would be made from one: a search
+    /// that quantifies nothing, and a design that is the user's, go on as with no SDRF.</item>
     /// </list>
     /// </summary>
     public static class SdrfAutomaticDesign
@@ -214,6 +217,10 @@ namespace TaskLayer
         public static bool IsSdrfFileName(string path)
         {
             string name = Path.GetFileName(path);
+            // macOS leaves an AppleDouble file named ._<name> beside a file it copies to some drives and shares; it is
+            // metadata, not an SDRF (pcruzparri's review of #2980).
+            if (name.StartsWith("._", StringComparison.Ordinal))
+                return false;
             return name.EndsWith(SdrfFileEnding, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(name, SdrfBareFileName, StringComparison.OrdinalIgnoreCase);
         }
@@ -249,21 +256,28 @@ namespace TaskLayer
             }
 
             // Which SDRF, when a folder holds several, is not ruled (QuantProject, 2026-11-07): one is kept per group of
-            // files. So none is guessed.
-            if (sdrfs.Count > 1)
+            // files. So none is guessed, and none goes to the search; they are refused below only where a design would be
+            // made from one (pcruzparri's review of #2980).
+            string sdrf = sdrfs.Count == 1 ? Path.GetFullPath(sdrfs[0]) : null;
+            string several = sdrf == null
+                ? $"{sdrfs.Count} SDRF files are beside the spectra files ({string.Join(", ", sdrfs.Select(Path.GetFileName))}), "
+                    + "and MetaMorpheus does not choose between them"
+                : null;
+            if (sdrf != null)
             {
-                return new SdrfDesignOutcome(messages,
-                    $"{sdrfs.Count} SDRF files are beside the spectra files ({string.Join(", ", sdrfs.Select(Path.GetFileName))}), "
-                    + "and MetaMorpheus does not choose between them, so no experimental design was made from an SDRF. Keep "
-                    + "beside the spectra files only the SDRF that describes them.", null, null);
+                NoteSdrfForSearchTasks(sdrf, searchTasks, messages);
             }
 
-            string sdrf = Path.GetFullPath(sdrfs[0]);
-            NoteSdrfForSearchTasks(sdrf, searchTasks, messages);
-
-            // A search that quantifies nothing reads no design.
-            if (!searchTasks.Any(t => t.Task.SearchParameters.DoLabelFreeQuantification || t.Task.SearchParameters.DoMultiplexQuantification))
+            // A search that quantifies nothing reads no design; the kit is read from the tasks that quantify.
+            var quantifying = searchTasks
+                .Where(t => t.Task.SearchParameters.DoLabelFreeQuantification || t.Task.SearchParameters.DoMultiplexQuantification)
+                .ToList();
+            if (quantifying.Count == 0)
             {
+                if (several != null)
+                {
+                    messages.Add(several + ", so neither is given to the search.");
+                }
                 return new SdrfDesignOutcome(messages, null, sdrf, null);
             }
 
@@ -288,25 +302,33 @@ namespace TaskLayer
             if (existing != null && !ours)
             {
                 messages.Add($"{Path.GetFileName(existing)} is beside the spectra files and was not written by MetaMorpheus from an SDRF, "
-                    + $"or was edited since, so it is the design; the SDRF beside it ({sdrf}) is not read for the design.");
+                    + "or was edited since, so it is the design; "
+                    + (sdrf != null ? $"the SDRF beside it ({sdrf}) is not read for the design." : $"the {sdrfs.Count} SDRF files beside it are not read."));
                 return new SdrfDesignOutcome(messages, null, sdrf, null);
             }
 
             string removeOurs = ours ? existing : null;
+            var ourMarker = ours ? marker : null;
 
-            var grouping = ReadGrouping(stated, ours ? marker : null, wording, messages);
+            if (several != null)
+            {
+                return Refuse(messages, several + ", so no experimental design was made from an SDRF. Keep beside the spectra files "
+                    + "only the SDRF that describes them.", null, null, removeOurs, designDirectory, ourMarker);
+            }
 
-            var kits = searchTasks
+            var grouping = ReadGrouping(stated, ourMarker, wording, messages);
+
+            var kits = quantifying
                 .Select(t => t.Task.SearchParameters.DoMultiplexQuantification ? t.Task.SearchParameters.MultiplexModId ?? string.Empty : null)
                 .Distinct()
                 .ToList();
             if (kits.Count > 1)
             {
                 return Refuse(messages,
-                    "The search tasks quantify differently (" + string.Join(", ", searchTasks.Select(t => t.Name + ": "
+                    "The search tasks quantify differently (" + string.Join(", ", quantifying.Select(t => t.Name + ": "
                         + (t.Task.SearchParameters.DoMultiplexQuantification ? t.Task.SearchParameters.MultiplexModId : "label-free")))
                     + "), and one experimental design cannot serve them all, so none was made from the SDRF.",
-                    null, sdrf, removeOurs, designDirectory);
+                    null, sdrf, removeOurs, designDirectory, ourMarker);
             }
 
             MzLibIsobaricMassTag tag = null;
@@ -314,7 +336,7 @@ namespace TaskLayer
             {
                 return Refuse(messages,
                     $"The search's multiplex label '{kits[0]}' is not an isobaric kit mzLib knows, so the SDRF's channels cannot be read.",
-                    null, sdrf, removeOurs, designDirectory);
+                    null, sdrf, removeOurs, designDirectory, ourMarker);
             }
 
             var plex = tag != null
@@ -339,20 +361,34 @@ namespace TaskLayer
             {
                 return Refuse(messages,
                     $"An SDRF is beside the spectra files ({sdrf}), but no experimental design could be made from it, for the reasons above.",
-                    report, sdrf, removeOurs, designDirectory);
+                    report, sdrf, removeOurs, designDirectory, ourMarker);
             }
 
             string designPath = tag != null ? isobaricPath : labelFreePath;
-            if (existing != null && existing != designPath)
+            SdrfDesignMarker newMarker;
+            try
             {
-                File.Delete(existing); // ours, unedited, and of the other kind: the search's label changed
-            }
-            design.WriteDesign(designPath);
+                if (existing != null && existing != designPath)
+                {
+                    File.Delete(existing); // ours, unedited, and of the other kind: the search's label changed
+                }
+                design.WriteDesign(designPath);
 
-            var newMarker = new SdrfDesignMarker(Path.GetFileName(designPath), SdrfDesignMarker.ContentSha256Of(designPath), sdrf,
-                SdrfDesignMarker.Sha256Of(sdrf), DescribeCondition(design, grouping),
-                grouping.Columns, grouping.SingleCondition, grouping.UnknownIsOwnCondition);
-            newMarker.WriteTo(designDirectory);
+                newMarker = new SdrfDesignMarker(Path.GetFileName(designPath), SdrfDesignMarker.ContentSha256Of(designPath), sdrf,
+                    SdrfDesignMarker.Sha256Of(sdrf), DescribeCondition(design, grouping),
+                    grouping.Columns, grouping.SingleCondition, grouping.UnknownIsOwnCondition);
+                newMarker.WriteTo(designDirectory);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // A spectra folder or design MetaMorpheus cannot write: refused like any design it cannot make, never a crash
+                // (pcruzparri's review of #2980). Each file here is MetaMorpheus's: the user's design returned above.
+                messages.Add(report.TrimEnd());
+                messages.AddRange(RemoveOurs(new[] { designPath, existing }, designDirectory));
+                return new SdrfDesignOutcome(messages,
+                    $"An SDRF is beside the spectra files ({sdrf}), but the experimental design made from it could not be written there: "
+                    + e.Message, sdrf, null);
+            }
 
             messages.Add(report.TrimEnd());
             if (tag?.TagType == Omics.Modifications.IsobaricMassTagType.TMT16)
@@ -368,23 +404,74 @@ namespace TaskLayer
         /// removed with its marker first: it no longer fits, and the run must not quantify with it.
         /// </summary>
         private static SdrfDesignOutcome Refuse(List<string> messages, string why, string report, string sdrf, string removeOurs,
-            string designDirectory)
+            string designDirectory, SdrfDesignMarker ourMarker)
         {
-            if (removeOurs != null)
-            {
-                File.Delete(removeOurs);
-                File.Delete(SdrfDesignMarker.PathIn(designDirectory));
-            }
-
             if (report != null)
             {
                 messages.Add(report.TrimEnd());
             }
             if (removeOurs != null)
             {
-                messages.Add($"{removeOurs} was removed: MetaMorpheus wrote it from the SDRF before, and it no longer fits.");
+                var notRemoved = RemoveOurs(new[] { removeOurs }, designDirectory);
+                if (notRemoved.Count == 0)
+                {
+                    // The marker was the only place a stated grouping was kept, so the next run will not use it again unless
+                    // it is stated again (pcruzparri's review of #2980).
+                    messages.Add($"{removeOurs} was removed: MetaMorpheus wrote it from the SDRF before, and it no longer fits."
+                        + (ourMarker?.StatesGrouping == true
+                            ? $" The grouping kept with it ({DescribeGrouping(new SdrfGrouping(ourMarker.ConditionColumns.ToList(), ourMarker.SingleCondition, ourMarker.UnknownFactorIsOwnCondition))}) "
+                                + "went with its marker; state it again for the next run."
+                            : string.Empty));
+                }
+                else
+                {
+                    messages.AddRange(notRemoved);
+                }
             }
             return new SdrfDesignOutcome(messages, why, sdrf, null);
+        }
+
+        /// <summary>
+        /// Removes designs MetaMorpheus wrote beside the spectra, then their marker, and returns a line for each file that
+        /// could not be removed (empty when all are gone). The marker goes only once every design has: a design left
+        /// without its marker would be taken for the user's by the next run and used as is, while with it the next run
+        /// knows the design is MetaMorpheus's and makes it again or refuses again.
+        /// </summary>
+        private static List<string> RemoveOurs(IEnumerable<string> designs, string designDirectory)
+        {
+            var notRemoved = designs
+                .Where(p => p != null)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(TryDelete)
+                .Where(problem => problem != null)
+                .Select(problem => problem + " A run that goes on reads it as the design, so remove it by hand.")
+                .ToList();
+            if (notRemoved.Count == 0)
+            {
+                string markerProblem = TryDelete(SdrfDesignMarker.PathIn(designDirectory));
+                if (markerProblem != null)
+                {
+                    notRemoved.Add(markerProblem);
+                }
+            }
+            return notRemoved;
+        }
+
+        /// <summary>
+        /// Deletes a file MetaMorpheus wrote beside the spectra (a file already gone is fine): null when it is gone, otherwise
+        /// the line saying it could not be removed, and why.
+        /// </summary>
+        private static string TryDelete(string path)
+        {
+            try
+            {
+                File.Delete(path);
+                return null;
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                return $"{path} could not be removed: {e.Message}";
+            }
         }
 
         /// <summary>The grouping the user states for a design made from an SDRF: the columns, one condition, or neither.</summary>
