@@ -329,7 +329,7 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
                     candidateScores[s] = 0;
         }
         var apexes = _parameters.DiaNnPeakFinding
-            ? DiaNnCandidateApexes(core, _parameters.ApexHalfWidthScans, _parameters.MaxApexCandidates, _parameters.DiaNnPeakFindingMs1 ? ms1Mono : null, _parameters.CandidatePeaksFromSummedCore).ToList()
+            ? DiaNnCandidateApexes(core, _parameters.ApexHalfWidthScans, _parameters.MaxApexCandidates, _parameters.DiaNnPeakFindingMs1 ? ms1Mono : null, _parameters.CandidatePeaksFromSummedCore, _parameters.CandidateApexSpacingScans).ToList()
             : FragmentCoElution.FindApexes(candidateScores, _parameters.ApexHalfWidthScans, _parameters.MaxApexCandidates).ToList();
         if (_parameters.FragmentApexCandidate && reachable.Length > 1)
         {
@@ -945,6 +945,7 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
     /// added when <paramref name="ms1"/> is given: the MS1 trace's correlation with the best fragment. With
     /// <paramref name="summedCorePeaks"/>, scans where the sum of the smoothed fragments peaks also compete on score for the
     /// <paramref name="maxCount"/> places, if more than <paramref name="halfWidth"/> from every candidate, so none of those moves.
+    /// <paramref name="spacing"/>, when given, replaces <paramref name="halfWidth"/> as the least distance between candidates.
     /// </summary>
     public static int[] DiaNnCandidateApexes(IReadOnlyList<double[]> core, int halfWidth, int maxCount, double[]? ms1 = null, bool summedCorePeaks = false, int? spacing = null)
     {
@@ -992,6 +993,7 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
             else if (summed is not null && IsLocalMaximum(summed, s, local))
                 summedOnly.Add((s, bestSum));
         }
+        int gap = spacing ?? halfWidth;
         var chosen = new List<(int Scan, double Score)>();
         double top = candidates.Count > 0 ? candidates.Max(c => c.Score) : 0;
         foreach (var (scan, score) in candidates.OrderByDescending(c => c.Score).ThenBy(c => c.Scan))
@@ -999,7 +1001,7 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
             // With sum-peaks still to weigh, the cap waits until they have competed for its places
             if (score < top - 2.0 || (summedOnly.Count == 0 && chosen.Count == maxCount))
                 break;
-            if (chosen.All(c => Math.Abs(c.Scan - scan) > halfWidth))
+            if (chosen.All(c => Math.Abs(c.Scan - scan) > gap))
                 chosen.Add((scan, score));
         }
         if (summedOnly.Count == 0)
@@ -1013,7 +1015,7 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
         {
             if (score < bar)
                 break;
-            if (chosen.All(c => Math.Abs(c.Scan - scan) > halfWidth))
+            if (chosen.All(c => Math.Abs(c.Scan - scan) > gap))
                 chosen.Add((scan, score));
         }
         return chosen.OrderByDescending(c => c.Score).ThenBy(c => c.Scan).Take(maxCount).Select(c => c.Scan).ToArray();
