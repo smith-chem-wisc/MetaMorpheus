@@ -145,11 +145,25 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
     public static int CountPassingTargets(IEnumerable<DiaPrecursorMatch> matches, double qValueThreshold) =>
         PassingTargets(matches, qValueThreshold).Count();
 
+    /// <summary>The columns of DiaCalibrationSummary.tsv, one row per run (<see cref="CalibrationSummaryRow"/>).</summary>
+    public static readonly string CalibrationSummaryHeader = string.Join('\t', "File Name", "Anchors", "Rounds", "FirstPassSearches", "ResidualSdIrt",
+        "IrtHalfWindow", "Ms1OffsetPpm", "Ms1SpreadPpm", "Ms1TolerancePpm", "FragmentTolerancePpm");
+
     /// <summary>
     /// One run's row of DiaCalibrationSummary.tsv: what its calibration settled on, and the tolerances the search used with it.
+    /// The MS1 offset varies with retention time, so its median is written (<see cref="Ms1OffsetModel.MedianOffsetPpm"/>),
+    /// beside the fit's residual spread. A cell with nothing measured is left empty: the MS1 offset when calibration ran a
+    /// single round, and the spread of a constant offset.
     /// </summary>
-    public static string CalibrationSummaryRow(string fileName, DiaIrtCalibration calibration, DiaLibrarySearchParameters parameters) =>
-        throw new NotImplementedException();
+    /// <param name="parameters">The search's parameters before the calibration is applied, as the task holds them.</param>
+    public static string CalibrationSummaryRow(string fileName, DiaIrtCalibration calibration, DiaLibrarySearchParameters parameters)
+    {
+        static string Number(double value) => double.IsFinite(value) ? value.ToString("R", CultureInfo.InvariantCulture) : "";
+        return string.Join('\t', fileName, calibration.AnchorCount.ToString(CultureInfo.InvariantCulture), calibration.Rounds.ToString(CultureInfo.InvariantCulture),
+            calibration.FirstPassSearches.ToString(CultureInfo.InvariantCulture), Number(calibration.Model.ResidualSd), Number(calibration.IrtHalfWindow),
+            Number(calibration.Ms1Offset?.MedianOffsetPpm ?? double.NaN), Number(calibration.Ms1Offset?.ResidualSpreadPpm ?? double.NaN),
+            Number(calibration.ApplyTo(parameters).EffectiveMs1TolerancePpm), Number(parameters.FragmentTolerancePpm));
+    }
 
     protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId,
         FileSpecificParameters[] fileSettingsList)
@@ -187,6 +201,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
         var bestPeptides = new DiaPeptideFdr.BestPrecursors();
         string? firstRun = null;
         var calibrationLines = new List<string> { "File Name\tAnchorRtMin\tLibraryIrt\tCalibratedIrt\tResidualIrt" };
+        var summaryLines = new List<string> { CalibrationSummaryHeader };
         foreach (string rawFile in currentRawFileList)
         {
             if (GlobalVariables.StopLoops)
@@ -199,6 +214,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
             var scans = LoadScans(rawFile);
             Status("Calibrating retention time...", ids);
             var calibration = DiaIrtSelfCalibration.Calibrate(scans, library, parameters, CommonParameters);
+            summaryLines.Add(CalibrationSummaryRow(fileName, calibration, parameters));
             foreach (var (rt, irt) in calibration.Anchors)
             {
                 double calibrated = calibration.Model.ToIrt(rt).Value;
@@ -252,6 +268,11 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
         string calibrationPath = Path.Combine(OutputFolder, "DiaIrtCalibration.tsv");
         File.WriteAllLines(calibrationPath, calibrationLines);
         FinishedWritingFile(calibrationPath, new List<string> { taskId });
+
+        // What each run's calibration settled on, and the tolerances its search used, so a record of the search can say so
+        string summaryPath = Path.Combine(OutputFolder, "DiaCalibrationSummary.tsv");
+        File.WriteAllLines(summaryPath, summaryLines);
+        FinishedWritingFile(summaryPath, new List<string> { taskId });
 
         MyTaskResults.AddTaskSummaryText($"All target precursors with q-value <= {threshold}: {total}");
         MyTaskResults.AddTaskSummaryText($"All target peptides with q-value <= {threshold}: {peptideRows.Count}");

@@ -40,7 +40,7 @@ public sealed class Ms1OffsetModel
     /// The offset a typical precursor gets, in ppm: the median of the bins' offsets. The bins hold equal numbers of points, so
     /// it is close to the median error over all of them. For a run's calibration summary; a search uses <see cref="OffsetPpm"/>.
     /// </summary>
-    public double MedianOffsetPpm => double.NaN;
+    public double MedianOffsetPpm => Median(_offsets);
 
     /// <summary>The same offset at every retention time.</summary>
     public static Ms1OffsetModel Constant(double ppm) => new([0], [ppm], double.NaN);
