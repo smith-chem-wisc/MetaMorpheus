@@ -683,4 +683,30 @@ public class DiaNeighbourEvidenceTests
         Assert.That(columns[matches.FindIndex(m => m.PrecursorIndex == 0)], Is.All.EqualTo(0));
         Assert.That(columns[matches.FindIndex(m => m.PrecursorIndex == 1)], Is.All.EqualTo(0));
     }
+    /// <summary>
+    /// Peptidoform resolution: two precursors on one MS1 signal are told apart by the ions each has and the other does not. The row and a
+    /// rival share ion 300; the rival's own are 700, 800 and 900. With the row's ions on the peak, the row's unique evidence is full and the
+    /// rival's none; with only the shared ion there, neither has any, since a shared ion says nothing about which of the two is present.
+    /// </summary>
+    [Test]
+    public void TwoPrecursorsOnOneSignalAreToldApartByTheIonsOnlyOneOfThemHas()
+    {
+        (double Mz, double Intensity)[] rival = [(300, 1.0), (700, 0.9), (800, 0.7), (900, 0.5)];
+
+        var (own, other) = DiaNeighbourEvidence.UniqueEvidence(Ions, rival, Window(OnThePeak())[ApexScan], Ppm);
+        Assert.That(own, Is.EqualTo(1).Within(1e-12));
+        Assert.That(other, Is.EqualTo(0));
+
+        // Only the shared ion is there: no evidence either way
+        (own, other) = DiaNeighbourEvidence.UniqueEvidence(Ions, rival, Window((300, s => Peak(s)))[ApexScan], Ppm);
+        Assert.That(own, Is.EqualTo(0));
+        Assert.That(other, Is.EqualTo(0));
+
+        // Half the row's unique ions by library weight (400 of 400, 500, 600: 0.8 of 1.8), all the rival's
+        (own, other) = DiaNeighbourEvidence.UniqueEvidence(Ions, rival, Window((400, s => Peak(s)), (700, s => Peak(s)), (800, s => Peak(s)), (900, s => Peak(s)))[ApexScan], Ppm);
+        Assert.That(own, Is.EqualTo(0.8 / 1.8).Within(1e-12));
+        Assert.That(other, Is.EqualTo(1).Within(1e-12));
+
+        Assert.That(new DiaLibrarySearchParameters().PeptidoformEvidence, Is.False);
+    }
 }

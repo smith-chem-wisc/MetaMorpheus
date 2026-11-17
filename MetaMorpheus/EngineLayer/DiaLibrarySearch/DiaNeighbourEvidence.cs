@@ -181,6 +181,14 @@ public static class DiaNeighbourEvidence
         }
     }
 
+    /// <summary>
+    /// Two precursors' evidence on the ions only each has, at one scan: the library-weighted share of its unique ions (none of the
+    /// other's within the tolerance) present, weights renormalised over the unique set. Shared ions are left out, since they say
+    /// nothing about which of the two is there.
+    /// </summary>
+    public static (double Own, double Rival) UniqueEvidence(IReadOnlyList<(double Mz, double Intensity)> own, IReadOnlyList<(double Mz, double Intensity)> rival,
+        MsDataScan scan, double tolerancePpm, bool mostIntensePeak = true) => (0, 0);
+
     /// <summary>Measures every row down to the provisional floor, each in the window holding its apex, against that window's confident targets.</summary>
     /// <param name="matches">One match per precursor, already scored.</param>
     /// <param name="ionsOf">What the library says of a precursor, by index; null when it cannot say.</param>

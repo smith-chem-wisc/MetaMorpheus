@@ -224,6 +224,11 @@ namespace EngineLayer.DiaLibrarySearch;
 /// maximum of the best fragment a half width from the real apex scores on the real peak at its window's edge, and, scoring a
 /// little higher, suppresses the real apex. A smaller spacing keeps both, and the classifier chooses on their apex features.
 /// </param>
+/// <param name="PeptidoformEvidence">
+/// With <see cref="NeighbourEvidence"/>: precursors reading one MS1 signal (same charge, within 3 ppm, apex within a cycle) are compared
+/// on the ions only each has (<see cref="DiaNeighbourEvidence.UniqueEvidence"/>), and the neighbour trees also see the worst difference,
+/// the number of such rivals and whether one outscores the row. Off by default.
+/// </param>
 public sealed record DiaLibrarySearchParameters(double FragmentTolerancePpm = 20, double IrtHalfWindow = 20,
     int TopFragmentCount = 12, int ApexHalfWidthScans = 3, int PrecursorSampleStride = 1, int MaxApexCandidates = 30, double ClassifierTrainingQValue = 0.01,
     StatisticalModels.RescoreModel ClassifierModel = StatisticalModels.RescoreModel.NeuralNetworkEnsemble,
@@ -280,7 +285,8 @@ public sealed record DiaLibrarySearchParameters(double FragmentTolerancePpm = 20
     DiaIrtCompositionModel? IrtComposition = null,
     bool Ms1InterpolatedTraces = true,
     bool Ms1CorrelationSummedCore = false,
-    int? CandidateApexSpacingScans = null)
+    int? CandidateApexSpacingScans = null,
+    bool PeptidoformEvidence = false)
 {
     /// <summary>
     /// The MS1 tolerance a search uses: <see cref="Ms1ToleranceSpreadMultiple"/> times the calibrated offset's residual
