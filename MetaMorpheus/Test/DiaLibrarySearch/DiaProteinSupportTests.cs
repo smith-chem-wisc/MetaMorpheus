@@ -45,6 +45,30 @@ public class DiaProteinSupportTests
         Assert.That(DiaProteinSupport.Measure(rows, Owner)[..8], Is.EqualTo(support[..8]));
     }
 
+    /// <summary>
+    /// mzLib's permuted decoys (#1271) are <c>DECOY_&lt;owner&gt;_f&lt;fold&gt;</c>: they count toward the owner's protein. With the
+    /// prefix only dropped, no decoy was ever supported, and support told targets from decoys by name (2026-11-18).
+    /// </summary>
+    [Test]
+    public void APermutedDecoyCountsTowardItsOwnersProtein()
+    {
+        DiaProteinSupport.Row[] rows =
+        [
+            Target("P1", "AAAK", confident: true),
+            Target("P1", "CCCK", confident: true),
+            Target("Random_P1_f0", "ACAK", confident: false), // an entrapment of P1
+            Decoy("DECOY_P1_f1", "KACA"),                     // 3: P1's permuted decoy
+            Decoy("DECOY_P1_f2", "KCAA"),                     // 4: the entrapment's, made from P1 too
+            Decoy("DECOY_Random_P1_f0", "KAAC"),              // 5: a reversed decoy of the entrapment, whose protein a target names
+            Decoy("DECOY_P7_f1", "KCCA"),                     // 6: a protein nothing supports
+        ];
+        double[] support = DiaProteinSupport.Measure(rows);
+        Assert.That(support[3..], Is.EqualTo(new double[] { 2, 2, 0, 0 }));
+
+        static string Owner(string accession) => accession.StartsWith("Random_", StringComparison.Ordinal) ? accession[7..accession.LastIndexOf("_f", StringComparison.Ordinal)] : accession;
+        Assert.That(DiaProteinSupport.Measure(rows, Owner)[2..], Is.EqualTo(new double[] { 2, 2, 2, 2, 0 }));
+    }
+
     [Test]
     public void ProteinSupportIsOffByDefaultAndCalibrationLeavesItOff()
     {

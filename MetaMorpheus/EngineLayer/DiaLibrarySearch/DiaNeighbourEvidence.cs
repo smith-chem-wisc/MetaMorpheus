@@ -330,7 +330,16 @@ public static class DiaNeighbourEvidence
     /// Appends log(1 + protein support) to each measured row, from the confident targets' peptides. Only the measured and the
     /// confident rows are read, so a library is not walked whole.
     /// </summary>
-    private static void AppendProteinSupport(IReadOnlyList<DiaPrecursorMatch> matches, double[]?[] columns, int[] measured, double[] q,
+    /// <summary>
+    /// Protein support is read only when measured decoys are in a supported protein at least this share as often as measured
+    /// targets are. A decoy counts toward its target's protein, so it lands in one about as often as a false target does.
+    /// When decoy accessions name no target protein, no decoy is ever supported, and the trees would tell targets from decoys
+    /// by name alone: the column is left out.
+    /// </summary>
+    public const double MinDecoySupportShare = 0.1;
+
+    /// <summary>Appends <see cref="ProteinSupportColumnName"/> to every measured row, or to none; returns what it did.</summary>
+    private static string AppendProteinSupport(IReadOnlyList<DiaPrecursorMatch> matches, double[]?[] columns, int[] measured, double[] q,
         Func<int, (string? Accession, string BaseSequence)?> proteinOf, Func<string, string>? proteinKey)
     {
         bool Confident(int i) => !matches[i].IsDecoy && q[i] <= ConfidentQValue;
@@ -342,8 +351,16 @@ public static class DiaNeighbourEvidence
         var supportOf = new Dictionary<int, double>(read.Length);
         for (int k = 0; k < read.Length; k++)
             supportOf[read[k]] = support[k];
+        int decoys = measured.Count(i => matches[i].IsDecoy), targets = measured.Length - decoys;
+        int supportedDecoys = measured.Count(i => matches[i].IsDecoy && supportOf[i] > 0);
+        int supportedTargets = measured.Count(i => !matches[i].IsDecoy && supportOf[i] > 0);
+        double decoyShare = decoys > 0 ? (double)supportedDecoys / decoys : 0, targetShare = targets > 0 ? (double)supportedTargets / targets : 0;
+        string counts = $"{supportedDecoys} of {decoys} measured decoys and {supportedTargets} of {targets} measured targets in a protein with another confident peptide";
+        if (decoyShare < MinDecoySupportShare * targetShare)
+            return $"protein support left out: {counts}; decoy accessions may not name their targets' proteins";
         foreach (int i in measured)
             columns[i] = [.. columns[i]!, Math.Log(1 + supportOf[i])];
+        return $"protein support: {counts}";
     }
 
     /// <summary>
@@ -392,7 +409,7 @@ public static class DiaNeighbourEvidence
             return applied;
         double[] q = TargetDecoyQValues.Compute(matches.Select(m => m.Score).ToArray(), matches.Select(m => m.IsDecoy).ToArray());
         if (proteinOf is not null)
-            AppendProteinSupport(matches, columns, measured, q, proteinOf, proteinKey);
+            report?.Invoke(AppendProteinSupport(matches, columns, measured, q, proteinOf, proteinKey));
         double keepAtOrAbove = matches.Where((_, i) => q[i] <= KeptQValue).Select(m => m.Score).DefaultIfEmpty(double.PositiveInfinity).Min();
         double[] stacked = Stack(measured.Select(i => matches[i].Score).ToList(), measured.Select(i => columns[i]!).ToList(), measured.Select(i => matches[i].IsDecoy).ToList(),
             measured.Select(i => matches[i].FullSequence).ToList(), seed, threads, keepAtOrAbove);

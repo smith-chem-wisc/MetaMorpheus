@@ -36,11 +36,13 @@ public static class DiaProteinSupport
     public static double[] Measure(IReadOnlyList<Row> rows, Func<string, string>? key = null)
     {
         ArgumentNullException.ThrowIfNull(rows);
+        var targetProteins = rows.Where(r => !r.IsDecoy).SelectMany(r => Split(r.Accession)).ToHashSet(StringComparer.Ordinal);
         var proteins = new string[rows.Count][];
         var confidentPeptides = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         for (int i = 0; i < rows.Count; i++)
         {
-            proteins[i] = ProteinsOf(rows[i].Accession, key);
+            proteins[i] = Split(rows[i].Accession).Select(a => rows[i].IsDecoy ? TargetProteinOfDecoy(a, targetProteins) : a)
+                .Where(a => a.Length > 0).Select(a => key is null ? a : key(a)).Distinct(StringComparer.Ordinal).ToArray();
             if (rows[i].IsDecoy || !rows[i].Confident)
                 continue;
             foreach (string protein in proteins[i])
@@ -64,15 +66,25 @@ public static class DiaProteinSupport
         return support;
     }
 
-    /// <summary>The proteins an accession string names: split on '|' and ';', a decoy's prefix dropped, each through <paramref name="key"/>.</summary>
-    private static string[] ProteinsOf(string? accession, Func<string, string>? key)
+    /// <summary>The accessions an accession string names, split on '|' and ';'.</summary>
+    private static string[] Split(string? accession) => string.IsNullOrEmpty(accession)
+        ? []
+        : accession.Split(['|', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    /// <summary>
+    /// The target protein a decoy accession was made from. A reversed decoy is <c>DECOY_&lt;target&gt;</c>. mzLib's permuted
+    /// decoys (#1271) are <c>DECOY_&lt;owner&gt;_f&lt;fold&gt;</c>, and dropping the prefix alone leaves <c>&lt;owner&gt;_f1</c>,
+    /// which names no protein: then no decoy ever gets support, and support tells targets from decoys by name alone (on
+    /// PXD071205 A1, 4.3% entrapment FDP at 1% q, 2026-11-18). The prefix dropped is taken when a target names it, else the owner.
+    /// </summary>
+    private static string TargetProteinOfDecoy(string accession, HashSet<string> targetProteins)
     {
-        if (string.IsNullOrEmpty(accession))
-            return [];
-        return accession.Split(['|', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(a => a.StartsWith(DecoyPrefix, StringComparison.Ordinal) ? a[DecoyPrefix.Length..] : a)
-            .Where(a => a.Length > 0)
-            .Select(a => key is null ? a : key(a))
-            .Distinct(StringComparer.Ordinal).ToArray();
+        if (!accession.StartsWith(DecoyPrefix, StringComparison.Ordinal))
+            return accession;
+        string unprefixed = accession[DecoyPrefix.Length..];
+        return !targetProteins.Contains(unprefixed)
+            && UsefulProteomicsDatabases.EntrapmentGeneration.EntrapmentAccession.TryParse(accession, out string owner, out _, entrapmentIdentifier: "DECOY")
+            ? owner
+            : unprefixed;
     }
 }

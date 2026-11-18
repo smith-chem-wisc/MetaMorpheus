@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using EngineLayer.DiaLibrarySearch;
 using MassSpectrometry;
@@ -638,28 +639,58 @@ public class DiaNeighbourEvidenceTests
     }
 
     /// <summary>
-    /// With proteins given, the trees also read protein support: weak targets of a protein a thousand confident peptides support
-    /// climb over decoys of a protein nothing supports, where the signal alone (the same for every row) cannot tell them apart.
+    /// A thousand confident targets in proteins P0-P9, then one band: 300 weak targets of the same proteins and 100 decoys
+    /// spread over P0-P19, half of them in a supported protein. The signal alone (the same for every row) cannot tell the band
+    /// apart. With proteins given, decoys of a protein nothing supports fall to the band's bottom, while decoys of a supported
+    /// protein climb with the targets: a decoy gets the support a false hit in its target's protein would.
     /// </summary>
-    [Test]
-    public void WithProteinsTheTreesReadProteinSupport()
+    private static (List<DiaPrecursorMatch> Matches, List<DiaPrecursorMatch> Without, List<DiaPrecursorMatch> With, List<string> Lines) ProteinCase(string decoyAccessionFormat)
     {
         var random = new Random(7);
         var matches = Enumerable.Range(0, 1000).Select(i => Match(i, 10 + random.NextDouble(), rt: 1 + i % 19)).ToList();
-        // 300 weak targets and 100 decoys in one band: a provisional q under 10%, so all are measured
+        // A provisional q under 10% over the band, so all of it is measured
         matches.AddRange(Enumerable.Range(1000, 400).Select(i => Match(i, 5 + random.NextDouble(), isDecoy: i % 4 == 0, rt: 1 + i % 19)));
         var window = Window(OnThePeak());
         DiaNeighbourEvidence.PrecursorIons Of(int index) => new(Ions.ToList(), Ions.Select(i => i.Mz).ToList(), $"BASE{index}");
-        (string? Accession, string BaseSequence)? ProteinOf(int index) => (index >= 1000 && index % 4 == 0 ? "DECOY_P9" : "P1", $"BASE{index}");
-        double DecoysInTheBandsTop(List<DiaPrecursorMatch> applied) =>
-            applied.Where(m => m.PrecursorIndex >= 1000).OrderByDescending(m => m.Score).Take(300).Count(m => m.IsDecoy) / 300.0;
+        (string? Accession, string BaseSequence)? ProteinOf(int index) => index >= 1000 && index % 4 == 0
+            ? (string.Format(CultureInfo.InvariantCulture, decoyAccessionFormat, index / 4 % 20), $"BASE{index}")
+            : ($"P{index % 10}", $"BASE{index}");
 
+        var lines = new List<string>();
         var without = DiaNeighbourEvidence.Apply(matches, Of, [(490, 510)], [window], RtTolerance, Ppm, ApexHalfWidth, true, 12, 0);
-        var with = DiaNeighbourEvidence.Apply(matches, Of, [(490, 510)], [window], RtTolerance, Ppm, ApexHalfWidth, true, 12, 0, proteinOf: ProteinOf);
+        var with = DiaNeighbourEvidence.Apply(matches, Of, [(490, 510)], [window], RtTolerance, Ppm, ApexHalfWidth, true, 12, 0, report: lines.Add, proteinOf: ProteinOf);
+        return (matches, without, with, lines);
+    }
 
-        Assert.That(DecoysInTheBandsTop(without), Is.GreaterThan(0.15), "without proteins, the band's order is the score's");
-        Assert.That(DecoysInTheBandsTop(with), Is.LessThan(0.02));
+    private static int InTheBandsTop(List<DiaPrecursorMatch> applied, Func<DiaPrecursorMatch, bool> which) =>
+        applied.Where(m => m.PrecursorIndex >= 1000).OrderByDescending(m => m.Score).Take(300).Count(which);
+
+    [TestCase("DECOY_P{0}")]
+    [TestCase("DECOY_P{0}_f1")] // mzLib's permuted decoys (#1271): the owner's protein, not "P3_f1"
+    public void WithProteinsTheTreesReadProteinSupport(string decoyAccessionFormat)
+    {
+        var (matches, without, with, lines) = ProteinCase(decoyAccessionFormat);
+        static bool Supported(DiaPrecursorMatch m) => m.IsDecoy && m.PrecursorIndex / 4 % 20 < 10;
+        static bool Unsupported(DiaPrecursorMatch m) => m.IsDecoy && m.PrecursorIndex / 4 % 20 >= 10;
+
+        Assert.That(InTheBandsTop(without, Unsupported), Is.GreaterThan(25), "without proteins, the band's order is the score's");
+        Assert.That(InTheBandsTop(with, Unsupported), Is.LessThan(5), "decoys of a protein nothing supports fall");
+        Assert.That(InTheBandsTop(with, Supported), Is.GreaterThan(35), "decoys of a supported protein climb with its targets");
+        Assert.That(lines, Has.One.StartsWith("protein support: 50 of 100 measured decoys and "));
         Assert.That(with.Select(m => m.Score).Order(), Is.EqualTo(matches.Select(m => m.Score).Order()), "the values stay the classifier's own");
+    }
+
+    /// <summary>
+    /// Decoy accessions that name no target protein (here "DECOYP3") leave every decoy unsupported, and support would sort the
+    /// band by name: on PXD071205 A1 that gave 4.3% entrapment FDP at 1% q (2026-11-18). The column is left out instead.
+    /// </summary>
+    [Test]
+    public void ProteinSupportIsLeftOutWhenNoDecoyIsInATargetsProtein()
+    {
+        var (_, without, with, lines) = ProteinCase("DECOYP{0}");
+
+        Assert.That(with.Select(m => m.Score), Is.EqualTo(without.Select(m => m.Score)));
+        Assert.That(lines, Has.One.StartsWith("protein support left out: 0 of 100 measured decoys and "));
     }
 
     /// <summary>Rows at or under a provisional q of 0.1% keep their scores, and the trees still learn from them.</summary>
