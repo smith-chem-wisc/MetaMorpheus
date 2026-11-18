@@ -216,5 +216,40 @@ namespace Test
             var (all, _, _) = PeptideXFixture();
             Assert.That(PepAnalysisEngine.CountAcceptedPeptides(all, 0.2), Is.EqualTo(10));
         }
+
+        /// <summary>
+        /// The FDR engine's branch with more matches than <see cref="FdrAnalysisEngine.PsmCountThresholdForInvertedQvalue"/>
+        /// but no more peptides trains PEP and then computes peptide PEP q-values too (review of #2982). Those q-values stand
+        /// each peptide on the match PEP trained on, as the other branches do, not on its lowest-PEP match. These sixteen
+        /// peptides are too few to train on, so the engine keeps the fixture's PEPs and the branch ranks them.
+        /// </summary>
+        [Test]
+        public static void WithFewPeptides_ThePeptidePepQValueStandsOnTheMatchPepTrainedOn()
+        {
+            var (all, xBest, xLowestPep) = PeptideXFixture();
+            int peptides = all.Select(p => p.FullSequence).Distinct().Count();
+            Assume.That(all.Count, Is.GreaterThan(peptides), "the fixture needs more matches than peptides");
+
+            var threshold = typeof(FdrAnalysisEngine).GetProperty(nameof(FdrAnalysisEngine.PsmCountThresholdForInvertedQvalue))!;
+            int original = FdrAnalysisEngine.PsmCountThresholdForInvertedQvalue;
+            lock (EverythingRunnerEngineTestCase.myLock)
+            {
+                try
+                {
+                    // More matches than the threshold, but no more peptides: the engine's second branch, asked to train.
+                    threshold.SetValue(null, peptides);
+                    new FdrAnalysisEngine(all, 1, Common, new List<(string, CommonParameters)> { ("file", Common) }, new List<string>()).Run();
+                }
+                finally
+                {
+                    threshold.SetValue(null, original);
+                }
+            }
+            Assume.That((xBest.FdrInfo.PEP, xLowestPep.FdrInfo.PEP), Is.EqualTo((0.3, 0.001)), "the fixture's PEPs must stand");
+
+            Assert.That(xBest.PeptideFdrInfo.PEP_QValue, Is.LessThan(2), "the best-scoring match, the one PEP trains on, carries X's PEP q-value");
+            Assert.That(xLowestPep.PeptideFdrInfo.PEP_QValue, Is.EqualTo(2), "X's lowest-PEP match carries none");
+            Assert.That(PeptideRows(all).Single(p => p.FullSequence == xBest.FullSequence), Is.SameAs(xBest));
+        }
     }
 }
