@@ -120,13 +120,14 @@ public static class DiaIrtSelfCalibration
     /// DIA-NN's signal share stays off as well: it was benchmarked in the main search only, and in calibration it moved the
     /// anchors and cost HF-X 1.5% on seed 0. The network is <see cref="CalibrationNetworkLayers"/>. Calibration only picks
     /// anchors, so it has no use for the tree blend or the neighbour evidence, and it stays on the candidate rule and features it was tuned with, without the summed core.
+    /// Candidate spacing stays at the half width and peptidoform evidence off: both were benchmarked in the main search only.
     /// </summary>
     public static DiaLibrarySearchParameters CalibrationParameters(DiaLibrarySearchParameters parameters) =>
         parameters with { DiaNnFragmentFilter = false, Ms1Offset = null, Ms1TolerancePpm = Math.Max(parameters.Ms1TolerancePpm, CalibrationMs1TolerancePpm), DiaNnSignalShare = false,
             InterferenceExplainedFragments = CalibrationInterferenceExplainedFragments, ClassifierNetworkLayers = [.. CalibrationNetworkLayers],
             ClassifierTreeBlend = false, CandidatePeaksFromSummedCore = false, NeighbourEvidence = false, FragmentIntensities = null, IrtComposition = null,
             MaxToleranceCoElution = false, Ms1TightCorrelation = false, SqrtCoElution = false, Ms1PeakEnvelopeTight = false, Ms1PeakSignalFraction = false, Ms1PeakPoints = false, Ms1PeakFeatures = false,
-            Ms1InterpolatedTraces = false, Ms1CorrelationSummedCore = false };
+            Ms1InterpolatedTraces = false, Ms1CorrelationSummedCore = false, CandidateApexSpacingScans = null, PeptidoformEvidence = false };
 
     /// <summary>
     /// MS1 tolerance during calibration, before the run's offset is known: wide enough for an error that drifts up to 3 ppm off
