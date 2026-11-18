@@ -146,9 +146,19 @@ namespace EngineLayer.FdrAnalysis
                         // stay at their default and no target is ever a positive, so PEP fails for every data set
                         // with 100 to 1000 peptides.
                         CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
-                        // Peptide-level PEP q-values are not computed here, so only the PSM level can be trained.
-                        pepTrainedPsmLevel = Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, iterativePepTraining);
-                        psms = psms.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
+                        bool trained = Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, iterativePepTraining);
+                        // Both levels follow the training (review of #2982): the peptide-level PEP q-values are computed here
+                        // too, as in the branch above, so the PEP q-value filter does not judge a search's PSMs by PEP and
+                        // its peptides by the notch.
+                        pepTrainedPsmLevel = trained;
+                        pepTrainedPeptideLevel = trained;
+                        var psmsByPep = psms.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
+                        peptides = psmsByPep
+                            .GroupBy(p => p.FullSequence)
+                            .Select(p => p.FirstOrDefault()) // Get the best psm for each peptide based on PEP (default comparer is used to break ties)
+                            .ToList();
+                        CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
+                        psms = psmsByPep;
                         CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
                     }
                 }

@@ -23,6 +23,10 @@ namespace EngineLayer
         public CommonParameters()
             : this(digestionParams: null)
         {
+            // A task TOML is read into this instance, setting only the keys the file holds. Until it names the
+            // identification filter, the filter is "not named", and a file saved before the setting existed is read by its
+            // thresholds once (IdentificationFilter).
+            _identificationFilterNamed = false;
         }
 
         public CommonParameters(
@@ -205,6 +209,7 @@ namespace EngineLayer
         public double PepQValueThreshold { get; private set; }
 
         private FilterType _identificationFilter;
+        private bool _identificationFilterNamed;
 
         /// <summary>
         /// The value that decides whether a match or peptide counts as identified, at every step of a search: the
@@ -213,16 +218,44 @@ namespace EngineLayer
         /// <see cref="FilterType.QValueNotch"/> (the default), held to <see cref="QValueThreshold"/>; or
         /// <see cref="FilterType.PepQValue"/>, held to <see cref="PepQValueThreshold"/>, where a match whose PEP was not
         /// trained is judged by its q-value notch at that same threshold, and the search says so.
+        /// The pooled q-value (<see cref="FilterType.QValue"/>) is not a choice: setting it throws.
+        /// A task TOML saved before this setting existed names no filter. If its <see cref="PepQValueThreshold"/> is below
+        /// its <see cref="QValueThreshold"/>, the old way of asking for PEP (the GUI's PEP box saved 1.0 and 0.01), it is read
+        /// as <see cref="FilterType.PepQValue"/> at that PEP threshold (<see cref="IdentificationFilterFromLegacyThresholds"/>);
+        /// otherwise as the notch. Saving it writes the filter, so the rule applies once per old file. A TOML that names the
+        /// filter, and every CommonParameters built in code, keeps the filter it names.
         /// </summary>
         public FilterType IdentificationFilter
         {
-            get => _identificationFilter;
-            private set => _identificationFilter = value is FilterType.QValueNotch or FilterType.PepQValue
-                ? value
-                : throw new ArgumentException($"The identification filter is {FilterType.QValueNotch} or {FilterType.PepQValue}, not {value}.");
+            get => _identificationFilterNamed || !(PepQValueThreshold < QValueThreshold) ? _identificationFilter : FilterType.PepQValue;
+            private set
+            {
+                _identificationFilter = value is FilterType.QValueNotch or FilterType.PepQValue ? value : throw new ArgumentException(NotAFilter(value));
+                _identificationFilterNamed = true;
+            }
         }
-        /// <summary>Not yet built (review of #2982): whether the filter was read from a task's legacy thresholds.</summary>
-        [TomlIgnore] public bool IdentificationFilterFromLegacyThresholds => false;
+
+        /// <summary>
+        /// The message for a filter that is not one of the two choices: the pooled q-value. It names the setting and both
+        /// choices, since a task TOML that names the pooled q-value fails to load with it.
+        /// </summary>
+        internal static string NotAFilter(FilterType value) =>
+            $"IdentificationFilter is {FilterType.PepQValue} (the PEP q-value) or {FilterType.QValueNotch} (the q-value notch), not {value}: " +
+            "the pooled q-value is not an identification filter of its own.";
+
+        /// <summary>
+        /// True when <see cref="IdentificationFilter"/> was read from a task TOML that names no filter and holds the old
+        /// PEP thresholds (<see cref="PepQValueThreshold"/> below <see cref="QValueThreshold"/>): the filter is then the
+        /// PEP q-value, and the search says so once.
+        /// </summary>
+        [TomlIgnore] public bool IdentificationFilterFromLegacyThresholds => !_identificationFilterNamed && PepQValueThreshold < QValueThreshold;
+
+        // A copy keeps whether the filter was named or read from legacy thresholds, so the search still says so.
+        private void CopyIdentificationFilterRecord(CommonParameters source)
+        {
+            _identificationFilter = source._identificationFilter;
+            _identificationFilterNamed = source._identificationFilterNamed;
+        }
         public double ScoreCutoff { get; private set; }
         /// <summary>
         /// This parameter determines which PSMs/Peptides will be used as postive training examples
@@ -298,8 +331,9 @@ namespace EngineLayer
             CommonParameters c = new CommonParameters();
             foreach (PropertyInfo property in typeof(CommonParameters).GetProperties())
             {
-                property.SetValue(c, property.GetValue(this));
+                if (property.CanWrite) property.SetValue(c, property.GetValue(this));
             }
+            c.CopyIdentificationFilterRecord(this);
             return c;
         }
 
@@ -308,8 +342,9 @@ namespace EngineLayer
             CommonParameters c = new CommonParameters();
             foreach (PropertyInfo property in typeof(CommonParameters).GetProperties())
             {
-                property.SetValue(c, property.GetValue(this));
+                if (property.CanWrite) property.SetValue(c, property.GetValue(this));
             }
+            c.CopyIdentificationFilterRecord(this);
             c.DissociationType = dissociationType;
             return c;
         }
