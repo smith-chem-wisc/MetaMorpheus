@@ -132,8 +132,12 @@ namespace Test
             Assert.That(output.Length == 3);
 
             var mzId = File.ReadAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecificSmall\tinySemi.mzID"));
-            Assert.That(mzId[115].Equals("          <cvParam name=\"mzML format\" cvRef=\"PSI-MS\" accession=\"MS:1000584\" />"));
-            Assert.That(mzId[118].Equals("          <cvParam name=\"mzML unique identifier\" cvRef=\"PSI-MS\" accession=\"MS:1001530\" />"));
+            // the spectra are an MGF, which has no native IDs, so each is named by its scan number
+            Assert.That(mzId[115].Equals("          <cvParam name=\"Mascot MGF format\" cvRef=\"PSI-MS\" accession=\"MS:1001062\" />"));
+            Assert.That(mzId[118].Equals("          <cvParam name=\"scan number only nativeID format\" cvRef=\"PSI-MS\" accession=\"MS:1000776\" />"));
+            var results = mzId.Where(line => line.Contains("<SpectrumIdentificationResult ")).ToList();
+            Assert.That(results, Is.Not.Empty);
+            Assert.That(results, Has.All.Contains("spectrumID=\"scan="));
             Assert.That(mzId[97].Equals("        <cvParam name=\"pep:FDR threshold\" value=\"0.01\" cvRef=\"PSI-MS\" accession=\"MS:1001448\" />"));
 
         }
