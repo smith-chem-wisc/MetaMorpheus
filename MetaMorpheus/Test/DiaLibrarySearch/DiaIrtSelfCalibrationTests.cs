@@ -175,6 +175,9 @@ public class DiaIrtSelfCalibrationTests
         // Calibration reads MS1 at its own fixed tolerance (the offset is not known yet), whatever the search's
         Assert.That(DiaIrtSelfCalibration.CalibrationParameters(new DiaLibrarySearchParameters(Ms1TolerancePpm: 5)).Ms1TolerancePpm,
             Is.EqualTo(DiaIrtSelfCalibration.CalibrationMs1TolerancePpm));
+        // ...unless the search is set wider: a user who knows the instrument is off widens calibration's read too
+        Assert.That(DiaIrtSelfCalibration.CalibrationParameters(new DiaLibrarySearchParameters(Ms1TolerancePpm: 30)).Ms1TolerancePpm, Is.EqualTo(30));
+        Assert.That(calibration.Ms1OffsetAnchors, Is.GreaterThan(calibration.AnchorCount / 2), "most anchors have an M0 the offset is fitted from");
         // Applying a calibration sets the search's iRT window, MS1 offset, intensity table and iRT composition fit together
         var applied = calibration.ApplyTo(new DiaLibrarySearchParameters());
         Assert.That(applied.IrtHalfWindow, Is.EqualTo(calibration.IrtHalfWindow));
@@ -183,6 +186,25 @@ public class DiaIrtSelfCalibrationTests
         Assert.That(applied.FragmentIntensities, Is.SameAs(calibration.FragmentIntensities));
         Assert.That(calibration.IrtComposition, Is.Not.Null);
         Assert.That(applied.IrtComposition, Is.SameAs(calibration.IrtComposition));
+    }
+
+    /// <summary>
+    /// A run whose MS1 error is past calibration's 10 ppm read: almost no anchor found its M0 there, so the offset was fitted
+    /// from a couple of chance peaks, near 0 (12 ppm fitted 0.07), and nothing said so. The offset is then read from each
+    /// anchor's nearest MS1 scan at the 20 ppm mass calibration reads with, and it comes out right, resting on most anchors.
+    /// </summary>
+    [TestCase(12)]
+    [TestCase(-15)]
+    public void AnMs1OffsetPastCalibrationsReadIsStillFitted(double ppm)
+    {
+        var run = SyntheticDiaRun.Build(300, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0, withMs1: true, ppmOffset: ppm);
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+
+        var calibration = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(), new CommonParameters());
+
+        Assert.That(calibration.Ms1Offset, Is.Not.Null);
+        Assert.That(calibration.Ms1Offset!.OffsetPpm(5), Is.EqualTo(ppm).Within(1));
+        Assert.That(calibration.Ms1OffsetAnchors, Is.GreaterThan(calibration.AnchorCount / 2));
     }
 
     /// <summary>The library halves one class's prediction after the run was made, so the run reads that class at twice what the library says, and calibration's table says so.</summary>
@@ -509,11 +531,40 @@ public class DiaIrtSelfCalibrationTests
             new DiaPrecursorMatch(200_000 + i, "KNOSIOP", 2, 500, true, new Irt(100), new RtMinutes(1), new Irt(0), 99, [1.0]),
         })).ToList();
 
-        var refined = DiaIrtSelfCalibration.Refine(poisoned);
+        var refined = DiaIrtSelfCalibration.Refine(calibration, poisoned, library);
 
         Assert.That(refined.AnchorCount, Is.EqualTo(Math.Min(confident, DiaIrtSelfCalibration.MaximumRefinementAnchors)));
         for (double irt = -10; irt <= 110; irt += 10)
             Assert.That(refined.Model.ToIrt(new RtMinutes(SyntheticDiaRun.TrueRtMinutes(irt))).Value, Is.EqualTo(irt).Within(2.0), $"at library iRT {irt}");
+    }
+
+    /// <summary>
+    /// A refit replaces the curve and its window, not the rest of the calibration: applied on top of the first calibration,
+    /// it keeps that calibration's MS1 offset and intensity table, and its iRT composition fit is refitted against the new
+    /// curve. A refit with too few targets says so, not that the first pass found too few.
+    /// </summary>
+    [Test]
+    public void ARefitKeepsTheCalibrationsOtherModels()
+    {
+        var run = SyntheticDiaRun.Build(300, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0, withMs1: true);
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+        var calibration = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(), new CommonParameters());
+        Assert.That(calibration.Ms1Offset, Is.Not.Null);
+        Assert.That(calibration.FragmentIntensities, Is.Not.Null);
+        Assert.That(calibration.IrtComposition, Is.Not.Null);
+        var first = calibration.ApplyTo(new DiaLibrarySearchParameters());
+        var results = (DiaLibrarySearchResults)new DiaLibrarySearchEngine(run.Scans, library, calibration.Model, first, new CommonParameters(), [], []).Run();
+
+        var refined = DiaIrtSelfCalibration.Refine(calibration, results.Matches, library);
+        var second = refined.ApplyTo(first);
+
+        Assert.That(second.IrtHalfWindow, Is.EqualTo(refined.IrtHalfWindow));
+        Assert.That(second.Ms1Offset, Is.SameAs(calibration.Ms1Offset));
+        Assert.That(second.FragmentIntensities, Is.SameAs(calibration.FragmentIntensities));
+        Assert.That(second.IrtComposition, Is.Not.Null.And.Not.SameAs(calibration.IrtComposition), "refitted against the new curve");
+        Assert.That(refined.Ms1OffsetAnchors, Is.EqualTo(calibration.Ms1OffsetAnchors));
+        var e = Assert.Throws<MetaMorpheusException>(() => DiaIrtSelfCalibration.Refine(calibration, [], library));
+        Assert.That(e!.Message, Does.Contain("main search").And.Not.Contain("first pass"));
     }
 
     /// <summary>With nothing to find there is nothing to calibrate on, and that is an error, not a guess.</summary>
