@@ -45,20 +45,30 @@ namespace EngineLayer.SpectrumMatch
         /// </summary>
         public static bool Passes(SpectralMatch psm, bool peptideLevel, FilterType filterType, double threshold)
         {
+            RefuseThePooledQValue(filterType);
             var fdrInfo = psm.GetFdrInfo(peptideLevel);
             return fdrInfo != null && Value(fdrInfo, filterType) <= threshold;
         }
 
         /// <summary>
-        /// The value a match is judged by. The PEP q-value where PEP was trained for the match
-        /// (<see cref="FdrInfo.PepTrained"/>), otherwise its q-value notch. The q-value notch. Or, only when a caller
-        /// asks for it by name, the q-value and the q-value notch together, so the larger of the two.
+        /// The pooled q-value is not an identification filter (<see cref="CommonParameters.IdentificationFilter"/>), so no
+        /// caller may ask for it by name either.
+        /// </summary>
+        private static void RefuseThePooledQValue(FilterType filterType)
+        {
+            if (filterType is not (FilterType.PepQValue or FilterType.QValueNotch))
+                throw new ArgumentException(CommonParameters.NotAFilter(filterType), nameof(filterType));
+        }
+
+        /// <summary>
+        /// The value a match is judged by. Under the PEP q-value filter, its PEP q-value where PEP was trained for it
+        /// (<see cref="FdrInfo.PepTrained"/>), and its q-value notch where it was not. Under the q-value notch filter, its
+        /// q-value notch.
         /// </summary>
         private static double Value(FdrInfo fdrInfo, FilterType filterType) => filterType switch
         {
             FilterType.PepQValue => fdrInfo.PepTrained ? fdrInfo.PEP_QValue : fdrInfo.QValueNotch,
             FilterType.QValueNotch => fdrInfo.QValueNotch,
-            FilterType.QValue => Math.Max(fdrInfo.QValue, fdrInfo.QValueNotch),
             _ => throw new ArgumentOutOfRangeException(nameof(filterType), filterType, null)
         };
 
@@ -180,6 +190,7 @@ namespace EngineLayer.SpectrumMatch
                     : psm.IsLocalizationAmbiguous ? includeLocalizationAmbiguous : includeAmbiguousMods;
 
             FilterType type = filterType ?? commonParams.IdentificationFilter;
+            RefuseThePooledQValue(type);
             double threshold = type == FilterType.PepQValue
                 ? pepQValueThreshold ?? commonParams.PepQValueThreshold
                 : qValueThreshold ?? commonParams.QValueThreshold;

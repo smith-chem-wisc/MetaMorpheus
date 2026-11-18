@@ -352,14 +352,7 @@ namespace MetaMorpheusGUI
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
 
-            if (task.CommonParameters.QValueThreshold < 1)
-            {
-                QValueThresholdTextBox.Text = task.CommonParameters.QValueThreshold.ToString(CultureInfo.InvariantCulture);
-            }
-            else
-            {
-                QValueThresholdTextBox.Text = "0.01";
-            }
+            QValueThresholdTextBox.Text = TaskWindowIdentificationFilter.QValueThresholdText(task.CommonParameters);
 
             // A task still at the bottom-up default starts from the default for its search type
             double pepTrainingQ = task.CommonParameters.QValueCutoffForPepCalculation;
@@ -370,11 +363,10 @@ namespace MetaMorpheusGUI
             }
             PepTrainingQValueTextBox.Text = pepTrainingQ.ToString(CultureInfo.InvariantCulture);
 
-            // The box is the identification filter: ticked, the PEP q-value; unticked, the q-value notch
-            PepQValueThresholdCheckbox.IsChecked = task.CommonParameters.IdentificationFilter == FilterType.PepQValue;
-            PepQValueThresholdTextBox.Text = task.CommonParameters.PepQValueThreshold < 1
-                ? task.CommonParameters.PepQValueThreshold.ToString(CultureInfo.InvariantCulture)
-                : "0.01";
+            // The box is the identification filter: ticked, the PEP q-value; unticked, the q-value notch. A task saved before
+            // the filter was named, with the old PEP box ticked, loads as the PEP q-value and shows the box ticked.
+            PepQValueThresholdCheckbox.IsChecked = TaskWindowIdentificationFilter.PepBoxTicked(task.CommonParameters);
+            PepQValueThresholdTextBox.Text = TaskWindowIdentificationFilter.PepQValueThresholdText(task.CommonParameters);
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             CkbMzId.IsChecked = task.SearchParameters.WriteMzId;
@@ -663,6 +655,9 @@ namespace MetaMorpheusGUI
             else if (Prosit2020iRTTMTRadioButton.IsChecked == true) rtPredictorModelName = RTPredictorNames.Prosit2020iRTTMT;
             else rtPredictorModelName = RTPredictorNames.Chronologer; // default
 
+            var savedFilter = TaskWindowIdentificationFilter.ForSave(PepQValueThresholdCheckbox.IsChecked.Value,
+                QValueThresholdTextBox.Text, PepQValueThresholdTextBox.Text);
+
             CommonParameters commonParamsToSave = new CommonParameters(
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
@@ -670,9 +665,9 @@ namespace MetaMorpheusGUI
                 totalPartitions: int.Parse(NumberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 doPrecursorDeconvolution: doPrecursorDeconvolution,
                 useProvidedPrecursorInfo: useProvidedPrecursorInfo,
-                qValueThreshold: !PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(QValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
-                pepQValueThreshold: PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(PepQValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
-                identificationFilter: PepQValueThresholdCheckbox.IsChecked.Value ? FilterType.PepQValue : FilterType.QValueNotch,
+                qValueThreshold: savedFilter.QValueThreshold,
+                pepQValueThreshold: savedFilter.PepQValueThreshold,
+                identificationFilter: savedFilter.IdentificationFilter,
                 qValueCutoffForPepCalculation: double.Parse(PepTrainingQValueTextBox.Text, CultureInfo.InvariantCulture),
                 scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                 listOfModsFixed: listOfModsFixed,

@@ -421,6 +421,11 @@ namespace EngineLayer
                 MatchedFragmentIons = bestMatches.First().MatchedIons;
         }
 
+        /// <summary>
+        /// Replaces the match's PSM-level FDR values. The record of whether its PEP was trained
+        /// (<see cref="FdrInfo.PepTrained"/>) is kept: it belongs to the FDR pass that computed the PEPs, not to these
+        /// q-values, which a caller recomputes (the crosslink search counts its own) from the same PEPs.
+        /// </summary>
         public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double pep, double pepQValue)
         {
             FdrInfo = new FdrInfo
@@ -432,7 +437,8 @@ namespace EngineLayer
                 CumulativeDecoyNotch = cumulativeDecoyNotch,
                 QValueNotch = qValueNotch,
                 PEP = pep,
-                PEP_QValue = pepQValue
+                PEP_QValue = pepQValue,
+                PepTrained = FdrInfo?.PepTrained ?? false
             };
         }
 

@@ -1669,11 +1669,15 @@ namespace TaskLayer
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
-            string psmResultsText = $"All target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsForPsmResults.GetFilterTypeString() + " <= " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " + psmsForPsmResults.TargetPsmsAboveThreshold;
+            string psmResultsText = $"All target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsForPsmResults.GetFilterTypeString() + " <= " + psmsForPsmResults.FilterThreshold.ToString(CultureInfo.InvariantCulture) + ": " + psmsForPsmResults.TargetPsmsAboveThreshold;
             psmResultsText = WithPepFilteringNotDone(psmsForPsmResults, psmResultsText);
             if (SearchTask.FilterKeepsEveryMatch(CommonParameters) is string keepsEveryMatch)
             {
                 psmResultsText = keepsEveryMatch + Environment.NewLine + psmResultsText;
+            }
+            if (SearchTask.LegacyFilterSentence(CommonParameters) is string fromLegacyThresholds)
+            {
+                psmResultsText = fromLegacyThresholds + Environment.NewLine + psmResultsText;
             }
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = psmResultsText;
             string precursorResultsText = $"All {GlobalVariables.AnalyteType.GetPrecursorLabel()}: " + Parameters.NumMs2SpectraPerFile.Select(f=>f.Value[1]).Sum();
@@ -1713,7 +1717,7 @@ namespace TaskLayer
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
-            string peptideResultsText = $"All target {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()}s with " + peptidesForPeptideResults.GetFilterTypeString() + " <= " + Math.Round(peptidesForPeptideResults.FilterThreshold, 2) + ": " +
+            string peptideResultsText = $"All target {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()}s with " + peptidesForPeptideResults.GetFilterTypeString() + " <= " + peptidesForPeptideResults.FilterThreshold.ToString(CultureInfo.InvariantCulture) + ": " +
                 peptidesForPeptideResults.TargetPsmsAboveThreshold;
             ResultsDictionary[("All", GlobalVariables.AnalyteType.GetUniqueFormLabel())] = WithPepFilteringNotDone(peptidesForPeptideResults, peptideResultsText);
         }
@@ -1772,7 +1776,7 @@ namespace TaskLayer
                 FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", psmFileGroup.Key });
 
                 // write summary text
-                string psmResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsToWrite.GetFilterTypeString() + " <= " + Math.Round(psmsToWrite.FilterThreshold, 2) + ": " + psmsToWrite.TargetPsmsAboveThreshold;
+                string psmResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s with " + psmsToWrite.GetFilterTypeString() + " <= " + psmsToWrite.FilterThreshold.ToString(CultureInfo.InvariantCulture) + ": " + psmsToWrite.TargetPsmsAboveThreshold;
                 ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = WithPepFilteringNotDone(psmsToWrite, psmResultsText);
                 // this file's precursor and MS2 scan counts are written by WritePsmResults, for every file
             });
@@ -1811,7 +1815,7 @@ namespace TaskLayer
                 FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", psmFileGroup.Key });
 
                 // write summary text
-                string peptideResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()}s with " + peptidesToWrite.GetFilterTypeString() + " <= " + Math.Round(peptidesToWrite.FilterThreshold, 2) + ": " +
+                string peptideResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()}s with " + peptidesToWrite.GetFilterTypeString() + " <= " + peptidesToWrite.FilterThreshold.ToString(CultureInfo.InvariantCulture) + ": " +
                                         peptidesToWrite.TargetPsmsAboveThreshold;
                 ResultsDictionary[(strippedFileName, GlobalVariables.AnalyteType.GetUniqueFormLabel())] = WithPepFilteringNotDone(peptidesToWrite, peptideResultsText);
             });
@@ -2012,12 +2016,12 @@ namespace TaskLayer
 
             // Build the protein results summary text
             // Add "(1% FDR)" suffix only at the standard 0.01 threshold, for clarity
-            string fdrSuffix = Math.Abs(filteredPsms.FilterThreshold - 0.01) < 0.0001 ? " (1% FDR)" : "";
+            string fdrSuffix = filteredPsms.FilterThreshold == 0.01 ? " (1% FDR)" : "";
             
             // Count protein groups that pass the configured filter threshold
             // This uses the same threshold that was used for PSM and peptide filtering to ensure consistency
             int proteinGroupCount = ProteinGroups.Count(b => b.QValue <= filteredPsms.FilterThreshold && !b.IsDecoy);
-            string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " <= " + Math.Round(filteredPsms.FilterThreshold, 2) + fdrSuffix + ": " + proteinGroupCount;
+            string proteinResultsText = $"All target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsms.GetFilterTypeString() + " <= " + filteredPsms.FilterThreshold.ToString(CultureInfo.InvariantCulture) + fdrSuffix + ": " + proteinGroupCount;
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = proteinResultsText;
 
 
@@ -2106,7 +2110,7 @@ namespace TaskLayer
                 {
                     // write summary text
                     string fileProteinResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups with " + filteredPsmsByFile.GetFilterTypeString() + " <= " 
-                        + Math.Round(filteredPsmsByFile.FilterThreshold, 2) + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= filteredPsmsByFile.FilterThreshold && !b.IsDecoy);
+                        + filteredPsmsByFile.FilterThreshold.ToString(CultureInfo.InvariantCulture) + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= filteredPsmsByFile.FilterThreshold && !b.IsDecoy);
                     ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s")] = fileProteinResultsText;
 
                     // write result files
