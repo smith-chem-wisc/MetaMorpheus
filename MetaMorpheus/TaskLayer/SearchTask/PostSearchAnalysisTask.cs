@@ -111,6 +111,7 @@ namespace TaskLayer
             ConstructResultsDictionary();
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
+            RecordSdrfProvenance();
             QuantificationAnalysis();
 
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files" }));
@@ -156,7 +157,7 @@ namespace TaskLayer
                 WriteDigestionCountHistogram();
             }
 
-            if (Parameters.SearchParameters.WriteSdrf)
+            if (WritesSdrf)
             {
                 WriteSdrf();
             }
@@ -633,6 +634,37 @@ namespace TaskLayer
             catch (Exception e)
             {
                 EngineCrashed("ModificationLocalization", e);
+            }
+        }
+
+        /// <summary>
+        /// Records in results.txt the SDRF this search read (the task's <see cref="SearchParameters.InputSdrfPath"/>, else the
+        /// SDRF beside the run's spectra files), by full path and sha256, and, when the run wrote the experimental design from
+        /// the SDRF beside the spectra files, which SDRF and how its condition was built (<see cref="SdrfForRun.Provenance"/>;
+        /// QuantProject, ruled 2026-11-07 and 2026-11-11). A reader of the results then knows what the grouping was read
+        /// from, and which part of it the user stated rather than the SDRF.
+        /// </summary>
+        private void RecordSdrfProvenance()
+        {
+            string input = InputSdrfPath;
+            if (!string.IsNullOrWhiteSpace(input))
+            {
+                string fullPath = Path.GetFullPath(input.Trim());
+                string line;
+                try
+                {
+                    line = $"Input SDRF: {fullPath} (sha256 {SdrfDesignMarker.Sha256Of(fullPath)}).";
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                    line = $"Input SDRF: {fullPath}, which could not be read: {e.Message}";
+                }
+                Parameters.SearchTaskResults.AddTaskSummaryText(line);
+            }
+
+            if (!string.IsNullOrWhiteSpace(Parameters.RunSdrf?.Provenance))
+            {
+                Parameters.SearchTaskResults.AddTaskSummaryText(Parameters.RunSdrf.Provenance);
             }
         }
 
