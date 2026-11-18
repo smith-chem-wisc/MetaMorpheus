@@ -152,14 +152,14 @@ namespace TaskLayer
             new mzIdentML110.Generated.cvType()
             {
                 id = "UNIMOD",
-                fullName = "UNIT-ONTOLOGY",
+                fullName = "UNIMOD",
                 uri = "http://www.unimod.org/obo/unimod.obo"
             },
               new mzIdentML110.Generated.cvType()
             {
                 id = "UO",
                 fullName = "UNIT-ONTOLOGY",
-                uri = "http://www.unimod.org/obo/unimod.obo"
+                uri = "http://purl.obolibrary.org/obo/uo.obo"
             }
             };
 
@@ -240,7 +240,9 @@ namespace TaskLayer
                 _mzid.DataCollection.Inputs.SearchDatabase[database_index] = new mzIdentML110.Generated.SearchDatabaseType()
                 {
                     id = "SDB_" + database_index,
-                    location = database,
+                    // The file name, not the local path: a path names the searcher's own folders (often their user
+                    // name), and a repository such as PRIDE matches the file by its name.
+                    location = Path.GetFileName(database),
                     DatabaseName = new mzIdentML110.Generated.ParamType
                     {
                         Item = new mzIdentML110.Generated.CVParamType
@@ -289,7 +291,7 @@ namespace TaskLayer
             int spectra_data_id = 0;
             foreach (string data_filepath in filenames)
             {
-                bool thermoRawFile = Path.GetExtension(data_filepath) == ".raw";
+                bool thermoRawFile = Path.GetExtension(data_filepath).Equals(".raw", StringComparison.OrdinalIgnoreCase);
                 string spectral_data_id = "SD_" + spectra_data_id;
                 spectral_ids.Add(data_filepath, spectra_data_id);
                 _mzid.AnalysisCollection.SpectrumIdentification[0].InputSpectra[spectra_data_id] = new mzIdentML110.Generated.InputSpectraType()
@@ -300,7 +302,7 @@ namespace TaskLayer
                 {
                     id = spectral_data_id,
                     name = Path.GetFileNameWithoutExtension(data_filepath),
-                    location = data_filepath,
+                    location = Path.GetFileName(data_filepath), // the file name, as for SearchDatabase above
                     FileFormat = new mzIdentML110.Generated.FileFormatType
                     {
                         cvParam = new mzIdentML110.Generated.CVParamType
@@ -770,44 +772,42 @@ namespace TaskLayer
             writer.Close();
         }
 
+        // mzIdentML 1.1 takes a modification's term from UNIMOD or PSI-MOD, or else MS:1001460 "unknown modification".
+        // Each term carries its own vocabulary's cvRef, declared in the cvList above. RESID is not one of mzIdentML's
+        // vocabularies, so a RESID reference is never written: UniProt's modifications that have one also have a PSI-MOD
+        // reference, and anything else is an unknown modification under its own name.
         private static mzIdentML110.Generated.CVParamType GetUnimodCvParam(Modification mod, bool appendMotifToModNames)
         {
-            if (mod.DatabaseReference != null && mod.DatabaseReference.ContainsKey("Unimod"))
+            string modName = appendMotifToModNames ? mod.IdWithMotif : mod.OriginalId;
+
+            if (mod.DatabaseReference != null && mod.DatabaseReference.TryGetValue("Unimod", out var unimod) && unimod.Count > 0)
             {
                 return new mzIdentML110.Generated.CVParamType()
                 {
-                    accession = "UNIMOD:" + mod.DatabaseReference["Unimod"].First(),
-                    name = appendMotifToModNames ? mod.IdWithMotif : mod.OriginalId,
-                    cvRef = "PSI-MS",
+                    accession = "UNIMOD:" + unimod.First(),
+                    name = modName,
+                    cvRef = "UNIMOD",
                 };
             }
 
-            if (mod.DatabaseReference != null && mod.DatabaseReference.ContainsKey("RESID"))
+            if (mod.DatabaseReference != null && mod.DatabaseReference.TryGetValue("PSI-MOD", out var psiMod) && psiMod.Count > 0)
             {
+                // UniProt's ptmlist already writes the accession as "MOD:00046"
+                string accession = psiMod.First();
                 return new mzIdentML110.Generated.CVParamType()
                 {
-                    accession = "RESID:" + mod.DatabaseReference["RESID"].First(),
-                    name = appendMotifToModNames ? mod.IdWithMotif : mod.OriginalId,
-                    cvRef = "PSI-MS",
+                    accession = accession.StartsWith("MOD:", StringComparison.Ordinal) ? accession : "MOD:" + accession,
+                    name = modName,
+                    cvRef = "PSI-MOD",
                 };
             }
 
-            if (mod.DatabaseReference != null && mod.DatabaseReference.ContainsKey("PSI-MOD"))
-            {
-                return new mzIdentML110.Generated.CVParamType()
-                {
-                    accession = "PSI-MOD:" + mod.DatabaseReference["PSI-MOD"].First(),
-                    name = appendMotifToModNames ? mod.IdWithMotif : mod.OriginalId,
-                    cvRef = "PSI-MS",
-                };
-            }
-            
             return new mzIdentML110.Generated.CVParamType()
             {
                 accession = "MS:1001460",
                 name = "unknown modification",
-                cvRef = "UNIMOD",
-                value = appendMotifToModNames ? mod.IdWithMotif : mod.OriginalId,
+                cvRef = "PSI-MS",
+                value = modName,
             };
         }
     }
