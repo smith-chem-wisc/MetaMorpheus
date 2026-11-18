@@ -146,7 +146,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
         PassingTargets(matches, qValueThreshold).Count();
 
     /// <summary>The columns of DiaCalibrationSummary.tsv, one row per run (<see cref="CalibrationSummaryRow"/>).</summary>
-    public static readonly string CalibrationSummaryHeader = string.Join('\t', "File Name", "Anchors", "Rounds", "FirstPassSearches", "ResidualSdIrt",
+    public static readonly string CalibrationSummaryHeader = string.Join('\t', "File Name", "Anchors", "Rounds", "ResidualSdIrt",
         "IrtHalfWindow", "Ms1OffsetPpm", "Ms1SpreadPpm", "Ms1TolerancePpm", "FragmentTolerancePpm");
 
     /// <summary>
@@ -160,7 +160,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
     {
         static string Number(double value) => double.IsFinite(value) ? value.ToString("R", CultureInfo.InvariantCulture) : "";
         return string.Join('\t', fileName, calibration.AnchorCount.ToString(CultureInfo.InvariantCulture), calibration.Rounds.ToString(CultureInfo.InvariantCulture),
-            calibration.FirstPassSearches.ToString(CultureInfo.InvariantCulture), Number(calibration.Model.ResidualSd), Number(calibration.IrtHalfWindow),
+            Number(calibration.Model.ResidualSd), Number(calibration.IrtHalfWindow),
             Number(calibration.Ms1Offset?.MedianOffsetPpm ?? double.NaN), Number(calibration.Ms1Offset?.ResidualSpreadPpm ?? double.NaN),
             Number(calibration.ApplyTo(parameters).EffectiveMs1TolerancePpm), Number(parameters.FragmentTolerancePpm));
     }
