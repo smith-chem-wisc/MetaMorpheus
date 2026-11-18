@@ -147,6 +147,10 @@ namespace Test
             foreach (var proteasePsms in psmsGroupedByProtease)
             {
                 var psms = proteasePsms.OrderByDescending(p => p).ToList();
+                // Since this copy was taken, every peptide-level pass stands each peptide on its best-scoring match, the
+                // one PEP trains on, instead of picking its lowest-PEP match. This test pins the counting and the single
+                // sort, so the copy follows the current choice of match.
+                var peptideStandIns = psms.GroupBy(p => p.FullSequence).Select(g => g.First()).ToList();
                 var peptides = FilteredPsms.Filter(psms,
                     commonParameters,
                     includeDecoys: true,
@@ -165,12 +169,9 @@ namespace Test
                         //PEP will model will be developed using peptides and then applied to all PSMs. 
                         FdrAnalysisEngine.Compute_PEPValue(myAnalysisResults, psms, fileSpecificParameters, outputFolder, iterativePepTraining);
 
-                        // peptides are ordered by PEP score from good to bad in order to select the best PSM for each peptide
-                        peptides = psms
+                        peptides = peptideStandIns
                             .OrderBy(p => p.FdrInfo.PEP)
                             .ThenByDescending(p => p)
-                            .GroupBy(p => p.FullSequence)
-                            .Select(p => p.FirstOrDefault()) // Get the best psm for each peptide based on PEP (default comparer is used to break ties)
                             .ToList();
                         PreviousCalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
 
@@ -192,11 +193,9 @@ namespace Test
                     // but we do want to calculate pep q-values
                     // really, in this case, we only need to run one or the other (i.e., only peptides or psms are passed in)
                     // but there's no mechanism to pass that info to the FDR analysis engine, so we'll do this for now
-                    peptides = psms
+                    peptides = peptideStandIns
                             .OrderBy(p => p.FdrInfo.PEP)
                             .ThenByDescending(p => p)
-                            .GroupBy(p => p.FullSequence)
-                            .Select(p => p.FirstOrDefault()) // Get the best psm for each peptide based on PEP (default comparer is used to break ties)
                             .ToList();
                     PreviousCalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
 
@@ -208,19 +207,15 @@ namespace Test
                 }
 
                 //we do this section last so that target and decoy counts written in the psmtsv files are appropriate for the sort order which is by MM score
-                peptides = psms
-                    .OrderBy(p => p.FdrInfo.PEP)
-                    .ThenByDescending(p => p)
-                    .GroupBy(b => b.FullSequence)
-                    .Select(b => b.FirstOrDefault()) // Get the best psm for each peptide based on PEP (default comparer is used to break ties)
-                    .OrderByDescending(p => p) // Sort using the default comparer before calculating Q Values
-                    .ToList();
+                peptides = peptideStandIns.ToList();
                 PreviousCalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
 
                 psms = psms.OrderByDescending(p => p).ToList();
                 PreviousCalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: false);
-                
-                PreviousCountPsm(psms);
+
+                // Spectrum Match Count follows the search's identification filter since this copy was taken: the q-value
+                // passes above are what this test pins, so the count is the current one.
+                FdrAnalysisEngine.CountPsm(psms, commonParameters);
             }
         }
 
@@ -448,32 +443,6 @@ namespace Test
                 psms[i].GetFdrInfo(peptideLevelAnalysis).PEP_QValue = qValue;
             }
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
-        }
-
-        private static void PreviousCountPsm(List<SpectralMatch> proteasePsms)
-        {
-            // exclude ambiguous psms and has a fdr cutoff = 0.01
-            var allUnambiguousPsms = proteasePsms.Where(psm => psm.FullSequence != null).ToList();
-
-            var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
-                    psm.FdrInfo.QValue <= 0.01
-                    && psm.FdrInfo.QValueNotch <= 0.01)
-                .GroupBy(p => p.FullSequence);
-
-            Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
-
-            foreach (var sequenceGroup in unambiguousPsmsLessThanOnePercentFdr)
-            {
-                sequenceToPsmCount.TryAdd(sequenceGroup.First().FullSequence, sequenceGroup.Count());
-            }
-
-            foreach (SpectralMatch psm in allUnambiguousPsms)
-            {
-                if (sequenceToPsmCount.TryGetValue(psm.FullSequence, out int count))
-                {
-                    psm.PsmCount = count;
-                }
-            }
         }
 
         #endregion

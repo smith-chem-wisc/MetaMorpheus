@@ -383,7 +383,7 @@ namespace Test
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // valid psm
             psm1.ResolveAllAmbiguities();
 
-            psm2.SetFdrValues(0, 0, 0.02, 0, 0, 0, 0, 0); // psm above fdr cutoff
+            psm2.SetFdrValues(0, 0, 0.02, 0, 0, 0.02, 0, 0); // psm above fdr cutoff (q-value and q-value notch)
             psm2.ResolveAllAmbiguities();
 
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // ambiguous psm
@@ -419,7 +419,8 @@ namespace Test
             List<string> peptides = File.ReadAllLines(Path.Combine(outputFolder, @"AllPeptides.psmtsv")).ToList();
             var header = peptides[0].Split(new char[] { '\t' }).ToArray();
             int indexOfPsmCountInTsv = Array.IndexOf(header, SpectrumMatchFromTsvHeader.SpectrumMatchCount);
-            int indexOfQValueInTsv = Array.IndexOf(header, SpectrumMatchFromTsvHeader.QValue);
+            // the default identification filter: the q-value notch at 0.01
+            int indexOfQValueInTsv = Array.IndexOf(header, SpectrumMatchFromTsvHeader.QValueNotch);
             Assert.That(indexOfPsmCountInTsv >= 0);
             Assert.That(indexOfQValueInTsv >= 0);
 
@@ -429,7 +430,7 @@ namespace Test
             {
                 string qValueString = peptide.Split('\t')[indexOfQValueInTsv].ToString();
                 double qValue = Convert.ToDouble(qValueString);
-                if (qValue < 0.01)
+                if (qValue <= 0.01)
                 {
                     allPeptidesQvalueBelowCutoff++;
                 }
@@ -438,7 +439,7 @@ namespace Test
             var psmsFromTsv = SpectrumMatchTsvReader.ReadPsmTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
             var allUnambiguousPsms = psmsFromTsv.Where(psm => psm.FullSequence != null);
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
-                    psm.QValue <= 0.01)
+                    psm.QValueNotch <= 0.01)
                 .GroupBy(p => p.FullSequence).ToList();
             Assert.That(unambiguousPsmsLessThanOnePercentFdr.Count, Is.EqualTo(allPeptidesQvalueBelowCutoff));
 
@@ -478,7 +479,7 @@ namespace Test
 
             List<string> results = File.ReadAllLines(Path.Combine(outputFolder, @"results.txt")).ToList();
 
-            string peptideCountFromResultsString = results.FirstOrDefault(r => r.Contains("All target peptides with q-value <= 0.01: "));
+            string peptideCountFromResultsString = results.FirstOrDefault(r => r.Contains("All target peptides with q-value notch <= 0.01: "));
             double peptideCountFromResults = Convert.ToDouble(peptideCountFromResultsString?.Split(':')[1].ToString());
             Assert.That(allPeptidesQvalueBelowCutoff, Is.EqualTo(peptideCountFromResults));
             Directory.Delete(outputFolder, true);

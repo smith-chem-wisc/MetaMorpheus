@@ -199,7 +199,8 @@ namespace Test
                 rtPredictorName: "SSRCalc3",
                 retentionTimeRange: new DoubleRange(12, 14),
                 fivePrimeTerminus: "H3O6P2",
-                threePrimeTerminus: "O3P");
+                threePrimeTerminus: "O3P",
+                identificationFilter: EngineLayer.SpectrumMatch.FilterType.PepQValue);
 
             // CustomIons is not a constructor parameter; the constructor reads it from a global dictionary
             typeof(CommonParameters).GetProperty(nameof(CommonParameters.CustomIons))
@@ -216,7 +217,9 @@ namespace Test
 
             foreach (PropertyInfo property in typeof(CommonParameters).GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
-                if (property.Name == nameof(CommonParameters.PrecursorMassTolerance) || property.GetIndexParameters().Length > 0)
+                // A property without a setter is computed from the others (IdentificationFilterFromLegacyThresholds), not a
+                // setting the rebuild could drop
+                if (property.Name == nameof(CommonParameters.PrecursorMassTolerance) || property.GetIndexParameters().Length > 0 || !property.CanWrite)
                 {
                     continue;
                 }

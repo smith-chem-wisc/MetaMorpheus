@@ -431,15 +431,11 @@ namespace TaskLayer
             var parents = new List<TruncationParent>();
 
             // One PSM per proteoform, chosen the way FdrAnalysisEngine chooses its proteoform-level representative
-            // (lowest PEP, then score), so the PSM kept is the one carrying the proteoform-level q-values. A
-            // pipe-ambiguous match has a null FullSequence; keying it on its hypotheses keeps each ambiguous
+            // (its best-scoring match, the one PEP trains on), so the PSM kept is the one carrying the proteoform-level
+            // q-values. A pipe-ambiguous match has a null FullSequence; keying it on its hypotheses keeps each ambiguous
             // proteoform separate rather than collapsing all of them into one null group (#2).
-            IEnumerable<SpectralMatch> proteoforms = pass1Psms
-                .Where(p => p != null)
-                .OrderBy(p => p.FdrInfo?.PEP ?? double.MaxValue)
-                .ThenByDescending(p => p)
-                .GroupBy(ProteoformKey)
-                .Select(g => g.First());
+            IEnumerable<SpectralMatch> proteoforms = SpectralMatchGroup.PeptideStandIns(
+                pass1Psms.Where(p => p != null), ProteoformKey);
 
             foreach (SpectralMatch psm in proteoforms)
             {
