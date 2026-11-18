@@ -28,6 +28,13 @@ public sealed record DiaIrtCalibration(IrtCalibrationModel Model, double IrtHalf
     public Ms1OffsetModel? Ms1Offset { get; init; }
 
     /// <summary>
+    /// How many of the last round's anchors had an M0 error that <see cref="Ms1Offset"/> was fitted from; 0 when calibration ran
+    /// a single round. Few against <see cref="AnchorCount"/> means the run has little MS1 signal, or an MS1 error past what
+    /// calibration could read, so a task can warn that the offset rests on little.
+    /// </summary>
+    public int Ms1OffsetAnchors { get; init; }
+
+    /// <summary>
     /// What the last round's anchors say of the library's fragment intensities; null when calibration ran a single round. A search applies it through
     /// <see cref="DiaLibrarySearchParameters.FragmentIntensities"/>.
     /// </summary>
@@ -105,24 +112,17 @@ public static class DiaIrtSelfCalibration
     /// </summary>
     public static IReadOnlyList<int> CalibrationNetworkLayers { get; } = [25, 20, 15, 10, 5];
 
-    /// <param name="sampleOffset">
-    /// Which of each pass's samples to draw (<see cref="DiaLibrarySearchParameters.PrecursorSampleOffset"/>, taken modulo the
-    /// pass's stride). 0 by default; others repeat calibration on a disjoint sample.
-    /// </param>
-    /// <exception cref="MetaMorpheusException">
-    /// The run has no DIA MS2 scans, the library holds no targets, or too few confident first-pass identifications to
-    /// calibrate on.
-    /// </exception>
     /// <summary>
-    /// The search's parameters as calibration uses them: every fragment scored, whatever the fragment rule, and MS1 read at
-    /// <see cref="CalibrationMs1TolerancePpm"/> with no offset, since calibration is what fits the offset. With the rule in
+    /// The search's parameters as calibration uses them: every fragment scored, whatever the fragment rule, and MS1 read with
+    /// no offset, since calibration is what fits the offset, at <see cref="CalibrationMs1TolerancePpm"/> or the search's own
+    /// tolerance if that is wider (a user who knows the instrument is off widens calibration too). With the rule in
     /// calibration too, the held-out run (PXD005573 1 h) lost 2.1% (two-seed means at a matched paired entrapment FDP of 1%).
     /// DIA-NN's signal share stays off as well: it was benchmarked in the main search only, and in calibration it moved the
     /// anchors and cost HF-X 1.5% on seed 0. The network is <see cref="CalibrationNetworkLayers"/>. Calibration only picks
     /// anchors, so it has no use for the tree blend or the neighbour evidence, and it stays on the candidate rule and features it was tuned with, without the summed core.
     /// </summary>
     public static DiaLibrarySearchParameters CalibrationParameters(DiaLibrarySearchParameters parameters) =>
-        parameters with { DiaNnFragmentFilter = false, Ms1Offset = null, Ms1TolerancePpm = CalibrationMs1TolerancePpm, DiaNnSignalShare = false,
+        parameters with { DiaNnFragmentFilter = false, Ms1Offset = null, Ms1TolerancePpm = Math.Max(parameters.Ms1TolerancePpm, CalibrationMs1TolerancePpm), DiaNnSignalShare = false,
             InterferenceExplainedFragments = CalibrationInterferenceExplainedFragments, ClassifierNetworkLayers = [.. CalibrationNetworkLayers],
             ClassifierTreeBlend = false, CandidatePeaksFromSummedCore = false, NeighbourEvidence = false, FragmentIntensities = null, IrtComposition = null,
             MaxToleranceCoElution = false, Ms1TightCorrelation = false, SqrtCoElution = false, Ms1PeakEnvelopeTight = false, Ms1PeakSignalFraction = false, Ms1PeakPoints = false, Ms1PeakFeatures = false };
@@ -142,6 +142,22 @@ public static class DiaIrtSelfCalibration
     internal static bool LineIsMisplaced(IReadOnlyList<(RtMinutes ApexRt, Irt LibraryIrt)> anchors, IrtCalibrationModel provisional, double halfWindow) =>
         anchors.Count > 0 && anchors.Count(a => Math.Abs(provisional.ToIrt(a.ApexRt).Value - a.LibraryIrt.Value) > halfWindow) > anchors.Count / 2.0;
 
+    /// <summary>
+    /// Calibrates the run onto the library's iRT scale from the run alone: a first pass with a provisional line and a wide
+    /// window, then later rounds, each searching with the previous fit. The last round's anchors also fit the run's MS1
+    /// offset, its fragment intensity table and its iRT composition fit (<see cref="DiaIrtCalibration.ApplyTo"/>).
+    /// </summary>
+    /// <param name="rounds">Calibration rounds, the first pass included (<see cref="DefaultRounds"/>).</param>
+    /// <param name="sampleOffset">
+    /// Which of each pass's samples to draw (<see cref="DiaLibrarySearchParameters.PrecursorSampleOffset"/>, taken modulo the
+    /// pass's stride). 0 by default; others repeat calibration on a disjoint sample.
+    /// </param>
+    /// <exception cref="ArgumentNullException"><paramref name="scans"/>, <paramref name="library"/> or <paramref name="parameters"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="rounds"/> is below 1, or <paramref name="sampleOffset"/> is negative.</exception>
+    /// <exception cref="MetaMorpheusException">
+    /// The run has no DIA MS2 scans, the library holds no target precursors with a library time, or the first pass finds too
+    /// few confident identifications to calibrate on.
+    /// </exception>
     public static DiaIrtCalibration Calibrate(MsDataScan[] scans, MslLibrary library, DiaLibrarySearchParameters parameters,
         CommonParameters commonParameters, IrtCalibrationOptions? options = null, int firstPassTargetCount = FirstPassTargetCount,
         int desiredAnchors = DesiredAnchors, int rounds = DefaultRounds, double windowSds = DefaultWindowSds, int sampleOffset = 0)
@@ -248,6 +264,8 @@ public static class DiaIrtSelfCalibration
     private static DiaIrtCalibration LaterRounds(DiaIrtCalibration calibration, MsDataScan[] scans, MslLibrary library,
         DiaLibrarySearchParameters parameters, CommonParameters commonParameters, IrtCalibrationOptions options, int stride, int offset, int rounds, double windowSds)
     {
+        var ms1 = scans.Where(s => s.MsnOrder == 1).OrderBy(s => s.RetentionTime).ToArray();
+        double[] ms1Rts = ms1.Select(s => s.RetentionTime).ToArray();
         for (int round = 2; round <= rounds; round++)
         {
             var pass = (DiaLibrarySearchResults)new DiaLibrarySearchEngine(scans, library, calibration.Model,
@@ -262,15 +280,38 @@ public static class DiaIrtSelfCalibration
                 break;
             // The same confident targets give the run's MS1 offset (calibration searches without one, so the errors are raw)
             var fitted = Fit(anchors, options, windowSds);
+            var (ms1Offset, ms1OffsetAnchors) = FitMs1Offset(confident, ms1, ms1Rts, parameters.Ms1TolerancePpm);
             calibration = fitted with
             {
                 Rounds = round,
                 IrtComposition = FitIrtComposition(confident, fitted.Model, library),
-                Ms1Offset = Ms1OffsetModel.Fit(confident.Select(m => (m.ApexRt.Value, m.Ms1ApexErrorPpm))),
+                Ms1Offset = ms1Offset,
+                Ms1OffsetAnchors = ms1OffsetAnchors,
                 FragmentIntensities = FitFragmentIntensities(confident, scans, library, parameters),
             };
         }
         return calibration;
+    }
+
+    /// <summary>
+    /// The run's MS1 offset from the anchors' M0 errors, and how many anchors had one. Calibration's own search reads MS1 at
+    /// <paramref name="tolerancePpm"/> with no offset, so it cannot see an error past that, and it cuts off one side of an
+    /// error most of the way there: a run 12 ppm off fitted an offset near 0. So when the anchors' M0s, read from their
+    /// nearest MS1 scan at the wider <see cref="DiaMassCalibration.SearchPpm"/>, put the run's median error past half the
+    /// tolerance, the offset is fitted from that read instead. A run within half, as every benchmark run so far, keeps the
+    /// search's own read and its offset is unchanged.
+    /// </summary>
+    private static (Ms1OffsetModel Offset, int Anchors) FitMs1Offset(IReadOnlyList<DiaPrecursorMatch> confident, MsDataScan[] ms1, double[] ms1Rts, double tolerancePpm)
+    {
+        var searched = confident.Select(m => (m.ApexRt.Value, m.Ms1ApexErrorPpm)).ToList();
+        if (ms1.Length > 0 && tolerancePpm < DiaMassCalibration.SearchPpm)
+        {
+            var wide = confident.Select(m => (m.ApexRt.Value, DiaMassCalibration.Ms1ErrorPpm(ms1, ms1Rts, m.ApexRt.Value, m.PrecursorMz))).ToList();
+            double[] errors = wide.Select(p => p.Item2).Where(double.IsFinite).Order().ToArray();
+            if (errors.Length > 0 && Math.Abs(errors[errors.Length / 2]) > tolerancePpm / 2)
+                return (Ms1OffsetModel.Fit(wide), errors.Length);
+        }
+        return (Ms1OffsetModel.Fit(searched), searched.Count(p => double.IsFinite(p.Item2)));
     }
 
     private static DiaIrtCompositionModel FitIrtComposition(IReadOnlyList<DiaPrecursorMatch> confident, IrtCalibrationModel model, MslLibrary library) =>
@@ -292,20 +333,40 @@ public static class DiaIrtSelfCalibration
     /// <summary>
     /// The second pass, as DIA-NN refits after its first search: the run's RT->iRT map refitted on the main search's targets at
     /// <see cref="AnchorQValue"/> (the best <see cref="MaximumRefinementAnchors"/> by score), many more than the first pass's.
-    /// Decoys and targets above the cutoff never take part.
+    /// Decoys and targets above the cutoff never take part. The refit replaces the curve and its window; the rest of
+    /// <paramref name="calibration"/> is kept. Its MS1 offset and intensity table do not depend on the curve. Its iRT
+    /// composition fit is read against the curve, so it is refitted against the new one; a calibration without one gets none.
     /// </summary>
-    /// <exception cref="ArgumentNullException"><paramref name="matches"/> is null.</exception>
-    /// <exception cref="MetaMorpheusException">Too few confident targets to fit.</exception>
-    public static DiaIrtCalibration Refine(IReadOnlyList<DiaPrecursorMatch> matches, IrtCalibrationOptions? options = null)
+    /// <param name="calibration">The calibration the main search ran with.</param>
+    /// <param name="library">The library searched, for the composition refit's sequences.</param>
+    /// <exception cref="ArgumentNullException">An argument other than <paramref name="options"/> is null.</exception>
+    /// <exception cref="MetaMorpheusException">The main search has too few confident targets to refit on.</exception>
+    public static DiaIrtCalibration Refine(DiaIrtCalibration calibration, IReadOnlyList<DiaPrecursorMatch> matches, MslLibrary library,
+        IrtCalibrationOptions? options = null)
     {
+        ArgumentNullException.ThrowIfNull(calibration);
         ArgumentNullException.ThrowIfNull(matches);
-        var anchors = matches
+        ArgumentNullException.ThrowIfNull(library);
+        options ??= new IrtCalibrationOptions();
+        var confident = matches
             .Where(m => !m.IsDecoy && m.QValue <= AnchorQValue)
             .OrderByDescending(m => m.Score).ThenBy(m => m.PrecursorIndex)
             .Take(MaximumRefinementAnchors)
-            .Select(m => (m.ApexRt, m.LibraryIrt))
             .ToList();
-        return Fit(anchors, options ?? new IrtCalibrationOptions(), DefaultWindowSds);
+        if (confident.Count < options.MinimumAnchors)
+            throw new MetaMorpheusException($"Could not refit retention time: the main search found only {confident.Count} confident " +
+                $"identifications, and at least {options.MinimumAnchors} are needed.");
+
+        var fitted = Fit(confident.Select(m => (m.ApexRt, m.LibraryIrt)).ToList(), options, DefaultWindowSds);
+        return fitted with
+        {
+            Rounds = calibration.Rounds,
+            FirstPassSearches = calibration.FirstPassSearches,
+            Ms1Offset = calibration.Ms1Offset,
+            Ms1OffsetAnchors = calibration.Ms1OffsetAnchors,
+            FragmentIntensities = calibration.FragmentIntensities,
+            IrtComposition = calibration.IrtComposition is null ? null : FitIrtComposition(confident, fitted.Model, library),
+        };
     }
 
     private static DiaIrtCalibration Fit(System.Collections.Generic.List<(RtMinutes ApexRt, Irt LibraryIrt)> anchors, IrtCalibrationOptions options, double windowSds)

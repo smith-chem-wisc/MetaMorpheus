@@ -192,15 +192,17 @@ public class DiaIrtSelfCalibrationTests
     /// A run whose MS1 error is past calibration's 10 ppm read: almost no anchor found its M0 there, so the offset was fitted
     /// from a couple of chance peaks, near 0 (12 ppm fitted 0.07), and nothing said so. The offset is then read from each
     /// anchor's nearest MS1 scan at the 20 ppm mass calibration reads with, and it comes out right, resting on most anchors.
+    /// A search set to 30 ppm reads that far in calibration too, and its own read is enough.
     /// </summary>
-    [TestCase(12)]
-    [TestCase(-15)]
-    public void AnMs1OffsetPastCalibrationsReadIsStillFitted(double ppm)
+    [TestCase(12, 5)]
+    [TestCase(-15, 5)]
+    [TestCase(12, 30)]
+    public void AnMs1OffsetPastCalibrationsReadIsStillFitted(double ppm, double searchTolerancePpm)
     {
         var run = SyntheticDiaRun.Build(300, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0, withMs1: true, ppmOffset: ppm);
         using var library = MslLibrary.Load(run.WriteLibrary(_directory));
 
-        var calibration = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(), new CommonParameters());
+        var calibration = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(Ms1TolerancePpm: searchTolerancePpm), new CommonParameters());
 
         Assert.That(calibration.Ms1Offset, Is.Not.Null);
         Assert.That(calibration.Ms1Offset!.OffsetPpm(5), Is.EqualTo(ppm).Within(1));
@@ -563,6 +565,8 @@ public class DiaIrtSelfCalibrationTests
         Assert.That(second.FragmentIntensities, Is.SameAs(calibration.FragmentIntensities));
         Assert.That(second.IrtComposition, Is.Not.Null.And.Not.SameAs(calibration.IrtComposition), "refitted against the new curve");
         Assert.That(refined.Ms1OffsetAnchors, Is.EqualTo(calibration.Ms1OffsetAnchors));
+        var oneRound = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(), new CommonParameters(), rounds: 1);
+        Assert.That(DiaIrtSelfCalibration.Refine(oneRound, results.Matches, library).IrtComposition, Is.Null, "a calibration without a composition fit gets none");
         var e = Assert.Throws<MetaMorpheusException>(() => DiaIrtSelfCalibration.Refine(calibration, [], library));
         Assert.That(e!.Message, Does.Contain("main search").And.Not.Contain("first pass"));
     }
