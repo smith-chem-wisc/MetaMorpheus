@@ -44,10 +44,11 @@ namespace Test
             string[] allResults = File.ReadAllLines(allResultsFile);
 
             // The new PEP calculation method improves things, so all these numbers are increasing as of (7/17/24)
-            // There is a discrepancy between the number of All target peptides and individual file target peptides, 
+            // The two files hold the same spectra, so the whole search and each file count the same peptides: every peptide
+            // stands on its best-scoring match, the one PEP trains on, in both.
 
             Assert.That(allResults[10], Is.EqualTo("All target PSMs with q-value notch <= 0.01: 428"));
-            Assert.That(allResults[11], Is.EqualTo("All target peptides with q-value notch <= 0.01: 173"));
+            Assert.That(allResults[11], Is.EqualTo("All target peptides with q-value notch <= 0.01: 174"));
             Assert.That(allResults[12], Is.EqualTo("All target protein groups with q-value notch <= 0.01 (1% FDR): 165"));
             Assert.That(allResults[13], Is.EqualTo("All Precursors: 1070"));
             Assert.That(allResults[14], Is.EqualTo("All MS2 Scans: 294"));
@@ -66,7 +67,7 @@ namespace Test
             string[] results = File.ReadAllLines(resultsFile);
 
             Assert.That(results[5], Is.EqualTo("All target PSMs with q-value notch <= 0.01: 428"));
-            Assert.That(results[6], Is.EqualTo("All target peptides with q-value notch <= 0.01: 173"));
+            Assert.That(results[6], Is.EqualTo("All target peptides with q-value notch <= 0.01: 174"));
             Assert.That(results[7], Is.EqualTo("All target protein groups with q-value notch <= 0.01 (1% FDR): 165"));
             Assert.That(results[8], Is.EqualTo("All Precursors: 1070"));
             Assert.That(results[9], Is.EqualTo("All MS2 Scans: 294"));
@@ -92,7 +93,7 @@ namespace Test
             // The number of protein groups will be different, because protein inference is performed once, using every peptide
             // identified across all files.
             int TaGe_SA_A549_3_snip_2ExpectedPsms = 214;
-            int TaGe_SA_A549_3_snip_2ExpectedPeptides = 173;
+            int TaGe_SA_A549_3_snip_2ExpectedPeptides = 174;
 
             EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpQValueSingle, out var testCaseSingle);
             outputFolder = testCaseSingle.OutputDirectory;
@@ -111,13 +112,15 @@ namespace Test
             // Note: PEP Q-value filtering typically yields fewer PSMs, peptides, and protein groups than Q-value filtering
             // (e.g., 144 protein groups here vs. 165 with Q-value filtering) because PEP is a more stringent per-PSM
             // confidence metric that considers additional features beyond just target-decoy competition.
+            // The whole search counts the same peptides as each of its two identical files (151): every peptide stands on
+            // its best-scoring match, the one PEP trains on, in both.
             EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpPepQValue, out var testCase);
             string outputFolder = testCase.OutputDirectory;
             var allResultsFile = Path.Combine(outputFolder, "allResults.txt");
             var allResults = File.ReadAllLines(allResultsFile);
 
             Assert.That(allResults[10], Is.EqualTo("All target PSMs with pep q-value <= 0.01: 374"));
-            Assert.That(allResults[11], Is.EqualTo("All target peptides with pep q-value <= 0.01: 153"));
+            Assert.That(allResults[11], Is.EqualTo("All target peptides with pep q-value <= 0.01: 151"));
             Assert.That(allResults[12], Is.EqualTo("All target protein groups with pep q-value <= 0.01 (1% FDR): 144"));
             Assert.That(allResults[13], Is.EqualTo("All Precursors: 1070"));
             Assert.That(allResults[14], Is.EqualTo("All MS2 Scans: 294"));
@@ -139,7 +142,7 @@ namespace Test
             var results = File.ReadAllLines(resultsFile);
 
             Assert.That(results[5], Is.EqualTo("All target PSMs with pep q-value <= 0.01: 374"));
-            Assert.That(results[6], Is.EqualTo("All target peptides with pep q-value <= 0.01: 153"));
+            Assert.That(results[6], Is.EqualTo("All target peptides with pep q-value <= 0.01: 151"));
             Assert.That(results[7], Is.EqualTo("All target protein groups with pep q-value <= 0.01 (1% FDR): 144"));
             Assert.That(results[8], Is.EqualTo("All Precursors: 1070"));
             Assert.That(results[9], Is.EqualTo("All MS2 Scans: 294"));
