@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EngineLayer.DiaLibrarySearch;
 
@@ -35,6 +36,43 @@ public static class DiaProteinSupport
     public static double[] Measure(IReadOnlyList<Row> rows, Func<string, string>? key = null)
     {
         ArgumentNullException.ThrowIfNull(rows);
-        return new double[rows.Count];
+        var proteins = new string[rows.Count][];
+        var confidentPeptides = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        for (int i = 0; i < rows.Count; i++)
+        {
+            proteins[i] = ProteinsOf(rows[i].Accession, key);
+            if (rows[i].IsDecoy || !rows[i].Confident)
+                continue;
+            foreach (string protein in proteins[i])
+            {
+                if (!confidentPeptides.TryGetValue(protein, out var peptides))
+                    confidentPeptides[protein] = peptides = new HashSet<string>(StringComparer.Ordinal);
+                peptides.Add(rows[i].BaseSequence);
+            }
+        }
+        var support = new double[rows.Count];
+        for (int i = 0; i < rows.Count; i++)
+        {
+            foreach (string protein in proteins[i])
+            {
+                if (!confidentPeptides.TryGetValue(protein, out var peptides))
+                    continue;
+                int others = peptides.Count - (!rows[i].IsDecoy && peptides.Contains(rows[i].BaseSequence) ? 1 : 0);
+                support[i] = Math.Max(support[i], others);
+            }
+        }
+        return support;
+    }
+
+    /// <summary>The proteins an accession string names: split on '|' and ';', a decoy's prefix dropped, each through <paramref name="key"/>.</summary>
+    private static string[] ProteinsOf(string? accession, Func<string, string>? key)
+    {
+        if (string.IsNullOrEmpty(accession))
+            return [];
+        return accession.Split(['|', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(a => a.StartsWith(DecoyPrefix, StringComparison.Ordinal) ? a[DecoyPrefix.Length..] : a)
+            .Where(a => a.Length > 0)
+            .Select(a => key is null ? a : key(a))
+            .Distinct(StringComparer.Ordinal).ToArray();
     }
 }

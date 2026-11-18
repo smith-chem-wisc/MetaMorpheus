@@ -1308,7 +1308,9 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
                 : null;
             matches = DiaNeighbourEvidence.Apply(matches, IonsOf, windowBounds, windowScans, (_parameters.InterferenceRtToleranceCycles ?? _parameters.ApexHalfWidthScans + 1) * cycleMinutes,
                 _parameters.FragmentTolerancePpm, _parameters.ApexHalfWidthScans, _parameters.MostIntenseFragmentPeak, _parameters.TopFragmentCount, _parameters.ClassifierSeed, CommonParameters.MaxThreadsToUsePerFile, Status,
-                _parameters.PeptidoformEvidence ? 1.2 * cycleMinutes : null);
+                _parameters.PeptidoformEvidence ? 1.2 * cycleMinutes : null,
+                _parameters.ProteinSupport ? index => _library.GetEntry(index) is { } entry ? (entry.ProteinAccession, entry.BaseSequence) : null : null,
+                _parameters.ProteinKey);
             Status($"timing: neighbour evidence over {matches.Count} precursors  [{neighbourClock.Elapsed:mm\\:ss\\.f}]");
         }
 

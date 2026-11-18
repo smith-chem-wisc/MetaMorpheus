@@ -327,6 +327,26 @@ public static class DiaNeighbourEvidence
     }
 
     /// <summary>
+    /// Appends log(1 + protein support) to each measured row, from the confident targets' peptides. Only the measured and the
+    /// confident rows are read, so a library is not walked whole.
+    /// </summary>
+    private static void AppendProteinSupport(IReadOnlyList<DiaPrecursorMatch> matches, double[]?[] columns, int[] measured, double[] q,
+        Func<int, (string? Accession, string BaseSequence)?> proteinOf, Func<string, string>? proteinKey)
+    {
+        bool Confident(int i) => !matches[i].IsDecoy && q[i] <= ConfidentQValue;
+        int[] read = measured.Concat(Enumerable.Range(0, matches.Count).Where(Confident)).Distinct().ToArray();
+        var rows = read.Select(i => proteinOf(matches[i].PrecursorIndex) is { } protein
+            ? new DiaProteinSupport.Row(protein.Accession, protein.BaseSequence, matches[i].IsDecoy, Confident(i))
+            : new DiaProteinSupport.Row(null, matches[i].FullSequence, matches[i].IsDecoy, false)).ToList();
+        double[] support = DiaProteinSupport.Measure(rows, proteinKey);
+        var supportOf = new Dictionary<int, double>(read.Length);
+        for (int k = 0; k < read.Length; k++)
+            supportOf[read[k]] = support[k];
+        foreach (int i in measured)
+            columns[i] = [.. columns[i]!, Math.Log(1 + supportOf[i])];
+    }
+
+    /// <summary>
     /// Re-orders rows by out-of-fold trees learning target against decoy from the score and the columns.
     /// </summary>
     /// <param name="groupKeys">Rows sharing a key, such as a peptide's charge states, stay in one fold.</param>
@@ -355,10 +375,15 @@ public static class DiaNeighbourEvidence
     /// <summary>
     /// Measures the rows near the threshold and re-orders them. Rows below the provisional floor keep their scores, and every value above it stays above it. So do rows at or under <see cref="KeptQValue"/>.
     /// </summary>
+    /// <param name="proteinOf">
+    /// With it, each measured row also gets <see cref="ProteinSupportColumnName"/>: log(1 + its <see cref="DiaProteinSupport"/>),
+    /// counting the targets at or under <see cref="ConfidentQValue"/>. It gives a library precursor's accessions and peptide.
+    /// </param>
+    /// <param name="proteinKey">The protein an accession counts toward (<see cref="DiaLibrarySearchParameters.ProteinKey"/>).</param>
     /// <returns>The matches in their input order, with their scores reassigned.</returns>
     public static List<DiaPrecursorMatch> Apply(IReadOnlyList<DiaPrecursorMatch> matches, Func<int, PrecursorIons?> ionsOf, IReadOnlyList<(double Low, double High)> windowBounds,
         IReadOnlyList<MsDataScan[]> windowScans, double rtToleranceMinutes, double tolerancePpm, int apexHalfWidthScans, bool mostIntensePeak, int topFragments, int seed, int threads = 1, Action<string>? report = null,
-        double? peptidoformRtMinutes = null)
+        double? peptidoformRtMinutes = null, Func<int, (string? Accession, string BaseSequence)?>? proteinOf = null, Func<string, string>? proteinKey = null)
     {
         double[]?[] columns = MeasureAll(matches, ionsOf, windowBounds, windowScans, rtToleranceMinutes, tolerancePpm, apexHalfWidthScans, mostIntensePeak, topFragments, threads, peptidoformRtMinutes);
         int[] measured = Enumerable.Range(0, matches.Count).Where(i => columns[i] is not null).ToArray();
@@ -366,6 +391,8 @@ public static class DiaNeighbourEvidence
         if (measured.Length == 0)
             return applied;
         double[] q = TargetDecoyQValues.Compute(matches.Select(m => m.Score).ToArray(), matches.Select(m => m.IsDecoy).ToArray());
+        if (proteinOf is not null)
+            AppendProteinSupport(matches, columns, measured, q, proteinOf, proteinKey);
         double keepAtOrAbove = matches.Where((_, i) => q[i] <= KeptQValue).Select(m => m.Score).DefaultIfEmpty(double.PositiveInfinity).Min();
         double[] stacked = Stack(measured.Select(i => matches[i].Score).ToList(), measured.Select(i => columns[i]!).ToList(), measured.Select(i => matches[i].IsDecoy).ToList(),
             measured.Select(i => matches[i].FullSequence).ToList(), seed, threads, keepAtOrAbove);

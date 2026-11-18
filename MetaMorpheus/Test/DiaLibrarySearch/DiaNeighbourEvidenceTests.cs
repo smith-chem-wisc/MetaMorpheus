@@ -637,6 +637,31 @@ public class DiaNeighbourEvidenceTests
         Assert.That(lines, Has.One.Contains("neighbour evidence"));
     }
 
+    /// <summary>
+    /// With proteins given, the trees also read protein support: weak targets of a protein a thousand confident peptides support
+    /// climb over decoys of a protein nothing supports, where the signal alone (the same for every row) cannot tell them apart.
+    /// </summary>
+    [Test]
+    public void WithProteinsTheTreesReadProteinSupport()
+    {
+        var random = new Random(7);
+        var matches = Enumerable.Range(0, 1000).Select(i => Match(i, 10 + random.NextDouble(), rt: 1 + i % 19)).ToList();
+        // 300 weak targets and 100 decoys in one band: a provisional q under 10%, so all are measured
+        matches.AddRange(Enumerable.Range(1000, 400).Select(i => Match(i, 5 + random.NextDouble(), isDecoy: i % 4 == 0, rt: 1 + i % 19)));
+        var window = Window(OnThePeak());
+        DiaNeighbourEvidence.PrecursorIons Of(int index) => new(Ions.ToList(), Ions.Select(i => i.Mz).ToList(), $"BASE{index}");
+        (string? Accession, string BaseSequence)? ProteinOf(int index) => (index >= 1000 && index % 4 == 0 ? "DECOY_P9" : "P1", $"BASE{index}");
+        double DecoysInTheBandsTop(List<DiaPrecursorMatch> applied) =>
+            applied.Where(m => m.PrecursorIndex >= 1000).OrderByDescending(m => m.Score).Take(300).Count(m => m.IsDecoy) / 300.0;
+
+        var without = DiaNeighbourEvidence.Apply(matches, Of, [(490, 510)], [window], RtTolerance, Ppm, ApexHalfWidth, true, 12, 0);
+        var with = DiaNeighbourEvidence.Apply(matches, Of, [(490, 510)], [window], RtTolerance, Ppm, ApexHalfWidth, true, 12, 0, proteinOf: ProteinOf);
+
+        Assert.That(DecoysInTheBandsTop(without), Is.GreaterThan(0.15), "without proteins, the band's order is the score's");
+        Assert.That(DecoysInTheBandsTop(with), Is.LessThan(0.02));
+        Assert.That(with.Select(m => m.Score).Order(), Is.EqualTo(matches.Select(m => m.Score).Order()), "the values stay the classifier's own");
+    }
+
     /// <summary>Rows at or under a provisional q of 0.1% keep their scores, and the trees still learn from them.</summary>
     [Test]
     public void ApplyKeepsRowsAtTheVeryTopInPlace()
