@@ -132,8 +132,12 @@ namespace Test
             Assert.That(output.Length == 3);
 
             var mzId = File.ReadAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecificSmall\tinySemi.mzID"));
-            Assert.That(mzId[115].Equals("          <cvParam name=\"mzML format\" cvRef=\"PSI-MS\" accession=\"MS:1000584\" />"));
-            Assert.That(mzId[118].Equals("          <cvParam name=\"mzML unique identifier\" cvRef=\"PSI-MS\" accession=\"MS:1001530\" />"));
+            // the spectra are an MGF, which has no native IDs, so each is named by its scan number
+            Assert.That(mzId[115].Equals("          <cvParam name=\"Mascot MGF format\" cvRef=\"PSI-MS\" accession=\"MS:1001062\" />"));
+            Assert.That(mzId[118].Equals("          <cvParam name=\"scan number only nativeID format\" cvRef=\"PSI-MS\" accession=\"MS:1000776\" />"));
+            var results = mzId.Where(line => line.Contains("<SpectrumIdentificationResult ")).ToList();
+            Assert.That(results, Is.Not.Empty);
+            Assert.That(results, Has.All.Contains("spectrumID=\"scan="));
             Assert.That(mzId[97].Equals("        <cvParam name=\"pep:FDR threshold\" value=\"0.01\" cvRef=\"PSI-MS\" accession=\"MS:1001448\" />"));
 
         }
@@ -851,11 +855,12 @@ namespace Test
             Protein protein = new Protein("PEPTIDE", "", databaseFilePath: "temp");
 
             // The mod has to have a RESID reference and NO Unimod one, because GetUnimodCvParam prefers
-            // Unimod and returns before it reaches the RESID branch this test exists to cover.
+            // Unimod and returns before it reaches the branch this test exists to cover.
             // "FMN phosphoryl threonine on T" used to qualify. It stopped when the modification data moved
             // to the mzLib package, whose ptmlist.txt is a newer UniProt release that added
             // "DR Unimod; 442." to that entry -- so it now writes UNIMOD:442 and the RESID branch went
             // untested. This one still has RESID and PSI-MOD only, and targets the same residue.
+            // mzIdentML has no RESID vocabulary, so the file carries the entry's PSI-MOD term instead.
             Modification uniProtMod = GlobalVariables.AllModsKnown.First(p =>
                 p.IdWithMotif == "(E)-2,3-didehydrobutyrine on T"
                 && p.ModificationType == "UniProt"
@@ -864,6 +869,8 @@ namespace Test
                 && p.LocationRestriction == "Anywhere.");
 
             string resIdAccession = uniProtMod.DatabaseReference["RESID"].First();
+            string psiModAccession = uniProtMod.DatabaseReference["PSI-MOD"].First();
+            Assert.That(psiModAccession, Does.StartWith("MOD:"), "UniProt writes the PSI-MOD accession whole");
             var peptide = protein.Digest(new DigestionParams(), new List<Modification> { uniProtMod }, new List<Modification>()).First();
 
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null,
@@ -884,12 +891,14 @@ namespace Test
             bool found = false;
             foreach (var line in file)
             {
-                if (line.Contains("(E)-2,3-didehydrobutyrine on T") && line.Contains("RESID:" + resIdAccession))
+                if (line.Contains("(E)-2,3-didehydrobutyrine on T") && line.Contains("cvRef=\"PSI-MOD\"")
+                    && line.Contains("accession=\"" + psiModAccession + "\""))
                 {
                     found = true;
                 }
             }
             Assert.That(found);
+            Assert.That(file, Has.None.Contains("RESID:" + resIdAccession));
 
             File.Delete(path);
         }
@@ -926,7 +935,8 @@ namespace Test
             bool found = false;
             foreach (var line in file)
             {
-                if (line.Contains("FAKE on T") && line.Contains("PSI-MOD:" + resIdAccession))
+                // the PSI-MOD accession is MOD:nnnnn, tagged PSI-MOD
+                if (line.Contains("FAKE on T") && line.Contains("cvRef=\"PSI-MOD\"") && line.Contains("accession=\"MOD:" + resIdAccession + "\""))
                 {
                     found = true;
                 }
@@ -942,7 +952,7 @@ namespace Test
             found = false;
             foreach (var line in file)
             {
-                if (line.Contains("FAKE") && !line.Contains(" on ") && line.Contains("PSI-MOD:" + resIdAccession))
+                if (line.Contains("FAKE") && !line.Contains(" on ") && line.Contains("cvRef=\"PSI-MOD\"") && line.Contains("accession=\"MOD:" + resIdAccession + "\""))
                 {
                     found = true;
                 }
