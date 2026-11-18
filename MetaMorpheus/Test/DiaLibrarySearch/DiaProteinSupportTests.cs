@@ -70,9 +70,9 @@ public class DiaProteinSupportTests
     }
 
     [Test]
-    public void ProteinSupportIsOffByDefaultAndCalibrationLeavesItOff()
+    public void ProteinSupportIsOnByDefaultAndCalibrationLeavesItOff()
     {
-        Assert.That(new DiaLibrarySearchParameters().ProteinSupport, Is.False);
+        Assert.That(new DiaLibrarySearchParameters().ProteinSupport, Is.True, "adopted 2026-11-18");
         Assert.That(new DiaLibrarySearchParameters().ProteinKey, Is.Null);
         Assert.That(DiaIrtSelfCalibration.CalibrationParameters(new DiaLibrarySearchParameters(ProteinSupport: true)).ProteinSupport, Is.False);
         Assert.That(DiaNeighbourEvidence.ProteinSupportColumnName, Is.EqualTo("ProteinSupport"));

@@ -241,7 +241,12 @@ namespace EngineLayer.DiaLibrarySearch;
 /// With <see cref="NeighbourEvidence"/>: the neighbour trees also see each row's protein support (<see cref="DiaProteinSupport.Measure"/>),
 /// the number of other confident peptides of its protein, as DIA-NN 2.3.2 re-scores on protein information after its network.
 /// Judge it only where entrapments count toward their owners' proteins (<see cref="ProteinKey"/>): in their own proteins,
-/// which are never present, support removes them for free. Off by default.
+/// which are never present, support removes them for free. On by default since 2026-11-18 (owner adopted it): with each
+/// entrapment in its owner's protein, two seeds, at a matched paired entrapment FDP of 1% against the defaults before it,
+/// PXD022589 HF-X +7.0% / +7.5%, PXD005573 1 h +7.8% / +8.1%; species arm +7.4% / +7.7% and +12.6% / +11.4%; DIA-NN's own
+/// list +2.8% / +3.6%; PXD071205 A1 +12.4% / +13.2%. FDP at 1% q stays at or under 1% (held-out's species arm 1.24% to 0.77%),
+/// and q 0.1% is flat or up. A decoy counts toward its target's protein; the column is left out when no decoy accession names
+/// one (<see cref="DiaNeighbourEvidence.MinDecoySupportShare"/>). Calibration leaves it off.
 /// </param>
 /// <param name="ProteinKey">
 /// The protein an accession counts toward for <see cref="ProteinSupport"/>; null takes the accession as it is. An entrapment
@@ -306,7 +311,7 @@ public sealed record DiaLibrarySearchParameters(double FragmentTolerancePpm = 20
     bool Ms1CorrelationSummedCore = false,
     int? CandidateApexSpacingScans = 2,
     bool PeptidoformEvidence = true,
-    bool ProteinSupport = false,
+    bool ProteinSupport = true,
     Func<string, string>? ProteinKey = null)
 {
     /// <summary>

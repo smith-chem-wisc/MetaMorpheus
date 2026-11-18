@@ -47,11 +47,13 @@ public class DiaIrtSelfCalibrationTests
         var search = new DiaLibrarySearchParameters(DiaNnFragmentFilter: true, TopFragmentCount: 10);
         var calibrationParameters = DiaIrtSelfCalibration.CalibrationParameters(search);
         Assert.That(calibrationParameters.DiaNnFragmentFilter, Is.False);
-        // Candidate spacing and peptidoform evidence were benchmarked in the main search only: calibration keeps the half width and no rivals
+        // Candidate spacing, peptidoform evidence and protein support were benchmarked in the main search only: calibration keeps
+        // the half width, no rivals and no protein support
         Assert.That(calibrationParameters.CandidateApexSpacingScans, Is.Null);
         Assert.That(calibrationParameters.PeptidoformEvidence, Is.False);
+        Assert.That(calibrationParameters.ProteinSupport, Is.False);
         Assert.That(calibrationParameters with { DiaNnFragmentFilter = true, Ms1TolerancePpm = search.Ms1TolerancePpm, DiaNnSignalShare = search.DiaNnSignalShare,
-                CandidateApexSpacingScans = search.CandidateApexSpacingScans, PeptidoformEvidence = search.PeptidoformEvidence,
+                CandidateApexSpacingScans = search.CandidateApexSpacingScans, PeptidoformEvidence = search.PeptidoformEvidence, ProteinSupport = search.ProteinSupport,
                 InterferenceExplainedFragments = search.InterferenceExplainedFragments, ClassifierNetworkLayers = search.ClassifierNetworkLayers,
                 ClassifierTreeBlend = search.ClassifierTreeBlend, CandidatePeaksFromSummedCore = search.CandidatePeaksFromSummedCore, NeighbourEvidence = search.NeighbourEvidence, FragmentIntensities = search.FragmentIntensities, IrtComposition = search.IrtComposition,
                 MaxToleranceCoElution = search.MaxToleranceCoElution, Ms1TightCorrelation = search.Ms1TightCorrelation, SqrtCoElution = search.SqrtCoElution, Ms1PeakEnvelopeTight = search.Ms1PeakEnvelopeTight, Ms1PeakSignalFraction = search.Ms1PeakSignalFraction, Ms1PeakPoints = search.Ms1PeakPoints, Ms1PeakFeatures = search.Ms1PeakFeatures, Ms1InterpolatedTraces = search.Ms1InterpolatedTraces },
