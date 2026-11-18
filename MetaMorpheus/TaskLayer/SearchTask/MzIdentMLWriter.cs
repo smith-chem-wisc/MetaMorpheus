@@ -19,7 +19,8 @@ namespace TaskLayer
     {
         public static void WriteMzIdentMl(IEnumerable<SpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<Modification> variableMods, 
             List<Modification> fixedMods, List<SilacLabel> silacLabels, List<DigestionAgent> proteases, Tolerance productTolerance, 
-            Tolerance parentTolerance, int missedCleavages, string outputPath, bool appendMotifToModNames, bool? semiSpecific = null)
+            Tolerance parentTolerance, int missedCleavages, string outputPath, bool appendMotifToModNames, bool? semiSpecific = null,
+            EngineLayer.SpectrumMatch.FilteredPsms identificationFilter = null)
         {
 
             //if SILAC, remove the silac labels, because the base/full sequences reported for output are not the same as the peptides in the best peptides list for the psm

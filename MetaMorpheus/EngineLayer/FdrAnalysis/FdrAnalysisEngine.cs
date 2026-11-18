@@ -561,6 +561,8 @@ namespace EngineLayer.FdrAnalysis
             }
         }
 
+        public static void CountPsm(List<SpectralMatch> proteasePsms, CommonParameters commonParameters) => CountPsm(proteasePsms);
+
         /// <summary>
         /// This method gets the count of PSMs with the same full sequence (with q-value < 0.01) to include in the psmtsv output
         /// </summary>

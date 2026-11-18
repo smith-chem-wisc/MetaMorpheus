@@ -10,6 +10,7 @@
         public double QValueNotch { get; set; }
         public double PEP { get; set; }
         public double PEP_QValue { get; set; }
+        public bool PepTrained { get; set; }
 
         /// <summary>
         /// Creates a new FdrInfo object where Q-Values and PEP_Qvalues are set to 2 by default
