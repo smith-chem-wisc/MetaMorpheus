@@ -1,6 +1,7 @@
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using EngineLayer.FdrAnalysis;
+using GuiFunctions.Util;
 using EngineLayer.ModificationAnalysis;
 using EngineLayer.SpectrumMatch;
 using MassSpectrometry;
@@ -581,6 +582,49 @@ namespace Test
                 "IdentificationFilter read from this task's legacy thresholds (PepQValueThreshold 0.01 < QValueThreshold 1): PEP q-value at 0.01"));
             Assert.That(SearchTask.FilterKeepsEveryMatch(common), Is.Null, "a migrated PEP task filters at 0.01, not at 1");
             Assert.That(common.Clone().IdentificationFilterFromLegacyThresholds, Is.True, "a copy remembers where its filter came from");
+        }
+
+        // Review of #2982 (Alexander-Sol), his reproduction: an unmodified old PEP TOML (master's Task2-SearchTaskconfig.toml,
+        // byte for byte) admitted ten trained matches with PEP q-value and notch 0.5, as a notch filter at its saved
+        // QValueThreshold of 1.0. Read as the PEP filter at its saved 0.01, it rejects all ten.
+        [Test]
+        public static void AnUnmodifiedOldPepToml_RejectsTenTrainedMatchesAtOneHalf()
+        {
+            var common = Nett.Toml.ReadFile<SearchTask>(TestData("Task2-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig).CommonParameters;
+            var psms = Matches("PEPTIDEK", "trypsin", 10, 0, pepTrained: true);
+            Assume.That(psms.Select(p => (p.FdrInfo.PEP_QValue, p.FdrInfo.QValueNotch, p.FdrInfo.PepTrained)).Distinct(), Is.EqualTo(new[] { (0.5, 0.5, true) }));
+
+            var filtered = FilteredPsms.Filter(psms, common);
+
+            Assert.That((filtered.FilterType, filtered.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.01)));
+            Assert.That(filtered.FilteredPsmsList, Is.Empty, "none of the ten passes the saved 0.01");
+            Assert.That(psms.Where(p => FilteredPsms.Passes(p, false, common.IdentificationFilter, FilteredPsms.Threshold(common, common.IdentificationFilter))), Is.Empty);
+        }
+
+        // Review of #2982 (Alexander-Sol): opening and saving an old PEP task in the Search task window keeps it a PEP task.
+        // The window's load and save rule is TaskWindowIdentificationFilter.
+        [Test]
+        public static void TheSearchWindow_ShowsAnOldPepTaskTicked_AndSavesItsFilterByName()
+        {
+            var old = Nett.Toml.ReadFile<SearchTask>(TestData("Task2-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig).CommonParameters;
+
+            bool ticked = TaskWindowIdentificationFilter.PepBoxTicked(old);
+            string qText = TaskWindowIdentificationFilter.QValueThresholdText(old), pepText = TaskWindowIdentificationFilter.PepQValueThresholdText(old);
+            Assert.That((ticked, qText, pepText), Is.EqualTo((true, "0.01", "0.01")), "the PEP box ticked, at the saved 0.01");
+
+            var (filter, qValueThreshold, pepQValueThreshold) = TaskWindowIdentificationFilter.ForSave(ticked, qText, pepText);
+            Assert.That((filter, qValueThreshold, pepQValueThreshold), Is.EqualTo((FilterType.PepQValue, 1.0, 0.01)));
+            string saved = TomlOf(new CommonParameters(qValueThreshold: qValueThreshold, pepQValueThreshold: pepQValueThreshold, identificationFilter: filter),
+                withoutTheFilter: false);
+            Assert.That(saved.Split(Environment.NewLine), Has.One.Match(@"^\s*IdentificationFilter = ""PepQValue""$"));
+            var reopened = LoadCommon(saved);
+            Assert.That((TaskWindowIdentificationFilter.PepBoxTicked(reopened), reopened.IdentificationFilterFromLegacyThresholds), Is.EqualTo((true, false)));
+
+            // A new task keeps the new default: the box unticked, saved as the notch.
+            var fresh = new SearchTask().CommonParameters;
+            Assert.That(TaskWindowIdentificationFilter.PepBoxTicked(fresh), Is.False);
+            Assert.That(TaskWindowIdentificationFilter.ForSave(false, TaskWindowIdentificationFilter.QValueThresholdText(fresh), TaskWindowIdentificationFilter.PepQValueThresholdText(fresh)),
+                Is.EqualTo((FilterType.QValueNotch, 0.01, 1.0)));
         }
 
         [Test]

@@ -217,7 +217,9 @@ namespace Test
 
             foreach (PropertyInfo property in typeof(CommonParameters).GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
-                if (property.Name == nameof(CommonParameters.PrecursorMassTolerance) || property.GetIndexParameters().Length > 0)
+                // A property without a setter is computed from the others (IdentificationFilterFromLegacyThresholds), not a
+                // setting the rebuild could drop
+                if (property.Name == nameof(CommonParameters.PrecursorMassTolerance) || property.GetIndexParameters().Length > 0 || !property.CanWrite)
                 {
                     continue;
                 }

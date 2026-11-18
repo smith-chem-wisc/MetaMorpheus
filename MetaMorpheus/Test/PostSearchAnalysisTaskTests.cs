@@ -116,45 +116,49 @@ namespace Test
             var allResultsFile = Path.Combine(outputFolder, "allResults.txt");
             var allResults = File.ReadAllLines(allResultsFile);
 
-            Assert.That(allResults[10], Is.EqualTo("All target PSMs with pep q-value <= 0.01: 374"));
-            Assert.That(allResults[11], Is.EqualTo("All target peptides with pep q-value <= 0.01: 153"));
-            Assert.That(allResults[12], Is.EqualTo("All target protein groups with pep q-value <= 0.01 (1% FDR): 144"));
-            Assert.That(allResults[13], Is.EqualTo("All Precursors: 1070"));
-            Assert.That(allResults[14], Is.EqualTo("All MS2 Scans: 294"));
+            // Task2-SearchTaskconfig.toml is an old GUI PEP task (no IdentificationFilter): it is read as the PEP q-value filter, and says so
+            const string legacyFilter = "IdentificationFilter read from this task's legacy thresholds (PepQValueThreshold 0.01 < QValueThreshold 1): PEP q-value at 0.01";
+            Assert.That(allResults[10], Is.EqualTo(legacyFilter));
+            Assert.That(allResults[11], Is.EqualTo("All target PSMs with pep q-value <= 0.01: 374"));
+            Assert.That(allResults[12], Is.EqualTo("All target peptides with pep q-value <= 0.01: 153"));
+            Assert.That(allResults[13], Is.EqualTo("All target protein groups with pep q-value <= 0.01 (1% FDR): 144"));
+            Assert.That(allResults[14], Is.EqualTo("All Precursors: 1070"));
+            Assert.That(allResults[15], Is.EqualTo("All MS2 Scans: 294"));
 
-            Assert.That(allResults[16], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 187"));
-            Assert.That(allResults[17], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 151"));
-            Assert.That(allResults[18], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups with pep q-value <= 0.01: 144"));
-            Assert.That(allResults[19], Is.EqualTo("TaGe_SA_A549_3_snip - Precursors: 535"));
-            Assert.That(allResults[20], Is.EqualTo("TaGe_SA_A549_3_snip - MS2 Scans: 147"));
+            Assert.That(allResults[17], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 187"));
+            Assert.That(allResults[18], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 151"));
+            Assert.That(allResults[19], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups with pep q-value <= 0.01: 144"));
+            Assert.That(allResults[20], Is.EqualTo("TaGe_SA_A549_3_snip - Precursors: 535"));
+            Assert.That(allResults[21], Is.EqualTo("TaGe_SA_A549_3_snip - MS2 Scans: 147"));
 
-            Assert.That(allResults[22], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 187"));
-            Assert.That(allResults[23], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 151"));
-            Assert.That(allResults[24], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups with pep q-value <= 0.01: 144"));
-            Assert.That(allResults[25], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Precursors: 535"));
-            Assert.That(allResults[26], Is.EqualTo("TaGe_SA_A549_3_snip_2 - MS2 Scans: 147"));
+            Assert.That(allResults[23], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 187"));
+            Assert.That(allResults[24], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 151"));
+            Assert.That(allResults[25], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups with pep q-value <= 0.01: 144"));
+            Assert.That(allResults[26], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Precursors: 535"));
+            Assert.That(allResults[27], Is.EqualTo("TaGe_SA_A549_3_snip_2 - MS2 Scans: 147"));
 
 
             var resultsFile = Path.Combine(outputFolder, @"postSearchAnalysisTaskTestOutput\results.txt");
             var results = File.ReadAllLines(resultsFile);
 
-            Assert.That(results[5], Is.EqualTo("All target PSMs with pep q-value <= 0.01: 374"));
-            Assert.That(results[6], Is.EqualTo("All target peptides with pep q-value <= 0.01: 153"));
-            Assert.That(results[7], Is.EqualTo("All target protein groups with pep q-value <= 0.01 (1% FDR): 144"));
-            Assert.That(results[8], Is.EqualTo("All Precursors: 1070"));
-            Assert.That(results[9], Is.EqualTo("All MS2 Scans: 294"));
+            Assert.That(results[5], Is.EqualTo(legacyFilter));
+            Assert.That(results[6], Is.EqualTo("All target PSMs with pep q-value <= 0.01: 374"));
+            Assert.That(results[7], Is.EqualTo("All target peptides with pep q-value <= 0.01: 153"));
+            Assert.That(results[8], Is.EqualTo("All target protein groups with pep q-value <= 0.01 (1% FDR): 144"));
+            Assert.That(results[9], Is.EqualTo("All Precursors: 1070"));
+            Assert.That(results[10], Is.EqualTo("All MS2 Scans: 294"));
 
-            Assert.That(results[11], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 187"));
-            Assert.That(results[12], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 151"));
-            Assert.That(results[13], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups with pep q-value <= 0.01: 144"));
-            Assert.That(results[14], Is.EqualTo("TaGe_SA_A549_3_snip - Precursors: 535"));
-            Assert.That(results[15], Is.EqualTo("TaGe_SA_A549_3_snip - MS2 Scans: 147"));
+            Assert.That(results[12], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 187"));
+            Assert.That(results[13], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 151"));
+            Assert.That(results[14], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups with pep q-value <= 0.01: 144"));
+            Assert.That(results[15], Is.EqualTo("TaGe_SA_A549_3_snip - Precursors: 535"));
+            Assert.That(results[16], Is.EqualTo("TaGe_SA_A549_3_snip - MS2 Scans: 147"));
 
-            Assert.That(results[17], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 187"));
-            Assert.That(results[18], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 151"));
-            Assert.That(results[19], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups with pep q-value <= 0.01: 144"));
-            Assert.That(results[20], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Precursors: 535"));
-            Assert.That(results[21], Is.EqualTo("TaGe_SA_A549_3_snip_2 - MS2 Scans: 147"));
+            Assert.That(results[18], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 187"));
+            Assert.That(results[19], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 151"));
+            Assert.That(results[20], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups with pep q-value <= 0.01: 144"));
+            Assert.That(results[21], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Precursors: 535"));
+            Assert.That(results[22], Is.EqualTo("TaGe_SA_A549_3_snip_2 - MS2 Scans: 147"));
         }
 
         [Test]
@@ -213,13 +217,17 @@ namespace Test
             int startIndexQ = resultsQ.IndexOf("Engine type: FdrAnalysisEngine");
             int startIndexPep = resultsPepQ.IndexOf("Engine type: FdrAnalysisEngine");
 
-            Assert.That(startIndexQ, Is.EqualTo(startIndexPep));
+            // The PEP case is an old GUI PEP task, so its results.txt carries more lines above the engines (where its
+            // filter came from): compare each engine block from its own start.
+            Assert.That(startIndexQ, Is.GreaterThan(0));
+            Assert.That(startIndexPep, Is.GreaterThan(startIndexQ));
+            int offset = startIndexPep - startIndexQ;
 
             int starsFound = 0;
             for (int i = startIndexQ; i < int.MaxValue; i++)
             {
                 var qLine = resultsQ[i];
-                var pepLine = resultsPepQ[i];
+                var pepLine = resultsPepQ[i + offset];
 
                 if (qLine.StartsWith("Time to run"))
                     continue;
