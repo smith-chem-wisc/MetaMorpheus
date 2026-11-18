@@ -237,6 +237,17 @@ namespace EngineLayer.DiaLibrarySearch;
 /// +2.3%). Permuted decoys are isomers of targets, so a decoy on a present target's MS1 now loses to it while a foreign false
 /// hit is nobody's isomer: E. coli FDP at 1% q rose 0.65-0.74% to 0.77-0.82% on HF-X and stayed 1.18-1.24% on held-out.
 /// </param>
+/// <param name="ProteinSupport">
+/// With <see cref="NeighbourEvidence"/>: the neighbour trees also see each row's protein support (<see cref="DiaProteinSupport.Measure"/>),
+/// the number of other confident peptides of its protein, as DIA-NN 2.3.2 re-scores on protein information after its network.
+/// Judge it only where entrapments count toward their owners' proteins (<see cref="ProteinKey"/>): in their own proteins,
+/// which are never present, support removes them for free. Off by default.
+/// </param>
+/// <param name="ProteinKey">
+/// The protein an accession counts toward for <see cref="ProteinSupport"/>; null takes the accession as it is. An entrapment
+/// benchmark maps each entrapment's accession to its owner target's, so it gets the support a false hit in a random,
+/// sometimes present, protein would.
+/// </param>
 public sealed record DiaLibrarySearchParameters(double FragmentTolerancePpm = 20, double IrtHalfWindow = 20,
     int TopFragmentCount = 12, int ApexHalfWidthScans = 3, int PrecursorSampleStride = 1, int MaxApexCandidates = 30, double ClassifierTrainingQValue = 0.01,
     StatisticalModels.RescoreModel ClassifierModel = StatisticalModels.RescoreModel.NeuralNetworkEnsemble,
@@ -294,7 +305,9 @@ public sealed record DiaLibrarySearchParameters(double FragmentTolerancePpm = 20
     bool Ms1InterpolatedTraces = true,
     bool Ms1CorrelationSummedCore = false,
     int? CandidateApexSpacingScans = 2,
-    bool PeptidoformEvidence = true)
+    bool PeptidoformEvidence = true,
+    bool ProteinSupport = false,
+    Func<string, string>? ProteinKey = null)
 {
     /// <summary>
     /// The MS1 tolerance a search uses: <see cref="Ms1ToleranceSpreadMultiple"/> times the calibrated offset's residual

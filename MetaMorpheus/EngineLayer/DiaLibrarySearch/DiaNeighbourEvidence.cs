@@ -209,6 +209,9 @@ public static class DiaNeighbourEvidence
         return (Share(own, rival), Share(rival, own));
     }
 
+    /// <summary>The column appended with protein support (<see cref="DiaProteinSupport"/>): log(1 + support).</summary>
+    public const string ProteinSupportColumnName = "ProteinSupport";
+
     /// <summary>The columns appended with peptidoform evidence, in order.</summary>
     public static readonly string[] PeptidoformColumnNames = ["PeptidoformDifferential", "PeptidoformRivals", "PeptidoformOutscored"];
 
