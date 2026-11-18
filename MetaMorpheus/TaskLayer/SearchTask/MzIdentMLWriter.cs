@@ -152,14 +152,14 @@ namespace TaskLayer
             new mzIdentML110.Generated.cvType()
             {
                 id = "UNIMOD",
-                fullName = "UNIT-ONTOLOGY",
+                fullName = "UNIMOD",
                 uri = "http://www.unimod.org/obo/unimod.obo"
             },
               new mzIdentML110.Generated.cvType()
             {
                 id = "UO",
                 fullName = "UNIT-ONTOLOGY",
-                uri = "http://www.unimod.org/obo/unimod.obo"
+                uri = "http://purl.obolibrary.org/obo/uo.obo"
             }
             };
 
@@ -240,7 +240,9 @@ namespace TaskLayer
                 _mzid.DataCollection.Inputs.SearchDatabase[database_index] = new mzIdentML110.Generated.SearchDatabaseType()
                 {
                     id = "SDB_" + database_index,
-                    location = database,
+                    // The file name, not the local path: a path names the searcher's own folders (often their user
+                    // name), and a repository such as PRIDE matches the file by its name.
+                    location = Path.GetFileName(database),
                     DatabaseName = new mzIdentML110.Generated.ParamType
                     {
                         Item = new mzIdentML110.Generated.CVParamType
@@ -286,27 +288,31 @@ namespace TaskLayer
             }
 
             Dictionary<string, int> spectral_ids = new Dictionary<string, int>(); //key is datafile, value is datafile's id
+            Dictionary<string, SpectraFormat> spectra_formats = new Dictionary<string, SpectraFormat>(); //key is datafile
             int spectra_data_id = 0;
             foreach (string data_filepath in filenames)
             {
-                bool thermoRawFile = Path.GetExtension(data_filepath) == ".raw";
+                SpectraFormat format = SpectraFormat.Of(data_filepath);
+                spectra_formats.Add(data_filepath, format);
                 string spectral_data_id = "SD_" + spectra_data_id;
                 spectral_ids.Add(data_filepath, spectra_data_id);
                 _mzid.AnalysisCollection.SpectrumIdentification[0].InputSpectra[spectra_data_id] = new mzIdentML110.Generated.InputSpectraType()
                 {
                     spectraData_ref = spectral_data_id
                 };
+                // a Bruker .d is a folder, which a trailing separator would leave with no file name
+                string fileName = Path.GetFileName(Path.TrimEndingDirectorySeparator(data_filepath));
                 _mzid.DataCollection.Inputs.SpectraData[spectra_data_id] = new mzIdentML110.Generated.SpectraDataType()
                 {
                     id = spectral_data_id,
-                    name = Path.GetFileNameWithoutExtension(data_filepath),
-                    location = data_filepath,
+                    name = Path.GetFileNameWithoutExtension(fileName),
+                    location = fileName, // the file name, as for SearchDatabase above
                     FileFormat = new mzIdentML110.Generated.FileFormatType
                     {
                         cvParam = new mzIdentML110.Generated.CVParamType
                         {
-                            accession = thermoRawFile ? "MS:1000563" : "MS:1000584",
-                            name = thermoRawFile ? "Thermo RAW format" : "mzML format",
+                            accession = format.FileFormatAccession,
+                            name = format.FileFormatName,
                             cvRef = "PSI-MS"
                         }
                     },
@@ -314,8 +320,8 @@ namespace TaskLayer
                     {
                         cvParam = new mzIdentML110.Generated.CVParamType
                         {
-                            accession = thermoRawFile ? "MS:1000768" : "MS:1001530",
-                            name = thermoRawFile ? "Thermo nativeID format" : "mzML unique identifier",
+                            accession = format.IdFormatAccession,
+                            name = format.IdFormatName,
                             cvRef = "PSI-MS"
                         }
                     }
@@ -396,7 +402,7 @@ namespace TaskLayer
                     {
                         id = "SIR_" + scan_result_scan_item.Item1,
                         spectraData_ref = "SD_" + spectral_ids[psm.FullFilePath].ToString(),
-                        spectrumID = psm.NativeId,
+                        spectrumID = spectra_formats[psm.FullFilePath].SpectrumIdOf(psm),
                         SpectrumIdentificationItem = new mzIdentML110.Generated.SpectrumIdentificationItemType[500],
                         cvParam = new mzIdentML110.Generated.CVParamType[1]
                         {
@@ -770,45 +776,120 @@ namespace TaskLayer
             writer.Close();
         }
 
+        // mzIdentML 1.1 takes a modification's term from UNIMOD or PSI-MOD, or else MS:1001460 "unknown modification".
+        // Each term carries its own vocabulary's cvRef, declared in the cvList above. RESID is not one of mzIdentML's
+        // vocabularies, so a RESID reference is never written: UniProt's modifications that have one also have a PSI-MOD
+        // reference, and anything else is an unknown modification under its own name.
         private static mzIdentML110.Generated.CVParamType GetUnimodCvParam(Modification mod, bool appendMotifToModNames)
         {
-            if (mod.DatabaseReference != null && mod.DatabaseReference.ContainsKey("Unimod"))
+            string modName = appendMotifToModNames ? mod.IdWithMotif : mod.OriginalId;
+
+            if (mod.DatabaseReference != null && mod.DatabaseReference.TryGetValue("Unimod", out var unimod) && unimod.Count > 0)
             {
                 return new mzIdentML110.Generated.CVParamType()
                 {
-                    accession = "UNIMOD:" + mod.DatabaseReference["Unimod"].First(),
-                    name = appendMotifToModNames ? mod.IdWithMotif : mod.OriginalId,
-                    cvRef = "PSI-MS",
+                    accession = "UNIMOD:" + unimod.First(),
+                    name = modName,
+                    cvRef = "UNIMOD",
                 };
             }
 
-            if (mod.DatabaseReference != null && mod.DatabaseReference.ContainsKey("RESID"))
+            if (mod.DatabaseReference != null && mod.DatabaseReference.TryGetValue("PSI-MOD", out var psiMod) && psiMod.Count > 0)
             {
+                // UniProt's ptmlist already writes the accession as "MOD:00046"
+                string accession = psiMod.First();
                 return new mzIdentML110.Generated.CVParamType()
                 {
-                    accession = "RESID:" + mod.DatabaseReference["RESID"].First(),
-                    name = appendMotifToModNames ? mod.IdWithMotif : mod.OriginalId,
-                    cvRef = "PSI-MS",
+                    accession = accession.StartsWith("MOD:", StringComparison.Ordinal) ? accession : "MOD:" + accession,
+                    name = modName,
+                    cvRef = "PSI-MOD",
                 };
             }
 
-            if (mod.DatabaseReference != null && mod.DatabaseReference.ContainsKey("PSI-MOD"))
-            {
-                return new mzIdentML110.Generated.CVParamType()
-                {
-                    accession = "PSI-MOD:" + mod.DatabaseReference["PSI-MOD"].First(),
-                    name = appendMotifToModNames ? mod.IdWithMotif : mod.OriginalId,
-                    cvRef = "PSI-MS",
-                };
-            }
-            
             return new mzIdentML110.Generated.CVParamType()
             {
                 accession = "MS:1001460",
                 name = "unknown modification",
-                cvRef = "UNIMOD",
-                value = appendMotifToModNames ? mod.IdWithMotif : mod.OriginalId,
+                cvRef = "PSI-MS",
+                value = modName,
             };
+        }
+
+        /// <summary>
+        /// A spectra file's format and the format of the spectrum IDs written for it, in PSI-MS terms. mzLib's readers
+        /// name their formats too (MsDataFile.GetSourceFile), but not always in PSI-MS's words: its BAF reader says
+        /// "mzML format" and its timsTOF reader ".D format".
+        /// </summary>
+        private sealed class SpectraFormat
+        {
+            public string FileFormatAccession { get; }
+            public string FileFormatName { get; }
+            public string IdFormatAccession { get; }
+            public string IdFormatName { get; }
+
+            // mzLib gives an MGF spectrum no native ID, so it is named by its scan number instead
+            private readonly bool _idIsScanNumber;
+
+            private SpectraFormat(string fileFormatAccession, string fileFormatName, string idFormatAccession, string idFormatName,
+                bool idIsScanNumber = false)
+            {
+                FileFormatAccession = fileFormatAccession;
+                FileFormatName = fileFormatName;
+                IdFormatAccession = idFormatAccession;
+                IdFormatName = idFormatName;
+                _idIsScanNumber = idIsScanNumber;
+            }
+
+            public string SpectrumIdOf(SpectralMatch psm) => _idIsScanNumber ? "scan=" + psm.ScanNumber : psm.NativeId;
+
+            public static SpectraFormat Of(string spectraFilePath)
+            {
+                switch (Path.GetExtension(Path.TrimEndingDirectorySeparator(spectraFilePath)).ToLowerInvariant())
+                {
+                    case ".raw":
+                        return new SpectraFormat("MS:1000563", "Thermo RAW format", "MS:1000768", "Thermo nativeID format");
+
+                    // The scan number MetaMorpheus reports for an MGF spectrum: its SCANS value, or else its one-based
+                    // position in the file. PSI's own MGF IDs, index=<zero-based position>, need the position, which only
+                    // mzLib's reader knows.
+                    case ".mgf":
+                        return new SpectraFormat("MS:1001062", "Mascot MGF format", "MS:1000776", "scan number only nativeID format",
+                            idIsScanNumber: true);
+
+                    // mzLib names an msalign spectrum scan=<its SCANS value>
+                    case ".msalign":
+                        return new SpectraFormat("MS:1002899", "msalign format", "MS:1000776", "scan number only nativeID format");
+
+                    case ".d":
+                        return OfBrukerFolder(spectraFilePath);
+
+                    // mzML, including the -calib and -averaged files MetaMorpheus writes itself
+                    default:
+                        return new SpectraFormat("MS:1000584", "mzML format", "MS:1001530", "mzML unique identifier");
+                }
+            }
+
+            // Which Bruker format a .d holds is decided by the files inside it, in the order mzLib's readers decide it:
+            // analysis.baf (BrukerFileReader), then analysis.tdf before analysis.tsf (TimsTofFileReader).
+            private static SpectraFormat OfBrukerFolder(string folder)
+            {
+                if (File.Exists(Path.Combine(folder, "analysis.baf")))
+                {
+                    // mzLib's IDs: scan=N
+                    return new SpectraFormat("MS:1000815", "Bruker BAF format", "MS:1000772", "Bruker BAF nativeID format");
+                }
+
+                if (!File.Exists(Path.Combine(folder, "analysis.tdf")) && File.Exists(Path.Combine(folder, "analysis.tsf")))
+                {
+                    // mzLib's IDs: frame=N
+                    return new SpectraFormat("MS:1003282", "Bruker TSF format", "MS:1003283", "Bruker TSF nativeID format");
+                }
+
+                // timsTOF. mzLib's spectra here merge many: a PASEF precursor is frames=A-B;scans=C-D. PSI's TDF IDs are
+                // frame=F scan=S, and its combined-spectra form (MS:1002819) is a comma-separated list of those, so neither
+                // describes mzLib's IDs exactly; this is the term for IDs made of TDF frame and scan numbers.
+                return new SpectraFormat("MS:1002817", "Bruker TDF format", "MS:1002818", "Bruker TDF nativeID format");
+            }
         }
     }
 }
