@@ -342,6 +342,90 @@ namespace Test
         }
 
         /// <summary>
+        /// A design MetaMorpheus wrote that no longer fits and cannot be removed (read-only here) stops the run even when
+        /// nothing normalizes, at verbosity none too, and asks nothing: a run that went on "without a design" would read it
+        /// and quantify with the old conditions (Alexander-Sol's review of #2980). Both ways a design stops fitting: the SDRF
+        /// now gives another design (WT became KO), which cannot be written over it, or gives none.
+        /// </summary>
+        [TestCase(true, true)]
+        [TestCase(true, false)]
+        [TestCase(false, true)]
+        [TestCase(false, false)]
+        public static void AnOldDesignThatCannotBeRemovedStopsTheRunWhateverItsNormalization(bool sdrfGivesAnotherDesign,
+            bool reportToConsole)
+        {
+            string folder = NewFolder("StaleReadOnly_" + sdrfGivesAnotherDesign + reportToConsole);
+            var spectra = Spectra(folder, "a1.mzML");
+            WriteSdrf(folder, ("a1.raw", "WT", 1));
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), new List<string>()), Is.EqualTo(Continue));
+            string old = File.ReadAllText(DesignPath(folder));
+            if (sdrfGivesAnotherDesign)
+            {
+                WriteSdrf(folder, ("a1.raw", "KO", 1));
+            }
+            else
+            {
+                WriteSdrfWithNoFactorColumn(folder, ("a1.raw", 1));
+            }
+            File.SetAttributes(DesignPath(folder), FileAttributes.ReadOnly);
+            try
+            {
+                Assert.That(SdrfAutomaticDesign.Resolve(folder, spectra, SearchTasks(new SearchTask()), null, null).StopsTheRun, Is.True);
+
+                var console = new List<string>();
+                bool asked = false;
+                Assert.That(Program.ResolveSdrfDesign(folder, spectra, SearchTasks(new SearchTask()), new CommandLineSettings(),
+                        normalizationRequested: false, reportToConsole, out _, console.Add, () => { asked = true; return "y"; }),
+                    Is.EqualTo(Stop), string.Join("\n", console));
+
+                Assert.That(asked, Is.False, "nothing to ask: going on would quantify with the old design");
+                Assert.That(File.ReadAllText(DesignPath(folder)), Is.EqualTo(old), "the old design is still there");
+                Assert.That(File.Exists(SdrfDesignMarker.PathIn(folder)), "the marker stays while the design does");
+                if (reportToConsole)
+                {
+                    Assert.That(console, Has.Some.StartWith(DesignPath(folder) + " could not be removed:"));
+                    Assert.That(console.Last(), Does.EndWith("a run that went on would quantify with it, so the run stops."));
+                }
+                else
+                {
+                    Assert.That(console, Is.Empty);
+                }
+            }
+            finally
+            {
+                File.SetAttributes(DesignPath(folder), FileAttributes.Normal);
+            }
+        }
+
+        /// <summary>
+        /// A marker that cannot be removed once its design is gone does not stop the run: nothing reads a marker without its
+        /// design, so a run that goes on has no design, as the user agreed.
+        /// </summary>
+        [Test]
+        public static void AMarkerLeftWithoutItsDesignDoesNotStopTheRun()
+        {
+            string folder = NewFolder("ReadOnlyMarker");
+            var spectra = Spectra(folder, "a1.mzML");
+            WriteSdrf(folder, ("a1.raw", "WT", 1));
+            Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), new List<string>()), Is.EqualTo(Continue));
+            WriteSdrfWithNoFactorColumn(folder, ("a1.raw", 1));
+            File.SetAttributes(SdrfDesignMarker.PathIn(folder), FileAttributes.ReadOnly);
+            try
+            {
+                var console = new List<string>();
+                Assert.That(Resolve(folder, spectra, SearchTasks(new SearchTask()), console, answer: "y"), Is.EqualTo(Continue));
+
+                Assert.That(File.Exists(DesignPath(folder)), Is.False);
+                Assert.That(console, Has.Some.StartWith(SdrfDesignMarker.PathIn(folder) + " could not be removed:"));
+                Assert.That(console.Last(), Does.EndWith("Continue without an experimental design? y/n"));
+            }
+            finally
+            {
+                File.SetAttributes(SdrfDesignMarker.PathIn(folder), FileAttributes.Normal);
+            }
+        }
+
+        /// <summary>
         /// A refused run removes the design MetaMorpheus wrote, and with its marker the grouping it kept; the run says so,
         /// rather than letting the next run quietly go back to every factor value column.
         /// </summary>

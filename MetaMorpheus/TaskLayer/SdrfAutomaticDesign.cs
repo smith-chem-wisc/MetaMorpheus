@@ -73,13 +73,14 @@ namespace TaskLayer
     public sealed class SdrfDesignOutcome
     {
         internal SdrfDesignOutcome(List<string> messages, string refusal, string sdrfPath, string designPath,
-            string provenance = null)
+            string provenance = null, bool stopsTheRun = false)
         {
             Messages = messages;
             Refusal = refusal;
             SdrfPath = sdrfPath;
             DesignPath = designPath;
             RunSdrf = sdrfPath == null ? null : new SdrfForRun(sdrfPath, provenance);
+            StopsTheRun = stopsTheRun;
         }
 
         /// <summary>The lines to show, in order (nothing when no SDRF is beside the spectra files).</summary>
@@ -87,9 +88,18 @@ namespace TaskLayer
 
         /// <summary>
         /// Why no design could be made from the SDRF, when one should have been; null otherwise. A front end handles it as
-        /// a design file it cannot read: stop when normalizing, otherwise ask whether to continue without a design.
+        /// a design file it cannot read: stop when normalizing, otherwise ask whether to continue without a design; and
+        /// stop whatever the normalization when <see cref="StopsTheRun"/> is set.
         /// </summary>
         public string Refusal { get; }
+
+        /// <summary>
+        /// True when the run must stop whether or not it normalizes: a design MetaMorpheus wrote from the SDRF before no
+        /// longer fits and could not be removed, so a run that went on "without a design" would still read it and quantify
+        /// with it (Alexander-Sol's review of #2980). A front end then neither continues nor asks. Set only with a
+        /// <see cref="Refusal"/>.
+        /// </summary>
+        public bool StopsTheRun { get; }
 
         /// <summary>The SDRF beside the spectra files, as a full path; null when there is none (or several).</summary>
         public string SdrfPath { get; }
@@ -128,7 +138,9 @@ namespace TaskLayer
     /// <item>A design that cannot be made (refused, unreadable, two SDRFs, search tasks of different kits, or a design or
     /// marker that cannot be written) is returned as a <see cref="SdrfDesignOutcome.Refusal"/>. Nothing is written then,
     /// and a design MetaMorpheus wrote before, which no longer fits, is removed with its marker; a grouping the marker kept
-    /// goes with it, and a line says so. The SDRF is never edited.</item>
+    /// goes with it, and a line says so. When that design cannot be removed, the run stops whatever its normalization
+    /// (<see cref="SdrfDesignOutcome.StopsTheRun"/>), because going on would quantify with it. The SDRF is never
+    /// edited.</item>
     /// <item>Two SDRFs are never chosen between, but they are refused only where a design would be made from one: a search
     /// that quantifies nothing, and a design that is the user's, go on as with no SDRF.</item>
     /// </list>
@@ -384,10 +396,10 @@ namespace TaskLayer
                 // A spectra folder or design MetaMorpheus cannot write: refused like any design it cannot make, never a crash
                 // (pcruzparri's review of #2980). Each file here is MetaMorpheus's: the user's design returned above.
                 messages.Add(report.TrimEnd());
-                messages.AddRange(RemoveOurs(new[] { designPath, existing }, designDirectory));
+                messages.AddRange(RemoveOurs(new[] { designPath, existing }, designDirectory, out bool designLeft));
                 return new SdrfDesignOutcome(messages,
                     $"An SDRF is beside the spectra files ({sdrf}), but the experimental design made from it could not be written there: "
-                    + e.Message, sdrf, null);
+                    + e.Message, sdrf, null, stopsTheRun: designLeft);
             }
 
             messages.Add(report.TrimEnd());
@@ -401,7 +413,8 @@ namespace TaskLayer
 
         /// <summary>
         /// A design that could not be made from the SDRF. A design MetaMorpheus wrote from the SDRF before, unedited, is
-        /// removed with its marker first: it no longer fits, and the run must not quantify with it.
+        /// removed with its marker first: it no longer fits, and the run must not quantify with it. When it cannot be
+        /// removed, the run stops (<see cref="SdrfDesignOutcome.StopsTheRun"/>).
         /// </summary>
         private static SdrfDesignOutcome Refuse(List<string> messages, string why, string report, string sdrf, string removeOurs,
             string designDirectory, SdrfDesignMarker ourMarker)
@@ -410,9 +423,10 @@ namespace TaskLayer
             {
                 messages.Add(report.TrimEnd());
             }
+            bool designLeft = false;
             if (removeOurs != null)
             {
-                var notRemoved = RemoveOurs(new[] { removeOurs }, designDirectory);
+                var notRemoved = RemoveOurs(new[] { removeOurs }, designDirectory, out designLeft);
                 if (notRemoved.Count == 0)
                 {
                     // The marker was the only place a stated grouping was kept, so the next run will not use it again unless
@@ -428,7 +442,7 @@ namespace TaskLayer
                     messages.AddRange(notRemoved);
                 }
             }
-            return new SdrfDesignOutcome(messages, why, sdrf, null);
+            return new SdrfDesignOutcome(messages, why, sdrf, null, stopsTheRun: designLeft);
         }
 
         /// <summary>
@@ -437,16 +451,22 @@ namespace TaskLayer
         /// without its marker would be taken for the user's by the next run and used as is, while with it the next run
         /// knows the design is MetaMorpheus's and makes it again or refuses again.
         /// </summary>
-        private static List<string> RemoveOurs(IEnumerable<string> designs, string designDirectory)
+        /// <param name="designLeft">
+        /// True when a design is still there. A run that went on would read it as its design and quantify with it, so the
+        /// run stops (Alexander-Sol's review of #2980). A marker left without its design does not stop it: nothing reads one.
+        /// </param>
+        private static List<string> RemoveOurs(IEnumerable<string> designs, string designDirectory, out bool designLeft)
         {
             var notRemoved = designs
                 .Where(p => p != null)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Select(TryDelete)
                 .Where(problem => problem != null)
-                .Select(problem => problem + " A run that goes on reads it as the design, so remove it by hand.")
+                .Select(problem => problem + " A run that went on would read it as the design and quantify with it, so the run "
+                    + "stops; remove it by hand.")
                 .ToList();
-            if (notRemoved.Count == 0)
+            designLeft = notRemoved.Count > 0;
+            if (!designLeft)
             {
                 string markerProblem = TryDelete(SdrfDesignMarker.PathIn(designDirectory));
                 if (markerProblem != null)

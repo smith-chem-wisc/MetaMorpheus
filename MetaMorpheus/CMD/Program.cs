@@ -448,7 +448,9 @@ namespace MetaMorpheusCommandLine
         /// shown on the console. A design that cannot be made from the SDRF is handled as
         /// <see cref="ResolveExperimentalDesign"/> handles a design file it cannot read (QuantProject's oracle verdict,
         /// 2026-11-07): with normalization asked for, every reason and exit 5; at verbosity none, the run continues; otherwise
-        /// every reason and a y/n prompt to continue without a design. Runs before <see cref="ResolveExperimentalDesign"/>,
+        /// every reason and a y/n prompt to continue without a design. A design MetaMorpheus wrote before that no longer fits
+        /// and could not be removed (<see cref="SdrfDesignOutcome.StopsTheRun"/>) stops the run with exit 5 whatever its
+        /// normalization and verbosity, with no prompt. Runs before <see cref="ResolveExperimentalDesign"/>,
         /// which then reads the design written here exactly as it reads one the user wrote. The search tasks are not
         /// changed: the SDRF comes back as <paramref name="runSdrf"/>, for the runner to hand them for this run only.
         /// </summary>
@@ -500,6 +502,18 @@ namespace MetaMorpheusCommandLine
             if (outcome.Refusal == null)
             {
                 return 0;
+            }
+
+            // A design MetaMorpheus wrote before that no longer fits, still there: going on "without a design" would read it
+            // and quantify with it, so there is nothing to ask (Alexander-Sol's review of #2980).
+            if (outcome.StopsTheRun)
+            {
+                if (reportToConsole)
+                {
+                    write(outcome.Refusal + " The design MetaMorpheus wrote from the SDRF before could not be removed, and a run "
+                        + "that went on would quantify with it, so the run stops.");
+                }
+                return 5;
             }
 
             if (normalizationRequested)
