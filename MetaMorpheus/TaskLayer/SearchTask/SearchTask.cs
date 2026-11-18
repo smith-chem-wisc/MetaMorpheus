@@ -162,6 +162,9 @@ namespace TaskLayer
         /// null otherwise. A task saved before the filter was named, with the GUI's PEP box ticked, has a q-value
         /// threshold of 1 and now loads with the q-value notch filter.
         /// </summary>
+        /// <summary>Not yet built (review of #2982): the sentence for a filter read from a task's legacy thresholds.</summary>
+        internal static string LegacyFilterSentence(CommonParameters commonParameters) => null;
+
         internal static string FilterKeepsEveryMatch(CommonParameters commonParameters) =>
             EngineLayer.SpectrumMatch.FilteredPsms.Threshold(commonParameters, commonParameters.IdentificationFilter) >= 1
                 ? $"This search filters by {EngineLayer.SpectrumMatch.FilteredPsms.Describe(commonParameters)}, which keeps every match. " +

@@ -503,11 +503,216 @@ namespace Test
         {
             var (folder, results, warnings) = Search("atOne", Chosen(FilterType.QValueNotch, qValueThreshold: 1.0), trainPep: false);
 
-            const string sentence = "This search filters by q-value notch <= 1, which keeps every match. A task saved with the PEP box ticked, before the filter was named, should now choose the PEP q-value filter.";
+            const string sentence = "This search filters by q-value notch <= 1, which keeps every match.";
             Assert.That(warnings, Has.One.EqualTo(sentence));
             Assert.That(results, Has.One.EqualTo(sentence));
 
             Directory.Delete(folder, true);
+        }
+
+        // Review of #2982 (nbollis): the setter's refusal must say what is refused and what is allowed.
+        [Test]
+        public static void ThePooledQValue_IsRefused_AndTheMessageNamesTheSettingAndBothChoices()
+        {
+            var ex = Assert.Throws<ArgumentException>(() => new CommonParameters(identificationFilter: FilterType.QValue));
+            Assert.That(ex.Message, Does.Contain("IdentificationFilter").And.Contain("PepQValue").And.Contain("QValueNotch")
+                .And.Contain("pooled q-value"));
+
+            // A task TOML that names it does not load, and the message a user sees names the setting.
+            string toml = Path.Combine(TestContext.CurrentContext.TestDirectory, "IdentificationFilterTests_qvalue.toml");
+            try
+            {
+                Nett.Toml.WriteFile(new SearchTask { CommonParameters = Chosen(FilterType.QValueNotch) }, toml, MetaMorpheusTask.tomlConfig);
+                File.WriteAllLines(toml, File.ReadAllLines(toml).Select(l => l.TrimStart().StartsWith("IdentificationFilter")
+                    ? "IdentificationFilter = \"QValue\"" : l));
+                var loadError = Assert.Catch(() => Nett.Toml.ReadFile<SearchTask>(toml, MetaMorpheusTask.tomlConfig));
+                var messages = new List<string>();
+                for (Exception e = loadError; e != null; e = e.InnerException) messages.Add(e.Message);
+                Assert.That(messages, Has.Some.Contain("IdentificationFilter").And.Some.Contain("PepQValue"));
+            }
+            finally
+            {
+                File.Delete(toml);
+            }
+        }
+
+        private static string TestData(string file) => Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", file);
+
+        private static CommonParameters LoadCommon(string tomlText)
+        {
+            string toml = Path.Combine(TestContext.CurrentContext.TestDirectory, $"IdentificationFilterTests_{Guid.NewGuid():N}.toml");
+            try
+            {
+                File.WriteAllText(toml, tomlText);
+                return Nett.Toml.ReadFile<SearchTask>(toml, MetaMorpheusTask.tomlConfig).CommonParameters;
+            }
+            finally
+            {
+                File.Delete(toml);
+            }
+        }
+
+        private static string TomlOf(CommonParameters commonParameters, bool withoutTheFilter)
+        {
+            string toml = Path.Combine(TestContext.CurrentContext.TestDirectory, $"IdentificationFilterTests_{Guid.NewGuid():N}.toml");
+            try
+            {
+                Nett.Toml.WriteFile(new SearchTask { CommonParameters = commonParameters }, toml, MetaMorpheusTask.tomlConfig);
+                var lines = File.ReadAllLines(toml).Where(l => !withoutTheFilter || !l.TrimStart().StartsWith("IdentificationFilter"));
+                return string.Join(Environment.NewLine, lines);
+            }
+            finally
+            {
+                File.Delete(toml);
+            }
+        }
+
+        // Review of #2982 (nbollis), loading old TOMLs. A task saved with the old GUI's PEP box ticked names no filter and holds
+        // QValueThreshold 1.0 and PepQValueThreshold 0.01 (TestData/Task2-SearchTaskconfig.toml, as on master). It loads as the PEP
+        // q-value filter at 0.01, says so once, and is not reported as a filter at 1.
+        [Test]
+        public static void AnOldGuiPepTask_LoadsAsThePepFilter_AndSaysSo()
+        {
+            var common = Nett.Toml.ReadFile<SearchTask>(TestData("Task2-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig).CommonParameters;
+
+            Assert.That((common.IdentificationFilter, common.PepQValueThreshold, common.QValueThreshold), Is.EqualTo((FilterType.PepQValue, 0.01, 1.0)));
+            Assert.That(common.IdentificationFilterFromLegacyThresholds, Is.True);
+            Assert.That(SearchTask.LegacyFilterSentence(common), Is.EqualTo(
+                "IdentificationFilter read from this task's legacy thresholds (PepQValueThreshold 0.01 < QValueThreshold 1): PEP q-value at 0.01"));
+            Assert.That(SearchTask.FilterKeepsEveryMatch(common), Is.Null, "a migrated PEP task filters at 0.01, not at 1");
+            Assert.That(common.Clone().IdentificationFilterFromLegacyThresholds, Is.True, "a copy remembers where its filter came from");
+        }
+
+        [Test]
+        public static void AnOldDefaultTask_LoadsAsTheNotch()
+        {
+            var common = LoadCommon(TomlOf(new CommonParameters(), withoutTheFilter: true));
+
+            Assert.That((common.IdentificationFilter, common.QValueThreshold, common.PepQValueThreshold), Is.EqualTo((FilterType.QValueNotch, 0.01, 1.0)));
+            Assert.That(common.IdentificationFilterFromLegacyThresholds, Is.False);
+            Assert.That(SearchTask.LegacyFilterSentence(common), Is.Null);
+        }
+
+        [Test]
+        public static void ATaskThatNamesTheNotch_KeepsIt_WhateverItsThresholds()
+        {
+            var named = new CommonParameters(qValueThreshold: 1.0, pepQValueThreshold: 0.01, identificationFilter: FilterType.QValueNotch);
+            var common = LoadCommon(TomlOf(named, withoutTheFilter: false));
+
+            Assert.That(common.IdentificationFilter, Is.EqualTo(FilterType.QValueNotch));
+            Assert.That(common.IdentificationFilterFromLegacyThresholds, Is.False);
+        }
+
+        [Test]
+        public static void AnOldGuiPepTask_SavedAgain_NamesItsFilter()
+        {
+            var old = Nett.Toml.ReadFile<SearchTask>(TestData("Task2-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            string saved = TomlOf(old.CommonParameters, withoutTheFilter: false);
+
+            Assert.That(saved.Split(Environment.NewLine), Has.One.Match(@"^\s*IdentificationFilter = ""PepQValue""$"));
+            var reloaded = LoadCommon(saved);
+            Assert.That(reloaded.IdentificationFilter, Is.EqualTo(FilterType.PepQValue));
+            Assert.That(reloaded.IdentificationFilterFromLegacyThresholds, Is.False, "the rule applies once per old file");
+        }
+
+        [Test]
+        public static void SearchTask_AnOldGuiPepTask_WarnsOnce_AndResultsTxtSaysWhereTheFilterCameFrom()
+        {
+            var common = LoadCommon(TomlOf(Chosen(FilterType.PepQValue, qValueThreshold: 1.0, pepQValueThreshold: 0.01), withoutTheFilter: true));
+            Assert.That(common.IdentificationFilterFromLegacyThresholds, Is.True);
+
+            var (folder, results, warnings) = Search("legacyToml", common, trainPep: false);
+            const string sentence = "IdentificationFilter read from this task's legacy thresholds (PepQValueThreshold 0.01 < QValueThreshold 1): PEP q-value at 0.01";
+            Assert.That(warnings, Has.One.EqualTo(sentence));
+            Assert.That(results, Has.One.EqualTo(sentence));
+            Assert.That(results, Has.Some.StartWith("All target PSMs with pep q-value <= 0.01: "));
+            Assert.That(warnings, Has.None.Contain("keeps every match"));
+
+            Directory.Delete(folder, true);
+        }
+
+        // Review of #2982 (nbollis), the peptide/PSM PepTrained mismatch. With more than 1000 matches but no more than 1000
+        // peptides, the FDR engine trained PEP but computed no peptide-level PEP q-values, so the PSM level was stamped trained
+        // and the peptide level not: under the PEP filter the PSM tables used PEP and the peptide tables the notch. Both levels
+        // now follow the training.
+        [Test]
+        public static void PepTrainedWithFewPeptides_BothLevelsFollowTheTraining()
+        {
+            var commonParameters = new CommonParameters(digestionParams: new DigestionParams());
+            var fsp = new List<(string, CommonParameters)> { ("TaGe_SA_HeLa_04_subset_longestSeq.mzML", commonParameters) };
+            string dataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            var msDataFile = new MyFileManager(true).LoadFile(dataFile, commonParameters);
+            List<Protein> proteins = UsefulProteomicsDatabases.ProteinDbLoader.LoadProteinFasta(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, UsefulProteomicsDatabases.DecoyType.Reverse, false, out _,
+                UsefulProteomicsDatabases.ProteinDbLoader.UniprotAccessionRegex, UsefulProteomicsDatabases.ProteinDbLoader.UniprotFullNameRegex, UsefulProteomicsDatabases.ProteinDbLoader.UniprotFullNameRegex,
+                UsefulProteomicsDatabases.ProteinDbLoader.UniprotGeneNameRegex, UsefulProteomicsDatabases.ProteinDbLoader.UniprotOrganismRegex, -1);
+            var scans = MetaMorpheusTask.GetMs2Scans(msDataFile, dataFile, commonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            SpectralMatch[] psmArray = new PeptideSpectralMatch[scans.Length];
+            new EngineLayer.ClassicSearch.ClassicSearchEngine(psmArray, scans, new List<Modification>(), new List<Modification>(), null, null, null,
+                proteins, new SinglePpmAroundZeroSearchMode(5), commonParameters, fsp, null, new List<string>(), false).Run();
+            var psms = psmArray.Where(p => p != null).ToList();
+            psms.ForEach(p => p.ResolveAllAmbiguities());
+            int peptides = psms.Select(p => p.FullSequence).Distinct().Count();
+            Assume.That(psms.Count, Is.GreaterThan(peptides), "the fixture needs more matches than peptides");
+
+            var threshold = typeof(FdrAnalysisEngine).GetProperty(nameof(FdrAnalysisEngine.PsmCountThresholdForInvertedQvalue))!;
+            int original = FdrAnalysisEngine.PsmCountThresholdForInvertedQvalue;
+            lock (EverythingRunnerEngineTestCase.myLock)
+            {
+                try
+                {
+                    // More matches than the threshold, but no more peptides: the engine's second branch.
+                    threshold.SetValue(null, peptides);
+                    commonParameters.QValueCutoffForPepCalculation = 0.1;
+                    new FdrAnalysisEngine(psms, 1, commonParameters, fsp, new List<string>()).Run();
+                }
+                finally
+                {
+                    threshold.SetValue(null, original);
+                }
+            }
+
+            Assert.That(psms.Select(p => p.PsmFdrInfo.PepTrained).Distinct(), Is.EqualTo(new[] { true }), "the fixture trains PEP");
+            Assert.That(psms.Select(p => p.PeptideFdrInfo.PepTrained).Distinct(), Is.EqualTo(new[] { true }), "the peptide level follows the training");
+            var peptideStandIns = FilteredPsms.Filter(psms, commonParameters, includeDecoys: true, includeContaminants: true, includeAmbiguous: true,
+                includeHighQValuePsms: true, filterAtPeptideLevel: true).FilteredPsmsList;
+            Assert.That(peptideStandIns.Select(p => p.PeptideFdrInfo.PEP_QValue), Has.All.LessThan(2), "peptide-level PEP q-values were computed");
+        }
+
+        // Review of #2982 (nbollis), SetFdrValues: replacing a match's q-values keeps the record of whether its PEP was trained.
+        [Test]
+        public static void SetFdrValues_KeepsTheRecordOfWhetherPepWasTrained()
+        {
+            var psm = Matches("PEPTIDEK", "trypsin", 1, 1, pepTrained: true)[0];
+            Assume.That(psm.PsmFdrInfo.PepTrained, Is.True);
+
+            psm.SetFdrValues(1, 0, 0.002, 1, 0, 0.003, 0.01, 0.004);
+
+            Assert.That(psm.PsmFdrInfo.PepTrained, Is.True);
+            Assert.That((psm.FdrInfo.QValue, psm.FdrInfo.QValueNotch, psm.FdrInfo.PEP_QValue), Is.EqualTo((0.002, 0.003, 0.004)));
+        }
+
+        // Review of #2982 (nbollis), rounding: results.txt states the threshold exactly; 0.005 is not 0.01.
+        [Test]
+        public static void SearchTask_ResultsTxt_StatesTheThresholdExactly()
+        {
+            var (folder, results, _) = Search("exactThreshold", Chosen(FilterType.QValueNotch, qValueThreshold: 0.005, pepQValueThreshold: 1.0), trainPep: false);
+
+            var countLines = results.Where(l => l.StartsWith("All target ") && l.Contains(" with q-value notch <= ")).ToList();
+            Assert.That(countLines, Has.Count.EqualTo(3), "PSMs, peptides and protein groups");
+            Assert.That(countLines, Has.All.Contain("q-value notch <= 0.005"));
+
+            Directory.Delete(folder, true);
+        }
+
+        // Review of #2982 (nbollis): the pooled q-value is no filter, so a caller cannot ask for it by name either.
+        [Test]
+        public static void ThePooledQValue_CannotBeAskedForByName()
+        {
+            var psms = Matches("PEPTIDEK", "trypsin", 10, 10, pepTrained: true);
+
+            Assert.Throws<ArgumentException>(() => FilteredPsms.Filter(psms, new CommonParameters(), filterType: FilterType.QValue));
+            Assert.Throws<ArgumentException>(() => FilteredPsms.Passes(psms[0], false, FilterType.QValue, 0.01));
         }
     }
 }

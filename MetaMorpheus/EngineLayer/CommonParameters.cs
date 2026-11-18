@@ -221,6 +221,8 @@ namespace EngineLayer
                 ? value
                 : throw new ArgumentException($"The identification filter is {FilterType.QValueNotch} or {FilterType.PepQValue}, not {value}.");
         }
+        /// <summary>Not yet built (review of #2982): whether the filter was read from a task's legacy thresholds.</summary>
+        [TomlIgnore] public bool IdentificationFilterFromLegacyThresholds => false;
         public double ScoreCutoff { get; private set; }
         /// <summary>
         /// This parameter determines which PSMs/Peptides will be used as postive training examples
