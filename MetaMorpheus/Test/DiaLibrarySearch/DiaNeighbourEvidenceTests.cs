@@ -707,6 +707,6 @@ public class DiaNeighbourEvidenceTests
         Assert.That(own, Is.EqualTo(0.8 / 1.8).Within(1e-12));
         Assert.That(other, Is.EqualTo(1).Within(1e-12));
 
-        Assert.That(new DiaLibrarySearchParameters().PeptidoformEvidence, Is.False);
+        Assert.That(new DiaLibrarySearchParameters().PeptidoformEvidence, Is.True, "adopted 2026-11-18");
     }
 }

@@ -1315,7 +1315,7 @@ public class DiaLibrarySearchEngineTests
         Assert.That(DiaLibrarySearchEngine.DiaNnCandidateApexes(traces, 3, 10), Has.Length.EqualTo(1));
         Assert.That(DiaLibrarySearchEngine.DiaNnCandidateApexes(traces, 3, 10, spacing: 2), Is.EquivalentTo(new[] { 10, 13 }));
         Assert.That(DiaLibrarySearchEngine.DiaNnCandidateApexes(traces, 3, 10, spacing: 3), Is.EqualTo(DiaLibrarySearchEngine.DiaNnCandidateApexes(traces, 3, 10)));
-        Assert.That(new DiaLibrarySearchParameters().CandidateApexSpacingScans, Is.Null);
+        Assert.That(new DiaLibrarySearchParameters().CandidateApexSpacingScans, Is.EqualTo(2), "adopted 2026-11-18");
     }
 
     /// <summary>
