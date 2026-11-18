@@ -43,11 +43,31 @@ namespace EngineLayer
         /// i.e., if the same base sequence has multiple modifications, this function will return the PSM with the highest score for each modification.
         /// </summary>
         public IEnumerable<SpectralMatch> GetBestMatches()
-        { 
+        {
             return SpectralMatches
                 .GroupBy(p => p.FullSequence)
                 .Select(g => g.MaxBy(p => p));
         }
+
+        /// <summary>
+        /// One match per peptide: each full sequence's best match by the default comparer, which reads the score and
+        /// never PEP. It is the match <see cref="GetBestMatches"/> gives PEP to train on, so every peptide-level step
+        /// after PEP stands each peptide on the match the model learned from, whatever PEPs its other matches got.
+        /// Returned in descending order of those matches, the order the classic q-value pass needs.
+        /// </summary>
+        public static List<SpectralMatch> PeptideStandIns(IEnumerable<SpectralMatch> spectralMatches) =>
+            PeptideStandIns(spectralMatches, p => p.FullSequence);
+
+        /// <summary>
+        /// As <see cref="PeptideStandIns(IEnumerable{SpectralMatch})"/>, with <paramref name="peptideOf"/> saying which
+        /// matches are one peptide.
+        /// </summary>
+        public static List<SpectralMatch> PeptideStandIns<TKey>(IEnumerable<SpectralMatch> spectralMatches, Func<SpectralMatch, TKey> peptideOf) =>
+            spectralMatches
+                .OrderByDescending(p => p)
+                .GroupBy(peptideOf)
+                .Select(g => g.First()) // OrderByDescending is stable, so ties keep their order, as MaxBy's first maximum does
+                .ToList();
 
         /// <summary>
         /// This function is called if there aren't enough peptides to train at the peptide level

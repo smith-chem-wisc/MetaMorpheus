@@ -800,9 +800,11 @@ namespace EngineLayer
 
         /// <summary>
         /// Target peptides whose peptide-level PEP q-value is below <paramref name="qValueCutoff"/>, computed
-        /// the way <see cref="FdrAnalysisEngine"/> computes the reported one: the PEP-best match per full
-        /// sequence (ties broken by the default comparer), fractional target and decoy counts per hypothesis
-        /// as in CalculateQValue, and q = min over the tail of (decoys + 1) / targets as in PepQValueInverted.
+        /// the way <see cref="FdrAnalysisEngine"/> computes the reported one: each full sequence on its
+        /// best-scoring match, the match this engine trains on (<see cref="SpectralMatchGroup.PeptideStandIns(IEnumerable{SpectralMatch})"/>),
+        /// ranked by that match's PEP (ties broken by the default comparer), fractional target and decoy counts
+        /// per hypothesis as in CalculateQValue, and q = min over the tail of (decoys + 1) / targets as in
+        /// PepQValueInverted.
         /// Reads the matches' current PEP. For reporting and the stopping decision only -- never labels.
         /// <remarks>
         /// Not written through CalculateQValue itself because that method stores its counts on the matches,
@@ -812,12 +814,9 @@ namespace EngineLayer
         /// </summary>
         internal static int CountAcceptedPeptides(IEnumerable<SpectralMatch> psms, double qValueCutoff)
         {
-            var peptides = psms
-                .Where(p => p != null)
+            var peptides = SpectralMatchGroup.PeptideStandIns(psms.Where(p => p != null))
                 .OrderBy(p => p.FdrInfo.PEP)
                 .ThenByDescending(p => p)
-                .GroupBy(p => p.FullSequence)
-                .Select(g => g.First())
                 .ToList();
 
             var q = new double[peptides.Count];

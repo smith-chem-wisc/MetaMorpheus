@@ -262,12 +262,9 @@ namespace EngineLayer.SpectrumMatch
             }
             else
             {
-                return psms
-                    .OrderBy(p => p.FdrInfo.PEP) // Order by PEP first
-                    .ThenByDescending(p => p) // Use the default comparer to break ties
-                    .GroupBy(p => p.FullSequence)
-                    .Select(p => p.FirstOrDefault()) // Choose the PSM with the lowest PEP for each peptide
-                    .OrderByDescending(p => p); // Use the default comparer to order the resulting list, so that the output is ordered by MetaMorpheus Score
+                // Each peptide's best-scoring match, the one PEP trained on and every peptide-level FDR pass stands the
+                // peptide on; ordered by the default comparer, so the output is ordered by MetaMorpheus score.
+                return SpectralMatchGroup.PeptideStandIns(psms);
             }
         }
 
