@@ -442,4 +442,42 @@ public class DiaIrtSelfCalibrationTests
             DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(), new CommonParameters()));
         Assert.That(e!.Message, Does.Contain("calibrat"));
     }
+
+    /// <summary>
+    /// What cannot be calibrated fails before any search, and says why: no calibration rounds, a run with no DIA MS2 scans, and
+    /// a library whose targets have no library time to set the first pass's range.
+    /// </summary>
+    [Test]
+    public void WhatCannotBeCalibratedFailsBeforeAnySearch()
+    {
+        var run = SyntheticDiaRun.Build(50, _ => false, withMs1: true);
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(),
+            new CommonParameters(), rounds: 0));
+
+        var ms1Only = run.Scans.Where(s => s.MsnOrder == 1).ToArray();
+        Assert.That(ms1Only, Is.Not.Empty);
+        var noMs2 = Assert.Throws<MetaMorpheusException>(() =>
+            DiaIrtSelfCalibration.Calibrate(ms1Only, library, new DiaLibrarySearchParameters(), new CommonParameters()));
+        Assert.That(noMs2!.Message, Does.Contain("no DIA MS2 scans"));
+
+        var untimedTargets = run.Library.Where(entry => !entry.IsDecoy).Select(entry => new MslLibraryEntry
+        {
+            FullSequence = entry.FullSequence,
+            BaseSequence = entry.BaseSequence,
+            PrecursorMz = entry.PrecursorMz,
+            ChargeState = entry.ChargeState,
+            RetentionTime = double.NaN,
+            IsDecoy = false,
+            MatchedFragmentIons = entry.MatchedFragmentIons,
+        }).ToList();
+        run.Library.RemoveAll(entry => !entry.IsDecoy);
+        run.Library.AddRange(untimedTargets);
+        using var untimedLibrary = MslLibrary.Load(run.WriteLibrary(_directory));
+        Assert.That(untimedLibrary.TargetCount, Is.GreaterThan(0));
+        var untimed = Assert.Throws<MetaMorpheusException>(() =>
+            DiaIrtSelfCalibration.Calibrate(run.Scans, untimedLibrary, new DiaLibrarySearchParameters(), new CommonParameters()));
+        Assert.That(untimed!.Message, Does.Contain("no target precursors with a library time"));
+    }
 }

@@ -125,9 +125,10 @@ public static class DiaMassCalibration
         return value - sorted[i - 1] <= sorted[i] - value ? i - 1 : i;
     }
 
+    /// <summary>The median of a non-empty list; <see cref="Calibrate"/> returns before it is called on an empty one.</summary>
     private static double Median(IEnumerable<double> values)
     {
         var sorted = values.Order().ToArray();
-        return sorted.Length == 0 ? double.NaN : sorted[sorted.Length / 2];
+        return sorted[sorted.Length / 2];
     }
 }

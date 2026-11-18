@@ -7,6 +7,7 @@ using System.Linq;
 using EngineLayer;
 using EngineLayer.DiaLibrarySearch;
 using MassSpectrometry;
+using MzLibUtil;
 using NUnit.Framework;
 using Readers;
 using Readers.SpectralLibrary;
@@ -103,6 +104,77 @@ public class DiaMassCalibrationTests
             new DiaLibrarySearchParameters(IrtHalfWindow: rt.IrtHalfWindow), new CommonParameters(), [], []).Run();
         int found = again.Matches.Count(m => !m.IsDecoy && m.QValue <= 0.01 && run.PlantedSequences.Contains(m.FullSequence));
         Assert.That(found, Is.GreaterThanOrEqualTo((int)Math.Ceiling(0.9 * run.PlantedSequences.Count)));
+    }
+
+    private (string LibraryPath, MsDataScan[] Scans, List<DiaPrecursorMatch> Confident)? _searched;
+
+    /// <summary>The 8 ppm run, searched once, and its targets at <see cref="DiaMassCalibration.LabelQValue"/>.</summary>
+    private (string LibraryPath, MsDataScan[] Scans, List<DiaPrecursorMatch> Confident) Searched()
+    {
+        if (_searched is { } searched)
+            return searched;
+        var run = SyntheticDiaRun.Build(200, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0, withMs1: true, ppmOffset: 8);
+        string path = run.WriteLibrary(_directory);
+        using var library = MslLibrary.Load(path);
+        var rt = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(), new CommonParameters());
+        var results = (DiaLibrarySearchResults)new DiaLibrarySearchEngine(run.Scans, library, rt.Model,
+            new DiaLibrarySearchParameters(IrtHalfWindow: rt.IrtHalfWindow), new CommonParameters(), [], []).Run();
+        var confident = results.Matches.Where(m => !m.IsDecoy && m.QValue <= DiaMassCalibration.LabelQValue).ToList();
+        _searched = (path, run.Scans, confident);
+        return _searched.Value;
+    }
+
+    private static void AssertSamePoints(DiaMassCalibrationResult actual, DiaMassCalibrationResult expected)
+    {
+        Assert.That(expected.Ms2Points, Is.GreaterThan(100));
+        Assert.That(actual.Ms1Points, Is.EqualTo(expected.Ms1Points));
+        Assert.That(actual.Ms2Points, Is.EqualTo(expected.Ms2Points));
+        Assert.That(actual.Ms1MedianPpmBefore, Is.EqualTo(expected.Ms1MedianPpmBefore));
+        Assert.That(actual.Ms2MedianPpmBefore, Is.EqualTo(expected.Ms2MedianPpmBefore));
+    }
+
+    /// <summary>
+    /// An identification labels from the scans nearest its apex time, which need not be a scan's own time: a time between two
+    /// scans takes the nearer, and a time before the first scan or after the last takes that end's scan. Moving every apex a
+    /// third of a cycle either way, and two of them beyond the run's ends, labels exactly the same points.
+    /// </summary>
+    [Test]
+    public void AnApexBetweenOrBeyondTheScansLabelsFromTheNearestScan()
+    {
+        var (path, scans, confident) = Searched();
+        using var library = MslLibrary.Load(path);
+        double first = scans.Min(s => s.RetentionTime), last = scans.Max(s => s.RetentionTime);
+        double shift = 0.3 * SyntheticDiaRun.CycleMinutes;
+        var onScans = confident
+            .Append(confident[0] with { ApexRt = new RtMinutes(first) })
+            .Append(confident[0] with { ApexRt = new RtMinutes(last) }).ToList();
+        var offScans = confident.Select((m, i) => m with { ApexRt = new RtMinutes(m.ApexRt.Value + (i % 2 == 0 ? shift : -shift)) })
+            .Append(confident[0] with { ApexRt = new RtMinutes(first - 1) })
+            .Append(confident[0] with { ApexRt = new RtMinutes(last + 1) }).ToList();
+
+        var expected = DiaMassCalibration.Calibrate(scans, onScans, library, new CommonParameters());
+        var actual = DiaMassCalibration.Calibrate(scans, offScans, library, new CommonParameters());
+
+        AssertSamePoints(actual, expected);
+    }
+
+    /// <summary>
+    /// Only targets at <see cref="DiaMassCalibration.LabelQValue"/> label points. Decoys, targets above it, and a precursor that
+    /// no isolation window holds and no MS1 peak lies near add nothing.
+    /// </summary>
+    [Test]
+    public void OnlyConfidentTargetsLabelPoints()
+    {
+        var (path, scans, confident) = Searched();
+        using var library = MslLibrary.Load(path);
+        var unusable = confident.Select(m => m with { IsDecoy = true })
+            .Concat(confident.Select(m => m with { QValue = 0.5 }))
+            .Append(confident[0] with { PrecursorMz = 100 });
+
+        var expected = DiaMassCalibration.Calibrate(scans, confident, library, new CommonParameters());
+        var actual = DiaMassCalibration.Calibrate(scans, confident.Concat(unusable).ToList(), library, new CommonParameters());
+
+        AssertSamePoints(actual, expected);
     }
 
     /// <summary>With no confident identifications there is nothing to calibrate on: the scans come back unchanged.</summary>
