@@ -53,6 +53,7 @@ PrecursorMassTolerance = "±5.0000 PPM"
 AddCompIons = false
 QValueThreshold = 1.0
 PepQValueThreshold = 0.01
+IdentificationFilter = "PepQValue"
 ScoreCutoff = 5.0
 ReportAllAmbiguity = true
 TopNpeaks = 200

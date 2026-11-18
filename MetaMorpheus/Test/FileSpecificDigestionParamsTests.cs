@@ -199,7 +199,8 @@ namespace Test
                 rtPredictorName: "SSRCalc3",
                 retentionTimeRange: new DoubleRange(12, 14),
                 fivePrimeTerminus: "H3O6P2",
-                threePrimeTerminus: "O3P");
+                threePrimeTerminus: "O3P",
+                identificationFilter: EngineLayer.SpectrumMatch.FilterType.PepQValue);
 
             // CustomIons is not a constructor parameter; the constructor reads it from a global dictionary
             typeof(CommonParameters).GetProperty(nameof(CommonParameters.CustomIons))

@@ -991,7 +991,8 @@ namespace Test
                     DoLabelFreeQuantification = false
                 },
 
-                CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD)
+                // the same thresholds: Spectrum Match Count is counted at the identification filter's threshold
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD, pepQValueThreshold: 0.01, qValueThreshold: 1.0)
             };
 
             searchTask.RunTask(hcdTaskFolder, new List<DbForTask> { db }, new List<string> { myFile }, "");
@@ -1021,9 +1022,9 @@ namespace Test
                     DoLabelFreeQuantification = false // quant disabled just to save some time
                 },
 
-                // Use pepQvalue filtering with fewer than 100 psms
+                // The PEP q-value filter, with fewer than 100 psms: PEP is not trained
                 CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD,
-                    pepQValueThreshold: 0.02, qValueThreshold: 1.0)
+                    pepQValueThreshold: 0.02, qValueThreshold: 1.0, identificationFilter: EngineLayer.SpectrumMatch.FilterType.PepQValue)
             };
 
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
@@ -1040,13 +1041,12 @@ namespace Test
 
             string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
             string[] results = File.ReadAllLines(resultsFile);
-            // Each sentence sits just above the count it qualifies; the old text ("Results were filtered by q-value.")
-            // said a filter ran.
-            const string notFiltered = "PEP filtering was requested, but there were fewer than 100 PSMs (85, counting decoys), so results were not filtered.";
-            Assert.That(results[5], Is.EqualTo(notFiltered));
-            Assert.That(results[6], Is.EqualTo("All target PSMs with q-value <= 1: 84"));
-            Assert.That(results[7], Is.EqualTo(notFiltered));
-            Assert.That(results[8], Does.StartWith("All target peptides with q-value <= 1: "));
+            // Fewer than 100 matches are filtered, not kept whole: PEP is not trained, so each is judged by its q-value notch
+            // at the PEP threshold. Each sentence sits just above the count it qualifies. Of 59 peptides, 50 pass.
+            Assert.That(results[5], Is.EqualTo("PEP filtering was requested, but PEP was not trained for 84 target PSMs (trypsin: 84), so those were filtered by q-value notch <= 0.02."));
+            Assert.That(results[6], Is.EqualTo("All target PSMs with pep q-value <= 0.02: 84"));
+            Assert.That(results[7], Is.EqualTo("PEP filtering was requested, but peptide-level PEP q-values were not computed for 59 target peptides (trypsin: 59), so those were filtered by q-value notch <= 0.02."));
+            Assert.That(results[8], Is.EqualTo("All target peptides with pep q-value <= 0.02: 50"));
 
             // clean up
             Directory.Delete(folderPath, true);
@@ -1056,23 +1056,17 @@ namespace Test
         /// PSM, peptide, and protein group counts are correctly reported with the appropriate
         /// filter type and threshold values.
         /// 
-        /// This test specifically validates the behavior when PEP Q-value filtering is requested
-        /// (pepQValueThreshold: 0.02) but cannot be performed due to insufficient PSMs (fewer than 100).
-        /// In this scenario, the system should fall back to standard Q-value filtering with a 
-        /// threshold of 1.0 (as specified by qValueThreshold).
-        /// 
+        /// This test specifically validates the behavior when the PEP q-value filter is chosen
+        /// (pepQValueThreshold: 0.02) but PEP is not trained (fewer than 100 PSMs).
+        /// In this scenario, each match is judged by its q-value notch at the PEP threshold, 0.02,
+        /// and results.txt says so above every count line it qualifies.
+        ///
         /// The test verifies:
-        /// 1. Combined results across all files show correct counts with "q-value <= 1" format
-        /// 2. Individual file results (mouseOne, mouseTwo) show correct per-file counts
+        /// 1. Combined results across all files show correct counts with "pep q-value <= 0.02" format
+        /// 2. Individual file results (mouseOne, mouseTwo) show correct per-file counts, with the same sentence
         /// 3. Protein groups are reported using the same filter type and threshold as PSMs and peptides
         ///    (both combined and per-file results should use consistent formatting)
         /// 4. Precursor and MS2 scan counts are accurately reported for each file and combined
-        /// 
-        /// Expected output format in results.txt:
-        /// - "All target PSMs with q-value <= 1: [count]"
-        /// - "All target peptides with q-value <= 1: [count]"  
-        /// - "All target protein groups with q-value <= 1: [count]"
-        /// - "[fileName] - Target protein groups with q-value <= 1: [count]"
         /// </summary>
         [Test]
         public static void TestSearchTaskResultsTextContents()
@@ -1085,9 +1079,9 @@ namespace Test
                     WriteIndividualFiles = true // the per-file counts are checked below
                 },
 
-                // Use pepQvalue filtering with fewer than 100 psms
+                // The PEP q-value filter, with fewer than 100 psms: PEP is not trained
                 CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD,
-        pepQValueThreshold: 0.02, qValueThreshold: 1.0)
+                    pepQValueThreshold: 0.02, qValueThreshold: 1.0, identificationFilter: EngineLayer.SpectrumMatch.FilterType.PepQValue)
             };
 
             string myFileOne = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseOne.mzML");
@@ -1106,26 +1100,30 @@ namespace Test
             string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
             string[] results = File.ReadAllLines(resultsFile);
 
-            // Lines 5 and 7 say PEP filtering was not done, each just above the count it qualifies.
-            Assert.That(results[5], Does.StartWith("PEP filtering was requested, but there were fewer than 100 PSMs ("));
-            Assert.That(results[6], Is.EqualTo("All target PSMs with q-value <= 1: 46"));
-            Assert.That(results[7], Is.EqualTo(results[5]));
-            Assert.That(results[8], Is.EqualTo("All target peptides with q-value <= 1: 14"));
-            Assert.That(results[9], Is.EqualTo("All target protein groups with q-value <= 1: 14"));
+            // Each fallback sentence sits just above the count it qualifies, on the all-files and the per-file lines.
+            Assert.That(results[5], Is.EqualTo("PEP filtering was requested, but PEP was not trained for 46 target PSMs (trypsin: 46), so those were filtered by q-value notch <= 0.02."));
+            Assert.That(results[6], Is.EqualTo("All target PSMs with pep q-value <= 0.02: 46"));
+            Assert.That(results[7], Is.EqualTo("PEP filtering was requested, but peptide-level PEP q-values were not computed for 14 target peptides (trypsin: 14), so those were filtered by q-value notch <= 0.02."));
+            Assert.That(results[8], Is.EqualTo("All target peptides with pep q-value <= 0.02: 14"));
+            Assert.That(results[9], Is.EqualTo("All target protein groups with pep q-value <= 0.02: 14"));
             Assert.That(results[10], Is.EqualTo("All Precursors: 123"));
             Assert.That(results[11], Is.EqualTo("All MS2 Scans: 42"));
 
-            Assert.That(results[13], Is.EqualTo("mouseOne - Target PSMs with q-value <= 1: 22"));
-            Assert.That(results[14], Is.EqualTo("mouseOne - Target peptides with q-value <= 1: 14"));
-            Assert.That(results[15], Is.EqualTo("mouseOne - Target protein groups with q-value <= 1: 14"));
-            Assert.That(results[16], Is.EqualTo("mouseOne - Precursors: 57"));
-            Assert.That(results[17], Is.EqualTo("mouseOne - MS2 Scans: 20"));
+            Assert.That(results[13], Is.EqualTo("PEP filtering was requested, but PEP was not trained for 22 target PSMs (trypsin: 22), so those were filtered by q-value notch <= 0.02."));
+            Assert.That(results[14], Is.EqualTo("mouseOne - Target PSMs with pep q-value <= 0.02: 22"));
+            Assert.That(results[15], Is.EqualTo(results[7]));
+            Assert.That(results[16], Is.EqualTo("mouseOne - Target peptides with pep q-value <= 0.02: 14"));
+            Assert.That(results[17], Is.EqualTo("mouseOne - Target protein groups with pep q-value <= 0.02: 14"));
+            Assert.That(results[18], Is.EqualTo("mouseOne - Precursors: 57"));
+            Assert.That(results[19], Is.EqualTo("mouseOne - MS2 Scans: 20"));
 
-            Assert.That(results[19], Is.EqualTo("mouseTwo - Target PSMs with q-value <= 1: 24"));
-            Assert.That(results[20], Is.EqualTo("mouseTwo - Target peptides with q-value <= 1: 14"));
-            Assert.That(results[21], Is.EqualTo("mouseTwo - Target protein groups with q-value <= 1: 14"));
-            Assert.That(results[22], Is.EqualTo("mouseTwo - Precursors: 66"));
-            Assert.That(results[23], Is.EqualTo("mouseTwo - MS2 Scans: 22"));
+            Assert.That(results[21], Is.EqualTo("PEP filtering was requested, but PEP was not trained for 24 target PSMs (trypsin: 24), so those were filtered by q-value notch <= 0.02."));
+            Assert.That(results[22], Is.EqualTo("mouseTwo - Target PSMs with pep q-value <= 0.02: 24"));
+            Assert.That(results[23], Is.EqualTo(results[7]));
+            Assert.That(results[24], Is.EqualTo("mouseTwo - Target peptides with pep q-value <= 0.02: 14"));
+            Assert.That(results[25], Is.EqualTo("mouseTwo - Target protein groups with pep q-value <= 0.02: 14"));
+            Assert.That(results[26], Is.EqualTo("mouseTwo - Precursors: 66"));
+            Assert.That(results[27], Is.EqualTo("mouseTwo - MS2 Scans: 22"));
 
             // clean up
             Directory.Delete(folderPath, true);
