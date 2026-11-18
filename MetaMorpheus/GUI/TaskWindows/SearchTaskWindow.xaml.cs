@@ -1,5 +1,6 @@
 using EngineLayer;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 using GuiFunctions;
 using GuiFunctions.Util;
 using MassSpectrometry;
@@ -369,15 +370,11 @@ namespace MetaMorpheusGUI
             }
             PepTrainingQValueTextBox.Text = pepTrainingQ.ToString(CultureInfo.InvariantCulture);
 
-            if (task.CommonParameters.PepQValueThreshold < 1)
-            {
-                PepQValueThresholdTextBox.Text = task.CommonParameters.PepQValueThreshold.ToString(CultureInfo.InvariantCulture);
-                PepQValueThresholdCheckbox.IsChecked = true;
-            }
-            else
-            {
-                PepQValueThresholdTextBox.Text = "0.01";
-            }
+            // The box is the identification filter: ticked, the PEP q-value; unticked, the q-value notch
+            PepQValueThresholdCheckbox.IsChecked = task.CommonParameters.IdentificationFilter == FilterType.PepQValue;
+            PepQValueThresholdTextBox.Text = task.CommonParameters.PepQValueThreshold < 1
+                ? task.CommonParameters.PepQValueThreshold.ToString(CultureInfo.InvariantCulture)
+                : "0.01";
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             CkbMzId.IsChecked = task.SearchParameters.WriteMzId;
@@ -675,6 +672,7 @@ namespace MetaMorpheusGUI
                 useProvidedPrecursorInfo: useProvidedPrecursorInfo,
                 qValueThreshold: !PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(QValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 pepQValueThreshold: PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(PepQValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
+                identificationFilter: PepQValueThresholdCheckbox.IsChecked.Value ? FilterType.PepQValue : FilterType.QValueNotch,
                 qValueCutoffForPepCalculation: double.Parse(PepTrainingQValueTextBox.Text, CultureInfo.InvariantCulture),
                 scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                 listOfModsFixed: listOfModsFixed,

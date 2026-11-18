@@ -157,6 +157,17 @@ namespace TaskLayer
             SearchParameters.MassDiffAcceptorType = LegacyMostAbundantEquivalent;
         }
 
+        /// <summary>
+        /// When the search's identification filter is held to 1 or more, which keeps every match, the sentence saying so;
+        /// null otherwise. A task saved before the filter was named, with the GUI's PEP box ticked, has a q-value
+        /// threshold of 1 and now loads with the q-value notch filter.
+        /// </summary>
+        internal static string FilterKeepsEveryMatch(CommonParameters commonParameters) =>
+            EngineLayer.SpectrumMatch.FilteredPsms.Threshold(commonParameters, commonParameters.IdentificationFilter) >= 1
+                ? $"This search filters by {EngineLayer.SpectrumMatch.FilteredPsms.Describe(commonParameters)}, which keeps every match. " +
+                  "A task saved with the PEP box ticked, before the filter was named, should now choose the PEP q-value filter."
+                : null;
+
         // Compiled optimized from the start. This method runs once per search, so the runtime would otherwise run it as
         // unoptimized code, which keeps every local alive until it is overwritten: each searched file's scans, matches and
         // search engine then stayed reachable through the rest of the run, about 0.6 GB per file on a TMT11 .raw file. It
@@ -173,6 +184,12 @@ namespace TaskLayer
             // a gap named up front can still be fixed cheaply, whereas one named after a three-hour
             // search cannot. This warns; it does not refuse the run.
             WarnAboutSdrfGaps(currentRawFileList);
+
+            // A filter at 1 is allowed, but it keeps every match: say so before the search, and in results.txt
+            if (FilterKeepsEveryMatch(CommonParameters) is string keepsEveryMatch)
+            {
+                Warn(keepsEveryMatch);
+            }
 
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select((b, i) => SetAllFileSpecificCommonParams(CommonParameters, b, currentRawFileList[i]));

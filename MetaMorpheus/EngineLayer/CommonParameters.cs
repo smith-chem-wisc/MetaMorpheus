@@ -203,7 +203,24 @@ namespace EngineLayer
         /// peptides/PSMs with PEP Q-Value below this threshold are included in .psmtsv results files.
         /// </summary>
         public double PepQValueThreshold { get; private set; }
-        public FilterType IdentificationFilter { get; private set; }
+
+        private FilterType _identificationFilter;
+
+        /// <summary>
+        /// The value that decides whether a match or peptide counts as identified, at every step of a search: the
+        /// tables, parsimony, protein scoring and FDR, quantification, the spectral library, the pruned database, the
+        /// Spectrum Match Count column and every count reported. The user picks one of two:
+        /// <see cref="FilterType.QValueNotch"/> (the default), held to <see cref="QValueThreshold"/>; or
+        /// <see cref="FilterType.PepQValue"/>, held to <see cref="PepQValueThreshold"/>, where a match whose PEP was not
+        /// trained is judged by its q-value notch at that same threshold, and the search says so.
+        /// </summary>
+        public FilterType IdentificationFilter
+        {
+            get => _identificationFilter;
+            private set => _identificationFilter = value is FilterType.QValueNotch or FilterType.PepQValue
+                ? value
+                : throw new ArgumentException($"The identification filter is {FilterType.QValueNotch} or {FilterType.PepQValue}, not {value}.");
+        }
         public double ScoreCutoff { get; private set; }
         /// <summary>
         /// This parameter determines which PSMs/Peptides will be used as postive training examples
@@ -350,7 +367,8 @@ namespace EngineLayer
                                 RTPredictorName,
                                  RetentionTimeRange,
                                  FivePrimeTerminus?.Formula,
-                                 ThreePrimeTerminus?.Formula);
+                                 ThreePrimeTerminus?.Formula,
+                                 IdentificationFilter);
         }
 
         /// <summary>
@@ -406,7 +424,8 @@ namespace EngineLayer
                                 RTPredictorName,
                                  RetentionTimeRange,
                                  FivePrimeTerminus?.Formula,
-                                 ThreePrimeTerminus?.Formula);
+                                 ThreePrimeTerminus?.Formula,
+                                 IdentificationFilter);
 
             // CustomIons is not a constructor parameter — the constructor reads it from the global
             // dissociation-type dictionary — so copy it across explicitly. GlycoSearchEngine branches on

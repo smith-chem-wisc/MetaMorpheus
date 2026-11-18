@@ -10,6 +10,14 @@
         public double QValueNotch { get; set; }
         public double PEP { get; set; }
         public double PEP_QValue { get; set; }
+
+        /// <summary>
+        /// True when <see cref="PEP_QValue"/> at this level comes from a PEP model trained for this match's digestion
+        /// agent (and cleavage-specificity category). Set by <see cref="FdrAnalysisEngine"/> in each pass that trains or
+        /// declines to train PEP; a pass that only reuses PEPs leaves it alone. False when PEP was not trained (too few
+        /// matches, or not asked for) or its training failed: a PEP q-value may then still have been computed, but only
+        /// from untrained PEPs, and the PEP q-value filter judges the match by its q-value notch instead.
+        /// </summary>
         public bool PepTrained { get; set; }
 
         /// <summary>
@@ -26,7 +34,7 @@
 
         /// <summary>
         /// A new FdrInfo holding the same values. Writing to the copy leaves this one unchanged. Every property is a
-        /// number, so a member-wise copy is a full copy, and a property added later is copied without a change here.
+        /// number or a bool, so a member-wise copy is a full copy, and a property added later is copied without a change here.
         /// </summary>
         public FdrInfo Clone() => (FdrInfo)MemberwiseClone();
     }

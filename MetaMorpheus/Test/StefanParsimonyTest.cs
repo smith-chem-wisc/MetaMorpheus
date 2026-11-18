@@ -491,18 +491,18 @@ namespace Test
 
             List<SpectralMatch> psms = new List<SpectralMatch> { psm };
 
-            // Create CommonParameters with PepQValueThreshold < QValueThreshold to trigger PepQValue filtering
-            var commonParams = new CommonParameters(qValueThreshold: 0.05, pepQValueThreshold: 0.01);
+            psm.PsmFdrInfo.PepTrained = true;
 
-            // Filter with pepQValueThreshold < qValueThreshold to trigger FilterType.PepQValue path
+            // The PEP q-value filter, chosen by name
+            var commonParams = new CommonParameters(qValueThreshold: 0.05, pepQValueThreshold: 0.01, identificationFilter: FilterType.PepQValue);
+
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParams,
                 qValueThreshold: 0.05,
                 pepQValueThreshold: 0.01);
 
-            // Verify the filter type is PepQValue
-            Assert.That(filteredPsms.FilterType == FilterType.PepQValue ||
-                        filteredPsms.FilteringNotPerformed, // May not filter if too few PSMs
-                        "FilterType should be PepQValue when pepQValueThreshold < qValueThreshold");
+            // Verify the filter type is PepQValue, at the PEP q-value threshold
+            Assert.That((filteredPsms.FilterType, filteredPsms.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.01)));
+            Assert.That(filteredPsms.FilteredPsmsList, Has.Count.EqualTo(1));
         }
 
         [Test]
