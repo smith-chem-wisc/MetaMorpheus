@@ -72,6 +72,10 @@ namespace EngineLayer.Localization
         public int MinTrainingPeaksPerFile { get; init; } = DefaultMinTrainingPeaksPerFile;
         public int MinTrainingPeaks { get; init; } = DefaultMinTrainingPeaks;
         public int MinMatchesForPrior { get; init; } = DefaultMinMatchesForPrior;
+        /// <summary>
+        /// The prior weight, in matches, each chemistry's flat prior keeps while it is learned, spread evenly over its
+        /// residue and position classes. Zero, as in PTMiner, lets classes never seen fall to (nearly) zero.
+        /// </summary>
         public double Pseudocount { get; init; } = DefaultPseudocount;
         public double Convergence { get; init; } = DefaultConvergence;
         public int MaxIterations { get; init; } = DefaultMaxIterations;
@@ -301,7 +305,7 @@ namespace EngineLayer.Localization
         /// <summary>
         /// Learns the log prior of each site class by expectation maximization over the confident target matches with more
         /// than one candidate: each class's new weight is its expected count of sites under the current posteriors, plus
-        /// a pseudocount, normalized within its chemistry. A chemistry on fewer than <see cref="MinMatchesForPrior"/> such
+        /// its share of the chemistry's <see cref="Pseudocount"/>, normalized within its chemistry. A chemistry on fewer than <see cref="MinMatchesForPrior"/> such
         /// matches keeps a flat prior.
         /// </summary>
         private double[] LearnPrior(ScoredMatch[] scored, SiteClassRegistry siteClasses, LocalizationProbabilityResults results)
@@ -345,10 +349,13 @@ namespace EngineLayer.Localization
                     }
                 }
 
+                // the pseudocount is a chemistry's total, spread evenly over its classes, so that it weighs as much as
+                // one match however many residues and positions the chemistry has been seen on
+                double PseudocountOf(int k) => Pseudocount / siteClasses.ClassesInGroup(siteClasses.GroupOf(k));
                 var groupTotals = new double[siteClasses.GroupCount];
                 for (int k = 0; k < classCount; k++)
                 {
-                    groupTotals[siteClasses.GroupOf(k)] += expected[k] + Pseudocount;
+                    groupTotals[siteClasses.GroupOf(k)] += expected[k] + PseudocountOf(k);
                 }
 
                 var change = new double[siteClasses.GroupCount];
@@ -359,7 +366,7 @@ namespace EngineLayer.Localization
                     {
                         continue;
                     }
-                    double updated = (expected[k] + Pseudocount) / groupTotals[group];
+                    double updated = (expected[k] + PseudocountOf(k)) / groupTotals[group];
                     change[group] += Math.Abs(updated - prior[k]);
                     prior[k] = updated;
                 }
@@ -476,6 +483,103 @@ namespace EngineLayer.Localization
         }
 
         /// <summary>
+        /// Groups sorted open-search mass differences into chemistries. Differences closer than the tolerance are
+        /// joined, as in single linkage, but a group is then split at each valley of its smoothed density that is
+        /// under half of the lower neighbouring peak. Without the split, a dense open search chains distinct
+        /// chemistries together (formylation at +27.995 and dimethylation at +28.031, say) and they share a prior.
+        /// Returns each group's lowest mass difference, for lookup, and its densest mass difference, as its name.
+        /// </summary>
+        public static (double[] Starts, double[] Modes) ClusterMassDifferences(IReadOnlyList<double> sorted, double tolerance)
+        {
+            var starts = new List<double>();
+            var modes = new List<double>();
+            int first = 0;
+            for (int i = 1; i <= sorted.Count; i++)
+            {
+                if (i == sorted.Count || sorted[i] - sorted[i - 1] > tolerance)
+                {
+                    SplitAtValleys(sorted, first, i, tolerance, starts, modes);
+                    first = i;
+                }
+            }
+            return (starts.ToArray(), modes.ToArray());
+        }
+
+        private static void SplitAtValleys(IReadOnlyList<double> sorted, int first, int end, double tolerance,
+            List<double> starts, List<double> modes)
+        {
+            double low = sorted[first];
+            double span = sorted[end - 1] - low;
+            double bin = tolerance / 20;
+            double sigma = tolerance / 2;
+            int bins = (int)(span / bin) + 1;
+
+            // Gaussian-smoothed density of the group's mass differences on a fine grid
+            var density = new double[bins];
+            int reach = (int)Math.Ceiling(3 * sigma / bin);
+            for (int i = first; i < end; i++)
+            {
+                int center = (int)((sorted[i] - low) / bin);
+                for (int b = Math.Max(0, center - reach); b <= Math.Min(bins - 1, center + reach); b++)
+                {
+                    double z = (b * bin - (sorted[i] - low)) / sigma;
+                    density[b] += Math.Exp(-0.5 * z * z);
+                }
+            }
+
+            // peaks, with the deepest valley between consecutive ones; merge a peak into its neighbour when the valley is shallow
+            var peaks = new List<int>();
+            for (int b = 0; b < bins; b++)
+            {
+                if ((b == 0 || density[b] > density[b - 1]) && (b == bins - 1 || density[b] >= density[b + 1]))
+                {
+                    peaks.Add(b);
+                }
+            }
+            var boundaries = new List<int>(); // first bin of each group after the first
+            int currentPeak = peaks[0];
+            for (int p = 1; p < peaks.Count; p++)
+            {
+                int valley = currentPeak;
+                for (int b = currentPeak; b <= peaks[p]; b++)
+                {
+                    if (density[b] < density[valley])
+                    {
+                        valley = b;
+                    }
+                }
+                if (density[valley] < 0.5 * Math.Min(density[currentPeak], density[peaks[p]]))
+                {
+                    boundaries.Add(valley);
+                    currentPeak = peaks[p];
+                }
+                else if (density[peaks[p]] > density[currentPeak])
+                {
+                    currentPeak = peaks[p];
+                }
+            }
+
+            // each group's start is its first mass difference, and its name is its densest bin
+            int groupFirstBin = 0;
+            for (int g = 0; g <= boundaries.Count; g++)
+            {
+                int groupEndBin = g < boundaries.Count ? boundaries[g] : bins;
+                int mode = groupFirstBin;
+                for (int b = groupFirstBin; b < groupEndBin; b++)
+                {
+                    if (density[b] > density[mode])
+                    {
+                        mode = b;
+                    }
+                }
+                double startMass = g == 0 ? low : low + groupFirstBin * bin;
+                starts.Add(startMass);
+                modes.Add(low + mode * bin);
+                groupFirstBin = groupEndBin;
+            }
+        }
+
+        /// <summary>
         /// Numbers the prior classes: (chemistry, residue, position class). A chemistry is an identified modification's
         /// formula (or mass, when it has none), or a cluster of open-search mass differences.
         /// </summary>
@@ -487,25 +591,17 @@ namespace EngineLayer.Localization
             private readonly List<string> _groupNames = new();
             private readonly List<int> _classesPerGroup = new();
             private readonly double[] _clusterStarts;
+            private readonly double[] _clusterModes;
 
             public SiteClassRegistry(List<SpectralMatch> matches, double clusterTolerance)
             {
-                // single-linkage clusters of the mass differences of open-search placements
                 var massDifferences = matches
                     .Select(m => m.LocalizationEvidence)
                     .Where(e => e.Placements.Any(p => p.Sites.Any(s => s.Modification == null)))
                     .Select(e => e.MassDifference)
                     .OrderBy(d => d)
                     .ToList();
-                var starts = new List<double>();
-                for (int i = 0; i < massDifferences.Count; i++)
-                {
-                    if (i == 0 || massDifferences[i] - massDifferences[i - 1] > clusterTolerance)
-                    {
-                        starts.Add(massDifferences[i]);
-                    }
-                }
-                _clusterStarts = starts.ToArray();
+                (_clusterStarts, _clusterModes) = ClusterMassDifferences(massDifferences, clusterTolerance);
 
                 foreach (SpectralMatch match in matches)
                 {
@@ -581,7 +677,7 @@ namespace EngineLayer.Localization
                 {
                     cluster = ~cluster - 1;
                 }
-                return "mass difference " + _clusterStarts[Math.Max(cluster, 0)].ToString("F3", CultureInfo.InvariantCulture);
+                return "mass difference " + _clusterModes[Math.Max(cluster, 0)].ToString("F3", CultureInfo.InvariantCulture);
             }
 
             private int GroupIndex(string chemistry)

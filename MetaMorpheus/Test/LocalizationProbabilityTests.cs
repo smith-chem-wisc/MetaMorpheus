@@ -486,5 +486,28 @@ namespace Test
 
             Assert.That(target.LocalizationProbabilities, Is.Null);
         }
+
+        [Test]
+        public static void ChainedMassDifferencesSplitAtTheValleyBetweenChemistries()
+        {
+            // formylation (+27.995) and dimethylation (+28.031), 1000 each with 3 mDa spread, joined by a sparse bridge
+            var random = new Random(1);
+            double Noise() => 0.003 * Math.Sqrt(-2 * Math.Log(1 - random.NextDouble())) * Math.Cos(2 * Math.PI * random.NextDouble());
+            var masses = Enumerable.Range(0, 1000).Select(_ => 27.995 + Noise())
+                .Concat(Enumerable.Range(0, 1000).Select(_ => 28.031 + Noise()))
+                .Concat(Enumerable.Range(0, 10).Select(i => 27.995 + 0.0036 * i))
+                .Append(14.016)
+                .OrderBy(m => m)
+                .ToList();
+            Assert.That(masses.Zip(masses.Skip(1)).Where(p => p.First > 20).Max(p => p.Second - p.First), Is.LessThan(0.01)); // single linkage would chain them
+
+            var (starts, modes) = LocalizationProbabilityEngine.ClusterMassDifferences(masses, 0.01);
+
+            Assert.That(modes.Length, Is.EqualTo(3));
+            Assert.That(modes[0], Is.EqualTo(14.016).Within(1e-9));
+            Assert.That(modes[1], Is.EqualTo(27.995).Within(0.002));
+            Assert.That(modes[2], Is.EqualTo(28.031).Within(0.002));
+            Assert.That(starts[2], Is.GreaterThan(28.0).And.LessThan(28.026));
+        }
     }
 }
