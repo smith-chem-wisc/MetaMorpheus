@@ -10,7 +10,10 @@ namespace TaskLayer;
 /// </summary>
 public class DiaLibrarySearchTaskParameters
 {
-    /// <summary>Fragment m/z tolerance, ppm.</summary>
+    /// <summary>
+    /// Fragment m/z tolerance, ppm. 20 by default, for Orbitrap MS2; set 10 for Orbitrap Astral MS2, which gained 2.5-13% on
+    /// PXD071205's 5-min runs (see <see cref="DiaLibrarySearchParameters.FragmentTolerancePpm"/>).
+    /// </summary>
     public double FragmentTolerancePpm { get; set; } = new DiaLibrarySearchParameters().FragmentTolerancePpm;
 
     /// <summary>MS1 precursor m/z tolerance, ppm, around the run's calibrated MS1 offset.</summary>
