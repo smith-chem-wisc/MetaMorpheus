@@ -430,7 +430,8 @@ namespace MetaMorpheusGUI
             int MaxModPerPep = (int.Parse(TxtBoxMaxModPerPep.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
             // Semi-specific peptides (SearchModeType Semi, terminus Both) or fully specific ones; never seeds, which a glyco search cannot use
-            // Every other digestion setting (SILAC, cleavage-blocking modifications, ...) is kept from the loaded task.
+            // Every other digestion setting (SILAC, cleavage-blocking modifications, ...) is kept from the loaded task. There is no
+            // cleavage-promoting box: a glyco search digests before it places glycans, so that setting stops a glycoprotease cutting.
             DigestionParams digestionParamsToSave = TaskWindowDigestionParams.ForSave(TheTask.CommonParameters.DigestionParams,
                 protease.Name, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms,
                 maxModsForPeptides: MaxModPerPep,
