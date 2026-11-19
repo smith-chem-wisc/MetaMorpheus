@@ -18,14 +18,14 @@ namespace Test
 {
     /// <summary>
     /// The PEP q-value filter chosen, but PEP not trained for some matches: those matches are judged by their q-value
-    /// notch at the PEP q-value threshold, the filter says so, and it never drops every match because PEP was not
+    /// notch at the same threshold, the filter says so, and it never drops every match because PEP was not
     /// trained. Also a filter a caller asks for by name.
     /// </summary>
     [TestFixture]
     public static class PepFilteringNotDoneTests
     {
-        // The PEP q-value filter, with the thresholds the GUI sends when its PEP box is ticked.
-        private static CommonParameters PepChosen => new CommonParameters(qValueThreshold: 1.0, pepQValueThreshold: 0.01, identificationFilter: FilterType.PepQValue);
+        // The PEP q-value filter, at 0.01
+        private static CommonParameters PepChosen => new CommonParameters(identificationFilter: FilterType.PepQValue, filterThreshold: 0.01);
 
         /// <summary>
         /// <paramref name="count"/> target matches; the first <paramref name="confident"/> have q, notch and PEP
@@ -100,25 +100,36 @@ namespace Test
         }
 
         [Test]
-        public static void DefaultSettings_FilterByTheNotchAndSayNothing()
+        public static void DefaultSettings_FilterByThePepQValue_AndSayWherePepWasNotTrained()
         {
+            // Bottom-up, the default filter is the PEP q-value: untrained, every match is judged by its notch, and it says so.
             var filtered = FilteredPsms.Filter(Matches(300, 200, pepTrained: false), new CommonParameters());
 
-            Assert.That((filtered.FilterType, filtered.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.01)));
+            Assert.That((filtered.FilterType, filtered.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.01)));
             Assert.That(filtered.FilteredPsmsList, Has.Count.EqualTo(200));
-            Assert.That(filtered.PepFilteringNotDone, Is.Null);
+            Assert.That(filtered.PepFilteringNotDone, Is.EqualTo(
+                "PEP filtering was requested, but PEP was not trained for 300 target PSMs (trypsin: 300), so those were filtered by q-value notch <= 0.01."));
+
+            // Top-down, the default is the q-value notch, which says nothing
+            var topDown = FilteredPsms.Filter(Matches(300, 200, pepTrained: false), new CommonParameters(digestionParams: new DigestionParams(protease: "top-down")));
+            Assert.That((topDown.FilterType, topDown.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.01)));
+            Assert.That(topDown.FilteredPsmsList, Has.Count.EqualTo(200));
+            Assert.That(topDown.PepFilteringNotDone, Is.Null);
         }
 
         [Test]
-        public static void TheNotchAlone_Decides_AndThePooledQValueCannotBeAskedFor()
+        public static void TheNotchAlone_Decides_AndThePooledQValueAlone_Decides()
         {
-            // A notch q-value below the threshold and a whole-search q-value above it: the search's notch filter keeps the
-            // match. The pooled q-value is no filter, by name either (review of #2982).
+            // A notch q-value below the threshold and a whole-search q-value above it: the notch filter keeps the match and
+            // the pooled q-value filter does not.
             var psms = Matches(300, 0, pepTrained: false);
             foreach (var psm in psms.Take(120)) psm.SetFdrValues(1, 0, 0.5, 1, 0, 0.001, 0, 2);
 
-            Assert.Throws<ArgumentException>(() => FilteredPsms.Filter(psms, new CommonParameters(), filterType: FilterType.QValue));
-            var byNotch = FilteredPsms.Filter(psms, new CommonParameters());
+            var byPooled = FilteredPsms.Filter(psms, new CommonParameters(), filterType: FilterType.QValue);
+            Assert.That(byPooled.FilteredPsmsList, Is.Empty);
+            Assert.That((byPooled.FilterType, byPooled.GetFilterTypeString()), Is.EqualTo((FilterType.QValue, "q-value")));
+
+            var byNotch = FilteredPsms.Filter(psms, new CommonParameters(identificationFilter: FilterType.QValueNotch));
 
             Assert.That(byNotch.FilteredPsmsList, Has.Count.EqualTo(120));
             Assert.That((byNotch.FilterType, byNotch.FilterThreshold, byNotch.GetFilterTypeString()), Is.EqualTo((FilterType.QValueNotch, 0.01, "q-value notch")));
@@ -127,13 +138,17 @@ namespace Test
         }
 
         [Test]
-        public static void AFilterAskedForByName_IsHeldToItsOwnThreshold()
+        public static void AFilterAskedForByName_IsHeldToTheOneThreshold()
         {
+            // There is one threshold: a filter asked for by name is held to it, unless the caller gives another
             var filtered = FilteredPsms.Filter(Matches(50, 20, pepTrained: false), PepChosen, filterType: FilterType.QValueNotch);
 
-            Assert.That(filtered.FilterThreshold, Is.EqualTo(1.0), "the notch is held to the q-value threshold");
-            Assert.That(filtered.FilteredPsmsList, Has.Count.EqualTo(50));
+            Assert.That(filtered.FilterThreshold, Is.EqualTo(0.01), "the notch is held to the search's one threshold");
+            Assert.That(filtered.FilteredPsmsList, Has.Count.EqualTo(20));
             Assert.That(filtered.PepFilteringNotDone, Is.Null);
+
+            var atOne = FilteredPsms.Filter(Matches(50, 20, pepTrained: false), PepChosen, threshold: 1.0, filterType: FilterType.QValueNotch);
+            Assert.That((atOne.FilterThreshold, atOne.FilteredPsmsList.Count), Is.EqualTo((1.0, 50)));
         }
 
         /// <summary>
@@ -191,7 +206,7 @@ namespace Test
             }));
             Assert.That(warnings.Where(w => w.StartsWith("PEP filtering was requested")), Is.EqualTo(new[] { said }), "one warning per search");
 
-            // Protein groups: held to the filter's 0.01, not to the q-value threshold of 1.
+            // Protein groups: held to the filter's 0.01
             string[] groups = File.ReadAllLines(Directory.GetFiles(searchFolder, "All*ProteinGroups.tsv").Single());
             int qColumn = groups[0].Split('\t').ToList().IndexOf("Protein QValue");
             Assert.That(qColumn, Is.Not.EqualTo(-1));
@@ -218,12 +233,13 @@ namespace Test
         [Test]
         public static void AFilterTypeWithNoCase_Throws()
         {
-            // A FilterType added later without its case here must fail loudly, not be read as the q-value. Since the review
-            // of #2982 the filter refuses anything but its two choices when asked, before it judges a match.
+            // A FilterType added later without its case here must fail loudly, not be read as another value: the first match
+            // it judges throws, and so does naming it.
             var psm = Matches(1, 0, pepTrained: false)[0];
 
-            Assert.Throws<ArgumentException>(() => FilteredPsms.Filter(Array.Empty<SpectralMatch>(), new CommonParameters(), filterType: (FilterType)99));
-            Assert.Throws<ArgumentException>(() => FilteredPsms.Passes(psm, false, (FilterType)99, 0.01));
+            Assert.Throws<ArgumentOutOfRangeException>(() => FilteredPsms.Filter(new[] { psm }, new CommonParameters(), filterType: (FilterType)99));
+            Assert.Throws<ArgumentOutOfRangeException>(() => FilteredPsms.Passes(psm, false, (FilterType)99, 0.01));
+            Assert.Throws<ArgumentOutOfRangeException>(() => FilteredPsms.Describe((FilterType)99, 0.01));
         }
     }
 }

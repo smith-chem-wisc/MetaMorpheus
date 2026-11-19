@@ -37,8 +37,7 @@ namespace MetaMorpheusGUI
             string numberOfDatabaseSearches,
             string maxModsPerPeptide,
             string maxFragmentMass,
-            string qValueFilter,
-            string pepqValueFilter,
+            string filterThreshold,
             string minInternalIonLength
             )
         {
@@ -66,7 +65,7 @@ namespace MetaMorpheusGUI
                 (CheckNumberOfDatabasePartitions(numberOfDatabaseSearches)),
                 (CheckMaxModsPerPeptide(maxModsPerPeptide)),
                 (CheckMaxFragementMass(maxFragmentMass)),
-                (CheckQValueFilters(qValueFilter, pepqValueFilter)),
+                (CheckFilterThreshold(filterThreshold)),
                 (CheckMinInternalFragmentIonLength(minInternalIonLength))
             };
 
@@ -336,28 +335,26 @@ namespace MetaMorpheusGUI
             return true;
         }
 
-        public static bool CheckQValueFilters(string qValue, string pepqValue)
+        /// <summary>
+        /// Checks the identification filter's one threshold (<see cref="TaskWindowIdentificationFilter.ThresholdError"/>): above
+        /// 0 and at most 1. At 1, which keeps every match, it warns and lets the user go back. Null, from a window that does not
+        /// show the filter, passes.
+        /// </summary>
+        public static bool CheckFilterThreshold(string filterThreshold)
         {
-            // for non-search tasks that do not use this for output filtering
-            if (qValue == null && pepqValue == null)
+            if (filterThreshold == null)
             {
                 return true;
             }
-            else if (pepqValue.Equals("") && !qValue.Equals(""))
+            if (TaskWindowIdentificationFilter.ThresholdError(filterThreshold) is string error)
             {
-                if (!double.TryParse(qValue, NumberStyles.Any, CultureInfo.InvariantCulture, out double qValueOut) || qValueOut < 0 || qValueOut > 1)
-                {
-                    MessageBox.Show("The q-value cutoff must be a number between 0 and 1");
-                    return false;
-                }
+                MessageBox.Show(error);
+                return false;
             }
-            else if (!pepqValue.Equals("") && qValue.Equals(""))
+            if (TaskWindowIdentificationFilter.ThresholdWarning(filterThreshold) is string warning)
             {
-                if (!double.TryParse(pepqValue, NumberStyles.Any, CultureInfo.InvariantCulture, out double pepqValueOut) || pepqValueOut < 0 || pepqValueOut > 1)
-                {
-                    MessageBox.Show("The q-value cutoff must be a number between 0 and 1");
-                    return false;
-                }
+                return MessageBox.Show(warning + "\n\nSave it anyway?", "Identification filter at 1", MessageBoxButton.OKCancel, MessageBoxImage.Warning)
+                    == MessageBoxResult.OK;
             }
             return true;
         }

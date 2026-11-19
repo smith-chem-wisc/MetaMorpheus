@@ -429,6 +429,18 @@ namespace TaskLayer
                 .CreateInstance(() => RnaFragmentationParams.Default))
             .ConfigureType<FragmentationParams>(type => type
                 .CreateInstance(() => new()))
+            // A task TOML saved before FilterThreshold replaced them holds QValueThreshold and PepQValueThreshold, which
+            // CommonParameters has no property for. They are recorded on the CommonParameters being read, which resolves its
+            // identification filter and threshold from them whatever order the keys come in
+            // (CommonParameters.IdentificationFilter). Every other key without a property is ignored, as it always was.
+            .ConfigurePropertyMapping(mapping => mapping
+                .OnTargetPropertyNotFound((keys, target, value) =>
+                {
+                    if (target is CommonParameters commonParameters)
+                    {
+                        commonParameters.RecordLegacyThreshold(keys[^1], value);
+                    }
+                }))
         );
        
 
@@ -987,9 +999,8 @@ namespace TaskLayer
                 reportAllAmbiguity: commonParams.ReportAllAmbiguity,
                 addCompIons: commonParams.AddCompIons,
                 totalPartitions: commonParams.TotalPartitions,
-                qValueThreshold: commonParams.QValueThreshold,
-                pepQValueThreshold: commonParams.PepQValueThreshold,
                 identificationFilter: commonParams.IdentificationFilter,
+                filterThreshold: commonParams.FilterThreshold,
                 qValueCutoffForPepCalculation: commonParams.QValueCutoffForPepCalculation,
                 scoreCutoff: commonParams.ScoreCutoff,
                 numberOfPeaksToKeepPerWindow: commonParams.NumberOfPeaksToKeepPerWindow,

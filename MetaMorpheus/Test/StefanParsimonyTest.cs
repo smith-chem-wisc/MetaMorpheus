@@ -343,7 +343,7 @@ namespace Test
 
             List<SpectralMatch> psms = new List<SpectralMatch> { psm };
 
-            var commonParams = new CommonParameters(qValueThreshold: 0.01, pepQValueThreshold: 0.05);
+            var commonParams = new CommonParameters(identificationFilter: FilterType.QValueNotch, filterThreshold: 0.01);
 
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psms, false, commonParams, null, new List<string>());
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
@@ -387,7 +387,7 @@ namespace Test
 
             List<SpectralMatch> psms = new List<SpectralMatch> { psm };
 
-            var commonParams = new CommonParameters(qValueThreshold: 0.05, pepQValueThreshold: 0.01, identificationFilter: FilterType.PepQValue);
+            var commonParams = new CommonParameters(identificationFilter: FilterType.PepQValue, filterThreshold: 0.01);
 
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psms, false, commonParams, null, new List<string>());
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
@@ -495,11 +495,10 @@ namespace Test
             psm.PsmFdrInfo.PepTrained = true;
 
             // The PEP q-value filter, chosen by name
-            var commonParams = new CommonParameters(qValueThreshold: 0.05, pepQValueThreshold: 0.01, identificationFilter: FilterType.PepQValue);
+            var commonParams = new CommonParameters(identificationFilter: FilterType.PepQValue, filterThreshold: 0.01);
 
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParams,
-                qValueThreshold: 0.05,
-                pepQValueThreshold: 0.01);
+                threshold: 0.01);
 
             // Verify the filter type is PepQValue, at the PEP q-value threshold
             Assert.That((filteredPsms.FilterType, filteredPsms.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.01)));

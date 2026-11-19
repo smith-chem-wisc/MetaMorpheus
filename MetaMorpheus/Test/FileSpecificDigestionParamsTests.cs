@@ -165,8 +165,7 @@ namespace Test
                 reportAllAmbiguity: false,
                 addCompIons: true,
                 totalPartitions: 3,
-                qValueThreshold: 0.02,
-                pepQValueThreshold: 0.5,
+                filterThreshold: 0.02,
                 qValueCutoffForPepCalculation: 0.004,
                 scoreCutoff: 4,
                 numberOfPeaksToKeepPerWindow: 111,
@@ -200,7 +199,7 @@ namespace Test
                 retentionTimeRange: new DoubleRange(12, 14),
                 fivePrimeTerminus: "H3O6P2",
                 threePrimeTerminus: "O3P",
-                identificationFilter: EngineLayer.SpectrumMatch.FilterType.PepQValue);
+                identificationFilter: EngineLayer.SpectrumMatch.FilterType.QValue);
 
             // CustomIons is not a constructor parameter; the constructor reads it from a global dictionary
             typeof(CommonParameters).GetProperty(nameof(CommonParameters.CustomIons))

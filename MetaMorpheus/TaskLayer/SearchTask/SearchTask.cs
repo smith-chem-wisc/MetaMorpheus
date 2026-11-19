@@ -172,8 +172,9 @@ namespace TaskLayer
         internal static string LegacyFilterSentence(CommonParameters commonParameters)
         {
             if (!commonParameters.IdentificationFilterFromLegacyThresholds) return null;
-            string pep = commonParameters.PepQValueThreshold.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            string q = commonParameters.QValueThreshold.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            // The thresholds the task's TOML held; a key it lacked meant its old default (CommonParameters.IdentificationFilter)
+            string pep = (commonParameters.LegacyPepQValueThreshold ?? CommonParameters.LegacyPepQValueThresholdDefault).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            string q = (commonParameters.LegacyQValueThreshold ?? CommonParameters.LegacyQValueThresholdDefault).ToString(System.Globalization.CultureInfo.InvariantCulture);
             return $"IdentificationFilter read from this task's legacy thresholds (PepQValueThreshold {pep} < QValueThreshold {q}): PEP q-value at {pep}";
         }
 
@@ -182,7 +183,7 @@ namespace TaskLayer
         /// null otherwise.
         /// </summary>
         internal static string FilterKeepsEveryMatch(CommonParameters commonParameters) =>
-            EngineLayer.SpectrumMatch.FilteredPsms.Threshold(commonParameters, commonParameters.IdentificationFilter) >= 1
+            EngineLayer.SpectrumMatch.FilteredPsms.Threshold(commonParameters) >= 1
                 ? $"This search filters by {EngineLayer.SpectrumMatch.FilteredPsms.Describe(commonParameters)}, which keeps every match."
                 : null;
 
