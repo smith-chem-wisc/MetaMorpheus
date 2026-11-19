@@ -219,8 +219,10 @@ namespace Test
 
                 psms = psms.OrderByDescending(p => p).ToList();
                 PreviousCalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: false);
-                
-                PreviousCountPsm(psms);
+
+                // Spectrum Match Count follows the search's identification filter since this copy was taken: the q-value
+                // passes above are what this test pins, so the count is the current one.
+                FdrAnalysisEngine.CountPsm(psms, commonParameters);
             }
         }
 
@@ -448,32 +450,6 @@ namespace Test
                 psms[i].GetFdrInfo(peptideLevelAnalysis).PEP_QValue = qValue;
             }
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
-        }
-
-        private static void PreviousCountPsm(List<SpectralMatch> proteasePsms)
-        {
-            // exclude ambiguous psms and has a fdr cutoff = 0.01
-            var allUnambiguousPsms = proteasePsms.Where(psm => psm.FullSequence != null).ToList();
-
-            var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
-                    psm.FdrInfo.QValue <= 0.01
-                    && psm.FdrInfo.QValueNotch <= 0.01)
-                .GroupBy(p => p.FullSequence);
-
-            Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
-
-            foreach (var sequenceGroup in unambiguousPsmsLessThanOnePercentFdr)
-            {
-                sequenceToPsmCount.TryAdd(sequenceGroup.First().FullSequence, sequenceGroup.Count());
-            }
-
-            foreach (SpectralMatch psm in allUnambiguousPsms)
-            {
-                if (sequenceToPsmCount.TryGetValue(psm.FullSequence, out int count))
-                {
-                    psm.PsmCount = count;
-                }
-            }
         }
 
         #endregion

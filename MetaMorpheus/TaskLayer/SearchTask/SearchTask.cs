@@ -163,6 +163,29 @@ namespace TaskLayer
             SearchParameters.MassDiffAcceptorType = LegacyMostAbundantEquivalent;
         }
 
+        /// <summary>
+        /// When the identification filter was read from a task TOML's legacy thresholds
+        /// (<see cref="CommonParameters.IdentificationFilterFromLegacyThresholds"/>: a task saved before the filter was
+        /// named, with the GUI's PEP box ticked), the sentence saying so, once per task, as a warning and in results.txt;
+        /// null otherwise.
+        /// </summary>
+        internal static string LegacyFilterSentence(CommonParameters commonParameters)
+        {
+            if (!commonParameters.IdentificationFilterFromLegacyThresholds) return null;
+            string pep = commonParameters.PepQValueThreshold.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            string q = commonParameters.QValueThreshold.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return $"IdentificationFilter read from this task's legacy thresholds (PepQValueThreshold {pep} < QValueThreshold {q}): PEP q-value at {pep}";
+        }
+
+        /// <summary>
+        /// When the search's identification filter is held to 1 or more, which keeps every match, the sentence saying so;
+        /// null otherwise.
+        /// </summary>
+        internal static string FilterKeepsEveryMatch(CommonParameters commonParameters) =>
+            EngineLayer.SpectrumMatch.FilteredPsms.Threshold(commonParameters, commonParameters.IdentificationFilter) >= 1
+                ? $"This search filters by {EngineLayer.SpectrumMatch.FilteredPsms.Describe(commonParameters)}, which keeps every match."
+                : null;
+
         // Compiled optimized from the start. This method runs once per search, so the runtime would otherwise run it as
         // unoptimized code, which keeps every local alive until it is overwritten: each searched file's scans, matches and
         // search engine then stayed reachable through the rest of the run, about 0.6 GB per file on a TMT11 .raw file. It
@@ -179,6 +202,18 @@ namespace TaskLayer
             // a gap named up front can still be fixed cheaply, whereas one named after a three-hour
             // search cannot. This warns; it does not refuse the run.
             WarnAboutSdrfGaps(currentRawFileList);
+
+            // A filter read from an old task's thresholds: say so once, before the search, and in results.txt
+            if (LegacyFilterSentence(CommonParameters) is string fromLegacyThresholds)
+            {
+                Warn(fromLegacyThresholds);
+            }
+
+            // A filter at 1 is allowed, but it keeps every match: say so before the search, and in results.txt
+            if (FilterKeepsEveryMatch(CommonParameters) is string keepsEveryMatch)
+            {
+                Warn(keepsEveryMatch);
+            }
 
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select((b, i) => SetAllFileSpecificCommonParams(CommonParameters, b, currentRawFileList[i]));

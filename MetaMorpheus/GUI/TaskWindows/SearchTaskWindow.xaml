@@ -268,15 +268,15 @@
 
                                 <!-- Q-Value Filter -->
                                 <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="5">
-                                    <Label x:Name="QValueThreshold" Content="Q-Value Threshold:" Width="150" />
-                                    <local:DoubleTextBoxControl x:Name="QValueThresholdTextBox"  Width="45" 
+                                    <Label x:Name="QValueThreshold" Content="Q-Value Notch Threshold:" Width="150" />
+                                    <local:DoubleTextBoxControl x:Name="QValueThresholdTextBox"  Width="45"
                                              ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
                                              IsEnabled="{Binding ElementName=PepQValueThresholdCheckbox, Path=IsChecked, Converter={StaticResource InvertedBooleanConverter}}">
                                         <TextBox.ToolTip>
                                             <TextBlock>
-                                                   The maximum q-value of peptides used for quantification and spectral library generation. Protein group construction is not affected by this threshold.
+                                                   The identification filter, unless the PEP box is ticked: the maximum q-value notch of a match or peptide,
                                                 <LineBreak />
-                                                    If the q-value threshold is set, PEP q-value filtering will not be performed.
+                                                   used everywhere: the results tables, protein inference and FDR, quantification, the spectral library and every count.
                                             </TextBlock>
                                         </TextBox.ToolTip>
                                     </local:DoubleTextBoxControl>
@@ -292,9 +292,9 @@
                                              Height="23" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <TextBox.ToolTip>
                                             <TextBlock>
-                                                    The maximum q-value of peptides used for quantification and spectral library generation. Protein group construction is not affected by this threshold.
+                                                    Ticked, the identification filter is the PEP q-value: the maximum PEP q-value of a match or peptide, used everywhere.
                                                     <LineBreak />
-                                                    If the PEP q-value threshold is set, traditional q-value filtering will not be performed.
+                                                    A match whose PEP could not be trained is judged by its q-value notch at this threshold instead, and the search says so.
                                             </TextBlock>
                                         </TextBox.ToolTip>
                                     </local:DoubleTextBoxControl>
