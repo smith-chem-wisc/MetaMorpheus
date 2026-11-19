@@ -29,6 +29,25 @@ namespace TaskLayer
         private const string SearchedDataFileColumn = "comment[searched data file]";
 
         /// <summary>
+        /// The input SDRF this search reads: the task's own InputSdrfPath, else the SDRF beside the run's spectra files
+        /// (<see cref="SdrfForRun.InputSdrfPathFor"/>); null when neither.
+        /// </summary>
+        private string InputSdrfPath => SdrfForRun.InputSdrfPathFor(Parameters.SearchParameters, Parameters.RunSdrf);
+
+        /// <summary>
+        /// Whether this search writes its own SDRF: the task asks for it, or the run has an SDRF beside its spectra files
+        /// (<see cref="SdrfForRun.WritesSdrfFor"/>).
+        /// </summary>
+        private bool WritesSdrf => SdrfForRun.WritesSdrfFor(Parameters.SearchParameters, Parameters.RunSdrf);
+
+        /// <summary>
+        /// True when this search's input SDRF is the run's, which MetaMorpheus found beside the spectra files, because the
+        /// task names none of its own.
+        /// </summary>
+        private bool ReadsOnlyTheRunsSdrf =>
+            Parameters.RunSdrf != null && string.IsNullOrWhiteSpace(Parameters.SearchParameters?.InputSdrfPath);
+
+        /// <summary>
         /// Written per search, into that search's own output folder, and never merged in place.
         /// Repeated searches of one experiment therefore accumulate as separate files that pool by
         /// accession rather than overwriting each other -- and two concurrent searches over the same
@@ -40,6 +59,12 @@ namespace TaskLayer
             // the whole run on failure. An SDRF is metadata about results, not results: a bad sample
             // annotation must not destroy a search that has already succeeded. Missing metadata was
             // already named before the run, by SearchTask.WarnAboutSdrfGaps.
+            //
+            // Until the document is built, a failure is the input SDRF refusing this search, or not being readable. When
+            // that input is only the run's SDRF, MetaMorpheus chose it and the task named none, so the refusal is a warning
+            // rather than a crash record (pcruzparri's review of #2980): a deposit's TMT SDRF, a row per channel, cannot
+            // describe an identification-only search of it. A task's own InputSdrfPath still records a crash.
+            bool describing = true;
             try
             {
                 // The input SDRF, restricted to the files this search read, or null when the task names none (sdrf D50).
@@ -66,6 +91,7 @@ namespace TaskLayer
                     // community writes, and quantms crashes on the accessioned form.
                     LabelForm = SdrfLabelForm.Bare
                 });
+                describing = false;
 
                 string path = Path.Combine(Parameters.OutputFolder, SdrfFileName);
                 document.WriteResults(path);
@@ -74,6 +100,14 @@ namespace TaskLayer
                 ReportSdrfCoverage(document, sampleColumnsCopied: inputSdrf is not null);
                 if (inputSdrf is not null)
                     ReportInputColumnsNotCarried(inputSdrf, document);
+            }
+            catch (Exception e) when (describing && ReadsOnlyTheRunsSdrf
+                && e is InvalidDataException or IOException or UnauthorizedAccessException or MzLibException or ArgumentException)
+            {
+                // InputSdrfRefused's message already says no SDRF was written, and why, file by file.
+                Warn(e is InvalidDataException
+                    ? e.Message
+                    : $"No {SdrfFileName} was written from the SDRF beside the spectra files ({InputSdrfPath.Trim()}): {e.Message}");
             }
             catch (Exception e)
             {
@@ -261,7 +295,7 @@ namespace TaskLayer
         /// crash record names them all.
         /// </summary>
         private InvalidDataException InputSdrfRefused(List<string> refusals) =>
-            new("The input SDRF " + Parameters.SearchParameters.InputSdrfPath.Trim() + " cannot describe this search, so no " +
+            new("The input SDRF " + InputSdrfPath.Trim() + " cannot describe this search, so no " +
                 SdrfFileName + " was written: " + string.Join("; ", refusals) + ".");
 
         /// <summary>
@@ -273,7 +307,7 @@ namespace TaskLayer
         /// </summary>
         private SdrfSearchScoping ReadInputSdrfIfGiven()
         {
-            string path = Parameters.SearchParameters.InputSdrfPath;
+            string path = InputSdrfPath;
             if (string.IsNullOrWhiteSpace(path))
                 return null;
 
@@ -883,7 +917,7 @@ namespace TaskLayer
         /// </summary>
         private Dictionary<string, SpectraFileInfo> ReadExperimentalDesignIfPresent()
         {
-            bool sampleColumnsCopied = !string.IsNullOrWhiteSpace(Parameters.SearchParameters?.InputSdrfPath);
+            bool sampleColumnsCopied = !string.IsNullOrWhiteSpace(InputSdrfPath);
             var byStem = new Dictionary<string, SpectraFileInfo>(StringComparer.OrdinalIgnoreCase);
             if (Parameters.CurrentRawFileList.Count == 0) return byStem;
 

@@ -27,11 +27,21 @@ namespace TaskLayer
         // does not pin its results for the rest of a run nothing will consume them in.
         private readonly TaskChainContext _taskChainContext;
 
-        public EverythingRunnerEngine(List<(string, MetaMorpheusTask)> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string outputFolder)
+        /// <summary>The SDRF beside the run's spectra files, handed to every search task for this run only; null with none.</summary>
+        private readonly SdrfForRun _runSdrf;
+
+        /// <param name="runSdrf">
+        /// The SDRF beside the spectra files, from <see cref="SdrfAutomaticDesign.Resolve"/>
+        /// (<see cref="SdrfDesignOutcome.RunSdrf"/>), which every search task reads for this run only
+        /// (<see cref="MetaMorpheusTask.RunSdrf"/>); null when the run has none, or the front end does not look for one.
+        /// </param>
+        public EverythingRunnerEngine(List<(string, MetaMorpheusTask)> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string outputFolder,
+            SdrfForRun runSdrf = null)
         {
             TaskList = taskList;
             OutputFolder = outputFolder.Trim('"');
             _taskChainContext = taskList.Any(t => t.Item2.ConsumesTaskChainContext) ? new TaskChainContext() : null;
+            _runSdrf = runSdrf;
 
             CurrentRawDataFilenameList = startingRawFilenameList;
             AcquiredRawDataFilenameList = startingRawFilenameList?.ToList();
@@ -131,6 +141,7 @@ namespace TaskLayer
 
                 // Actual task running code
                 ok.Item2.AcquiredSpectraFiles = AcquiredRawDataFilenameList;
+                ok.Item2.RunSdrf = _runSdrf;
                 var myTaskResults = ok.Item2.RunTask(outputFolderForThisTask, CurrentXmlDbFilenameList, CurrentRawDataFilenameList, ok.Item1);
 
                 // A consumer has taken what it needed; drop the deposited results rather than holding the
@@ -177,8 +188,32 @@ namespace TaskLayer
                 file.WriteLine("Total time: " + stopWatch.Elapsed);
                 file.Write(allResultsText.ToString());
             }
+            CopySdrfDesignMarker();
             FinishedWritingAllResultsFileHandler?.Invoke(this, new StringEventArgs(resultsFileName, null));
             FinishedAllTasks(OutputFolder);
+        }
+
+        /// <summary>
+        /// When the run's experimental design was written from the SDRF beside the spectra files, copies its
+        /// <see cref="SdrfDesignMarker"/> into the run's output folder, beside Task Settings, so the results keep the whole
+        /// record of how the design was made: which SDRF, by sha256, and the grouping the user stated. It is read from the
+        /// folder of the spectra files the run started from, because a Calibrate or Average task moves the spectra and not
+        /// the marker. A copy that fails is warned about, and the results stand without it.
+        /// </summary>
+        private void CopySdrfDesignMarker()
+        {
+            if (_runSdrf?.Provenance == null)
+                return;
+
+            string marker = SdrfDesignMarker.PathIn(Path.GetDirectoryName(Path.GetFullPath(AcquiredRawDataFilenameList[0])));
+            try
+            {
+                File.Copy(marker, Path.Combine(OutputFolder, SdrfDesignMarker.FileName), overwrite: true);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                Warn($"Could not copy {marker} into the output folder: {e.Message}");
+            }
         }
 
         private void Warn(string v)

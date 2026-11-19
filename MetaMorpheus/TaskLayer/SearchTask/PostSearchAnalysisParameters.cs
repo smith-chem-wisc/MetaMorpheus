@@ -47,6 +47,9 @@ namespace TaskLayer
         /// <summary>The acquired files the run started from (see MetaMorpheusTask.AcquiredSpectraFiles), or null.</summary>
         public List<string> AcquiredSpectraFiles { get; set; }
 
+        /// <summary>The SDRF beside the run's spectra files, for this run only (see MetaMorpheusTask.RunSdrf), or null.</summary>
+        public SdrfForRun RunSdrf { get; set; }
+
         /// <summary>
         /// Each searched file's instrument model, as the search's own load of the file read it (SourceFile), keyed
         /// by path. The SDRF takes it from here rather than opening every file a second time.

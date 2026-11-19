@@ -52,25 +52,25 @@ namespace MetaMorpheusCommandLine
         [Option("sdrfDesign", HelpText = "[Optional] Path to a label-free SDRF file to turn into an ExperimentalDesign.tsv, which is written beside the first spectra file given with -s, where a run looks for it. It is read with mzLib's SdrfSearchDesign, the same check a pipeline can run before a search. The SDRF is first restricted to the spectra files with mzLib's SdrfSearchScope: a spectra file finds its rows by file name without extension, ignoring case and the -calib and -averaged suffixes MetaMorpheus adds, so a row naming X.raw stands for X.mzML or X-calib.mzML. Every spectra file must have a row; rows for other files are dropped, and what the restriction set aside is printed. A spectra file must find rows naming one file only: an SDRF that lists one run under two names (X.raw and X.mzML) is refused, so keep one row per run. Two spectra files that find the same rows (X.raw and X.mzML both given) are refused too: the first in name order keeps the rows and the other has none. Biological replicates and fractions are copied as the SDRF numbers them; a replicate number is added only where the SDRF gives none, and every added number is printed, as is any gap in a condition's replicate numbers. If the SDRF describes a design MetaMorpheus would reject, nothing is written and every reason is printed. An existing design file is never overwritten. Runs on its own: give -s, but no task or database. -o is ignored, with a warning, because a run reads the design only from beside its first spectra file. With --sdrfTag, a TMT, iTRAQ or DiLeu SDRF is read instead and TmtDesign.txt is written, its biological replicates copied as given. Exits 0 when the design was written, 2 for a settings error, 4 when the SDRF could not be read and 5 when the design was refused or a design file is already there.")]
         public string SdrfDesign { get; set; }
 
-        [Option("sdrfCondition", HelpText = "[Optional] The SDRF columns the condition is built from, in order; space-delimited. A bare name such as 'genotype' means 'factor value[genotype]'; the 'factor value[' prefix may be given in any case; any other name with a '[', such as 'characteristics[cell type]', is that column. Values are joined with '_'. Without it, every factor value column makes the condition, in the SDRF's order, and the report says so; an SDRF with no factor value column is refused, naming any characteristic that differs between the samples, unless --sdrfSingleCondition states one condition. Only meaningful with --sdrfDesign.")]
+        [Option("sdrfCondition", HelpText = "[Optional] The SDRF columns the condition is built from, in order; space-delimited. A bare name such as 'genotype' means 'factor value[genotype]'; the 'factor value[' prefix may be given in any case; any other name with a '[', such as 'characteristics[cell type]', is that column. Values are joined with '_'. Without it, every factor value column makes the condition, in the SDRF's order, and the report says so; an SDRF with no factor value column is refused, naming any characteristic that differs between the samples, unless --sdrfSingleCondition states one condition. With --sdrfDesign, or in a run whose spectra files have an SDRF beside them, which then makes the run's experimental design (in a run, when none of these switches is given, the grouping stated when MetaMorpheus last wrote that design, kept in DesignFromSdrf.txt beside it, is used again, and the run says so).")]
         public IEnumerable<string> SdrfConditionColumns { get; set; }
 
-        [Option("sdrfSingleCondition", HelpText = "[Optional] States that every sample is one condition, with this name. Never assumed: an SDRF with no factor value column is refused without it. Any factor value columns the SDRF has are set aside, and the report names them. Cannot be given with --sdrfCondition. Only meaningful with --sdrfDesign.")]
+        [Option("sdrfSingleCondition", HelpText = "[Optional] States that every sample is one condition, with this name. Never assumed: an SDRF with no factor value column is refused without it. Any factor value columns the SDRF has are set aside, and the report names them. Cannot be given with --sdrfCondition. With --sdrfDesign, or in a run whose spectra files have an SDRF beside them, which then makes the run's experimental design (in a run, when none of these switches is given, the grouping stated when MetaMorpheus last wrote that design, kept in DesignFromSdrf.txt beside it, is used again, and the run says so).")]
         public string SdrfSingleCondition { get; set; }
 
-        [Option("sdrfUnknownFactorIsCondition", HelpText = "[Optional] States that files whose condition cell says nobody stated it ('not available', 'not applicable', or blank, read as 'not available') are a condition of their own. Without it, each such file is refused by name. Only meaningful with --sdrfDesign.")]
+        [Option("sdrfUnknownFactorIsCondition", HelpText = "[Optional] States that files whose condition cell says nobody stated it ('not available', 'not applicable', or blank, read as 'not available') are a condition of their own. Without it, each such file is refused by name. With --sdrfDesign, or in a run whose spectra files have an SDRF beside them, which then makes the run's experimental design (in a run, when none of these switches is given, the grouping stated when MetaMorpheus last wrote that design, kept in DesignFromSdrf.txt beside it, is used again, and the run says so).")]
         public bool SdrfUnknownFactorIsCondition { get; set; }
 
-        [Option("sdrfTag", HelpText = "[Optional] The isobaric kit the search uses, which makes --sdrfDesign read a TMT, iTRAQ or DiLeu SDRF and write TmtDesign.txt instead of ExperimentalDesign.tsv. Give the kit as the search names it: TMT6, TMT10, TMT11, TMT16, TMT18, iTRAQ4, iTRAQ8, diLeu4, diLeu12, or the search's multiplex modification (e.g. 'TMT11 on K'). TMTpro 16-plex may be given as TMT16, which checks the SDRF against its sixteen channels; MetaMorpheus searches it with its TMT18 label, and the design written reads as is under that. The kit is never guessed from the SDRF's labels: one kit's labels can be a subset of another's. Needs exactly one of --sdrfPlexColumn, --sdrfPlexPattern, --sdrfSinglePlex.")]
+        [Option("sdrfTag", HelpText = "[Optional] The isobaric kit the search uses, which makes --sdrfDesign read a TMT, iTRAQ or DiLeu SDRF and write TmtDesign.txt instead of ExperimentalDesign.tsv. Give the kit as the search names it: TMT6, TMT10, TMT11, TMT16, TMT18, iTRAQ4, iTRAQ8, diLeu4, diLeu12, or the search's multiplex modification (e.g. 'TMT11 on K'). TMTpro 16-plex may be given as TMT16, which checks the SDRF against its sixteen channels; MetaMorpheus searches it with its TMT18 label, and the design written reads as is under that. The kit is never guessed from the SDRF's labels: one kit's labels can be a subset of another's. The plex is read from the SDRF's comment[plex] column; give one of --sdrfPlexColumn, --sdrfPlexPattern, --sdrfSinglePlex to read it elsewhere.")]
         public string SdrfTag { get; set; }
 
-        [Option("sdrfPlexColumn", HelpText = "[Optional] The SDRF column each row's plex is read from, by its exact name. With --sdrfTag.")]
+        [Option("sdrfPlexColumn", HelpText = "[Optional] The SDRF column each row's plex is read from, by its exact name; without this, --sdrfPlexPattern or --sdrfSinglePlex, comment[plex] is read. With --sdrfTag, or in a run of an isobaric search whose spectra files have an SDRF beside them.")]
         public string SdrfPlexColumn { get; set; }
 
-        [Option("sdrfPlexPattern", HelpText = "[Optional] A regular expression matched against each row's file name; the plex is its group named 'plex', else its first group. With --sdrfTag.")]
+        [Option("sdrfPlexPattern", HelpText = "[Optional] A regular expression matched against each row's file name; the plex is its group named 'plex', else its first group. With --sdrfTag, or in a run of an isobaric search whose spectra files have an SDRF beside them.")]
         public string SdrfPlexPattern { get; set; }
 
-        [Option("sdrfSinglePlex", HelpText = "[Optional] The name of the one plex every file belongs to. With --sdrfTag.")]
+        [Option("sdrfSinglePlex", HelpText = "[Optional] The name of the one plex every file belongs to. With --sdrfTag, or in a run of an isobaric search whose spectra files have an SDRF beside them.")]
         public string SdrfSinglePlex { get; set; }
 
         public enum VerbosityType { none, minimal, normal };
@@ -137,19 +137,22 @@ namespace MetaMorpheusCommandLine
                 }
             }
 
-            if (SdrfConditionColumns != null && SdrfConditionColumns.Any() && SdrfDesign == null)
+            // These say how a design made from an SDRF is grouped: by --sdrfDesign, or by a run whose spectra files have an
+            // SDRF beside them (the automatic design). Anything else has no design to group.
+            bool makesADesign = SdrfDesign != null || Tasks.Count > 0;
+            if (SdrfConditionColumns != null && SdrfConditionColumns.Any() && !makesADesign)
             {
-                throw new MetaMorpheusException("--sdrfCondition is only meaningful with --sdrfDesign.");
+                throw new MetaMorpheusException("--sdrfCondition is only meaningful with --sdrfDesign, or in a run.");
             }
 
-            if (SdrfSingleCondition != null && SdrfDesign == null)
+            if (SdrfSingleCondition != null && !makesADesign)
             {
-                throw new MetaMorpheusException("--sdrfSingleCondition is only meaningful with --sdrfDesign.");
+                throw new MetaMorpheusException("--sdrfSingleCondition is only meaningful with --sdrfDesign, or in a run.");
             }
 
-            if (SdrfUnknownFactorIsCondition && SdrfDesign == null)
+            if (SdrfUnknownFactorIsCondition && !makesADesign)
             {
-                throw new MetaMorpheusException("--sdrfUnknownFactorIsCondition is only meaningful with --sdrfDesign.");
+                throw new MetaMorpheusException("--sdrfUnknownFactorIsCondition is only meaningful with --sdrfDesign, or in a run.");
             }
 
             // Two answers to one question: which columns make the condition, or that there is one condition. Refused
@@ -337,7 +340,8 @@ namespace MetaMorpheusCommandLine
 
         /// <summary>
         /// The options that make --sdrfDesign read an isobaric SDRF: each only with what it modifies, a kit
-        /// MetaMorpheus knows, and exactly one place to read the plex from, because the plex is never guessed.
+        /// MetaMorpheus knows, and at most one place to read the plex from; with none, the SDRF's comment[plex] column. The
+        /// plex is never guessed.
         /// </summary>
         private void ValidateIsobaricSdrfDesignOptions()
         {
@@ -348,10 +352,17 @@ namespace MetaMorpheusCommandLine
 
             if (SdrfTag == null)
             {
-                if (plexOptions.Count > 0)
+                // A run's automatic design takes its kit from the search task's multiplex label, so in a run a plex source
+                // needs no --sdrfTag; it still needs to be one.
+                if (plexOptions.Count > 0 && (SdrfDesign != null || Tasks.Count == 0))
                 {
                     throw new MetaMorpheusException(string.Join(", ", plexOptions) + " " + (plexOptions.Count == 1 ? "is" : "are")
-                        + " only meaningful with --sdrfTag, which names the isobaric kit.");
+                        + " only meaningful with --sdrfTag, which names the isobaric kit, or in a run, whose search task names it.");
+                }
+                if (plexOptions.Count > 1)
+                {
+                    throw new MetaMorpheusException("Give at most one of --sdrfPlexColumn, --sdrfPlexPattern and --sdrfSinglePlex, "
+                        + "to say where each file's plex is written; " + string.Join(" and ", plexOptions) + " were given.");
                 }
                 return;
             }
@@ -368,11 +379,12 @@ namespace MetaMorpheusCommandLine
                     + ", or the search's multiplex modification.");
             }
 
-            if (plexOptions.Count != 1)
+            // With none, the plex is read from the SDRF's comment[plex] column (ruled 2026-11-13).
+            if (plexOptions.Count > 1)
             {
-                throw new MetaMorpheusException("--sdrfTag needs exactly one of --sdrfPlexColumn, --sdrfPlexPattern and --sdrfSinglePlex, "
-                    + "to say where each file's plex is written"
-                    + (plexOptions.Count == 0 ? "; none was given." : "; " + string.Join(" and ", plexOptions) + " were given."));
+                throw new MetaMorpheusException("--sdrfTag takes at most one of --sdrfPlexColumn, --sdrfPlexPattern and --sdrfSinglePlex, "
+                    + "to say where each file's plex is written (with none, comment[plex] is read); "
+                    + string.Join(" and ", plexOptions) + " were given.");
             }
         }
 

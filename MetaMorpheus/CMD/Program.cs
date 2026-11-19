@@ -293,6 +293,25 @@ namespace MetaMorpheusCommandLine
                 .Where(p => p.Item2.TaskType == MyTask.Search)
                 .Select(p => (SearchTask)p.Item2);
 
+            bool reportToConsole = settings.Verbosity == CommandLineSettings.VerbosityType.minimal
+                || settings.Verbosity == CommandLineSettings.VerbosityType.normal;
+
+            // An SDRF beside the spectra files makes the design, before the design check reads it; the runner hands the
+            // SDRF to the search tasks for this run only.
+            int sdrfExitCode = ResolveSdrfDesign(
+                Directory.GetParent(startingRawFilenameList.First()).FullName,
+                startingRawFilenameList,
+                taskList.Where(p => p.Item2.TaskType == MyTask.Search).Select(p => (p.Item1, (SearchTask)p.Item2)).ToList(),
+                settings,
+                searchTasks.Any(p => p.SearchParameters.Normalize),
+                reportToConsole,
+                out SdrfForRun runSdrf);
+
+            if (sdrfExitCode != 0)
+            {
+                return sdrfExitCode;
+            }
+
             int designExitCode = ResolveExperimentalDesign(
                 Directory.GetParent(startingRawFilenameList.First()).FullName,
                 startingRawFilenameList,
@@ -314,7 +333,8 @@ namespace MetaMorpheusCommandLine
                 return digestionExitCode;
             }
 
-            EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, settings.OutputFolder);
+            EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, settings.OutputFolder,
+                runSdrf);
 
             try
             {
@@ -422,6 +442,106 @@ namespace MetaMorpheusCommandLine
 
             return 5;
         }
+
+        /// <summary>
+        /// The automatic design for a command-line run (<see cref="SdrfAutomaticDesign.Resolve"/>, shared with the GUI),
+        /// shown on the console. A design that cannot be made from the SDRF is handled as
+        /// <see cref="ResolveExperimentalDesign"/> handles a design file it cannot read (QuantProject's oracle verdict,
+        /// 2026-11-07): with normalization asked for, every reason and exit 5; at verbosity none, the run continues; otherwise
+        /// every reason and a y/n prompt to continue without a design. A design MetaMorpheus wrote before that no longer fits
+        /// and could not be removed (<see cref="SdrfDesignOutcome.StopsTheRun"/>) stops the run with exit 5 whatever its
+        /// normalization and verbosity, with no prompt. Runs before <see cref="ResolveExperimentalDesign"/>,
+        /// which then reads the design written here exactly as it reads one the user wrote. The search tasks are not
+        /// changed: the SDRF comes back as <paramref name="runSdrf"/>, for the runner to hand them for this run only.
+        /// </summary>
+        /// <param name="designDirectory">The folder of the first spectra file, where a run reads its design.</param>
+        /// <param name="startingRawFilenameList">Full paths of the spectra files this run will search.</param>
+        /// <param name="searchTasks">The run's search tasks, by name; the design serves them all.</param>
+        /// <param name="settings">The command line, for the --sdrf... switches.</param>
+        /// <param name="normalizationRequested">True when any search task normalizes, which makes a design mandatory.</param>
+        /// <param name="reportToConsole">True at minimal or normal verbosity.</param>
+        /// <param name="runSdrf">The SDRF beside the spectra files, for <see cref="EverythingRunnerEngine"/>; null with none.</param>
+        /// <param name="write">Console writer; defaults to <see cref="Console.WriteLine(string)"/>.</param>
+        /// <param name="readLine">Console reader; defaults to <see cref="Console.ReadLine"/>.</param>
+        /// <returns>0 to carry on, 5 to stop.</returns>
+        public static int ResolveSdrfDesign(
+            string designDirectory,
+            List<string> startingRawFilenameList,
+            IReadOnlyList<(string Name, SearchTask Task)> searchTasks,
+            CommandLineSettings settings,
+            bool normalizationRequested,
+            bool reportToConsole,
+            out SdrfForRun runSdrf,
+            Action<string> write = null,
+            Func<string> readLine = null)
+        {
+            write ??= Console.WriteLine;
+            readLine ??= Console.ReadLine;
+
+            var outcome = SdrfAutomaticDesign.Resolve(designDirectory, startingRawFilenameList, searchTasks,
+                new SdrfDesignStatements
+                {
+                    ConditionColumns = settings.SdrfConditionColumns?.ToList() ?? new List<string>(),
+                    SingleCondition = settings.SdrfSingleCondition,
+                    UnknownFactorIsOwnCondition = settings.SdrfUnknownFactorIsCondition,
+                    PlexColumn = settings.SdrfPlexColumn,
+                    PlexPattern = settings.SdrfPlexPattern,
+                    SinglePlex = settings.SdrfSinglePlex,
+                },
+                CommandLineWording);
+            runSdrf = outcome.RunSdrf;
+
+            if (reportToConsole)
+            {
+                foreach (string message in outcome.Messages)
+                {
+                    write(message);
+                }
+            }
+
+            if (outcome.Refusal == null)
+            {
+                return 0;
+            }
+
+            // A design MetaMorpheus wrote before that no longer fits, still there: going on "without a design" would read it
+            // and quantify with it, so there is nothing to ask (Alexander-Sol's review of #2980).
+            if (outcome.StopsTheRun)
+            {
+                if (reportToConsole)
+                {
+                    write(outcome.Refusal + " The design MetaMorpheus wrote from the SDRF before could not be removed, and a run "
+                        + "that went on would quantify with it, so the run stops.");
+                }
+                return 5;
+            }
+
+            if (normalizationRequested)
+            {
+                if (reportToConsole)
+                {
+                    write(outcome.Refusal + " Normalization needs an experimental design, so the run stops. No design was written.");
+                }
+                return 5;
+            }
+
+            if (!reportToConsole)
+            {
+                return 0;
+            }
+
+            write(outcome.Refusal + " Continue without an experimental design? y/n");
+            string answer = readLine();
+            return answer?.ToLowerInvariant() == "y" || answer?.ToLowerInvariant() == "yes" ? 0 : 5;
+        }
+
+        /// <summary>How the command line names the ways to state a grouping: its switches.</summary>
+        private static readonly SdrfDesignWording CommandLineWording = new()
+        {
+            ReportHint = SwitchesTheReportNames,
+            HowToStateAnotherGrouping = "Give --sdrfCondition, --sdrfSingleCondition or --sdrfUnknownFactorIsCondition to state another, "
+                + "or delete the design file to make it again from every factor value column.",
+        };
 
         private static void WriteMultiLineIndented(string toWrite)
         {
@@ -537,24 +657,14 @@ namespace MetaMorpheusCommandLine
                 SdrfDesignOptions(settings, tag));
 
             output.WriteLine(design.Report());
+            output.Write(SdrfAutomaticDesign.DefaultPlexNote(design, tag != null,
+                SdrfAutomaticDesign.PlexIsStated(settings.SdrfPlexColumn, settings.SdrfPlexPattern, settings.SdrfSinglePlex)));
 
             if (!design.IsValid)
             {
                 output.WriteLine("No design file was written.");
 
-                // Where a refusal can be answered by stating a grouping, mzLib's report names its option; say which
-                // switch that is. Only a line printed or not hangs on the report's words.
-                foreach (var (option, sw) in new[]
-                         {
-                             (nameof(SdrfSearchDesignOptions.SingleCondition), "--sdrfSingleCondition"),
-                             (nameof(SdrfSearchDesignOptions.UnknownFactorIsOwnCondition), "--sdrfUnknownFactorIsCondition"),
-                         })
-                {
-                    if (design.Refusals.Any(r => r.Contains("(" + option + ")")))
-                    {
-                        output.WriteLine($"On the command line, {option} is {sw}.");
-                    }
-                }
+                output.Write(SwitchesTheReportNames(design));
 
                 // Neither the join nor a reader ran only when the file itself could not be read: the settings were
                 // checked before, so the other such refusals (no searched file, a plex source without a kit) cannot
@@ -567,13 +677,40 @@ namespace MetaMorpheusCommandLine
             // file is one a TMT18 run reads as is. Said, so the search is not set to a label that is not there.
             if (tag?.TagType == Omics.Modifications.IsobaricMassTagType.TMT16)
             {
-                output.WriteLine("TMT16 is searched in MetaMorpheus with its TMT18 multiplex label (TMTpro, the same reagent). "
-                    + "This design is read as is by such a run; channels 134C and 135N stay empty.");
+                output.WriteLine(Tmt16Note);
             }
 
             design.WriteDesign(designPath);
             output.WriteLine("Wrote " + designPath);
             return 0;
+        }
+
+        /// <summary>
+        /// MetaMorpheus has no TMT16 multiplex label: TMTpro 16-plex is searched with TMT18, the same reagent. TmtDesign.txt
+        /// names no kit, and TMT16's channels are TMT18's first sixteen, so the file is one a TMT18 run reads as is. Said, so
+        /// the search is not set to a label that is not there.
+        /// </summary>
+        private const string Tmt16Note = SdrfAutomaticDesign.Tmt16Note;
+
+        /// <summary>
+        /// Where a refusal can be answered by stating a grouping, mzLib's report names its option; this says which switch
+        /// that is, one line each, or nothing. Only whether a line is printed hangs on the report's words.
+        /// </summary>
+        private static string SwitchesTheReportNames(SdrfSearchDesign design)
+        {
+            var lines = new System.Text.StringBuilder();
+            foreach (var (option, sw) in new[]
+                     {
+                         (nameof(SdrfSearchDesignOptions.SingleCondition), "--sdrfSingleCondition"),
+                         (nameof(SdrfSearchDesignOptions.UnknownFactorIsOwnCondition), "--sdrfUnknownFactorIsCondition"),
+                     })
+            {
+                if (design.Refusals.Any(r => r.Contains("(" + option + ")")))
+                {
+                    lines.AppendLine($"On the command line, {option} is {sw}.");
+                }
+            }
+            return lines.ToString();
         }
 
         /// <summary>
@@ -584,16 +721,23 @@ namespace MetaMorpheusCommandLine
         /// none, every factor value column makes the condition. A single condition and files whose factor nobody stated
         /// are groupings only the user can state (ruled 2026-11-11): never defaults.
         /// </summary>
-        private static SdrfSearchDesignOptions SdrfDesignOptions(CommandLineSettings settings, MzLibIsobaricMassTag tag) => new()
+        private static SdrfSearchDesignOptions SdrfDesignOptions(CommandLineSettings settings, MzLibIsobaricMassTag tag)
         {
-            Tag = tag,
-            PlexColumn = settings.SdrfPlexColumn,
-            PlexFileNamePattern = settings.SdrfPlexPattern,
-            SinglePlex = settings.SdrfSinglePlex,
-            ConditionColumns = settings.SdrfConditionColumns?.ToList(),
-            SingleCondition = settings.SdrfSingleCondition,
-            UnknownFactorIsOwnCondition = settings.SdrfUnknownFactorIsCondition,
-        };
+            // An isobaric SDRF's plex: the switch given, else the SDRF's comment[plex] (ruled 2026-11-13).
+            var plex = tag != null
+                ? SdrfAutomaticDesign.PlexSource(settings.SdrfDesign, settings.SdrfPlexColumn, settings.SdrfPlexPattern, settings.SdrfSinglePlex)
+                : (settings.SdrfPlexColumn, settings.SdrfPlexPattern, settings.SdrfSinglePlex);
+            return new SdrfSearchDesignOptions
+            {
+                Tag = tag,
+                PlexColumn = plex.Item1,
+                PlexFileNamePattern = plex.Item2,
+                SinglePlex = plex.Item3,
+                ConditionColumns = settings.SdrfConditionColumns?.ToList(),
+                SingleCondition = settings.SdrfSingleCondition,
+                UnknownFactorIsOwnCondition = settings.SdrfUnknownFactorIsCondition,
+            };
+        }
 
         /// <summary>
         /// Prints what one SDRF document says about quantification, and runs nothing else.

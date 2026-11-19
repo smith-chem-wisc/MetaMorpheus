@@ -325,7 +325,7 @@ namespace Test
         public static void TestProteinScoringAndFdrEngine_FilterTypeSelection_QValue()
         {
             // This PSM passes QValue filtering but fails PepQValue filtering.
-            // With QValueThreshold < PepQValueThreshold, the protein group should survive scoring.
+            // With the q-value notch filter (the default), the protein group should survive scoring.
 
             var protein1 = new Protein("PEPTIDEK", "target1");
 
@@ -368,7 +368,7 @@ namespace Test
         public static void TestProteinScoringAndFdrEngine_FilterTypeSelection_PepQValue()
         {
             // This PSM passes QValue filtering but fails PepQValue filtering.
-            // With PepQValueThreshold < QValueThreshold, scoring should drop the only protein group.
+            // With the PEP q-value filter chosen, scoring should drop the only protein group.
 
             var protein1 = new Protein("PEPTIDEK", "target1");
 
@@ -382,11 +382,12 @@ namespace Test
 
             SpectralMatch psm = new PeptideSpectralMatch(peptides[0], 0, 10, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm.SetFdrValues(0, 0, 0.005, 0, 0, 0.005, 0.2, 0.2);
+            psm.PsmFdrInfo.PepTrained = true;
             psm.ResolveAllAmbiguities();
 
             List<SpectralMatch> psms = new List<SpectralMatch> { psm };
 
-            var commonParams = new CommonParameters(qValueThreshold: 0.05, pepQValueThreshold: 0.01);
+            var commonParams = new CommonParameters(qValueThreshold: 0.05, pepQValueThreshold: 0.01, identificationFilter: FilterType.PepQValue);
 
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psms, false, commonParams, null, new List<string>());
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
@@ -491,18 +492,18 @@ namespace Test
 
             List<SpectralMatch> psms = new List<SpectralMatch> { psm };
 
-            // Create CommonParameters with PepQValueThreshold < QValueThreshold to trigger PepQValue filtering
-            var commonParams = new CommonParameters(qValueThreshold: 0.05, pepQValueThreshold: 0.01);
+            psm.PsmFdrInfo.PepTrained = true;
 
-            // Filter with pepQValueThreshold < qValueThreshold to trigger FilterType.PepQValue path
+            // The PEP q-value filter, chosen by name
+            var commonParams = new CommonParameters(qValueThreshold: 0.05, pepQValueThreshold: 0.01, identificationFilter: FilterType.PepQValue);
+
             FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParams,
                 qValueThreshold: 0.05,
                 pepQValueThreshold: 0.01);
 
-            // Verify the filter type is PepQValue
-            Assert.That(filteredPsms.FilterType == FilterType.PepQValue ||
-                        filteredPsms.FilteringNotPerformed, // May not filter if too few PSMs
-                        "FilterType should be PepQValue when pepQValueThreshold < qValueThreshold");
+            // Verify the filter type is PepQValue, at the PEP q-value threshold
+            Assert.That((filteredPsms.FilterType, filteredPsms.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.01)));
+            Assert.That(filteredPsms.FilteredPsmsList, Has.Count.EqualTo(1));
         }
 
         [Test]
