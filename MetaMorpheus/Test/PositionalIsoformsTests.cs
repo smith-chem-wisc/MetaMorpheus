@@ -28,6 +28,27 @@ namespace Test
                 _locationRestriction: location, _chemicalFormula: ChemicalFormula.ParseFormula(formula));
         }
 
+        [Test]
+        public static void ModificationsAnnotatedInTheDatabaseArePlaceable()
+        {
+            // a GPTMD database annotates phosphotyrosine on one protein and phosphothreonine on another, and the
+            // search varies only phosphoserine and oxidation
+            ModificationMotif.TryGetMotif("Y", out ModificationMotif y);
+            var phosphoY = new Modification(_originalId: "Phosphorylation", _modificationType: "Common Biological", _target: y,
+                _locationRestriction: "Anywhere.", _chemicalFormula: ChemicalFormula.ParseFormula("H1O3P1"));
+            var proteins = new List<IBioPolymer>
+            {
+                new Protein("PEPSYK", "P1", oneBasedModifications: new Dictionary<int, List<Modification>> { { 5, new List<Modification> { phosphoY } } }),
+                new Protein("PETYK", "P2", oneBasedModifications: new Dictionary<int, List<Modification>> { { 3, new List<Modification> { PhosphoT } } }),
+                new Protein("KYSPEP", "DECOY_P1", isDecoy: true, oneBasedModifications: new Dictionary<int, List<Modification>> { { 2, new List<Modification> { phosphoY } } }),
+            };
+
+            var placeable = TaskLayer.PostSearchAnalysisTask.PlaceableModifications(new[] { PhosphoS, OxidationM }, proteins);
+
+            // the variable ones and the annotated ones, each once
+            Assert.That(placeable, Is.EquivalentTo(new[] { PhosphoS, OxidationM, phosphoY, PhosphoT }));
+        }
+
         /// <summary>
         /// The peptide of <paramref name="protein"/> with the given modifications, keyed as AllModsOneIsNterminus is.
         /// </summary>

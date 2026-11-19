@@ -596,6 +596,20 @@ namespace TaskLayer
             Status($"Done constructing {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups!", Parameters.SearchTaskId);
         }
 
+        /// <summary>
+        /// The modifications a match's own may be swapped for when localizing: the variable ones and every one annotated
+        /// in the databases (from GPTMD or UniProt). Without the annotated ones, a search of a GPTMD database never weighs
+        /// an annotated phosphotyrosine against the phosphoserine it reported.
+        /// </summary>
+        public static List<Modification> PlaceableModifications(IEnumerable<Modification> variableModifications,
+            IEnumerable<Omics.IBioPolymer> bioPolymers)
+        {
+            return variableModifications
+                .Concat(bioPolymers.SelectMany(p => p.OneBasedPossibleLocalizedModifications.Values.SelectMany(mods => mods)))
+                .Distinct()
+                .ToList();
+        }
+
         private void DoMassDifferenceLocalizationAnalysis()
         {
             try
@@ -605,6 +619,9 @@ namespace TaskLayer
                 if (localizeMassDifferences || computeProbabilities)
                 {
                     Status(localizeMassDifferences ? "Running mass-difference localization analysis..." : "Collecting localization evidence...", Parameters.SearchTaskId);
+                    List<Modification> placeable = computeProbabilities
+                        ? PlaceableModifications(Parameters.VariableModifications, Parameters.BioPolymerList)
+                        : null;
                     for (int spectraFileIndex = 0;
                          spectraFileIndex < Parameters.CurrentRawFileList.Count;
                          spectraFileIndex++)
@@ -620,8 +637,8 @@ namespace TaskLayer
                                 myMsDataFile, combinedParams, this.FileSpecificParameters,
                                 new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile },
                                 localizeMassDifferences,
-                                // every arrangement of a match's modifications, each swappable for a variable modification
-                                placeableModifications: computeProbabilities ? Parameters.VariableModifications : null,
+                                // every arrangement of a match's modifications, each swappable for a variable or database one
+                                placeableModifications: placeable,
                                 siteRule: Parameters.SearchParameters.LocalizationSiteRule)
                             {
                                 KeepMassDifferenceEvidence = computeProbabilities
