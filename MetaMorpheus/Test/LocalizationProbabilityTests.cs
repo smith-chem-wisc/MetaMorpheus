@@ -450,6 +450,22 @@ namespace Test
         }
 
         [Test]
+        public static void TheFirstNTerminalIonsAreNotPredictedForLocalization()
+        {
+            // b1 seldom forms; predicting it would charge a missing fragment to a modification on the first residue only
+            var peptide = (PeptideWithSetModifications)new Protein("SSHLQIVTK", "P1")
+                .Digest(Parameters.DigestionParams, new List<Modification>(), new List<Modification>()).First();
+            var products = new List<Product>();
+            peptide.Fragment(MassSpectrometry.DissociationType.HCD, FragmentationTerminus.Both, products);
+            Assert.That(products.Any(p => p.ProductType == ProductType.b && p.FragmentNumber == 1));
+
+            var excluded = products.Where(LocalizationEngine.IsFirstNTerminalIon).ToList();
+            Assert.That(excluded.Select(p => (p.ProductType, p.FragmentNumber)), Is.EquivalentTo(new[] { (ProductType.b, 1) }));
+            Assert.That(products.Any(p => p.ProductType == ProductType.b && p.FragmentNumber == 2 && !LocalizationEngine.IsFirstNTerminalIon(p)));
+            Assert.That(products.Where(p => p.Terminus == FragmentationTerminus.C).Any(LocalizationEngine.IsFirstNTerminalIon), Is.False);
+        }
+
+        [Test]
         public static void PerCleavageEvidenceKeepsOneIonOfAFragmentAndItsNeutralLosses()
         {
             var intact = new Product(ProductType.y, FragmentationTerminus.C, 500, 4, 2, 0);

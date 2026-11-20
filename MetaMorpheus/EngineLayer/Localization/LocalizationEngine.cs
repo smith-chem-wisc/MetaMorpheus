@@ -94,6 +94,33 @@ namespace EngineLayer.Localization
         /// </summary>
         public bool CollapseIonTrapNeutralLosses { get; init; }
 
+        /// <summary>
+        /// Whether the first N-terminal a and b ions (a1, b1, and their losses) are predicted. Off by default: they
+        /// seldom form in collisional dissociation (mzLib already leaves them out for CID), and predicting them charges
+        /// a missing fragment to a modification on the first residue, whose heavier b1 falls in the scan range, but not to
+        /// one on the second, whose light b1 falls below it. On PXD070496 this moved true first-residue sites to the second.
+        /// Peptides only.
+        /// </summary>
+        public bool PredictFirstNTerminalIons { get; init; }
+
+        /// <summary>The ion types that are not predicted at the first cleavage unless <see cref="PredictFirstNTerminalIons"/>.</summary>
+        internal static bool IsFirstNTerminalIon(Product product) => product.Terminus == FragmentationTerminus.N && product.FragmentNumber == 1
+            && product.ProductType is ProductType.a or ProductType.b or ProductType.aStar or ProductType.aDegree or ProductType.bAmmoniaLoss or ProductType.bWaterLoss;
+
+        private void FragmentForLocalization(IBioPolymerWithSetMods biopolymer, List<Product> products) =>
+            biopolymer.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, products, CommonParameters.FragmentationParameters);
+
+        private bool ExcludesFirstNTerminalIons(IBioPolymerWithSetMods biopolymer) =>
+            !PredictFirstNTerminalIons && biopolymer is Proteomics.ProteolyticDigestion.PeptideWithSetModifications;
+
+        /// <summary>The matched ions kept as localization evidence. Scores still count every matched ion.</summary>
+        private List<MatchedFragmentIon> EvidenceIons(IBioPolymerWithSetMods biopolymer, List<MatchedFragmentIon> ions) =>
+            ExcludesFirstNTerminalIons(biopolymer) ? ions.Where(ion => !IsFirstNTerminalIon(ion.NeutralTheoreticalProduct)).ToList() : ions;
+
+        /// <summary>The fragments predicted for localization evidence.</summary>
+        private List<Product> EvidenceProducts(IBioPolymerWithSetMods biopolymer, List<Product> products) =>
+            ExcludesFirstNTerminalIons(biopolymer) ? products.Where(p => !IsFirstNTerminalIon(p)).ToList() : products;
+
         private bool PerCleavage(MsDataScan scan) => !CountNeutralLossesSeparately && (CollapseIonTrapNeutralLosses || !IsIonTrap(scan));
 
         private static bool IsIonTrap(MsDataScan scan) => scan.MzAnalyzer is MZAnalyzerType.IonTrap2D or MZAnalyzerType.IonTrap3D;
@@ -192,9 +219,10 @@ namespace EngineLayer.Localization
         {
             if (evidence != null && precursorExplained)
             {
-                peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, products, CommonParameters.FragmentationParameters);
+                FragmentForLocalization(peptide, products);
                 var ions = MatchFragmentIons(scanWithSpecificMass, products, CommonParameters, isLowRes: range.IsLowRes);
-                evidence.AddCandidate(new LocalizationPlacement(System.Array.Empty<LocalizationSite>()), CalculatePeptideScore(scan, ions), ions, range.CountObservable(products));
+                evidence.AddCandidate(new LocalizationPlacement(System.Array.Empty<LocalizationSite>()), CalculatePeptideScore(scan, ions),
+                    EvidenceIons(peptide, ions), range.CountObservable(EvidenceProducts(peptide, products)));
                 range.RecordUnmatched(evidence, scanWithSpecificMass, CommonParameters);
                 psm.LocalizationEvidence = evidence.Build(massDifference, peptide.Length, IsProteinNTerminal(peptide), IsProteinCTerminal(peptide));
                 evidence = null;
@@ -207,7 +235,7 @@ namespace EngineLayer.Localization
                 var peptideWithLocalizedMassDiff = peptide.Localize(r, massDifference);
 
                 // this is the list of theoretical products for this peptide with mass-difference on this residue
-                peptideWithLocalizedMassDiff.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, products, CommonParameters.FragmentationParameters);
+                FragmentForLocalization(peptideWithLocalizedMassDiff, products);
 
                 var matchedIons = MatchFragmentIons(scanWithSpecificMass, products, CommonParameters, isLowRes: range.IsLowRes);
 
@@ -215,8 +243,8 @@ namespace EngineLayer.Localization
                 double localizedScore = CalculatePeptideScore(scan, matchedIons);
 
                 localizedScores.Add(localizedScore);
-                evidence?.AddCandidate(new LocalizationPlacement(new[] { new LocalizationSite(r, peptide.BaseSequence[r]) }), localizedScore, matchedIons,
-                    range.CountObservable(products));
+                evidence?.AddCandidate(new LocalizationPlacement(new[] { new LocalizationSite(r, peptide.BaseSequence[r]) }), localizedScore,
+                    EvidenceIons(peptide, matchedIons), range.CountObservable(EvidenceProducts(peptide, products)));
             }
 
             psm.LocalizedScores = localizedScores;
@@ -252,11 +280,12 @@ namespace EngineLayer.Localization
                     return true; // a kind of biopolymer that cannot be rebuilt; nothing to place
                 }
 
-                arranged.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, products, CommonParameters.FragmentationParameters);
+                FragmentForLocalization(arranged, products);
                 var matchedIons = MatchFragmentIons(scanWithSpecificMass, products, CommonParameters, isLowRes: range.IsLowRes);
-                evidence.AddCandidate(isoform.Placement, CalculatePeptideScore(scan, matchedIons), matchedIons, range.CountObservable(products));
+                List<Product> predicted = EvidenceProducts(arranged, products);
+                evidence.AddCandidate(isoform.Placement, CalculatePeptideScore(scan, matchedIons), EvidenceIons(arranged, matchedIons), range.CountObservable(predicted));
 
-                var masses = range.ObservableMassCounts(products);
+                var masses = range.ObservableMassCounts(predicted);
                 if (shared == null)
                 {
                     shared = masses;
