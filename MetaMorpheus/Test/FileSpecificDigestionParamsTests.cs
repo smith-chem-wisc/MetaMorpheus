@@ -223,11 +223,6 @@ namespace Test
                     continue;
                 }
 
-                if (property.IsDefined(typeof(ObsoleteAttribute), inherit: false))
-                {
-                    continue; // a legacy key read from old task TOMLs: never read back, so it cannot differ
-                }
-
                 object a = property.GetValue(task);
                 object b = property.GetValue(combined);
                 object def = property.GetValue(defaults);

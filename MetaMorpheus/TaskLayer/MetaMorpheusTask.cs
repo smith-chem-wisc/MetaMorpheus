@@ -281,7 +281,20 @@ namespace TaskLayer
 
         #endregion
 
-        public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
+        // The settings every task-TOML read uses. Reading a CommonParameters resolves a file saved before FilterThreshold
+        // existed once, through its old QValueThreshold/PepQValueThreshold keys, so the object holds only the filter and
+        // threshold the search runs with.
+        public static readonly TomlSettings tomlConfig = BuildTomlSettings(withLegacyCommonParameters: true);
+
+        // The same conversions without the CommonParameters one, used inside it so reading a CommonParameters does not
+        // re-enter the conversion.
+        private static readonly TomlSettings plainTomlConfig = BuildTomlSettings(withLegacyCommonParameters: false);
+
+        private static TomlSettings BuildTomlSettings(bool withLegacyCommonParameters)
+        {
+            return TomlSettings.Create(cfg =>
+            {
+                var builder = cfg
             .ConfigureType<Tolerance>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
@@ -428,8 +441,81 @@ namespace TaskLayer
             .ConfigureType<RnaFragmentationParams>(type => type
                 .CreateInstance(() => RnaFragmentationParams.Default))
             .ConfigureType<FragmentationParams>(type => type
-                .CreateInstance(() => new()))
-        );
+                .CreateInstance(() => new()));
+
+                if (withLegacyCommonParameters)
+                {
+                    builder.ConfigureType<CommonParameters>(type => type
+                        .WithConversionFor<TomlTable>(convert => convert
+                            .FromToml(ReadCommonParametersFromToml)));
+                }
+            });
+        }
+
+        /// <summary>
+        /// A CommonParameters from its task-TOML table, with the filter and threshold a file written before FilterThreshold
+        /// existed meant. The old keys are resolved once, here, so a search reads plain values and no caller needs a
+        /// special reader: a named IdentificationFilter keeps the file's old threshold, an unnamed old file is the PEP
+        /// q-value when its PepQValueThreshold is below its QValueThreshold and the q-value notch otherwise, a file from
+        /// before #2285 is the notch at 0.01, and a file with no filter keys at all is the default for its analyte.
+        /// </summary>
+        private static CommonParameters ReadCommonParametersFromToml(TomlTable table)
+        {
+            bool hasNamedFilter = table.ContainsKey(nameof(CommonParameters.IdentificationFilter));
+            FilterType? named = hasNamedFilter
+                ? Enum.Parse<FilterType>(table.Get<string>(nameof(CommonParameters.IdentificationFilter)))
+                : null;
+            double? thresholdGiven = table.ContainsKey(nameof(CommonParameters.FilterThreshold))
+                ? table.Get<double>(nameof(CommonParameters.FilterThreshold))
+                : null;
+
+            double? legacyQ = table.ContainsKey("QValueThreshold") ? table.Get<double>("QValueThreshold") : null;
+            double? legacyPep = table.ContainsKey("PepQValueThreshold") ? table.Get<double>("PepQValueThreshold") : null;
+            bool beforeThresholds = table.ContainsKey("QValueOutputFilter") || table.ContainsKey("PepQValueOutputFilter");
+            bool legacy = legacyQ.HasValue || legacyPep.HasValue || beforeThresholds;
+
+            double q = legacyQ ?? 0.01;     // QValueThreshold's old default
+            double pep = legacyPep ?? 1.0;  // PepQValueThreshold's old default
+
+            FilterType filter = named
+                ?? (legacy
+                    ? (pep < q ? FilterType.PepQValue : FilterType.QValueNotch)
+                    : DefaultIdentificationFilterFor(table));
+            double threshold = thresholdGiven
+                ?? (legacy ? (filter == FilterType.PepQValue ? pep : q) : CommonParameters.DefaultFilterThreshold);
+
+            // Drop the old keys and pin the resolved values, then let the normal mapping read them like any other key.
+            table.Remove("QValueThreshold");
+            table.Remove("PepQValueThreshold");
+            table.Remove("QValueOutputFilter");
+            table.Remove("PepQValueOutputFilter");
+            SetTomlNode(table, nameof(CommonParameters.IdentificationFilter), $"\"{filter}\"");
+            SetTomlNode(table, nameof(CommonParameters.FilterThreshold), threshold.ToString("R", CultureInfo.InvariantCulture));
+
+            return Toml.ReadString<CommonParameters>(table.ToString(), plainTomlConfig);
+        }
+
+        /// <summary>The filter a file that names none gets: the default for the analyte its digestion parameters search.</summary>
+        private static FilterType DefaultIdentificationFilterFor(TomlTable table)
+        {
+            bool isRna = false;
+            bool isTopDown = false;
+            if (table.ContainsKey(nameof(CommonParameters.DigestionParams)))
+            {
+                IDigestionParams digestionParams = table.Get<TomlTable>(nameof(CommonParameters.DigestionParams)).Get<IDigestionParams>();
+                isRna = digestionParams is RnaDigestionParams;
+                isTopDown = digestionParams is DigestionParams { DigestionAgent.Name: "top-down" };
+            }
+            return CommonParameters.DefaultIdentificationFilter(isRna, isTopDown);
+        }
+
+        /// <summary>Adds or replaces a key in a parsed TOML table, as the node a small snippet parses to.</summary>
+        private static void SetTomlNode(TomlTable table, string key, string tomlValue)
+        {
+            TomlTable snippet = Toml.ReadString($"{key} = {tomlValue}");
+            table[key] = snippet[key];
+        }
+
        
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
