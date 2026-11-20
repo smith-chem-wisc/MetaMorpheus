@@ -503,9 +503,7 @@ namespace EngineLayer
         /// what it is, sorted. Two positional isomers (oxidation on M3, or on M5) give the same string. Null when the
         /// candidates differ in base sequence or in their modifications. A modification is what it is by its type, its
         /// name without the residue (<see cref="Modification.OriginalId"/>, so Phosphorylation on S and on T are one
-        /// modification) and its chemical formula. A formula alone does not say what a modification is: Hydroxylation on
-        /// P and Oxidation on M are both one oxygen, and a match that cannot tell them apart is ambiguous in which
-        /// modification it carries, not only in where. A modification with no formula is compared by its mass, which
+        /// modification) and its chemical formula. A modification with no formula is compared by its mass, which
         /// every modification on a scored peptide has: the peptide's mass is the sum of them.
         /// </summary>
         public string GetSiteFreeIdentity()

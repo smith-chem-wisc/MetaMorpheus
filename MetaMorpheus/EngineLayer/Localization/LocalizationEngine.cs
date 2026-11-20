@@ -71,6 +71,33 @@ namespace EngineLayer.Localization
         /// </summary>
         public bool KeepMassDifferenceEvidence { get; init; } = true;
 
+        /// <summary>
+        /// Whether ion-trap scans are matched at <see cref="CommonParameters.ProductMassTolerance_LowRes"/> rather than
+        /// <see cref="CommonParameters.ProductMassTolerance"/>, which is calibrated on Orbitrap fragments: a method that
+        /// alternates ion-trap and Orbitrap MS2 in one file otherwise matches the ion-trap scans at a ppm tolerance far
+        /// tighter than their real error, missing many of their true fragments.
+        /// </summary>
+        public bool UseLowResToleranceForIonTraps { get; init; }
+
+        /// <summary>
+        /// Whether a fragment and its neutral-loss forms count as separate pieces of localization evidence. Off by
+        /// default: they report one backbone cleavage, so counting each would reward a placement twice for one cleavage
+        /// (and charge it twice when the cleavage is missing). Only the evidence is affected; scores are not.
+        /// </summary>
+        public bool CountNeutralLossesSeparately { get; init; }
+
+        /// <summary>
+        /// Whether ion-trap scans also count a fragment and its neutral-loss forms once per cleavage. Off by default:
+        /// at the wide ion-trap tolerance a chance peak often matches one form of a cleavage but seldom both, so seeing
+        /// both is corroboration worth keeping (on PXD070496 collapsing them made ion-trap probabilities overconfident,
+        /// while it helped Orbitrap ones).
+        /// </summary>
+        public bool CollapseIonTrapNeutralLosses { get; init; }
+
+        private bool PerCleavage(MsDataScan scan) => !CountNeutralLossesSeparately && (CollapseIonTrapNeutralLosses || !IsIonTrap(scan));
+
+        private static bool IsIonTrap(MsDataScan scan) => scan.MzAnalyzer is MZAnalyzerType.IonTrap2D or MZAnalyzerType.IonTrap3D;
+
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             // any-residue placement swaps nothing, so it needs no list of modifications to swap for
@@ -121,13 +148,13 @@ namespace EngineLayer.Localization
                         bool precursorExplained = CommonParameters.PrecursorMassTolerance.Within(observedMass, peptide.MonoisotopicMass);
                         bool placeThisMatchesModifications = placeModifications && precursorExplained;
 
-                        var observable = new ObservableRange(scan, scanWithSpecificMass);
+                        var observable = new ObservableRange(scan, scanWithSpecificMass, UseLowResToleranceForIonTraps && IsIonTrap(scan), PerCleavage(scan));
 
                         if (LocalizeMassDifferences && psm.FullSequence != null)
                         {
                             bool keepEvidence = KeepMassDifferenceEvidence && basePeakIntensity > 0 && !placeThisMatchesModifications;
                             LocalizeMassDifference(psm, peptide, massDifference, scan, scanWithSpecificMass, products,
-                                keepEvidence ? new LocalizationEvidenceBuilder(basePeakIntensity) : null, precursorExplained, observable);
+                                keepEvidence ? new LocalizationEvidenceBuilder(basePeakIntensity, ScanTypeOf(scan), PerCleavage(scan)) : null, precursorExplained, observable);
                         }
 
                         if (placeThisMatchesModifications && basePeakIntensity > 0)
@@ -166,7 +193,7 @@ namespace EngineLayer.Localization
             if (evidence != null && precursorExplained)
             {
                 peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, products, CommonParameters.FragmentationParameters);
-                var ions = MatchFragmentIons(scanWithSpecificMass, products, CommonParameters);
+                var ions = MatchFragmentIons(scanWithSpecificMass, products, CommonParameters, isLowRes: range.IsLowRes);
                 evidence.AddCandidate(new LocalizationPlacement(System.Array.Empty<LocalizationSite>()), CalculatePeptideScore(scan, ions), ions, range.CountObservable(products));
                 range.RecordUnmatched(evidence, scanWithSpecificMass, CommonParameters);
                 psm.LocalizationEvidence = evidence.Build(massDifference, peptide.Length, IsProteinNTerminal(peptide), IsProteinCTerminal(peptide));
@@ -182,7 +209,7 @@ namespace EngineLayer.Localization
                 // this is the list of theoretical products for this peptide with mass-difference on this residue
                 peptideWithLocalizedMassDiff.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, products, CommonParameters.FragmentationParameters);
 
-                var matchedIons = MatchFragmentIons(scanWithSpecificMass, products, CommonParameters);
+                var matchedIons = MatchFragmentIons(scanWithSpecificMass, products, CommonParameters, isLowRes: range.IsLowRes);
 
                 // score when the mass-diff is on this residue
                 double localizedScore = CalculatePeptideScore(scan, matchedIons);
@@ -214,7 +241,9 @@ namespace EngineLayer.Localization
                 return false;
             }
 
-            var evidence = new LocalizationEvidenceBuilder(basePeakIntensity);
+            var evidence = new LocalizationEvidenceBuilder(basePeakIntensity, ScanTypeOf(scan), PerCleavage(scan));
+            // the observable fragments every arrangement predicts alike: whichever is right, these are predicted
+            Dictionary<(ProductType, long), int> shared = null;
             foreach (PositionalIsoform isoform in isoforms)
             {
                 IBioPolymerWithSetMods arranged = PositionalIsoforms.WithModifications(peptide, isoform.AllModsOneIsNterminus);
@@ -224,14 +253,37 @@ namespace EngineLayer.Localization
                 }
 
                 arranged.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, products, CommonParameters.FragmentationParameters);
-                var matchedIons = MatchFragmentIons(scanWithSpecificMass, products, CommonParameters);
+                var matchedIons = MatchFragmentIons(scanWithSpecificMass, products, CommonParameters, isLowRes: range.IsLowRes);
                 evidence.AddCandidate(isoform.Placement, CalculatePeptideScore(scan, matchedIons), matchedIons, range.CountObservable(products));
+
+                var masses = range.ObservableMassCounts(products);
+                if (shared == null)
+                {
+                    shared = masses;
+                }
+                else
+                {
+                    foreach (var key in shared.Keys.ToList())
+                    {
+                        shared[key] = System.Math.Min(shared[key], masses.GetValueOrDefault(key));
+                    }
+                }
             }
 
+            evidence.SetSharedPredictedFragments(shared?.Values.Sum() ?? 0);
             range.RecordUnmatched(evidence, scanWithSpecificMass, CommonParameters);
             psm.LocalizationEvidence = evidence.Build(massDifference, peptide.Length, IsProteinNTerminal(peptide), IsProteinCTerminal(peptide));
             return true;
         }
+
+        /// <summary>
+        /// A fragment's intact neutral mass (to 0.1 mDa): a fragment and its neutral-loss forms, which report one backbone
+        /// cleavage, share it.
+        /// </summary>
+        internal static long CleavageKey(Product product) => (long)System.Math.Round((product.NeutralMass + product.NeutralLoss) * 1e4);
+
+        /// <summary>The scan's analyzer and activation, e.g. "IonTrap2D CID": scans alike in both share intensity statistics.</summary>
+        internal static string ScanTypeOf(MsDataScan scan) => $"{scan.MzAnalyzer} {scan.DissociationType?.ToString() ?? "Unknown"}";
 
         /// <summary>
         /// The fragments a scan could show: those with an m/z inside the scan window at some charge from 1 to the
@@ -245,9 +297,16 @@ namespace EngineLayer.Localization
             private readonly int _charge;
             private readonly int _unitCharge;
             private readonly double _precursorMass;
+            private readonly bool _perCleavage;
 
-            public ObservableRange(MsDataScan scan, Ms2ScanWithSpecificMass scanWithSpecificMass)
+            /// <param name="isLowRes">Whether the scan's fragments are matched at the low-resolution tolerance
+            /// (<see cref="CommonParameters.ProductMassTolerance_LowRes"/>).</param>
+            /// <param name="perCleavage">Whether fragments are counted per backbone cleavage, a fragment and its
+            /// neutral-loss forms once.</param>
+            public ObservableRange(MsDataScan scan, Ms2ScanWithSpecificMass scanWithSpecificMass, bool isLowRes = false, bool perCleavage = false)
             {
+                IsLowRes = isLowRes;
+                _perCleavage = perCleavage;
                 MzLibUtil.MzRange window = scan.ScanWindowRange;
                 if (window == null || !(window.Maximum > window.Minimum))
                 {
@@ -260,27 +319,45 @@ namespace EngineLayer.Localization
                 _precursorMass = scanWithSpecificMass.PrecursorMass;
             }
 
+            /// <summary>Whether the scan's fragments are matched at the low-resolution tolerance.</summary>
+            public bool IsLowRes { get; }
+
             public double LowestMass => Chemistry.ClassExtensions.ToMass(_lowestMz, _unitCharge);
             public double HighestMass => System.Math.Min(_precursorMass, Chemistry.ClassExtensions.ToMass(_highestMz, _charge));
 
-            /// <summary>The number of products (diagnostic and precursor ions aside) the scan could show.</summary>
-            public int CountObservable(List<Product> products)
+            /// <summary>
+            /// The number of products (diagnostic and precursor ions aside) the scan could show; per cleavage, the number
+            /// of backbone cleavages with at least one form (intact or neutral-loss) it could show.
+            /// </summary>
+            public int CountObservable(List<Product> products) => ObservableMassCounts(products).Values.Sum();
+
+            /// <summary>
+            /// The products <see cref="CountObservable"/> counts, keyed by fragment type and neutral mass (to 0.1 mDa)
+            /// with how many share the key, so that the fragments every candidate predicts alike can be counted. Per
+            /// cleavage the mass is the intact fragment's, so a fragment and its neutral-loss forms share one key, once.
+            /// </summary>
+            public Dictionary<(ProductType, long), int> ObservableMassCounts(List<Product> products)
             {
                 double lowest = LowestMass, highest = HighestMass;
-                int count = 0;
+                var counts = new Dictionary<(ProductType, long), int>(products.Count);
                 foreach (Product product in products)
                 {
                     double mass = product.NeutralMass;
-                    if (product.ProductType is ProductType.D or ProductType.M || double.IsNaN(mass))
+                    if (product.ProductType is ProductType.D or ProductType.M || double.IsNaN(mass) || mass < lowest || mass > highest)
                     {
                         continue;
                     }
-                    if (mass >= lowest && mass <= highest)
+                    if (_perCleavage)
                     {
-                        count++;
+                        counts[(product.ProductType, CleavageKey(product))] = 1;
+                    }
+                    else
+                    {
+                        var key = (product.ProductType, (long)System.Math.Round(mass * 1e4));
+                        counts[key] = counts.GetValueOrDefault(key) + 1;
                     }
                 }
-                return count;
+                return counts;
             }
 
             /// <summary>
@@ -293,7 +370,8 @@ namespace EngineLayer.Localization
                 {
                     return;
                 }
-                evidence.RecordUnmatchedEnvelopes(scan.ExperimentalFragments, commonParameters.ProductMassTolerance, LowestMass, HighestMass, _charge);
+                evidence.RecordUnmatchedEnvelopes(scan.ExperimentalFragments,
+                    IsLowRes ? commonParameters.ProductMassTolerance_LowRes : commonParameters.ProductMassTolerance, LowestMass, HighestMass, _charge);
             }
         }
 

@@ -57,8 +57,9 @@ namespace EngineLayer.Localization
 
         internal LocalizationEvidence(double massDifference, int peptideLength, bool isProteinNTerminal, bool isProteinCTerminal,
             LocalizationPlacement[] placements, double[] scores, float[] peakRelativeIntensities, ulong[] matchMasks,
-            int[] predictedFragmentCounts = null, float[] noiseCoverage = null)
+            int[] predictedFragmentCounts = null, float[] noiseCoverage = null, int sharedPredictedFragmentCount = -1)
         {
+            SharedPredictedFragmentCount = sharedPredictedFragmentCount;
             MassDifference = massDifference;
             PeptideLength = peptideLength;
             IsProteinNTerminal = isProteinNTerminal;
@@ -131,6 +132,19 @@ namespace EngineLayer.Localization
         public int PredictedFragmentCount(int candidate) => _predictedFragmentCounts[candidate];
 
         /// <summary>
+        /// The number of fragments within the scan's range that every candidate predicts alike (the same neutral mass),
+        /// so that they are predicted whichever candidate is right; -1 when not recorded. With the peaks every candidate
+        /// matches, it lets a modified match teach how often a predicted fragment is observed without knowing its site.
+        /// </summary>
+        public int SharedPredictedFragmentCount { get; }
+
+        /// <summary>
+        /// The scan's analyzer and activation, e.g. "IonTrap2D CID", or null when not recorded. One file can hold scans of
+        /// several types (a Fusion method alternating ion-trap and Orbitrap MS2), whose fragment statistics differ.
+        /// </summary>
+        public string ScanType { get; init; }
+
+        /// <summary>
         /// The peaks no candidate explains, as a histogram over <see cref="PeakIntensityRatioModel"/>'s intensity bins
         /// in which each peak adds the fraction of the fragment mass range its tolerance window covers: bin b holds the
         /// chance that a predicted fragment lands on an unexplained peak of that intensity. Null when not recorded.
@@ -154,12 +168,28 @@ namespace EngineLayer.Localization
         private readonly List<List<int>> _matchedPeaks = new();
         private readonly List<int> _predictedFragmentCounts = new();
         private float[] _noiseCoverage;
+        private int _sharedPredictedFragments = -1;
+        private readonly string _scanType;
 
         /// <param name="basePeakIntensity">The intensity of the most intense peak in the spectrum.</param>
-        public LocalizationEvidenceBuilder(double basePeakIntensity)
+        /// <param name="scanType">The scan's analyzer and activation (see <see cref="LocalizationEvidence.ScanType"/>).</param>
+        /// <param name="perCleavage">Whether a candidate's ions are kept one per backbone cleavage: of a fragment and its
+        /// neutral-loss forms (and its charge states), only the most intense matched peak.</param>
+        public LocalizationEvidenceBuilder(double basePeakIntensity, string scanType = null, bool perCleavage = false)
         {
             _basePeakIntensity = basePeakIntensity;
+            _scanType = scanType;
+            _perCleavage = perCleavage;
         }
+
+        private readonly bool _perCleavage;
+        private readonly HashSet<(double Mz, double Intensity)> _explained = new();
+
+        /// <summary>Of each cleavage's matched ions, the most intense: one piece of evidence per cleavage.</summary>
+        private static IEnumerable<MatchedFragmentIon> OnePerCleavage(IReadOnlyList<MatchedFragmentIon> ions) => ions
+            .GroupBy(ion => (ion.NeutralTheoreticalProduct.ProductType,
+                (long)Math.Round((ion.NeutralTheoreticalProduct.NeutralMass + ion.NeutralTheoreticalProduct.NeutralLoss) * 1e4)))
+            .Select(g => g.MaxBy(ion => ion.Intensity));
 
         /// <summary>
         /// Records a candidate placement and the ions it matched. Ions with the same m/z and intensity are one
@@ -171,6 +201,10 @@ namespace EngineLayer.Localization
         {
             var peaks = new List<int>(matchedIons.Count);
             foreach (MatchedFragmentIon ion in matchedIons)
+            {
+                _explained.Add((Math.Round(ion.Mz, 6), ion.Intensity)); // explained, even where not kept as evidence
+            }
+            foreach (MatchedFragmentIon ion in _perCleavage ? OnePerCleavage(matchedIons) : matchedIons)
             {
                 var key = (Math.Round(ion.Mz, 6), ion.Intensity);
                 if (!_peakIndex.TryGetValue(key, out int index))
@@ -187,6 +221,9 @@ namespace EngineLayer.Localization
             _matchedPeaks.Add(peaks);
             _predictedFragmentCounts.Add(predictedFragments);
         }
+
+        /// <summary>Sets <see cref="LocalizationEvidence.SharedPredictedFragmentCount"/>.</summary>
+        public void SetSharedPredictedFragments(int count) => _sharedPredictedFragments = count;
 
         /// <summary>Sets the unexplained-peak coverage histogram directly (see <see cref="LocalizationEvidence.NoiseCoverage"/>).</summary>
         public void SetNoiseCoverage(float[] coverage)
@@ -219,7 +256,7 @@ namespace EngineLayer.Localization
                     }
                     // the key a matched envelope has (see MetaMorpheusEngine.MatchFragmentIons)
                     double intensity = envelope.Peaks.First().intensity;
-                    if (_peakIndex.ContainsKey((Math.Round(mass.ToMz(envelope.Charge), 6), intensity)))
+                    if (_explained.Contains((Math.Round(mass.ToMz(envelope.Charge), 6), intensity)))
                     {
                         continue;
                     }
@@ -244,7 +281,7 @@ namespace EngineLayer.Localization
 
             int[] predicted = _predictedFragmentCounts.All(n => n >= 0) ? _predictedFragmentCounts.ToArray() : null;
             return new LocalizationEvidence(massDifference, peptideLength, isProteinNTerminal, isProteinCTerminal,
-                _placements.ToArray(), _scores.ToArray(), _peakRelativeIntensities.ToArray(), masks, predicted, _noiseCoverage);
+                _placements.ToArray(), _scores.ToArray(), _peakRelativeIntensities.ToArray(), masks, predicted, _noiseCoverage, _sharedPredictedFragments) { ScanType = _scanType };
         }
     }
 }

@@ -90,6 +90,44 @@ namespace EngineLayer.Localization
         /// </summary>
         public LocalizationLikelihood Likelihood { get; init; } = DefaultLikelihood;
 
+        /// <summary>
+        /// Whether the intensity models also learn from confident modified matches whose peptide explains the precursor,
+        /// as well as from unmodified ones. A modified match contributes only what holds whichever of its placements is
+        /// right: the peaks every candidate matches, the peaks none explains, and the fragments every candidate predicts
+        /// alike (<see cref="LocalizationEvidence.SharedPredictedFragmentCount"/>). It matters most where unmodified
+        /// matches are few or unlike the modified ones, as in an enriched sample.
+        /// </summary>
+        public bool LearnFromModifiedMatches { get; init; }
+
+        /// <summary>
+        /// Whether the intensity models are learned per scan type (analyzer and activation) within each file, as well as
+        /// per file: a method that alternates ion-trap and Orbitrap MS2 puts both in one file, and their fragment
+        /// observation and chance-match statistics differ. A file with too few peaks of a type borrows that type's model
+        /// across every file.
+        /// </summary>
+        public bool ModelPerScanType { get; init; }
+
+        /// <summary>
+        /// The power each candidate's likelihood is raised to before it meets the prior, 1 by default. The likelihood
+        /// treats each fragment as independent evidence; fragments of one spectrum are not (an interfering peptide or a
+        /// bad isolation moves many at once), so it is overconfident. Below 1 tempers it toward the prior.
+        /// </summary>
+        public double LikelihoodExponent { get; init; } = 1;
+
+        /// <summary>
+        /// Whether the prior over site classes is learned from the matches (PTMiner) or kept flat within each chemistry.
+        /// A learned prior reflects which residues the sample's modifications sit on, which helps accuracy, but it
+        /// makes the residues it disfavours overconfident: on PXD070496, a library rich in pY, it learned Y and left pS
+        /// at a true FLR of 7% when the estimate was 1%, against 2% with a flat prior.
+        /// </summary>
+        public bool LearnSitePrior { get; init; } = true;
+
+        /// <summary>
+        /// The <see cref="LikelihoodExponent"/> the search task uses: on PXD070496, with a flat prior, it brought the
+        /// true false localization rate of matches estimated at 1% from 1.8% to 1.3% (0.9% leaving out likely chimeras).
+        /// </summary>
+        public const double RecommendedLikelihoodExponent = 0.8;
+
         public const LocalizationLikelihood DefaultLikelihood = LocalizationLikelihood.IntensityRatio;
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -132,7 +170,10 @@ namespace EngineLayer.Localization
             Parallel.For(0, matches.Count, new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile }, i =>
             {
                 SpectralMatch psm = matches[i];
-                FileModels model = models.TryGetValue(psm.FullFilePath ?? "", out var fileModel) ? fileModel : pooled;
+                // the file's own model (of this scan type), else every file's of this scan type, else every file's
+                FileModels model = models.TryGetValue(ModelKey(psm), out var fileModel) ? fileModel
+                    : ModelPerScanType && models.TryGetValue(AllFilesKey(psm), out var typeModel) ? typeModel
+                    : pooled;
                 double[] logLikelihoods = likelihood == LocalizationLikelihood.IntensityRatio
                     ? LogLikelihoodRatios(psm.LocalizationEvidence, model.Ratio)
                     : LogLikelihoods(psm.LocalizationEvidence, model.Cdf);
@@ -174,10 +215,19 @@ namespace EngineLayer.Localization
         private Dictionary<string, FileModels> FitIntensityModels(List<SpectralMatch> matches, out FileModels pooled)
         {
             var dataByFile = new Dictionary<string, TrainingData>();
-            foreach (SpectralMatch psm in matches.Where(m => !m.IsDecoy && IsConfident(m) && IsUnmodified(m)))
+            foreach (SpectralMatch psm in matches.Where(m => !m.IsDecoy && IsConfident(m)))
             {
+                bool unmodified = IsUnmodified(psm);
+                // a modified match teaches only what holds whichever placement is right: the peaks every candidate
+                // matches, the peaks none explains, and the fragments every candidate predicts alike
+                bool modified = !unmodified && LearnFromModifiedMatches && PrecursorExplained(psm)
+                    && psm.LocalizationEvidence.SharedPredictedFragmentCount >= 0;
+                if (!unmodified && !modified)
+                {
+                    continue;
+                }
                 LocalizationEvidence evidence = psm.LocalizationEvidence;
-                string file = psm.FullFilePath ?? "";
+                string file = ModelKey(psm);
                 if (!dataByFile.TryGetValue(file, out var data))
                 {
                     dataByFile[file] = data = new TrainingData();
@@ -198,7 +248,12 @@ namespace EngineLayer.Localization
                 {
                     data.NoiseCoverages.Add(evidence.NoiseCoverage);
                 }
-                if (evidence.HasPredictedFragmentCounts && evidence.CandidateCount == 1)
+                if (modified)
+                {
+                    data.PredictedFragments += evidence.SharedPredictedFragmentCount;
+                    data.ObservedFragments += Math.Min(observed, evidence.SharedPredictedFragmentCount);
+                }
+                else if (evidence.HasPredictedFragmentCounts && evidence.CandidateCount == 1)
                 {
                     data.PredictedFragments += evidence.PredictedFragmentCount(0);
                     data.ObservedFragments += Math.Min(observed, evidence.PredictedFragmentCount(0));
@@ -212,6 +267,18 @@ namespace EngineLayer.Localization
 
             pooled = Fit(dataByFile.Values);
             var models = new Dictionary<string, FileModels>();
+            if (ModelPerScanType)
+            {
+                // each scan type across every file, for a file with too few peaks of that type to learn from alone
+                foreach (var byType in dataByFile.GroupBy(kv => AllFilesKeyOf(kv.Key)))
+                {
+                    FileModels model = Fit(byType.Select(kv => kv.Value));
+                    if (model.Cdf.TrainingPeakCount >= MinTrainingPeaksPerFile)
+                    {
+                        models[byType.Key] = model.Ratio.IsTrained ? model : model with { Ratio = pooled.Ratio };
+                    }
+                }
+            }
             foreach (var (file, data) in dataByFile)
             {
                 FileModels model = Fit(new[] { data });
@@ -224,11 +291,25 @@ namespace EngineLayer.Localization
             return models;
         }
 
+        /// <summary>The intensity models' key: the spectra file, and with <see cref="ModelPerScanType"/> the scan type.</summary>
+        private string ModelKey(SpectralMatch psm) => ModelPerScanType
+            ? (psm.FullFilePath ?? "") + "\n" + (psm.LocalizationEvidence.ScanType ?? "")
+            : psm.FullFilePath ?? "";
+
+        private string AllFilesKey(SpectralMatch psm) => AllFilesKeyOf(ModelKey(psm));
+
+        private static string AllFilesKeyOf(string modelKey) => "*\n" + modelKey.Substring(modelKey.IndexOf('\n') + 1);
+
         private bool IsUnmodified(SpectralMatch psm)
         {
             IBioPolymerWithSetMods peptide = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
-            return peptide.NumVariableMods == 0
-                && CommonParameters.PrecursorMassTolerance.Within(peptide.MonoisotopicMass + psm.LocalizationEvidence.MassDifference, peptide.MonoisotopicMass);
+            return peptide.NumVariableMods == 0 && PrecursorExplained(psm);
+        }
+
+        private bool PrecursorExplained(SpectralMatch psm)
+        {
+            IBioPolymerWithSetMods peptide = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
+            return CommonParameters.PrecursorMassTolerance.Within(peptide.MonoisotopicMass + psm.LocalizationEvidence.MassDifference, peptide.MonoisotopicMass);
         }
 
         /// <summary>
@@ -333,7 +414,7 @@ namespace EngineLayer.Localization
                 prior[k] = 1.0 / siteClasses.ClassesInGroup(siteClasses.GroupOf(k));
             }
 
-            for (int iteration = 1; iteration <= MaxIterations; iteration++)
+            for (int iteration = 1; LearnSitePrior && iteration <= MaxIterations; iteration++)
             {
                 double[] logPrior = prior.Select(p => Math.Log(p)).ToArray();
                 var expected = new double[classCount];
@@ -385,14 +466,14 @@ namespace EngineLayer.Localization
         /// <summary>
         /// The posterior probability of each candidate: its likelihood times the prior of its sites, normalized.
         /// </summary>
-        private static double[] Posterior(ScoredMatch match, double[] logPrior)
+        private double[] Posterior(ScoredMatch match, double[] logPrior)
         {
             int n = match.LogLikelihoods.Length;
             var logPosterior = new double[n];
             double max = double.NegativeInfinity;
             for (int c = 0; c < n; c++)
             {
-                double value = match.LogLikelihoods[c];
+                double value = LikelihoodExponent * match.LogLikelihoods[c];
                 foreach (int k in match.Classes[c])
                 {
                     value += logPrior[k];
@@ -405,7 +486,10 @@ namespace EngineLayer.Localization
             // of classes it never sees to zero); the spectrum alone then decides.
             if (double.IsNegativeInfinity(max))
             {
-                Array.Copy(match.LogLikelihoods, logPosterior, n);
+                for (int c = 0; c < n; c++)
+                {
+                    logPosterior[c] = LikelihoodExponent * match.LogLikelihoods[c];
+                }
                 max = logPosterior.Max();
             }
 

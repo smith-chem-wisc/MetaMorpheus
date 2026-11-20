@@ -641,7 +641,8 @@ namespace TaskLayer
                                 placeableModifications: placeable,
                                 siteRule: Parameters.SearchParameters.LocalizationSiteRule)
                             {
-                                KeepMassDifferenceEvidence = computeProbabilities
+                                KeepMassDifferenceEvidence = computeProbabilities,
+                                UseLowResToleranceForIonTraps = computeProbabilities && Parameters.SearchParameters.LocalizeIonTrapScansSeparately
                             }
                             .Run();
                         Parameters.MyFileManager.DoneWithFile(origDataFile);
@@ -658,6 +659,12 @@ namespace TaskLayer
                         includeDecoys: false, includeContaminants: true, includeAmbiguous: true, includeAmbiguousMods: true);
                     new LocalizationProbabilityEngine(Parameters.AllSpectralMatches, CommonParameters, this.FileSpecificParameters,
                             new List<string> { Parameters.SearchTaskId }, identified.PassesThreshold)
+                        {
+                            ModelPerScanType = Parameters.SearchParameters.LocalizeIonTrapScansSeparately,
+                            LearnFromModifiedMatches = true,
+                            LearnSitePrior = Parameters.SearchParameters.LearnLocalizationPrior,
+                            LikelihoodExponent = Parameters.SearchParameters.LocalizationLikelihoodExponent
+                        }
                         .Run();
                 }
 

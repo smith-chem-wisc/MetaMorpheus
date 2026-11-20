@@ -83,6 +83,27 @@ namespace TaskLayer
         /// those its motif allows (the default), or any residue, for experiments where its chemistry is unknown.
         /// </summary>
         public LocalizationSiteRule LocalizationSiteRule { get; set; }
+
+        /// <summary>
+        /// With <see cref="DoLocalizationProbabilities"/>, match ion-trap scans at the low-resolution product tolerance
+        /// (<see cref="EngineLayer.CommonParameters.ProductMassTolerance_LowRes"/>) when collecting localization evidence,
+        /// and learn their fragment statistics apart from other scan types. For methods that put ion-trap and Orbitrap
+        /// MS2 in one file. Off by default.
+        /// </summary>
+        public bool LocalizeIonTrapScansSeparately { get; set; }
+
+        /// <summary>
+        /// With <see cref="DoLocalizationProbabilities"/>, learn how often each modification sits on each residue from the
+        /// matches (PTMiner's prior) instead of weighing every allowed residue alike. Off by default: a learned prior
+        /// helps accuracy but leaves the residues it disfavours overconfident.
+        /// </summary>
+        public bool LearnLocalizationPrior { get; set; }
+
+        /// <summary>
+        /// With <see cref="DoLocalizationProbabilities"/>, the power each placement's likelihood is raised to, tempering
+        /// the fragment evidence, which the model treats as independent when it is not. 1 leaves it untempered.
+        /// </summary>
+        public double LocalizationLikelihoodExponent { get; set; } = LocalizationProbabilityEngine.RecommendedLikelihoodExponent;
         public bool DoLabelFreeQuantification { get; set; }
         public bool UseSharedPeptidesForLFQ { get; set; }
         public bool DoMultiplexQuantification { get; set; }

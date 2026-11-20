@@ -392,6 +392,59 @@ namespace Test
         }
 
         [Test]
+        public static void WithoutLearningThePriorUnclearMatchesStayACoinToss()
+        {
+            var clear = Enumerable.Range(0, 40).Select(_ => Psm(Evidence(new[] { OnS3, OnT4 }, (0.8, new[] { 0 }), (0.3, new[] { 0, 1 })), modified: true));
+            var unclear = Enumerable.Range(0, 10).Select(_ => Psm(Evidence(new[] { OnS3, OnT4 }, (0.3, new[] { 0, 1 })), modified: true)).ToList();
+            var psms = UnmodifiedMatches().Concat(clear).Concat(unclear).ToList();
+
+            new LocalizationProbabilityEngine(psms, Parameters, new List<(string, CommonParameters)>(), new List<string>())
+            { Likelihood = LocalizationLikelihood.PtminerCdf, LearnSitePrior = false }.Run();
+
+            Assert.That(unclear[0].LocalizationProbabilities.PlacementProbabilities[0], Is.EqualTo(0.5).Within(1e-9));
+        }
+
+        [Test]
+        public static void TemperingScalesTheLogOddsOfAPlacementByTheExponent()
+        {
+            var clear = Enumerable.Range(0, 40).Select(_ => Psm(Evidence(new[] { OnS3, OnT4 }, (0.8, new[] { 0 }), (0.6, new[] { 0 })), modified: true)).ToList();
+            var psms = UnmodifiedMatches().Concat(clear).ToList();
+            double LogOdds(double exponent)
+            {
+                new LocalizationProbabilityEngine(psms, Parameters, new List<(string, CommonParameters)>(), new List<string>())
+                { Likelihood = LocalizationLikelihood.PtminerCdf, LearnSitePrior = false, LikelihoodExponent = exponent }.Run();
+                double p = clear[0].LocalizationProbabilities.PlacementProbabilities[0];
+                return Math.Log(p / (1 - p));
+            }
+
+            double untempered = LogOdds(1);
+            double tempered = LogOdds(0.5);
+            Assert.That(untempered, Is.GreaterThan(0));
+            Assert.That(tempered, Is.EqualTo(0.5 * untempered).Within(1e-9)); // with a flat prior, the posterior is the likelihood
+            Assert.That(clear[0].LocalizationProbabilities.BestPlacement, Is.SameAs(OnS3));
+        }
+
+        [Test]
+        public static void PerCleavageEvidenceKeepsOneIonOfAFragmentAndItsNeutralLosses()
+        {
+            var intact = new Product(ProductType.y, FragmentationTerminus.C, 500, 4, 2, 0);
+            var waterLoss = new Product(ProductType.y, FragmentationTerminus.C, 500 - 18.0106, 4, 2, 18.0106);
+            var ions = new List<MatchedFragmentIon> { new(intact, 501, 0.4, 1), new(waterLoss, 483, 0.9, 1) };
+            LocalizationEvidence Build(bool perCleavage)
+            {
+                var builder = new LocalizationEvidenceBuilder(basePeakIntensity: 1, perCleavage: perCleavage);
+                builder.AddCandidate(OnS3, 0, ions);
+                builder.AddCandidate(OnT4, 0, new List<MatchedFragmentIon>());
+                return builder.Build(massDifference: 0, peptideLength: 6, isProteinNTerminal: false, isProteinCTerminal: false);
+            }
+
+            Assert.That(Build(perCleavage: false).PeakCount, Is.EqualTo(2));
+            LocalizationEvidence collapsed = Build(perCleavage: true);
+            Assert.That(collapsed.PeakCount, Is.EqualTo(1));
+            Assert.That(collapsed.PeakRelativeIntensity(0), Is.EqualTo(0.9).Within(1e-6)); // the most intense form is kept (stored as float)
+        }
+
+        [Test]
         public static void ClearMatchesHaveLowLocalizationQValuesAndUnclearOnesHigher()
         {
             var clear = Enumerable.Range(0, 40).Select(_ => Psm(Evidence(new[] { OnS3, OnT4 }, (0.8, new[] { 0 }), (0.6, new[] { 0 })), modified: true)).ToList();
