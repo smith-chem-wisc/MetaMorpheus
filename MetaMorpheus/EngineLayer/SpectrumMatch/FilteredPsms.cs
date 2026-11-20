@@ -62,19 +62,13 @@ namespace EngineLayer.SpectrumMatch
             _ => throw new ArgumentOutOfRangeException(nameof(filterType), filterType, null)
         };
 
-        /// <summary>
-        /// The threshold the search's identification filter is held to: <see cref="CommonParameters.FilterThreshold"/>,
-        /// whichever the filter (and for the q-value notch of the matches the PEP q-value filter judges by the notch).
-        /// </summary>
-        public static double Threshold(CommonParameters commonParams) => commonParams.FilterThreshold;
-
         /// <summary>The filter and its threshold, as results.txt and the output files state them: "q-value notch &lt;= 0.01".</summary>
         public static string Describe(FilterType filterType, double threshold) =>
             Name(filterType) + " <= " + threshold.ToString(CultureInfo.InvariantCulture);
 
         /// <summary>The search's own filter and threshold, described as <see cref="Describe(FilterType, double)"/>.</summary>
         public static string Describe(CommonParameters commonParams) =>
-            Describe(commonParams.IdentificationFilter, Threshold(commonParams));
+            Describe(commonParams.IdentificationFilter, commonParams.FilterThreshold);
 
         private static string Name(FilterType filterType) => filterType switch
         {
@@ -151,8 +145,6 @@ namespace EngineLayer.SpectrumMatch
         /// <param name="includeLocalizationAmbiguousMods">Keep PSMs ambiguous only in where their modifications sit
         /// (<see cref="SpectralMatch.IsLocalizationAmbiguous"/>), whatever <paramref name="includeAmbiguousMods"/> says
         /// about the others. Null, the default, follows <paramref name="includeAmbiguousMods"/>.</param>
-        /// <param name="threshold">Overrides the threshold the filter is held to. Null (the default) is the search's
-        /// <see cref="CommonParameters.FilterThreshold"/>.</param>
         /// <param name="filterType">The filter, when the caller chooses it. Null (the default) is the search's
         /// <see cref="CommonParameters.IdentificationFilter"/>.</param>
         /// <returns> A FilteredPsms object</returns>
@@ -163,7 +155,6 @@ namespace EngineLayer.SpectrumMatch
             bool includeAmbiguous = false,
             bool includeAmbiguousMods = true,
             bool includeHighQValuePsms = false,
-            double? threshold = null,
             bool filterAtPeptideLevel = false,
             bool? includeLocalizationAmbiguousMods = null,
             FilterType? filterType = null)
@@ -178,7 +169,7 @@ namespace EngineLayer.SpectrumMatch
                     : psm.IsLocalizationAmbiguous ? includeLocalizationAmbiguous : includeAmbiguousMods;
 
             FilterType type = filterType ?? commonParams.IdentificationFilter;
-            double heldTo = threshold ?? Threshold(commonParams);
+            double threshold = commonParams.FilterThreshold;
 
             List<SpectralMatch> candidates = psms.Where(psm =>
                     (includeDecoys || !psm.IsDecoy)
@@ -188,15 +179,15 @@ namespace EngineLayer.SpectrumMatch
                 .ToList();
 
             List<SpectralMatch> filteredPsms = candidates
-                .FilterByQValue(includeHighQValuePsms, heldTo, filterAtPeptideLevel, type)
+                .FilterByQValue(includeHighQValuePsms, threshold, filterAtPeptideLevel, type)
                 .CollapseToPeptides(filterAtPeptideLevel)
                 .ToList();
 
-            return new FilteredPsms(filteredPsms, type, heldTo, filterAtPeptideLevel)
+            return new FilteredPsms(filteredPsms, type, threshold, filterAtPeptideLevel)
             {
                 // At the peptide level, the peptides judged: one match per full sequence
                 PepFilteringNotDone = type == FilterType.PepQValue
-                    ? PepNotTrainedSentence(candidates.CollapseToPeptides(filterAtPeptideLevel), filterAtPeptideLevel, heldTo)
+                    ? PepNotTrainedSentence(candidates.CollapseToPeptides(filterAtPeptideLevel), filterAtPeptideLevel, threshold)
                     : null
             };
         }

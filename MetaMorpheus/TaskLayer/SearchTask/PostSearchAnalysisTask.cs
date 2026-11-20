@@ -1707,7 +1707,7 @@ namespace TaskLayer
             {
                 psmResultsText = keepsEveryMatch + Environment.NewLine + psmResultsText;
             }
-            if (SearchTask.LegacyFilterSentence(CommonParameters) is string fromLegacyThresholds)
+            if (LegacyFilterSentence is string fromLegacyThresholds)
             {
                 psmResultsText = fromLegacyThresholds + Environment.NewLine + psmResultsText;
             }

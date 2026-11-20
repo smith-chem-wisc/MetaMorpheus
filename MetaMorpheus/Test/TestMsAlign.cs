@@ -67,7 +67,7 @@ namespace Test
             string topDownSearchToml = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TopDownSearchToml.toml");
 
             var db = new DbForTask(dbPath, false);
-            var searchTask = Toml.ReadFile<SearchTask>(topDownSearchToml, MetaMorpheusTask.tomlConfig);
+            var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(topDownSearchToml);
             searchTask.CommonParameters.PrecursorMassTolerance = new AbsoluteTolerance(5);
 
             searchTask.RunTask(outDirectory, [db], [path], "TestSearchWithMsAlign");

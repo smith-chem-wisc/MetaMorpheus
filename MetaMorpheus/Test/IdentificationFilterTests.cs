@@ -142,9 +142,10 @@ namespace Test
             Assert.That(lines, Has.One.Match($@"^\s*FilterThreshold = {threshold.ToString(System.Globalization.CultureInfo.InvariantCulture)}$"));
             Assert.That(lines, Has.None.Match(@"^\s*(Pep)?QValueThreshold ="), "the old thresholds are not written");
 
-            var reloaded = LoadCommon(saved);
+            var reloadedTask = LoadTask(saved);
+            var reloaded = reloadedTask.CommonParameters;
             Assert.That((reloaded.IdentificationFilter, reloaded.FilterThreshold), Is.EqualTo((filter, threshold)));
-            Assert.That(reloaded.IdentificationFilterFromLegacyThresholds, Is.False);
+            Assert.That(reloadedTask.LegacyFilterSentence != null, Is.False);
         }
 
         // Spec 2: every filter is held to the one threshold, and a PEP fallback to the notch at that threshold.
@@ -445,6 +446,10 @@ namespace Test
         /// <paramref name="trainPep"/> training is attempted and fails.
         /// </summary>
         private static (string Folder, string[] Results, List<string> Warnings) Search(string name, CommonParameters commonParameters, bool trainPep,
+            bool writeIndividualFiles = false, bool writeIdentificationFiles = false) =>
+            Search(name, new SearchTask { CommonParameters = commonParameters }, trainPep, writeIndividualFiles, writeIdentificationFiles);
+
+        private static (string Folder, string[] Results, List<string> Warnings) Search(string name, SearchTask task, bool trainPep,
             bool writeIndividualFiles = false, bool writeIdentificationFiles = false)
         {
             string testDirectory = TestContext.CurrentContext.TestDirectory;
@@ -452,15 +457,11 @@ namespace Test
             if (Directory.Exists(outputFolder))
                 Directory.Delete(outputFolder, true);
 
-            var task = new SearchTask
+            task.SearchParameters = new SearchParameters
             {
-                CommonParameters = commonParameters,
-                SearchParameters = new SearchParameters
-                {
-                    WriteIndividualFiles = writeIndividualFiles,
-                    WriteMzId = writeIdentificationFiles,
-                    WritePepXml = writeIdentificationFiles
-                }
+                WriteIndividualFiles = writeIndividualFiles,
+                WriteMzId = writeIdentificationFiles,
+                WritePepXml = writeIdentificationFiles
             };
             var spectraFiles = new List<string>
             {
@@ -578,19 +579,21 @@ namespace Test
 
         private static string TestData(string file) => Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", file);
 
-        private static CommonParameters LoadCommon(string tomlText)
+        private static SearchTask LoadTask(string tomlText)
         {
             string toml = Path.Combine(TestContext.CurrentContext.TestDirectory, $"IdentificationFilterTests_{Guid.NewGuid():N}.toml");
             try
             {
                 File.WriteAllText(toml, tomlText);
-                return Nett.Toml.ReadFile<SearchTask>(toml, MetaMorpheusTask.tomlConfig).CommonParameters;
+                return MetaMorpheusTask.ReadTaskToml<SearchTask>(toml);
             }
             finally
             {
                 File.Delete(toml);
             }
         }
+
+        private static CommonParameters LoadCommon(string tomlText) => LoadTask(tomlText).CommonParameters;
 
         private static string TomlOf(CommonParameters commonParameters)
         {
@@ -641,15 +644,17 @@ namespace Test
         [Test]
         public static void AnOldGuiPepTask_LoadsAsThePepFilter_AndSaysSo()
         {
-            var common = Nett.Toml.ReadFile<SearchTask>(TestData("Task2-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig).CommonParameters;
+            var commonTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(TestData("Task2-SearchTaskconfig.toml"));
+            var common = commonTask.CommonParameters;
 
             Assert.That((common.IdentificationFilter, common.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.01)));
-            Assert.That((common.LegacyPepQValueThreshold, common.LegacyQValueThreshold), Is.EqualTo(((double?)0.01, (double?)1.0)));
-            Assert.That(common.IdentificationFilterFromLegacyThresholds, Is.True);
-            Assert.That(SearchTask.LegacyFilterSentence(common), Is.EqualTo(
+            Assert.That(commonTask.LegacyFilterSentence != null, Is.True);
+            Assert.That(commonTask.LegacyFilterSentence, Is.EqualTo(
                 "IdentificationFilter read from this task's legacy thresholds (PepQValueThreshold 0.01 < QValueThreshold 1): PEP q-value at 0.01"));
             Assert.That(SearchTask.FilterKeepsEveryMatch(common), Is.Null, "a migrated PEP task filters at 0.01, not at 1");
-            Assert.That(common.Clone().IdentificationFilterFromLegacyThresholds, Is.True, "a copy remembers where its filter came from");
+            Assert.That((common.Clone().IdentificationFilter, common.Clone().FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.01)), "a copy keeps the filter");
+            commonTask.CommonParameters = common.Clone();
+            Assert.That(commonTask.LegacyFilterSentence, Is.Null, "a task given new CommonParameters (a window saved it) no longer says where an old filter came from");
         }
 
         // Review of #2982 (Alexander-Sol), his reproduction: an unmodified old PEP TOML (master's Task2-SearchTaskconfig.toml,
@@ -658,7 +663,7 @@ namespace Test
         [Test]
         public static void AnUnmodifiedOldPepToml_RejectsTenTrainedMatchesAtOneHalf()
         {
-            var common = Nett.Toml.ReadFile<SearchTask>(TestData("Task2-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig).CommonParameters;
+            var common = MetaMorpheusTask.ReadTaskToml<SearchTask>(TestData("Task2-SearchTaskconfig.toml")).CommonParameters;
             var psms = Matches("PEPTIDEK", "trypsin", 10, 0, pepTrained: true);
             Assume.That(psms.Select(p => (p.FdrInfo.PEP_QValue, p.FdrInfo.QValueNotch, p.FdrInfo.PepTrained)).Distinct(), Is.EqualTo(new[] { (0.5, 0.5, true) }));
 
@@ -666,7 +671,7 @@ namespace Test
 
             Assert.That((filtered.FilterType, filtered.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.01)));
             Assert.That(filtered.FilteredPsmsList, Is.Empty, "none of the ten passes the saved 0.01");
-            Assert.That(psms.Where(p => FilteredPsms.Passes(p, false, common.IdentificationFilter, FilteredPsms.Threshold(common))), Is.Empty);
+            Assert.That(psms.Where(p => FilteredPsms.Passes(p, false, common.IdentificationFilter, common.FilterThreshold)), Is.Empty);
         }
 
         // Review of #2982 (Alexander-Sol): opening and saving an old PEP task in the Search task window keeps it a PEP task.
@@ -674,7 +679,7 @@ namespace Test
         [Test]
         public static void TheSearchWindow_ShowsAnOldPepTaskAsThePepFilter_AndSavesItsFilterByName()
         {
-            var old = Nett.Toml.ReadFile<SearchTask>(TestData("Task2-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig).CommonParameters;
+            var old = MetaMorpheusTask.ReadTaskToml<SearchTask>(TestData("Task2-SearchTaskconfig.toml")).CommonParameters;
 
             var (shown, thresholdText) = TaskWindowIdentificationFilter.Load(old, isRna: false, isTopDown: false);
             Assert.That((shown, thresholdText), Is.EqualTo((FilterType.PepQValue, "0.01")), "the PEP q-value, at the saved 0.01");
@@ -684,8 +689,9 @@ namespace Test
             string saved = TomlOf(new CommonParameters(identificationFilter: filter, filterThreshold: threshold));
             Assert.That(saved.Split(Environment.NewLine), Has.One.Match(@"^\s*IdentificationFilter = ""PepQValue""$"));
             Assert.That(saved.Split(Environment.NewLine), Has.One.Match(@"^\s*FilterThreshold = 0.01$"));
-            var reopened = LoadCommon(saved);
-            Assert.That((TaskWindowIdentificationFilter.Load(reopened, false, false), reopened.IdentificationFilterFromLegacyThresholds),
+            var reopenedTask = LoadTask(saved);
+            var reopened = reopenedTask.CommonParameters;
+            Assert.That((TaskWindowIdentificationFilter.Load(reopened, false, false), reopenedTask.LegacyFilterSentence != null),
                 Is.EqualTo(((FilterType.PepQValue, "0.01"), false)));
 
             // A new task shows the new bottom-up default, and a top-down or RNA one the q-value notch
@@ -702,12 +708,12 @@ namespace Test
         [TestCase(true)]
         public static void AnOldDefaultTask_LoadsAsTheNotch(bool keysFirst)
         {
-            var common = LoadCommon(OldToml(new[] { "QValueThreshold = 0.01", "PepQValueThreshold = 1.0" }, first: keysFirst));
+            var commonTask = LoadTask(OldToml(new[] { "QValueThreshold = 0.01", "PepQValueThreshold = 1.0" }, first: keysFirst));
+            var common = commonTask.CommonParameters;
 
             Assert.That((common.IdentificationFilter, common.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.01)));
-            Assert.That((common.LegacyQValueThreshold, common.LegacyPepQValueThreshold), Is.EqualTo(((double?)0.01, (double?)1.0)));
-            Assert.That(common.IdentificationFilterFromLegacyThresholds, Is.False);
-            Assert.That(SearchTask.LegacyFilterSentence(common), Is.Null);
+            Assert.That(commonTask.LegacyFilterSentence != null, Is.False);
+            Assert.That(commonTask.LegacyFilterSentence, Is.Null);
         }
 
         // Row 2: a #2982 task that names the notch keeps it, at its old QValueThreshold, whatever its PEP threshold.
@@ -716,10 +722,11 @@ namespace Test
         [TestCase(true)]
         public static void ATaskThatNamesTheNotch_KeepsIt_AtItsOldQValueThreshold(bool filterFirst)
         {
-            var common = LoadCommon(OldToml(new[] { "QValueThreshold = 0.05", "PepQValueThreshold = 0.01" }, filter: "QValueNotch", first: filterFirst));
+            var commonTask = LoadTask(OldToml(new[] { "QValueThreshold = 0.05", "PepQValueThreshold = 0.01" }, filter: "QValueNotch", first: filterFirst));
+            var common = commonTask.CommonParameters;
 
             Assert.That((common.IdentificationFilter, common.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.05)));
-            Assert.That(common.IdentificationFilterFromLegacyThresholds, Is.False);
+            Assert.That(commonTask.LegacyFilterSentence != null, Is.False);
         }
 
         // Row 3: a #2982 task that names the PEP q-value keeps it, at its old PepQValueThreshold.
@@ -728,10 +735,11 @@ namespace Test
         [TestCase(true)]
         public static void ATaskThatNamesThePepQValue_KeepsIt_AtItsOldPepQValueThreshold(bool filterFirst)
         {
-            var common = LoadCommon(OldToml(new[] { "QValueThreshold = 1.0", "PepQValueThreshold = 0.02" }, filter: "PepQValue", first: filterFirst));
+            var commonTask = LoadTask(OldToml(new[] { "QValueThreshold = 1.0", "PepQValueThreshold = 0.02" }, filter: "PepQValue", first: filterFirst));
+            var common = commonTask.CommonParameters;
 
             Assert.That((common.IdentificationFilter, common.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.02)));
-            Assert.That(common.IdentificationFilterFromLegacyThresholds, Is.False, "it named its filter");
+            Assert.That(commonTask.LegacyFilterSentence != null, Is.False, "it named its filter");
         }
 
         // Row 4, with the old keys in either order and before or after the rest of the table
@@ -740,10 +748,11 @@ namespace Test
         [TestCase(true)]
         public static void AnOldPepTask_ReadsAsThePepFilter_WhereverItsKeysSit(bool keysFirst)
         {
-            var common = LoadCommon(OldToml(new[] { "PepQValueThreshold = 0.005", "QValueThreshold = 1.0" }, first: keysFirst));
+            var commonTask = LoadTask(OldToml(new[] { "PepQValueThreshold = 0.005", "QValueThreshold = 1.0" }, first: keysFirst));
+            var common = commonTask.CommonParameters;
 
             Assert.That((common.IdentificationFilter, common.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.005)));
-            Assert.That(common.IdentificationFilterFromLegacyThresholds, Is.True);
+            Assert.That(commonTask.LegacyFilterSentence != null, Is.True);
         }
 
         // Row 5 for a top-down task: the old keys keep it the notch at its QValueThreshold.
@@ -764,10 +773,11 @@ namespace Test
             var onlyQ = LoadCommon(OldToml(new[] { "QValueThreshold = 0.05" }));
             Assert.That((onlyQ.IdentificationFilter, onlyQ.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.05)));
 
-            var onlyPep = LoadCommon(OldToml(new[] { "PepQValueThreshold = 0.005" }));
+            var onlyPepTask = LoadTask(OldToml(new[] { "PepQValueThreshold = 0.005" }));
+            var onlyPep = onlyPepTask.CommonParameters;
             Assert.That((onlyPep.IdentificationFilter, onlyPep.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.005)), "0.005 is below the old default 0.01");
-            Assert.That(onlyPep.IdentificationFilterFromLegacyThresholds, Is.True);
-            Assert.That(SearchTask.LegacyFilterSentence(onlyPep), Is.EqualTo(
+            Assert.That(onlyPepTask.LegacyFilterSentence != null, Is.True);
+            Assert.That(onlyPepTask.LegacyFilterSentence, Is.EqualTo(
                 "IdentificationFilter read from this task's legacy thresholds (PepQValueThreshold 0.005 < QValueThreshold 0.01): PEP q-value at 0.005"));
 
             var whole = LoadCommon(OldToml(new[] { "QValueThreshold = 1", "PepQValueThreshold = 1" }));
@@ -781,9 +791,10 @@ namespace Test
             string withThreshold(string tomlText) => tomlText.Replace(
                 $"{Environment.NewLine}QValueThreshold = 1.0", $"{Environment.NewLine}QValueThreshold = 1.0{Environment.NewLine}FilterThreshold = 0.03");
 
-            var bottomUp = LoadCommon(withThreshold(OldToml(new[] { "QValueThreshold = 1.0", "PepQValueThreshold = 0.5" })));
+            var bottomUpTask = LoadTask(withThreshold(OldToml(new[] { "QValueThreshold = 1.0", "PepQValueThreshold = 0.5" })));
+            var bottomUp = bottomUpTask.CommonParameters;
             Assert.That((bottomUp.IdentificationFilter, bottomUp.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.03)));
-            Assert.That(bottomUp.IdentificationFilterFromLegacyThresholds, Is.False);
+            Assert.That(bottomUpTask.LegacyFilterSentence != null, Is.False);
 
             var topDown = LoadCommon(withThreshold(OldToml(new[] { "QValueThreshold = 1.0" }, digestionParams: TopDown)));
             Assert.That((topDown.IdentificationFilter, topDown.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.03)));
@@ -814,13 +825,13 @@ namespace Test
         [Test]
         public static void ATaskFromBeforeTheThresholds_KeepsTheNotchAt001()
         {
-            var common = LoadCommon(OldToml(new[] { "QValueOutputFilter = 1.0", "PepQValueOutputFilter = 1.0" }));
+            var commonTask = LoadTask(OldToml(new[] { "QValueOutputFilter = 1.0", "PepQValueOutputFilter = 1.0" }));
+            var common = commonTask.CommonParameters;
 
             Assert.That((common.IdentificationFilter, common.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.01)));
-            Assert.That((common.LegacyQValueThreshold, common.LegacyPepQValueThreshold), Is.EqualTo(((double?)null, (double?)null)));
-            Assert.That(common.IdentificationFilterFromLegacyThresholds, Is.False);
+            Assert.That(commonTask.LegacyFilterSentence != null, Is.False);
 
-            var fixture = Nett.Toml.ReadFile<SearchTask>(TestData("Search.toml"), MetaMorpheusTask.tomlConfig).CommonParameters;
+            var fixture = MetaMorpheusTask.ReadTaskToml<SearchTask>(TestData("Search.toml")).CommonParameters;
             Assert.That((fixture.IdentificationFilter, fixture.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.01)));
         }
 
@@ -851,7 +862,7 @@ namespace Test
         [TestCase(@"GlycoTestData\TaskForOglycoPruneDb.toml", FilterType.QValueNotch, 0.01)]
         public static void TheOldSearchTaskFixtures_KeepTheirFilter(string file, FilterType filter, double threshold)
         {
-            var common = Nett.Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, file), MetaMorpheusTask.tomlConfig).CommonParameters;
+            var common = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, file)).CommonParameters;
             Assert.That((common.IdentificationFilter, common.FilterThreshold), Is.EqualTo((filter, threshold)));
         }
 
@@ -860,30 +871,30 @@ namespace Test
         [TestCase(@"GlycoTestData\Glyco_Isobaric_testing.toml")]
         public static void TheOldGlycoTaskFixtures_KeepTheNotch(string file)
         {
-            var common = Nett.Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, file), MetaMorpheusTask.tomlConfig).CommonParameters;
+            var common = MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, file)).CommonParameters;
             Assert.That((common.IdentificationFilter, common.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.01)));
         }
 
         [Test]
         public static void TheOldGptmdTaskFixture_KeepsTheNotch()
         {
-            var common = Nett.Toml.ReadFile<GptmdTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ModificationAnalysis\GPTMDTaskconfig.toml"),
-                MetaMorpheusTask.tomlConfig).CommonParameters;
+            var common = MetaMorpheusTask.ReadTaskToml<GptmdTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ModificationAnalysis\GPTMDTaskconfig.toml")).CommonParameters;
             Assert.That((common.IdentificationFilter, common.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.01)));
         }
 
         [Test]
         public static void AnOldGuiPepTask_SavedAgain_NamesItsFilterAndThreshold()
         {
-            var old = Nett.Toml.ReadFile<SearchTask>(TestData("Task2-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            var old = MetaMorpheusTask.ReadTaskToml<SearchTask>(TestData("Task2-SearchTaskconfig.toml"));
             string saved = TomlOf(old.CommonParameters);
 
             Assert.That(saved.Split(Environment.NewLine), Has.One.Match(@"^\s*IdentificationFilter = ""PepQValue""$"));
             Assert.That(saved.Split(Environment.NewLine), Has.One.Match(@"^\s*FilterThreshold = 0.01$"));
             Assert.That(saved.Split(Environment.NewLine), Has.None.Match(@"^\s*(Pep)?QValueThreshold ="));
-            var reloaded = LoadCommon(saved);
+            var reloadedTask = LoadTask(saved);
+            var reloaded = reloadedTask.CommonParameters;
             Assert.That((reloaded.IdentificationFilter, reloaded.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.01)));
-            Assert.That(reloaded.IdentificationFilterFromLegacyThresholds, Is.False, "the rule applies once per old file");
+            Assert.That(reloadedTask.LegacyFilterSentence != null, Is.False, "the rule applies once per old file");
         }
 
         // A copy keeps the record of an old file, and resolves as the original does
@@ -903,10 +914,11 @@ namespace Test
         [Test]
         public static void SearchTask_AnOldGuiPepTask_WarnsOnce_AndResultsTxtSaysWhereTheFilterCameFrom()
         {
-            var common = LoadCommon(OldToml(new[] { "QValueThreshold = 1.0", "PepQValueThreshold = 0.01" }));
-            Assert.That(common.IdentificationFilterFromLegacyThresholds, Is.True);
+            var commonTask = LoadTask(OldToml(new[] { "QValueThreshold = 1.0", "PepQValueThreshold = 0.01" }));
+            var common = commonTask.CommonParameters;
+            Assert.That(commonTask.LegacyFilterSentence != null, Is.True);
 
-            var (folder, results, warnings) = Search("legacyToml", common, trainPep: false);
+            var (folder, results, warnings) = Search("legacyToml", commonTask, trainPep: false);
             const string sentence = "IdentificationFilter read from this task's legacy thresholds (PepQValueThreshold 0.01 < QValueThreshold 1): PEP q-value at 0.01";
             Assert.That(warnings, Has.One.EqualTo(sentence));
             Assert.That(results, Has.One.EqualTo(sentence));

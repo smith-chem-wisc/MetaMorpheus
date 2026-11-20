@@ -140,14 +140,15 @@ namespace Test
         [Test]
         public static void AFilterAskedForByName_IsHeldToTheOneThreshold()
         {
-            // There is one threshold: a filter asked for by name is held to it, unless the caller gives another
+            // There is one threshold: a filter asked for by name is held to the search's FilterThreshold
             var filtered = FilteredPsms.Filter(Matches(50, 20, pepTrained: false), PepChosen, filterType: FilterType.QValueNotch);
 
             Assert.That(filtered.FilterThreshold, Is.EqualTo(0.01), "the notch is held to the search's one threshold");
             Assert.That(filtered.FilteredPsmsList, Has.Count.EqualTo(20));
             Assert.That(filtered.PepFilteringNotDone, Is.Null);
 
-            var atOne = FilteredPsms.Filter(Matches(50, 20, pepTrained: false), PepChosen, threshold: 1.0, filterType: FilterType.QValueNotch);
+            var atOne = FilteredPsms.Filter(Matches(50, 20, pepTrained: false),
+                new CommonParameters(identificationFilter: FilterType.PepQValue, filterThreshold: 1.0), filterType: FilterType.QValueNotch);
             Assert.That((atOne.FilterThreshold, atOne.FilteredPsmsList.Count), Is.EqualTo((1.0, 50)));
         }
 

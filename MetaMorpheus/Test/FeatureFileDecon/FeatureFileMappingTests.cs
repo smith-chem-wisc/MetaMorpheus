@@ -137,7 +137,7 @@ public static class FeatureFileMappingTests
         Assert.That(toml, Does.Contain("sample.feature.tsv"));
         Assert.That(toml, Does.Not.Contain(@"E:\data"));
         Assert.That(toml, Does.Not.Contain(@"E:\features"));
-        var loadedTask = Toml.ReadString<SearchTask>(toml, MetaMorpheusTask.tomlConfig);
+        var loadedTask = MetaMorpheusTask.ReadTaskTomlString<SearchTask>(toml);
         var mapped = (FeatureMappedFromFileDeconvolutionParameters)loadedTask.CommonParameters.PrecursorDeconvolutionParameters;
 
         Assert.That(mapped.FeatureFileMap, Has.Count.EqualTo(1));
@@ -160,7 +160,7 @@ public static class FeatureFileMappingTests
         };
 
         string toml = Toml.WriteString(originalTask, MetaMorpheusTask.tomlConfig);
-        var loadedTask = Toml.ReadString<SearchTask>(toml, MetaMorpheusTask.tomlConfig);
+        var loadedTask = MetaMorpheusTask.ReadTaskTomlString<SearchTask>(toml);
 
         Assert.That(loadedTask.CommonParameters.PrecursorDeconvolutionParameters,
             Is.TypeOf<FromFileDeconvolutionParameters>());
@@ -189,7 +189,7 @@ public static class FeatureFileMappingTests
         Assert.That(toml, Does.Not.Contain("Entries"));
         Assert.That(toml, Does.Not.Contain("raw.mzML\\tfeatures.ms1.feature"));
 
-        var loadedTask = Toml.ReadString<SearchTask>(toml, MetaMorpheusTask.tomlConfig);
+        var loadedTask = MetaMorpheusTask.ReadTaskTomlString<SearchTask>(toml);
         var loadedParameters = (FeatureMappedFromFileDeconvolutionParameters)
             loadedTask.CommonParameters.PrecursorDeconvolutionParameters;
 

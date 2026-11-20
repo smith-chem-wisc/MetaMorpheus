@@ -1217,7 +1217,7 @@ namespace Test
         private static string RunTwoFileSearch(string outputFolder, bool writeIndividualFiles)
         {
             string testDirectory = TestContext.CurrentContext.TestDirectory;
-            var task = Nett.Toml.ReadFile<SearchTask>(Path.Combine(testDirectory, @"TestData\Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            var task = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(testDirectory, @"TestData\Task1-SearchTaskconfig.toml"));
             task.CommonParameters.QValueCutoffForPepCalculation = 0.01;
             task.SearchParameters.WriteIndividualFiles = writeIndividualFiles;
             task.SearchParameters.WriteMzId = true;
@@ -1284,7 +1284,7 @@ namespace Test
             string database = WriteDatabaseWithVariantPeptides(Path.Combine(testDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta"),
                 variantPeptides, Path.Combine(root, "TaGe_SA_A549_3_snip_variants.xml"));
 
-            var task = Nett.Toml.ReadFile<SearchTask>(Path.Combine(testDirectory, @"TestData\Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            var task = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(testDirectory, @"TestData\Task1-SearchTaskconfig.toml"));
             task.CommonParameters.QValueCutoffForPepCalculation = 0.01;
             task.TaskChainContext = new TaskChainContext(); // as when a TruncationSearchTask follows the search
             double parentThreshold = new TruncationSearchParameters().ParentQValueThreshold;

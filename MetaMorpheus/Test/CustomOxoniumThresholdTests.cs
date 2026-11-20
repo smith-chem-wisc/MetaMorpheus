@@ -181,7 +181,7 @@ namespace Test
         {
             string oldToml = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "GlycoSnip.toml");
             Assert.That(File.ReadAllText(oldToml), Does.Not.Contain("CustomOxoniumThreshold"));
-            var oldTask = Toml.ReadFile<GlycoSearchTask>(oldToml, MetaMorpheusTask.tomlConfig);
+            var oldTask = MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(oldToml);
             Assert.That(oldTask._glycoSearchParameters.CustomOxoniumThreshold, Is.EqualTo(0.02));
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "CustomOxoniumThresholdTomlTest");
@@ -192,7 +192,7 @@ namespace Test
                 oldTask._glycoSearchParameters.CustomOxoniumThreshold = 0.07;
                 Toml.WriteFile(oldTask, path, MetaMorpheusTask.tomlConfig);
 
-                var reloaded = Toml.ReadFile<GlycoSearchTask>(path, MetaMorpheusTask.tomlConfig);
+                var reloaded = MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(path);
                 Assert.That(reloaded._glycoSearchParameters.CustomOxoniumThreshold, Is.EqualTo(0.07));
             }
             finally

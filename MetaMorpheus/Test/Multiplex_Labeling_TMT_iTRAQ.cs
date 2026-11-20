@@ -234,9 +234,7 @@ namespace Test
                 MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(singleScanDataFile, mzmlPath, true);
 
                 // Now, run a task with this mzml and a simple fasta (contains only PEPTIDEK)
-                var searchTask = Toml.ReadFile<SearchTask>(
-                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
-                    MetaMorpheusTask.tomlConfig);
+                var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"));
 
                 List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
                 string mzmlName = @"TMT_test\SingleScan_TMT10.mzML";
@@ -271,9 +269,7 @@ namespace Test
         [Test]
         public static void TestTmtQuantificationOutput()
         {
-            var searchTask = Toml.ReadFile<SearchTask>(
-                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
-                MetaMorpheusTask.tomlConfig);
+            var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"));
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
             string mzmlName = @"TMT_test\VA084TQ_6.mzML";
@@ -306,9 +302,7 @@ namespace Test
         [Test]
         public static void TestMs3TmtQuantificationWith()
         {
-            var searchTask = Toml.ReadFile<SearchTask>(
-                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT11_LowCID_SearchTask.toml"),
-                MetaMorpheusTask.tomlConfig);
+            var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT11_LowCID_SearchTask.toml"));
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
             string mzmlName = @"TMT_test\MS3_TMT11_Mouse_snip.mzML";
@@ -385,9 +379,7 @@ namespace Test
         [Test]
         public static void TestDiLeuQuantificationOutput()
         {
-            var searchTask = Toml.ReadFile<SearchTask>(
-                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\DiLeu-12plex-Task1-SearchTaskconfig.toml"),
-                MetaMorpheusTask.tomlConfig);
+            var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\DiLeu-12plex-Task1-SearchTaskconfig.toml"));
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
             string mzmlName = @"TMT_test\DiLeu_Slice_PXD029269.mzML";
@@ -410,9 +402,7 @@ namespace Test
             Directory.Delete(outputFolder, true);
 
             // Same data as above, but here we're pretending that DiLeu 4-plex was used
-            searchTask = Toml.ReadFile<SearchTask>(
-                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\DiLeu-4plex-Task1-SearchTaskconfig.toml"),
-                MetaMorpheusTask.tomlConfig);
+            searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\DiLeu-4plex-Task1-SearchTaskconfig.toml"));
             taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
             engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
             engine.Run();
@@ -589,7 +579,7 @@ namespace Test
         public static void TestDoNotCountDiagnosticIonsInScore_HCD()
         {
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\TMT-Task1-SearchTaskconfig.toml");
-            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(myTomlPath);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\TestOutput");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\VA084TQ_6.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\mouseTmt.fasta");
@@ -743,9 +733,7 @@ namespace Test
             // Spectral counts and count-based occupancy are per spectra file, so TMT gets them like any
             // other run. Intensities do not follow: FlashLFQ never runs, and a reporter-ion array is not
             // the single per-file intensity the occupancy calculator accepts.
-            var searchTask = Toml.ReadFile<SearchTask>(
-                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
-                MetaMorpheusTask.tomlConfig);
+            var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"));
             // DoParsimony must be true to generate protein groups output file
             searchTask.SearchParameters.DoParsimony = true;
 

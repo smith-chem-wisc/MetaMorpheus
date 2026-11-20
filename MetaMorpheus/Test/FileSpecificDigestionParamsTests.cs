@@ -216,7 +216,7 @@ namespace Test
 
             foreach (PropertyInfo property in typeof(CommonParameters).GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
-                // A property without a setter is computed from the others (IdentificationFilterFromLegacyThresholds), not a
+                // A property without a setter is computed from the others, not a
                 // setting the rebuild could drop
                 if (property.Name == nameof(CommonParameters.PrecursorMassTolerance) || property.GetIndexParameters().Length > 0 || !property.CanWrite)
                 {
@@ -301,7 +301,7 @@ namespace Test
             try
             {
                 Nett.Toml.WriteFile(task, path, MetaMorpheusTask.tomlConfig);
-                SearchTask loaded = Nett.Toml.ReadFile<SearchTask>(path, MetaMorpheusTask.tomlConfig);
+                SearchTask loaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(path);
 
                 Assert.That(loaded.CommonParameters.RetentionTimeRange.Minimum, Is.EqualTo(12.5));
                 Assert.That(loaded.CommonParameters.RetentionTimeRange.Maximum, Is.EqualTo(48.75));
@@ -351,7 +351,7 @@ namespace Test
             Assert.That(toml, Does.Contain("12.5;48.75"));
             toml = toml.Replace("12.5;48.75", invalidRange, StringComparison.Ordinal);
 
-            var exception = Assert.Throws<InvalidOperationException>(() => Nett.Toml.ReadString<SearchTask>(toml, MetaMorpheusTask.tomlConfig));
+            var exception = Assert.Throws<InvalidOperationException>(() => MetaMorpheusTask.ReadTaskTomlString<SearchTask>(toml));
             Assert.That(exception.InnerException?.InnerException, Is.TypeOf<MetaMorpheusException>());
         }
     }

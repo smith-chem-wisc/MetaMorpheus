@@ -107,8 +107,7 @@ namespace Test.GuiTests
         [TestCaseSource(nameof(Windows))]
         public static void AnOldGuiPepTask_OpenedAndSaved_StaysThePepFilter(string window)
         {
-            var old = Nett.Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Task2-SearchTaskconfig.toml"),
-                MetaMorpheusTask.tomlConfig).CommonParameters;
+            var old = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Task2-SearchTaskconfig.toml")).CommonParameters;
 
             CommonParameters saved = WindowSaves[window](old, false);
 

@@ -127,8 +127,8 @@ namespace Test
                 string keyTrueToml = Path.Combine(subFolder, "keyTrue.toml");
                 File.WriteAllLines(keyTrueToml, savedLines.Select(line => isTheKey(line) ? "WriteIndividualFiles = true" : line));
 
-                SearchTask defaultTask = Toml.ReadFile<SearchTask>(keyAbsentToml, MetaMorpheusTask.tomlConfig);
-                SearchTask optedInTask = Toml.ReadFile<SearchTask>(keyTrueToml, MetaMorpheusTask.tomlConfig);
+                SearchTask defaultTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(keyAbsentToml);
+                SearchTask optedInTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(keyTrueToml);
                 Assert.That(defaultTask.SearchParameters.WriteIndividualFiles, Is.False);
                 Assert.That(optedInTask.SearchParameters.WriteIndividualFiles, Is.True);
                 Assert.That(defaultTask.SearchParameters.WriteMzId, Is.True, "premise: .mzID is written by default");
@@ -232,7 +232,7 @@ namespace Test
         [Test]
         public static void TestOpairFileOutput()
         {
-            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            var task = MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfig.toml"));
 
             string currentDirectory = Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData");
 

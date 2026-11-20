@@ -497,8 +497,7 @@ namespace Test
             // The PEP q-value filter, chosen by name
             var commonParams = new CommonParameters(identificationFilter: FilterType.PepQValue, filterThreshold: 0.01);
 
-            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParams,
-                threshold: 0.01);
+            FilteredPsms filteredPsms = FilteredPsms.Filter(psms, commonParams);
 
             // Verify the filter type is PepQValue, at the PEP q-value threshold
             Assert.That((filteredPsms.FilterType, filteredPsms.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.01)));

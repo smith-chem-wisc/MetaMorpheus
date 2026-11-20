@@ -469,7 +469,7 @@ namespace Test
             // A task file written before the setting existed has no such key, and must load with iteration on.
             string oldToml = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\customBY.toml");
             Assert.That(File.ReadAllText(oldToml), Does.Not.Contain(nameof(SearchParameters.IterativePepTraining)));
-            Assert.That(Toml.ReadFile<SearchTask>(oldToml, MetaMorpheusTask.tomlConfig).SearchParameters.IterativePepTraining, Is.True);
+            Assert.That(MetaMorpheusTask.ReadTaskToml<SearchTask>(oldToml).SearchParameters.IterativePepTraining, Is.True);
             // The engine on its own trains once; only a search task's setting turns iteration on.
             Assert.That(new PepAnalysisEngine(SearchHelaSubset(out var commonParameters), "standard", FileSpecificParameters(commonParameters), null).MaxTrainingRounds, Is.EqualTo(1));
         }

@@ -79,7 +79,7 @@ namespace EngineLayer.FdrAnalysis
             DoFalseDiscoveryRateAnalysis(myAnalysisResults);
             Status("Done.");
             FilterType filter = CommonParameters.IdentificationFilter;
-            double threshold = FilteredPsms.Threshold(CommonParameters);
+            double threshold = CommonParameters.FilterThreshold;
             myAnalysisResults.PsmsWithin1PercentFdr = AllPsms.Count(b => !b.IsDecoy && FilteredPsms.Passes(b, peptideLevel: false, filter, threshold));
             myAnalysisResults.IdentificationFilter = FilteredPsms.Describe(filter, threshold);
 
@@ -608,7 +608,7 @@ namespace EngineLayer.FdrAnalysis
         {
             commonParameters ??= new CommonParameters();
             FilterType filter = commonParameters.IdentificationFilter;
-            double threshold = FilteredPsms.Threshold(commonParameters);
+            double threshold = commonParameters.FilterThreshold;
 
             // exclude ambiguous psms
             var allUnambiguousPsms = proteasePsms.Where(psm => psm.FullSequence != null).ToList();

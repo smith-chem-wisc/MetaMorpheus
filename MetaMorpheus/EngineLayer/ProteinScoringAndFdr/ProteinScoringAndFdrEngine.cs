@@ -37,7 +37,7 @@ namespace EngineLayer
 
             // The search's identification filter decides which matches score the groups, and how the groups are ranked
             _filterType = CommonParameters.IdentificationFilter;
-            _filterThreshold = FilteredPsms.Threshold(CommonParameters);
+            _filterThreshold = CommonParameters.FilterThreshold;
 
             // Ranked by PEP only when PEP was trained for every match that scores them: an untrained match's PEP is not a
             // PEP, so a group it scored would be ranked on nothing. Otherwise by the q-value notch, which the PEP q-value

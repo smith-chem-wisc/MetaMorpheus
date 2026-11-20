@@ -88,7 +88,7 @@ namespace Test.MetaDraw
 
             // run a quick search 
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
-            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(myTomlPath);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
@@ -161,7 +161,7 @@ namespace Test.MetaDraw
 
             // run a quick search
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
-            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(myTomlPath);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestToleranceUnit");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
@@ -267,7 +267,7 @@ namespace Test.MetaDraw
         public static void TestFragmentationReanalysisViewModel_DiagnosticIons()
         {
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\TMT-Task1-SearchTaskconfig.toml");
-            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(myTomlPath);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestRefragmentDiagnosticIons");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\VA084TQ_6.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\mouseTmt.fasta");

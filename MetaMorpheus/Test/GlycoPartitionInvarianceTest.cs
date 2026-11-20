@@ -126,8 +126,7 @@ namespace Test
         public static void GlycoSearchEngine_TwoRoundsOverTwoPartitions_KeepExactlyTheOnePassMatches()
         {
             const int topN = 1;
-            CommonParameters one = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "GlycoSnip.toml"),
-                MetaMorpheusTask.tomlConfig).CommonParameters.CloneWithNewTotalPartitions(1);
+            CommonParameters one = MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "GlycoSnip.toml")).CommonParameters.CloneWithNewTotalPartitions(1);
             CommonParameters two = one.CloneWithNewTotalPartitions(2);
 
             string spectra = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "GlycoPepMix_snip.mzML");
@@ -375,7 +374,7 @@ namespace Test
             string path = Path.Combine(folder, $"GlycoSnip_{maxThreads}threads.toml");
             File.WriteAllText(path, toml.Replace("MaxThreadsToUsePerFile = 27", "MaxThreadsToUsePerFile = " + maxThreads));
 
-            var task = Toml.ReadFile<GlycoSearchTask>(path, MetaMorpheusTask.tomlConfig);
+            var task = MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(path);
             task._glycoSearchParameters.GlycoSearchTopNum = topN;
             task.CommonParameters = task.CommonParameters.CloneWithNewTotalPartitions(totalPartitions);
             return task;

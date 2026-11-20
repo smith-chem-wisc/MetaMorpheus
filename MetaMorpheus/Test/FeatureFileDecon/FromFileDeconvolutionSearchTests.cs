@@ -88,7 +88,7 @@ public static class FromFileDeconvolutionSearchTests
             Assert.That(taskToml, Does.Contain("file-specific-decon"));
             Assert.That(taskToml, Does.Not.Contain(testDirectory));
 
-            var roundTrippedTask = Toml.ReadString<SearchTask>(taskToml, MetaMorpheusTask.tomlConfig);
+            var roundTrippedTask = MetaMorpheusTask.ReadTaskTomlString<SearchTask>(taskToml);
             var roundTrippedParameters = roundTrippedTask.CommonParameters.PrecursorDeconvolutionParameters
                 as FeatureMappedFromFileDeconvolutionParameters;
             Assert.That(roundTrippedParameters, Is.Not.Null);

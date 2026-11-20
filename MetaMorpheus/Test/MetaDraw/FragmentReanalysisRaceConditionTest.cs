@@ -33,7 +33,7 @@ namespace Test.MetaDraw
 
             // run a quick search 
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
-            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(myTomlPath);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestRaceCondition");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");

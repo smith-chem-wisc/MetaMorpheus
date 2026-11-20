@@ -367,7 +367,7 @@ public class MetaDrawDataLoader
 
             foreach (var searchToml in distinctSearchTomls.Where(p => p != null))
             {
-                var task = Toml.ReadFile<SearchTask>(searchToml, MetaMorpheusTask.tomlConfig);
+                var task = MetaMorpheusTask.ReadTaskToml<SearchTask>(searchToml);
                 precursorParameters.Add(task.CommonParameters.PrecursorDeconvolutionParameters);
                 productParameters.Add(task.CommonParameters.ProductDeconvolutionParameters);
                 commonParameters.Add(task.CommonParameters);

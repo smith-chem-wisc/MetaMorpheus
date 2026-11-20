@@ -235,7 +235,7 @@ namespace Test
         public static void SpectralLibrarySearchWithNonSpecificSearchTest()
         {
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\NonSpecificSearchToml.toml");
-            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(myTomlPath);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"SpectralLibraryNonSpecificSearchTest");
             Directory.CreateDirectory(outputFolder);
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");

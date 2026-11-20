@@ -5,7 +5,6 @@ using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Nett;
 using Omics.Digestion;
@@ -24,10 +23,6 @@ namespace EngineLayer
         public CommonParameters()
             : this(digestionParams: null)
         {
-            // A task TOML is read into this instance, setting only the keys the file holds. Until it names the
-            // identification filter or its threshold, each is "not named" and is resolved from what the file does hold
-            // (IdentificationFilter): a file saved before FilterThreshold existed is read by its old thresholds.
-            _filterThresholdNamed = false;
         }
 
         public CommonParameters(
@@ -92,11 +87,6 @@ namespace EngineLayer
             ReportAllAmbiguity = reportAllAmbiguity;
             AddCompIons = addCompIons;
             TotalPartitions = totalPartitions;
-            // Null leaves the filter unnamed: the default for the analyte the digestion parameters search (IdentificationFilter)
-            if (identificationFilter is FilterType filter)
-            {
-                IdentificationFilter = filter;
-            }
             FilterThreshold = filterThreshold;
             QValueCutoffForPepCalculation = qValueCutoffForPepCalculation;
             ScoreCutoff = scoreCutoff;
@@ -113,6 +103,9 @@ namespace EngineLayer
             ProductMassTolerance_LowRes = productMassTolerance_LowRes ?? new AbsoluteTolerance(0.35);
             DeconvolutionMassTolerance = deconvolutionMassTolerance ?? new PpmTolerance(4);
             DigestionParams = digestionParams ?? new DigestionParams();
+            // Null is the default for the analyte the digestion parameters search
+            AnalyteType analyte = DetermineAnalyteType();
+            IdentificationFilter = identificationFilter ?? DefaultIdentificationFilter(analyte == AnalyteType.Oligo, analyte == AnalyteType.Proteoform);
             DissociationType = dissociationType;
             SeparationType = separationType;
             MS2ChildScanDissociationType = ms2childScanDissociationType;
@@ -199,37 +192,6 @@ namespace EngineLayer
         public Tolerance PrecursorMassTolerance { get; set; } // public setter required for calibration task
         public bool AddCompIons { get; set; }
 
-        private FilterType _identificationFilter;
-        private bool _identificationFilterNamed;
-        private double _filterThreshold;
-        private bool _filterThresholdNamed;
-
-        // What a task TOML saved before FilterThreshold existed held instead: recorded by the task TOML reader
-        // (RecordLegacyThreshold), never written back. _oldTaskFile: it held at least one of the old keys.
-        private double? _legacyQValueThreshold;
-        private double? _legacyPepQValueThreshold;
-        private bool _oldTaskFile;
-
-        /// <summary>The key a task TOML saved before <see cref="FilterThreshold"/> existed held the q-value threshold under.</summary>
-        public const string LegacyQValueThresholdKey = "QValueThreshold";
-
-        /// <summary>The key a task TOML saved before <see cref="FilterThreshold"/> existed held the PEP q-value threshold under.</summary>
-        public const string LegacyPepQValueThresholdKey = "PepQValueThreshold";
-
-        /// <summary>
-        /// The keys a task TOML saved before QValueThreshold and PepQValueThreshold existed (MetaMorpheus before June 2023,
-        /// #2285) held its output filters under. Their values filtered only what was written, and have been ignored since;
-        /// they still are. They mark the file as an old task file, which keeps the q-value notch at 0.01 it has searched
-        /// with since (<see cref="IdentificationFilter"/>).
-        /// </summary>
-        public static readonly IReadOnlyList<string> LegacyOutputFilterKeys = new[] { "QValueOutputFilter", "PepQValueOutputFilter" };
-
-        /// <summary>What a task TOML that held only one of the old thresholds meant by QValueThreshold: its old default.</summary>
-        public const double LegacyQValueThresholdDefault = 0.01;
-
-        /// <summary>What a task TOML that held only one of the old thresholds meant by PepQValueThreshold: its old default.</summary>
-        public const double LegacyPepQValueThresholdDefault = 1.0;
-
         /// <summary>
         /// The value that decides whether a match or peptide counts as identified, at every step of a search: the
         /// tables, parsimony, protein scoring and FDR, quantification, the spectral library, the pruned database, the
@@ -243,46 +205,19 @@ namespace EngineLayer
         /// <item><description><see cref="FilterType.QValue"/>: the pooled q-value, counted over every notch together, and
         /// nothing else.</description></item>
         /// </list>
-        /// Unnamed, the filter is the default for the analyte the <see cref="DigestionParams"/> search, read when it is asked
-        /// for (a task TOML sets its digestion parameters after constructing this instance):
-        /// <see cref="DefaultIdentificationFilter(bool, bool)"/>, the PEP q-value bottom-up and the q-value notch for
-        /// top-down and RNA.
-        /// <para>A task TOML saved before <see cref="FilterThreshold"/> existed holds QValueThreshold and PepQValueThreshold
-        /// instead (every file MetaMorpheus wrote from June 2023 holds both), and keeps what it meant: the filter it names
-        /// at that filter's old threshold (the PEP q-value at PepQValueThreshold, otherwise QValueThreshold); naming none,
-        /// the PEP q-value when PepQValueThreshold is below QValueThreshold (the old GUI's PEP box saved PepQValueThreshold
-        /// 0.01 and QValueThreshold 1.0; <see cref="IdentificationFilterFromLegacyThresholds"/>), the q-value notch at
-        /// QValueThreshold otherwise. A key the file lacks means its old default (<see cref="LegacyQValueThresholdDefault"/>,
-        /// <see cref="LegacyPepQValueThresholdDefault"/>); a file older still holds only
-        /// <see cref="LegacyOutputFilterKeys"/>, and so means the q-value notch at 0.01. Saving it writes the filter and
-        /// its threshold, so the rule applies once per old file. A filter the TOML names, the constructor is given or the
-        /// setter sets, always wins; so does a FilterThreshold the TOML holds.</para>
+        /// The constructor sets the default for the analyte its digestion parameters search when it is given none
+        /// (<see cref="DefaultIdentificationFilter"/>). A task TOML is read through TaskLayer's
+        /// MetaMorpheusTask.ReadTaskToml, which sets the filter and threshold a file means once the whole file is read,
+        /// including a file saved before FilterThreshold existed.
         /// </summary>
-        public FilterType IdentificationFilter
-        {
-            get => ResolveIdentificationFilter().Filter;
-            private set
-            {
-                _identificationFilter = value;
-                _identificationFilterNamed = true;
-            }
-        }
+        public FilterType IdentificationFilter { get; private set; }
 
         /// <summary>
         /// The one threshold <see cref="IdentificationFilter"/> is held to: a match or peptide passes when the filter's value
-        /// is at or below it. 0.01 by default. If SearchParameters.WriteHighQValuePsms is false, only the matches and
-        /// peptides that pass are written to the .psmtsv files. A task TOML saved before this setting existed is read by
-        /// its old thresholds (<see cref="IdentificationFilter"/>).
+        /// is at or below it. <see cref="DefaultFilterThreshold"/> by default. If SearchParameters.WriteHighQValuePsms is
+        /// false, only the matches and peptides that pass are written to the .psmtsv files.
         /// </summary>
-        public double FilterThreshold
-        {
-            get => ResolveIdentificationFilter().Threshold;
-            private set
-            {
-                _filterThreshold = value;
-                _filterThresholdNamed = true;
-            }
-        }
+        public double FilterThreshold { get; private set; }
 
         /// <summary>The <see cref="FilterThreshold"/> a search gets when it names none.</summary>
         public const double DefaultFilterThreshold = 0.01;
@@ -296,98 +231,13 @@ namespace EngineLayer
         public static FilterType DefaultIdentificationFilter(bool isRna, bool isTopDown) =>
             isRna || isTopDown ? FilterType.QValueNotch : FilterType.PepQValue;
 
-        private (FilterType Filter, double Threshold) ResolveIdentificationFilter()
+        /// <summary>A copy with a different identification filter and threshold, as the other CloneWithNew* copies.</summary>
+        public CommonParameters CloneWithNewIdentificationFilter(FilterType identificationFilter, double filterThreshold)
         {
-            // FilterThreshold named, or not an old task file: the filter as named, or the analyte's default
-            if (_filterThresholdNamed || !_oldTaskFile)
-            {
-                if (_identificationFilterNamed)
-                {
-                    return (_identificationFilter, _filterThreshold);
-                }
-                AnalyteType analyte = DetermineAnalyteType();
-                return (DefaultIdentificationFilter(analyte == AnalyteType.Oligo, analyte == AnalyteType.Proteoform), _filterThreshold);
-            }
-
-            // A task TOML saved before FilterThreshold existed: what its old thresholds meant
-            double qValueThreshold = _legacyQValueThreshold ?? LegacyQValueThresholdDefault;
-            double pepQValueThreshold = _legacyPepQValueThreshold ?? LegacyPepQValueThresholdDefault;
-            if (_identificationFilterNamed)
-            {
-                return (_identificationFilter, _identificationFilter == FilterType.PepQValue ? pepQValueThreshold : qValueThreshold);
-            }
-            return pepQValueThreshold < qValueThreshold
-                ? (FilterType.PepQValue, pepQValueThreshold)
-                : (FilterType.QValueNotch, qValueThreshold);
-        }
-
-        /// <summary>
-        /// Records a key a task TOML saved before <see cref="FilterThreshold"/> existed holds, for
-        /// <see cref="IdentificationFilter"/> and <see cref="FilterThreshold"/> to read: one of the two old thresholds
-        /// (<see cref="LegacyQValueThresholdKey"/>, <see cref="LegacyPepQValueThresholdKey"/>), with its value, or one of the
-        /// older output filters (<see cref="LegacyOutputFilterKeys"/>), whose value is ignored. The task TOML reader
-        /// (MetaMorpheusTask.tomlConfig) calls it for each key CommonParameters has no property for. Returns false, recording
-        /// nothing, for any other key.
-        /// </summary>
-        /// <exception cref="MetaMorpheusException">The key is one of the two thresholds, and its value is not a number.</exception>
-        public bool RecordLegacyThreshold(string key, TomlObject value)
-        {
-            if (LegacyOutputFilterKeys.Contains(key))
-            {
-                _oldTaskFile = true;
-                return true;
-            }
-            if (key is not (LegacyQValueThresholdKey or LegacyPepQValueThresholdKey))
-            {
-                return false;
-            }
-
-            double threshold = value switch
-            {
-                TomlFloat number => number.Value,
-                TomlInt number => number.Value,
-                _ => throw new MetaMorpheusException($"{key} must be a number, not {value.ReadableTypeName} '{value}'.")
-            };
-            if (key == LegacyQValueThresholdKey)
-            {
-                _legacyQValueThreshold = threshold;
-            }
-            else
-            {
-                _legacyPepQValueThreshold = threshold;
-            }
-            _oldTaskFile = true;
-            return true;
-        }
-
-        /// <summary>The QValueThreshold the task TOML this was read from held; null when it held none.</summary>
-        [TomlIgnore] public double? LegacyQValueThreshold => _legacyQValueThreshold;
-
-        /// <summary>The PepQValueThreshold the task TOML this was read from held; null when it held none.</summary>
-        [TomlIgnore] public double? LegacyPepQValueThreshold => _legacyPepQValueThreshold;
-
-        /// <summary>
-        /// True when <see cref="IdentificationFilter"/> was read from a task TOML that names neither the filter nor
-        /// <see cref="FilterThreshold"/> and holds the old PEP thresholds (PepQValueThreshold below QValueThreshold, as the
-        /// old GUI's PEP box saved them): the filter is then the PEP q-value at that PEP threshold, and the search says so
-        /// once.
-        /// </summary>
-        [TomlIgnore]
-        public bool IdentificationFilterFromLegacyThresholds =>
-            !_identificationFilterNamed && !_filterThresholdNamed && _oldTaskFile
-            && (_legacyPepQValueThreshold ?? LegacyPepQValueThresholdDefault) < (_legacyQValueThreshold ?? LegacyQValueThresholdDefault);
-
-        // A copy keeps whether the filter and its threshold were named, or are read from old thresholds, so it resolves
-        // them as the original does and the search still says where they came from.
-        private void CopyIdentificationFilterRecord(CommonParameters source)
-        {
-            _identificationFilter = source._identificationFilter;
-            _identificationFilterNamed = source._identificationFilterNamed;
-            _filterThreshold = source._filterThreshold;
-            _filterThresholdNamed = source._filterThresholdNamed;
-            _legacyQValueThreshold = source._legacyQValueThreshold;
-            _legacyPepQValueThreshold = source._legacyPepQValueThreshold;
-            _oldTaskFile = source._oldTaskFile;
+            CommonParameters c = Clone();
+            c.IdentificationFilter = identificationFilter;
+            c.FilterThreshold = filterThreshold;
+            return c;
         }
         public double ScoreCutoff { get; private set; }
         /// <summary>
@@ -466,7 +316,6 @@ namespace EngineLayer
             {
                 if (property.CanWrite) property.SetValue(c, property.GetValue(this));
             }
-            c.CopyIdentificationFilterRecord(this);
             return c;
         }
 
@@ -477,7 +326,6 @@ namespace EngineLayer
             {
                 if (property.CanWrite) property.SetValue(c, property.GetValue(this));
             }
-            c.CopyIdentificationFilterRecord(this);
             c.DissociationType = dissociationType;
             return c;
         }

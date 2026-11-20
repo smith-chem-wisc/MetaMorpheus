@@ -15,7 +15,7 @@ namespace Test
         [Test]
         public static void SlicedTest1()
         {
-            var task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"), MetaMorpheusTask.tomlConfig);
+            var task = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"));
 
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
@@ -42,7 +42,7 @@ namespace Test
         [Test]
         public static void FaFormatTest()
         {
-            var task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"), MetaMorpheusTask.tomlConfig);
+            var task = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"));
 
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fa"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");

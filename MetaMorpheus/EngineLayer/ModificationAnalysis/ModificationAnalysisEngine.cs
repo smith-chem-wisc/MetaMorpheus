@@ -22,7 +22,7 @@ namespace EngineLayer.ModificationAnalysis
 
             // The target matches that pass the search's identification filter at its threshold
             FilterType filter = CommonParameters.IdentificationFilter;
-            double threshold = FilteredPsms.Threshold(CommonParameters);
+            double threshold = CommonParameters.FilterThreshold;
             myAnalysisResults.IdentificationFilter = FilteredPsms.Describe(filter, threshold);
             var confidentTargetPsms = NewPsms.Where(b => !b.IsDecoy && FilteredPsms.Passes(b, peptideLevel: false, filter, threshold)).ToList();
 
