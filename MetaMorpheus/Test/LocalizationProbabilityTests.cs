@@ -425,6 +425,31 @@ namespace Test
         }
 
         [Test]
+        public static void MatchesWithADifferentlyPlacedCoElutingIsomerAreFlaggedAndGetNoQValue()
+        {
+            // every match here comes from one scan, so all co-elute; most are placed on S3, a few on T4
+            var onS3 = Enumerable.Range(0, 40).Select(_ => Psm(Evidence(new[] { OnS3, OnT4 }, (0.8, new[] { 0 }), (0.6, new[] { 0 })), modified: true)).ToList();
+            var onT4 = Enumerable.Range(0, 5).Select(_ => Psm(Evidence(new[] { OnS3, OnT4 }, (0.8, new[] { 1 }), (0.3, new[] { 1 })), modified: true)).ToList();
+            var psms = UnmodifiedMatches().Concat(onS3).Concat(onT4).ToList();
+            LocalizationProbabilityResults Run(double window, IEnumerable<SpectralMatch> matches) =>
+                (LocalizationProbabilityResults)new LocalizationProbabilityEngine(matches, Parameters, new List<(string, CommonParameters)>(), new List<string>())
+                { Likelihood = LocalizationLikelihood.PtminerCdf, LearnSitePrior = false, CoElutionWindow = window }.Run();
+
+            Run(0, psms);
+            Assert.That(onS3.Concat(onT4).Any(p => p.LocalizationProbabilities.HasCoElutingIsomer), Is.False);
+
+            LocalizationProbabilityResults results = Run(0.5, psms);
+            Assert.That(results.MatchesWithCoElutingIsomer, Is.EqualTo(45));
+            Assert.That(onS3.Concat(onT4).All(p => p.LocalizationProbabilities.HasCoElutingIsomer));
+            Assert.That(onS3.Concat(onT4).All(p => p.LocalizationProbabilities.QValue == null)); // no rate is reported for them
+            Assert.That(results.MatchesAtOnePercentFlr, Is.EqualTo(0));
+
+            // with only one placement among them, nothing co-elutes with a different isomer
+            Run(0.5, UnmodifiedMatches().Concat(onS3).ToList());
+            Assert.That(onS3.Any(p => p.LocalizationProbabilities.HasCoElutingIsomer), Is.False);
+        }
+
+        [Test]
         public static void PerCleavageEvidenceKeepsOneIonOfAFragmentAndItsNeutralLosses()
         {
             var intact = new Product(ProductType.y, FragmentationTerminus.C, 500, 4, 2, 0);

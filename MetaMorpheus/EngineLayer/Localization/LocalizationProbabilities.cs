@@ -45,10 +45,19 @@ namespace EngineLayer.Localization
         /// <summary>
         /// The localization q-value of the best placement: the lowest false localization rate (the mean of one minus
         /// the best probability) of any set of confident matches, ranked by best probability, that includes this one.
-        /// Null for decoys, for matches that are not confident, and for matches with only one placement.
+        /// Null for decoys, for matches that are not confident, for matches with only one placement, and for matches with a
+        /// co-eluting isomer (<see cref="HasCoElutingIsomer"/>), whose false localization rate is not controlled.
         /// </summary>
         public double? QValue { get; internal set; }
 
+        /// <summary>
+        /// Whether another confident match in the same spectra file, close in retention time, identifies the same peptide
+        /// and modifications with them placed differently. Positional isomers that co-elute are co-isolated, and a
+        /// spectrum of both supports both placements, so its probabilities are overconfident; and where only one isomer is
+        /// present, a neighbour placed differently means one of the two is wrong. Such a match keeps its probabilities but
+        /// gets no <see cref="QValue"/>, and is left out of the ranking the others' q-values come from.
+        /// </summary>
+        public bool HasCoElutingIsomer { get; internal set; }
         /// <summary>
         /// The probability that a modification sits on the residue at <paramref name="residueIndex"/> (for the first and
         /// last residues, on the residue or its peptide terminus): the sum of the probabilities of the placements that

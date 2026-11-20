@@ -104,6 +104,13 @@ namespace TaskLayer
         /// the fragment evidence, which the model treats as independent when it is not. 1 leaves it untempered.
         /// </summary>
         public double LocalizationLikelihoodExponent { get; set; } = LocalizationProbabilityEngine.RecommendedLikelihoodExponent;
+
+        /// <summary>
+        /// With <see cref="DoLocalizationProbabilities"/>, the retention-time window, in minutes, within which another
+        /// identification of the same peptide with its modifications placed differently marks a match as having a
+        /// co-eluting isomer, which then gets no localization q-value. 0 checks nothing.
+        /// </summary>
+        public double LocalizationCoElutionWindow { get; set; } = LocalizationProbabilityEngine.RecommendedCoElutionWindow;
         public bool DoLabelFreeQuantification { get; set; }
         public bool UseSharedPeptidesForLFQ { get; set; }
         public bool DoMultiplexQuantification { get; set; }

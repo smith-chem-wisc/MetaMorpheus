@@ -128,6 +128,16 @@ namespace EngineLayer.Localization
         /// </summary>
         public const double RecommendedLikelihoodExponent = 0.8;
 
+        /// <summary>
+        /// The retention-time window, in minutes, within which a differently placed identification of the same peptide
+        /// in the same file marks a match as having a co-eluting isomer (<see cref="LocalizationProbabilities.HasCoElutingIsomer"/>).
+        /// 0, the default, checks nothing.
+        /// </summary>
+        public double CoElutionWindow { get; init; }
+
+        /// <summary>The <see cref="CoElutionWindow"/> the search task uses.</summary>
+        public const double RecommendedCoElutionWindow = 0.5;
+
         public const LocalizationLikelihood DefaultLikelihood = LocalizationLikelihood.IntensityRatio;
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -191,8 +201,64 @@ namespace EngineLayer.Localization
                 match.Psm.LocalizationProbabilities = new LocalizationProbabilities(match.Psm.LocalizationEvidence.Placements, Posterior(match, logPrior));
             }
 
-            AssignQValues(scored, results);
+            if (CoElutionWindow > 0)
+            {
+                results.MatchesWithCoElutingIsomer = FlagCoElutingIsomers(scored, CoElutionWindow);
+            }
+
+            // A match with a co-eluting isomer gets no q-value: its probabilities are overconfident (on PXD070496, 2.9% of
+            // such matches estimated at 1% were wrong), and no rate is reported rather than one that is not controlled.
+            var inQuestion = scored.Where(m => m.IsTraining && m.Psm.LocalizationProbabilities.IsLocalizationInQuestion).ToList();
+            results.MatchesInQuestion = inQuestion.Count;
+            results.MatchesAtOnePercentFlr = AssignQValues(inQuestion.Where(m => !m.Psm.LocalizationProbabilities.HasCoElutingIsomer));
             return results;
+        }
+
+        /// <summary>
+        /// Flags each confident target whose peptide is also identified, with its modifications placed differently, by
+        /// another confident target in the same spectra file within <paramref name="window"/> minutes. Placements are
+        /// compared by each match's best placement.
+        /// </summary>
+        /// <returns>How many matches were flagged.</returns>
+        private static int FlagCoElutingIsomers(ScoredMatch[] scored, double window)
+        {
+            static string PlacementKey(LocalizationPlacement placement) =>
+                string.Join(";", placement.Sites.Select(s => $"{s.ResidueIndex}:{s.Modification?.IdWithMotif}"));
+
+            int flagged = 0;
+            var groups = scored
+                .Where(m => m.IsTraining && m.Psm.BaseSequence != null && m.Psm.GetSiteFreeIdentity() != null)
+                .GroupBy(m => (m.Psm.FullFilePath, m.Psm.GetSiteFreeIdentity()));
+            foreach (var group in groups)
+            {
+                var occurrences = group
+                    .Select(m => (Match: m, Time: m.Psm.ScanRetentionTime, Placement: PlacementKey(m.Psm.LocalizationProbabilities.BestPlacement)))
+                    .OrderBy(o => o.Time)
+                    .ToArray();
+                if (occurrences.Select(o => o.Placement).Distinct().Count() < 2)
+                {
+                    continue;
+                }
+
+                int start = 0;
+                for (int i = 0; i < occurrences.Length; i++)
+                {
+                    while (occurrences[i].Time - occurrences[start].Time > window)
+                    {
+                        start++;
+                    }
+                    for (int j = start; j < occurrences.Length && occurrences[j].Time - occurrences[i].Time <= window; j++)
+                    {
+                        if (occurrences[j].Placement != occurrences[i].Placement)
+                        {
+                            occurrences[i].Match.Psm.LocalizationProbabilities.HasCoElutingIsomer = true;
+                            flagged++;
+                            break;
+                        }
+                    }
+                }
+            }
+            return flagged;
         }
 
         /// <summary>The peak-intensity models of one spectra file, or of every file pooled.</summary>
@@ -507,14 +573,14 @@ namespace EngineLayer.Localization
         }
 
         /// <summary>
-        /// Ranks the confident targets with more than one placement by best probability. The false localization rate of
-        /// the top k is the mean of one minus their best probabilities; a match's q-value is the lowest such rate of any
-        /// set that includes it, and tied probabilities share a rate.
+        /// Ranks matches by best probability. The false localization rate of the top k is the mean of one minus their best
+        /// probabilities; a match's q-value is the lowest such rate of any set that includes it, and tied probabilities
+        /// share a rate.
         /// </summary>
-        private static void AssignQValues(ScoredMatch[] scored, LocalizationProbabilityResults results)
+        /// <returns>How many matches have a q-value of 0.01 or less.</returns>
+        private static int AssignQValues(IEnumerable<ScoredMatch> matches)
         {
-            var ranked = scored
-                .Where(m => m.IsTraining && m.Psm.LocalizationProbabilities.IsLocalizationInQuestion)
+            var ranked = matches
                 .Select(m => m.Psm.LocalizationProbabilities)
                 .OrderByDescending(p => p.BestProbability)
                 .ToList();
@@ -543,9 +609,7 @@ namespace EngineLayer.Localization
                 lowest = Math.Min(lowest, rates[r]);
                 ranked[r].QValue = lowest;
             }
-
-            results.MatchesInQuestion = ranked.Count;
-            results.MatchesAtOnePercentFlr = ranked.Count(p => p.QValue <= 0.01);
+            return ranked.Count(p => p.QValue <= 0.01);
         }
 
         /// <summary>
@@ -806,6 +870,7 @@ namespace EngineLayer.Localization
         public int Iterations { get; set; }
         public int MatchesInQuestion { get; set; }
         public int MatchesAtOnePercentFlr { get; set; }
+        public int MatchesWithCoElutingIsomer { get; set; }
         public string Prior { get; set; } = "";
 
         public override string ToString()
@@ -820,6 +885,7 @@ namespace EngineLayer.Localization
             }
             sb.AppendLine($"Chemistries with a learned prior: {ChemistriesLearned} of {Chemistries}, after {Iterations} iterations");
             sb.AppendLine($"Confident matches with more than one placement: {MatchesInQuestion}; localized at 1% FLR: {MatchesAtOnePercentFlr}");
+            sb.AppendLine($"Confident matches with a co-eluting isomer (no q-value): {MatchesWithCoElutingIsomer}");
             sb.Append(Prior);
             return sb.ToString();
         }

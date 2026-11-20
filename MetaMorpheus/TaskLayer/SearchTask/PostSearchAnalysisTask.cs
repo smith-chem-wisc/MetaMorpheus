@@ -663,7 +663,8 @@ namespace TaskLayer
                             ModelPerScanType = Parameters.SearchParameters.LocalizeIonTrapScansSeparately,
                             LearnFromModifiedMatches = true,
                             LearnSitePrior = Parameters.SearchParameters.LearnLocalizationPrior,
-                            LikelihoodExponent = Parameters.SearchParameters.LocalizationLikelihoodExponent
+                            LikelihoodExponent = Parameters.SearchParameters.LocalizationLikelihoodExponent,
+                            CoElutionWindow = Parameters.SearchParameters.LocalizationCoElutionWindow
                         }
                         .Run();
                 }
