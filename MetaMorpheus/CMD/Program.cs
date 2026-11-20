@@ -242,22 +242,22 @@ namespace MetaMorpheusCommandLine
                 switch (toml.Get<string>("TaskType"))
                 {
                     case "Search":
-                        var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(filePath);
+                        var searchTask = Toml.ReadFile<SearchTask>(filePath, MetaMorpheusTask.tomlConfig);
                         taskList.Add(("Task" + (i + 1) + "SearchTask", searchTask));
                         break;
 
                     case "Calibrate":
-                        var calibrationTask = MetaMorpheusTask.ReadTaskToml<CalibrationTask>(filePath);
+                        var calibrationTask = Toml.ReadFile<CalibrationTask>(filePath, MetaMorpheusTask.tomlConfig);
                         taskList.Add(("Task" + (i + 1) + "CalibrationTask", calibrationTask));
                         break;
 
                     case "Gptmd":
-                        var GptmdTask = MetaMorpheusTask.ReadTaskToml<GptmdTask>(filePath);
+                        var GptmdTask = Toml.ReadFile<GptmdTask>(filePath, MetaMorpheusTask.tomlConfig);
                         taskList.Add(("Task" + (i + 1) + "GptmdTask", GptmdTask));
                         break;
 
                     case "XLSearch":
-                        var XlTask = MetaMorpheusTask.ReadTaskToml<XLSearchTask>(filePath);
+                        var XlTask = Toml.ReadFile<XLSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
                         taskList.Add(("Task" + (i + 1) + "XLSearchTask", XlTask));
                         break;
 
@@ -267,12 +267,12 @@ namespace MetaMorpheusCommandLine
                         break;
 
                     case "Average":
-                        var AveragingTask = MetaMorpheusTask.ReadTaskToml<SpectralAveragingTask>(filePath);
+                        var AveragingTask = Toml.ReadFile<SpectralAveragingTask>(filePath, MetaMorpheusTask.tomlConfig);
                         taskList.Add(("Task" + (i + 1) + "AveragingTask", AveragingTask));
                         break;
 
                     case "Truncation":
-                        var truncationTask = MetaMorpheusTask.ReadTaskToml<TruncationSearchTask>(filePath);
+                        var truncationTask = Toml.ReadFile<TruncationSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
                         taskList.Add(("Task" + (i + 1) + "TruncationSearchTask", truncationTask));
                         break;
 

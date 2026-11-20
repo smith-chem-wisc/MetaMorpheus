@@ -25,7 +25,7 @@ namespace Test
             if (Directory.Exists(outputFolder))
                 Directory.Delete(outputFolder, true);
 
-            var task = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(testDirectory, @"TestData\Task1-SearchTaskconfig.toml"));
+            var task = Nett.Toml.ReadFile<SearchTask>(Path.Combine(testDirectory, @"TestData\Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
             task.CommonParameters.QValueCutoffForPepCalculation = 0.01;
             var spectraFiles = new List<string>
             {

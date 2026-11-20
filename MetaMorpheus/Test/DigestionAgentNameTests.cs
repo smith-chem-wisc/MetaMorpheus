@@ -84,7 +84,7 @@ namespace Test
             var task = new SearchTask { CommonParameters = new CommonParameters(digestionParams: digestionParams) };
             string path = Path.Combine(TestContext.CurrentContext.WorkDirectory, fileName);
             Toml.WriteFile(task, path, MetaMorpheusTask.tomlConfig);
-            var reloaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(path);
+            var reloaded = Toml.ReadFile<SearchTask>(path, MetaMorpheusTask.tomlConfig);
             File.Delete(path);
             return reloaded;
         }

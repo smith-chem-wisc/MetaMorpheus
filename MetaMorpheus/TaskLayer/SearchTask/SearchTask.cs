@@ -164,6 +164,12 @@ namespace TaskLayer
         }
 
         /// <summary>
+        /// When the identification filter was read from a task TOML's legacy thresholds: the sentence saying so, once per
+        /// task, as a warning and in results.txt; null otherwise.
+        /// </summary>
+        internal static string LegacyFilterSentence(CommonParameters commonParameters) => commonParameters.LegacyFilterSentence;
+
+        /// <summary>
         /// When the search's identification filter is held to 1 or more, which keeps every match, the sentence saying so;
         /// null otherwise.
         /// </summary>
@@ -190,7 +196,7 @@ namespace TaskLayer
             WarnAboutSdrfGaps(currentRawFileList);
 
             // A filter read from an old task's thresholds (LegacyFilterSentence): say so once, before the search, and in results.txt
-            if (LegacyFilterSentence is string fromLegacyThresholds)
+            if (LegacyFilterSentence(CommonParameters) is string fromLegacyThresholds)
             {
                 Warn(fromLegacyThresholds);
             }
@@ -705,8 +711,6 @@ namespace TaskLayer
                 CommonParameters = CommonParameters,
                 DigestionCountDictionary = digestionCountDictionary
             };
-            // the same CommonParameters, so the sentence carries over and results.txt says it too
-            postProcessing.SetLegacyFilterSentence(LegacyFilterSentence);
             // if post-search fails, RunTask still ends the cache write before the task does
             MyTaskResults postSearchResults = postProcessing.Run();
 

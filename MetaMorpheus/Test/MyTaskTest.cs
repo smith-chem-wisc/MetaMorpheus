@@ -139,10 +139,10 @@ namespace Test
         public static void TestModificationAnalysisEngine()
         {
             var myGptmdTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ModificationAnalysis\GPTMDTaskconfig.toml");
-            var gptmdTaskLoaded = MetaMorpheusTask.ReadTaskToml<GptmdTask>(myGptmdTomlPath);
+            var gptmdTaskLoaded = Toml.ReadFile<GptmdTask>(myGptmdTomlPath, MetaMorpheusTask.tomlConfig);
 
             var mySearchTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ModificationAnalysis\SearchTaskconfig.toml");
-            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(mySearchTomlPath);
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(mySearchTomlPath, MetaMorpheusTask.tomlConfig);
 
             List<(string, MetaMorpheusTask)> taskList = new() {
                 ("gptmd", gptmdTaskLoaded),
@@ -594,7 +594,7 @@ namespace Test
         {
             string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestFileOutput");
 
-            SearchTask task = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"));
+            SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"), MetaMorpheusTask.tomlConfig);
             task.SearchParameters.DecoyType = DecoyType.None;
             task.SearchParameters.WriteMzId = true;
             task.SearchParameters.WriteIndividualFiles = true;

@@ -78,7 +78,9 @@ namespace Test
         private static void RunTmtSearch(string stagedMzmlPath, string outputFolder, bool doParsimony = true,
             bool doLabelFreeQuantification = false)
         {
-            var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"));
+            var searchTask = Toml.ReadFile<SearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                MetaMorpheusTask.tomlConfig);
 
             // The stock TMT toml leaves parsimony off, and multiplex quantification rolls up to protein
             // groups, so there would be nothing to quantify onto. Turning it on is what a user doing
@@ -339,7 +341,9 @@ namespace Test
                     Path.Combine(dataFolder, GlobalVariables.TmtExperimentalDesignFileName),
                     new[] { TmtExperimentalDesign.Header }.Concat(rows));
 
-                var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"));
+                var searchTask = Toml.ReadFile<SearchTask>(
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                    MetaMorpheusTask.tomlConfig);
                 searchTask.SearchParameters.DoParsimony = true;
                 searchTask.SearchParameters.WriteIndividualFiles = true;
 
@@ -441,7 +445,9 @@ namespace Test
                 string second = Path.Combine(dataFolder, "VA084TQ_6_copy.mzML");
                 File.Copy(first, second);
 
-                var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"));
+                var searchTask = Toml.ReadFile<SearchTask>(
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                    MetaMorpheusTask.tomlConfig);
                 searchTask.SearchParameters.WriteIndividualFiles = true; // the per-file peptide tables go through the same writer
                 new EverythingRunnerEngine(
                     new List<(string, MetaMorpheusTask)> { ("search", searchTask) },
@@ -1734,7 +1740,9 @@ namespace Test
                     Path.Combine(dataFolder, GlobalVariables.TmtExperimentalDesignFileName),
                     new[] { TmtExperimentalDesign.Header }.Concat(rows));
 
-                var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"));
+                var searchTask = Toml.ReadFile<SearchTask>(
+                    Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                    MetaMorpheusTask.tomlConfig);
                 searchTask.SearchParameters.DoParsimony = true;
 
                 new EverythingRunnerEngine(

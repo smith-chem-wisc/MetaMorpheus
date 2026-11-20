@@ -33,11 +33,11 @@ namespace Test
             glycoTask._glycoSearchParameters.MaximumGlycanBoxMass = 2500.5;
 
             Toml.WriteFile(glycoTask, tomlPath, MetaMorpheusTask.tomlConfig);
-            var glycoTaskLoaded = MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(tomlPath);
+            var glycoTaskLoaded = Toml.ReadFile<GlycoSearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
             File.Delete(tomlPath);
             Assert.That(glycoTaskLoaded._glycoSearchParameters.MaximumGlycanBoxMass, Is.EqualTo(2500.5));
 
-            var legacyTask = MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"));
+            var legacyTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
             Assert.That(legacyTask._glycoSearchParameters.MaximumGlycanBoxMass, Is.EqualTo(GlycanBox.DefaultMaximumGlycanBoxMass));
         }
 
@@ -52,7 +52,7 @@ namespace Test
                     listOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation on M") }),
             };
             Toml.WriteFile(searchTask, "SearchTask.toml", MetaMorpheusTask.tomlConfig);
-            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>("SearchTask.toml");
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>("SearchTask.toml", MetaMorpheusTask.tomlConfig);
 
             Assert.That(searchTask.CommonParameters.DeconvolutionMassTolerance.ToString(), Is.EqualTo(searchTaskLoaded.CommonParameters.DeconvolutionMassTolerance.ToString()));
             Assert.That(searchTask.CommonParameters.ProductMassTolerance.ToString(), Is.EqualTo(searchTaskLoaded.CommonParameters.ProductMassTolerance.ToString()));
@@ -82,11 +82,11 @@ namespace Test
 
             CalibrationTask calibrationTask = new();
             Toml.WriteFile(calibrationTask, "CalibrationTask.toml", MetaMorpheusTask.tomlConfig);
-            _ = MetaMorpheusTask.ReadTaskToml<CalibrationTask>("CalibrationTask.toml");
+            _ = Toml.ReadFile<CalibrationTask>("CalibrationTask.toml", MetaMorpheusTask.tomlConfig);
 
             GptmdTask gptmdTask = new GptmdTask();
             Toml.WriteFile(gptmdTask, "GptmdTask.toml", MetaMorpheusTask.tomlConfig);
-            var gptmdTaskLoaded = MetaMorpheusTask.ReadTaskToml<GptmdTask>("GptmdTask.toml");
+            var gptmdTaskLoaded = Toml.ReadFile<GptmdTask>("GptmdTask.toml", MetaMorpheusTask.tomlConfig);
 
             var gptmdEngine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("GPTMD", gptmdTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             gptmdEngine.Run();
@@ -95,7 +95,7 @@ namespace Test
 
             XLSearchTask xLSearchTask = new();
             Toml.WriteFile(xLSearchTask, "XLSearchTask.toml", MetaMorpheusTask.tomlConfig);
-            var xLSearchTaskLoaded = MetaMorpheusTask.ReadTaskToml<XLSearchTask>("XLSearchTask.toml");
+            var xLSearchTaskLoaded = Toml.ReadFile<XLSearchTask>("XLSearchTask.toml", MetaMorpheusTask.tomlConfig);
 
             string myFileXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
             string myDatabaseXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
@@ -111,7 +111,7 @@ namespace Test
             SpectralAveragingTask averagingTask = new SpectralAveragingTask(new SpectralAveragingParameters()
                 { NumberOfScansToAverage = 15, BinSize = 2});
             Toml.WriteFile(averagingTask, "averagingTask.toml", MetaMorpheusTask.tomlConfig);
-            var readInAveragingTask = MetaMorpheusTask.ReadTaskToml<SpectralAveragingTask>("averagingTask.toml");
+            var readInAveragingTask = Toml.ReadFile<SpectralAveragingTask>("averagingTask.toml", MetaMorpheusTask.tomlConfig);
             Assert.That(averagingTask.Parameters.NumberOfScansToAverage, Is.EqualTo(readInAveragingTask.Parameters.NumberOfScansToAverage).And.EqualTo(15));
             Assert.That(averagingTask.Parameters.BinSize, Is.EqualTo(readInAveragingTask.Parameters.BinSize).And.EqualTo(2));
 
@@ -501,7 +501,7 @@ namespace Test
             // write and read file 
             string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testDigestionParams.toml");
             Toml.WriteFile(searchTask, filePath, MetaMorpheusTask.tomlConfig);
-            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(filePath);
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(filePath, MetaMorpheusTask.tomlConfig);
 
             // check that digestion params are correct in search task
             digestion = searchTaskLoaded.CommonParameters.DigestionParams as DigestionParams;
@@ -551,7 +551,7 @@ namespace Test
             // write and read file 
             string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testDigestionParams.toml");
             Toml.WriteFile(searchTask, filePath, MetaMorpheusTask.tomlConfig);
-            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(filePath);
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(filePath, MetaMorpheusTask.tomlConfig);
 
             // check that digestion params are correct in search task
             digestion = searchTaskLoaded.CommonParameters.DigestionParams as RnaDigestionParams;
@@ -590,7 +590,7 @@ namespace Test
             var tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "testAverageResidueModel.toml");
             Toml.WriteFile(searchTask, tomlPath, MetaMorpheusTask.tomlConfig);
 
-            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(tomlPath);
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
             var loadedModel = searchTaskLoaded.CommonParameters.PrecursorDeconvolutionParameters.AverageResidueModel;
             Assert.That(loadedModel.GetType(), Is.EqualTo(model.GetType()));
             File.Delete(tomlPath);
@@ -609,7 +609,7 @@ namespace Test
             var tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "testIsodec.toml");
             Toml.WriteFile(searchTask, tomlPath, MetaMorpheusTask.tomlConfig);
 
-            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(tomlPath);
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
             var loadedModel = searchTaskLoaded.CommonParameters.PrecursorDeconvolutionParameters.AverageResidueModel;
             Assert.That(loadedModel.GetType(), Is.EqualTo(model.GetType()));
             var loadedDeconParams = searchTaskLoaded.CommonParameters.PrecursorDeconvolutionParameters;
@@ -631,7 +631,7 @@ namespace Test
             try
             {
                 var tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "RnaSearchTask_MultipleDecon.toml");
-                var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(tomlPath);
+                var searchTaskLoaded = Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
 
                 Assert.That(searchTaskLoaded.CommonParameters.PrecursorDeconvolutionParameters, Is.TypeOf<MultipleDeconParameters>());
                 var multipleParams = (MultipleDeconParameters)searchTaskLoaded.CommonParameters.PrecursorDeconvolutionParameters;
@@ -713,7 +713,7 @@ namespace Test
 
             try
             {
-                MetaMorpheusTask.ReadTaskToml<SearchTask>(tomlPath);
+                Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
                 Assert.Fail();
             }
             catch (InvalidOperationException e)
@@ -761,7 +761,7 @@ namespace Test
 
             try
             {
-                MetaMorpheusTask.ReadTaskToml<SearchTask>(tomlPath);
+                Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
                 Assert.Fail();
             }
             catch (InvalidOperationException e)

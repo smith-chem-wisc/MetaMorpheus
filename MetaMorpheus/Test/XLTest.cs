@@ -251,7 +251,7 @@ namespace Test
         [Test]
         public static void XlTest_BSA_DSS_file()
         {
-            var task = MetaMorpheusTask.ReadTaskToml<XLSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/Rappsilber3-XLSearchTaskconfig.toml"));
+            var task = Toml.ReadFile<XLSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/Rappsilber3-XLSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData"));
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/YeastPol2.fasta"), false);
 

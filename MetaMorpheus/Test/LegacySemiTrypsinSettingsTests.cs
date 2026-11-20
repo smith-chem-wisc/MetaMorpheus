@@ -60,7 +60,7 @@ namespace Test
             {
                 GlycoSearchTask task = throughLowResFallbackReader
                     ? MetaMorpheusTask.ReadTaskTomlWithLowResFallback<GlycoSearchTask>(path)
-                    : MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(path);
+                    : Toml.ReadFile<GlycoSearchTask>(path, MetaMorpheusTask.tomlConfig);
                 return (task, warnings);
             }
             finally

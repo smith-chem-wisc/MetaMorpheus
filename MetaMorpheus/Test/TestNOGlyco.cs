@@ -98,7 +98,7 @@ namespace Test
             Directory.CreateDirectory(outputFolder);
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\Q9C0Y4.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\yeast_glycan_25170.mgf");
-            var task = MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"));
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
 
             task._glycoSearchParameters.GlycoSearchType = GlycoSearchType.N_O_GlycanSearch;
             task._glycoSearchParameters.NGlycanDatabasefile = "NGlycan_ForNoSearch.gdb";
@@ -142,7 +142,7 @@ namespace Test
             Directory.CreateDirectory(outputFolder);
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
-            var task = MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml"));
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
 
             task._glycoSearchParameters.GlycoSearchType = GlycoSearchType.N_O_GlycanSearch;
             task._glycoSearchParameters.NGlycanDatabasefile = "NGlycan_ForNoSearch.gdb";
@@ -179,7 +179,7 @@ namespace Test
             Directory.CreateDirectory(outputFolder);
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P02649.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\181217_Fusion_(LC2)_NewObj_Serum_deSA_Jacalin_HRM_4h_ETD_HCD_DDA_mz(400_1200)_21707.mgf");
-            var task = MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run2.toml"));
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run2.toml"), MetaMorpheusTask.tomlConfig);
 
             task._glycoSearchParameters.GlycoSearchType = GlycoSearchType.N_O_GlycanSearch;
             task._glycoSearchParameters.NGlycanDatabasefile = "NGlycan_ForNoSearch.gdb";

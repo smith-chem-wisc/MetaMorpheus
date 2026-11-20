@@ -288,7 +288,7 @@ namespace Test
             File.WriteAllText(path, text.Replace("Rnase = \"top-down\"", $"Rnase = \"{rnase}\""));
             try
             {
-                var task = MetaMorpheusTask.ReadTaskToml<SearchTask>(path);
+                var task = Toml.ReadFile<SearchTask>(path, MetaMorpheusTask.tomlConfig);
                 var digestionParams = (RnaDigestionParams)task.CommonParameters.DigestionParams;
                 Assert.That(digestionParams.Rnase.Name, Is.EqualTo(rnase), "premise");
                 Assert.That(digestionParams.SearchModeType, Is.EqualTo(CleavageSpecificity.Full), "premise");

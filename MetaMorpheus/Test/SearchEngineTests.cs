@@ -152,7 +152,7 @@ namespace Test
             property.SetValue(null, true); 
 
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
-            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(myTomlPath);
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
@@ -216,7 +216,7 @@ namespace Test
         public static void TestClassicSearchXcorrWithToml()
         {
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Search.toml");
-            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(myTomlPath);
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
@@ -1061,7 +1061,7 @@ namespace Test
         public static void TestNonSpecificEnzymeSearchEngine()
         {
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\NonSpecificSearchToml.toml");
-            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(myTomlPath);
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\NonSpecificSearchTest");
             Directory.CreateDirectory(outputFolder);
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");

@@ -90,7 +90,7 @@ public class RnaTerminalCapsTests
                 CommonParameters = new CommonParameters(digestionParams: new RnaDigestionParams(), fivePrimeTerminus: FivePrimeCap, threePrimeTerminus: ThreePrimeCap)
             };
             Toml.WriteFile(task, path, MetaMorpheusTask.tomlConfig);
-            var loaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(path);
+            var loaded = Toml.ReadFile<SearchTask>(path, MetaMorpheusTask.tomlConfig);
             Assert.That(loaded.CommonParameters.FivePrimeTerminus, Is.EqualTo(task.CommonParameters.FivePrimeTerminus));
             Assert.That(loaded.CommonParameters.ThreePrimeTerminus, Is.EqualTo(task.CommonParameters.ThreePrimeTerminus));
             Assert.That(loaded.CommonParameters.ThreePrimeTerminus, Is.Not.Null);
@@ -98,7 +98,7 @@ public class RnaTerminalCapsTests
             // default (null) caps stay null after a round trip
             var defaults = new SearchTask { CommonParameters = new CommonParameters(digestionParams: new RnaDigestionParams()) };
             Toml.WriteFile(defaults, path, MetaMorpheusTask.tomlConfig);
-            var loadedDefaults = MetaMorpheusTask.ReadTaskToml<SearchTask>(path);
+            var loadedDefaults = Toml.ReadFile<SearchTask>(path, MetaMorpheusTask.tomlConfig);
             Assert.That(loadedDefaults.CommonParameters.FivePrimeTerminus, Is.Null);
             Assert.That(loadedDefaults.CommonParameters.ThreePrimeTerminus, Is.Null);
         }
@@ -173,7 +173,7 @@ public class RnaTerminalCapsTests
 
             // a typo must not quietly become the default chemistry
             File.WriteAllText(path, text.Replace(written, $"FivePrimeTerminus = \"{badFormula}\""));
-            var ex = Assert.Catch(() => MetaMorpheusTask.ReadTaskToml<SearchTask>(path));
+            var ex = Assert.Catch(() => Toml.ReadFile<SearchTask>(path, MetaMorpheusTask.tomlConfig));
             var messages = new List<string>();
             for (var e = ex; e != null; e = e.InnerException)
                 messages.Add(e.Message);
@@ -181,7 +181,7 @@ public class RnaTerminalCapsTests
 
             // blank is still "use the default"
             File.WriteAllText(path, text.Replace(written, "FivePrimeTerminus = \"  \""));
-            var loaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(path);
+            var loaded = Toml.ReadFile<SearchTask>(path, MetaMorpheusTask.tomlConfig);
             Assert.That(loaded.CommonParameters.FivePrimeTerminus, Is.Null);
             Assert.That(loaded.CommonParameters.ThreePrimeTerminus, Is.EqualTo(task.CommonParameters.ThreePrimeTerminus));
         }

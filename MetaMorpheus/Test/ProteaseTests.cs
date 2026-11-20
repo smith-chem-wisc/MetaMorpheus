@@ -22,7 +22,7 @@ namespace Test
         public static void TestChymotrypsinCleaveAfterLeucine()
         {
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"DatabaseTests\Task1-SearchTaskconfig.toml");
-            var searchTaskLoaded = MetaMorpheusTask.ReadTaskToml<SearchTask>(myTomlPath);
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"DatabaseTests\TestProtease");
             Directory.CreateDirectory(outputFolder);
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"DatabaseTests\Q9UHB6_Chym_snip.mzML");
@@ -61,7 +61,7 @@ namespace Test
                 "premise: the saved task names its protease on exactly two lines");
             File.WriteAllText(path, Regex.Replace(text, "^((?:Specific)?Protease) = \"[^\"]*\"", $"$1 = \"{historicalName}\"", RegexOptions.Multiline));
 
-            var digestionParams = (DigestionParams)MetaMorpheusTask.ReadTaskToml<SearchTask>(path).CommonParameters.DigestionParams;
+            var digestionParams = (DigestionParams)Toml.ReadFile<SearchTask>(path, MetaMorpheusTask.tomlConfig).CommonParameters.DigestionParams;
             File.Delete(path);
 
             Assert.That(MotifSignature(digestionParams.Protease.DigestionMotifs),

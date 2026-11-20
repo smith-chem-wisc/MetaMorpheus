@@ -34,7 +34,7 @@ namespace Test
         private GlycoSearchTask WriteAndReadBack(GlycoSearchTask task)
         {
             Toml.WriteFile(task, _tomlPath, MetaMorpheusTask.tomlConfig);
-            return MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(_tomlPath);
+            return Toml.ReadFile<GlycoSearchTask>(_tomlPath, MetaMorpheusTask.tomlConfig);
         }
 
         [Test]
@@ -131,7 +131,7 @@ namespace Test
                 "the property should have been written, otherwise this test proves nothing");
             File.WriteAllLines(_tomlPath, withoutTheLine);
 
-            var loaded = MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(_tomlPath);
+            var loaded = Toml.ReadFile<GlycoSearchTask>(_tomlPath, MetaMorpheusTask.tomlConfig);
 
             Assert.That(loaded._glycoSearchParameters.SelectedGlycans, Is.Not.Null);
             Assert.That(loaded._glycoSearchParameters.SelectedGlycans, Is.Empty);

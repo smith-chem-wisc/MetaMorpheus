@@ -5,6 +5,7 @@ using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using Nett;
 using Omics.Digestion;
@@ -39,7 +40,7 @@ namespace EngineLayer
             bool addCompIons = false, 
             int totalPartitions = 1,
             FilterType? identificationFilter = null,
-            double filterThreshold = DefaultFilterThreshold,
+            double? filterThreshold = null,
             double qValueCutoffForPepCalculation = 0.005,
             double scoreCutoff = 5, 
             int? numberOfPeaksToKeepPerWindow = 200, 
@@ -87,7 +88,7 @@ namespace EngineLayer
             ReportAllAmbiguity = reportAllAmbiguity;
             AddCompIons = addCompIons;
             TotalPartitions = totalPartitions;
-            FilterThreshold = filterThreshold;
+            _filterThreshold = filterThreshold;
             QValueCutoffForPepCalculation = qValueCutoffForPepCalculation;
             ScoreCutoff = scoreCutoff;
             NumberOfPeaksToKeepPerWindow = numberOfPeaksToKeepPerWindow;
@@ -103,9 +104,7 @@ namespace EngineLayer
             ProductMassTolerance_LowRes = productMassTolerance_LowRes ?? new AbsoluteTolerance(0.35);
             DeconvolutionMassTolerance = deconvolutionMassTolerance ?? new PpmTolerance(4);
             DigestionParams = digestionParams ?? new DigestionParams();
-            // Null is the default for the analyte the digestion parameters search
-            AnalyteType analyte = DetermineAnalyteType();
-            IdentificationFilter = identificationFilter ?? DefaultIdentificationFilter(analyte == AnalyteType.Oligo, analyte == AnalyteType.Proteoform);
+            _identificationFilter = identificationFilter;
             DissociationType = dissociationType;
             SeparationType = separationType;
             MS2ChildScanDissociationType = ms2childScanDissociationType;
@@ -205,19 +204,66 @@ namespace EngineLayer
         /// <item><description><see cref="FilterType.QValue"/>: the pooled q-value, counted over every notch together, and
         /// nothing else.</description></item>
         /// </list>
-        /// The constructor sets the default for the analyte its digestion parameters search when it is given none
-        /// (<see cref="DefaultIdentificationFilter"/>). A task TOML is read through TaskLayer's
-        /// MetaMorpheusTask.ReadTaskToml, which sets the filter and threshold a file means once the whole file is read,
-        /// including a file saved before FilterThreshold existed.
+        /// When a value is not set, it resolves to what the file or analyte means: a task TOML saved before
+        /// FilterThreshold existed names its filter through the old QValueThreshold/PepQValueThreshold keys, and with no
+        /// such keys the filter is the default for the analyte its digestion parameters search
+        /// (<see cref="DefaultIdentificationFilter"/>). Resolution happens when read, so it does not depend on the order
+        /// Nett sets the properties.
         /// </summary>
-        public FilterType IdentificationFilter { get; private set; }
+        public FilterType IdentificationFilter
+        {
+            get
+            {
+                if (_identificationFilter is FilterType named) return named;
+                if (_filterThreshold == null && IsLegacyFile) return LegacyChosePep ? FilterType.PepQValue : FilterType.QValueNotch;
+                AnalyteType analyte = DetermineAnalyteType();
+                return DefaultIdentificationFilter(analyte == AnalyteType.Oligo, analyte == AnalyteType.Proteoform);
+            }
+            private set => _identificationFilter = value;
+        }
 
         /// <summary>
         /// The one threshold <see cref="IdentificationFilter"/> is held to: a match or peptide passes when the filter's value
         /// is at or below it. <see cref="DefaultFilterThreshold"/> by default. If SearchParameters.WriteHighQValuePsms is
         /// false, only the matches and peptides that pass are written to the .psmtsv files.
         /// </summary>
-        public double FilterThreshold { get; private set; }
+        public double FilterThreshold
+        {
+            get => _filterThreshold
+                ?? (IsLegacyFile ? (IdentificationFilter == FilterType.PepQValue ? LegacyPep : LegacyQ) : DefaultFilterThreshold);
+            private set => _filterThreshold = value;
+        }
+
+        private FilterType? _identificationFilter;
+        private double? _filterThreshold;
+        private double? _legacyQValueThreshold;
+        private double? _legacyPepQValueThreshold;
+
+        // A task TOML saved before FilterThreshold existed: its old keys decide the filter and threshold, once
+        private bool IsLegacyFile => _legacyQValueThreshold.HasValue || _legacyPepQValueThreshold.HasValue;
+        private double LegacyQ => _legacyQValueThreshold ?? 0.01;     // QValueThreshold's old default
+        private double LegacyPep => _legacyPepQValueThreshold ?? 1.0; // PepQValueThreshold's old default
+        private bool LegacyChosePep => _identificationFilter == null && _filterThreshold == null
+                                       && IsLegacyFile && LegacyPep < LegacyQ;
+
+        // Read from old task TOMLs only. The getter returns null so Nett never writes them back.
+        [Obsolete("Only read from task TOMLs saved before FilterThreshold; use FilterThreshold.", error: true)]
+        public double? QValueThreshold { get => null; set { if (value.HasValue) _legacyQValueThreshold = value; } }
+
+        [Obsolete("Only read from task TOMLs saved before FilterThreshold; use FilterThreshold.", error: true)]
+        public double? PepQValueThreshold { get => null; set { if (value.HasValue) _legacyPepQValueThreshold = value; } }
+
+        // Before #2285 (June 2023). Their values were never used; they only mark an old file.
+        [Obsolete("Only read from task TOMLs saved before #2285; marks an old file.", error: true)]
+        public double? QValueOutputFilter { get => null; set { if (value.HasValue) _legacyQValueThreshold ??= 0.01; } }
+
+        [Obsolete("Only read from task TOMLs saved before #2285; marks an old file.", error: true)]
+        public double? PepQValueOutputFilter { get => null; set { if (value.HasValue) _legacyQValueThreshold ??= 0.01; } }
+
+        [TomlIgnore]
+        public string LegacyFilterSentence => LegacyChosePep
+            ? $"IdentificationFilter read from this task's legacy thresholds (PepQValueThreshold {LegacyPep.ToString(CultureInfo.InvariantCulture)} < QValueThreshold {LegacyQ.ToString(CultureInfo.InvariantCulture)}): PEP q-value at {LegacyPep.ToString(CultureInfo.InvariantCulture)}"
+            : null;
 
         /// <summary>The <see cref="FilterThreshold"/> a search gets when it names none.</summary>
         public const double DefaultFilterThreshold = 0.01;

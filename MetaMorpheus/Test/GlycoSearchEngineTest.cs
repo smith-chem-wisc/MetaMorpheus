@@ -350,7 +350,7 @@ namespace Test
                 Assert.That(File.Exists(writtenTaskToml), Is.True, "Expected task config TOML was not written.");
 
                 // Confirm written TOML preserves tracked values
-                var writtenTask = MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(writtenTaskToml);
+                var writtenTask = Toml.ReadFile<GlycoSearchTask>(writtenTaskToml, MetaMorpheusTask.tomlConfig);
                 Assert.That(writtenTask.CommonParameters.ProductMassTolerance, Is.TypeOf<PpmTolerance>());
                 Assert.That(writtenTask.CommonParameters.ProductMassTolerance.Value, Is.EqualTo(40).Within(1e-9));
                 Assert.That(writtenTask.CommonParameters.ProductMassTolerance_LowRes, Is.TypeOf<PpmTolerance>());
@@ -397,7 +397,7 @@ namespace Test
                 Assert.That(File.Exists(writtenTaskToml), Is.True, "Expected task config TOML was not written.");
 
                 // Confirm written TOML updated low-Res values
-                var writtenTask = MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(writtenTaskToml);
+                var writtenTask = Toml.ReadFile<GlycoSearchTask>(writtenTaskToml, MetaMorpheusTask.tomlConfig);
                 Assert.That(writtenTask.CommonParameters.ProductMassTolerance, Is.TypeOf<PpmTolerance>());
                 Assert.That(writtenTask.CommonParameters.ProductMassTolerance.Value, Is.EqualTo(40).Within(1e-9));
                 Assert.That(writtenTask.CommonParameters.ProductMassTolerance_LowRes, Is.TypeOf<AbsoluteTolerance>());

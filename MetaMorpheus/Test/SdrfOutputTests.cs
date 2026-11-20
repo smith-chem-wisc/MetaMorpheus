@@ -1516,7 +1516,9 @@ namespace Test
                     new[] { TmtExperimentalDesign.Header }.Concat(designRows));
             }
 
-            var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"));
+            var searchTask = Toml.ReadFile<SearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                MetaMorpheusTask.tomlConfig);
             searchTask.SearchParameters.WriteSdrf = true;
             searchTask.SearchParameters.DoParsimony = true;
             if (inputSdrf is not null)
@@ -1621,7 +1623,7 @@ namespace Test
             task.SearchParameters.ProteomeXchangeAccession = "PXD012345";
             Toml.WriteFile(task, tomlPath, MetaMorpheusTask.tomlConfig);
 
-            var reread = MetaMorpheusTask.ReadTaskToml<SearchTask>(tomlPath);
+            var reread = Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
             Assert.That(reread.SearchParameters.ProteomeXchangeAccession, Is.EqualTo("PXD012345"));
 
             Directory.Delete(folder, true);
@@ -2282,7 +2284,7 @@ namespace Test
             task.SearchParameters.InputSdrfPath = @"C:\data\PXD012345.sdrf.tsv";
             Toml.WriteFile(task, tomlPath, MetaMorpheusTask.tomlConfig);
 
-            var reread = MetaMorpheusTask.ReadTaskToml<SearchTask>(tomlPath);
+            var reread = Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
             Assert.That(reread.SearchParameters.InputSdrfPath, Is.EqualTo(@"C:\data\PXD012345.sdrf.tsv"));
 
             Directory.Delete(folder, true);

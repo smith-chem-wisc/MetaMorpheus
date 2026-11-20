@@ -1263,7 +1263,7 @@ namespace Test
                 Is.EqualTo(File.ReadAllText(SdrfDesignMarker.PathIn(folder))), "the marker, beside Task Settings");
             string saved = Directory.GetFiles(Path.Combine(output, "Task Settings"), "*config.toml").Single();
             Assert.That(File.ReadAllText(saved), Does.Not.Contain("RunSdrf").And.Not.Contain(Path.GetFileName(sdrf)));
-            var savedTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(saved);
+            var savedTask = Toml.ReadFile<SearchTask>(saved, MetaMorpheusTask.tomlConfig);
             Assert.That(savedTask.SearchParameters.InputSdrfPath, Is.Null);
             Assert.That(savedTask.SearchParameters.WriteSdrf, Is.False);
         }

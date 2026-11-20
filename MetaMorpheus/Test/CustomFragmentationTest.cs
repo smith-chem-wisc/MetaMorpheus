@@ -29,9 +29,9 @@ namespace Test
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
 
             // create 3 search tasks with different custom fragmentation ions
-            var task1 = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\customBY.toml"));
-            var task2 = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\customCZ.toml"));
-            var task3 = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\customBCZ.toml"));
+            var task1 = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\customBY.toml"), MetaMorpheusTask.tomlConfig);
+            var task2 = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\customCZ.toml"), MetaMorpheusTask.tomlConfig);
+            var task3 = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\customBCZ.toml"), MetaMorpheusTask.tomlConfig);
 
             // run all tasks
             DbForTask db = new DbForTask(myDatabase, false);
@@ -42,9 +42,9 @@ namespace Test
             // read generated toml settings and make sure custom fragmentations match are handled properly for each task
             string outputPath = Path.Combine(outputFolder, @"Task Settings");
 
-            var task1Settings = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(outputPath, @"TestSearchBYConfig.toml"));
-            var task2Settings = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(outputPath, @"TestSearchCZConfig.toml"));
-            var task3Settings = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(outputPath, @"TestSearchBCZConfig.toml"));
+            var task1Settings = Toml.ReadFile<SearchTask>(Path.Combine(outputPath, @"TestSearchBYConfig.toml"), MetaMorpheusTask.tomlConfig);
+            var task2Settings = Toml.ReadFile<SearchTask>(Path.Combine(outputPath, @"TestSearchCZConfig.toml"), MetaMorpheusTask.tomlConfig);
+            var task3Settings = Toml.ReadFile<SearchTask>(Path.Combine(outputPath, @"TestSearchBCZConfig.toml"), MetaMorpheusTask.tomlConfig);
 
             var task1CustomIons = task1Settings.CommonParameters.CustomIons;
             var task2CustomIons = task2Settings.CommonParameters.CustomIons;
@@ -80,7 +80,9 @@ namespace Test
             var gptmdCommonParam = new CommonParameters(dissociationType: DissociationType.Custom);
             GptmdTask gptmdTask = new GptmdTask() {CommonParameters = gptmdCommonParam};
             
-            SearchTask searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\customBCZ.toml"));
+            SearchTask searchTask = Toml.ReadFile<SearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\customBCZ.toml"),
+                MetaMorpheusTask.tomlConfig);
 
             var taskCollection = new List<(string, MetaMorpheusTask)>
                 { ("Calibration", calibrationTask), ("GPTMD", gptmdTask), ("Search", searchTask) };
@@ -106,13 +108,19 @@ namespace Test
             }
 
             // read generated toml settings and make sure custom fragmentations match are handled properly for each task
-            var loadedCalibrationTask = MetaMorpheusTask.ReadTaskToml<CalibrationTask>(Path.Combine(outputFolder, "Task Settings", $"{taskCollection[0].Item1}Config.toml"));
+            var loadedCalibrationTask = Toml.ReadFile<CalibrationTask>(
+                Path.Combine(outputFolder, "Task Settings", $"{taskCollection[0].Item1}Config.toml"),
+                MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons, loadedCalibrationTask.CommonParameters.CustomIons);
             Assert.That(loadedCalibrationTask.CommonParameters.DissociationType, Is.EqualTo(DissociationType.Custom));
-            var loadedGptmdTask = MetaMorpheusTask.ReadTaskToml<GptmdTask>(Path.Combine(outputFolder, "Task Settings", $"{taskCollection[1].Item1}Config.toml"));
+            var loadedGptmdTask = Toml.ReadFile<GptmdTask>(
+                Path.Combine(outputFolder, "Task Settings", $"{taskCollection[1].Item1}Config.toml"),
+                MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons, loadedGptmdTask.CommonParameters.CustomIons);
             Assert.That(loadedGptmdTask.CommonParameters.DissociationType, Is.EqualTo(DissociationType.Custom));
-            var loadedSearchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(outputFolder, "Task Settings", $"{taskCollection[2].Item1}Config.toml"));
+            var loadedSearchTask = Toml.ReadFile<SearchTask>(
+                Path.Combine(outputFolder, "Task Settings", $"{taskCollection[2].Item1}Config.toml"),
+                MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons, loadedSearchTask.CommonParameters.CustomIons);
             Assert.That(loadedSearchTask.CommonParameters.DissociationType, Is.EqualTo(DissociationType.Custom));
 
@@ -132,10 +140,14 @@ namespace Test
             engine.Run();
 
             // read generated toml settings and make sure custom fragmentations match are handled properly for each task
-            loadedGptmdTask = MetaMorpheusTask.ReadTaskToml<GptmdTask>(Path.Combine(newOutputFolder, "Task Settings", $"{taskCollection[1].Item1}Config.toml"));
+            loadedGptmdTask = Toml.ReadFile<GptmdTask>(
+                Path.Combine(newOutputFolder, "Task Settings", $"{taskCollection[1].Item1}Config.toml"),
+                MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons, loadedGptmdTask.CommonParameters.CustomIons);
             Assert.That(loadedGptmdTask.CommonParameters.DissociationType, Is.EqualTo(DissociationType.Custom));
-            loadedSearchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(newOutputFolder, "Task Settings", $"{taskCollection[2].Item1}Config.toml"));
+            loadedSearchTask = Toml.ReadFile<SearchTask>(
+                Path.Combine(newOutputFolder, "Task Settings", $"{taskCollection[2].Item1}Config.toml"),
+                MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons, loadedSearchTask.CommonParameters.CustomIons);
             Assert.That(loadedSearchTask.CommonParameters.DissociationType, Is.EqualTo(DissociationType.Custom));
 
@@ -244,23 +256,33 @@ namespace Test
             }
 
             // read generated toml settings and make sure custom fragmentations match are handled properly for each task
-            var loadedCalibrationTask = MetaMorpheusTask.ReadTaskToml<CalibrationTask>(Path.Combine(outputFolder, "Task Settings", $"{taskCollection[0].Item1}Config.toml"));
+            var loadedCalibrationTask = Toml.ReadFile<CalibrationTask>(
+                Path.Combine(outputFolder, "Task Settings", $"{taskCollection[0].Item1}Config.toml"),
+                MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons1, loadedCalibrationTask.CommonParameters.CustomIons);
             Assert.That(loadedCalibrationTask.CommonParameters.DissociationType == DissociationType.Custom);
 
-            var loadedGptmdTask = MetaMorpheusTask.ReadTaskToml<GptmdTask>(Path.Combine(outputFolder, "Task Settings", $"{taskCollection[1].Item1}Config.toml"));
+            var loadedGptmdTask = Toml.ReadFile<GptmdTask>(
+                Path.Combine(outputFolder, "Task Settings", $"{taskCollection[1].Item1}Config.toml"),
+                MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons2, loadedGptmdTask.CommonParameters.CustomIons);
             Assert.That(loadedGptmdTask.CommonParameters.DissociationType == DissociationType.Custom);
 
-            var loadedSearchTask1 = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(outputFolder, "Task Settings", $"{taskCollection[2].Item1}Config.toml"));
+            var loadedSearchTask1 = Toml.ReadFile<SearchTask>(
+                Path.Combine(outputFolder, "Task Settings", $"{taskCollection[2].Item1}Config.toml"),
+                MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons1, loadedSearchTask1.CommonParameters.CustomIons);
             Assert.That(loadedSearchTask1.CommonParameters.DissociationType == DissociationType.Custom);
 
-            var loadedSearchTask2 = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(outputFolder, "Task Settings", $"{taskCollection[3].Item1}Config.toml"));
+            var loadedSearchTask2 = Toml.ReadFile<SearchTask>(
+                Path.Combine(outputFolder, "Task Settings", $"{taskCollection[3].Item1}Config.toml"),
+                MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons2, loadedSearchTask2.CommonParameters.CustomIons);
             Assert.That(loadedSearchTask2.CommonParameters.DissociationType == DissociationType.Custom);
 
-            var loadedSearchTask3 = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(outputFolder, "Task Settings", $"{taskCollection[4].Item1}Config.toml"));
+            var loadedSearchTask3 = Toml.ReadFile<SearchTask>(
+                Path.Combine(outputFolder, "Task Settings", $"{taskCollection[4].Item1}Config.toml"),
+                MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons3, loadedSearchTask3.CommonParameters.CustomIons);
             Assert.That(loadedSearchTask3.CommonParameters.DissociationType == DissociationType.Custom);
 
@@ -300,19 +322,27 @@ namespace Test
             engine.Run();
 
             // read generated toml settings and make sure custom fragmentations match are handled properly for each task
-            loadedGptmdTask = MetaMorpheusTask.ReadTaskToml<GptmdTask>(Path.Combine(newOutputFolder, "Task Settings", $"{taskCollection[1].Item1}Config.toml"));
+            loadedGptmdTask = Toml.ReadFile<GptmdTask>(
+                Path.Combine(newOutputFolder, "Task Settings", $"{taskCollection[1].Item1}Config.toml"),
+                MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons2, loadedGptmdTask.CommonParameters.CustomIons);
             Assert.That(loadedGptmdTask.CommonParameters.DissociationType == DissociationType.Custom);
 
-            loadedSearchTask1 = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(newOutputFolder, "Task Settings", $"{taskCollection[2].Item1}Config.toml"));
+            loadedSearchTask1 = Toml.ReadFile<SearchTask>(
+                Path.Combine(newOutputFolder, "Task Settings", $"{taskCollection[2].Item1}Config.toml"),
+                MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons1, loadedSearchTask1.CommonParameters.CustomIons);
             Assert.That(loadedSearchTask1.CommonParameters.DissociationType == DissociationType.Custom);
 
-            loadedSearchTask2 = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(newOutputFolder, "Task Settings", $"{taskCollection[3].Item1}Config.toml"));
+            loadedSearchTask2 = Toml.ReadFile<SearchTask>(
+                Path.Combine(newOutputFolder, "Task Settings", $"{taskCollection[3].Item1}Config.toml"),
+                MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons2, loadedSearchTask2.CommonParameters.CustomIons);
             Assert.That(loadedSearchTask2.CommonParameters.DissociationType == DissociationType.Custom);
 
-            loadedSearchTask3 = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(newOutputFolder, "Task Settings", $"{taskCollection[4].Item1}Config.toml"));
+            loadedSearchTask3 = Toml.ReadFile<SearchTask>(
+                Path.Combine(newOutputFolder, "Task Settings", $"{taskCollection[4].Item1}Config.toml"),
+                MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons3, loadedSearchTask3.CommonParameters.CustomIons);
             Assert.That(loadedSearchTask3.CommonParameters.DissociationType == DissociationType.Custom);
 

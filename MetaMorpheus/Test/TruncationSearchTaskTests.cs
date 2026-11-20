@@ -255,7 +255,7 @@ namespace Test
                 // CMD dispatches on this raw string (Program.cs switch).
                 Assert.That(Toml.ReadFile(tomlPath, MetaMorpheusTask.tomlConfig).Get<string>("TaskType"), Is.EqualTo("Truncation"));
 
-                var read = MetaMorpheusTask.ReadTaskToml<TruncationSearchTask>(tomlPath);
+                var read = Toml.ReadFile<TruncationSearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
                 Assert.That(read.TaskType, Is.EqualTo(MyTask.Truncation));
                 Assert.That(read.TruncationSearchParameters.UpstreamSearchTaskId, Is.EqualTo("Task1SearchTask"));
                 Assert.That(read.TruncationSearchParameters.ParentQValueThreshold, Is.EqualTo(0.05));
@@ -287,7 +287,7 @@ namespace Test
 
                 // A stale key left over in an existing benchmarking TOML must not break the read.
                 File.AppendAllText(tomlPath, "\r\nPerfLogPath = 'C:\\stale\\perf_log.tsv'\r\n");
-                var read = MetaMorpheusTask.ReadTaskToml<TruncationSearchTask>(tomlPath);
+                var read = Toml.ReadFile<TruncationSearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
                 Assert.That(read.TruncationSearchParameters.PerfLogPath, Is.Null,
                     "the TOML key is ignored; the environment variable drives it");
             }
@@ -429,13 +429,13 @@ namespace Test
                 string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta");
                 string topDownSearchToml = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TopDownSearchToml.toml");
 
-                var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(topDownSearchToml);
+                var searchTask = Toml.ReadFile<SearchTask>(topDownSearchToml, MetaMorpheusTask.tomlConfig);
 
                 var truncationTask = new TruncationSearchTask();
                 // Consume the upstream search's proteoforms in-memory (#1) and use the same top-down-tuned
                 // CommonParameters so MS2 deconvolution + the intact-skip tolerance match Pass 1.
                 truncationTask.TruncationSearchParameters.UpstreamSearchTaskId = "Task1-SearchTask";
-                truncationTask.CommonParameters = MetaMorpheusTask.ReadTaskToml<SearchTask>(topDownSearchToml).CommonParameters;
+                truncationTask.CommonParameters = Toml.ReadFile<SearchTask>(topDownSearchToml, MetaMorpheusTask.tomlConfig).CommonParameters;
                 // Also exercise the optional perf-log path (docs/Truncation-Search.md, Benchmarking hook).
                 string perfLogPath = Path.Combine(outDirectory, "perf_log.tsv");
                 truncationTask.TruncationSearchParameters.PerfLogPath = perfLogPath;
@@ -529,7 +529,7 @@ namespace Test
             {
                 var task = new TruncationSearchTask
                 {
-                    CommonParameters = MetaMorpheusTask.ReadTaskToml<SearchTask>(toml).CommonParameters
+                    CommonParameters = Toml.ReadFile<SearchTask>(toml, MetaMorpheusTask.tomlConfig).CommonParameters
                 };
                 task.TruncationSearchParameters.SeedParentsFromDatabase = true;    // -> BuildParentsFromDatabase
                 task.TruncationSearchParameters.MaxParentMass = 100000;            // don't exclude large yeast proteins
@@ -636,7 +636,7 @@ namespace Test
             try
             {
                 var (data, db, toml) = TopDownFixture();
-                var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(toml);
+                var searchTask = Toml.ReadFile<SearchTask>(toml, MetaMorpheusTask.tomlConfig);
                 var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task1-SearchTask", searchTask) },
                     new List<string> { data }, new List<DbForTask> { new DbForTask(db, false) }, outDirectory);
 
@@ -684,7 +684,8 @@ namespace Test
 
                 Assert.That(task.CommonParameters.PrecursorMassTolerance.Value, Is.EqualTo(10));
                 Assert.That(warnings, Has.None.Contains("differ from the upstream search"));
-                var written = MetaMorpheusTask.ReadTaskToml<TruncationSearchTask>(Path.Combine(root, "Task Settings", "Task2-TruncationSearchTaskconfig.toml"));
+                var written = Toml.ReadFile<TruncationSearchTask>(
+                    Path.Combine(root, "Task Settings", "Task2-TruncationSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
                 Assert.That(written.CommonParameters.PrecursorMassTolerance.Value, Is.EqualTo(10));
                 Assert.That(written.TruncationSearchParameters.InheritUpstreamCommonParameters, Is.True);
             }
@@ -709,7 +710,7 @@ namespace Test
             try
             {
                 string searchOut = Path.Combine(outDir, "search");
-                var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(toml);
+                var searchTask = Toml.ReadFile<SearchTask>(toml, MetaMorpheusTask.tomlConfig);
                 new EverythingRunnerEngine(
                     new List<(string, MetaMorpheusTask)> { ("Task1-SearchTask", searchTask) },
                     new List<string> { data }, new List<DbForTask> { new DbForTask(db, false) }, searchOut).Run();
@@ -722,7 +723,7 @@ namespace Test
                 string truncOut = Path.Combine(outDir, "trunc");
                 var task = new TruncationSearchTask
                 {
-                    CommonParameters = MetaMorpheusTask.ReadTaskToml<SearchTask>(toml).CommonParameters
+                    CommonParameters = Toml.ReadFile<SearchTask>(toml, MetaMorpheusTask.tomlConfig).CommonParameters
                 };
                 task.TruncationSearchParameters.Pass1ProteoformsFilePath = proteoformsTsv; // -> BuildParentsFromDisk
 

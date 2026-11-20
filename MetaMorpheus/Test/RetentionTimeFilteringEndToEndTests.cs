@@ -63,7 +63,7 @@ namespace Test
             Directory.CreateDirectory(outputDirectory);
 
             string taskConfigPath = CreateTaskConfig(configPath, outputDirectory, minimumRetentionTime, maximumRetentionTime);
-            TTask task = MetaMorpheusTask.ReadTaskToml<TTask>(taskConfigPath);
+            TTask task = Toml.ReadFile<TTask>(taskConfigPath, MetaMorpheusTask.tomlConfig);
             List<double> retentionTimes = new();
 
             EventHandler<SingleEngineFinishedEventArgs> finishedEngineHandler = (sender, args) =>

@@ -153,7 +153,7 @@ namespace Test
         {
             string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantFileOutput");
 
-            SearchTask task = MetaMorpheusTask.ReadTaskToml<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"VariantSearchTaskConfig.toml"));
+            SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"VariantSearchTaskConfig.toml"), MetaMorpheusTask.tomlConfig);
             task.SearchParameters.DecoyType = DecoyType.None;
 
             DbForTask noVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNoVariantDb.xml"), false);

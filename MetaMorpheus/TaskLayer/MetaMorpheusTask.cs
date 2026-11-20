@@ -281,10 +281,6 @@ namespace TaskLayer
 
         #endregion
 
-        /// <summary>
-        /// How MetaMorpheus reads and writes its TOML files. Read a task TOML with <see cref="ReadTaskToml{TTask}(string)"/>,
-        /// not Toml.ReadFile: the identification filter and its threshold are set from the whole file once it is read.
-        /// </summary>
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
             .ConfigureType<Tolerance>(type => type
                 .WithConversionFor<TomlString>(convert => convert
@@ -517,25 +513,6 @@ namespace TaskLayer
 
         public CommonParameters CommonParameters { get; set; }
         public List<(string FileName, CommonParameters Parameters)> FileSpecificParameters { get; set; }
-
-        private CommonParameters _legacyFilterReadWith;
-        private string _legacyFilterSentence;
-
-        /// <summary>
-        /// When this task was read from a task TOML whose old PEP thresholds chose its identification filter
-        /// (<see cref="TaskToml.IdentificationFilterOf"/>), the sentence saying so, which the search warns with and writes
-        /// to results.txt; null otherwise. It belongs to the CommonParameters the task was read with: once they are
-        /// replaced (a task window saved the task, naming its filter), it is null.
-        /// </summary>
-        [TomlIgnore]
-        public string LegacyFilterSentence => ReferenceEquals(CommonParameters, _legacyFilterReadWith) ? _legacyFilterSentence : null;
-
-        /// <summary>Records <see cref="LegacyFilterSentence"/> for the task's current CommonParameters.</summary>
-        internal void SetLegacyFilterSentence(string sentence)
-        {
-            _legacyFilterSentence = sentence;
-            _legacyFilterReadWith = sentence == null ? null : CommonParameters;
-        }
 
         #region Deconvolution
 
@@ -2689,33 +2666,15 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Reads a task TOML file. Every task file is read here (the command line, the GUI, MetaDraw and the tests), not with
-        /// Toml.ReadFile, because the identification filter and its threshold are set from the whole file once it is read
-        /// (<see cref="TaskToml.IdentificationFilterOf"/>): the filter an unnamed file gets depends on its digestion
-        /// parameters, and a file saved before FilterThreshold existed is read by its old thresholds, whatever the key order.
+        /// Legacy TOML compatibility when ProductMassTolerance_LowRes is omitted, the helper falls back to ProductMassTolerance to keep constant result.
         /// </summary>
-        public static TTask ReadTaskToml<TTask>(string filePath) where TTask : MetaMorpheusTask =>
-            TaskFromToml<TTask>(Toml.ReadFile(filePath, tomlConfig));
-
-        /// <summary><see cref="ReadTaskToml{TTask}(string)"/> for the text of a task TOML.</summary>
-        public static TTask ReadTaskTomlString<TTask>(string toml) where TTask : MetaMorpheusTask =>
-            TaskFromToml<TTask>(Toml.ReadString(toml, tomlConfig));
-
-        private static TTask TaskFromToml<TTask>(TomlTable raw) where TTask : MetaMorpheusTask
-        {
-            TTask task = raw.Get<TTask>();
-            TaskToml.SetIdentificationFilter(task, raw.ContainsKey(nameof(CommonParameters)) ? raw.Get<TomlTable>(nameof(CommonParameters)) : null);
-            return task;
-        }
-
-        /// <summary>
-        /// <see cref="ReadTaskToml{TTask}(string)"/>, and legacy TOML compatibility when ProductMassTolerance_LowRes is
-        /// omitted: the helper falls back to ProductMassTolerance to keep constant result.
-        /// </summary>
+        /// <typeparam name="TTask"></typeparam>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
         public static TTask ReadTaskTomlWithLowResFallback<TTask>(string filePath) where TTask : MetaMorpheusTask
         {
             TomlTable raw = Toml.ReadFile(filePath, tomlConfig);
-            TTask task = TaskFromToml<TTask>(raw);
+            TTask task = raw.Get<TTask>();
 
             if (raw.ContainsKey(nameof(CommonParameters)))
             {

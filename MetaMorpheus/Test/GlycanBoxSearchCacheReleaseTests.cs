@@ -95,7 +95,7 @@ namespace Test
             Directory.CreateDirectory(outputFolder);
             var db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\Q9C0Y4.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\yeast_glycan_25170.mgf");
-            var task = MetaMorpheusTask.ReadTaskToml<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"));
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\NGlycanSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
             task._glycoSearchParameters.GlycoSearchType = GlycoSearchType.N_O_GlycanSearch;
             task._glycoSearchParameters.NGlycanDatabasefile = "NGlycan_ForNoSearch.gdb";
             task._glycoSearchParameters.OGlycanDatabasefile = "OGlycan.gdb";

@@ -44,7 +44,7 @@ namespace Test
         [Test]
         public static void Ms2ReporterIons_AreReadFromTheStoredScan_NotTheTrimmedOne()
         {
-            var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"));
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
             Assert.That(searchTask.CommonParameters.TrimMsMsPeaks, Is.True, "the fixture only means anything with trimming on");
             Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
             string mzml = TestFile("VA084TQ_6.mzML");
@@ -158,7 +158,7 @@ namespace Test
         [Test]
         public static void Mgf_WithARepeatedScanNumber_IsSearched_AndEachPsmReadsItsOwnBlock()
         {
-            var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"));
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
             Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
             string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsRepeatedMgfScan");
 
@@ -208,7 +208,7 @@ namespace Test
         [Test]
         public static void RepeatedScanNumber_EachBlockIsReadFromItsOwnStoredBlock()
         {
-            var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"));
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
             Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
             string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsRepeatedScanPairing");
 
@@ -259,7 +259,7 @@ namespace Test
         [TestCase("mgf")]
         public static void LowCidReporterIons_AreReadFromTheStoredScan_NotTheBinnedOne(string format)
         {
-            var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(TestFile("TMT11_LowCID_SearchTask.toml"));
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT11_LowCID_SearchTask.toml"), MetaMorpheusTask.tomlConfig);
             Assert.That(searchTask.CommonParameters.DissociationType, Is.EqualTo(DissociationType.LowCID));
             Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
             string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsLowCid_" + format);
@@ -317,7 +317,7 @@ namespace Test
         [Test]
         public static void ScansWhoseTwoReadsDisagree_AreLeftUnpaired_AndReadFromTheLoadedSpectrum()
         {
-            var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"));
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
             Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
             string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsUnpairedScans");
 
@@ -427,7 +427,7 @@ namespace Test
         [TestCase("mzMLNumberedFromOne")]
         public static void LowCidReporterIons_ReadOneScanAtATime_AreTheStoredScans(string fixture)
         {
-            var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(TestFile("TMT11_LowCID_SearchTask.toml"));
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT11_LowCID_SearchTask.toml"), MetaMorpheusTask.tomlConfig);
             Assert.That(searchTask.CommonParameters.DissociationType, Is.EqualTo(DissociationType.LowCID));
             Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
             string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsLowCid_" + fixture);
@@ -491,7 +491,7 @@ namespace Test
         [TestCase("mzMLWithANonNumericScanNumber", false)]
         public static void StoredScans_AreReadOneAtATime_WhereAReadByScanNumberFindsTheLoadedScan(string fixture, bool oneAtATime)
         {
-            var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"));
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
             Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
             string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsOneAtATime_" + fixture);
 
@@ -594,7 +594,7 @@ namespace Test
         [Test]
         public static void Mgf_AskedForAScanNumberItDoesNotHold_IsReadWhole()
         {
-            var searchTask = MetaMorpheusTask.ReadTaskToml<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"));
+            var searchTask = Toml.ReadFile<SearchTask>(TestFile("TMT-Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
             Assert.That(IsobaricMassTag.TryGetIsobaricMassTag(searchTask.SearchParameters.MultiplexModId, GlobalVariables.AllModsKnown, out var tag), Is.True);
             string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestReporterIonsMgfMissingScan");
 

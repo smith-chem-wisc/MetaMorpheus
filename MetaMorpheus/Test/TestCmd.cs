@@ -568,7 +568,7 @@ namespace Test
                 var raw = Toml.ReadFile(averagingToml, MetaMorpheusTask.tomlConfig);
                 Assert.That(raw.Get<string>("TaskType"), Is.EqualTo(MyTask.Average.ToString()));
 
-                var task = MetaMorpheusTask.ReadTaskToml<SpectralAveragingTask>(averagingToml);
+                var task = Toml.ReadFile<SpectralAveragingTask>(averagingToml, MetaMorpheusTask.tomlConfig);
                 Assert.That(task.Parameters, Is.Not.Null, "generated toml carried no [Parameters]");
                 Assert.That(task.CommonParameters, Is.Not.Null, "generated toml carried no [CommonParameters]");
                 Assert.That(task.TaskType, Is.EqualTo(MyTask.Average));
