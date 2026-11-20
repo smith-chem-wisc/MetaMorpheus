@@ -1,4 +1,4 @@
-using Chemistry;
+﻿using Chemistry;
 using Chromatography.RetentionTimePrediction;
 using Chromatography.RetentionTimePrediction.SSRCalc;
 using EngineLayer.CrosslinkSearch;
@@ -1629,7 +1629,12 @@ namespace EngineLayer
             }
         }
 
-        private static double GetCifuentesMobility(IBioPolymerWithSetMods pwsm)
+        /// <summary>
+        /// The predicted electrophoretic mobility PEP compares a CZE file's matches against (the Cifuentes and Poppe
+        /// model: basic residues, less modifications that remove a charge, over mass^0.411). PEP scales it by 100.
+        /// Public so MetaDraw can plot the same value.
+        /// </summary>
+        public static double GetCifuentesMobility(IBioPolymerWithSetMods pwsm)
         {
             int charge = 1 + pwsm.BaseSequence.Count(f => f == 'K') + pwsm.BaseSequence.Count(f => f == 'R') + pwsm.BaseSequence.Count(f => f == 'H') - CountModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable());// the 1 + is for N-terminal
 

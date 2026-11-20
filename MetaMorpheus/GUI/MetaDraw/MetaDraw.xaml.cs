@@ -631,6 +631,7 @@ namespace MetaMorpheusGUI
             {
                 plotTypes.Remove("Histogram of Hydrophobicity scores");
                 plotTypes.Remove("Predicted RT vs. Observed RT");
+                plotTypes.Remove("Predicted CZE Mobility vs. Observed Migration Time");
             }
 
             ToggleButtonsEnabled(true);
