@@ -18,6 +18,34 @@ namespace Test
     public static class LocalizationTest
     {
         [Test]
+        public static void WithAutodetectEachScanIsFragmentedAsItWasActivated()
+        {
+            // Autodetect names no fragment types of its own; the scan (HCD here) says how to fragment
+            double[] ScoresWith(DissociationType dissociationType)
+            {
+                Protein protein = new Protein("MEK", null);
+                var commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1), dissociationType: dissociationType);
+                ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
+                var variable = new List<Modification> { new Modification(_originalId: "21", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) };
+                List<IBioPolymerWithSetMods> peptides = protein.Digest(commonParameters.DigestionParams, new List<Modification>(), variable).ToList();
+                MsDataFile file = new TestDataFile(new List<IBioPolymerWithSetMods> { peptides[1] });
+                var scan = new Ms2ScanWithSpecificMass(file.GetAllScansList().Last(), peptides[1].MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
+
+                var products = new List<Product>();
+                peptides[0].Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+                var psm = new PeptideSpectralMatch(peptides[0], 0, 0, 2, scan, commonParameters, MetaMorpheusEngine.MatchFragmentIons(scan, products, new CommonParameters()));
+                psm.ResolveAllAmbiguities();
+                new LocalizationEngine(new List<SpectralMatch> { psm }, file, commonParameters,
+                    new List<(string, CommonParameters)> { ("", commonParameters) }, new List<string>()).Run();
+                return psm.LocalizedScores.ToArray();
+            }
+
+            double[] hcd = ScoresWith(DissociationType.HCD);
+            Assert.That(hcd[1], Is.GreaterThan(4));
+            Assert.That(ScoresWith(DissociationType.Autodetect), Is.EqualTo(hcd));
+        }
+
+        [Test]
         public static void TestNonSpecific()
         {
             Protease p = ProteaseDictionary.Dictionary["non-specific"];

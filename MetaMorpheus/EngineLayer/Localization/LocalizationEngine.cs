@@ -107,8 +107,17 @@ namespace EngineLayer.Localization
         internal static bool IsFirstNTerminalIon(Product product) => product.Terminus == FragmentationTerminus.N && product.FragmentNumber == 1
             && product.ProductType is ProductType.a or ProductType.b or ProductType.aStar or ProductType.aDegree or ProductType.bAmmoniaLoss or ProductType.bWaterLoss;
 
-        private void FragmentForLocalization(IBioPolymerWithSetMods biopolymer, List<Product> products) =>
-            biopolymer.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, products, CommonParameters.FragmentationParameters);
+        /// <summary>
+        /// Fragments the biopolymer as the scan was activated. With <see cref="DissociationType.Autodetect"/> that is the
+        /// scan's own dissociation type, as the search matched it; Autodetect itself names no fragment types.
+        /// </summary>
+        private void FragmentForLocalization(IBioPolymerWithSetMods biopolymer, MsDataScan scan, List<Product> products) =>
+            biopolymer.Fragment(DissociationTypeOf(scan), CommonParameters.DigestionParams.FragmentationTerminus, products, CommonParameters.FragmentationParameters);
+
+        private DissociationType DissociationTypeOf(MsDataScan scan) =>
+            CommonParameters.DissociationType == DissociationType.Autodetect && scan.DissociationType is DissociationType own
+                && own != DissociationType.Unknown && own != DissociationType.Autodetect
+                ? own : CommonParameters.DissociationType;
 
         private bool ExcludesFirstNTerminalIons(IBioPolymerWithSetMods biopolymer) =>
             !PredictFirstNTerminalIons && biopolymer is Proteomics.ProteolyticDigestion.PeptideWithSetModifications;
@@ -219,7 +228,7 @@ namespace EngineLayer.Localization
         {
             if (evidence != null && precursorExplained)
             {
-                FragmentForLocalization(peptide, products);
+                FragmentForLocalization(peptide, scan, products);
                 var ions = MatchFragmentIons(scanWithSpecificMass, products, CommonParameters, isLowRes: range.IsLowRes);
                 evidence.AddCandidate(new LocalizationPlacement(System.Array.Empty<LocalizationSite>()), CalculatePeptideScore(scan, ions),
                     EvidenceIons(peptide, ions), range.CountObservable(EvidenceProducts(peptide, products)));
@@ -235,7 +244,7 @@ namespace EngineLayer.Localization
                 var peptideWithLocalizedMassDiff = peptide.Localize(r, massDifference);
 
                 // this is the list of theoretical products for this peptide with mass-difference on this residue
-                FragmentForLocalization(peptideWithLocalizedMassDiff, products);
+                FragmentForLocalization(peptideWithLocalizedMassDiff, scan, products);
 
                 var matchedIons = MatchFragmentIons(scanWithSpecificMass, products, CommonParameters, isLowRes: range.IsLowRes);
 
@@ -280,7 +289,7 @@ namespace EngineLayer.Localization
                     return true; // a kind of biopolymer that cannot be rebuilt; nothing to place
                 }
 
-                FragmentForLocalization(arranged, products);
+                FragmentForLocalization(arranged, scan, products);
                 var matchedIons = MatchFragmentIons(scanWithSpecificMass, products, CommonParameters, isLowRes: range.IsLowRes);
                 List<Product> predicted = EvidenceProducts(arranged, products);
                 evidence.AddCandidate(isoform.Placement, CalculatePeptideScore(scan, matchedIons), EvidenceIons(arranged, matchedIons), range.CountObservable(predicted));
