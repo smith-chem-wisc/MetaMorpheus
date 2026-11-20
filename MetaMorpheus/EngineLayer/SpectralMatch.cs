@@ -66,6 +66,18 @@ namespace EngineLayer
         public Dictionary<string, int> ModsIdentified { get; private set; } // these should never be null under normal circumstances
         public List<double> LocalizedScores { get; internal set; }
 
+        /// <summary>
+        /// The evidence for each candidate placement of this match's mass difference, from which localization
+        /// probabilities are computed. Null unless the localization engine ran on this match.
+        /// </summary>
+        public Localization.LocalizationEvidence LocalizationEvidence { get; internal set; }
+
+        /// <summary>
+        /// The probability of each candidate placement of this match's modifications, and the localization q-value of
+        /// the best. Null unless localization probabilities were computed for this match.
+        /// </summary>
+        public Localization.LocalizationProbabilities LocalizationProbabilities { get; internal set; }
+
         #region Scan metadata — delegated to ScanMetadata record
 
         /// <summary>
@@ -526,9 +538,7 @@ namespace EngineLayer
         /// what it is, sorted. Two positional isomers (oxidation on M3, or on M5) give the same string. Null when the
         /// candidates differ in base sequence or in their modifications. A modification is what it is by its type, its
         /// name without the residue (<see cref="Modification.OriginalId"/>, so Phosphorylation on S and on T are one
-        /// modification) and its chemical formula. A formula alone does not say what a modification is: Hydroxylation on
-        /// P and Oxidation on M are both one oxygen, and a match that cannot tell them apart is ambiguous in which
-        /// modification it carries, not only in where. A modification with no formula is compared by its mass, which
+        /// modification) and its chemical formula. A modification with no formula is compared by its mass, which
         /// every modification on a scored peptide has: the peptide's mass is the sum of them.
         /// </summary>
         public string GetSiteFreeIdentity()
@@ -594,6 +604,8 @@ namespace EngineLayer
             PsmCount = psm.PsmCount;
             ModsIdentified = psm.ModsIdentified;
             LocalizedScores = psm.LocalizedScores;
+            LocalizationEvidence = psm.LocalizationEvidence;
+            LocalizationProbabilities = psm.LocalizationProbabilities;
             ScanPrecursorMostAbundantMass = psm.ScanPrecursorMostAbundantMass;
             IsMostAbundantMode = psm.IsMostAbundantMode;
             PrecursorAveragine = psm.PrecursorAveragine;

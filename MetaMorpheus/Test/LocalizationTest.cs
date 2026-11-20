@@ -1,4 +1,4 @@
-﻿using Chemistry;
+using Chemistry;
 using EngineLayer;
 using EngineLayer.Localization;
 using MassSpectrometry;
@@ -17,6 +17,34 @@ namespace Test
     [TestFixture]
     public static class LocalizationTest
     {
+        [Test]
+        public static void WithAutodetectEachScanIsFragmentedAsItWasActivated()
+        {
+            // Autodetect names no fragment types of its own; the scan (HCD here) says how to fragment
+            double[] ScoresWith(DissociationType dissociationType)
+            {
+                Protein protein = new Protein("MEK", null);
+                var commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1), dissociationType: dissociationType);
+                ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
+                var variable = new List<Modification> { new Modification(_originalId: "21", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) };
+                List<IBioPolymerWithSetMods> peptides = protein.Digest(commonParameters.DigestionParams, new List<Modification>(), variable).ToList();
+                MsDataFile file = new TestDataFile(new List<IBioPolymerWithSetMods> { peptides[1] });
+                var scan = new Ms2ScanWithSpecificMass(file.GetAllScansList().Last(), peptides[1].MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
+
+                var products = new List<Product>();
+                peptides[0].Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+                var psm = new PeptideSpectralMatch(peptides[0], 0, 0, 2, scan, commonParameters, MetaMorpheusEngine.MatchFragmentIons(scan, products, new CommonParameters()));
+                psm.ResolveAllAmbiguities();
+                new LocalizationEngine(new List<SpectralMatch> { psm }, file, commonParameters,
+                    new List<(string, CommonParameters)> { ("", commonParameters) }, new List<string>()).Run();
+                return psm.LocalizedScores.ToArray();
+            }
+
+            double[] hcd = ScoresWith(DissociationType.HCD);
+            Assert.That(hcd[1], Is.GreaterThan(4));
+            Assert.That(ScoresWith(DissociationType.Autodetect), Is.EqualTo(hcd));
+        }
+
         [Test]
         public static void TestNonSpecific()
         {
@@ -64,6 +92,85 @@ namespace Test
 
             // when localizing, three peaks match
             Assert.That(newPsm.LocalizedScores[1] > 4 && newPsm.LocalizedScores[1] < 5);//we have another matched ion
+
+            // the evidence holds one candidate per residue, in order; the termini are not separate candidates
+            LocalizationEvidence evidence = newPsm.LocalizationEvidence;
+            Assert.That(evidence, Is.Not.Null);
+            Assert.That(evidence.CandidateCount, Is.EqualTo(ps.Length));
+            for (int r = 0; r < ps.Length; r++)
+            {
+                Assert.That(evidence.Placements[r].Sites, Is.EqualTo(new[] { new LocalizationSite(r, ps.BaseSequence[r]) }));
+                Assert.That(evidence.Scores[r], Is.EqualTo(newPsm.LocalizedScores[r]));
+            }
+            Assert.That(evidence.MassDifference, Is.EqualTo(21.981943).Within(1e-3));
+            Assert.That(evidence.IsProteinNTerminal, Is.True);
+
+            // the E placement matches a peak the M placement does not, and every relative intensity is in (0, 1]
+            Assert.That(Enumerable.Range(0, evidence.PeakCount).Any(p => evidence.Matches(1, p) && !evidence.Matches(0, p)));
+            Assert.That(Enumerable.Range(0, evidence.PeakCount).All(p => evidence.PeakRelativeIntensity(p) > 0 && evidence.PeakRelativeIntensity(p) <= 1));
+        }
+
+        [Test]
+        public static void TerminalMassFragmentsAsTheSameMassOnTheTerminalResidue()
+        {
+            // the localization engine treats a peptide-terminal placement and its terminal residue as one site; that is
+            // only right if the two fragment to the same masses
+            var peptide = (PeptideWithSetModifications)new Protein("PEPTIDEK", "P1")
+                .Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+            const double mass = 42.010565;
+
+            foreach (var (residueIndex, terminusKey) in new[] { (0, 1), (peptide.Length - 1, peptide.Length + 2) })
+            {
+                var onResidue = peptide.Localize(residueIndex, mass);
+                var onTerminus = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams,
+                    peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory,
+                    peptide.PeptideDescription, peptide.MissedCleavages,
+                    new Dictionary<int, Modification> { { terminusKey, new Modification(_locationRestriction: "Anywhere.", _monoisotopicMass: mass) } },
+                    peptide.NumFixedMods);
+
+                foreach (DissociationType dissociation in new[] { DissociationType.HCD, DissociationType.ETD })
+                {
+                    var residueProducts = new List<Product>();
+                    var terminusProducts = new List<Product>();
+                    onResidue.Fragment(dissociation, FragmentationTerminus.Both, residueProducts);
+                    onTerminus.Fragment(dissociation, FragmentationTerminus.Both, terminusProducts);
+
+                    Assert.That(terminusProducts.Select(p => (p.ProductType, p.FragmentNumber, System.Math.Round(p.NeutralMass, 6))),
+                        Is.EquivalentTo(residueProducts.Select(p => (p.ProductType, p.FragmentNumber, System.Math.Round(p.NeutralMass, 6)))));
+                }
+            }
+        }
+
+        [Test]
+        public static void EvidenceBuilderCountsAPeakOncePerCandidateAndAcrossCandidates()
+        {
+            var product = new Product(ProductType.b, FragmentationTerminus.N, 100, 1, 1, 0);
+            var otherProduct = new Product(ProductType.y, FragmentationTerminus.C, 100, 1, 1, 0);
+            var builder = new LocalizationEvidenceBuilder(basePeakIntensity: 200);
+
+            // 70 distinct peaks, so the match masks run past one 64-bit word
+            var manyIons = Enumerable.Range(0, 70).Select(i => new MatchedFragmentIon(product, 100 + i, 10 + i, 1)).ToList();
+            builder.AddCandidate(new LocalizationPlacement(new[] { new LocalizationSite(0, 'P') }), 5, manyIons);
+
+            // two products matching one peak are one peak; the second candidate matches peak 0 and peak 69 only
+            builder.AddCandidate(new LocalizationPlacement(new[] { new LocalizationSite(1, 'E') }), 2, new List<MatchedFragmentIon>
+            {
+                new MatchedFragmentIon(product, 100, 10, 1),
+                new MatchedFragmentIon(otherProduct, 100, 10, 1),
+                new MatchedFragmentIon(product, 169, 79, 1),
+            });
+
+            LocalizationEvidence evidence = builder.Build(massDifference: 1, peptideLength: 2, isProteinNTerminal: false, isProteinCTerminal: false);
+
+            Assert.That(evidence.PeakCount, Is.EqualTo(70));
+            Assert.That(evidence.CandidateCount, Is.EqualTo(2));
+            Assert.That(evidence.PeakRelativeIntensity(0), Is.EqualTo(0.05).Within(1e-6));
+            Assert.That(evidence.PeakRelativeIntensity(69), Is.EqualTo(79 / 200.0).Within(1e-6));
+            Assert.That(Enumerable.Range(0, 70).All(p => evidence.Matches(0, p)));
+            Assert.That(Enumerable.Range(0, 70).Where(p => evidence.Matches(1, p)), Is.EqualTo(new[] { 0, 69 }));
+            Assert.That(evidence.Scores, Is.EqualTo(new[] { 5.0, 2.0 }));
+            Assert.That(evidence.IsSharedByAllCandidates(0), Is.True);
+            Assert.That(evidence.IsSharedByAllCandidates(1), Is.False);
         }
 
         [Test]

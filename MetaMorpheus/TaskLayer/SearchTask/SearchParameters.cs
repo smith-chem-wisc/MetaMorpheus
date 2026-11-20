@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UsefulProteomicsDatabases;
 using EngineLayer;
+using EngineLayer.Localization;
 using Omics.Modifications;
 
 namespace TaskLayer
@@ -68,6 +69,48 @@ namespace TaskLayer
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
+
+        /// <summary>
+        /// Estimate, for each match, the probability of each placement of its modifications (and, in an open search, of
+        /// its mass difference), and a localization q-value: the false localization rate of the confident matches as
+        /// sure of their placement as it is (PTMiner, An et al., MCP 2019). Off by default: it reads every spectra file
+        /// a second time and keeps each match's matched peaks until the end of the search.
+        /// </summary>
+        public bool DoLocalizationProbabilities { get; set; }
+
+        /// <summary>
+        /// With <see cref="DoLocalizationProbabilities"/>, which residues an identified modification may be placed on:
+        /// those its motif allows (the default), or any residue, for experiments where its chemistry is unknown.
+        /// </summary>
+        public LocalizationSiteRule LocalizationSiteRule { get; set; }
+
+        /// <summary>
+        /// With <see cref="DoLocalizationProbabilities"/>, match ion-trap scans at the low-resolution product tolerance
+        /// (<see cref="EngineLayer.CommonParameters.ProductMassTolerance_LowRes"/>) when collecting localization evidence,
+        /// and learn their fragment statistics apart from other scan types. For methods that put ion-trap and Orbitrap
+        /// MS2 in one file. Off by default.
+        /// </summary>
+        public bool LocalizeIonTrapScansSeparately { get; set; }
+
+        /// <summary>
+        /// With <see cref="DoLocalizationProbabilities"/>, learn how often each modification sits on each residue from the
+        /// matches (PTMiner's prior) instead of weighing every allowed residue alike. Off by default: a learned prior
+        /// helps accuracy but leaves the residues it disfavours overconfident.
+        /// </summary>
+        public bool LearnLocalizationPrior { get; set; }
+
+        /// <summary>
+        /// With <see cref="DoLocalizationProbabilities"/>, the power each placement's likelihood is raised to, tempering
+        /// the fragment evidence, which the model treats as independent when it is not. 1 leaves it untempered.
+        /// </summary>
+        public double LocalizationLikelihoodExponent { get; set; } = LocalizationProbabilityEngine.RecommendedLikelihoodExponent;
+
+        /// <summary>
+        /// With <see cref="DoLocalizationProbabilities"/>, the retention-time window, in minutes, within which another
+        /// identification of the same peptide with its modifications placed differently marks a match as having a
+        /// co-eluting isomer, which then gets no localization q-value. 0 checks nothing.
+        /// </summary>
+        public double LocalizationCoElutionWindow { get; set; } = LocalizationProbabilityEngine.RecommendedCoElutionWindow;
         public bool DoLabelFreeQuantification { get; set; }
         public bool UseSharedPeptidesForLFQ { get; set; }
         public bool DoMultiplexQuantification { get; set; }
