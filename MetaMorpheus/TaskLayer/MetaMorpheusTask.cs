@@ -17,7 +17,6 @@ using SpectralAveraging;
 using System;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -439,69 +438,29 @@ namespace TaskLayer
         );
 
         /// <summary>
-        /// Maps a task TOML's pre-FilterThreshold filter keys onto the resolved properties as the CommonParameters is bound.
-        /// A file written by a release names its filter through them: exactly one of QValueThreshold and PepQValueThreshold
-        /// is the old default of 1 (the unused one) and the other is the threshold, so the key that holds it picks the
-        /// filter. A pre-#2285 file has QValueOutputFilter/PepQValueOutputFilter instead, which always meant the notch at
-        /// 0.01. New files carry neither, so their IdentificationFilter/FilterThreshold bind normally. Files written by the
-        /// intermediate #2982 build are not supported.
+        /// Maps a task TOML's pre-FilterThreshold filter key onto the resolved properties as the CommonParameters is bound.
+        /// A release file before FilterThreshold holds one threshold between 0 and 1 in QValueThreshold or
+        /// PepQValueThreshold and leaves the other key at its old default of 1, so the key that holds the value picks the
+        /// filter. New files carry IdentificationFilter/FilterThreshold and bind normally.
         /// </summary>
         private static void ResolveLegacyCommonParametersKey(string[] path, object target, TomlObject node)
         {
-            if (target is not CommonParameters commonParameters || path.Length == 0)
-            {
-                return;
-            }
-
-            LegacyCommonParametersState state = LegacyCommonParametersStates.GetOrCreateValue(commonParameters);
-            string key = path[^1];
-
-            // A pre-#2285 file has QValueOutputFilter/PepQValueOutputFilter instead of the thresholds; those meant the
-            // notch at 0.01. A release file carries both pairs, and the threshold keys win, so ignore these once one did.
-            if (key is "QValueOutputFilter" or "PepQValueOutputFilter")
-            {
-                if (!state.ThresholdKeyResolved)
+            FilterType? filter = path.Length > 0
+                ? path[^1] switch
                 {
-                    SetResolvedFilter(commonParameters, FilterType.QValueNotch, CommonParameters.DefaultFilterThreshold);
+                    "QValueThreshold" => FilterType.QValueNotch,
+                    "PepQValueThreshold" => FilterType.PepQValue,
+                    _ => null
                 }
-                return;
-            }
-
-            // The unused key sits at the old default of 1; only the other key carries a threshold between 0 and 1.
-            if (node is not TomlFloat threshold || threshold.Value >= 1)
+                : null;
+            if (target is not CommonParameters commonParameters || filter is not FilterType resolved
+                || node is not TomlFloat threshold || threshold.Value >= 1)
             {
                 return;
             }
-            if (key == "QValueThreshold")
-            {
-                state.ThresholdKeyResolved = true;
-                SetResolvedFilter(commonParameters, FilterType.QValueNotch, threshold.Value);
-            }
-            else if (key == "PepQValueThreshold")
-            {
-                state.ThresholdKeyResolved = true;
-                SetResolvedFilter(commonParameters, FilterType.PepQValue, threshold.Value);
-            }
-        }
 
-        private sealed class LegacyCommonParametersState
-        {
-            public bool ThresholdKeyResolved;
-        }
-
-        private static readonly ConditionalWeakTable<CommonParameters, LegacyCommonParametersState> LegacyCommonParametersStates = new();
-
-        private static readonly PropertyInfo IdentificationFilterProperty =
-            typeof(CommonParameters).GetProperty(nameof(CommonParameters.IdentificationFilter))!;
-
-        private static readonly PropertyInfo FilterThresholdProperty =
-            typeof(CommonParameters).GetProperty(nameof(CommonParameters.FilterThreshold))!;
-
-        /// <summary>Sets the resolved filter and threshold on the CommonParameters being bound; both have private setters.</summary>
-        private static void SetResolvedFilter(CommonParameters commonParameters, FilterType filter, double threshold)
-        {
-            IdentificationFilterProperty.SetValue(commonParameters, filter);
-            FilterThresholdProperty.SetValue(commonParameters, threshold);
+            typeof(CommonParameters).GetProperty(nameof(CommonParameters.IdentificationFilter))!.SetValue(commonParameters, resolved);
+            typeof(CommonParameters).GetProperty(nameof(CommonParameters.FilterThreshold))!.SetValue(commonParameters, threshold.Value);
         }
 
        

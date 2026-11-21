@@ -742,21 +742,6 @@ namespace Test
             Assert.That((onlyPep.IdentificationFilter, onlyPep.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.005)), "0.005 is below the old default 0.01");
         }
 
-        // A task file from before June 2023 (#2285) holds QValueOutputFilter and PepQValueOutputFilter instead of the
-        // thresholds. Their values were never the identification filter and are still ignored; the file keeps the notch at
-        // 0.01 it has searched with since, not the new default.
-        [Test]
-        public static void ATaskFromBeforeTheThresholds_KeepsTheNotchAt001()
-        {
-            var commonTask = LoadTask(OldToml(new[] { "QValueOutputFilter = 1.0", "PepQValueOutputFilter = 1.0" }));
-            var common = commonTask.CommonParameters;
-
-            Assert.That((common.IdentificationFilter, common.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.01)));
-
-            var fixture = Toml.ReadFile<SearchTask>(TestData("Search.toml"), MetaMorpheusTask.tomlConfig).CommonParameters;
-            Assert.That((fixture.IdentificationFilter, fixture.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.01)));
-        }
-
         // The twelve test TOMLs that name both old keys are kept as they are, as old task files. Each keeps what it meant.
         [Test]
         [TestCase(@"DatabaseTests\Task1-SearchTaskconfig.toml", FilterType.QValueNotch, 0.01)]
