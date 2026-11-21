@@ -345,7 +345,13 @@ namespace TaskLayer
             }
 
             //get non-ambigous psms above cutoffs that are normally used for parsimony
-            List<SpectralMatch>  _filteredPsms = psmsForProteinParsimony.Where(p => p.FullSequence != null && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01).ToList();
+            List<SpectralMatch> _filteredPsms = FilteredPsms.Filter(psmsForProteinParsimony, CommonParameters,
+                includeDecoys: true,
+                includeContaminants: true,
+                includeAmbiguous: true,
+                includeAmbiguousMods: false,
+                qValueThreshold: 0.01,
+                filterType: FilterType.QValueAndQValueNotch).FilteredPsmsList;
 
             // if there are no peptides observed, there are no proteins; return an empty list of protein groups
             if (_filteredPsms.Count != 0)
@@ -499,11 +505,15 @@ namespace TaskLayer
             }
 
             // get PSMs to pass to FlashLFQ
-            var unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
-                p.FdrInfo.QValue <= 0.01
-                && p.FdrInfo.QValueNotch <= 0.01
-                && !p.IsDecoy
-                && p.FullSequence != null).ToList();
+            var unambiguousPsmsBelowOnePercentFdr = FilteredPsms.Filter(Parameters.AllPsms.Cast<SpectralMatch>(), CommonParameters,
+                includeDecoys: false,
+                includeContaminants: true,
+                includeAmbiguous: true,
+                includeAmbiguousMods: false,
+                qValueThreshold: 0.01,
+                filterType: FilterType.QValueAndQValueNotch).FilteredPsmsList
+                .Cast<GlycoSpectralMatch>()
+                .ToList();
 
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<SpectralMatch, List<FlashLFQ.ProteinGroup>>();
@@ -651,7 +661,6 @@ namespace TaskLayer
             }
 
             foreach (var form in psmsForQuantification
-                .Where(p => p.FullSequence != null)
                 .GroupBy(p => (p.FullFilePath, p.FullSequence)))
             {
                 if (!filesByPath.TryGetValue(form.Key.FullFilePath, out var spectraFile)
