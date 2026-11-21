@@ -1622,7 +1622,7 @@ namespace Test
             var settings = new CommandLineSettings { SdrfConditionColumns = new[] { "genotype" }, GenerateDefaultTomls = true, OutputFolder = ScratchDataDirectory };
 
             var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
-            Assert.That(thrown.Message, Is.EqualTo("--sdrfCondition is only meaningful with --sdrfDesign."));
+            Assert.That(thrown.Message, Is.EqualTo("--sdrfCondition is only meaningful with --sdrfDesign, or in a run."));
         }
 
         [Test]
@@ -1631,7 +1631,7 @@ namespace Test
             var settings = new CommandLineSettings { SdrfSingleCondition = "all", GenerateDefaultTomls = true, OutputFolder = ScratchDataDirectory };
 
             var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
-            Assert.That(thrown.Message, Is.EqualTo("--sdrfSingleCondition is only meaningful with --sdrfDesign."));
+            Assert.That(thrown.Message, Is.EqualTo("--sdrfSingleCondition is only meaningful with --sdrfDesign, or in a run."));
         }
 
         [Test]
@@ -1640,7 +1640,7 @@ namespace Test
             var settings = new CommandLineSettings { SdrfUnknownFactorIsCondition = true, GenerateDefaultTomls = true, OutputFolder = ScratchDataDirectory };
 
             var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
-            Assert.That(thrown.Message, Is.EqualTo("--sdrfUnknownFactorIsCondition is only meaningful with --sdrfDesign."));
+            Assert.That(thrown.Message, Is.EqualTo("--sdrfUnknownFactorIsCondition is only meaningful with --sdrfDesign, or in a run."));
         }
 
         [Test]
@@ -1657,6 +1657,34 @@ namespace Test
 
             var thrown = Assert.Throws<MetaMorpheusException>(() => settings.ValidateCommandLineSettings());
             Assert.That(thrown.Message, Does.StartWith("--sdrfCondition and --sdrfSingleCondition were both given."));
+        }
+
+        /// <summary>
+        /// In a run, an SDRF beside the spectra files makes the design (the automatic design), so the switches that say how
+        /// it is grouped, and where its plex is written, are accepted there without --sdrfDesign or --sdrfTag. More than
+        /// one plex source is still refused.
+        /// </summary>
+        [Test]
+        public static void TestSdrfGroupingAndPlexSwitchesAreAcceptedInARun()
+        {
+            var (_, data) = WriteLabelFreeSdrf(("a1.raw", "WT", "DMSO", 1, 1));
+            string task = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
+            string database = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fasta");
+            CommandLineSettings Run(Action<CommandLineSettings> set)
+            {
+                var settings = new CommandLineSettings { _spectra = new[] { data }, _tasks = new[] { task }, _databases = new[] { database }, OutputFolder = ScratchDataDirectory };
+                set(settings);
+                return settings;
+            }
+
+            Assert.DoesNotThrow(() => Run(s => s.SdrfConditionColumns = new[] { "genotype" }).ValidateCommandLineSettings());
+            Assert.DoesNotThrow(() => Run(s => s.SdrfSingleCondition = "all").ValidateCommandLineSettings());
+            Assert.DoesNotThrow(() => Run(s => s.SdrfUnknownFactorIsCondition = true).ValidateCommandLineSettings());
+            Assert.DoesNotThrow(() => Run(s => s.SdrfPlexColumn = "comment[plex]").ValidateCommandLineSettings());
+
+            var twoPlexSources = Assert.Throws<MetaMorpheusException>(() =>
+                Run(s => { s.SdrfPlexColumn = "comment[plex]"; s.SdrfSinglePlex = "P1"; }).ValidateCommandLineSettings());
+            Assert.That(twoPlexSources.Message, Does.StartWith("Give at most one of --sdrfPlexColumn, --sdrfPlexPattern and --sdrfSinglePlex"));
         }
 
         /// <summary>
@@ -2008,14 +2036,19 @@ namespace Test
             var (sdrf, data) = WriteTmt6Sdrf(("pool7_f1.raw", "ignored"));
 
             var byPattern = TmtSdrfDesignSettings(sdrf, data, "TMT6", plexPattern: @"^(?<plex>pool\d+)_");
-            Assert.That(Program.WriteDesignFromSdrf(byPattern, new StringWriter()), Is.EqualTo(0));
+            var byPatternOutput = new StringWriter();
+            Assert.That(Program.WriteDesignFromSdrf(byPattern, byPatternOutput), Is.EqualTo(0));
             string designPath = Path.Combine(data, GlobalVariables.TmtExperimentalDesignFileName);
             Assert.That(TmtExperimentalDesign.Read(designPath, byPattern.Spectra.Select(Path.GetFullPath).ToList(), out _).Single().Plex, Is.EqualTo("pool7"));
             File.Delete(designPath);
 
             var single = TmtSdrfDesignSettings(sdrf, data, "TMT6", singlePlex: "only");
-            Assert.That(Program.WriteDesignFromSdrf(single, new StringWriter()), Is.EqualTo(0));
+            var singleOutput = new StringWriter();
+            Assert.That(Program.WriteDesignFromSdrf(single, singleOutput), Is.EqualTo(0));
             Assert.That(TmtExperimentalDesign.Read(designPath, single.Spectra.Select(Path.GetFullPath).ToList(), out _).Single().Plex, Is.EqualTo("only"));
+
+            // A stated plex is the user's, so nothing says MetaMorpheus chose it.
+            Assert.That(byPatternOutput.ToString() + singleOutput.ToString(), Does.Not.Contain("No plex source was named"));
         }
 
         /// <summary>A design MetaMorpheus would reject is refused, with the reason printed, and nothing is written.</summary>
@@ -2032,9 +2065,42 @@ namespace Test
             Assert.That(File.Exists(Path.Combine(data, GlobalVariables.TmtExperimentalDesignFileName)), Is.False);
         }
 
+        /// <summary>Ruled 2026-11-13: with --sdrfTag and no plex switch, the SDRF's comment[plex] column is read.</summary>
+        [Test]
+        public static void TestSdrfTmtDesignReadsCommentPlexWhenNoPlexSwitchIsGiven()
+        {
+            var (sdrf, data) = WriteTmt6Sdrf(("pool1_f1.raw", "pool1"));
+            var settings = TmtSdrfDesignSettings(sdrf, data, "TMT6");
+
+            var written = new StringWriter();
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(0), written.ToString());
+
+            string designPath = Path.Combine(data, GlobalVariables.TmtExperimentalDesignFileName);
+            Assert.That(TmtExperimentalDesign.Read(designPath, settings.Spectra.Select(Path.GetFullPath).ToList(), out _).Single().Plex,
+                Is.EqualTo("pool1"));
+            // mzLib's report says the column was "declared"; the run says MetaMorpheus chose it.
+            Assert.That(written.ToString(),
+                Does.Contain("No plex source was named, so MetaMorpheus read the plex from the SDRF's comment[plex] column."));
+        }
+
+        /// <summary>No comment[plex] and no plex switch: refused when the SDRF is read, saying comment[plex] was looked for.</summary>
+        [Test]
+        public static void TestSdrfTmtDesignWithNoCommentPlexAndNoPlexSwitchIsRefused()
+        {
+            var (sdrf, data) = WriteTmt6Sdrf(("pool1_f1.raw", "pool1"));
+            File.WriteAllText(sdrf, File.ReadAllText(sdrf).Replace("comment[plex]", "comment[pool]"));
+            var settings = TmtSdrfDesignSettings(sdrf, data, "TMT6");
+
+            var written = new StringWriter();
+            Assert.That(Program.WriteDesignFromSdrf(settings, written), Is.EqualTo(5));
+            Assert.That(written.ToString(), Does.Contain("No plex source was declared")
+                .And.Contain("The SDRF has no comment[plex] column, which MetaMorpheus reads for the plex when none is named.")
+                .And.Contain("No design file was written."));
+            Assert.That(File.Exists(Path.Combine(data, GlobalVariables.TmtExperimentalDesignFileName)), Is.False);
+        }
+
         [TestCase(null, "TMT6", null, null, "--sdrfTag is only meaningful with --sdrfDesign.")]
         [TestCase("x", null, "comment[plex]", null, "--sdrfPlexColumn is only meaningful with --sdrfTag")]
-        [TestCase("x", "TMT6", null, null, "--sdrfTag needs exactly one of --sdrfPlexColumn, --sdrfPlexPattern and --sdrfSinglePlex")]
         [TestCase("x", "TMT6", "comment[plex]", "one", "--sdrfPlexColumn and --sdrfSinglePlex were given")]
         [TestCase("x", "TMT99", "comment[plex]", null, "--sdrfTag 'TMT99' is not an isobaric kit MetaMorpheus knows")]
         public static void TestSdrfTagOptionsAreRefusedWhenTheyCannotWork(string sdrfDesign, string tag, string plexColumn, string singlePlex, string expected)

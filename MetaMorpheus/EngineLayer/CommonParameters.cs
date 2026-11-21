@@ -12,6 +12,7 @@ using Transcriptomics.Digestion;
 using EngineLayer.DIA;
 using Transcriptomics;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 
 namespace EngineLayer
 {
@@ -22,6 +23,10 @@ namespace EngineLayer
         public CommonParameters()
             : this(digestionParams: null)
         {
+            // A task TOML is read into this instance, setting only the keys the file holds. Until it names the
+            // identification filter, the filter is "not named", and a file saved before the setting existed is read by its
+            // thresholds once (IdentificationFilter).
+            _identificationFilterNamed = false;
         }
 
         public CommonParameters(
@@ -69,7 +74,8 @@ namespace EngineLayer
                 string rtPredictorName = RTPredictorNames.Chronologer,
             DoubleRange retentionTimeRange = null,
             string fivePrimeTerminus = null,
-            string threePrimeTerminus = null)
+            string threePrimeTerminus = null,
+            FilterType identificationFilter = FilterType.QValueNotch)
 
         {
             retentionTimeRange ??= new DoubleRange(0, double.MaxValue);
@@ -88,6 +94,7 @@ namespace EngineLayer
             TotalPartitions = totalPartitions;
             QValueThreshold = qValueThreshold;
             PepQValueThreshold = pepQValueThreshold;
+            IdentificationFilter = identificationFilter;
             QValueCutoffForPepCalculation = qValueCutoffForPepCalculation;
             ScoreCutoff = scoreCutoff;
             NumberOfPeaksToKeepPerWindow = numberOfPeaksToKeepPerWindow;
@@ -200,6 +207,55 @@ namespace EngineLayer
         /// peptides/PSMs with PEP Q-Value below this threshold are included in .psmtsv results files.
         /// </summary>
         public double PepQValueThreshold { get; private set; }
+
+        private FilterType _identificationFilter;
+        private bool _identificationFilterNamed;
+
+        /// <summary>
+        /// The value that decides whether a match or peptide counts as identified, at every step of a search: the
+        /// tables, parsimony, protein scoring and FDR, quantification, the spectral library, the pruned database, the
+        /// Spectrum Match Count column and every count reported. The user picks one of two:
+        /// <see cref="FilterType.QValueNotch"/> (the default), held to <see cref="QValueThreshold"/>; or
+        /// <see cref="FilterType.PepQValue"/>, held to <see cref="PepQValueThreshold"/>, where a match whose PEP was not
+        /// trained is judged by its q-value notch at that same threshold, and the search says so.
+        /// The pooled q-value (<see cref="FilterType.QValue"/>) is not a choice: setting it throws.
+        /// A task TOML saved before this setting existed names no filter. If its <see cref="PepQValueThreshold"/> is below
+        /// its <see cref="QValueThreshold"/>, the old way of asking for PEP (the GUI's PEP box saved 1.0 and 0.01), it is read
+        /// as <see cref="FilterType.PepQValue"/> at that PEP threshold (<see cref="IdentificationFilterFromLegacyThresholds"/>);
+        /// otherwise as the notch. Saving it writes the filter, so the rule applies once per old file. A TOML that names the
+        /// filter, and every CommonParameters built in code, keeps the filter it names.
+        /// </summary>
+        public FilterType IdentificationFilter
+        {
+            get => _identificationFilterNamed || !(PepQValueThreshold < QValueThreshold) ? _identificationFilter : FilterType.PepQValue;
+            private set
+            {
+                _identificationFilter = value is FilterType.QValueNotch or FilterType.PepQValue ? value : throw new ArgumentException(NotAFilter(value));
+                _identificationFilterNamed = true;
+            }
+        }
+
+        /// <summary>
+        /// The message for a filter that is not one of the two choices: the pooled q-value. It names the setting and both
+        /// choices, since a task TOML that names the pooled q-value fails to load with it.
+        /// </summary>
+        internal static string NotAFilter(FilterType value) =>
+            $"IdentificationFilter is {FilterType.PepQValue} (the PEP q-value) or {FilterType.QValueNotch} (the q-value notch), not {value}: " +
+            "the pooled q-value is not an identification filter of its own.";
+
+        /// <summary>
+        /// True when <see cref="IdentificationFilter"/> was read from a task TOML that names no filter and holds the old
+        /// PEP thresholds (<see cref="PepQValueThreshold"/> below <see cref="QValueThreshold"/>): the filter is then the
+        /// PEP q-value, and the search says so once.
+        /// </summary>
+        [TomlIgnore] public bool IdentificationFilterFromLegacyThresholds => !_identificationFilterNamed && PepQValueThreshold < QValueThreshold;
+
+        // A copy keeps whether the filter was named or read from legacy thresholds, so the search still says so.
+        private void CopyIdentificationFilterRecord(CommonParameters source)
+        {
+            _identificationFilter = source._identificationFilter;
+            _identificationFilterNamed = source._identificationFilterNamed;
+        }
         public double ScoreCutoff { get; private set; }
         /// <summary>
         /// This parameter determines which PSMs/Peptides will be used as postive training examples
@@ -275,8 +331,9 @@ namespace EngineLayer
             CommonParameters c = new CommonParameters();
             foreach (PropertyInfo property in typeof(CommonParameters).GetProperties())
             {
-                property.SetValue(c, property.GetValue(this));
+                if (property.CanWrite) property.SetValue(c, property.GetValue(this));
             }
+            c.CopyIdentificationFilterRecord(this);
             return c;
         }
 
@@ -285,8 +342,9 @@ namespace EngineLayer
             CommonParameters c = new CommonParameters();
             foreach (PropertyInfo property in typeof(CommonParameters).GetProperties())
             {
-                property.SetValue(c, property.GetValue(this));
+                if (property.CanWrite) property.SetValue(c, property.GetValue(this));
             }
+            c.CopyIdentificationFilterRecord(this);
             c.DissociationType = dissociationType;
             return c;
         }
@@ -346,7 +404,8 @@ namespace EngineLayer
                                 RTPredictorName,
                                  RetentionTimeRange,
                                  FivePrimeTerminus?.Formula,
-                                 ThreePrimeTerminus?.Formula);
+                                 ThreePrimeTerminus?.Formula,
+                                 IdentificationFilter);
         }
 
         /// <summary>
@@ -402,7 +461,8 @@ namespace EngineLayer
                                 RTPredictorName,
                                  RetentionTimeRange,
                                  FivePrimeTerminus?.Formula,
-                                 ThreePrimeTerminus?.Formula);
+                                 ThreePrimeTerminus?.Formula,
+                                 IdentificationFilter);
 
             // CustomIons is not a constructor parameter — the constructor reads it from the global
             // dissociation-type dictionary — so copy it across explicitly. GlycoSearchEngine branches on

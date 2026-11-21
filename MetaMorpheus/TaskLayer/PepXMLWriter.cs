@@ -56,7 +56,8 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "Product Mass Tolerance", value = CommonParameters.ProductMassTolerance.ToString() });
                 // TODO: check this
                 para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = string.Join(", ", DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType]) });
-                para.Add(new pepXML.Generated.nameValueType { name = "Q-value Filter", value = CommonParameters.QValueThreshold.ToString() });
+                // The filter the written matches passed, and its threshold: "pep q-value <= 0.01"
+                para.Add(new pepXML.Generated.nameValueType { name = "Identification Filter", value = EngineLayer.SpectrumMatch.FilteredPsms.Describe(CommonParameters) });
                 foreach (var item in fixedModifications)
                 {
                     para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.IdWithMotif, value = item.MonoisotopicMass.ToString() });
