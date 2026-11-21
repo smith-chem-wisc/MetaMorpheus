@@ -217,27 +217,6 @@ namespace EngineLayer
         /// false, only the matches and peptides that pass are written to the .psmtsv files.
         /// </summary>
         public double FilterThreshold { get; private set; }
-
-        /// <summary>The <see cref="FilterThreshold"/> a search gets when it names none.</summary>
-        public const double DefaultFilterThreshold = 0.01;
-
-        /// <summary>
-        /// The identification filter a search gets when it names none: the q-value notch for RNA
-        /// (<paramref name="isRna"/>) and for top-down (<paramref name="isTopDown"/>, the "top-down" protease), the PEP
-        /// q-value bottom-up. The task windows start a top-down task from it, as from
-        /// <see cref="PepAnalysisEngine.DefaultQValueCutoffForPepCalculation"/>.
-        /// </summary>
-        public static FilterType DefaultIdentificationFilter(bool isRna, bool isTopDown) =>
-            isRna || isTopDown ? FilterType.QValueNotch : FilterType.PepQValue;
-
-        /// <summary>A copy with a different identification filter and threshold, as the other CloneWithNew* copies.</summary>
-        public CommonParameters CloneWithNewIdentificationFilter(FilterType identificationFilter, double filterThreshold)
-        {
-            CommonParameters c = Clone();
-            c.IdentificationFilter = identificationFilter;
-            c.FilterThreshold = filterThreshold;
-            return c;
-        }
         public double ScoreCutoff { get; private set; }
         /// <summary>
         /// This parameter determines which PSMs/Peptides will be used as postive training examples
@@ -469,6 +448,18 @@ namespace EngineLayer
         {
             DigestionParams.ProductsFromDissociationType()[MassSpectrometry.DissociationType.Custom] = CustomIons;
         }
+
+        /// <summary>The <see cref="FilterThreshold"/> a search gets when it names none.</summary>
+        public const double DefaultFilterThreshold = 0.01;
+
+        /// <summary>
+        /// The identification filter a search gets when it names none: the q-value notch for RNA
+        /// (<paramref name="isRna"/>) and for top-down (<paramref name="isTopDown"/>, the "top-down" protease), the PEP
+        /// q-value bottom-up. The task windows start a top-down task from it, as from
+        /// <see cref="PepAnalysisEngine.DefaultQValueCutoffForPepCalculation"/>.
+        /// </summary>
+        public static FilterType DefaultIdentificationFilter(bool isRna, bool isTopDown) =>
+            isRna || isTopDown ? FilterType.QValueNotch : FilterType.PepQValue;
 
         public AnalyteType DetermineAnalyteType()
         {
