@@ -17,11 +17,13 @@ using SpectralAveraging;
 using System;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using EngineLayer.DatabaseLoading;
@@ -281,20 +283,10 @@ namespace TaskLayer
 
         #endregion
 
-        // The settings every task-TOML read uses. Reading a CommonParameters resolves a file saved before FilterThreshold
-        // existed once, through its old QValueThreshold/PepQValueThreshold keys, so the object holds only the filter and
-        // threshold the search runs with.
-        public static readonly TomlSettings tomlConfig = BuildTomlSettings(withLegacyCommonParameters: true);
-
-        // The same conversions without the CommonParameters one, used inside it so reading a CommonParameters does not
-        // re-enter the conversion.
-        private static readonly TomlSettings plainTomlConfig = BuildTomlSettings(withLegacyCommonParameters: false);
-
-        private static TomlSettings BuildTomlSettings(bool withLegacyCommonParameters)
-        {
-            return TomlSettings.Create(cfg =>
-            {
-                var builder = cfg
+        // The settings every task-TOML read uses. A file written before FilterThreshold existed names its filter and
+        // threshold through the old QValueThreshold/PepQValueThreshold keys; OnTargetPropertyNotFound maps them onto the
+        // resolved properties as the task is bound, so functional code and CommonParameters carry no legacy awareness.
+        public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
             .ConfigureType<Tolerance>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
@@ -441,79 +433,75 @@ namespace TaskLayer
             .ConfigureType<RnaFragmentationParams>(type => type
                 .CreateInstance(() => RnaFragmentationParams.Default))
             .ConfigureType<FragmentationParams>(type => type
-                .CreateInstance(() => new()));
-
-                if (withLegacyCommonParameters)
-                {
-                    builder.ConfigureType<CommonParameters>(type => type
-                        .WithConversionFor<TomlTable>(convert => convert
-                            .FromToml(ReadCommonParametersFromToml)));
-                }
-            });
-        }
+                .CreateInstance(() => new()))
+            .ConfigurePropertyMapping(mapping => mapping
+                .OnTargetPropertyNotFound(ResolveLegacyCommonParametersKey))
+        );
 
         /// <summary>
-        /// A CommonParameters from its task-TOML table, with the filter and threshold a file written before FilterThreshold
-        /// existed meant. The old keys are resolved once, here, so a search reads plain values and no caller needs a
-        /// special reader: a named IdentificationFilter keeps the file's old threshold, an unnamed old file is the PEP
-        /// q-value when its PepQValueThreshold is below its QValueThreshold and the q-value notch otherwise, a file from
-        /// before #2285 is the notch at 0.01, and a file with no filter keys at all is the default for its analyte.
+        /// Maps a task TOML's pre-FilterThreshold filter keys onto the resolved properties as the CommonParameters is bound.
+        /// A file written by a release names its filter through them: exactly one of QValueThreshold and PepQValueThreshold
+        /// is the old default of 1 (the unused one) and the other is the threshold, so the key that holds it picks the
+        /// filter. A pre-#2285 file has QValueOutputFilter/PepQValueOutputFilter instead, which always meant the notch at
+        /// 0.01. New files carry neither, so their IdentificationFilter/FilterThreshold bind normally. Files written by the
+        /// intermediate #2982 build are not supported.
         /// </summary>
-        private static CommonParameters ReadCommonParametersFromToml(TomlTable table)
+        private static void ResolveLegacyCommonParametersKey(string[] path, object target, TomlObject node)
         {
-            bool hasNamedFilter = table.ContainsKey(nameof(CommonParameters.IdentificationFilter));
-            FilterType? named = hasNamedFilter
-                ? Enum.Parse<FilterType>(table.Get<string>(nameof(CommonParameters.IdentificationFilter)))
-                : null;
-            double? thresholdGiven = table.ContainsKey(nameof(CommonParameters.FilterThreshold))
-                ? table.Get<double>(nameof(CommonParameters.FilterThreshold))
-                : null;
-
-            double? legacyQ = table.ContainsKey("QValueThreshold") ? table.Get<double>("QValueThreshold") : null;
-            double? legacyPep = table.ContainsKey("PepQValueThreshold") ? table.Get<double>("PepQValueThreshold") : null;
-            bool beforeThresholds = table.ContainsKey("QValueOutputFilter") || table.ContainsKey("PepQValueOutputFilter");
-            bool legacy = legacyQ.HasValue || legacyPep.HasValue || beforeThresholds;
-
-            double q = legacyQ ?? 0.01;     // QValueThreshold's old default
-            double pep = legacyPep ?? 1.0;  // PepQValueThreshold's old default
-
-            FilterType filter = named
-                ?? (legacy
-                    ? (pep < q ? FilterType.PepQValue : FilterType.QValueNotch)
-                    : DefaultIdentificationFilterFor(table));
-            double threshold = thresholdGiven
-                ?? (legacy ? (filter == FilterType.PepQValue ? pep : q) : CommonParameters.DefaultFilterThreshold);
-
-            // Drop the old keys and pin the resolved values, then let the normal mapping read them like any other key.
-            table.Remove("QValueThreshold");
-            table.Remove("PepQValueThreshold");
-            table.Remove("QValueOutputFilter");
-            table.Remove("PepQValueOutputFilter");
-            SetTomlNode(table, nameof(CommonParameters.IdentificationFilter), $"\"{filter}\"");
-            SetTomlNode(table, nameof(CommonParameters.FilterThreshold), threshold.ToString("R", CultureInfo.InvariantCulture));
-
-            return Toml.ReadString<CommonParameters>(table.ToString(), plainTomlConfig);
-        }
-
-        /// <summary>The filter a file that names none gets: the default for the analyte its digestion parameters search.</summary>
-        private static FilterType DefaultIdentificationFilterFor(TomlTable table)
-        {
-            bool isRna = false;
-            bool isTopDown = false;
-            if (table.ContainsKey(nameof(CommonParameters.DigestionParams)))
+            if (target is not CommonParameters commonParameters || path.Length == 0)
             {
-                IDigestionParams digestionParams = table.Get<TomlTable>(nameof(CommonParameters.DigestionParams)).Get<IDigestionParams>();
-                isRna = digestionParams is RnaDigestionParams;
-                isTopDown = digestionParams is DigestionParams { DigestionAgent.Name: "top-down" };
+                return;
             }
-            return CommonParameters.DefaultIdentificationFilter(isRna, isTopDown);
+
+            LegacyCommonParametersState state = LegacyCommonParametersStates.GetOrCreateValue(commonParameters);
+            string key = path[^1];
+
+            // A pre-#2285 file has QValueOutputFilter/PepQValueOutputFilter instead of the thresholds; those meant the
+            // notch at 0.01. A release file carries both pairs, and the threshold keys win, so ignore these once one did.
+            if (key is "QValueOutputFilter" or "PepQValueOutputFilter")
+            {
+                if (!state.ThresholdKeyResolved)
+                {
+                    SetResolvedFilter(commonParameters, FilterType.QValueNotch, CommonParameters.DefaultFilterThreshold);
+                }
+                return;
+            }
+
+            // The unused key sits at the old default of 1; only the other key carries a threshold between 0 and 1.
+            if (node is not TomlFloat threshold || threshold.Value >= 1)
+            {
+                return;
+            }
+            if (key == "QValueThreshold")
+            {
+                state.ThresholdKeyResolved = true;
+                SetResolvedFilter(commonParameters, FilterType.QValueNotch, threshold.Value);
+            }
+            else if (key == "PepQValueThreshold")
+            {
+                state.ThresholdKeyResolved = true;
+                SetResolvedFilter(commonParameters, FilterType.PepQValue, threshold.Value);
+            }
         }
 
-        /// <summary>Adds or replaces a key in a parsed TOML table, as the node a small snippet parses to.</summary>
-        private static void SetTomlNode(TomlTable table, string key, string tomlValue)
+        private sealed class LegacyCommonParametersState
         {
-            TomlTable snippet = Toml.ReadString($"{key} = {tomlValue}");
-            table[key] = snippet[key];
+            public bool ThresholdKeyResolved;
+        }
+
+        private static readonly ConditionalWeakTable<CommonParameters, LegacyCommonParametersState> LegacyCommonParametersStates = new();
+
+        private static readonly PropertyInfo IdentificationFilterProperty =
+            typeof(CommonParameters).GetProperty(nameof(CommonParameters.IdentificationFilter))!;
+
+        private static readonly PropertyInfo FilterThresholdProperty =
+            typeof(CommonParameters).GetProperty(nameof(CommonParameters.FilterThreshold))!;
+
+        /// <summary>Sets the resolved filter and threshold on the CommonParameters being bound; both have private setters.</summary>
+        private static void SetResolvedFilter(CommonParameters commonParameters, FilterType filter, double threshold)
+        {
+            IdentificationFilterProperty.SetValue(commonParameters, filter);
+            FilterThresholdProperty.SetValue(commonParameters, threshold);
         }
 
        

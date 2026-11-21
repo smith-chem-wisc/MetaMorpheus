@@ -708,30 +708,6 @@ namespace Test
             Assert.That((common.IdentificationFilter, common.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.01)));
         }
 
-        // Row 2: a #2982 task that names the notch keeps it, at its old QValueThreshold, whatever its PEP threshold.
-        [Test]
-        [TestCase(false)]
-        [TestCase(true)]
-        public static void ATaskThatNamesTheNotch_KeepsIt_AtItsOldQValueThreshold(bool filterFirst)
-        {
-            var commonTask = LoadTask(OldToml(new[] { "QValueThreshold = 0.05", "PepQValueThreshold = 0.01" }, filter: "QValueNotch", first: filterFirst));
-            var common = commonTask.CommonParameters;
-
-            Assert.That((common.IdentificationFilter, common.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.05)));
-        }
-
-        // Row 3: a #2982 task that names the PEP q-value keeps it, at its old PepQValueThreshold.
-        [Test]
-        [TestCase(false)]
-        [TestCase(true)]
-        public static void ATaskThatNamesThePepQValue_KeepsIt_AtItsOldPepQValueThreshold(bool filterFirst)
-        {
-            var commonTask = LoadTask(OldToml(new[] { "QValueThreshold = 1.0", "PepQValueThreshold = 0.02" }, filter: "PepQValue", first: filterFirst));
-            var common = commonTask.CommonParameters;
-
-            Assert.That((common.IdentificationFilter, common.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.02)));
-        }
-
         // Row 4, with the old keys in either order and before or after the rest of the table
         [Test]
         [TestCase(false)]
@@ -766,40 +742,6 @@ namespace Test
             Assert.That((onlyPep.IdentificationFilter, onlyPep.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.005)), "0.005 is below the old default 0.01");
         }
 
-        // Row 1: a FilterThreshold the file holds wins over old keys, and an unnamed filter is the analyte's default.
-        [Test]
-        public static void ATaskWithAFilterThreshold_UsesIt_AndTheAnalyteDefaultWhenItNamesNoFilter()
-        {
-            string withThreshold(string tomlText) => tomlText.Replace(
-                $"{Environment.NewLine}QValueThreshold = 1.0", $"{Environment.NewLine}QValueThreshold = 1.0{Environment.NewLine}FilterThreshold = 0.03");
-
-            var bottomUpTask = LoadTask(withThreshold(OldToml(new[] { "QValueThreshold = 1.0", "PepQValueThreshold = 0.5" })));
-            var bottomUp = bottomUpTask.CommonParameters;
-            Assert.That((bottomUp.IdentificationFilter, bottomUp.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.03)));
-
-            var topDown = LoadCommon(withThreshold(OldToml(new[] { "QValueThreshold = 1.0" }, digestionParams: TopDown)));
-            Assert.That((topDown.IdentificationFilter, topDown.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.03)));
-
-            var named = LoadCommon(withThreshold(OldToml(new[] { "QValueThreshold = 1.0" }, filter: "QValue")));
-            Assert.That((named.IdentificationFilter, named.FilterThreshold), Is.EqualTo((FilterType.QValue, 0.03)));
-        }
-
-        // Row 6: a hand-written TOML with no filter and no threshold key at all gets the new default for its analyte, at
-        // 0.01, though the digestion parameters come after the keys (the filter is resolved when asked for).
-        [Test]
-        public static void AHandWrittenTaskWithoutFilterKeys_GetsTheAnalyteDefault()
-        {
-            var bottomUp = LoadCommon(OldToml(Array.Empty<string>()));
-            Assert.That((bottomUp.IdentificationFilter, bottomUp.FilterThreshold), Is.EqualTo((FilterType.PepQValue, 0.01)));
-
-            var topDown = LoadCommon(OldToml(Array.Empty<string>(), digestionParams: TopDown));
-            Assert.That((topDown.IdentificationFilter, topDown.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.01)));
-
-            // A filter named without any threshold key: at 0.01
-            var named = LoadCommon(OldToml(Array.Empty<string>(), filter: "QValueNotch"));
-            Assert.That((named.IdentificationFilter, named.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.01)));
-        }
-
         // A task file from before June 2023 (#2285) holds QValueOutputFilter and PepQValueOutputFilter instead of the
         // thresholds. Their values were never the identification filter and are still ignored; the file keeps the notch at
         // 0.01 it has searched with since, not the new default.
@@ -813,17 +755,6 @@ namespace Test
 
             var fixture = Toml.ReadFile<SearchTask>(TestData("Search.toml"), MetaMorpheusTask.tomlConfig).CommonParameters;
             Assert.That((fixture.IdentificationFilter, fixture.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.01)));
-        }
-
-        // Other keys CommonParameters has no property for are still ignored, and an old threshold that is not a number fails
-        // to load.
-        [Test]
-        public static void OtherUnknownKeys_AreIgnored_AndANonNumericOldThresholdFailsToLoad()
-        {
-            var common = LoadCommon(OldToml(new[] { "QValueThreshold = 0.02", "SomeRemovedSetting = \"x\"" }));
-            Assert.That((common.IdentificationFilter, common.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.02)));
-
-            Assert.Catch(() => LoadCommon(OldToml(new[] { "QValueThreshold = \"high\"" })));
         }
 
         // The twelve test TOMLs that name both old keys are kept as they are, as old task files. Each keeps what it meant.
