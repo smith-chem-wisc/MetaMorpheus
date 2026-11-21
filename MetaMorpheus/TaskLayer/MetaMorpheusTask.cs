@@ -438,29 +438,40 @@ namespace TaskLayer
         );
 
         /// <summary>
-        /// Maps a task TOML's pre-FilterThreshold filter key onto the resolved properties as the CommonParameters is bound.
-        /// A release file before FilterThreshold holds one threshold between 0 and 1 in QValueThreshold or
-        /// PepQValueThreshold and leaves the other key at its old default of 1, so the key that holds the value picks the
-        /// filter. New files carry IdentificationFilter/FilterThreshold and bind normally.
+        /// Resolves the released legacy filter keys while Nett binds CommonParameters. Threshold keys select the filter
+        /// when present. In the pre-#2285 files, PepQValueOutputFilter was 1.0 and marked the old notch-at-0.01 behavior;
+        /// in transitional files it copied the active PEP threshold, so that key is ignored when below 1.0.
         /// </summary>
         private static void ResolveLegacyCommonParametersKey(string[] path, object target, TomlObject node)
         {
-            FilterType? filter = path.Length > 0
-                ? path[^1] switch
-                {
-                    "QValueThreshold" => FilterType.QValueNotch,
-                    "PepQValueThreshold" => FilterType.PepQValue,
-                    _ => null
-                }
-                : null;
-            if (target is not CommonParameters commonParameters || filter is not FilterType resolved
-                || node is not TomlFloat threshold || threshold.Value >= 1)
+            if (target is not CommonParameters commonParameters || path.Length == 0 || node is not TomlFloat value)
             {
                 return;
             }
 
-            typeof(CommonParameters).GetProperty(nameof(CommonParameters.IdentificationFilter))!.SetValue(commonParameters, resolved);
-            typeof(CommonParameters).GetProperty(nameof(CommonParameters.FilterThreshold))!.SetValue(commonParameters, threshold.Value);
+            string key = path[^1];
+            FilterType? filter = null;
+            double threshold = value.Value;
+            if (threshold < 1)
+            {
+                filter = key switch
+                {
+                    "QValueThreshold" => FilterType.QValueNotch,
+                    "PepQValueThreshold" => FilterType.PepQValue,
+                    _ => null
+                };
+            }
+            else if (key == "PepQValueOutputFilter")
+            {
+                filter = FilterType.QValueNotch;
+                threshold = CommonParameters.DefaultFilterThreshold;
+            }
+
+            if (filter is FilterType resolved)
+            {
+                typeof(CommonParameters).GetProperty(nameof(CommonParameters.IdentificationFilter))!.SetValue(commonParameters, resolved);
+                typeof(CommonParameters).GetProperty(nameof(CommonParameters.FilterThreshold))!.SetValue(commonParameters, threshold);
+            }
         }
 
        
