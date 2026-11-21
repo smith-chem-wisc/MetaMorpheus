@@ -59,6 +59,7 @@ namespace EngineLayer.SpectrumMatch
             FilterType.PepQValue => fdrInfo.PepTrained ? fdrInfo.PEP_QValue : fdrInfo.QValueNotch,
             FilterType.QValueNotch => fdrInfo.QValueNotch,
             FilterType.QValue => fdrInfo.QValue,
+            FilterType.QValueAndQValueNotch => Math.Max(fdrInfo.QValue, fdrInfo.QValueNotch),
             _ => throw new ArgumentOutOfRangeException(nameof(filterType), filterType, null)
         };
 
@@ -75,6 +76,7 @@ namespace EngineLayer.SpectrumMatch
             FilterType.PepQValue => "pep q-value",
             FilterType.QValueNotch => "q-value notch",
             FilterType.QValue => "q-value",
+            FilterType.QValueAndQValueNotch => "q-value and q-value notch",
             _ => throw new ArgumentOutOfRangeException(nameof(filterType), filterType, null)
         };
 
@@ -142,6 +144,8 @@ namespace EngineLayer.SpectrumMatch
         /// <param name="filterAtPeptideLevel">Filter results at the peptide level (defaults to false) </param>
         /// <param name="includeAmbiguousMods">Keep PSMs whose full sequence did not resolve (two or more full sequences
         /// match the scan)</param>
+        /// <param name="includeNotchAmbiguous">For q-value-notch filtering, keep a PSM whose notch q-value was not
+        /// assigned when one of its matching hypotheses passes the notch threshold</param>
         /// <param name="includeLocalizationAmbiguousMods">Keep PSMs ambiguous only in where their modifications sit
         /// (<see cref="SpectralMatch.IsLocalizationAmbiguous"/>), whatever <paramref name="includeAmbiguousMods"/> says
         /// about the others. Null, the default, follows <paramref name="includeAmbiguousMods"/>.</param>
@@ -157,7 +161,8 @@ namespace EngineLayer.SpectrumMatch
             bool includeHighQValuePsms = false,
             bool filterAtPeptideLevel = false,
             bool? includeLocalizationAmbiguousMods = null,
-            FilterType? filterType = null)
+            FilterType? filterType = null,
+            bool includeNotchAmbiguous = false)
         {
             bool includeLocalizationAmbiguous = includeLocalizationAmbiguousMods ?? includeAmbiguousMods;
 
@@ -179,7 +184,7 @@ namespace EngineLayer.SpectrumMatch
                 .ToList();
 
             List<SpectralMatch> filteredPsms = candidates
-                .FilterByQValue(includeHighQValuePsms, threshold, filterAtPeptideLevel, type)
+                .FilterByQValue(includeHighQValuePsms, threshold, filterAtPeptideLevel, type, includeNotchAmbiguous)
                 .CollapseToPeptides(filterAtPeptideLevel)
                 .ToList();
 
@@ -262,9 +267,13 @@ namespace EngineLayer.SpectrumMatch
         /// The matches that pass <paramref name="filterType"/> at <paramref name="qValueThreshold"/>
         /// (<see cref="FilteredPsms.Passes"/>), or every match when <paramref name="includeHighQValuePsms"/>.
         /// </summary>
-        internal static IEnumerable<SpectralMatch> FilterByQValue(this IEnumerable<SpectralMatch> psms, bool includeHighQValuePsms, double qValueThreshold, bool filterAtPeptideLevel, FilterType filterType) =>
+        internal static IEnumerable<SpectralMatch> FilterByQValue(this IEnumerable<SpectralMatch> psms, bool includeHighQValuePsms, double qValueThreshold, bool filterAtPeptideLevel, FilterType filterType, bool includeNotchAmbiguous = false) =>
             includeHighQValuePsms
                 ? psms
-                : psms.Where(psm => FilteredPsms.Passes(psm, filterAtPeptideLevel, filterType, qValueThreshold));
+                : psms.Where(psm => FilteredPsms.Passes(psm, filterAtPeptideLevel, filterType, qValueThreshold)
+                    || (includeNotchAmbiguous
+                        && filterType == FilterType.QValueNotch
+                        && Math.Abs(psm.FdrInfo.QValueNotch - 2) < 0.001
+                        && psm.BestMatchingBioPolymersWithSetMods.Any(p => p.QValueNotch.HasValue && p.QValueNotch <= qValueThreshold)));
     }
 }

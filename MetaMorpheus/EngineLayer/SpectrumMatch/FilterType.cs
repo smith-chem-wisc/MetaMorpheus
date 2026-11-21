@@ -24,6 +24,9 @@ namespace EngineLayer.SpectrumMatch
         /// The q-value notch: the q-value counted within each mass-difference notch. The default for top-down and RNA
         /// (<see cref="CommonParameters.DefaultIdentificationFilter"/>).
         /// </summary>
-        QValueNotch
+        QValueNotch,
+
+        /// <summary>A pooled q-value and q-value-notch filter, both held to the same threshold.</summary>
+        QValueAndQValueNotch
     }
 }

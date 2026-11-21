@@ -194,6 +194,22 @@ namespace Test
                 "PEP training does not matter to it");
         }
 
+        [Test]
+        public static void CombinedQValueAndQValueNotchFilterRequiresBothValuesAtTheThreshold()
+        {
+            var psms = Matches("PEPTIDEK", "trypsin", 3, 0, pepTrained: true);
+            Set(psms[0], q: 0.01, notch: 0.01, pepQ: 0.01);
+            Set(psms[1], q: 0.011, notch: 0.001, pepQ: 0.01);
+            Set(psms[2], q: 0.001, notch: 0.011, pepQ: 0.01);
+
+            var filtered = FilteredPsms.Filter(psms, Chosen(FilterType.QValueNotch, 0.01),
+                includeAmbiguousMods: false,
+                filterType: FilterType.QValueAndQValueNotch);
+
+            Assert.That(filtered.FilteredPsmsList, Is.EqualTo(new[] { psms[0] }));
+            Assert.That(filtered.GetFilterValue(psms[0]), Is.EqualTo(0.01));
+        }
+
         // Spec 5 (README C): one protease trained PEP, the other did not.
         [Test]
         public static void PepNotTrainedForOneProtease_ItsMatchesAreJudgedByTheNotch_AndTheSentenceNamesIt()
