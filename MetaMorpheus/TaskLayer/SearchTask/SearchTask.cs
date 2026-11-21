@@ -37,7 +37,17 @@ namespace TaskLayer
             SearchParameters = new SearchParameters();
         }
 
-        public SearchParameters SearchParameters { get; set; }
+        /// <summary>
+        /// For tasks that build on the search task and report their own <see cref="MyTask"/> type.
+        /// </summary>
+        protected SearchTask(MyTask task) : base(task)
+        {
+            CommonParameters = new CommonParameters();
+
+            SearchParameters = new SearchParameters();
+        }
+
+        public virtual SearchParameters SearchParameters { get; set; }
 
         /// <summary>The input SDRF this search reads: the task's own, else the run's (<see cref="SdrfForRun.InputSdrfPathFor"/>).</summary>
         private string InputSdrfPathForRun => SdrfForRun.InputSdrfPathFor(SearchParameters, RunSdrf);

@@ -16,8 +16,18 @@ namespace EngineLayer
         private readonly HashSet<string> _decoyIdentifiers;
         private readonly FilterType _filterType;
         private readonly double _filterThreshold;
+        private readonly bool _psmsAlreadyFiltered;
         private readonly bool _rankByPep;
 
+        /// <summary>
+        /// Whether protein FDR ranks groups by their best peptide's q-value or by its PEP.
+        /// </summary>
+        public FilterType FilterType => _filterType;
+
+        /// <summary>
+        /// Takes every PSM from the search; the engine keeps those passing the q-value or PEP q-value threshold
+        /// from <paramref name="commonParameters"/>, whichever is stricter.
+        /// </summary>
         /// <param name="labelPeptidesUniqueToOneGroup">
         /// True for the search's own call: after FDR, label each group's peptides unique or shared among the groups it
         /// returns. False for a per-file call, whose groups are subsets of the search's and already carry its labels
@@ -25,9 +35,21 @@ namespace EngineLayer
         /// </param>
         public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, IList<SpectralMatch> filteredPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups,
             CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds,
+            bool labelPeptidesUniqueToOneGroup = true)
+            : this(proteinGroups, filteredPsms, psmsAlreadyFiltered: false, noOneHitWonders, treatModPeptidesAsDifferentPeptides, mergeIndistinguishableProteinGroups,
+                commonParameters, fileSpecificParameters, nestedIds, labelPeptidesUniqueToOneGroup) { }
+
+        /// <summary>
+        /// When <paramref name="psmsAlreadyFiltered"/> is true, <paramref name="psms"/> are scored as-is with no q-value
+        /// filtering. Parallel search relies on this to score every baseline PSM, since it aligns transient FDR to the
+        /// baseline rather than recalculating it.
+        /// </summary>
+        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, IList<SpectralMatch> psms, bool psmsAlreadyFiltered, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups,
+            CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds,
             bool labelPeptidesUniqueToOneGroup = true) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
-            _FilteredPsms = filteredPsms;
+            _FilteredPsms = psms;
+            _psmsAlreadyFiltered = psmsAlreadyFiltered;
             ProteinGroups = proteinGroups;
             NoOneHitWonders = noOneHitWonders;
             TreatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
@@ -85,7 +107,10 @@ namespace EngineLayer
         /// protease: FlashLFQ and the isobaric engine key a peptide on its sequence alone, so they treat that sequence as
         /// shared between the two groups.
         /// </remarks>
-        internal static void LabelPeptidesUniqueToOneGroup(List<ProteinGroup> proteinGroups, bool treatModPeptidesAsDifferentPeptides)
+        /// <param name="groupsToLabel">The groups whose labels are set; null for all of <paramref name="proteinGroups"/>.
+        /// Either way a peptide is unique when no other group in <paramref name="proteinGroups"/> lists it.</param>
+        internal static void LabelPeptidesUniqueToOneGroup(List<ProteinGroup> proteinGroups, bool treatModPeptidesAsDifferentPeptides,
+            IEnumerable<ProteinGroup> groupsToLabel = null)
         {
             (string, object) Sequence(IBioPolymerWithSetMods peptide) =>
                 (treatModPeptidesAsDifferentPeptides ? peptide.FullSequence : peptide.BaseSequence, peptide.DigestionParams?.DigestionAgent);
@@ -99,7 +124,7 @@ namespace EngineLayer
                 }
             }
 
-            foreach (var proteinGroup in proteinGroups)
+            foreach (var proteinGroup in groupsToLabel ?? proteinGroups)
             {
                 proteinGroup.UniquePeptides = new HashSet<IBioPolymerWithSetMods>(
                     proteinGroup.AllPeptides.Where(peptide => groupsListingSequence[Sequence(peptide)] == 1));
@@ -118,11 +143,15 @@ namespace EngineLayer
         {
             // add each protein groups PSMs
             var peptideToPsmMatching = new Dictionary<IBioPolymerWithSetMods, HashSet<SpectralMatch>>();
-            foreach (var psm in psmList.FilterByQValue(
-                includeHighQValuePsms: false,
-                qValueThreshold: _filterThreshold,
-                filterAtPeptideLevel: false,
-                filterType: _filterType))
+            var psmsToScore = _psmsAlreadyFiltered
+                ? psmList
+                : psmList.FilterByQValue(
+                    includeHighQValuePsms: false,
+                    qValueThreshold: _filterThreshold,
+                    filterAtPeptideLevel: false,
+                    filterType: _filterType);
+
+            foreach (var psm in psmsToScore)
             {
                 if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                 {
