@@ -365,7 +365,7 @@ namespace Test
             //There is one PSM with close peptide mass (0 ppm difference) and one PSM with large mass difference (>1000 ppm difference)
             //Since this is an open search, both PSMs should be reported because they share the exact same MS2 scan
 
-            Assert.That(theStringResult.Contains("All target PSMs with q-value notch <= 0.01: 1"));
+            Assert.That(theStringResult.Contains("All target PSMs with pep q-value <= 0.01: 1"));
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
@@ -577,7 +577,7 @@ namespace Test
             {
                 while ((line = file.ReadLine()) != null)
                 {
-                    if (line.Contains("All target peptides with q-value notch <= 0.01: 4"))
+                    if (line.Contains("All target peptides with pep q-value <= 0.01: 4"))
                     {
                         foundD = true;
                     }

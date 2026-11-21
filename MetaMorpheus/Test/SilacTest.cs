@@ -124,7 +124,7 @@ namespace Test
                 },
                 // Previously, the default q value output filtering threshold for CommonParameters was 1.0.
                 // The q-value output filtering has unintended side effects. This issue will be fix in a later PR
-                CommonParameters = new CommonParameters(qValueThreshold: 1.0, digestionParams: new DigestionParams(minPeptideLength: 2))
+                CommonParameters = new CommonParameters(identificationFilter: FilterType.QValueNotch, filterThreshold: 1.0, digestionParams: new DigestionParams(minPeptideLength: 2))
             };
 
 
@@ -232,7 +232,7 @@ namespace Test
             Assert.That(File.Exists(mzIDPath1));
             Assert.That(File.Exists(mzIDPath2));
 
-            Assert.That(theStringResult.Contains("All target PSMs with q-value notch <= 0.01: 2")); //it's not a psm, it's a MBR feature. 2 because there are two files, but not 4 because MBR != psm
+            Assert.That(theStringResult.Contains("All target PSMs with pep q-value <= 0.01: 2")); //it's not a psm, it's a MBR feature. 2 because there are two files, but not 4 because MBR != psm
 
             ///Normal Peptide
             //test proteins
