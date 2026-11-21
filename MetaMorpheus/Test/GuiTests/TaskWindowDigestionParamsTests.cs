@@ -1,12 +1,16 @@
+using EngineLayer;
 using GuiFunctions.Util;
+using Nett;
 using NUnit.Framework;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using TaskLayer;
 using Transcriptomics.Digestion;
 
 namespace Test.GuiTests
@@ -73,41 +77,93 @@ namespace Test.GuiTests
         }
 
         /// <summary>
-        /// Each window's call to <see cref="TaskWindowDigestionParams.ForSave"/>, with the window's controls showing what the
-        /// loaded task holds (the user opened the task and changed nothing). Mirrors SaveButton_Click in each window.
+        /// Each window's call to <see cref="TaskWindowDigestionParams.ForSave"/>, given the loaded task and whether the window's
+        /// "Respect cleavage-promoting modifications" box is ticked; every other control shows what the loaded task holds.
+        /// Mirrors SaveButton_Click in each window.
         /// </summary>
-        private static readonly Dictionary<string, Func<DigestionParams, DigestionParams>> WindowSaves = new()
+        private static readonly Dictionary<string, Func<DigestionParams, bool, DigestionParams>> WindowSaves = new()
         {
-            ["Calibrate"] = loaded => TaskWindowDigestionParams.ForSave(loaded, loaded.SpecificProtease.Name,
+            ["Calibrate"] = (loaded, promotingBox) => TaskWindowDigestionParams.ForSave(loaded, loaded.SpecificProtease.Name,
                 loaded.MaxMissedCleavages, loaded.MinLength, loaded.MaxLength, loaded.MaxModificationIsoforms,
                 maxModsForPeptides: loaded.MaxMods,
-                initiatorMethionineBehavior: loaded.InitiatorMethionineBehavior),
+                initiatorMethionineBehavior: loaded.InitiatorMethionineBehavior,
+                respectCleavagePromotingModifications: promotingBox),
 
-            ["GPTMD"] = loaded => TaskWindowDigestionParams.ForSave(loaded, loaded.SpecificProtease.Name,
+            ["GPTMD"] = (loaded, promotingBox) => TaskWindowDigestionParams.ForSave(loaded, loaded.SpecificProtease.Name,
                 loaded.MaxMissedCleavages, loaded.MinLength, loaded.MaxLength, loaded.MaxModificationIsoforms,
                 maxModsForPeptides: loaded.MaxMods,
-                initiatorMethionineBehavior: loaded.InitiatorMethionineBehavior),
+                initiatorMethionineBehavior: loaded.InitiatorMethionineBehavior,
+                respectCleavagePromotingModifications: promotingBox),
 
-            ["Glyco"] = loaded => TaskWindowDigestionParams.ForSave(loaded, loaded.SpecificProtease.Name,
+            // the glyco window has no cleavage-promoting box
+            ["Glyco"] = (loaded, _) => TaskWindowDigestionParams.ForSave(loaded, loaded.SpecificProtease.Name,
                 loaded.MaxMissedCleavages, loaded.MinLength, loaded.MaxLength, loaded.MaxModificationIsoforms,
                 maxModsForPeptides: loaded.MaxMods,
                 initiatorMethionineBehavior: loaded.InitiatorMethionineBehavior,
                 searchMode: TaskWindowSearchMode.ForSemiSpecificChoice(TaskWindowSearchMode.IsSemiSpecific(loaded))),
 
             // the crosslink window has no control for MaxModsForPeptide
-            ["Crosslink"] = loaded => TaskWindowDigestionParams.ForSave(loaded, loaded.SpecificProtease.Name,
+            ["Crosslink"] = (loaded, promotingBox) => TaskWindowDigestionParams.ForSave(loaded, loaded.SpecificProtease.Name,
                 loaded.MaxMissedCleavages, loaded.MinLength, loaded.MaxLength, loaded.MaxModificationIsoforms,
-                initiatorMethionineBehavior: loaded.InitiatorMethionineBehavior),
+                initiatorMethionineBehavior: loaded.InitiatorMethionineBehavior,
+                respectCleavagePromotingModifications: promotingBox),
 
-            ["Search"] = loaded => TaskWindowDigestionParams.ForSave(loaded, loaded.SpecificProtease.Name,
+            ["Search"] = (loaded, promotingBox) => TaskWindowDigestionParams.ForSave(loaded, loaded.SpecificProtease.Name,
                 loaded.MaxMissedCleavages, loaded.MinLength, loaded.MaxLength, loaded.MaxModificationIsoforms,
                 maxModsForPeptides: loaded.MaxMods,
                 initiatorMethionineBehavior: loaded.InitiatorMethionineBehavior,
                 searchMode: (loaded.SearchModeType, loaded.FragmentationTerminus),
-                generateUnlabeledProteinsForSilac: loaded.GeneratehUnlabeledProteinsForSilac),
+                generateUnlabeledProteinsForSilac: loaded.GeneratehUnlabeledProteinsForSilac,
+                respectCleavagePromotingModifications: promotingBox),
         };
 
         private static IEnumerable<string> Windows() => WindowSaves.Keys;
+
+        /// <summary>
+        /// The windows with a cleavage-promoting box: a new task of the kind each edits, and how that task is read back from
+        /// its settings file (as MainWindow opens it).
+        /// </summary>
+        private static readonly Dictionary<string, (Func<MetaMorpheusTask> NewTask, Func<string, MetaMorpheusTask> Reopen)> WindowsWithThePromotingBox = new()
+        {
+            ["Calibrate"] = (() => new CalibrationTask(), toml => Toml.ReadFile<CalibrationTask>(toml, MetaMorpheusTask.tomlConfig)),
+            ["GPTMD"] = (() => new GptmdTask(), toml => Toml.ReadFile<GptmdTask>(toml, MetaMorpheusTask.tomlConfig)),
+            ["Crosslink"] = (() => new XLSearchTask(), toml => Toml.ReadFile<XLSearchTask>(toml, MetaMorpheusTask.tomlConfig)),
+            ["Search"] = (() => new SearchTask(), toml => Toml.ReadFile<SearchTask>(toml, MetaMorpheusTask.tomlConfig)),
+        };
+
+        private static IEnumerable<TestCaseData> TickingAndUntickingThePromotingBox() =>
+            WindowsWithThePromotingBox.Keys.SelectMany(window => new[] { true, false }.Select(ticked => new TestCaseData(window, ticked)));
+
+        /// <summary>
+        /// The user opens a task, ticks (or unticks) "Respect cleavage-promoting modifications" and saves. The settings file
+        /// holds what the box showed, and reopening it shows the box the same way (UpdateFieldsFromTask reads it from the
+        /// task's digestion parameters).
+        /// </summary>
+        [Test]
+        [TestCaseSource(nameof(TickingAndUntickingThePromotingBox))]
+        public static void ThePromotingBox_IsSavedToTheSettingsFile_AndShownAgainOnReopening(string window, bool ticked)
+        {
+            var (newTask, reopen) = WindowsWithThePromotingBox[window];
+            var loaded = new DigestionParams("StcE-trypsin", respectCleavagePromotingModifications: !ticked);
+            MetaMorpheusTask task = newTask();
+            task.CommonParameters = new CommonParameters(digestionParams: WindowSaves[window](loaded, ticked));
+
+            string toml = Path.Combine(TestContext.CurrentContext.TestDirectory, $"ThePromotingBox_{window}_{ticked}.toml");
+            try
+            {
+                Toml.WriteFile(task, toml, MetaMorpheusTask.tomlConfig);
+                Assert.That(File.ReadAllLines(toml),
+                    Has.One.Match($@"^\s*RespectCleavagePromotingModifications = {ticked.ToString().ToLowerInvariant()}$"));
+
+                var reopened = (DigestionParams)reopen(toml).CommonParameters.DigestionParams;
+                Assert.That(reopened.RespectCleavagePromotingModifications, Is.EqualTo(ticked),
+                    $"the {window} window does not show the box the way it was saved");
+            }
+            finally
+            {
+                File.Delete(toml);
+            }
+        }
 
         /// <summary>
         /// Opening a task in any window and saving it without touching anything gives back the same digestion settings. The
@@ -117,14 +173,15 @@ namespace Test.GuiTests
         [TestCaseSource(nameof(Windows))]
         public static void OpeningAndSavingATask_KeepsEveryDigestionSetting(string window)
         {
-            Func<DigestionParams, DigestionParams> save = WindowSaves[window];
+            Func<DigestionParams, bool, DigestionParams> save = WindowSaves[window];
             var loaded = new DigestionParams("trypsin", maxMissedCleavages: 3, minPeptideLength: 8, maxPeptideLength: 40,
                 maxModificationIsoforms: 512, initiatorMethionineBehavior: InitiatorMethionineBehavior.Cleave,
                 maxModsForPeptides: 5, searchModeType: CleavageSpecificity.Semi, fragmentationTerminus: FragmentationTerminus.Both,
                 generateUnlabeledProteinsForSilac: false, keepNGlycopeptide: true, keepOGlycopeptide: true,
-                respectCleavageBlockingModifications: true);
+                respectCleavageBlockingModifications: true, respectCleavagePromotingModifications: true);
 
-            AssertSameSettings(save(loaded), loaded, $"the {window} window changed a setting the user did not touch");
+            AssertSameSettings(save(loaded, loaded.RespectCleavagePromotingModifications), loaded,
+                $"the {window} window changed a setting the user did not touch");
         }
 
         /// <summary>
@@ -141,7 +198,8 @@ namespace Test.GuiTests
                 maxModsForPeptides: 1,
                 initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain,
                 searchMode: (CleavageSpecificity.Full, FragmentationTerminus.Both),
-                generateUnlabeledProteinsForSilac: true);
+                generateUnlabeledProteinsForSilac: true,
+                respectCleavagePromotingModifications: true);
 
             Assert.That(saved.SpecificProtease.Name, Is.EqualTo("Arg-C"));
             Assert.That(saved.MaxMissedCleavages, Is.EqualTo(1));
@@ -152,6 +210,7 @@ namespace Test.GuiTests
             Assert.That(saved.InitiatorMethionineBehavior, Is.EqualTo(InitiatorMethionineBehavior.Retain));
             Assert.That(saved.SearchModeType, Is.EqualTo(CleavageSpecificity.Full));
             Assert.That(saved.GeneratehUnlabeledProteinsForSilac, Is.True);
+            Assert.That(saved.RespectCleavagePromotingModifications, Is.True);
         }
 
         /// <summary>
