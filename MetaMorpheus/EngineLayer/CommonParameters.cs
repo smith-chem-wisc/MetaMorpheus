@@ -195,19 +195,7 @@ namespace EngineLayer
         /// <summary>
         /// The value that decides whether a match or peptide counts as identified, at every step of a search: the
         /// tables, parsimony, protein scoring and FDR, quantification, the spectral library, the pruned database, the
-        /// Spectrum Match Count column and every count reported. It is held to <see cref="FilterThreshold"/>. The user
-        /// picks one of three:
-        /// <list type="bullet">
-        /// <item><description><see cref="FilterType.PepQValue"/>: the PEP q-value. A match whose PEP was not trained is
-        /// judged by its q-value notch at the same threshold, and the search says so.</description></item>
-        /// <item><description><see cref="FilterType.QValueNotch"/>: the q-value counted within each mass-difference
-        /// notch.</description></item>
-        /// <item><description><see cref="FilterType.QValue"/>: the pooled q-value, counted over every notch together, and
-        /// nothing else.</description></item>
-        /// </list>
-        /// A task TOML saved before FilterThreshold existed names its filter through the old
-        /// QValueThreshold/PepQValueThreshold keys; those are resolved while the file is read
-        /// (<c>MetaMorpheusTask.tomlConfig</c>), so the value here is always the one the search uses.
+        /// Spectrum Match Count column and every count reported. 
         /// </summary>
         public FilterType IdentificationFilter { get; private set; }
 

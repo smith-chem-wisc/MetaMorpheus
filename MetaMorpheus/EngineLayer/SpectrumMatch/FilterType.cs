@@ -1,7 +1,7 @@
 namespace EngineLayer.SpectrumMatch
 {
     /// <summary>
-    /// The FDR values a match or peptide can be judged by: the three choices for
+    /// The FDR values a match or peptide can be judged by: the choices for
     /// <see cref="CommonParameters.IdentificationFilter"/>, each held to <see cref="CommonParameters.FilterThreshold"/>.
     /// </summary>
     public enum FilterType

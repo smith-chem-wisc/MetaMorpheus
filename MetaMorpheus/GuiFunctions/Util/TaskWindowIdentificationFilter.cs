@@ -7,7 +7,7 @@ namespace GuiFunctions.Util;
 
 /// <summary>
 /// What a task window shows and saves for <see cref="CommonParameters.IdentificationFilter"/> and
-/// <see cref="CommonParameters.FilterThreshold"/>: a choice of the three filters (<see cref="Choices"/>) and one threshold
+    /// <see cref="CommonParameters.FilterThreshold"/>: a choice of the filters (<see cref="Choices"/>) and one threshold
 /// box. The Search window loads them with <see cref="Load(CommonParameters, bool)"/> and saves what it shows with
 /// <see cref="ForSave"/>.
 /// </summary>
@@ -21,7 +21,7 @@ public static class TaskWindowIdentificationFilter
     /// <summary>One identification filter a task window offers: its filter, its name in the window, and what it means.</summary>
     public sealed record Choice(FilterType Filter, string Label, string Description);
 
-    /// <summary>The three filters, in the order the windows list them.</summary>
+    /// <summary>The filters, in the order the windows list them.</summary>
     public static IReadOnlyList<Choice> Choices { get; } = new[]
     {
         new Choice(FilterType.PepQValue, "PEP q-value",
@@ -33,6 +33,8 @@ public static class TaskWindowIdentificationFilter
             "The default for top-down and RNA."),
         new Choice(FilterType.QValue, "q-value (pooled)",
             "The q-value counted over every mass-difference notch together, and nothing else."),
+        new Choice(FilterType.QValueAndQValueNotch, "q-value and q-value notch",
+            "The pooled q-value and q-value notch, both held to the same threshold."),
     };
 
     /// <summary>
