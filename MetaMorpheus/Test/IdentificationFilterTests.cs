@@ -68,6 +68,26 @@ namespace Test
             return psms;
         }
 
+        private static SpectralMatch NotchAmbiguousPsm(double psmHypothesisQValue, double peptideHypothesisQValue)
+        {
+            var psm = Matches("PEPTIDEK", "trypsin", 1, 0, pepTrained: false)[0];
+            var alternate = new Protein("PEPTIDER", "acc_alternate")
+                .Digest(new DigestionParams(protease: "trypsin", minPeptideLength: 1), new List<Modification>(), new List<Modification>())
+                .First();
+            psm.AddOrReplace(alternate, psm.Score, 1, reportAllAmbiguity: true, matchedFragmentIons: new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+            Set(psm, q: 0.5, notch: 2, pepQ: 2, pepTrained: false);
+            psm.PeptideFdrInfo = new FdrInfo { QValue = 0.5, QValueNotch = 2, PEP_QValue = 2 };
+
+            foreach (var hypothesis in psm.BestMatchingBioPolymersWithSetMods)
+            {
+                hypothesis.QValueNotch = psmHypothesisQValue;
+                hypothesis.PeptideQValueNotch = peptideHypothesisQValue;
+            }
+
+            return psm;
+        }
+
         private static void Set(SpectralMatch psm, double q, double notch, double pepQ, bool pepTrained = true, double pep = 0)
         {
             psm.SetFdrValues(1, 0, q, 1, 0, notch, pep, pepQ);
@@ -91,6 +111,9 @@ namespace Test
 
             var pooled = FilteredPsms.Filter(trained, Chosen(FilterType.QValue, 0.05));
             Assert.That((pooled.FilterType, pooled.FilterThreshold), Is.EqualTo((FilterType.QValue, 0.05)));
+
+            var combined = FilteredPsms.Filter(trained, Chosen(FilterType.QValueAndQValueNotch, 0.05));
+            Assert.That((combined.FilterType, combined.FilterThreshold), Is.EqualTo((FilterType.QValueAndQValueNotch, 0.05)));
         }
 
         // The maintainer's request: unnamed, the filter is the PEP q-value bottom-up and the q-value notch for top-down
@@ -208,6 +231,56 @@ namespace Test
 
             Assert.That(filtered.FilteredPsmsList, Is.EqualTo(new[] { psms[0] }));
             Assert.That(filtered.GetFilterValue(psms[0]), Is.EqualTo(0.01));
+        }
+
+        [Test]
+        public static void NotchAmbiguousFiltering_DefaultMatchesThePreviousPsmPredicate_AndOptInKeepsPassingHypotheses()
+        {
+            var ambiguous = NotchAmbiguousPsm(psmHypothesisQValue: 0.001, peptideHypothesisQValue: 0.001);
+            var ordinaryPass = Matches("ORDINARYK", "trypsin", 1, 0, pepTrained: false)[0];
+            Set(ordinaryPass, q: 0.5, notch: 0.01, pepQ: 2, pepTrained: false);
+            var ordinaryFail = Matches("FAILINGK", "trypsin", 1, 0, pepTrained: false)[0];
+            Set(ordinaryFail, q: 0.5, notch: 0.2, pepQ: 2, pepTrained: false);
+            var ambiguousFail = NotchAmbiguousPsm(psmHypothesisQValue: 0.2, peptideHypothesisQValue: 0.2);
+            const double threshold = 0.05;
+            var input = new[] { ordinaryPass, ordinaryFail, ambiguous, ambiguousFail };
+
+            bool PreviousPredicate(SpectralMatch psm) => psm.PsmFdrInfo.QValueNotch <= threshold
+                || (Math.Abs(psm.PsmFdrInfo.QValueNotch - 2) < 0.001
+                    && psm.BestMatchingBioPolymersWithSetMods.Any(h => h.QValueNotch.HasValue && h.QValueNotch <= threshold));
+
+            var defaultFiltered = FilteredPsms.Filter(input, Chosen(FilterType.QValueNotch, threshold),
+                includeAmbiguous: true, includeAmbiguousMods: true);
+            var optInFiltered = FilteredPsms.Filter(input, Chosen(FilterType.QValueNotch, threshold),
+                includeAmbiguous: true, includeAmbiguousMods: true, includeNotchAmbiguous: true);
+
+            Assert.That(input.Where(PreviousPredicate), Is.EqualTo(new[] { ordinaryPass, ambiguous }));
+            Assert.That(defaultFiltered.FilteredPsmsList, Is.EqualTo(new[] { ordinaryPass }), "the new option must remain opt-in");
+            Assert.That(optInFiltered.FilteredPsmsList, Is.EqualTo(new[] { ordinaryPass, ambiguous }));
+            Assert.That(ambiguous.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2),
+                "filtering must not perform notch disambiguation or mutate hypotheses");
+        }
+
+        [Test]
+        public static void NotchAmbiguousFiltering_DropsWhenEveryHypothesisFails()
+        {
+            var ambiguous = NotchAmbiguousPsm(psmHypothesisQValue: 0.2, peptideHypothesisQValue: 0.2);
+
+            var filtered = FilteredPsms.Filter(new[] { ambiguous }, Chosen(FilterType.QValueNotch, 0.05),
+                includeAmbiguous: true, includeAmbiguousMods: true, includeNotchAmbiguous: true);
+
+            Assert.That(filtered.FilteredPsmsList, Is.Empty);
+        }
+
+        [Test]
+        public static void NotchAmbiguousFiltering_UsesPeptideLevelHypothesisNotchValues()
+        {
+            var ambiguous = NotchAmbiguousPsm(psmHypothesisQValue: 0.2, peptideHypothesisQValue: 0.001);
+
+            var filtered = FilteredPsms.Filter(new[] { ambiguous }, Chosen(FilterType.QValueNotch, 0.05),
+                includeAmbiguous: true, includeAmbiguousMods: true, filterAtPeptideLevel: true, includeNotchAmbiguous: true);
+
+            Assert.That(filtered.FilteredPsmsList, Is.EqualTo(new[] { ambiguous }));
         }
 
         // Spec 5 (README C): one protease trained PEP, the other did not.

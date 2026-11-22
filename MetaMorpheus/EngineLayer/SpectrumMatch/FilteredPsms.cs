@@ -149,6 +149,7 @@ namespace EngineLayer.SpectrumMatch
         /// <param name="includeLocalizationAmbiguousMods">Keep PSMs ambiguous only in where their modifications sit
         /// (<see cref="SpectralMatch.IsLocalizationAmbiguous"/>), whatever <paramref name="includeAmbiguousMods"/> says
         /// about the others. Null, the default, follows <paramref name="includeAmbiguousMods"/>.</param>
+        /// <param name="filterThreshold">Overrides the selected filter's threshold.</param>
         /// <param name="filterType">The filter, when the caller chooses it. Null (the default) is the search's
         /// <see cref="CommonParameters.IdentificationFilter"/>.</param>
         /// <returns> A FilteredPsms object</returns>
@@ -275,7 +276,10 @@ namespace EngineLayer.SpectrumMatch
                 : psms.Where(psm => FilteredPsms.Passes(psm, filterAtPeptideLevel, filterType, qValueThreshold)
                     || (includeNotchAmbiguous
                         && filterType == FilterType.QValueNotch
-                        && Math.Abs(psm.FdrInfo.QValueNotch - 2) < 0.001
-                        && psm.BestMatchingBioPolymersWithSetMods.Any(p => p.QValueNotch.HasValue && p.QValueNotch <= qValueThreshold)));
+                        && psm.GetFdrInfo(filterAtPeptideLevel) is { QValueNotch: var qValueNotch }
+                        && Math.Abs(qValueNotch - 2) < 0.001
+                        && psm.BestMatchingBioPolymersWithSetMods.Any(p =>
+                            (filterAtPeptideLevel ? p.PeptideQValueNotch : p.QValueNotch) is double hypothesisQValueNotch
+                            && hypothesisQValueNotch <= qValueThreshold)));
     }
 }
