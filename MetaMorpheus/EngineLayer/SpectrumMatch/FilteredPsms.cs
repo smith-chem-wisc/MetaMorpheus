@@ -258,46 +258,13 @@ namespace EngineLayer.SpectrumMatch
             }
         }
 
-        public static IEnumerable<SpectralMatch> FilterByQValue(this IEnumerable<SpectralMatch> psms, bool includeHighQValuePsms, double qValueThreshold, bool filterAtPeptideLevel, FilterType filterType, bool filterValidated = false)
-        {
-            // If we validate the filter ahead of time, no need for a second iteration through the PSMs to check for the presence of PEP-QValues values. 
-            if (!filterValidated &&  filterType == FilterType.PepQValue && psms.All(p => p.GetFdrInfo(filterAtPeptideLevel) != null && Math.Abs(p.GetFdrInfo(filterAtPeptideLevel).PEP_QValue - 2) < 0.1 ))
-            {
-                filterType = FilterType.QValue;
-            }
-
-            foreach (var psm in psms)
-            {
-                if (includeHighQValuePsms)
-                {
-                    yield return psm;
-                }
-                else if (psm.GetFdrInfo(filterAtPeptideLevel) != null)
-                {
-                    switch(filterType)
-                    {
-                        case FilterType.PepQValue:
-                            if (psm.GetFdrInfo(filterAtPeptideLevel).PEP_QValue <= qValueThreshold)
-                            {
-                                yield return psm;
-                            }
-                            break;
-                        case FilterType.QValueNotch:
-                            if (psm.GetFdrInfo(filterAtPeptideLevel).QValueNotch <= qValueThreshold)
-                            {
-                                yield return psm;
-                            }
-                            break;
-                        case FilterType.QValue:
-                        default:
-                            if (psm.GetFdrInfo(filterAtPeptideLevel).QValue <= qValueThreshold && psm.GetFdrInfo(filterAtPeptideLevel).QValueNotch <= qValueThreshold)
-                            {
-                                yield return psm;
-                            }
-                            break;
-                    }
-                }
-            }
-        }
+        /// <summary>
+        /// The matches that pass <paramref name="filterType"/> at <paramref name="qValueThreshold"/>
+        /// (<see cref="FilteredPsms.Passes"/>), or every match when <paramref name="includeHighQValuePsms"/>.
+        /// </summary>
+        internal static IEnumerable<SpectralMatch> FilterByQValue(this IEnumerable<SpectralMatch> psms, bool includeHighQValuePsms, double qValueThreshold, bool filterAtPeptideLevel, FilterType filterType) =>
+            includeHighQValuePsms
+                ? psms
+                : psms.Where(psm => FilteredPsms.Passes(psm, filterAtPeptideLevel, filterType, qValueThreshold));
     }
 }

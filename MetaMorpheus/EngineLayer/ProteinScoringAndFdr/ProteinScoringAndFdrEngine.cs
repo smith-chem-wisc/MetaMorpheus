@@ -25,8 +25,8 @@ namespace EngineLayer
         public FilterType FilterType => _filterType;
 
         /// <summary>
-        /// Takes every PSM from the search; the engine keeps those passing the q-value or PEP q-value threshold
-        /// from <paramref name="commonParameters"/>, whichever is stricter.
+        /// Takes every PSM from the search; the engine scores groups with those passing the search's identification
+        /// filter at its threshold (<see cref="CommonParameters.IdentificationFilter"/>, <see cref="CommonParameters.FilterThreshold"/>).
         /// </summary>
         /// <param name="labelPeptidesUniqueToOneGroup">
         /// True for the search's own call: after FDR, label each group's peptides unique or shared among the groups it
@@ -65,7 +65,7 @@ namespace EngineLayer
             // PEP, so a group it scored would be ranked on nothing. Otherwise by the q-value notch, which the PEP q-value
             // filter falls back to.
             _rankByPep = _filterType == FilterType.PepQValue
-                && filteredPsms.Where(psm => FilteredPsms.Passes(psm, peptideLevel: false, _filterType, _filterThreshold))
+                && psms.Where(psm => FilteredPsms.Passes(psm, peptideLevel: false, _filterType, _filterThreshold))
                     .All(psm => psm.PsmFdrInfo.PepTrained);
         }
 
