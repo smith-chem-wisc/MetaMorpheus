@@ -174,25 +174,11 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// When the identification filter was read from a task TOML's legacy thresholds
-        /// (<see cref="CommonParameters.IdentificationFilterFromLegacyThresholds"/>: a task saved before the filter was
-        /// named, with the GUI's PEP box ticked), the sentence saying so, once per task, as a warning and in results.txt;
-        /// null otherwise.
-        /// </summary>
-        internal static string LegacyFilterSentence(CommonParameters commonParameters)
-        {
-            if (!commonParameters.IdentificationFilterFromLegacyThresholds) return null;
-            string pep = commonParameters.PepQValueThreshold.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            string q = commonParameters.QValueThreshold.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            return $"IdentificationFilter read from this task's legacy thresholds (PepQValueThreshold {pep} < QValueThreshold {q}): PEP q-value at {pep}";
-        }
-
-        /// <summary>
         /// When the search's identification filter is held to 1 or more, which keeps every match, the sentence saying so;
         /// null otherwise.
         /// </summary>
         internal static string FilterKeepsEveryMatch(CommonParameters commonParameters) =>
-            EngineLayer.SpectrumMatch.FilteredPsms.Threshold(commonParameters, commonParameters.IdentificationFilter) >= 1
+            commonParameters.FilterThreshold >= 1
                 ? $"This search filters by {EngineLayer.SpectrumMatch.FilteredPsms.Describe(commonParameters)}, which keeps every match."
                 : null;
 
@@ -212,12 +198,6 @@ namespace TaskLayer
             // a gap named up front can still be fixed cheaply, whereas one named after a three-hour
             // search cannot. This warns; it does not refuse the run.
             WarnAboutSdrfGaps(currentRawFileList);
-
-            // A filter read from an old task's thresholds: say so once, before the search, and in results.txt
-            if (LegacyFilterSentence(CommonParameters) is string fromLegacyThresholds)
-            {
-                Warn(fromLegacyThresholds);
-            }
 
             // A filter at 1 is allowed, but it keeps every match: say so before the search, and in results.txt
             if (FilterKeepsEveryMatch(CommonParameters) is string keepsEveryMatch)

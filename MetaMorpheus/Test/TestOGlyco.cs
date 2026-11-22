@@ -817,8 +817,8 @@ namespace Test
             glycoSearchTask._glycoSearchParameters.WriteDecoys = true;
             glycoSearchTask._glycoSearchParameters.DecoyType = DecoyType.Reverse;
             glycoSearchTask.CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD, trimMsMsPeaks: false, 
-                precursorMassTolerance: new PpmTolerance(6), productMassTolerance: new PpmTolerance(10), qValueThreshold: 1, 
-                pepQValueThreshold: 1, scoreCutoff: 1);
+                precursorMassTolerance: new PpmTolerance(6), productMassTolerance: new PpmTolerance(10),
+                identificationFilter: EngineLayer.SpectrumMatch.FilterType.QValueNotch, filterThreshold: 1, scoreCutoff: 1);
 
             DbForTask targetDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoProteinFASTA_7proteins.fasta"), false);
             DbForTask dbContaminant = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P02649.fasta"), true);
