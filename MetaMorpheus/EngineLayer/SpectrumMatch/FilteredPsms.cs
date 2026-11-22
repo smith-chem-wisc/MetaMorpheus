@@ -162,7 +162,9 @@ namespace EngineLayer.SpectrumMatch
             bool filterAtPeptideLevel = false,
             bool? includeLocalizationAmbiguousMods = null,
             FilterType? filterType = null,
-            bool includeNotchAmbiguous = false)
+            double? filterThreshold = null,
+            bool includeNotchAmbiguous = false
+            )
         {
             bool includeLocalizationAmbiguous = includeLocalizationAmbiguousMods ?? includeAmbiguousMods;
 
@@ -174,7 +176,7 @@ namespace EngineLayer.SpectrumMatch
                     : psm.IsLocalizationAmbiguous ? includeLocalizationAmbiguous : includeAmbiguousMods;
 
             FilterType type = filterType ?? commonParams.IdentificationFilter;
-            double threshold = commonParams.FilterThreshold;
+            double threshold = filterThreshold ?? commonParams.FilterThreshold;
 
             List<SpectralMatch> candidates = psms.Where(psm =>
                     (includeDecoys || !psm.IsDecoy)

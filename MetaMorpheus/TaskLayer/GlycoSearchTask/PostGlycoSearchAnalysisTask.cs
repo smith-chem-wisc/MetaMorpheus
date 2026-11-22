@@ -345,13 +345,13 @@ namespace TaskLayer
             }
 
             //get non-ambigous psms above cutoffs that are normally used for parsimony
-            List<SpectralMatch> _filteredPsms = FilteredPsms.Filter(psmsForProteinParsimony, CommonParameters,
+            List<SpectralMatch> _filteredPsms = FilteredPsms.Filter(psmsForProteinParsimony, null,
                 includeDecoys: true,
                 includeContaminants: true,
                 includeAmbiguous: true,
                 includeAmbiguousMods: false,
-                qValueThreshold: 0.01,
-                filterType: FilterType.QValueAndQValueNotch).FilteredPsmsList;
+                filterType: FilterType.QValueAndQValueNotch,
+                filterThreshold: 0.01).FilteredPsmsList;
 
             // if there are no peptides observed, there are no proteins; return an empty list of protein groups
             if (_filteredPsms.Count != 0)
@@ -505,13 +505,13 @@ namespace TaskLayer
             }
 
             // get PSMs to pass to FlashLFQ
-            var unambiguousPsmsBelowOnePercentFdr = FilteredPsms.Filter(Parameters.AllPsms.Cast<SpectralMatch>(), CommonParameters,
+            var unambiguousPsmsBelowOnePercentFdr = FilteredPsms.Filter(Parameters.AllPsms.Cast<SpectralMatch>(), null,
                 includeDecoys: false,
                 includeContaminants: true,
                 includeAmbiguous: true,
                 includeAmbiguousMods: false,
-                qValueThreshold: 0.01,
-                filterType: FilterType.QValueAndQValueNotch).FilteredPsmsList
+                filterType: FilterType.QValueAndQValueNotch,
+                filterThreshold: 0.01).FilteredPsmsList
                 .Cast<GlycoSpectralMatch>()
                 .ToList();
 

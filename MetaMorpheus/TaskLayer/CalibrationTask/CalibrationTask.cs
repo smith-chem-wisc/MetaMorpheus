@@ -4,6 +4,7 @@ using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
+using EngineLayer.SpectrumMatch;
 using EngineLayer.Util;
 using MassSpectrometry;
 using MzLibUtil;
@@ -303,10 +304,13 @@ namespace TaskLayer
 
             _ = new FdrAnalysisEngine(allPsms, searchMode.NumNotches, CommonParameters, FileSpecificParameters, new List<string> { _taskId, "Individual Spectra Files", fileNameWithoutExtension }, doPEP: false).Run();
 
-            List<SpectralMatch> goodIdentifications = allPsms.Where(b =>
-                b.FdrInfo.QValueNotch < CalibrationParameters.QValueCutoffForCalibratingPSMs
-                && b.FullSequence != null
-                && !b.IsDecoy).ToList();
+            List<SpectralMatch> goodIdentifications = FilteredPsms.Filter(allPsms, null,
+                includeDecoys: false,
+                includeContaminants: true,
+                includeAmbiguous: true,
+                includeAmbiguousMods: false,
+                filterType: FilterType.QValueNotch,
+                filterThreshold: CalibrationParameters.QValueCutoffForCalibratingPSMs).FilteredPsmsList;
 
             if (!goodIdentifications.Any())
             {

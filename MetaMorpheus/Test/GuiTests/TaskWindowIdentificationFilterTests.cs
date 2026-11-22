@@ -46,7 +46,7 @@ namespace Test.GuiTests
 
         private static IEnumerable<string> Windows() => WindowSaves.Keys;
 
-        private static IEnumerable<FilterType> Filters() => Enum.GetValues<FilterType>();
+        private static IEnumerable<FilterType> Filters() => TaskWindowIdentificationFilter.Choices.Select(c => c.Filter);
 
         private static IEnumerable<TestCaseData> WindowsAndFilters() =>
             Windows().SelectMany(window => Filters().Select(filter => new TestCaseData(window, filter)));

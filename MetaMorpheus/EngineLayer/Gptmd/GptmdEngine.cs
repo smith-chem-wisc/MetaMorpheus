@@ -12,6 +12,7 @@ using System.Collections.Concurrent;
 using MassSpectrometry;
 using Omics.Fragmentation;
 using System.Threading;
+using EngineLayer.SpectrumMatch;
 
 namespace EngineLayer.Gptmd
 {
@@ -96,7 +97,14 @@ namespace EngineLayer.Gptmd
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
 
             // Keep psms if they are below q value notch threshold, or notch ambiguous results with hypothesis below threshold. 
-            var psms = AllIdentifications.Where(b => b.FdrInfo.QValueNotch <= QValueNotchThreshold || (Math.Abs(b.FdrInfo.QValueNotch - 2) < 0.001 && b.BestMatchingBioPolymersWithSetMods.Any(p => p.QValueNotch.HasValue && p.QValueNotch <= QValueNotchThreshold))).ToList();
+            var psms = FilteredPsms.Filter(AllIdentifications, null,
+                includeDecoys: true,
+                includeContaminants: true,
+                includeAmbiguous: true,
+                includeAmbiguousMods: true,
+                includeNotchAmbiguous: true,
+                filterType: FilterType.QValueNotch,
+                filterThreshold: QValueNotchThreshold).FilteredPsmsList;
             if (psms.Any() == false)
             {
                 return new GptmdResults(this, ModDictionary, 0);
