@@ -91,7 +91,7 @@ public class ParallelSearchTask : SearchTask
     // Optimization caches for FDR alignment and parsimony
     [TomlIgnore] private BaselineScoreLookup<FdrInfo> _baselinePsmFdr = new([]);
     [TomlIgnore] private BaselineScoreLookup<FdrInfo> _baselinePeptideFdr = new([]);
-    [TomlIgnore] private ProteinGroupFdrLookup _baselineProteinGroupFdr = new([], FilterType.QValue);
+    [TomlIgnore] private ProteinGroupFdrLookup _baselineProteinGroupFdr = new([], FilterType.QValueNotch);
     [TomlIgnore] private List<CachedProteinGroup> CachedBaselineProteinGroups { get; set; } = [];
     [TomlIgnore] private readonly Dictionary<string, List<int>> _baselinePeptideKeyToScanIndexes = new(StringComparer.Ordinal);
     [TomlIgnore] private readonly Dictionary<IBioPolymer, List<int>> _baselineProteinToScanIndexes = new(ReferenceEqualityComparer.Instance);
@@ -393,7 +393,7 @@ public class ParallelSearchTask : SearchTask
         try
         {
             _retentionTimeCalibrations = RetentionTimeCollector.FitRetentionTimeCalibrations(baselinePsms,
-                Math.Min(CommonParameters.QValueThreshold, CommonParameters.PepQValueThreshold),
+                CommonParameters.FilterThreshold,
                 CommonParameters.MaxThreadsToUsePerFile, Warn);
         }
         catch (Exception e)
@@ -437,12 +437,12 @@ public class ParallelSearchTask : SearchTask
                     .ToList();
 
                 _baselineProteinGroupFdr = BaselineFdr.CreateProteinGroupLookup(baselineProteinScoringResults
-                    .SortedAndScoredProteinGroups, baselineProteinScoringEngine.FilterType);
+                    .SortedAndScoredProteinGroups, baselineProteinScoringEngine.RankingFilter);
             }
             else
             {
                 CachedBaselineProteinGroups = [];
-                _baselineProteinGroupFdr = new([], FilterType.QValue);
+                _baselineProteinGroupFdr = new([], FilterType.QValueNotch);
             }
         }
 
@@ -954,7 +954,7 @@ public class ParallelSearchTask : SearchTask
     {
         if (proteinGroups != null && proteinGroups.Any())
         {
-            double qValueThreshold = Math.Min(CommonParameters.QValueThreshold, CommonParameters.PepQValueThreshold);
+            double qValueThreshold = CommonParameters.FilterThreshold;
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 await output.WriteLineAsync(proteinGroups.First().GetTabSeparatedHeader());

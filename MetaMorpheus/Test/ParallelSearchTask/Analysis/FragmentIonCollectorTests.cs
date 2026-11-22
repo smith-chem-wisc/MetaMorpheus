@@ -93,7 +93,7 @@ public class FragmentIonCollectorTests
             peptideQValue: 0.5);
 
         var context = ParallelSearchTestContextFactory.CreateContext(
-            ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.01),
+            ParallelSearchTestContextFactory.CreateCommonParameters(),
             allPsms: [psmHighQ],
             transientPsms: [psmHighQ],
             allPeptides: [psmHighQ],
@@ -112,7 +112,7 @@ public class FragmentIonCollectorTests
     [Test]
     public void CollectData_FiltersByQValueAndReturnsMetrics()
     {
-        var commonParams = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.05);
+        var commonParams = ParallelSearchTestContextFactory.CreateCommonParameters(filterThreshold: 0.05);
 
         var targetPsm = ParallelSearchTestContextFactory.CreateSpectralMatch(
             commonParams,
@@ -155,7 +155,7 @@ public class FragmentIonCollectorTests
     [Test]
     public void CollectData_FiltersPsmsByPsmQValueAndPeptidesByPeptideQValue()
     {
-        var commonParams = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.01);
+        var commonParams = ParallelSearchTestContextFactory.CreateCommonParameters();
 
         // passes at the PSM level only
         var psmLevelOnly = ParallelSearchTestContextFactory.CreateSpectralMatch(
@@ -201,7 +201,7 @@ public class FragmentIonCollectorTests
     [Test]
     public void CollectData_PeptideWithoutPeptideFdr_IsNotConfident()
     {
-        var commonParams = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.01);
+        var commonParams = ParallelSearchTestContextFactory.CreateCommonParameters();
         var peptide = ParallelSearchTestContextFactory.CreateSpectralMatch(
             commonParams, isDecoy: false, score: 10.0, psmQValue: 0.001, peptideQValue: 0.001);
         peptide.PeptideFdrInfo = null;

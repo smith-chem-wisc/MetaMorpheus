@@ -25,6 +25,13 @@ namespace EngineLayer
         public FilterType FilterType => _filterType;
 
         /// <summary>
+        /// The value protein FDR actually ranked groups by: <see cref="FilterType.PepQValue"/> (best peptide PEP) when PEP
+        /// was trained for every match that scored them, otherwise <see cref="FilterType.QValueNotch"/> (best peptide
+        /// q-value notch), which the PEP q-value filter falls back to.
+        /// </summary>
+        public FilterType RankingFilter => _rankByPep ? FilterType.PepQValue : FilterType.QValueNotch;
+
+        /// <summary>
         /// Takes every PSM from the search; the engine scores groups with those passing the search's identification
         /// filter at its threshold (<see cref="CommonParameters.IdentificationFilter"/>, <see cref="CommonParameters.FilterThreshold"/>).
         /// </summary>

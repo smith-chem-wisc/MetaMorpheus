@@ -34,7 +34,7 @@ public class PsmPeptideSearchCollectorTests
     [Test]
     public void CollectData_FiltersByQValueAndReturnsScoreArrays()
     {
-        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.01, pepQValueThreshold: 0.01);
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters();
 
         var targetPass = ParallelSearchTestContextFactory.CreateSpectralMatch(commonParameters, isDecoy: false, score: 110, psmQValue: 0.005, peptideQValue: 0.005, scanNumber: 1);
         var decoyPass = ParallelSearchTestContextFactory.CreateSpectralMatch(commonParameters, isDecoy: true, score: 90, psmQValue: 0.006, peptideQValue: 0.006, scanNumber: 2);

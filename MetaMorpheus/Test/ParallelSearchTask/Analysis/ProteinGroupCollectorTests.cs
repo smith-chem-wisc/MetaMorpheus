@@ -27,7 +27,7 @@ public class ProteinGroupCollectorTests
     [Test]
     public void CollectData_FiltersByQValueAndMinimumPeptides()
     {
-        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.01, pepQValueThreshold: 0.05);
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters();
 
         var passingTarget = ParallelSearchTestContextFactory.CreateProteinGroup(isDecoy: false, qValue: 0.005, peptideCount: 2);
         var passingDecoy = ParallelSearchTestContextFactory.CreateProteinGroup(isDecoy: true, qValue: 0.008, peptideCount: 2);

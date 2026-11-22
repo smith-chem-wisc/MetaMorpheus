@@ -10,14 +10,16 @@ using Omics.Fragmentation;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using TaskLayer.ParallelSearch.Analysis;
+using EngineLayer.SpectrumMatch;
 
 namespace Test.ParallelSearchTask.Utility;
 
 internal static class ParallelSearchTestContextFactory
 {
-    public static CommonParameters CreateCommonParameters(double qValueThreshold = 0.01, double pepQValueThreshold = 0.01)
+    /// <summary>The search's identification filter at its threshold; the q-value notch at 0.01 unless asked otherwise.</summary>
+    public static CommonParameters CreateCommonParameters(FilterType identificationFilter = FilterType.QValueNotch, double filterThreshold = 0.01)
     {
-        return new CommonParameters(qValueThreshold: qValueThreshold, pepQValueThreshold: pepQValueThreshold);
+        return new CommonParameters(identificationFilter: identificationFilter, filterThreshold: filterThreshold);
     }
 
     public static SpectralMatch CreateSpectralMatch(

@@ -65,7 +65,7 @@ public class RetentionTimeCollectorTests
     [Test]
     public void CollectData_WithNoConfidentEntries_ReturnsNaNAndEmptyArrays()
     {
-        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.01, pepQValueThreshold: 0.01);
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters();
         var highQValuePsm = ParallelSearchTestContextFactory.CreateSpectralMatch(commonParameters, isDecoy: false, score: 100, psmQValue: 0.5, peptideQValue: 0.5);
 
         var context = ParallelSearchTestContextFactory.CreateContext(
@@ -93,7 +93,7 @@ public class RetentionTimeCollectorTests
     [Test]
     public void CollectData_FiltersPsmsByPsmQValueAndPeptidesByPeptideQValue()
     {
-        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.01, pepQValueThreshold: 0.01);
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters();
 
         // passes at the PSM level only
         var psmLevelOnly = ParallelSearchTestContextFactory.CreateSpectralMatch(commonParameters, isDecoy: false, score: 100, psmQValue: 0.001, peptideQValue: 0.5, scanNumber: 1);

@@ -4,6 +4,7 @@ using NUnit.Framework;
 using TaskLayer.ParallelSearch.Analysis;
 using TaskLayer.ParallelSearch.Analysis.Collectors;
 using Test.ParallelSearchTask.Utility;
+using EngineLayer.SpectrumMatch;
 
 namespace Test.ParallelSearchTask.Analysis;
 
@@ -33,7 +34,7 @@ public class BasicMetricCollectorTests
     [Test]
     public void CollectData_UsesMinimumThresholdAcrossPsmAndPeptide()
     {
-        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 0.01, pepQValueThreshold: 0.05);
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters();
 
         var allPsms = new List<EngineLayer.SpectralMatch>
         {
@@ -76,11 +77,12 @@ public class BasicMetricCollectorTests
     }
 
     [Test]
-    [TestCase(120, 60)] // PEP filtering: counted by PEP q-value at the PEP q-value threshold, as FilteredPsms does
-    [TestCase(50, 50)]  // fewer than 100 matches: FilteredPsms does not filter, so every match counts
-    public void CollectData_WithAPepQValueThresholdBelowTheQValueThreshold_FiltersAsFilteredPsmsDoes(int matchCount, int expectedConfident)
+    [TestCase(true, 60)]  // PEP trained: counted by PEP q-value at the threshold, as FilteredPsms does
+    [TestCase(false, 0)]  // PEP not trained: judged by the q-value notch instead (all 0.5 here), as FilteredPsms does
+    public void CollectData_WithThePepQValueFilter_FiltersAsFilteredPsmsDoes(bool pepTrained, int expectedConfident)
     {
-        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(qValueThreshold: 1.0, pepQValueThreshold: 0.01);
+        const int matchCount = 120;
+        var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters(FilterType.PepQValue, 0.01);
         // q-values all above 0.01, PEP q-values passing for the first half only
         var psms = Enumerable.Range(0, matchCount).Select(i =>
         {
@@ -88,7 +90,9 @@ public class BasicMetricCollectorTests
                 psmQValue: 0.5, peptideQValue: 0.5, scanNumber: i + 1);
             double pepQValue = i < matchCount / 2 ? 0.001 : 0.5;
             psm.SetFdrValues(0, 0, 0.5, 0, 0, 0.5, 0, pepQValue);
+            psm.PsmFdrInfo.PepTrained = pepTrained;
             psm.PeptideFdrInfo.PEP_QValue = pepQValue;
+            psm.PeptideFdrInfo.PepTrained = pepTrained;
             return psm;
         }).ToList();
         var context = ParallelSearchTestContextFactory.CreateContext(commonParameters, allPsms: psms, transientPsms: psms,
@@ -105,7 +109,7 @@ public class BasicMetricCollectorTests
     }
 
     [Test]
-    public void CollectData_OnTheQValuePath_AlsoHoldsTheNotchQValueToTheThreshold()
+    public void CollectData_WithTheQValueNotchFilter_HoldsTheNotchQValueToTheThreshold()
     {
         var commonParameters = ParallelSearchTestContextFactory.CreateCommonParameters();
         // every q-value passes, but the notch q-value passes for the first half only

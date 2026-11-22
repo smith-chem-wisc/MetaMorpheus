@@ -67,10 +67,12 @@ public sealed class TransientProteinScoringAndFdrEngine : ProteinScoringAndFdrEn
 
         if (!_baselineFdr.IsEmpty)
         {
-            // the baseline groups were ranked under the same parameters, so this only fails on a wiring mistake
-            if (_baselineFdr.FilterType != FilterType)
+            // Transient groups are placed by the value the baseline ranked by (the lookup's), so a baseline that fell back
+            // to the q-value notch under the PEP q-value filter is fine. A baseline ranked by PEP under any other filter
+            // was built for different parameters: a wiring mistake.
+            if (_baselineFdr.FilterType == EngineLayer.SpectrumMatch.FilterType.PepQValue && FilterType != EngineLayer.SpectrumMatch.FilterType.PepQValue)
                 throw new MetaMorpheusException(
-                    $"The baseline protein FDR ranked groups by {_baselineFdr.FilterType}, but this search ranks them by {FilterType}.");
+                    $"The baseline protein FDR ranked groups by {_baselineFdr.FilterType}, but this search filters by {FilterType}.");
 
             BaselineFdr.AlignProteinGroups(_baselineFdr, filteredTransientGroups);
         }
