@@ -231,8 +231,16 @@ namespace EngineLayer
             return proteinGroups.Where(p => p.AllPeptides.Select(x => x.BaseSequence).Distinct().Skip(1).Any()).ToList();
         }
 
-        protected static void PopulateBestPeptideMetrics(IEnumerable<ProteinGroup> proteinGroups)
+        protected static void PopulateBestPeptideMetrics(IEnumerable<ProteinGroup> proteinGroups, IEnumerable<SpectralMatch> psms)
         {
+            // A peptide's PEP is its best-scoring match's, the match PEP trains on, as at every peptide-level step;
+            // the lowest PEP of its repeats would be a PSM-level number. Per digestion agent, as FDR and PEP are.
+            var peptidePep = psms
+                .Where(p => p?.FdrInfo != null && p.FullSequence != null)
+                .GroupBy(p => p.DigestionParams.DigestionAgent)
+                .SelectMany(g => g.CollapseToPeptides(filterAtPeptideLevel: true))
+                .ToDictionary(p => (p.DigestionParams.DigestionAgent, p.FullSequence), p => p.FdrInfo.PEP);
+
             foreach (var pg in proteinGroups)
             {
                 if (pg.AllPsmsBelowOnePercentFDR.Count == 0)
@@ -248,7 +256,8 @@ namespace EngineLayer
                 var bestPeptidePsms = pg.AllPsmsBelowOnePercentFDR.Cast<SpectralMatch>().ToList();
                 pg.BestPeptideScore = bestPeptidePsms.Max(psm => psm.Score);
                 pg.BestPeptideQValue = bestPeptidePsms.Min(psm => psm.FdrInfo.QValueNotch);
-                pg.BestPeptidePEP = bestPeptidePsms.Min(psm => psm.FdrInfo.PEP);
+                pg.BestPeptidePEP = bestPeptidePsms.Min(psm =>
+                    peptidePep.TryGetValue((psm.DigestionParams.DigestionAgent, psm.FullSequence), out double pep) ? pep : psm.FdrInfo.PEP);
             }
         }
 
@@ -257,7 +266,7 @@ namespace EngineLayer
             proteinGroups = ApplyNoOneHitWondersFilter(proteinGroups);
 
             // Both passes below rank groups by their best peptide, so set its score, q-value and PEP first
-            PopulateBestPeptideMetrics(proteinGroups);
+            PopulateBestPeptideMetrics(proteinGroups, _FilteredPsms);
 
             // Do Classic protein FDR (all targets, all decoys)
             // order protein groups based on filter type

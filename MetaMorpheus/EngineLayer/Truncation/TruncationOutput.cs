@@ -28,7 +28,7 @@ namespace EngineLayer.Truncation
 
         /// <summary>
         /// AllTruncatedProteoforms.psmtsv — one row per truncated FullSequence, peptide-level FDR columns. The row is
-        /// the PSM <see cref="FdrAnalysisEngine"/> chose as that proteoform's representative (lowest PEP, then score),
+        /// the PSM <see cref="FdrAnalysisEngine"/> chose as that proteoform's representative (its best-scoring match),
         /// because only that PSM carries the proteoform-level q-values; any other member would be written with the
         /// unassigned sentinel (2).
         /// </summary>

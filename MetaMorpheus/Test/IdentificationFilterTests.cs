@@ -293,6 +293,43 @@ namespace Test
             Assert.That((byPooled["X"], byPooled["Y"]), Is.EqualTo((0.0, 0.5)), "ranked by the notch");
         }
 
+        /// <summary>Another match to <paramref name="of"/>'s peptide, on a scan of its own, at the given score and PEP.</summary>
+        private static SpectralMatch Repeat(SpectralMatch of, double score, double pep)
+        {
+            var peptide = of.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
+            var dataScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false),
+                2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null,
+                null, "scan=2", double.NaN, null, null, double.NaN, null, DissociationType.HCD, 0, null);
+            var scan = new Ms2ScanWithSpecificMass(dataScan, 2, 0, "File", new CommonParameters());
+            var psm = new PeptideSpectralMatch(peptide, 0, score, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+            Set(psm, q: 0.001, notch: 0.001, pepQ: 0.001, pep: pep);
+            return psm;
+        }
+
+        // A group's best peptide PEP reads each peptide's PEP off the match PEP trained on, its best-scoring match, never
+        // off a lower-scoring repeat whose own PEP came out lower. Y's peptide has two matches: the best-scoring one at PEP
+        // 0.01 and a repeat at PEP 0. Read off the repeat, Y would rank first; read off its best-scoring match, it ranks
+        // after the decoy.
+        [Test]
+        public static void ProteinFdr_ReadsEachPeptidesPepOffItsBestScoringMatch()
+        {
+            var x = OneGroup("X", "ACDEFK", decoy: false, score: 60, notch: 0.001, pep: 0.0001);
+            var y = OneGroup("Y", "GHILMK", decoy: false, score: 50, notch: 0.001, pep: 0.01);
+            var decoy = OneGroup("DECOY_Z", "NQSTVK", decoy: true, score: 40, notch: 0.003, pep: 0.001);
+            var repeat = Repeat(y.Psm, score: 20, pep: 0);
+
+            var results = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
+                new List<ProteinGroup> { x.Group, y.Group, decoy.Group }, new List<SpectralMatch> { x.Psm, y.Psm, repeat, decoy.Psm },
+                noOneHitWonders: false, treatModPeptidesAsDifferentPeptides: true, mergeIndistinguishableProteinGroups: false, Chosen(FilterType.PepQValue),
+                new List<(string, CommonParameters)>(), new List<string>()).Run();
+            var groups = results.SortedAndScoredProteinGroups.ToDictionary(g => g.ProteinGroupName);
+
+            Assert.That(groups["Y"].AllPsmsBelowOnePercentFDR, Has.Count.EqualTo(2), "the repeat still scores the group");
+            Assert.That(groups["Y"].BestPeptidePEP, Is.EqualTo(0.01), "the best-scoring match's PEP, not the repeat's 0");
+            Assert.That((groups["X"].QValue, groups["Y"].QValue), Is.EqualTo((0.0, 0.5)), "Y ranks after the decoy");
+        }
+
         /// <summary>A match to the first peptide of <paramref name="protein"/>, on its own scan.</summary>
         private static SpectralMatch Match(Protein protein, int notch, double score, int scanNumber)
         {

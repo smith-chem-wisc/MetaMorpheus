@@ -133,7 +133,8 @@ namespace EngineLayer
         #region MetaMorpheus-Specific Properties
 
         /// <summary>
-        /// The minimum Posterior Error Probability (PEP) among all PSMs in <see cref="AllPsmsBelowOnePercentFDR"/>.
+        /// The minimum Posterior Error Probability (PEP) over the peptides of the PSMs in <see cref="AllPsmsBelowOnePercentFDR"/>,
+        /// each peptide's PEP being its best-scoring match's, the match PEP trains on.
         /// Lower values indicate higher confidence. Populated during protein FDR and used for PEP-based ranking.
         /// </summary>
         public double BestPeptidePEP { get; set; }
