@@ -429,16 +429,43 @@ namespace EngineLayer
                 }
 
                 // *** greedy algorithm loop
+                // The next best protein is the one with:
+                // 1. the most new peptide sequences and then (in case of a tie),
+                // 2. the most total peptides observed for the protein, regardless if they're unaccounted for or not,
+                // and then the first in algDictionary's order. Proteins are kept in buckets by their count of new sequences,
+                // each ordered by that tie-break, so a pick does not scan (and hash the sequence of) every remaining protein:
+                // that was quadratic in the number of proteins left. algDictionary is only removed from in this loop, so the
+                // remaining proteins keep their relative order.
+                var proteinRank = new Dictionary<IBioPolymer, int>(algDictionary.Count);
+                foreach (var (protein, rank) in algDictionary.Keys
+                    .Select((protein, order) => (protein, order))
+                    .OrderByDescending(p => proteinToPepSeqMatch[p.protein].Count)
+                    .ThenBy(p => p.order)
+                    .Select((p, rank) => (p.protein, rank)))
+                {
+                    proteinRank.Add(protein, rank);
+                }
+                var proteinsByRank = new IBioPolymer[proteinRank.Count];
+                foreach (var (protein, rank) in proteinRank)
+                {
+                    proteinsByRank[rank] = protein;
+                }
+
                 int numNewSeqs = algDictionary.Max(p => p.Value.Count);
+                var proteinsByNewSeqCount = new SortedSet<int>[numNewSeqs + 1];
+                for (int count = 0; count <= numNewSeqs; count++)
+                {
+                    proteinsByNewSeqCount[count] = new SortedSet<int>();
+                }
+                foreach (var (protein, peptideSequences) in algDictionary)
+                {
+                    proteinsByNewSeqCount[peptideSequences.Count].Add(proteinRank[protein]);
+                }
+
                 while (numNewSeqs != 0)
                 {
-                    // get the next best protein based on:
-                    // 1. the number of new peptide sequences and then (in case of a tie),
-                    // 2. the number of total peptides observed for the protein, regardless if they're unaccounted for or not
-                    IBioPolymer bestProtein = algDictionary
-                        .Where(p => p.Value.Count == numNewSeqs)
-                        .OrderByDescending(p => proteinToPepSeqMatch[p.Key].Count)
-                        .First().Key;
+                    int bestRank = proteinsByNewSeqCount[numNewSeqs].Min;
+                    IBioPolymer bestProtein = proteinsByRank[bestRank];
 
                     parsimoniousProteinList.Add(bestProtein);
 
@@ -450,15 +477,25 @@ namespace EngineLayer
 
                         foreach (IBioPolymer protein in proteinsWithThisPeptide)
                         {
-                            algDictionary[protein].Remove(peptide.Sequence);
+                            HashSet<string> newSequences = algDictionary[protein];
+                            if (newSequences.Remove(peptide.Sequence))
+                            {
+                                int rank = proteinRank[protein];
+                                proteinsByNewSeqCount[newSequences.Count + 1].Remove(rank);
+                                proteinsByNewSeqCount[newSequences.Count].Add(rank);
+                            }
                             algDictionaryProtease[protein].Remove(peptide);
                         }
                     }
 
+                    proteinsByNewSeqCount[algDictionary[bestProtein].Count].Remove(bestRank);
                     algDictionary.Remove(bestProtein);
                     algDictionaryProtease.Remove(bestProtein);
 
-                    numNewSeqs = algDictionary.Any() ? algDictionary.Max(p => p.Value.Count) : 0;
+                    while (numNewSeqs > 0 && proteinsByNewSeqCount[numNewSeqs].Count == 0)
+                    {
+                        numNewSeqs--;
+                    }
                 }
 
                 // *** done with greedy algorithm

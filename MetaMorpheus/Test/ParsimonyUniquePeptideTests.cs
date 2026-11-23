@@ -482,5 +482,44 @@ namespace Test
                 if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
             }
         }
+
+        /// <summary>
+        /// Every peptide is shared, so the greedy step picks the proteins. A protein with the same peptides as a picked
+        /// protein is added back (indistinguishable); one with as many peptides but a different set is not.
+        /// </summary>
+        [Test]
+        public static void OnlyProteinsWithAPickedProteinsExactPeptideSetAreAddedBack()
+        {
+            // P1 and P2 have three peptides each, so one of them is picked first and the other is added back; then P3 and P4
+            // tie on EEEK with two peptides each, one is picked, and the other, with as many peptides but a different set, is not
+            var p1 = Protein("AAAKCCCKDDDK", "P1");
+            var p2 = Protein("AAAKCCCKDDDK", "P2");
+            var p3 = Protein("CCCKEEEK", "P3");
+            var p4 = Protein("EEEKAAAK", "P4");
+            var p5 = Protein("GGGKAAAK", "P5");
+
+            var psms = new List<SpectralMatch>
+            {
+                Psm(Peptide(p1, 1, 4), Peptide(p2, 1, 4), Peptide(p4, 5, 8), Peptide(p5, 5, 8)), // AAAK
+                Psm(Peptide(p1, 5, 8), Peptide(p2, 5, 8), Peptide(p3, 1, 4)), // CCCK
+                Psm(Peptide(p1, 9, 12), Peptide(p2, 9, 12)), // DDDK
+                Psm(Peptide(p3, 5, 8), Peptide(p4, 1, 4)), // EEEK
+            };
+
+            var parsimony = (ProteinParsimonyResults)new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, null).Run();
+
+            // parsimony trims each match to the proteins it keeps. P5's set {AAAK} is a subset of P1's and was never
+            // picked, so it is not added back
+            var kept = psms.SelectMany(p => p.BestMatchingBioPolymersWithSetMods).Select(h => h.SpecificBioPolymer.Parent.Accession)
+                .Distinct().OrderBy(a => a).ToList();
+            Assert.That(kept, Does.Contain("P1").And.Contain("P2"));
+            Assert.That(kept.Count(a => a is "P3" or "P4"), Is.EqualTo(1), string.Join(", ", kept));
+            Assert.That(kept, Does.Not.Contain("P5"));
+            Assert.That(kept, Has.Count.EqualTo(3));
+
+            var scored = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(parsimony.ProteinGroups, psms, false, false, true,
+                new CommonParameters(), null, new List<string>()).Run();
+            Assert.That(scored.SortedAndScoredProteinGroups.Select(g => g.ProteinGroupName), Has.Some.EqualTo("P1|P2"));
+        }
     }
 }

@@ -642,5 +642,26 @@ namespace Test
         }
 
         #endregion
+
+        #region Greedy choice of parsimonious proteins
+
+        /// <summary>
+        /// P003 is kept for its unique peptides, which leaves P001 and P002 one new peptide each, AAAK. The greedy step breaks
+        /// that tie by the total number of peptides, so it keeps P002 (two) over P001 (one), although P001 comes first.
+        /// </summary>
+        [Test]
+        public static void GreedyTieOnNewPeptidesGoesToTheProteinWithMorePeptides()
+        {
+            var blocks = new List<string[]>
+            {
+                new[] { "AAAK" },
+                new[] { "AAAK", "DDDK" },
+                new[] { "DDDK", "EEEK", "FFFK" },
+            };
+
+            Assert.That(ParsimoniousProteins(blocks), Is.EqualTo(new[] { "P002", "P003" }));
+        }
+
+        #endregion
     }
 }
