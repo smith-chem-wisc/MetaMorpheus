@@ -931,5 +931,33 @@ namespace Test
                 Directory.Delete(outputFolder, true);
             }
         }
+
+        /// <summary>
+        /// Protein FDR reads a site-ambiguous peptide's PEP off its best-scoring match, keyed by its site-free identity as
+        /// the peptide-level passes key it, not the lowest PEP of its repeats (review of #2983).
+        /// </summary>
+        [Test]
+        public static void ProteinFdrReadsASiteAmbiguousPeptidesPepOffItsBestScoringMatch()
+        {
+            var protein = Protein("GMHMK", "P1");
+            var onM2 = Peptide(protein, 1, 5, (2, OxidationOnM));
+            var onM4 = Peptide(protein, 1, 5, (4, OxidationOnM));
+            var best = ScoredPsm(50, "a.mzML", 1, onM2, onM4);
+            var repeat = ScoredPsm(20, "a.mzML", 2, onM2, onM4);
+            best.PsmFdrInfo.PEP = 0.01;
+            repeat.PsmFdrInfo.PEP = 0;
+            Assume.That(best.IsLocalizationAmbiguous && repeat.IsLocalizationAmbiguous);
+            var peptides = new HashSet<Omics.IBioPolymerWithSetMods> { onM2, onM4 };
+            var group = new ProteinGroup(new HashSet<Omics.IBioPolymer> { protein }, peptides, peptides);
+
+            var results = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(new List<ProteinGroup> { group },
+                new List<SpectralMatch> { best, repeat }, noOneHitWonders: false, treatModPeptidesAsDifferentPeptides: false,
+                mergeIndistinguishableProteinGroups: false, new CommonParameters(digestionParams: Digestion),
+                new List<(string, CommonParameters)>(), new List<string>()).Run();
+            var scored = results.SortedAndScoredProteinGroups.Single();
+
+            Assume.That(scored.AllPsmsBelowOnePercentFDR, Has.Count.EqualTo(2), "both matches score the group");
+            Assert.That(scored.BestPeptidePEP, Is.EqualTo(0.01), "the best-scoring match's PEP, not the repeat's 0");
+        }
     }
 }

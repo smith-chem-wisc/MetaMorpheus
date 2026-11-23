@@ -234,12 +234,17 @@ namespace EngineLayer
         protected static void PopulateBestPeptideMetrics(IEnumerable<ProteinGroup> proteinGroups, IEnumerable<SpectralMatch> psms)
         {
             // A peptide's PEP is its best-scoring match's, the match PEP trains on, as at every peptide-level step;
-            // the lowest PEP of its repeats would be a PSM-level number. Per digestion agent, as FDR and PEP are.
+            // the lowest PEP of its repeats would be a PSM-level number. Keyed as the peptide-level passes key a peptide,
+            // per digestion agent: its full sequence, or its site-free identity when it is ambiguous only in where its
+            // modifications sit (FdrAnalysisEngine.CalculateLocalizationAmbiguousPeptideQValues). A match ambiguous in
+            // its sequence keeps its own PEP.
+            static (object, string, string) PeptideKey(SpectralMatch p) => (p.DigestionParams.DigestionAgent, p.FullSequence,
+                p.FullSequence == null && p.IsLocalizationAmbiguous ? p.GetSiteFreeIdentity() : null);
             var peptidePep = psms
-                .Where(p => p.FullSequence != null)
-                .GroupBy(p => p.DigestionParams.DigestionAgent)
-                .SelectMany(g => g.CollapseToPeptides(filterAtPeptideLevel: true))
-                .ToDictionary(p => (p.DigestionParams.DigestionAgent, p.FullSequence), p => p.FdrInfo.PEP);
+                .Where(p => p.FullSequence != null || p.IsLocalizationAmbiguous)
+                .OrderByDescending(p => p)
+                .GroupBy(PeptideKey)
+                .ToDictionary(g => g.Key, g => g.First().FdrInfo.PEP);
 
             foreach (var pg in proteinGroups)
             {
@@ -257,7 +262,7 @@ namespace EngineLayer
                 pg.BestPeptideScore = bestPeptidePsms.Max(psm => psm.Score);
                 pg.BestPeptideQValue = bestPeptidePsms.Min(psm => psm.FdrInfo.QValueNotch);
                 pg.BestPeptidePEP = bestPeptidePsms.Min(psm =>
-                    peptidePep.TryGetValue((psm.DigestionParams.DigestionAgent, psm.FullSequence), out double pep) ? pep : psm.FdrInfo.PEP);
+                    peptidePep.TryGetValue(PeptideKey(psm), out double pep) ? pep : psm.FdrInfo.PEP);
             }
         }
 
