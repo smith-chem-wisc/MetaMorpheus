@@ -464,16 +464,20 @@ namespace EngineLayer
                 // *** done with greedy algorithm
 
                 // Parsimony stage 4: add back indistinguishable proteins (proteins that have identical peptide sets as parsimonious proteins)
+                // Each protein's peptide set is looked up once here, not once per pair compared below: a protein's hash is
+                // its whole sequence's, recomputed on every lookup, and the pairs compared grow with the square of a group's size.
                 var allProteinsGroupedByNumPeptides = proteinToPepSeqMatch.GroupBy(p => p.Value.Count);
-                var parsimonyProteinsGroupedByNumPeptides = parsimoniousProteinList.GroupBy(p => proteinToPepSeqMatch[p].Count);
+                var parsimonyProteinsByNumPeptides = parsimoniousProteinList
+                    .Select(p => (Protein: p, Peptides: proteinToPepSeqMatch[p]))
+                    .GroupBy(p => p.Peptides.Count)
+                    .ToDictionary(g => g.Key, g => g.ToArray());
                 var indistinguishableProteins = new ConcurrentBag<IBioPolymer>();
 
                 foreach (var group in allProteinsGroupedByNumPeptides)
                 {
-                    var parsimonyProteinsWithSameNumPeptides = parsimonyProteinsGroupedByNumPeptides.FirstOrDefault(p => p.Key == group.Key);
                     var list = group.ToList();
 
-                    if (parsimonyProteinsWithSameNumPeptides != null)
+                    if (parsimonyProteinsByNumPeptides.TryGetValue(group.Key, out var parsimonyProteinsWithSameNumPeptides))
                     {
                         Parallel.ForEach(Partitioner.Create(0, list.Count),
                             new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
@@ -482,11 +486,12 @@ namespace EngineLayer
                                 for (int i = range.Item1; i < range.Item2; i++)
                                 {
                                     IBioPolymer otherProtein = list[i].Key;
+                                    HashSet<ParsimonySequence> otherPeptides = list[i].Value;
 
-                                    foreach (var parsimonyProtein in parsimonyProteinsWithSameNumPeptides)
+                                    foreach (var (parsimonyProtein, parsimonyPeptides) in parsimonyProteinsWithSameNumPeptides)
                                     {
                                         // if the two proteins have the same set of peptide sequences, they're indistinguishable
-                                        if (parsimonyProtein != otherProtein && proteinToPepSeqMatch[parsimonyProtein].SetEquals(proteinToPepSeqMatch[otherProtein]))
+                                        if (parsimonyProtein != otherProtein && parsimonyPeptides.SetEquals(otherPeptides))
                                         {
                                             indistinguishableProteins.Add(otherProtein);
                                         }

@@ -559,5 +559,88 @@ namespace Test
         }
 
         #endregion
+
+        #region Adding back proteins indistinguishable from parsimonious ones
+
+        /// <summary>
+        /// Proteins built from tryptic blocks, one PSM per block sequence shared by every protein that has the block.
+        /// Returns the accessions of the proteins the parsimony engine keeps: the engine makes a group for every protein,
+        /// and keeps a protein by leaving it among the proteins of the PSMs it explains.
+        /// </summary>
+        private static List<string> ParsimoniousProteins(IReadOnlyList<string[]> blocksOfEachProtein)
+        {
+            var proteins = blocksOfEachProtein.Select((blocks, i) => Protein(string.Concat(blocks), $"P{i + 1:000}")).ToList();
+            var peptidesOfBlock = new Dictionary<string, List<PeptideWithSetModifications>>();
+            for (int i = 0; i < proteins.Count; i++)
+            {
+                int start = 1;
+                foreach (string block in blocksOfEachProtein[i])
+                {
+                    if (!peptidesOfBlock.TryGetValue(block, out var list))
+                    {
+                        peptidesOfBlock.Add(block, list = new List<PeptideWithSetModifications>());
+                    }
+                    list.Add(Peptide(proteins[i], start, start + block.Length - 1));
+                    start += block.Length;
+                }
+            }
+
+            var psms = peptidesOfBlock.Values.Select(p => Psm(new List<MatchedFragmentIon>(), p.ToArray())).ToList();
+            new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, new List<string>()).Run();
+            return psms.SelectMany(psm => psm.BestMatchingBioPolymersWithSetMods).Select(p => p.SpecificBioPolymer.Parent.Accession)
+                .Distinct().OrderBy(a => a, StringComparer.Ordinal).ToList();
+        }
+
+        /// <summary>
+        /// P004 is chosen first, for its two peptides, and then one of P001 and P002. The other of the two has the same
+        /// peptide and is added back. P003 and P005 each have one peptide, as P001 does, but a different one, so they are not.
+        /// </summary>
+        [Test]
+        public static void ProteinsWithTheSamePeptidesAsAParsimoniousOneAreAddedBackAndNoOthers()
+        {
+            var blocks = new List<string[]>
+            {
+                new[] { "AAAK" },
+                new[] { "AAAK" },
+                new[] { "CCCK" },
+                new[] { "CCCK", "DDDK" },
+                new[] { "DDDK" },
+            };
+
+            Assert.That(ParsimoniousProteins(blocks), Is.EqualTo(new[] { "P001", "P002", "P004" }));
+        }
+
+        /// <summary>
+        /// Many proteins with one or two peptides, as a sparse search gives: large groups of proteins with the same number
+        /// of peptides, compared pair by pair. A protein is kept exactly when its peptides are those of a kept protein, and
+        /// the kept proteins account for every peptide.
+        /// </summary>
+        [Test]
+        public static void EveryProteinIndistinguishableFromAKeptOneIsKept()
+        {
+            string[] blockPool = Enumerable.Range(0, 30).Select(i => $"{Residues[i % 20]}{Residues[(i * 7 + 3) % 20]}{Residues[i / 20]}K").ToArray();
+            var random = new Random(11);
+            for (int trial = 0; trial < 40; trial++)
+            {
+                var blocks = Enumerable.Range(0, random.Next(20, 120))
+                    .Select(_ => blockPool.OrderBy(_ => random.Next()).Take(random.Next(1, 3)).ToArray()).ToList();
+
+                var kept = ParsimoniousProteins(blocks).ToHashSet();
+                var peptideSetOf = blocks
+                    .Select((b, i) => (Accession: $"P{i + 1:000}", Set: string.Join(",", b.OrderBy(x => x, StringComparer.Ordinal))))
+                    .ToList();
+                var keptSets = peptideSetOf.Where(p => kept.Contains(p.Accession)).Select(p => p.Set).ToHashSet();
+                string description = $"trial {trial}: {string.Join(" ; ", blocks.Select(b => string.Join(",", b)))}";
+
+                foreach (var (accession, set) in peptideSetOf)
+                {
+                    Assert.That(kept.Contains(accession), Is.EqualTo(keptSets.Contains(set)), $"{accession} ({set}), {description}");
+                }
+                Assert.That(blocks.SelectMany(b => b).Distinct().All(block => keptSets.Any(s => s.Split(',').Contains(block))),
+                    Is.True, description);
+            }
+        }
+
+        #endregion
     }
 }
