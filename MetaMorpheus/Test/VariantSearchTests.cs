@@ -62,7 +62,8 @@ namespace Test
                     SearchTarget = decoyType == DecoyType.None,
                     ModPeptidesAreDifferent = false
                 },
-                CommonParameters = new CommonParameters(scoreCutoff: 1, qValueThreshold: 1.0, digestionParams: new DigestionParams(minPeptideLength: 2), precursorMassTolerance: new PpmTolerance(20)),
+                CommonParameters = new CommonParameters(scoreCutoff: 1, identificationFilter: EngineLayer.SpectrumMatch.FilterType.QValueNotch, filterThreshold: 1.0,
+                    digestionParams: new DigestionParams(minPeptideLength: 2), precursorMassTolerance: new PpmTolerance(20)),
             };
 
             ModificationMotif.TryGetMotif("V", out ModificationMotif motifV);
@@ -134,7 +135,8 @@ namespace Test
                     SearchTarget = decoyType == DecoyType.None,
                     ModPeptidesAreDifferent = false
                 },
-                CommonParameters = new CommonParameters(scoreCutoff: 1, qValueThreshold: 1.0, digestionParams: new DigestionParams(minPeptideLength: 2), precursorMassTolerance: new PpmTolerance(20)),
+                CommonParameters = new CommonParameters(scoreCutoff: 1, identificationFilter: EngineLayer.SpectrumMatch.FilterType.QValueNotch, filterThreshold: 1.0,
+                    digestionParams: new DigestionParams(minPeptideLength: 2), precursorMassTolerance: new PpmTolerance(20)),
             };
 
             st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "");
