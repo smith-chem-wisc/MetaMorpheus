@@ -236,7 +236,7 @@ namespace EngineLayer
             // A peptide's PEP is its best-scoring match's, the match PEP trains on, as at every peptide-level step;
             // the lowest PEP of its repeats would be a PSM-level number. Per digestion agent, as FDR and PEP are.
             var peptidePep = psms
-                .Where(p => p?.FdrInfo != null && p.FullSequence != null)
+                .Where(p => p.FullSequence != null)
                 .GroupBy(p => p.DigestionParams.DigestionAgent)
                 .SelectMany(g => g.CollapseToPeptides(filterAtPeptideLevel: true))
                 .ToDictionary(p => (p.DigestionParams.DigestionAgent, p.FullSequence), p => p.FdrInfo.PEP);

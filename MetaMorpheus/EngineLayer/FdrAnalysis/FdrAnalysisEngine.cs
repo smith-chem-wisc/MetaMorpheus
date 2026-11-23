@@ -219,11 +219,13 @@ namespace EngineLayer.FdrAnalysis
                     .OrderByDescending(p => p)
                     .GroupBy(p => (p.FullSequence, SiteFreeIdentity: p.FullSequence == null && p.IsLocalizationAmbiguous ? p.GetSiteFreeIdentity() : null))
                     .Select(p => p.First())
+                    .OrderBy(p => p.FdrInfo.PEP)
+                    .ThenByDescending(p => p)
                     .ToList();
 
                 if (proteasePsms.Any(p => p.FdrInfo.PEP > 0))
                 {
-                    CalculateQValue(peptides.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList(), peptideLevelCalculation: true, pepCalculation: true);
+                    CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
                 }
 
                 peptides = peptides.OrderByDescending(p => p).ToList();
