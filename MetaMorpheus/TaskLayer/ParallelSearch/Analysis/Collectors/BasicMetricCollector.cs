@@ -49,6 +49,7 @@ public class BasicMetricCollector : IMetricCollector
     {
         var psmCutoff = context.PsmCutoff;
         var peptideCutoff = context.PeptideCutoff;
+        var global = context.GetGlobalCounts();
 
         return new Dictionary<string, object>
         {
@@ -56,11 +57,11 @@ public class BasicMetricCollector : IMetricCollector
             [TransientProteinCount] = context.TransientProteinAccessions.Count,
             [TransientPeptideCount] = context.TransientPeptideCount,
 
-            [TargetPsmsAtQValueThreshold] = context.AllPsms.Count(p => !p.IsDecoy && psmCutoff.Passes(p)),
+            [TargetPsmsAtQValueThreshold] = global.PsmTargets,
             [TargetPsmsFromTransientDb] = context.TransientPsms.Count(p => !p.IsDecoy),
             [TargetPsmsFromTransientDbAtQValueThreshold] = context.TransientPsms.Count(p => !p.IsDecoy && psmCutoff.Passes(p)),
 
-            [TargetPeptidesAtQValueThreshold] = context.AllPeptides.Count(p => !p.IsDecoy && peptideCutoff.Passes(p)),
+            [TargetPeptidesAtQValueThreshold] = global.PeptideTargets,
             [TargetPeptidesFromTransientDb] = context.TransientPeptides.Count(p => !p.IsDecoy),
             [TargetPeptidesFromTransientDbAtQValueThreshold] = context.TransientPeptides.Count(p => !p.IsDecoy && peptideCutoff.Passes(p))
         };

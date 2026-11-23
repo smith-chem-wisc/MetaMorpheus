@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using CsvHelper;
 using CsvHelper.Configuration;
 using TaskLayer.ParallelSearch.Analysis;
@@ -23,6 +24,14 @@ public class ParallelSearchResultCache
     private readonly ConcurrentDictionary<string, TransientDatabaseMetrics> _databaseResults = new();
     private readonly string _csvFilePath;
 
+    // One writer formats every checkpoint row. CsvHelper compiles a write delegate for TransientDatabaseMetrics (166
+    // columns) per writer, so a writer per row cost about 58 ms each, inside _writeLock, which held every parallel
+    // search in line behind it. Both are used only under _writeLock.
+    private static readonly UTF8Encoding Utf8NoBom = new(false);
+    private StringWriter? _rowBuffer;
+    private CsvWriter? _rowWriter;
+    private string? _headerLine;
+
     public string FilePath => _csvFilePath;
 
     /// <summary>
@@ -36,6 +45,15 @@ public class ParallelSearchResultCache
     /// (or did not exist).
     /// </summary>
     public string? UnreadableFileMessage { get; private set; }
+
+    /// <summary>
+    /// A user-facing description of rows <see cref="InitializeCache"/> left out because older collectors wrote them
+    /// (<see cref="TransientDatabaseMetrics.CurrentCollectorVersion"/>), or null when there were none.
+    /// </summary>
+    public string? OlderCollectorsMessage { get; private set; }
+
+    /// <summary>Where the summary holding those rows was copied before they are dropped from it, or null.</summary>
+    public string? OlderCollectorsBackupPath { get; private set; }
 
     /// <summary>
     /// Helper class for thread-safe reading and writing of database search results to CSV
@@ -153,6 +171,18 @@ public class ParallelSearchResultCache
 
                 var results = csv.GetRecords<TransientDatabaseMetrics>().ToList();
 
+                // rows from older collectors are searched again, never reused (see CurrentCollectorVersion)
+                var older = results.Where(r => r.CollectorVersion < TransientDatabaseMetrics.CurrentCollectorVersion).ToList();
+                if (older.Count > 0)
+                {
+                    OlderCollectorsBackupPath = CopyAside("olderCollectors");
+                    OlderCollectorsMessage = $"{older.Count} of {results.Count} rows in {Path.GetFileName(_csvFilePath)} were " +
+                        $"written by older collectors (version {older.Min(r => r.CollectorVersion)}, current " +
+                        $"{TransientDatabaseMetrics.CurrentCollectorVersion}); those databases will be searched again" +
+                        (OlderCollectorsBackupPath is null ? "." : $". The original summary was copied to {OlderCollectorsBackupPath}.");
+                    results = results.Except(older).ToList();
+                }
+
                 // Populate Results dictionary from properties
                 foreach (var result in results)
                 {
@@ -221,6 +251,29 @@ public class ParallelSearchResultCache
     }
 
     /// <summary>
+    /// Copies the summary to the first free <c>name_label.csv</c> (then <c>name_label_N.csv</c>) beside it and returns the
+    /// copy's path, or null when the copy failed.
+    /// </summary>
+    private string? CopyAside(string label)
+    {
+        try
+        {
+            string directory = Path.GetDirectoryName(_csvFilePath) ?? string.Empty;
+            string baseName = Path.GetFileNameWithoutExtension(_csvFilePath);
+            string extension = Path.GetExtension(_csvFilePath);
+            string copyPath = Path.Combine(directory, $"{baseName}_{label}{extension}");
+            for (int counter = 2; File.Exists(copyPath); counter++)
+                copyPath = Path.Combine(directory, $"{baseName}_{label}_{counter}{extension}");
+            File.Copy(_csvFilePath, copyPath);
+            return copyPath;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Writes a single result to the CSV file in a thread-safe manner and tracks it
     /// </summary>
     public void AppendToFile(TransientDatabaseMetrics result)
@@ -235,25 +288,16 @@ public class ParallelSearchResultCache
                 rollbackPosition = new FileInfo(_csvFilePath).Length;
             }
 
+            // formatted before the file is touched, so a row that cannot be formatted leaves the file as it was
+            string text = rollbackPosition == 0 ? GetHeaderLine() + FormatRow(result) : FormatRow(result);
+            byte[] bytes = Utf8NoBom.GetBytes(text);
+
             try
             {
-                using var stream = new FileStream(_csvFilePath, FileMode.Append, FileAccess.Write, FileShare.Read);
-                using var writer = new StreamWriter(stream);
-                using var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture)
+                using (var stream = new FileStream(_csvFilePath, FileMode.Append, FileAccess.Write, FileShare.Read))
                 {
-                    HasHeaderRecord = rollbackPosition == 0
-                });
-
-                // Write header if file is new
-                if (rollbackPosition == 0)
-                {
-                    csv.WriteHeader<TransientDatabaseMetrics>();
-                    csv.NextRecord();
+                    stream.Write(bytes, 0, bytes.Length);
                 }
-
-                csv.WriteRecord(result);
-                csv.NextRecord();
-                csv.Flush();
 
                 lock (_cacheLock)
                 {
@@ -274,6 +318,55 @@ public class ParallelSearchResultCache
                 }
                 throw;
             }
+        }
+    }
+
+    private static CsvConfiguration CreateWriteConfiguration(bool hasHeaderRecord) =>
+        new(CultureInfo.InvariantCulture) { HasHeaderRecord = hasHeaderRecord };
+
+    /// <summary>The header row, line ending included; built once, since a file that is deleted mid-run needs it again.</summary>
+    private string GetHeaderLine()
+    {
+        if (_headerLine is null)
+        {
+            using var buffer = new StringWriter(CultureInfo.InvariantCulture);
+            using (var csv = new CsvWriter(buffer, CreateWriteConfiguration(true), leaveOpen: true))
+            {
+                csv.WriteHeader<TransientDatabaseMetrics>();
+                csv.NextRecord();
+                csv.Flush();
+            }
+            _headerLine = buffer.ToString();
+        }
+        return _headerLine;
+    }
+
+    /// <summary>One data row, line ending included, written by the reused row writer.</summary>
+    private string FormatRow(TransientDatabaseMetrics result)
+    {
+        if (_rowWriter is null)
+        {
+            _rowBuffer = new StringWriter(CultureInfo.InvariantCulture);
+            _rowWriter = new CsvWriter(_rowBuffer, CreateWriteConfiguration(false), leaveOpen: true);
+        }
+
+        try
+        {
+            _rowWriter.WriteRecord(result);
+            _rowWriter.NextRecord();
+            _rowWriter.Flush();
+            return _rowBuffer!.ToString();
+        }
+        catch
+        {
+            // a row that failed part way may have left fields in the writer's buffer; start the next row on a new writer
+            _rowWriter.Dispose();
+            _rowWriter = null;
+            throw;
+        }
+        finally
+        {
+            _rowBuffer?.GetStringBuilder().Clear();
         }
     }
 

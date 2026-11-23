@@ -234,8 +234,9 @@ public class FragmentIonCollectorTests
             Assert.That(columns, Contains.Item(FragmentIonCollector.PSM_SequenceCoverageFractionDecoys));
             Assert.That(columns, Contains.Item(FragmentIonCollector.Peptide_LongestIonSeriesBidirectionalTargets));
             Assert.That(columns, Contains.Item(FragmentIonCollector.Peptide_LongestIonSeriesBidirectionalDecoys));
+            Assert.That(columns, Contains.Item(FragmentIonCollector.Peptide_MedianAbsoluteFragmentPpmErrorsTargets));
         });
 
-        Assert.That(columns.Count, Is.EqualTo(24));
+        Assert.That(columns.Count, Is.EqualTo(25));
     }
 }

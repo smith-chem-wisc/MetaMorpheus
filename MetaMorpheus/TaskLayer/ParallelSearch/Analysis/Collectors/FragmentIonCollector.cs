@@ -36,6 +36,8 @@ public class FragmentIonCollector : IMetricCollector
     public const string Peptide_ComplementaryIonCount_AllDecoys = "Peptide_ComplementaryIonCount_AllDecoys";
     public const string Peptide_SequenceCoverageFraction_AllDecoys = "Peptide_SequenceCoverageFraction_AllDecoys";
     public const string Peptide_FragmentPPMErrors = "Peptide_PPMErrors";
+    /// <summary>One value per confident target peptide: the median absolute fragment mass error of its PSM.</summary>
+    public const string Peptide_MedianAbsoluteFragmentPpmErrorsTargets = "Peptide_MedianAbsoluteFragmentPpmErrorsTargets";
 
     public string CollectorName => "FragmentIons";
     
@@ -66,15 +68,15 @@ public class FragmentIonCollector : IMetricCollector
         yield return Peptide_LongestIonSeriesBidirectional_AllDecoys;
         yield return Peptide_ComplementaryIonCount_AllDecoys;
         yield return Peptide_SequenceCoverageFraction_AllDecoys;
+        yield return Peptide_MedianAbsoluteFragmentPpmErrorsTargets;
     }
 
     public Dictionary<string, object> CollectData(TransientDatabaseContext context)
     {
 
         // Psms
-        var confidentPsms = context.TransientPsms
-            .Where(context.PsmCutoff.Passes)
-            .ToList();
+        // confident matches that are this database's own evidence, not shared with the baseline
+        var confidentPsms = context.ConfidentUnambiguousPsms;
 
         var psmPpmErrors = confidentPsms.SelectMany(p => p.MatchedFragmentIons.Select(m => m.MassErrorPpm)).ToArray();
 
@@ -98,11 +100,14 @@ public class FragmentIonCollector : IMetricCollector
             .ToList();
 
         // peptides
-        var confidentPeptides = context.TransientPeptides
-            .Where(context.PeptideCutoff.Passes)
-            .ToList();
+        var confidentPeptides = context.ConfidentUnambiguousPeptides;
 
         var peptidePpmErrors = confidentPeptides.SelectMany(p => p.MatchedFragmentIons.Select(m => m.MassErrorPpm)).ToArray();
+        // fragment errors are correlated within a spectrum, so a test treats each peptide as one value: its median |ppm|
+        var peptideMedianAbsolutePpmErrors = confidentPeptides
+            .Where(p => !p.IsDecoy && p.MatchedFragmentIons.Count > 0)
+            .Select(p => p.MatchedFragmentIons.Select(m => Math.Abs(m.MassErrorPpm)).Median())
+            .ToArray();
 
         foreach (var psm in confidentPeptides)
             if (psm.FragmentCoveragePositionInPeptide is null)
@@ -151,7 +156,8 @@ public class FragmentIonCollector : IMetricCollector
             [Peptide_LongestIonSeriesBidirectional_AllDecoys] = peptidesBidirectional.Where(p => p.Item1).Select(p => p.Item2).ToArray(),
             [Peptide_ComplementaryIonCount_AllDecoys] = peptidesComplementaryCounts.Where(p => p.Item1).Select(p => p.Item2).ToArray(),
             [Peptide_SequenceCoverageFraction_AllDecoys] = peptidesSequenceCoverage.Where(p => p.Item1).Select(p => p.Item2).ToArray(),
-            [Peptide_FragmentPPMErrors] = peptidePpmErrors
+            [Peptide_FragmentPPMErrors] = peptidePpmErrors,
+            [Peptide_MedianAbsoluteFragmentPpmErrorsTargets] = peptideMedianAbsolutePpmErrors
         };
     }
 

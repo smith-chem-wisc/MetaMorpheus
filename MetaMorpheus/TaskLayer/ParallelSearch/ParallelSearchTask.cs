@@ -85,14 +85,30 @@ public class ParallelSearchTask : SearchTask
     [TomlIgnore] public List<IBioPolymer> BaseBioPolymers { get; private set; } = [];
     [TomlIgnore] public Ms2ScanWithSpecificMass[] AllSortedMs2Scans { get; private set; } = [];
     [TomlIgnore] private SpectralMatch[] BaseSearchPsms = null!; // PSMs from base database search
+
+    /// <summary>
+    /// Arrays the length of <see cref="BaseSearchPsms"/>, each handed to one transient search at a time and returned when
+    /// its database is done. A new copy per database lands on the large object heap (one reference per scan), which only
+    /// a gen2 collection frees; reusing them keeps the arrays to one per search running at once.
+    /// </summary>
+    [TomlIgnore] private readonly ConcurrentBag<SpectralMatch[]> _transientPsmArrays = new();
     [TomlIgnore] private PerFileTolerances? _perFileTolerances; // null when every file uses the task's tolerances
 
 
     // Optimization caches for FDR alignment and parsimony
     [TomlIgnore] private BaselineScoreLookup<FdrInfo> _baselinePsmFdr = new([]);
     [TomlIgnore] private BaselineScoreLookup<FdrInfo> _baselinePeptideFdr = new([]);
+    // per-notch notch q-value curves; empty (and unused) when the acceptor has one notch
+    [TomlIgnore] private IReadOnlyDictionary<int, BaselineScoreLookup<NotchFdr>> _baselinePsmNotchFdr = new Dictionary<int, BaselineScoreLookup<NotchFdr>>();
+    [TomlIgnore] private IReadOnlyDictionary<int, BaselineScoreLookup<NotchFdr>> _baselinePeptideNotchFdr = new Dictionary<int, BaselineScoreLookup<NotchFdr>>();
     [TomlIgnore] private ProteinGroupFdrLookup _baselineProteinGroupFdr = new([], FilterType.QValueNotch);
     [TomlIgnore] private List<CachedProteinGroup> CachedBaselineProteinGroups { get; set; } = [];
+    // the baseline's run-wide PSM and peptide counts, updated per database instead of re-sorting every PSM; null under
+    // PEP filtering, whose cutoff needs the full lists
+    [TomlIgnore] private BaselineMatchCounts? _baselineMatchCounts;
+    // the classic search's per-scan structures (masses, sorted index, locks), built once for AllSortedMs2Scans and shared
+    // by every search instead of rebuilt per database
+    [TomlIgnore] private EngineLayer.ClassicSearch.ClassicSearchScanIndex? _scanIndex;
     [TomlIgnore] private readonly Dictionary<string, List<int>> _baselinePeptideKeyToScanIndexes = new(StringComparer.Ordinal);
     [TomlIgnore] private readonly Dictionary<IBioPolymer, List<int>> _baselineProteinToScanIndexes = new(ReferenceEqualityComparer.Instance);
     [TomlIgnore] private Dictionary<string, IrtCalibrationModel> _retentionTimeCalibrations = new();
@@ -127,6 +143,10 @@ public class ParallelSearchTask : SearchTask
         if (_resultsManager.UnreadableSummaryMessage is { } unreadableSummaryMessage)
         {
             Warn(unreadableSummaryMessage);
+        }
+        if (_resultsManager.OlderCollectorsMessage is { } olderCollectorsMessage)
+        {
+            Warn(olderCollectorsMessage);
         }
 
         // Check cache status early for fast-path optimization
@@ -384,6 +404,15 @@ public class ParallelSearchTask : SearchTask
             FileSpecificParameters, [taskId], "PSM", false, outputFolder);
         baselineFdrEngine.Run();
 
+        // With more than one notch (e.g. OneMM), a match whose tied hypotheses sit at different notches has notch
+        // q-values only on its hypotheses; give it its best notch's, and keep one notch q-value curve per notch for transient matches
+        if (numNotches > 1)
+        {
+            BaselineFdr.UseBestNotch(baselinePsms);
+            _baselinePsmNotchFdr = BaselineFdr.CreateNotchLookups(baselinePsms, peptideLevel: false);
+            _baselinePeptideNotchFdr = BaselineFdr.CreateNotchLookups(baselinePsms, peptideLevel: true);
+        }
+
         _baselinePsmFdr = BaselineFdr.CreatePsmLookup(baselinePsms);
         _baselinePeptideFdr = BaselineFdr.CreatePeptideLookup(baselinePsms);
         BuildBaselineScanIndexLookups();
@@ -445,6 +474,12 @@ public class ParallelSearchTask : SearchTask
                 _baselineProteinGroupFdr = new([], FilterType.QValueNotch);
             }
         }
+
+        // Every filter judges a match by its own FDR values, which transient matches take from the baseline, so the
+        // baseline counts can be updated per search under any filter
+        _baselineMatchCounts = new BaselineMatchCounts(BaseSearchPsms,
+            ConfidenceCutoff.For([], CommonParameters, peptideLevel: false),
+            ConfidenceCutoff.For([], CommonParameters, peptideLevel: true));
 
         // Write Psms and Peptides from base search
         string psmFile = Path.Combine(outputFolder,
@@ -606,28 +641,39 @@ public class ParallelSearchTask : SearchTask
 
         Status($"Searching {dbName} ({transientProteins.Count} transient proteins)...", nestedIds);
 
-         // Reuse baseline PSMs with copy-on-write in peptide/proteoform mode.
-         SpectralMatch[] psmArray = BaseSearchPsms.ToArray();
-         PerformSearch(transientProteins, psmArray, nestedIds, out HashSet<int> updatedPsmIndexes, out int transientPeptideCount, useCopyOnWrite: true, commonParameters: commonParameters);
+         // Reuse baseline PSMs with copy-on-write in peptide/proteoform mode: the search starts from the baseline's
+         // references and copies a PSM only where it changes it. The array of references is borrowed, and nothing keeps
+         // it once the post-search analysis returns (the context holds lists made from it).
+         SpectralMatch[] psmArray = RentTransientPsmArray();
+         TransientDatabaseContext analysisContext;
+         TransientDatabaseMetrics dbResults;
+         try
+         {
+             PerformSearch(transientProteins, psmArray, nestedIds, out HashSet<int> updatedPsmIndexes, out int transientPeptideCount, useCopyOnWrite: true, commonParameters: commonParameters);
 
-        Status($"Performing post-search analysis for {dbName}...", nestedIds);
+             Status($"Performing post-search analysis for {dbName}...", nestedIds);
 
-         int totalProteins = BaseBioPolymers.Count + transientProteins.Count;
-         
-         // Process database through unified manager (handles analysis + caching)
-         var (analysisContext, dbResults) = PerformPostSearchAnalysis(
-              psmArray,
-              dbOutputFolder, 
-              nestedIds,
-             dbName, 
-             totalProteins, 
-             transientProteinAccessions, 
-             transientPeptideCount, 
-             transientProteins, 
-              transientDb,
-              updatedPsmIndexes,
-              commonParameters
-          );
+             int totalProteins = BaseBioPolymers.Count + transientProteins.Count;
+
+             // Process database through unified manager (handles analysis + caching)
+             (analysisContext, dbResults) = PerformPostSearchAnalysis(
+                 psmArray,
+                 dbOutputFolder,
+                 nestedIds,
+                 dbName,
+                 totalProteins,
+                 transientProteinAccessions,
+                 transientPeptideCount,
+                 transientProteins,
+                 transientDb,
+                 updatedPsmIndexes,
+                 commonParameters
+             );
+         }
+         finally
+         {
+             ReturnTransientPsmArray(psmArray);
+         }
 
          _completedDatabaseWriteChannel!.Writer.WriteAsync((analysisContext, dbResults)).AsTask().GetAwaiter().GetResult();
 
@@ -654,7 +700,8 @@ public class ParallelSearchTask : SearchTask
               spectralMatchArray, AllSortedMs2Scans, VariableModifications,
               FixedModifications, proteinsToSearch, massDiffAcceptor, commonParameters,
               FileSpecificParameters, nestedIds, copyOnWriteEnabled: useCopyOnWrite,
-              perFileTolerances: _perFileTolerances);
+              perFileTolerances: _perFileTolerances,
+              scanIndex: _scanIndex ??= new EngineLayer.ClassicSearch.ClassicSearchScanIndex(AllSortedMs2Scans, CommonParameters));
 
          var results = searchEngine.Run();
          updatedPsmIndexes = (results as TransientSearchEngineResults)!.UpdatedSpectralMatchIndexes;
@@ -677,8 +724,12 @@ public class ParallelSearchTask : SearchTask
     {
         bool writeAllResults = !ParallelSearchParameters.WriteTransientResultsOnly;
 
-        List<SpectralMatch> psmList = allPsms.Where(p => p != null)
-            .OrderByDescending(p => p).ToList();
+        // Every PSM and peptide of the run, sorted, are needed only to write them all or for the spectral library.
+        // Otherwise the run-wide counts are the baseline's, updated for the scans this search changed.
+        bool needFullLists = writeAllResults || SearchParameters.WriteSpectralLibrary || _baselineMatchCounts is null;
+        List<SpectralMatch> psmList = needFullLists
+            ? allPsms.Where(p => p != null).OrderByDescending(p => p).ToList()
+            : [];
 
         #region FDR and Parsiomony
 
@@ -698,12 +749,27 @@ public class ParallelSearchTask : SearchTask
                 transientProteinAccessions)
             .OrderByDescending(p => p)
             .ToList();
-        BaselineFdr.AlignPsms(_baselinePsmFdr, transientPsms);
+        BaselineFdr.AlignPsms(_baselinePsmFdr, transientPsms, _baselinePsmNotchFdr);
 
         // Collapse to peptides and apply FDR alignment to peptides
-        var allPeptides = psmList.CollapseToPeptides(true).ToList();
-        var transientPeptides = FilterToTransientDatabaseOnly(allPeptides, transientProteinAccessions).ToList();
-        BaselineFdr.AlignPeptides(_baselinePeptideFdr, transientPeptides);
+        List<SpectralMatch> allPeptides;
+        List<SpectralMatch> affectedPeptides;
+        HashSet<string>? affectedSequences = null;
+        if (needFullLists)
+        {
+            allPeptides = psmList.CollapseToPeptides(true).ToList();
+            affectedPeptides = allPeptides;
+        }
+        else
+        {
+            allPeptides = [];
+            affectedPeptides = _baselineMatchCounts!.CollapseAffectedPeptides(allPsms, updatedPsmIndexes, out affectedSequences);
+        }
+        var transientPeptides = FilterToTransientDatabaseOnly(affectedPeptides, transientProteinAccessions).ToList();
+        BaselineFdr.AlignPeptides(_baselinePeptideFdr, transientPeptides, _baselinePeptideNotchFdr);
+
+        // read before parsimony, which trims hypotheses in place and can drop the baseline protein a match ties with
+        var baselineTies = BaselineTies.Read(transientPsms, transientProteinAccessions);
 
         List<ProteinGroup>? proteinGroups = null;
         if (SearchParameters.DoParsimony && transientPsms.Count > 0)
@@ -775,6 +841,13 @@ public class ParallelSearchTask : SearchTask
 
         #region Result Caching and Analysis
 
+        // read after parsimony, as counting the full lists in the collectors would have
+        GlobalMatchCounts? globalCounts = needFullLists
+            ? null
+            : _baselineMatchCounts!.Count(allPsms, updatedPsmIndexes, affectedPeptides, affectedSequences!,
+                ConfidenceCutoff.For([], commonParameters, peptideLevel: false),
+                ConfidenceCutoff.For([], commonParameters, peptideLevel: true));
+
         // Create analysis context
         var analysisContext = new TransientDatabaseContext
         {
@@ -782,9 +855,11 @@ public class ParallelSearchTask : SearchTask
             TransientDatabase = transientDatabase,
             TransientProteins = transientProteins,
             TransientProteinAccessions = transientProteinAccessions,
+            BaselineTies = baselineTies,
             AllPsms = psmList,
             TransientPsms = transientPsms,
             AllPeptides = allPeptides,
+            GlobalCounts = globalCounts,
             TransientPeptides = transientPeptides,
             ProteinGroups = proteinGroups,
             TransientProteinGroups = transientProteinGroups,
@@ -806,6 +881,26 @@ public class ParallelSearchTask : SearchTask
         #endregion
 
         return (analysisContext, aggregatedResult);
+    }
+
+    /// <summary>An array holding the baseline's PSM references, for one transient search. Give it back with <see cref="ReturnTransientPsmArray"/>.</summary>
+    private SpectralMatch[] RentTransientPsmArray()
+    {
+        if (!_transientPsmArrays.TryTake(out SpectralMatch[]? psmArray) || psmArray.Length != BaseSearchPsms.Length)
+            return BaseSearchPsms.ToArray();
+
+        Array.Copy(BaseSearchPsms, psmArray, BaseSearchPsms.Length);
+        return psmArray;
+    }
+
+    /// <summary>
+    /// Takes back an array from <see cref="RentTransientPsmArray"/>. It is cleared first, so the PSMs one database's
+    /// search copied (and through them its proteins) are not kept alive until the array's next use.
+    /// </summary>
+    private void ReturnTransientPsmArray(SpectralMatch[] psmArray)
+    {
+        Array.Clear(psmArray);
+        _transientPsmArrays.Add(psmArray);
     }
 
     #endregion
@@ -1104,9 +1199,10 @@ public class ParallelSearchTask : SearchTask
         {
             bool hasTransientProtein = false;
 
+            // whether any (or every) hypothesis is transient does not depend on their order, so the unsorted list is read
             if (allowAmbiguous)
             {
-                foreach (var match in psm.BestMatchingBioPolymersWithSetMods)
+                foreach (var match in psm.HypothesesInAddedOrder)
                 {
                     if (transientProteinAccessions.Contains(match.SpecificBioPolymer.Parent.Accession))
                     {
@@ -1115,7 +1211,7 @@ public class ParallelSearchTask : SearchTask
                     }
                 }
             }
-            else if (psm.BestMatchingBioPolymersWithSetMods.All(p => transientProteinAccessions.Contains(p.SpecificBioPolymer.Parent.Accession)))
+            else if (psm.HypothesesInAddedOrder.All(p => transientProteinAccessions.Contains(p.SpecificBioPolymer.Parent.Accession)))
                 hasTransientProtein = true;
 
             if (hasTransientProtein)

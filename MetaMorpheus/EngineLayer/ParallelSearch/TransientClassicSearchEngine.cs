@@ -32,8 +32,9 @@ namespace EngineLayer.ParallelSearch
         public TransientClassicSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, 
             List<IBioPolymer> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIds,
-            bool copyOnWriteEnabled = false, PerFileTolerances perFileTolerances = null)
-            : base(globalPsms, arrayOfSortedMS2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, commonParameters, fileSpecificParameters, null, nestedIds, false)
+            bool copyOnWriteEnabled = false, PerFileTolerances perFileTolerances = null, ClassicSearchScanIndex scanIndex = null)
+            : base(globalPsms, arrayOfSortedMS2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, commonParameters, fileSpecificParameters, null, nestedIds, false,
+                scanIndex: scanIndex)
         {
             UpdatedIndexes = new ConcurrentDictionary<int, byte>();
             _singleThreadMode = CommonParameters.MaxThreadsToUsePerFile <= 1;
@@ -54,10 +55,13 @@ namespace EngineLayer.ParallelSearch
             if (Proteins.Any())
             {
                 // as in ClassicSearchEngine: the scans whose candidates can be scored before their ions are built, decided once
-                bool[] scoreBeforeMatching = new bool[ArrayOfSortedMS2Scans.Length];
-                for (int s = 0; s < scoreBeforeMatching.Length; s++)
+                bool[] scoreBeforeMatching = ScanIndex?.ScoreBeforeMatching ?? new bool[ArrayOfSortedMS2Scans.Length];
+                if (ScanIndex == null)
                 {
-                    scoreBeforeMatching[s] = CanScoreBeforeMatching(ArrayOfSortedMS2Scans[s], CommonParameters, matchAllCharges: false);
+                    for (int s = 0; s < scoreBeforeMatching.Length; s++)
+                    {
+                        scoreBeforeMatching[s] = CanScoreBeforeMatching(ArrayOfSortedMS2Scans[s], CommonParameters, matchAllCharges: false);
+                    }
                 }
 
                 Action<int, int> processProteinRange = (start, end) =>
@@ -217,7 +221,7 @@ namespace EngineLayer.ParallelSearch
                 return;
 
             // The base engine's per-scan locks, as ClassicSearchEngine.AddPeptideCandidateToPsm uses them
-            lock (Locks[scanIndex])
+            lock (LockFor(scanIndex))
             {
                 var existingPsm = SpectralMatches[scanIndex];
 

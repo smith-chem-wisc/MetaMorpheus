@@ -58,14 +58,25 @@ internal static class ParallelSearchTestContextFactory
         List<ProteinGroup>? transientProteinGroups = null,
         int totalProteins = 0,
         int transientPeptideCount = 0,
-        IReadOnlyDictionary<string, IrtCalibrationModel>? retentionTimeCalibrations = null)
+        IReadOnlyDictionary<string, IrtCalibrationModel>? retentionTimeCalibrations = null,
+        HashSet<string>? transientProteinAccessions = null,
+        BaselineTies? baselineTies = null)
     {
+        // by default every protein behind the transient matches and groups is the transient database's own, so none is
+        // shared with the baseline; pass the accessions to make some of them baseline proteins
+        // (some tests pass null lists on purpose)
+        transientProteinAccessions ??= (transientPsms ?? []).Concat(transientPeptides ?? [])
+            .SelectMany(m => m.BestMatchingBioPolymersWithSetMods.Select(h => h.SpecificBioPolymer.Parent.Accession))
+            .Concat((transientProteinGroups ?? []).SelectMany(g => g.Proteins.Select(p => p.Accession)))
+            .ToHashSet();
+
         return new TransientDatabaseContext
         {
             DatabaseName = "TransientDb",
             TransientDatabase = null!,
             TransientProteins = [],
-            TransientProteinAccessions = new HashSet<string> { "A", "B" },
+            TransientProteinAccessions = transientProteinAccessions,
+            BaselineTies = baselineTies ?? BaselineTies.Empty,
             AllPsms = allPsms,
             TransientPsms = transientPsms,
             AllPeptides = allPeptides,
@@ -98,6 +109,13 @@ internal static class ParallelSearchTestContextFactory
         {
             QValue = qValue,
         };
+
+        // one PSM on the group's own first peptide, so the group has evidence of its own
+        var commonParameters = CreateCommonParameters();
+        var psm = new PeptideSpectralMatch(peptides.First(), 0, 10, 1, CreateScan(1, commonParameters), commonParameters,
+            new List<MatchedFragmentIon>());
+        psm.ResolveAllAmbiguities();
+        proteinGroup.AllPsmsBelowOnePercentFDR.Add(psm);
 
         return proteinGroup;
     }

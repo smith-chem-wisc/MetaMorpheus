@@ -1,7 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using EngineLayer;
+using EngineLayer.FdrAnalysis;
 using EngineLayer.ParallelSearch;
+using EngineLayer.ParallelSearch.FdrAlignment;
+using EngineLayer.SpectrumMatch;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
@@ -10,6 +13,7 @@ using Omics.Digestion;
 using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using TaskLayer;
 
 namespace Test.ParallelSearchTask.Engine;
@@ -182,5 +186,103 @@ public class TransientClassicSearchEngineTests
             Assert.That(perFile!.PrecursorIsPpm, Is.True);
             Assert.That(perFile.ScanPrecursorHalfWidth, Is.EqualTo(new[] { 3e-6 }).Within(1e-15));
         });
+    }
+
+    /// <summary>
+    /// Regression: with a notch-tolerant acceptor, a baseline PSM that FDR left notch-ambiguous carries notch q-values on
+    /// each hypothesis. A transient search that ties it adds a hypothesis without them, and ResolveAllAmbiguities used to
+    /// read the missing value ("Nullable object must have a value") and stop the whole ParallelSearch.
+    /// </summary>
+    [Test]
+    public void OneMmTransientTie_OnANotchAmbiguousBaselinePsmAfterFdr_DoesNotThrow()
+    {
+        var (baselinePsm, afterTransient, _, _, _) = OneMmTieSearch();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(afterTransient[0], Is.Not.SameAs(baselinePsm));
+            Assert.That(afterTransient[0].Notch, Is.Null);
+            Assert.That(afterTransient[0].BestMatchingBioPolymersWithSetMods.Select(h => h.SpecificBioPolymer.Parent.Accession),
+                Is.EquivalentTo(new[] { "BaseE", "BaseQ", "Transient" }));
+            Assert.That(baselinePsm.BestMatchingBioPolymersWithSetMods.Select(h => h.SpecificBioPolymer.Parent.Accession),
+                Is.EquivalentTo(new[] { "BaseE", "BaseQ" }));
+        });
+    }
+
+    /// <summary>
+    /// The notch q-value decides whether a match counts as confident (ConfidenceCutoff, FilteredPsms). A match whose tied
+    /// hypotheses sit at different notches must get its best notch's value, and the value written must be the one counted.
+    /// </summary>
+    [Test]
+    public void OneMmNotchAmbiguousMatches_GetTheirBestNotchQValue_InTheBaselineAndTheTransientCopy()
+    {
+        var (baselinePsm, afterTransient, baselineList, before, _) = OneMmTieSearch();
+        // FDR alone leaves the match's own notch q-value unset (2), so it could never pass a q-value cutoff
+        Assert.That(before, Is.EqualTo(2));
+
+        BaselineFdr.UseBestNotch(baselineList);
+        var expected = baselinePsm.BestMatchingBioPolymersWithSetMods.Min(h => h.QValueNotch!.Value);
+        Assert.That(baselinePsm.PsmFdrInfo.QValueNotch, Is.EqualTo(expected));
+        Assert.That(expected, Is.LessThanOrEqualTo(1));
+
+        // the transient copy is aligned the way ParallelSearchTask aligns it
+        var transient = afterTransient[0];
+        BaselineFdr.AlignPsms(BaselineFdr.CreatePsmLookup(baselineList), new[] { transient },
+            BaselineFdr.CreateNotchLookups(baselineList, peptideLevel: false));
+
+        var written = new Dictionary<string, string>();
+        PsmTsvWriter.AddMatchScoreData(written, transient, writePeptideLevelFdr: false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(transient.PsmFdrInfo.QValueNotch, Is.EqualTo(expected));
+            Assert.That(transient.PsmFdrInfo, Is.Not.SameAs(baselinePsm.PsmFdrInfo));
+            Assert.That(written[SpectrumMatchFromTsvHeader.QValueNotch],
+                Is.EqualTo(transient.PsmFdrInfo.QValueNotch.ToString("F6", System.Globalization.CultureInfo.InvariantCulture)));
+            // the hypotheses the transient copy shares with the baseline match are not written to
+            Assert.That(baselinePsm.BestMatchingBioPolymersWithSetMods.Select(h => h.QValueNotch), Has.All.Not.Null);
+        });
+    }
+
+    /// <summary>
+    /// QQE (403.1703) and QQQ (402.1863, ~47 ppm off OneMM's +1.0029 Da notch) tie on one scan in the baseline, so the
+    /// baseline match is notch-ambiguous after FDR; a transient copy of QQQ then ties it again.
+    /// </summary>
+    private static (SpectralMatch BaselinePsm, SpectralMatch[] AfterTransient, List<SpectralMatch> BaselineList,
+        double QValueNotchAfterFdr, MassDiffAcceptor Acceptor) OneMmTieSearch()
+    {
+        var commonParameters = CreateCommonParameters(1);
+        var fileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> { ("", commonParameters) };
+        // OneMM's second notch is +1.0029 Da, so QQQ (402.1863) sits ~47 ppm off notch 1 of a 403.1703 (QQE) precursor
+        var acceptor = SearchTask.GetMassDiffAcceptor(new PpmTolerance(100), MassDiffAcceptorType.OneMM, null);
+        var noMods = new List<Modification>();
+
+        // y1, b2 (shared) and y2 of QQQ and of QQE at equal intensity, so the two peptides tie on score
+        double[] mz = { 147.07642, 148.06043, 257.12444, 275.13500, 276.11901 };
+        double[] intensities = { 100, 100, 100, 100, 100 };
+        var scans = MetaMorpheusTask.GetMs2Scans(new TestDataFile(mz, intensities, 403.17031, 1), null, commonParameters)
+            .OrderBy(b => b.PrecursorMass).ToArray();
+
+        SpectralMatch[] baseline = new SpectralMatch[scans.Length];
+        new TransientClassicSearchEngine(baseline, scans, noMods, noMods,
+            new List<IBioPolymer> { new Protein("MNNNKQQE", "BaseE"), new Protein("MNNNKQQQ", "BaseQ") }, acceptor,
+            commonParameters, fileSpecificParameters, new List<string>()).Run();
+        var baselineList = baseline.Where(p => p != null).ToList();
+        new FdrAnalysisEngine(baselineList, acceptor.NumNotches, commonParameters,
+            fileSpecificParameters, new List<string>(), "PSM", false).Run();
+
+        SpectralMatch baselinePsm = baseline[0];
+        Assert.That(baselinePsm, Is.Not.Null);
+        Assert.That(baselinePsm.Notch, Is.Null, "the baseline PSM must be notch-ambiguous for this test to mean anything");
+        Assert.That(baselinePsm.BestMatchingBioPolymersWithSetMods.Select(h => h.QValueNotch), Has.All.Not.Null);
+        double qValueNotchAfterFdr = baselinePsm.PsmFdrInfo.QValueNotch;
+
+        // the transient hypothesis has no notch q-value; resolving the PSM used to read it and throw
+        SpectralMatch[] afterTransient = baseline.ToArray();
+        Assert.DoesNotThrow(() => new TransientClassicSearchEngine(afterTransient, scans, noMods, noMods,
+            new List<IBioPolymer> { new Protein("MNNNKQQQ", "Transient") }, acceptor, commonParameters,
+            fileSpecificParameters, new List<string>(), copyOnWriteEnabled: true).Run());
+
+        return (baselinePsm, afterTransient, baselineList, qValueNotchAfterFdr, acceptor);
     }
 }

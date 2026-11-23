@@ -74,12 +74,18 @@ public class ProteinGroupCollector : IMetricCollector
 
 
         var (targetsGlobalAtCutoff, decoysGlobalAtCutoff, unambiguousTargetsGlobal, unambiguousDecoysGlobal) =
-            AnalyzeProteinGroups(context.ProteinGroups!, qValueThreshold);
+            AnalyzeProteinGroups(context.ProteinGroups!, qValueThreshold, IsForegroundOrganism);
 
+        // a transient group is ambiguous when it holds a foreground-organism protein or any protein outside the database
+        Func<ProteinGroup, bool> isAmbiguous = pg => IsForegroundOrganism(pg) || context.IsSharedWithBaseline(pg);
         var (bacterialTargetsAtCutoff, bacterialDecoysAtCutoff, unambiguousTargets, unambiguousDecoys) =
-            AnalyzeProteinGroups(context.TransientProteinGroups!, qValueThreshold);
+            AnalyzeProteinGroups(context.TransientProteinGroups!, qValueThreshold, isAmbiguous);
 
-        var transientTargets = context.TransientProteinGroups!.Where(p => !p.IsDecoy).ToList();
+        // the per-group distributions describe the groups counted as unambiguous targets above: confident groups that are
+        // this database's own (unconfident groups gave databases with no confident PSMs KS p-values of 1e-5)
+        var transientTargets = context.TransientProteinGroups!
+            .Where(pg => !pg.IsDecoy && IsConfident(pg, qValueThreshold) && !isAmbiguous(pg))
+            .ToList();
 
         var peptidesPerProtein = transientTargets.Select(pg => (double)pg.AllPeptides.Count(p => !p.Parent.IsDecoy));
         var uniquePeptidesPerProtein = transientTargets.Select(pg => (double)pg.UniquePeptides.Count(p => !p.Parent.IsDecoy));
@@ -112,37 +118,34 @@ public class ProteinGroupCollector : IMetricCollector
         };
     }
 
+    private static bool IsConfident(ProteinGroup pg, double qValueThreshold) =>
+        pg.QValue <= qValueThreshold && pg.AllPeptides.Count >= 2;
+
+    private bool IsForegroundOrganism(ProteinGroup pg) =>
+        pg.Proteins.Any(p => p.Organism is { } organism && organism.Contains(_targetOrganism, StringComparison.Ordinal));
+
     private (int Targets, int Decoys, int UnambiguousTargets, int UnambiguousDecoys)
-        AnalyzeProteinGroups(List<ProteinGroup> proteinGroups, double qValueThreshold)
+        AnalyzeProteinGroups(List<ProteinGroup> proteinGroups, double qValueThreshold, Func<ProteinGroup, bool> isAmbiguous)
     {
         int targets = 0, decoys = 0, unambiguousTargets = 0, unambiguousDecoys = 0;
 
         foreach (var pg in proteinGroups)
         {
-            if (pg.QValue > qValueThreshold || pg.AllPeptides.Count < 2)
+            if (!IsConfident(pg, qValueThreshold))
                 continue;
 
-            bool isOrganismAmbiguous = false;
-            foreach (var protein in pg.Proteins)
-            {
-                string? organism = protein.Organism;
-                if (organism != null && organism.Contains(_targetOrganism, StringComparison.Ordinal))
-                {
-                    isOrganismAmbiguous = true;
-                    break;
-                }
-            }
+            bool isAmbiguousGroup = isAmbiguous(pg);
 
             if (pg.IsDecoy)
             {
                 decoys++;
-                if (!isOrganismAmbiguous)
+                if (!isAmbiguousGroup)
                     unambiguousDecoys++;
             }
             else
             {
                 targets++;
-                if (!isOrganismAmbiguous)
+                if (!isAmbiguousGroup)
                     unambiguousTargets++;
             }
         }

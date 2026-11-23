@@ -98,15 +98,17 @@ public class PsmPeptideSearchCollector : IMetricCollector
 
     public Dictionary<string, object> CollectData(TransientDatabaseContext context)
     {
-        var globalPsmMetrics = AnalyzeSpectralMatches(context.AllPsms, context.PsmCutoff);
-        var globalPeptideMetrics = AnalyzeSpectralMatches(context.AllPeptides, context.PeptideCutoff);
-        var psmMetrics = AnalyzeSpectralMatches(context.TransientPsms, context.PsmCutoff);
-        var peptideMetrics = AnalyzeSpectralMatches(context.TransientPeptides, context.PeptideCutoff);
+        // run-wide target and decoy counts; a transient match is ambiguous when a hypothesis is from the foreground
+        // organism or from any protein outside the transient database
+        var global = context.GetGlobalCounts();
+        Func<SpectralMatch, bool> isAmbiguous = m => IsForegroundOrganism(m) || context.IsSharedWithBaseline(m);
+        var psmMetrics = AnalyzeSpectralMatches(context.TransientPsms, context.PsmCutoff, isAmbiguous);
+        var peptideMetrics = AnalyzeSpectralMatches(context.TransientPeptides, context.PeptideCutoff, isAmbiguous);
 
         return new Dictionary<string, object>
         {
-            [PsmTargets] = globalPsmMetrics.Targets,
-            [PsmDecoys] = globalPsmMetrics.Decoys,
+            [PsmTargets] = global.PsmTargets,
+            [PsmDecoys] = global.PsmDecoys,
             [PsmBacterialTargets] = psmMetrics.Targets,
             [PsmBacterialDecoys] = psmMetrics.Decoys,
             [PsmBacterialAmbiguous] = psmMetrics.Targets - psmMetrics.UnambiguousTargets,
@@ -120,8 +122,8 @@ public class PsmPeptideSearchCollector : IMetricCollector
             [PsmPrecusorDeconScores] = psmMetrics.PrecursorDeconScores.ToArray(),
             [PsmPrecusorFractionalIntensity] = psmMetrics.PrecursorFractionalIntensity.ToArray(),
 
-            [PeptideTargets] = globalPeptideMetrics.Targets,
-            [PeptideDecoys] = globalPeptideMetrics.Decoys,
+            [PeptideTargets] = global.PeptideTargets,
+            [PeptideDecoys] = global.PeptideDecoys,
             [PeptideBacterialTargets] = peptideMetrics.Targets,
             [PeptideBacterialDecoys] = peptideMetrics.Decoys,
             [PeptideBacterialAmbiguous] = peptideMetrics.Targets - peptideMetrics.UnambiguousTargets,
@@ -139,7 +141,7 @@ public class PsmPeptideSearchCollector : IMetricCollector
 
     private (int Targets, int Decoys, int UnambiguousTargets, int UnambiguousDecoys,
         List<double> TargetScores, List<double> DecoyScores, List<double> DeltaScores, List<double> PrecursorMassErrors, List<int> PrecursorPeakCounts, List<double> PrecursorDeconScores, List<double> PrecursorFractionalIntensity)
-        AnalyzeSpectralMatches(List<SpectralMatch> spectralMatches, ConfidenceCutoff cutoff)
+        AnalyzeSpectralMatches(List<SpectralMatch> spectralMatches, ConfidenceCutoff cutoff, Func<SpectralMatch, bool> isAmbiguous)
     {
         int targets = 0, decoys = 0, unambiguousTargets = 0, unambiguousDecoys = 0;
         List<double> targetScores = [];
@@ -154,21 +156,12 @@ public class PsmPeptideSearchCollector : IMetricCollector
         {
             if (!cutoff.Passes(psm)) continue;
 
-            bool isOrganismAmbiguous = false;
-            foreach (var match in psm.BestMatchingBioPolymersWithSetMods)
-            {
-                string? organism = match.SpecificBioPolymer.Parent.Organism;
-                if (organism != null && organism.Contains(_targetOrganism, StringComparison.Ordinal))
-                {
-                    isOrganismAmbiguous = true;
-                    break;
-                }
-            }
+            bool isAmbiguousMatch = isAmbiguous(psm);
 
             if (psm.IsDecoy)
             {
                 decoys++;
-                if (!isOrganismAmbiguous)
+                if (!isAmbiguousMatch)
                 {
                     unambiguousDecoys++;
                     decoyScores.Add(psm.Score);
@@ -177,11 +170,13 @@ public class PsmPeptideSearchCollector : IMetricCollector
             else
             {
                 targets++;
-                if (!isOrganismAmbiguous)
-                {
-                    unambiguousTargets++;
-                    targetScores.Add(psm.Score);
-                }
+                if (isAmbiguousMatch)
+                    continue;
+
+                // the distributions describe the database's own evidence: a match shared with the baseline is a
+                // baseline identification and says nothing about this database
+                unambiguousTargets++;
+                targetScores.Add(psm.Score);
                 deltaScores.Add(psm.DeltaScore);
                 precursorMassErrors.Add(psm.PrecursorMassErrorPpm.Mean());
                 precursorPeakCounts.Add(psm.PrecursorScanEnvelopePeakCount);
@@ -192,4 +187,8 @@ public class PsmPeptideSearchCollector : IMetricCollector
 
         return (targets, decoys, unambiguousTargets, unambiguousDecoys, targetScores, decoyScores, deltaScores, precursorMassErrors, precursorPeakCounts, precursorDeconScores, precursorFractionalIntensity);
     }
+
+    private bool IsForegroundOrganism(SpectralMatch match) =>
+        match.HypothesesInAddedOrder.Any(h =>
+            h.SpecificBioPolymer.Parent.Organism is { } organism && organism.Contains(_targetOrganism, StringComparison.Ordinal));
 }

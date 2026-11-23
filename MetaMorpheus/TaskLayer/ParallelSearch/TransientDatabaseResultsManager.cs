@@ -28,6 +28,9 @@ public class TransientDatabaseResultsManager
     /// </summary>
     public string? UnreadableSummaryMessage => _analysisCache.UnreadableFileMessage;
     public string? UnreadableSummaryBackupPath => _analysisCache.UnreadableFileBackupPath;
+
+    /// <summary>Rows of the existing summary left out because older collectors wrote them; null when there were none.</summary>
+    public string? OlderCollectorsMessage => _analysisCache.OlderCollectorsMessage;
     
     /// <summary>
     /// Gets all cached analysis results

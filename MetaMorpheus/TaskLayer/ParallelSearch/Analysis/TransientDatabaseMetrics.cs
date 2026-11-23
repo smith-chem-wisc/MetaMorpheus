@@ -22,16 +22,33 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
     /// Aggregated result from all analyzers
     /// Stores results as a dynamic dictionary that can be serialized to CSV
     /// </summary>
-    public TransientDatabaseMetrics(string dbname) 
+    public TransientDatabaseMetrics(string dbname)
     {
         this.DatabaseName = dbname;
+        CollectorVersion = CurrentCollectorVersion;
     }
+
+    /// <summary>
+    /// The version of the collectors that fill a summary row. Raise it whenever a collector's output changes meaning (what
+    /// a count includes, which matches a distribution holds) or a column is added. A summary row from older
+    /// collectors is not reused: its database is searched again, so one summary never mixes rows from different collectors.
+    /// <list type="bullet">
+    /// <item>1: matches tied with a protein outside the database, including ties parsimony trims, are shared, not the database's evidence.</item>
+    /// </list>
+    /// </summary>
+    public const int CurrentCollectorVersion = 1;
 
     // Empty constructor for csv helper. 
     public TransientDatabaseMetrics() { }
 
     public string DatabaseName { get; set; }
-    
+
+    /// <summary>
+    /// <see cref="CurrentCollectorVersion"/> of the collectors that filled this row; 0 for a row read from a summary written
+    /// before the column existed.
+    /// </summary>
+    [Optional] public int CollectorVersion { get; set; }
+
     /// <summary>
     /// Serialized representation of all analysis results for CSV storage
     /// This uses a custom converter to flatten the dictionary
@@ -204,6 +221,10 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
     [TypeConverter(typeof(SemiColonDelimitedToDoubleArrayTypeConverter))]
     [Optional] public double[] Peptide_FragmentPPMErrors { get; set; } = Array.Empty<double>();
 
+    /// <summary>One value per confident target peptide: the median absolute fragment mass error of its PSM.</summary>
+    [TypeConverter(typeof(SemiColonDelimitedToDoubleArrayTypeConverter))]
+    [Optional] public double[] Peptide_MedianAbsoluteFragmentPpmErrorsTargets { get; set; } = Array.Empty<double>();
+
     #endregion
 
     #region Retention Time
@@ -351,6 +372,7 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
         Results[FragmentIonCollector.Peptide_ComplementaryIonCount_AllDecoys] = Peptide_ComplementaryCountDecoys;
         Results[FragmentIonCollector.Peptide_SequenceCoverageFraction_AllDecoys] = Peptide_SequenceCoverageFractionDecoys;
         Results[FragmentIonCollector.Peptide_FragmentPPMErrors] = Peptide_FragmentPPMErrors;
+        Results[FragmentIonCollector.Peptide_MedianAbsoluteFragmentPpmErrorsTargets] = Peptide_MedianAbsoluteFragmentPpmErrorsTargets;
 
         // Retention Time metrics
         Results[RetentionTimeCollector.PsmMeanAbsoluteRtError] = Psm_MeanAbsoluteRtError;
@@ -458,6 +480,8 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
         Peptide_ComplementaryCountDecoys = GetValue<double[]>(FragmentIonCollector.Peptide_ComplementaryIonCount_AllDecoys) ?? Array.Empty<double>();
         Peptide_SequenceCoverageFractionDecoys = GetValue<double[]>(FragmentIonCollector.Peptide_SequenceCoverageFraction_AllDecoys) ?? Array.Empty<double>();
         Peptide_FragmentPPMErrors = GetValue<double[]>(FragmentIonCollector.Peptide_FragmentPPMErrors) ?? Array.Empty<double>();
+        Peptide_MedianAbsoluteFragmentPpmErrorsTargets =
+            GetValue<double[]>(FragmentIonCollector.Peptide_MedianAbsoluteFragmentPpmErrorsTargets) ?? Array.Empty<double>();
 
         // Retention Time metrics
         Psm_MeanAbsoluteRtError = GetValue(RetentionTimeCollector.PsmMeanAbsoluteRtError, double.NaN);
@@ -546,7 +570,10 @@ public class TransientDatabaseMetrics : IEquatable<TransientDatabaseMetrics>
         if (other == null) return this;
         if (this.DatabaseName != other.DatabaseName) throw new MetaMorpheusException("Cannot add metrics from different databases", new ArgumentException("Database names do not match"));
 
-        var metrics = new TransientDatabaseMetrics(this.DatabaseName);
+        var metrics = new TransientDatabaseMetrics(this.DatabaseName)
+        {
+            CollectorVersion = Math.Min(this.CollectorVersion, other.CollectorVersion),
+        };
         foreach (var key in Results.Keys)
         {
             if (other.Results.ContainsKey(key))

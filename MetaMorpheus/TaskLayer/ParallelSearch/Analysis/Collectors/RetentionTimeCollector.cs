@@ -153,12 +153,9 @@ public class RetentionTimeCollector : IMetricCollector
     {
 
         // Psms
-        var confidentPsms = context.TransientPsms
-            .Where(context.PsmCutoff.Passes)
-            .ToList();
-        var confidentPeptides = context.TransientPeptides
-            .Where(context.PeptideCutoff.Passes)
-            .ToList();
+        // confident matches that are this database's own evidence, not shared with the baseline
+        var confidentPsms = context.ConfidentUnambiguousPsms;
+        var confidentPeptides = context.ConfidentUnambiguousPeptides;
 
         PredictUncachedSequences(confidentPsms.Concat(confidentPeptides), context.CommonParameters.MaxThreadsToUsePerFile);
 

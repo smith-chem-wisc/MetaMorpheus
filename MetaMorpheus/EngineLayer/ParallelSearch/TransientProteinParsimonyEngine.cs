@@ -164,6 +164,15 @@ public sealed class TransientProteinParsimonyEngine : ProteinParsimonyEngine
                 continue;
             }
 
+            // A scan is "updated" when a transient candidate beat its runner-up, even if its best match did not change.
+            // Without a transient protein among its best matches it is the baseline's match, and every baseline protein
+            // that can compete with a transient protein is reached through the transient scans below. Seeding from it
+            // only pulled in its baseline proteins and all their scans: on deep data, a large part of the baseline.
+            if (!psm.BestMatchingBioPolymersWithSetMods.Any(h => transientProteins.Contains(h.SpecificBioPolymer.Parent)))
+            {
+                continue;
+            }
+
             SpectralMatch originalBaselinePsm = scanIndex >= 0 && scanIndex < baseSearchPsms.Length
                 ? baseSearchPsms[scanIndex]
                 : null;
