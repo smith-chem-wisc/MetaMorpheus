@@ -240,11 +240,12 @@ namespace EngineLayer
             // its sequence keeps its own PEP.
             static (object, string, string) PeptideKey(SpectralMatch p) => (p.DigestionParams.DigestionAgent, p.FullSequence,
                 p.FullSequence == null && p.IsLocalizationAmbiguous ? p.GetSiteFreeIdentity() : null);
+            // Its peptide-level PEP q-value sits on the same match.
             var peptidePep = psms
                 .Where(p => p.FullSequence != null || p.IsLocalizationAmbiguous)
                 .OrderByDescending(p => p)
                 .GroupBy(PeptideKey)
-                .ToDictionary(g => g.Key, g => g.First().FdrInfo.PEP);
+                .ToDictionary(g => g.Key, g => (Pep: g.First().FdrInfo.PEP, PepQValue: g.First().PeptideFdrInfo?.PEP_QValue ?? 2));
 
             foreach (var pg in proteinGroups)
             {
@@ -253,6 +254,7 @@ namespace EngineLayer
                     pg.BestPeptideScore = 0;
                     pg.BestPeptideQValue = 1;
                     pg.BestPeptidePEP = 1;
+                    pg.BestPeptidePepQValue = 1;
                     continue;
                 }
 
@@ -262,7 +264,9 @@ namespace EngineLayer
                 pg.BestPeptideScore = bestPeptidePsms.Max(psm => psm.Score);
                 pg.BestPeptideQValue = bestPeptidePsms.Min(psm => psm.FdrInfo.QValueNotch);
                 pg.BestPeptidePEP = bestPeptidePsms.Min(psm =>
-                    peptidePep.TryGetValue(PeptideKey(psm), out double pep) ? pep : psm.FdrInfo.PEP);
+                    peptidePep.TryGetValue(PeptideKey(psm), out var peptide) ? peptide.Pep : psm.FdrInfo.PEP);
+                pg.BestPeptidePepQValue = bestPeptidePsms.Min(psm =>
+                    peptidePep.TryGetValue(PeptideKey(psm), out var peptide) ? peptide.PepQValue : psm.PeptideFdrInfo?.PEP_QValue ?? 2);
             }
         }
 
@@ -342,14 +346,14 @@ namespace EngineLayer
         }
         /// <summary>
         /// Sorts protein groups by the search's identification filter.
-        /// PEP q-value, with PEP trained for every scoring match: by best peptide PEP (ascending), then by best peptide score (descending).
+        /// PEP q-value, with PEP trained for every scoring match: by best peptide PEP q-value (ascending), then by best peptide score (descending).
         /// Otherwise: by best peptide q-value notch (ascending), then by best peptide score (descending).
         /// </summary>
         private List<ProteinGroup> SortProteinGroupsByFilterType(IEnumerable<ProteinGroup> proteinGroups)
         {
             return _rankByPep
                 ? proteinGroups
-                    .OrderBy(p => p.BestPeptidePEP)
+                    .OrderBy(p => p.BestPeptidePepQValue)
                     .ThenByDescending(p => p.BestPeptideScore)
                     .ToList()
                 : proteinGroups
