@@ -102,12 +102,23 @@ public static class DiaMassCalibration
             Math.Log10(Math.Max(1e-3, scan.InjectionTime ?? 1)), Math.Log10(Math.Max(1, intensity)), mz, null);
     }
 
+    /// <summary>
+    /// A precursor's M0 error in ppm (observed minus <paramref name="mz"/>), read as calibration labels its points: the peak
+    /// nearest <paramref name="mz"/> in the MS1 scan nearest <paramref name="rtMinutes"/>, if it lies within
+    /// <see cref="SearchPpm"/>; NaN otherwise.
+    /// </summary>
+    /// <param name="ms1">The run's MS1 scans in retention-time order, at least one.</param>
+    /// <param name="ms1Rts">Their retention times, in the same order.</param>
+    internal static double Ms1ErrorPpm(MsDataScan[] ms1, double[] ms1Rts, double rtMinutes, double mz) =>
+        Label(ms1[NearestIndex(ms1Rts, rtMinutes)], mz) is { } point ? point.RelativeMzError * 1e6 : double.NaN;
+
     /// <summary>The scan as recorded, with a different spectrum.</summary>
     private static MsDataScan WithSpectrum(MsDataScan scan, MzSpectrum spectrum) => new(
         spectrum, scan.OneBasedScanNumber, scan.MsnOrder, scan.IsCentroid, scan.Polarity, scan.RetentionTime, scan.ScanWindowRange,
         scan.ScanFilter, scan.MzAnalyzer, scan.TotalIonCurrent, scan.InjectionTime, scan.NoiseData, scan.NativeId, scan.SelectedIonMZ,
         scan.SelectedIonChargeStateGuess, scan.SelectedIonIntensity, scan.IsolationMz, scan.IsolationWidth, scan.DissociationType,
-        scan.OneBasedPrecursorScanNumber, scan.SelectedIonMonoisotopicGuessMz);
+        scan.OneBasedPrecursorScanNumber, scan.SelectedIonMonoisotopicGuessMz, scan.HcdEnergy, scan.ScanDescription, scan.CompensationVoltage,
+        scan.ChargeArray);
 
     private static MsDataScan Nearest(MsDataScan[] sorted, Func<MsDataScan, double> key, double value) =>
         sorted[NearestIndex(sorted.Select(key).ToArray(), value)];
