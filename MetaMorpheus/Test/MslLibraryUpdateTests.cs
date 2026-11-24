@@ -97,6 +97,7 @@ namespace Test
                 Is.EqualTo(new[] { written, "proteins.fasta" }));
             Assert.That(File.Exists(Path.Combine(_folder, "UpdateSpectralLibrary_crash.txt")), Is.False);
             Assert.That(_warnings, Is.Empty);
+            AssertTheDiaLibrarySearchOpens(written);
 
             using var library = MslLibrary.Load(written);
             var entries = library.GetAllEntries().ToDictionary(e => (e.FullSequence, e.IsDecoy));
@@ -162,6 +163,7 @@ namespace Test
             string written = Directory.GetFiles(_folder, "updateSpectralLibrary_*").Single();
             Assert.That(task.Parameters.SearchTaskResults.NewDatabases[0].FilePath, Is.EqualTo(written));
             Assert.That(File.Exists(Path.Combine(_folder, "UpdateSpectralLibrary_crash.txt")), Is.False);
+            AssertTheDiaLibrarySearchOpens(written);
 
             using var library = MslLibrary.Load(written);
             var entries = library.GetAllEntries().ToDictionary(e => (e.FullSequence, e.IsDecoy));
@@ -239,6 +241,17 @@ namespace Test
 
             Assert.That(TaskWithLibraries(msl, msp).SingleMslLibraryPath(), Is.Null);
             Assert.That(_warnings.Single(), Does.Contain("written together as .msp"));
+        }
+
+        /// <summary>
+        /// The DIA library search refuses a library holding run minutes (DiaLibrarySearchTask.OpenLibrary); what the update
+        /// writes must open there, times or not.
+        /// </summary>
+        private static void AssertTheDiaLibrarySearchOpens(string path)
+        {
+            MslLibrary opened = null;
+            Assert.DoesNotThrow(() => opened = DiaLibrarySearchTask.OpenLibrary(path), "the DIA library search refused it");
+            opened?.Dispose();
         }
 
         /// <summary>
