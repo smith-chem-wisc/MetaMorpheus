@@ -31,23 +31,37 @@ namespace EngineLayer.ClassicSearch
         private readonly DotMassDiffAcceptor DotSearchMode; // the search mode, when it is exactly a DotMassDiffAcceptor
         private readonly bool WriteSpectralLibrary;
         private readonly bool WriteDigestionCounts;
-        private readonly object[] Locks;
+
+        /// <summary>
+        /// One lock per scan, guarding that scan's entry in <see cref="SpectralMatches"/>.
+        /// </summary>
+        protected readonly object[] Locks;
+
+        /// <summary>The shared per-scan structures this search uses, or null when it built its own.</summary>
+        protected readonly ClassicSearchScanIndex ScanIndex;
+
+        /// <summary>The lock guarding <paramref name="scanIndex"/>'s entry in <see cref="SpectralMatches"/>.</summary>
+        protected object LockFor(int scanIndex) => Locks[scanIndex % Locks.Length];
         private ClassicSearchDigestionCache DigestionCache;
+
         public readonly ConcurrentDictionary<(string Accession, string BaseSequence), int> DigestionCountDictionary; // Used to track the amount of digestion products from each protein when the option is enabled.
 
         public ClassicSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
             List<IBioPolymer> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
             SpectralLibrary spectralLibrary, List<string> nestedIds, bool writeSpectralLibrary, bool writeDigestionCounts = false,
-            ClassicSearchDigestionCache digestionCache = null)
+            ClassicSearchDigestionCache digestionCache = null, ClassicSearchScanIndex scanIndex = null)
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             SpectralMatches = globalPsms;
             ArrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
+            // the per-scan structures, shared when the caller built them once for these scans (ClassicSearchScanIndex)
+            ScanIndex = scanIndex != null && scanIndex.Serves(arrayOfSortedMS2Scans, globalPsms.Length) ? scanIndex : null;
             // The search mode decides which observed mass candidates are selected with (monoisotopic, or
             // the most-abundant isotopologue). The caller sorted the scans by that same quantity, which is
             // what keeps the binary search below valid.
-            MyScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.GetPrecursorMassForSearch(commonParameters)).ToArray();
+            MyScanPrecursorMasses = ScanIndex?.PrecursorMasses
+                ?? arrayOfSortedMS2Scans.Select(b => b.GetPrecursorMassForSearch(commonParameters)).ToArray();
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
             SilacLabels = silacLabels;
@@ -57,15 +71,16 @@ namespace EngineLayer.ClassicSearch
             }
 
             SearchMode = searchMode;
-            ScanMassIndex = new SortedMassIndex(MyScanPrecursorMasses);
+            ScanMassIndex = ScanIndex?.MassIndex ?? new SortedMassIndex(MyScanPrecursorMasses);
             DotSearchMode = searchMode != null && searchMode.GetType() == typeof(DotMassDiffAcceptor) ? (DotMassDiffAcceptor)searchMode : null;
             SpectralLibrary = spectralLibrary;
             WriteSpectralLibrary = writeSpectralLibrary;
             WriteDigestionCounts = writeDigestionCounts;
             DigestionCountDictionary = new();
 
-            // Create one lock for each PSM to ensure thread safety
-            Locks = new object[SpectralMatches.Length];
+            // One lock per PSM to ensure thread safety; with a shared scan index (one search per database over the same
+            // scans), a fixed set of locks striped over the scans instead of one object per scan for every search
+            Locks = new object[ScanIndex != null ? Math.Min(ClassicSearchScanIndex.LockStripes, SpectralMatches.Length) : SpectralMatches.Length];
             for (int i = 0; i < Locks.Length; i++)
             {
                 Locks[i] = new object();
@@ -284,7 +299,7 @@ namespace EngineLayer.ClassicSearch
             if (meetsScoreCutoff)
             {
                 // valid hit (met the cutoff score); lock the scan to prevent other threads from accessing it
-                lock (Locks[scan.ScanIndex])
+                lock (LockFor(scan.ScanIndex))
                 {
                     bool scoreImprovement = SpectralMatches[scan.ScanIndex] == null || (thisScore - SpectralMatches[scan.ScanIndex].RunnerUpScore) > -SpectralMatch.ToleranceForScoreDifferentiation;
 
