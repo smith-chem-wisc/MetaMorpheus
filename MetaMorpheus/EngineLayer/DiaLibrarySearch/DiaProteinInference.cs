@@ -65,7 +65,9 @@ public static class DiaProteinInference
 
     /// <summary>
     /// Infers and scores protein groups from one run's peptides (<see cref="DiaPeptideFdr.Assign"/>), targets and decoys.
-    /// Peptides passing <see cref="CommonParameters.QValueThreshold"/> are the evidence, as PSMs are in DDA.
+    /// Peptides passing the search's identification filter at <see cref="CommonParameters.FilterThreshold"/> are the
+    /// evidence, as PSMs are in DDA. Every filter reads the peptide's q-value: the stand-in matches carry it as their
+    /// q-value and q-value notch, and their PEP is untrained, so the PEP q-value filter falls back to the notch.
     /// </summary>
     /// <param name="proteins">Target and decoy proteins: the database the library was built from.</param>
     /// <param name="fullFilePath">The run the peptides came from.</param>
@@ -81,20 +83,13 @@ public static class DiaProteinInference
     /// the protein structure the library was built with, whatever made its decoys.
     /// </param>
     /// <exception cref="ArgumentNullException">An argument is null.</exception>
-    /// <exception cref="ArgumentException">
-    /// A PEP q-value threshold is set (the DIA search has no PEP, so the protein engine would filter every peptide out),
-    /// or decoys are given two ways to map.
-    /// </exception>
+    /// <exception cref="ArgumentException">Decoys are given two ways to map.</exception>
     public static DiaProteinInferenceResult Infer(IReadOnlyList<DiaPeptideMatch> peptides, IEnumerable<Protein> proteins,
         CommonParameters commonParameters, string fullFilePath, List<Modification> fixedModifications, List<Modification> variableModifications,
         Func<string, string?>? targetSequenceOfDecoy = null, Func<string, IReadOnlyList<string>?>? decoyAccessionsOf = null)
     {
         ArgumentNullException.ThrowIfNull(peptides);
         ArgumentNullException.ThrowIfNull(fullFilePath);
-        if (commonParameters is not null && commonParameters.PepQValueThreshold < commonParameters.QValueThreshold)
-        {
-            throw new ArgumentException("DIA protein inference filters on q-value; the DIA search computes no PEP, so a PEP q-value threshold is not supported.", nameof(commonParameters));
-        }
         if (targetSequenceOfDecoy is not null && decoyAccessionsOf is not null)
         {
             throw new ArgumentException("Give one way to map decoy peptides: by their targets or by their library accessions, not both.", nameof(decoyAccessionsOf));

@@ -837,8 +837,7 @@ namespace Test
                 reportAllAmbiguity: false,
                 addCompIons: true,
                 totalPartitions: 3,
-                qValueThreshold: 0.02,
-                pepQValueThreshold: 0.5,
+                filterThreshold: 0.02,
                 qValueCutoffForPepCalculation: 0.004,
                 scoreCutoff: 4,
                 numberOfPeaksToKeepPerWindow: 111,
@@ -867,7 +866,8 @@ namespace Test
                 fragmentationParams: new FragmentationParams(),
                 precursorMassMatchMode: PrecursorMassMatchMode.MostAbundant,
                 rtPredictorName: "SSRCalc3",
-                retentionTimeRange: new DoubleRange(12, 14));
+                retentionTimeRange: new DoubleRange(12, 14),
+                identificationFilter: EngineLayer.SpectrumMatch.FilterType.QValue);
 
             // CustomIons is not a constructor parameter — the constructor reads it from a global dictionary,
             // so give the original a distinctive value. Without this, a clone that simply re-read the global
@@ -888,8 +888,9 @@ namespace Test
             {
                 // The terminal caps are RNA-only and this fixture is protein, so they are always null here;
                 // RnaTerminalCapsTests covers their survival through every clone with an RNA digestion.
+                // A property without a setter is computed from the others.
                 if (property.Name is nameof(CommonParameters.TotalPartitions) or nameof(CommonParameters.FivePrimeTerminus) or nameof(CommonParameters.ThreePrimeTerminus)
-                    || property.GetIndexParameters().Length > 0)
+                    || property.GetIndexParameters().Length > 0 || !property.CanWrite)
                 {
                     continue;
                 }

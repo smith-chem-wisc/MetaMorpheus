@@ -22,6 +22,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using EngineLayer.DatabaseLoading;
@@ -46,6 +47,7 @@ namespace TaskLayer
         GlycoSearch,
         Average,
         Truncation,
+        ParallelSearch,
         DiaLibrarySearch
     }
 
@@ -282,6 +284,9 @@ namespace TaskLayer
 
         #endregion
 
+        // The settings every task-TOML read uses. A file written before FilterThreshold existed names its filter and
+        // threshold through the old QValueThreshold/PepQValueThreshold keys; OnTargetPropertyNotFound maps them onto the
+        // resolved properties as the task is bound, so functional code and CommonParameters carry no legacy awareness.
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
             .ConfigureType<Tolerance>(type => type
                 .WithConversionFor<TomlString>(convert => convert
@@ -430,7 +435,54 @@ namespace TaskLayer
                 .CreateInstance(() => RnaFragmentationParams.Default))
             .ConfigureType<FragmentationParams>(type => type
                 .CreateInstance(() => new()))
+            .ConfigureType<List<DbForTask>>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(dbs => string.Join("\t", dbs.Select(db => db.FilePath)))
+                    .FromToml(tmlString => tmlString.Value
+                        .Split('\t', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(filePath => new DbForTask(filePath, false))
+                        .ToList())))
+            .ConfigurePropertyMapping(mapping => mapping
+                .OnTargetPropertyNotFound(ResolveLegacyCommonParametersKey))
         );
+
+        /// <summary>
+        /// Resolves the released legacy filter keys while Nett binds CommonParameters. Threshold keys select the filter
+        /// when present. In the pre-#2285 files, PepQValueOutputFilter was 1.0 and marked the old notch-at-0.01 behavior;
+        /// in transitional files it copied the active PEP threshold, so that key is ignored when below 1.0.
+        /// </summary>
+        private static void ResolveLegacyCommonParametersKey(string[] path, object target, TomlObject node)
+        {
+            if (target is not CommonParameters commonParameters || path.Length == 0 || node is not TomlFloat value)
+            {
+                return;
+            }
+
+            string key = path[^1];
+            FilterType? filter = null;
+            double threshold = value.Value;
+            if (threshold < 1)
+            {
+                filter = key switch
+                {
+                    "QValueThreshold" => FilterType.QValueNotch,
+                    "PepQValueThreshold" => FilterType.PepQValue,
+                    _ => null
+                };
+            }
+            else if (key == "PepQValueOutputFilter")
+            {
+                filter = FilterType.QValueNotch;
+                threshold = CommonParameters.DefaultFilterThreshold;
+            }
+
+            if (filter is FilterType resolved)
+            {
+                typeof(CommonParameters).GetProperty(nameof(CommonParameters.IdentificationFilter))!.SetValue(commonParameters, resolved);
+                typeof(CommonParameters).GetProperty(nameof(CommonParameters.FilterThreshold))!.SetValue(commonParameters, threshold);
+            }
+        }
+
        
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
@@ -473,6 +525,15 @@ namespace TaskLayer
         /// </summary>
         [TomlIgnore]
         public List<string> AcquiredSpectraFiles { get; set; }
+
+        /// <summary>
+        /// The SDRF beside the run's spectra files, for this run only. Set by <see cref="EverythingRunnerEngine"/>, as
+        /// <see cref="AcquiredSpectraFiles"/> is, and never written to the task file, so the task's own settings stay as the
+        /// user saved them. A search reads it as its input SDRF unless the task names its own, and writes its own SDRF
+        /// (<see cref="SdrfForRun"/>). Null when the run has none, or when a task is run on its own.
+        /// </summary>
+        [TomlIgnore]
+        public SdrfForRun RunSdrf { get; set; }
 
         protected MyTaskResults MyTaskResults;
 
@@ -979,8 +1040,8 @@ namespace TaskLayer
                 reportAllAmbiguity: commonParams.ReportAllAmbiguity,
                 addCompIons: commonParams.AddCompIons,
                 totalPartitions: commonParams.TotalPartitions,
-                qValueThreshold: commonParams.QValueThreshold,
-                pepQValueThreshold: commonParams.PepQValueThreshold,
+                identificationFilter: commonParams.IdentificationFilter,
+                filterThreshold: commonParams.FilterThreshold,
                 qValueCutoffForPepCalculation: commonParams.QValueCutoffForPepCalculation,
                 scoreCutoff: commonParams.ScoreCutoff,
                 numberOfPeaksToKeepPerWindow: commonParams.NumberOfPeaksToKeepPerWindow,

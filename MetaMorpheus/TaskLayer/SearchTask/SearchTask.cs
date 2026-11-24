@@ -37,7 +37,23 @@ namespace TaskLayer
             SearchParameters = new SearchParameters();
         }
 
-        public SearchParameters SearchParameters { get; set; }
+        /// <summary>
+        /// For tasks that build on the search task and report their own <see cref="MyTask"/> type.
+        /// </summary>
+        protected SearchTask(MyTask task) : base(task)
+        {
+            CommonParameters = new CommonParameters();
+
+            SearchParameters = new SearchParameters();
+        }
+
+        public virtual SearchParameters SearchParameters { get; set; }
+
+        /// <summary>The input SDRF this search reads: the task's own, else the run's (<see cref="SdrfForRun.InputSdrfPathFor"/>).</summary>
+        private string InputSdrfPathForRun => SdrfForRun.InputSdrfPathFor(SearchParameters, RunSdrf);
+
+        /// <summary>Whether this search writes its own SDRF (<see cref="SdrfForRun.WritesSdrfFor"/>).</summary>
+        private bool WritesSdrfForRun => SdrfForRun.WritesSdrfFor(SearchParameters, RunSdrf);
 
         /// <summary>
         /// Builds the precursor search mode for a <see cref="MassDiffAcceptorType"/>.
@@ -157,6 +173,15 @@ namespace TaskLayer
             SearchParameters.MassDiffAcceptorType = LegacyMostAbundantEquivalent;
         }
 
+        /// <summary>
+        /// When the search's identification filter is held to 1 or more, which keeps every match, the sentence saying so;
+        /// null otherwise.
+        /// </summary>
+        internal static string FilterKeepsEveryMatch(CommonParameters commonParameters) =>
+            commonParameters.FilterThreshold >= 1
+                ? $"This search filters by {EngineLayer.SpectrumMatch.FilteredPsms.Describe(commonParameters)}, which keeps every match."
+                : null;
+
         // Compiled optimized from the start. This method runs once per search, so the runtime would otherwise run it as
         // unoptimized code, which keeps every local alive until it is overwritten: each searched file's scans, matches and
         // search engine then stayed reachable through the rest of the run, about 0.6 GB per file on a TMT11 .raw file. It
@@ -173,6 +198,12 @@ namespace TaskLayer
             // a gap named up front can still be fixed cheaply, whereas one named after a three-hour
             // search cannot. This warns; it does not refuse the run.
             WarnAboutSdrfGaps(currentRawFileList);
+
+            // A filter at 1 is allowed, but it keeps every match: say so before the search, and in results.txt
+            if (FilterKeepsEveryMatch(CommonParameters) is string keepsEveryMatch)
+            {
+                Warn(keepsEveryMatch);
+            }
 
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select((b, i) => SetAllFileSpecificCommonParams(CommonParameters, b, currentRawFileList[i]));
@@ -659,6 +690,7 @@ namespace TaskLayer
                 ListOfDigestionParams = [.. fileSpecificCommonParams.Select(p => p.DigestionParams)],
                 CurrentRawFileList = currentRawFileList,
                 AcquiredSpectraFiles = AcquiredSpectraFiles,
+                RunSdrf = RunSdrf,
                 InstrumentModelsByFile = instrumentModelsByFile,
                 MyFileManager = myFileManager,
                 NumNotches = numNotches,
@@ -715,7 +747,7 @@ namespace TaskLayer
         /// </summary>
         private void WarnAboutSdrfGaps(List<string> currentRawFileList)
         {
-            if (!SearchParameters.WriteSdrf || currentRawFileList is null || currentRawFileList.Count == 0)
+            if (!WritesSdrfForRun || currentRawFileList is null || currentRawFileList.Count == 0)
                 return;
 
             // First, and in its own method, so that no branch below can skip it. A branch that returns
@@ -739,7 +771,7 @@ namespace TaskLayer
 
             // An input SDRF governs label-free and isobaric searches alike (sdrf D50). After the branch, because which of
             // its rows are copied depends on which files get channel rows.
-            if (!string.IsNullOrWhiteSpace(SearchParameters.InputSdrfPath))
+            if (!string.IsNullOrWhiteSpace(InputSdrfPathForRun))
                 WarnAboutInputSdrf(currentRawFileList, channelFiles, tagType);
         }
 
@@ -750,7 +782,7 @@ namespace TaskLayer
         private void WarnAboutLabelFreeSdrfGaps(string designDirectory, List<string> currentRawFileList)
         {
             string designPath = Path.Combine(designDirectory, GlobalVariables.ExperimentalDesignFileName);
-            bool sampleColumnsCopied = !string.IsNullOrWhiteSpace(SearchParameters.InputSdrfPath);
+            bool sampleColumnsCopied = !string.IsNullOrWhiteSpace(InputSdrfPathForRun);
 
             if (!File.Exists(designPath) && sampleColumnsCopied)
             {
@@ -816,7 +848,7 @@ namespace TaskLayer
             // name is scoped to its plex or channel and no made-up name is numbered. And a file described once then
             // takes one input row, so an input written a row per channel is refused (QuantProject 067 R1), which
             // WarnAboutInputSdrf names file by file.
-            bool sourceNamesCopied = !string.IsNullOrWhiteSpace(SearchParameters.InputSdrfPath);
+            bool sourceNamesCopied = !string.IsNullOrWhiteSpace(InputSdrfPathForRun);
             string describedOnce = sourceNamesCopied
                 ? "the SDRF can describe each file only once, by one row of the input SDRF; an input with a row per " +
                   "channel is refused, and no " + PostSearchAnalysisTask.SdrfFileName + " is then written"
@@ -890,7 +922,7 @@ namespace TaskLayer
         private void WarnAboutInputSdrf(List<string> currentRawFileList,
             IReadOnlyDictionary<string, TmtFileInfo> channelFiles, IsobaricMassTagType? tagType)
         {
-            string path = SearchParameters.InputSdrfPath.Trim();
+            string path = InputSdrfPathForRun.Trim();
             string consequence = "so no " + PostSearchAnalysisTask.SdrfFileName + " will be written";
 
             SdrfSearchScoping scope;

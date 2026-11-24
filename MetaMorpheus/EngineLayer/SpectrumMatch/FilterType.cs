@@ -1,23 +1,28 @@
 namespace EngineLayer.SpectrumMatch
 {
     /// <summary>
-    /// Specifies the type of filtering used for PSM/peptide/protein FDR calculations.
+    /// The FDR values a match or peptide can be judged by: the three choices for
+    /// <see cref="CommonParameters.IdentificationFilter"/>, each held to <see cref="CommonParameters.FilterThreshold"/>.
     /// </summary>
     public enum FilterType
     {
         /// <summary>
-        /// Filter based on q-value (classic FDR)
+        /// The pooled q-value alone, counted over every mass-difference notch together. Before the identification filter
+        /// was named, a "q-value" filter meant the pooled q-value and the q-value notch together; this is the pooled
+        /// q-value alone.
         /// </summary>
         QValue,
 
         /// <summary>
-        /// Filter based on PEP q-value (posterior error probability)
+        /// The PEP q-value: matches ranked by their posterior error probability, decoys counted down that ranking. A match
+        /// whose PEP was not trained is judged by its q-value notch instead. The default bottom-up
+        /// (<see cref="CommonParameters.DefaultIdentificationFilter"/>).
         /// </summary>
         PepQValue,
 
         /// <summary>
-        /// Filter based on the q-value notch alone (the q-value computed within each mass-difference notch).
-        /// Used only when a caller asks for it by name; MetaMorpheus never infers it.
+        /// The q-value notch: the q-value counted within each mass-difference notch. The default for top-down and RNA
+        /// (<see cref="CommonParameters.DefaultIdentificationFilter"/>).
         /// </summary>
         QValueNotch
     }

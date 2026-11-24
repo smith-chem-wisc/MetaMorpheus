@@ -12,6 +12,7 @@ using Transcriptomics.Digestion;
 using EngineLayer.DIA;
 using Transcriptomics;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 
 namespace EngineLayer
 {
@@ -36,9 +37,9 @@ namespace EngineLayer
             int deconvolutionMaxAssumedChargeState = 12, 
             bool reportAllAmbiguity = true,
             bool addCompIons = false, 
-            int totalPartitions = 1, 
-            double qValueThreshold = 0.01,
-            double pepQValueThreshold = 1.0,
+            int totalPartitions = 1,
+            FilterType? identificationFilter = null,
+            double filterThreshold = DefaultFilterThreshold,
             double qValueCutoffForPepCalculation = 0.005,
             double scoreCutoff = 5, 
             int? numberOfPeaksToKeepPerWindow = 200, 
@@ -86,8 +87,7 @@ namespace EngineLayer
             ReportAllAmbiguity = reportAllAmbiguity;
             AddCompIons = addCompIons;
             TotalPartitions = totalPartitions;
-            QValueThreshold = qValueThreshold;
-            PepQValueThreshold = pepQValueThreshold;
+            FilterThreshold = filterThreshold;
             QValueCutoffForPepCalculation = qValueCutoffForPepCalculation;
             ScoreCutoff = scoreCutoff;
             NumberOfPeaksToKeepPerWindow = numberOfPeaksToKeepPerWindow;
@@ -103,6 +103,9 @@ namespace EngineLayer
             ProductMassTolerance_LowRes = productMassTolerance_LowRes ?? new AbsoluteTolerance(0.35);
             DeconvolutionMassTolerance = deconvolutionMassTolerance ?? new PpmTolerance(4);
             DigestionParams = digestionParams ?? new DigestionParams();
+            // Null is the default for the analyte the digestion parameters search
+            AnalyteType analyte = DetermineAnalyteType();
+            IdentificationFilter = identificationFilter ?? DefaultIdentificationFilter(analyte == AnalyteType.Oligo, analyte == AnalyteType.Proteoform);
             DissociationType = dissociationType;
             SeparationType = separationType;
             MS2ChildScanDissociationType = ms2childScanDissociationType;
@@ -188,18 +191,32 @@ namespace EngineLayer
         public Tolerance ProductMassTolerance_LowRes { get; set; }// Use a wider mass tolerance for lower-resolution analyzers (e.g., ion traps). For now, this is an independent parameter used only in glyco tasks and is not modified by the calibration task.
         public Tolerance PrecursorMassTolerance { get; set; } // public setter required for calibration task
         public bool AddCompIons { get; set; }
+
         /// <summary>
-        /// Only peptides/PSMs with Q-Value and Q-Value Notch below this threshold are used for quantification and
-        /// spectral library generation. If SearchParameters.WriteHighQValuePsms is set to false, only 
-        /// peptides/PSMs with Q-Value/Notch below this threshold are included in .psmtsv results files.
+        /// The value that decides whether a match or peptide counts as identified, at every step of a search: the
+        /// tables, parsimony, protein scoring and FDR, quantification, the spectral library, the pruned database, the
+        /// Spectrum Match Count column and every count reported. It is held to <see cref="FilterThreshold"/>. The user
+        /// picks one of three:
+        /// <list type="bullet">
+        /// <item><description><see cref="FilterType.PepQValue"/>: the PEP q-value. A match whose PEP was not trained is
+        /// judged by its q-value notch at the same threshold, and the search says so.</description></item>
+        /// <item><description><see cref="FilterType.QValueNotch"/>: the q-value counted within each mass-difference
+        /// notch.</description></item>
+        /// <item><description><see cref="FilterType.QValue"/>: the pooled q-value, counted over every notch together, and
+        /// nothing else.</description></item>
+        /// </list>
+        /// A task TOML saved before FilterThreshold existed names its filter through the old
+        /// QValueThreshold/PepQValueThreshold keys; those are resolved while the file is read
+        /// (<c>MetaMorpheusTask.tomlConfig</c>), so the value here is always the one the search uses.
         /// </summary>
-        public double QValueThreshold { get; private set; }
+        public FilterType IdentificationFilter { get; private set; }
+
         /// <summary>
-        /// Only peptides/PSMs with PEP Q-Value below this threshold are used for quantification and
-        /// spectral library generation. If SearchParameters.WriteHighQValuePsms is set to false, only 
-        /// peptides/PSMs with PEP Q-Value below this threshold are included in .psmtsv results files.
+        /// The one threshold <see cref="IdentificationFilter"/> is held to: a match or peptide passes when the filter's value
+        /// is at or below it. <see cref="DefaultFilterThreshold"/> by default. If SearchParameters.WriteHighQValuePsms is
+        /// false, only the matches and peptides that pass are written to the .psmtsv files.
         /// </summary>
-        public double PepQValueThreshold { get; private set; }
+        public double FilterThreshold { get; private set; }
         public double ScoreCutoff { get; private set; }
         /// <summary>
         /// This parameter determines which PSMs/Peptides will be used as postive training examples
@@ -275,7 +292,7 @@ namespace EngineLayer
             CommonParameters c = new CommonParameters();
             foreach (PropertyInfo property in typeof(CommonParameters).GetProperties())
             {
-                property.SetValue(c, property.GetValue(this));
+                if (property.CanWrite) property.SetValue(c, property.GetValue(this));
             }
             return c;
         }
@@ -285,7 +302,7 @@ namespace EngineLayer
             CommonParameters c = new CommonParameters();
             foreach (PropertyInfo property in typeof(CommonParameters).GetProperties())
             {
-                property.SetValue(c, property.GetValue(this));
+                if (property.CanWrite) property.SetValue(c, property.GetValue(this));
             }
             c.DissociationType = dissociationType;
             return c;
@@ -314,8 +331,8 @@ namespace EngineLayer
                                 ReportAllAmbiguity,
                                 addCompIons.Value,//possibly changed
                                 TotalPartitions,
-                                QValueThreshold,
-                                PepQValueThreshold,
+                                IdentificationFilter,
+                                FilterThreshold,
                                 QValueCutoffForPepCalculation,
                                 ScoreCutoff,
                                 NumberOfPeaksToKeepPerWindow,
@@ -370,8 +387,8 @@ namespace EngineLayer
                                 ReportAllAmbiguity,
                                 AddCompIons,
                                 totalPartitions, //changed
-                                QValueThreshold,
-                                PepQValueThreshold,
+                                IdentificationFilter,
+                                FilterThreshold,
                                 QValueCutoffForPepCalculation,
                                 ScoreCutoff,
                                 NumberOfPeaksToKeepPerWindow,
@@ -431,6 +448,18 @@ namespace EngineLayer
         {
             DigestionParams.ProductsFromDissociationType()[MassSpectrometry.DissociationType.Custom] = CustomIons;
         }
+
+        /// <summary>The <see cref="FilterThreshold"/> a search gets when it names none.</summary>
+        public const double DefaultFilterThreshold = 0.01;
+
+        /// <summary>
+        /// The identification filter a search gets when it names none: the q-value notch for RNA
+        /// (<paramref name="isRna"/>) and for top-down (<paramref name="isTopDown"/>, the "top-down" protease), the PEP
+        /// q-value bottom-up. The task windows start a top-down task from it, as from
+        /// <see cref="PepAnalysisEngine.DefaultQValueCutoffForPepCalculation"/>.
+        /// </summary>
+        public static FilterType DefaultIdentificationFilter(bool isRna, bool isTopDown) =>
+            isRna || isTopDown ? FilterType.QValueNotch : FilterType.PepQValue;
 
         public AnalyteType DetermineAnalyteType()
         {

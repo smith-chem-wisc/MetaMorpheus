@@ -179,10 +179,12 @@ namespace Test
 
             var k = allResultsText.ToString();
 
-            Assert.That(k.Contains("Localized mods seen below q-value 0.01:\r\n\tCarbamidomethyl on C\t84"));
-            Assert.That(k.Contains("(Approx) Additional localized but protein ambiguous mods seen below q-value 0.01:\r\n\tCarbamidomethyl on C\t9"));
-            Assert.That(k.Contains("(Approx) Additional unlocalized mods seen below q-value 0.01:\r\n\tDecarboxylation on E\t2"));
-            Assert.That(k.Contains("(Approx) Additional unlocalized modification formulas seen below q-value 0.01:\r\n\tO\t2\r\n\tCH2\t2"));
+            // Counted by the default identification filter, the q-value notch alone, which passes a few matches the q-value
+            // and notch together did not (Carbamidomethyl on C was 84, Decarboxylation on E 2; CH2 is still 2, now later in the tie)
+            Assert.That(k.Contains("Localized mods seen with q-value notch <= 0.01:\r\n\tCarbamidomethyl on C\t85"));
+            Assert.That(k.Contains("(Approx) Additional localized but protein ambiguous mods seen with q-value notch <= 0.01:\r\n\tCarbamidomethyl on C\t9"));
+            Assert.That(k.Contains("(Approx) Additional unlocalized mods seen with q-value notch <= 0.01:\r\n\tDecarboxylation on E\t3"));
+            Assert.That(k.Contains("(Approx) Additional unlocalized modification formulas seen with q-value notch <= 0.01:\r\n\tO\t2\r\n\tC2H3NO\t2"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -363,7 +365,7 @@ namespace Test
             //There is one PSM with close peptide mass (0 ppm difference) and one PSM with large mass difference (>1000 ppm difference)
             //Since this is an open search, both PSMs should be reported because they share the exact same MS2 scan
 
-            Assert.That(theStringResult.Contains("All target PSMs with q-value <= 0.01: 1"));
+            Assert.That(theStringResult.Contains("All target PSMs with pep q-value <= 0.01: 1"));
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
@@ -575,7 +577,7 @@ namespace Test
             {
                 while ((line = file.ReadLine()) != null)
                 {
-                    if (line.Contains("All target peptides with q-value <= 0.01: 4"))
+                    if (line.Contains("All target peptides with pep q-value <= 0.01: 4"))
                     {
                         foundD = true;
                     }

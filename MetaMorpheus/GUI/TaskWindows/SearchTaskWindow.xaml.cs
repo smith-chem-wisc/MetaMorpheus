@@ -1,5 +1,6 @@
 using EngineLayer;
 using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 using GuiFunctions;
 using GuiFunctions.Util;
 using MassSpectrometry;
@@ -351,15 +352,6 @@ namespace MetaMorpheusGUI
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
 
-            if (task.CommonParameters.QValueThreshold < 1)
-            {
-                QValueThresholdTextBox.Text = task.CommonParameters.QValueThreshold.ToString(CultureInfo.InvariantCulture);
-            }
-            else
-            {
-                QValueThresholdTextBox.Text = "0.01";
-            }
-
             // A task still at the bottom-up default starts from the default for its search type
             double pepTrainingQ = task.CommonParameters.QValueCutoffForPepCalculation;
             if (pepTrainingQ == PepAnalysisEngine.DefaultQValueCutoffForPepCalculation(false, false))
@@ -369,15 +361,12 @@ namespace MetaMorpheusGUI
             }
             PepTrainingQValueTextBox.Text = pepTrainingQ.ToString(CultureInfo.InvariantCulture);
 
-            if (task.CommonParameters.PepQValueThreshold < 1)
-            {
-                PepQValueThresholdTextBox.Text = task.CommonParameters.PepQValueThreshold.ToString(CultureInfo.InvariantCulture);
-                PepQValueThresholdCheckbox.IsChecked = true;
-            }
-            else
-            {
-                PepQValueThresholdTextBox.Text = "0.01";
-            }
+            // The identification filter and its threshold; a task at the bottom-up default with a top-down protease, or in RNA
+            // mode, shows the default for its search type
+            IdentificationFilterComboBox.ItemsSource = TaskWindowIdentificationFilter.Choices;
+            var (identificationFilter, filterThresholdText) = TaskWindowIdentificationFilter.Load(task.CommonParameters, GuiGlobalParamsViewModel.Instance.IsRnaMode);
+            IdentificationFilterComboBox.SelectedValue = identificationFilter;
+            FilterThresholdTextBox.Text = filterThresholdText;
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             CkbMzId.IsChecked = task.SearchParameters.WriteMzId;
@@ -509,9 +498,8 @@ namespace MetaMorpheusGUI
                 NumberOfWindowsTextBox.Text, 
                 NumberOfDatabaseSearchesTextBox.Text, 
                 MaxModNumTextBox.Text,
-                _fragmentationParamsViewModel.MaxFragmentMassDa.ToString(), 
-                QValueThresholdTextBox.Text, 
-                PepQValueThresholdTextBox.Text,
+                _fragmentationParamsViewModel.MaxFragmentMassDa.ToString(),
+                FilterThresholdTextBox.Text,
                 _fragmentationParamsViewModel.GenerateInternalIons ? _fragmentationParamsViewModel.MinInternalIonLength.ToString() : null))
             {
                 return;
@@ -666,6 +654,8 @@ namespace MetaMorpheusGUI
             else if (Prosit2020iRTTMTRadioButton.IsChecked == true) rtPredictorModelName = RTPredictorNames.Prosit2020iRTTMT;
             else rtPredictorModelName = RTPredictorNames.Chronologer; // default
 
+            var savedFilter = TaskWindowIdentificationFilter.ForSave((FilterType)IdentificationFilterComboBox.SelectedValue, FilterThresholdTextBox.Text);
+
             CommonParameters commonParamsToSave = new CommonParameters(
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
@@ -673,8 +663,8 @@ namespace MetaMorpheusGUI
                 totalPartitions: int.Parse(NumberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 doPrecursorDeconvolution: doPrecursorDeconvolution,
                 useProvidedPrecursorInfo: useProvidedPrecursorInfo,
-                qValueThreshold: !PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(QValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
-                pepQValueThreshold: PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(PepQValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
+                identificationFilter: savedFilter.IdentificationFilter,
+                filterThreshold: savedFilter.FilterThreshold,
                 qValueCutoffForPepCalculation: double.Parse(PepTrainingQValueTextBox.Text, CultureInfo.InvariantCulture),
                 scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                 listOfModsFixed: listOfModsFixed,
@@ -969,6 +959,9 @@ namespace MetaMorpheusGUI
                         {
                             PepTrainingQValueTextBox.Text = PepAnalysisEngine.DefaultQValueCutoffForPepCalculation(isRnaMode, true)
                                 .ToString(CultureInfo.InvariantCulture);
+                            var (topDownFilter, topDownThreshold) = TaskWindowIdentificationFilter.TopDownRecommended(isRnaMode);
+                            IdentificationFilterComboBox.SelectedValue = topDownFilter;
+                            FilterThresholdTextBox.Text = topDownThreshold;
                             DeconHostViewModel.DoPrecursorDeconvolution = true;
                             DeconHostViewModel.UseProvidedPrecursors = false;
                             if (isRnaMode)

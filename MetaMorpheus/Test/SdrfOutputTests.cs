@@ -1476,12 +1476,17 @@ namespace Test
         /// its own. With <paramref name="writeDesign"/>, a TmtDesign.txt goes beside the spectra: the
         /// last channel is Empty, and the rows are written in reverse so document order cannot pass
         /// for reporter m/z order. With <paramref name="designIsUnusable"/>, every row's Sample Type is
-        /// one the design reader refuses. With <paramref name="inputSdrf"/>, its rows are the search's input SDRF.
+        /// one the design reader refuses. With <paramref name="inputSdrf"/>, its rows are the search's input SDRF:
+        /// the task's own InputSdrfPath, or with <paramref name="inputIsTheRunsSdrf"/> the run's SDRF, which the
+        /// automatic design found beside the spectra, for a task that did not ask for SDRF output and names none, or with
+        /// <paramref name="taskNamesItToo"/> names the same one. With <paramref name="quantifiesNothing"/>, the search
+        /// identifies only.
         /// Returns the root folder to delete.
         /// </summary>
         private static string RunTmtSearchWritingSdrf(string folderName, bool writeDesign,
             out string output, out List<string> warnings, bool designIsUnusable = false,
-            bool emptyChannelIsUnnamed = false, bool placeholderOnly = false, IEnumerable<string[]> inputSdrf = null)
+            bool emptyChannelIsUnnamed = false, bool placeholderOnly = false, IEnumerable<string[]> inputSdrf = null,
+            bool inputIsTheRunsSdrf = false, bool taskNamesItToo = false, bool quantifiesNothing = false)
         {
             string root = Path.Combine(TestContext.CurrentContext.TestDirectory, folderName);
             if (Directory.Exists(root)) Directory.Delete(root, true);
@@ -1520,7 +1525,20 @@ namespace Test
             {
                 string inputPath = Path.Combine(dataFolder, "input.sdrf.tsv");
                 File.WriteAllLines(inputPath, inputSdrf.Select(cells => string.Join("\t", cells)));
-                searchTask.SearchParameters.InputSdrfPath = inputPath;
+                if (inputIsTheRunsSdrf)
+                {
+                    searchTask.SearchParameters.WriteSdrf = false;
+                    searchTask.RunSdrf = new SdrfForRun(inputPath, null);
+                }
+                if (!inputIsTheRunsSdrf || taskNamesItToo)
+                {
+                    searchTask.SearchParameters.InputSdrfPath = inputPath;
+                }
+            }
+            if (quantifiesNothing)
+            {
+                searchTask.SearchParameters.DoMultiplexQuantification = false;
+                searchTask.SearchParameters.DoLabelFreeQuantification = false;
             }
 
             output = Path.Combine(root, "out");
@@ -1927,6 +1945,46 @@ namespace Test
                 document.LoadResults();
                 Assert.That(document.Results.Single()["source name"], Is.EqualTo("pooled donors"));
                 Assert.That(warnings.Any(w => w.Contains("each by its one row of the input SDRF, without their channels")), Is.True, all);
+            }
+
+            Directory.Delete(root, true);
+        }
+
+        /// <summary>
+        /// The run's SDRF (found beside the spectra files by the automatic design; the task names none and did not ask for
+        /// SDRF output) refusing a search it cannot describe is a warning, not a crash record (pcruzparri's review of #2980).
+        /// A TMT deposit's SDRF, a row per channel, beside an identification-only search, and beside a TMT search whose
+        /// design has no channels: no SDRF is written, as the warning before the run says, and the search's results stand.
+        /// A task that names that SDRF as its own InputSdrfPath still gets the crash record, as
+        /// <see cref="ATmtFileDescribedOnceIsWarnedAboutOnlyWhenItsSdrfIsWritten"/> does with no run SDRF.
+        /// </summary>
+        [TestCase(true, false)]
+        [TestCase(false, false)]
+        [TestCase(false, true)]
+        public static void TheRunsSdrfThatCannotDescribeTheSearchIsAWarningNotACrash(bool quantifiesNothing, bool taskNamesItToo)
+        {
+            var input = TmtInputSdrf(Tmt11Channels.Select((tag, i) => ("VA084TQ_6.raw", "TMT" + tag, "donor " + (i + 1))).ToArray());
+
+            string root = RunTmtSearchWritingSdrf(
+                nameof(TheRunsSdrfThatCannotDescribeTheSearchIsAWarningNotACrash) + quantifiesNothing + taskNamesItToo,
+                writeDesign: !quantifiesNothing, out string output, out List<string> warnings, placeholderOnly: true,
+                inputSdrf: input, inputIsTheRunsSdrf: true, taskNamesItToo: taskNamesItToo, quantifiesNothing: quantifiesNothing);
+            string all = string.Join(" | ", warnings);
+            const string refusal = "has 11 rows in it, but this search describes the file as one sample";
+
+            Assert.That(File.Exists(Path.Combine(output, SdrfFileName)), Is.False);
+            Assert.That(File.Exists(Path.Combine(output, "AllPSMs.psmtsv")), Is.True, "The search's results stand.");
+            if (taskNamesItToo)
+            {
+                Assert.That(File.ReadAllText(Path.Combine(output, "SdrfWriter_crash.txt")), Does.Contain(refusal));
+            }
+            else
+            {
+                Assert.That(File.Exists(Path.Combine(output, "SdrfWriter_crash.txt")), Is.False, all);
+                Assert.That(warnings.Any(w => w.Contains("engine Crashed")), Is.False, all);
+                Assert.That(warnings.Any(w => w.Contains(refusal) && w.Contains("so no " + SdrfFileName + " was written")), Is.True, all);
+                Assert.That(warnings.Any(w => w.Contains(refusal) && w.Contains("so no " + SdrfFileName + " will be written")), Is.True,
+                    "said before the run: " + all);
             }
 
             Directory.Delete(root, true);

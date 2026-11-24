@@ -289,9 +289,10 @@ namespace EngineLayer
         /// <summary>
         /// The same hypotheses as <see cref="BestMatchingBioPolymersWithSetMods"/>, in the order they were added and
         /// without the sort that property performs on every enumeration. Only for callers whose result does not depend
-        /// on the order, such as counting targets and decoys per notch.
+        /// on the order, such as counting targets and decoys per notch, or asking whether any hypothesis comes from a
+        /// given protein.
         /// </summary>
-        internal IReadOnlyList<SpectralMatchHypothesis> HypothesesInAddedOrder => _BestMatchingBioPolymersWithSetMods;
+        public IReadOnlyList<SpectralMatchHypothesis> HypothesesInAddedOrder => _BestMatchingBioPolymersWithSetMods;
 
         public IEnumerable<SpectralMatchHypothesis> BestMatchingBioPolymersWithSetMods
         {
@@ -366,7 +367,10 @@ namespace EngineLayer
             Notch = PsmTsvWriter.Resolve(bestMatches.Select(b => b.Notch)).ResolvedValue;
             if (Notch == null) // notch ambiguous resolve q-value notch fields if possible. 
             {
-                if (bestMatches.First().QValueNotch != null) // Psm Level FDR has run
+                // Only when PSM-level FDR has given every hypothesis its notch values. In ParallelSearch a transient search
+                // can add a tied hypothesis at another notch to a baseline PSM after FDR has run; that hypothesis has none,
+                // and the PSM's FDR then comes from the baseline alignment (BaselineFdr) instead.
+                if (bestMatches.All(p => p.QValueNotch.HasValue && p.CumulativeTargetNotch.HasValue && p.CumulativeDecoyNotch.HasValue))
                 {
                     var qNotch = PsmTsvWriter.Resolve(bestMatches.Select(p => p.QValueNotch!.Value)).ResolvedValue;
                     if (qNotch != null) // Q-value notches are identical even if the notches are not
@@ -377,7 +381,8 @@ namespace EngineLayer
                     }
                 }
 
-                if (bestMatches.First().PeptideQValueNotch != null) // Peptide Level FDR has run
+                // Peptide-level FDR has run on every hypothesis (see above)
+                if (bestMatches.All(p => p.PeptideQValueNotch.HasValue && p.PeptideCumulativeTargetNotch.HasValue && p.PeptideCumulativeDecoyNotch.HasValue))
                 {
                     var pepQNotch = PsmTsvWriter.Resolve(bestMatches.Select(p => p.PeptideQValueNotch!.Value)).ResolvedValue;
                     if (pepQNotch != null) // Q-value notches are identical even if the notches are not
@@ -421,6 +426,11 @@ namespace EngineLayer
                 MatchedFragmentIons = bestMatches.First().MatchedIons;
         }
 
+        /// <summary>
+        /// Replaces the match's PSM-level FDR values. The record of whether its PEP was trained
+        /// (<see cref="FdrInfo.PepTrained"/>) is kept: it belongs to the FDR pass that computed the PEPs, not to these
+        /// q-values, which a caller recomputes (the crosslink search counts its own) from the same PEPs.
+        /// </summary>
         public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double pep, double pepQValue)
         {
             FdrInfo = new FdrInfo
@@ -432,7 +442,8 @@ namespace EngineLayer
                 CumulativeDecoyNotch = cumulativeDecoyNotch,
                 QValueNotch = qValueNotch,
                 PEP = pep,
-                PEP_QValue = pepQValue
+                PEP_QValue = pepQValue,
+                PepTrained = FdrInfo?.PepTrained ?? false
             };
         }
 

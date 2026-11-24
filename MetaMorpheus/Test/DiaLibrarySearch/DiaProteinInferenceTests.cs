@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using EngineLayer;
 using EngineLayer.DiaLibrarySearch;
+using EngineLayer.SpectrumMatch;
 using NUnit.Framework;
 using Omics.Modifications;
 using Proteomics;
@@ -356,15 +357,28 @@ public class DiaProteinInferenceTests
     }
 
     /// <summary>
-    /// The DIA search has no PEP. A PEP q-value threshold would switch the protein engine to filtering on PEP, which
-    /// every DIA peptide fails, and report no proteins at all. Refuse it instead.
+    /// The DIA search has no PEP, so whichever identification filter the search names, it reads the DIA peptide's
+    /// q-value at the filter threshold. Under the PEP q-value filter (the bottom-up default) an untrained PEP falls back
+    /// to the q-value notch, which the stand-in match sets to the peptide's q-value.
     /// </summary>
-    [Test]
-    public void APepQValueThresholdIsRefused()
+    [TestCase(FilterType.PepQValue)]
+    [TestCase(FilterType.QValueNotch)]
+    [TestCase(FilterType.QValue)]
+    public void EveryIdentificationFilterReadsThePeptideQValue(FilterType filter)
     {
-        var pepFiltered = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5), pepQValueThreshold: 0.005);
+        var peptides = new List<DiaPeptideMatch>
+        {
+            Peptide("EEEEER", 0.001, index: 0),
+            Peptide("VVVVVK", 0.02, index: 1),
+        };
+        Assert.That(Enum.GetValues<FilterType>(), Has.Length.EqualTo(3), "a new filter needs a case here");
 
-        Assert.Throws<ArgumentException>(() =>
-            DiaProteinInference.Infer([Peptide("EEEEER", 0.001)], TargetsAndDecoys(), pepFiltered, "run.raw", [], []));
+        var strict = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5), identificationFilter: filter, filterThreshold: 0.01);
+        var loose = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5), identificationFilter: filter, filterThreshold: 0.05);
+
+        Assert.That(DiaProteinInference.Infer(peptides, TargetsAndDecoys(), strict, "run.raw", [], []).ProteinGroups
+            .Select(g => g.ProteinGroupName), Is.EquivalentTo(new[] { "A" }));
+        Assert.That(DiaProteinInference.Infer(peptides, TargetsAndDecoys(), loose, "run.raw", [], []).ProteinGroups
+            .Select(g => g.ProteinGroupName), Is.EquivalentTo(new[] { "A", "C" }));
     }
 }
