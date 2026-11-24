@@ -245,8 +245,10 @@ namespace Test
             Assert.That(psms.Select(p => p.PsmCount).Distinct(), Is.EqualTo(new[] { 150 }), "the 150 that pass the PEP q-value");
         }
 
-        /// <summary>One protein, one peptide, one PSM at the given score, notch q-value and PEP, PEP trained.</summary>
-        private static (ProteinGroup Group, SpectralMatch Psm) OneGroup(string accession, string sequence, bool decoy, double score, double notch, double pep)
+        /// <summary>One protein, one peptide, one PSM at the given score, notch q-value and PEP, PEP trained, holding its
+        /// peptide's PEP q-value.</summary>
+        private static (ProteinGroup Group, SpectralMatch Psm) OneGroup(string accession, string sequence, bool decoy, double score, double notch, double pep,
+            double peptidePepQ = 0.001)
         {
             var protein = new Protein(sequence, accession, isDecoy: decoy);
             var peptide = protein.Digest(new DigestionParams(protease: "trypsin", minPeptideLength: 1), new List<Modification>(), new List<Modification>()).First();
@@ -257,6 +259,7 @@ namespace Test
             var psm = new PeptideSpectralMatch(peptide, 0, score, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm.ResolveAllAmbiguities();
             Set(psm, q: 0.001, notch: notch, pepQ: 0.001, pep: pep);
+            psm.PeptideFdrInfo = new FdrInfo { PEP_QValue = peptidePepQ };
             var group = new ProteinGroup(new HashSet<IBioPolymer> { protein }, new HashSet<IBioPolymerWithSetMods> { peptide },
                 new HashSet<IBioPolymerWithSetMods> { peptide });
             return (group, psm);
@@ -264,13 +267,13 @@ namespace Test
 
         private static Dictionary<string, double> ProteinQValues(CommonParameters commonParameters)
         {
-            // X: best score 30, notch 0.0001, PEP 0.5. Y: best score 50, notch 0.005, PEP 0.0001. A decoy between them on
-            // both. Ranked by the notch: X, decoy, Y. Ranked by PEP: Y, decoy, X.
+            // X: best score 30, notch 0.0001, peptide PEP q-value 0.005. Y: best score 50, notch 0.005, peptide PEP q-value
+            // 0.0001. A decoy between them on both. Ranked by the notch: X, decoy, Y. Ranked by the peptide PEP q-value: Y, decoy, X.
             var all = new[]
             {
-                OneGroup("X", "ACDEFK", decoy: false, score: 30, notch: 0.0001, pep: 0.5),
-                OneGroup("Y", "GHILMK", decoy: false, score: 50, notch: 0.005, pep: 0.0001),
-                OneGroup("DECOY_Z", "NQSTVK", decoy: true, score: 40, notch: 0.003, pep: 0.001),
+                OneGroup("X", "ACDEFK", decoy: false, score: 30, notch: 0.0001, pep: 0.5, peptidePepQ: 0.005),
+                OneGroup("Y", "GHILMK", decoy: false, score: 50, notch: 0.005, pep: 0.0001, peptidePepQ: 0.0001),
+                OneGroup("DECOY_Z", "NQSTVK", decoy: true, score: 40, notch: 0.003, pep: 0.001, peptidePepQ: 0.001),
             };
             var results = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(all.Select(a => a.Group).ToList(), all.Select(a => a.Psm).ToList(),
                 noOneHitWonders: false, treatModPeptidesAsDifferentPeptides: true, mergeIndistinguishableProteinGroups: false, commonParameters,
@@ -283,7 +286,7 @@ namespace Test
         public static void ProteinFdr_UsesTheChosenFilter()
         {
             var byPep = ProteinQValues(Chosen(FilterType.PepQValue));
-            Assert.That((byPep["Y"], byPep["X"]), Is.EqualTo((0.0, 0.5)), "ranked by PEP");
+            Assert.That((byPep["Y"], byPep["X"]), Is.EqualTo((0.0, 0.5)), "ranked by the peptide PEP q-value");
 
             var byNotch = ProteinQValues(Chosen(FilterType.QValueNotch));
             Assert.That((byNotch["X"], byNotch["Y"]), Is.EqualTo((0.0, 0.5)), "ranked by the notch");
@@ -291,6 +294,63 @@ namespace Test
             // The pooled q-value ranks protein groups by their best q-value notch, as every filter but a trained PEP does
             var byPooled = ProteinQValues(Chosen(FilterType.QValue));
             Assert.That((byPooled["X"], byPooled["Y"]), Is.EqualTo((0.0, 0.5)), "ranked by the notch");
+        }
+
+        /// <summary>Another match to <paramref name="of"/>'s peptide, on a scan of its own, at the given score and PEP.</summary>
+        private static SpectralMatch Repeat(SpectralMatch of, double score, double pep)
+        {
+            var peptide = of.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
+            var dataScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false),
+                2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null,
+                null, "scan=2", double.NaN, null, null, double.NaN, null, DissociationType.HCD, 0, null);
+            var scan = new Ms2ScanWithSpecificMass(dataScan, 2, 0, "File", new CommonParameters());
+            var psm = new PeptideSpectralMatch(peptide, 0, score, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.ResolveAllAmbiguities();
+            Set(psm, q: 0.001, notch: 0.001, pepQ: 0.001, pep: pep);
+            return psm;
+        }
+
+        // A group's best peptide PEP and PEP q-value read each peptide's values off the match PEP trained on, its
+        // best-scoring match, never off a lower-scoring repeat whose own came out lower. Y's peptide has two matches: the
+        // best-scoring one at PEP and PEP q-value 0.01 and a repeat at 0. Read off the repeat, Y would rank first; read off
+        // its best-scoring match, it ranks after the decoy.
+        [Test]
+        public static void ProteinFdr_ReadsEachPeptidesPepOffItsBestScoringMatch()
+        {
+            var x = OneGroup("X", "ACDEFK", decoy: false, score: 60, notch: 0.001, pep: 0.0001, peptidePepQ: 0.0001);
+            var y = OneGroup("Y", "GHILMK", decoy: false, score: 50, notch: 0.001, pep: 0.01, peptidePepQ: 0.01);
+            var decoy = OneGroup("DECOY_Z", "NQSTVK", decoy: true, score: 40, notch: 0.003, pep: 0.001, peptidePepQ: 0.001);
+            var repeat = Repeat(y.Psm, score: 20, pep: 0);
+            repeat.PeptideFdrInfo = new FdrInfo { PEP_QValue = 0 };
+
+            var results = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
+                new List<ProteinGroup> { x.Group, y.Group, decoy.Group }, new List<SpectralMatch> { x.Psm, y.Psm, repeat, decoy.Psm },
+                noOneHitWonders: false, treatModPeptidesAsDifferentPeptides: true, mergeIndistinguishableProteinGroups: false, Chosen(FilterType.PepQValue),
+                new List<(string, CommonParameters)>(), new List<string>()).Run();
+            var groups = results.SortedAndScoredProteinGroups.ToDictionary(g => g.ProteinGroupName);
+
+            Assert.That(groups["Y"].AllPsmsBelowOnePercentFDR, Has.Count.EqualTo(2), "the repeat still scores the group");
+            Assert.That(groups["Y"].BestPeptidePEP, Is.EqualTo(0.01), "the best-scoring match's PEP, not the repeat's 0");
+            Assert.That(groups["Y"].BestPeptidePepQValue, Is.EqualTo(0.01), "the best-scoring match's PEP q-value, not the repeat's 0");
+            Assert.That((groups["X"].QValue, groups["Y"].QValue), Is.EqualTo((0.0, 0.5)), "Y ranks after the decoy");
+        }
+
+        // Under the PEP q-value filter, protein groups rank by their best peptide PEP q-value, not by raw PEP. The top block
+        // of peptides shares one PEP q-value (FdrAnalysisEngine.PepQValueInverted takes the lowest decoy-to-target ratio
+        // below each), so a decoy whose peptide reached PEP 0 does not rank ahead of a higher-scoring target in that block.
+        [Test]
+        public static void ProteinFdr_RanksByPeptidePepQValue_NotByPep()
+        {
+            var target = OneGroup("X", "ACDEFK", decoy: false, score: 50, notch: 0.001, pep: 0.001);
+            var decoy = OneGroup("DECOY_Z", "NQSTVK", decoy: true, score: 40, notch: 0.001, pep: 0);
+
+            var results = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
+                new List<ProteinGroup> { target.Group, decoy.Group }, new List<SpectralMatch> { target.Psm, decoy.Psm },
+                noOneHitWonders: false, treatModPeptidesAsDifferentPeptides: true, mergeIndistinguishableProteinGroups: false, Chosen(FilterType.PepQValue),
+                new List<(string, CommonParameters)>(), new List<string>()).Run();
+
+            Assert.That(results.SortedAndScoredProteinGroups.Single(g => g.ProteinGroupName == "X").QValue, Is.EqualTo(0.0),
+                "ranked by raw PEP, the decoy would come first");
         }
 
         /// <summary>A match to the first peptide of <paramref name="protein"/>, on its own scan.</summary>
