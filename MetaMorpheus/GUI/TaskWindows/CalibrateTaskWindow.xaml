@@ -527,6 +527,20 @@
                                     </GroupBox>
                                     <GroupBox Header="In-Silico Digestion Parameters" >
                                         <StackPanel Margin="2">
+                                            <CheckBox x:Name="CheckBoxRespectCleavagePromotingModifications" Content="Respect cleavage-promoting modifications" Margin="5 1 1 1" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
+                                                      Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
+                                                <CheckBox.ToolTip>
+                                                    <TextBlock>
+                                                        Some proteases cut only beside a modified residue: StcE, for example, needs an O-glycan two residues before the cut.
+                                                        <LineBreak />
+                                                        Checked: such a protease cuts only where the search can place that modification (a variable modification, or one annotated in the database).
+                                                        <LineBreak />
+                                                        Unchecked: it cuts wherever its sequence motif matches, as if the modification were always there.
+                                                        <LineBreak />
+                                                        No effect on other proteases, or on semi-specific and non-specific searches.
+                                                    </TextBlock>
+                                                </CheckBox.ToolTip>
+                                            </CheckBox>
                                             <StackPanel Orientation="Horizontal" Margin="2">
                                                 <Label x:Name="MaxModificationIsoformsLabel" Content="Max Modification Isoforms:" Width="250" />
                                                 <local:IntegerTexBoxControl x:Name="MaxModificationIsoformsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">

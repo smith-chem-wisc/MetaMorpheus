@@ -5,6 +5,9 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+  # The merge queue tests each group of queued pull requests on top of master before merging it, so
+  # "Test on Windows" must also run on the queue's merge_group commits.
+  merge_group:
 
 env:
   DOTNET_VERSION: 10.0.x
@@ -49,7 +52,8 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
           flags: unittests
-          fail_ci_if_error: true
+          # Pull-request runs enforce coverage; a Codecov outage must not block the merge queue.
+          fail_ci_if_error: ${{ github.event_name != 'merge_group' }}
 
   test-core:
     name: Test on Windows (core)
@@ -78,7 +82,8 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
           flags: unittests
-          fail_ci_if_error: true
+          # Pull-request runs enforce coverage; a Codecov outage must not block the merge queue.
+          fail_ci_if_error: ${{ github.event_name != 'merge_group' }}
 
   # Aggregator so the required status check keeps its existing name. Branch protection can go on
   # keeping "Test on Windows" required without a settings change; this fails if either half failed

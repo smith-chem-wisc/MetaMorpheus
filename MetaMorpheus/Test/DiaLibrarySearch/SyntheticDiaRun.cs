@@ -68,8 +68,12 @@ internal sealed class SyntheticDiaRun
     /// <param name="withCharge3Siblings">Adds each peptide's 3+ precursor (same fragments, same iRT) where its m/z is inside
     /// the run's windows, for targets and decoys alike. It elutes with its 2+ sibling when planted.</param>
     /// <param name="ppmOffset">Shifts every recorded m/z by this many ppm, as a miscalibrated instrument would.</param>
+    /// <param name="deadMinutes">Minutes before anything elutes, as a short direct-injection run spends before its peptides
+    /// arrive: the run lasts <see cref="RunMinutes"/> plus this, and every elution is this much later than
+    /// <see cref="TrueRtMinutes"/>.</param>
     public static SyntheticDiaRun Build(int targetCount, Func<MslLibraryEntry, bool> plant, bool withDecoys = true,
-        int seed = 42, double noisePeaksPerScan = 60, Func<MslLibraryEntry, double>? abundance = null, bool withMs1 = false, double ppmOffset = 0, bool withCharge3Siblings = false)
+        int seed = 42, double noisePeaksPerScan = 60, Func<MslLibraryEntry, double>? abundance = null, bool withMs1 = false, double ppmOffset = 0, bool withCharge3Siblings = false,
+        double deadMinutes = 0)
     {
         var random = new Random(seed);
         var library = new List<MslLibraryEntry>();
@@ -96,7 +100,7 @@ internal sealed class SyntheticDiaRun
         var planted = library.Where(plant).ToList();
         var scans = new List<MsDataScan>();
         int scanNumber = 1;
-        for (double rt = 0; rt < RunMinutes; rt += CycleMinutes)
+        for (double rt = 0; rt < RunMinutes + deadMinutes; rt += CycleMinutes)
         {
             if (withMs1)
             {
@@ -105,7 +109,7 @@ internal sealed class SyntheticDiaRun
                     ms1Peaks.Add((FirstWindowLowMz + random.NextDouble() * WindowCount * WindowWidth, 50 + random.NextDouble() * 950));
                 foreach (var entry in planted)
                 {
-                    double elution = 1e6 * (abundance?.Invoke(entry) ?? 1) * Math.Exp(-0.5 * Math.Pow((rt - TrueRtMinutes(entry.RetentionTime)) / ElutionSigmaMinutes, 2));
+                    double elution = 1e6 * (abundance?.Invoke(entry) ?? 1) * Math.Exp(-0.5 * Math.Pow((rt - deadMinutes - TrueRtMinutes(entry.RetentionTime)) / ElutionSigmaMinutes, 2));
                     if (elution < 1)
                         continue;
                     double lambda = (entry.PrecursorMz - 1.007276) * entry.ChargeState / 1800;
@@ -128,7 +132,7 @@ internal sealed class SyntheticDiaRun
 
                 foreach (var entry in planted.Where(e => e.PrecursorMz >= low && e.PrecursorMz < low + WindowWidth))
                 {
-                    double elution = 1e5 * (abundance?.Invoke(entry) ?? 1) * Math.Exp(-0.5 * Math.Pow((rt - TrueRtMinutes(entry.RetentionTime)) / ElutionSigmaMinutes, 2));
+                    double elution = 1e5 * (abundance?.Invoke(entry) ?? 1) * Math.Exp(-0.5 * Math.Pow((rt - deadMinutes - TrueRtMinutes(entry.RetentionTime)) / ElutionSigmaMinutes, 2));
                     if (elution < 1)
                         continue;
                     foreach (var fragment in entry.MatchedFragmentIons)
