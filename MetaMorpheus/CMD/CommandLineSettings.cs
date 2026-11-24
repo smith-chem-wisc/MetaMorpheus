@@ -335,6 +335,9 @@ namespace MetaMorpheusCommandLine
 
                 ParallelSearchTask parallelSearch = new ParallelSearchTask();
                 Toml.WriteFile(parallelSearch, Path.Combine(folderLocation, @"ParallelSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+
+                DiaLibrarySearchTask dia = new DiaLibrarySearchTask();
+                Toml.WriteFile(dia, Path.Combine(folderLocation, @"DiaLibrarySearchTask.toml"), MetaMorpheusTask.tomlConfig);
             }
             catch (Exception e)
             {
