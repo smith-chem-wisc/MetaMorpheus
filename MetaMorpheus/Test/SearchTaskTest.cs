@@ -977,7 +977,8 @@ namespace Test
 
                 // use DissociationType.Autodetect as the dissociation type. this signals to the search that the dissociation type
                 // should be taken from the scan header on a scan-specific basis
-                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect, pepQValueThreshold: 0.01, qValueThreshold: 1.0)
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect,
+                    identificationFilter: EngineLayer.SpectrumMatch.FilterType.QValueNotch, filterThreshold: 1.0)
             };
 
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
@@ -1002,7 +1003,8 @@ namespace Test
                 },
 
                 // the same thresholds: Spectrum Match Count is counted at the identification filter's threshold
-                CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD, pepQValueThreshold: 0.01, qValueThreshold: 1.0)
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD,
+                    identificationFilter: EngineLayer.SpectrumMatch.FilterType.QValueNotch, filterThreshold: 1.0)
             };
 
             searchTask.RunTask(hcdTaskFolder, new List<DbForTask> { db }, new List<string> { myFile }, "");
@@ -1034,7 +1036,7 @@ namespace Test
 
                 // The PEP q-value filter, with fewer than 100 psms: PEP is not trained
                 CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD,
-                    pepQValueThreshold: 0.02, qValueThreshold: 1.0, identificationFilter: EngineLayer.SpectrumMatch.FilterType.PepQValue)
+                    identificationFilter: EngineLayer.SpectrumMatch.FilterType.PepQValue, filterThreshold: 0.02)
             };
 
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
@@ -1091,7 +1093,7 @@ namespace Test
 
                 // The PEP q-value filter, with fewer than 100 psms: PEP is not trained
                 CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD,
-                    pepQValueThreshold: 0.02, qValueThreshold: 1.0, identificationFilter: EngineLayer.SpectrumMatch.FilterType.PepQValue)
+                    identificationFilter: EngineLayer.SpectrumMatch.FilterType.PepQValue, filterThreshold: 0.02)
             };
 
             string myFileOne = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseOne.mzML");

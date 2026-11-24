@@ -121,7 +121,8 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 (
-                    qValueThreshold: 0
+                    identificationFilter: EngineLayer.SpectrumMatch.FilterType.QValueNotch,
+                    filterThreshold: 0
                 ),
                 SearchParameters = new SearchParameters
                 {
@@ -419,7 +420,8 @@ namespace Test
             List<string> peptides = File.ReadAllLines(Path.Combine(outputFolder, @"AllPeptides.psmtsv")).ToList();
             var header = peptides[0].Split(new char[] { '\t' }).ToArray();
             int indexOfPsmCountInTsv = Array.IndexOf(header, SpectrumMatchFromTsvHeader.SpectrumMatchCount);
-            // the default identification filter: the q-value notch at 0.01
+            // the default identification filter bottom-up is the PEP q-value at 0.01; PEP is not trained on this small file, so
+            // every match is judged by its q-value notch
             int indexOfQValueInTsv = Array.IndexOf(header, SpectrumMatchFromTsvHeader.QValueNotch);
             Assert.That(indexOfPsmCountInTsv >= 0);
             Assert.That(indexOfQValueInTsv >= 0);
@@ -479,7 +481,7 @@ namespace Test
 
             List<string> results = File.ReadAllLines(Path.Combine(outputFolder, @"results.txt")).ToList();
 
-            string peptideCountFromResultsString = results.FirstOrDefault(r => r.Contains("All target peptides with q-value notch <= 0.01: "));
+            string peptideCountFromResultsString = results.FirstOrDefault(r => r.Contains("All target peptides with pep q-value <= 0.01: "));
             double peptideCountFromResults = Convert.ToDouble(peptideCountFromResultsString?.Split(':')[1].ToString());
             Assert.That(allPeptidesQvalueBelowCutoff, Is.EqualTo(peptideCountFromResults));
             Directory.Delete(outputFolder, true);

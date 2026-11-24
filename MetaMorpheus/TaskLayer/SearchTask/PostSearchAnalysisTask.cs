@@ -1707,10 +1707,6 @@ namespace TaskLayer
             {
                 psmResultsText = keepsEveryMatch + Environment.NewLine + psmResultsText;
             }
-            if (SearchTask.LegacyFilterSentence(CommonParameters) is string fromLegacyThresholds)
-            {
-                psmResultsText = fromLegacyThresholds + Environment.NewLine + psmResultsText;
-            }
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s")] = psmResultsText;
             string precursorResultsText = $"All {GlobalVariables.AnalyteType.GetPrecursorLabel()}: " + Parameters.NumMs2SpectraPerFile.Select(f=>f.Value[1]).Sum();
             ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.GetPrecursorLabel()}")] = precursorResultsText;

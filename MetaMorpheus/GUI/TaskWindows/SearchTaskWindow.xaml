@@ -266,35 +266,30 @@
                                     </local:IntegerTexBoxControl>
                                 </StackPanel>
 
-                                <!-- Q-Value Filter -->
-                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="5">
-                                    <Label x:Name="QValueThreshold" Content="Q-Value Notch Threshold:" Width="150" />
-                                    <local:DoubleTextBoxControl x:Name="QValueThresholdTextBox"  Width="45"
-                                             ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
-                                             IsEnabled="{Binding ElementName=PepQValueThresholdCheckbox, Path=IsChecked, Converter={StaticResource InvertedBooleanConverter}}">
-                                        <TextBox.ToolTip>
-                                            <TextBlock>
-                                                   The identification filter, unless the PEP box is ticked: the maximum q-value notch of a match or peptide,
+                                <!-- Identification filter and its threshold: GuiFunctions.Util.TaskWindowIdentificationFilter -->
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="5" Grid.ColumnSpan="2">
+                                    <Label Content="Identification filter:" Width="150" />
+                                    <ComboBox x:Name="IdentificationFilterComboBox" Width="125" DisplayMemberPath="Label" SelectedValuePath="Filter"
+                                              ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <ComboBox.ItemContainerStyle>
+                                            <Style TargetType="ComboBoxItem">
+                                                <Setter Property="ToolTip" Value="{Binding Description}" />
+                                                <Setter Property="ToolTipService.ShowDuration" Value="999999" />
+                                            </Style>
+                                        </ComboBox.ItemContainerStyle>
+                                        <ComboBox.ToolTip>
+                                            <TextBlock MaxWidth="600" TextWrapping="Wrap">
+                                                The value that decides whether a match or peptide counts as identified. Point at a choice in the list for what it means. Unless a task names one, the PEP q-value bottom-up, and the q-value notch for top-down and RNA.
                                                 <LineBreak />
-                                                   used everywhere: the results tables, protein inference and FDR, quantification, the spectral library and every count.
+                                                A match whose PEP could not be trained is judged by its q-value notch at the same threshold, and the search says so.
                                             </TextBlock>
-                                        </TextBox.ToolTip>
-                                    </local:DoubleTextBoxControl>
-                                </StackPanel>
-
-                                <!-- PEP Q-Value Filter -->
-                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="5">
-                                    <!-- pep 1-value button -->
-                                    <CheckBox x:Name="PepQValueThresholdCheckbox" Content="PEP Q-Value Threshold:" 
-                                                 IsChecked="False" Margin="5,5,2,0" />
-                                    <local:DoubleTextBoxControl x:Name="PepQValueThresholdTextBox"
-                                             IsEnabled="{Binding IsChecked, ElementName=PepQValueThresholdCheckbox}" Width="45"
-                                             Height="23" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        </ComboBox.ToolTip>
+                                    </ComboBox>
+                                    <Label Content="at most" Margin="5 0 0 0" />
+                                    <local:DoubleTextBoxControl x:Name="FilterThresholdTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <TextBox.ToolTip>
-                                            <TextBlock>
-                                                    Ticked, the identification filter is the PEP q-value: the maximum PEP q-value of a match or peptide, used everywhere.
-                                                    <LineBreak />
-                                                    A match whose PEP could not be trained is judged by its q-value notch at this threshold instead, and the search says so.
+                                            <TextBlock MaxWidth="600" TextWrapping="Wrap">
+                                                The most the chosen value can be for a match or peptide to count as identified: above 0, at most 1. 0.01 by default. 1 keeps every match.
                                             </TextBlock>
                                         </TextBox.ToolTip>
                                     </local:DoubleTextBoxControl>
