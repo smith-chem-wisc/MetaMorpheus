@@ -708,7 +708,9 @@
                                     </CheckBox.ToolTip>
                                 </CheckBox>
                                 <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" />
-                                <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update spectral library" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}" />
+                                <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update spectral library" Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}"
+                                          ToolTip="Updates the spectral library given with this search's spectra, written to the output folder. An .msl library is written as .msl, with its retention times calibrated onto the iRT scale against Prosit 2025 predictions from Koina (network required; without it, the spectra are still updated and results.txt says so)."
+                                          ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress individual file results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
                                 <CheckBox x:Name="WriteTargetDecoyFastaCheckBox" Content="Write target-decoy FASTA file">
                                     <CheckBox.ToolTip>
