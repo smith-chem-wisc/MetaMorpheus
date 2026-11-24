@@ -224,6 +224,10 @@ namespace EngineLayer
         public bool AssumeOrphanPeaksAreZ1Fragments { get; private set; }
         public int MaxHeterozygousVariants { get; private set; }
         public int MinVariantDepth { get; private set; }
+        /// <summary>
+        /// A search task runs the truncation search on its own matches when it finishes (TaskLayer SearchTask, TruncationSearch.cs).
+        /// The database is no longer expanded with truncation products.
+        /// </summary>
         public bool AddTruncations { get; private set; }
         public DissociationType DissociationType { get; private set; }
         public string SeparationType { get; private set; }

@@ -26,6 +26,7 @@ internal class CachedProteinGroup(ProteinGroup proteinGroup)
             BestPeptideScore = pg.BestPeptideScore,
             BestPeptideQValue = pg.BestPeptideQValue,
             BestPeptidePEP = pg.BestPeptidePEP,
+            BestPeptidePepQValue = pg.BestPeptidePepQValue,
             QValue = pg.QValue,
             CumulativeTarget = pg.CumulativeTarget,
             CumulativeDecoy = pg.CumulativeDecoy,

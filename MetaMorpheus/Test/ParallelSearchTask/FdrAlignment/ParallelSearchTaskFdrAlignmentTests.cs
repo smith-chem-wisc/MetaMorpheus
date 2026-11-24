@@ -146,7 +146,7 @@ public class ParallelSearchTaskFdrAlignmentTests
             // the groups keep their own best-peptide values; those are what placed each group
             Assert.That(transientGroups.Select(g => g.BestPeptideQValue), Is.EqualTo(new[] { 0.0005, 0.001, 0.004, 0.01, 0.5 }).Within(1e-10));
             Assert.That(transientGroups.Select(g => g.BestPeptideScore), Is.EqualTo(new[] { 25.0, 15, 12, 9, 1 }).Within(1e-10));
-            Assert.That(transientGroups.Select(g => g.BestPeptidePEP), Has.All.EqualTo(0.9).Within(1e-10));
+            Assert.That(transientGroups.Select(g => g.BestPeptidePepQValue), Has.All.EqualTo(0.9).Within(1e-10));
         });
     }
 
@@ -192,12 +192,12 @@ public class ParallelSearchTaskFdrAlignmentTests
     }
 
     [Test]
-    public void AlignProteinGroups_WithPepFiltering_RanksByBestPeptidePep()
+    public void AlignProteinGroups_WithPepFiltering_RanksByBestPeptidePepQValue()
     {
         var lookup = BaselineFdr.CreateProteinGroupLookup(CreateBaselineGroups(), FilterType.PepQValue);
 
-        // a best-peptide q-value that would place it last, but a PEP that places it first
-        var transient = CreateTransientGroup(bestPeptideQValue: 0.5, bestPeptideScore: 20, bestPeptidePep: 0.005);
+        // a best-peptide q-value that would place it last, but a peptide PEP q-value that places it first
+        var transient = CreateTransientGroup(bestPeptideQValue: 0.5, bestPeptideScore: 20, bestPeptidePepQValue: 0.005);
         BaselineFdr.AlignProteinGroups(lookup, [transient]);
 
         Assert.Multiple(() =>
@@ -260,16 +260,16 @@ public class ParallelSearchTaskFdrAlignmentTests
     {
         return
         [
-            CreateProteinGroup(bestPeptideQValue: 0.001, bestPeptideScore: 20, bestPeptidePep: 0.01, qValue: 0.01, cumulativeTarget: 100, cumulativeDecoy: 1, summedScore: 30),
-            CreateProteinGroup(bestPeptideQValue: 0.004, bestPeptideScore: 12, bestPeptidePep: 0.2, qValue: 0.05, cumulativeTarget: 80, cumulativeDecoy: 2, summedScore: 200),
-            CreateProteinGroup(bestPeptideQValue: 0.02, bestPeptideScore: 8, bestPeptidePep: 0.4, qValue: 0.10, cumulativeTarget: 60, cumulativeDecoy: 3, summedScore: 15),
+            CreateProteinGroup(bestPeptideQValue: 0.001, bestPeptideScore: 20, bestPeptidePepQValue: 0.01, qValue: 0.01, cumulativeTarget: 100, cumulativeDecoy: 1, summedScore: 30),
+            CreateProteinGroup(bestPeptideQValue: 0.004, bestPeptideScore: 12, bestPeptidePepQValue: 0.2, qValue: 0.05, cumulativeTarget: 80, cumulativeDecoy: 2, summedScore: 200),
+            CreateProteinGroup(bestPeptideQValue: 0.02, bestPeptideScore: 8, bestPeptidePepQValue: 0.4, qValue: 0.10, cumulativeTarget: 60, cumulativeDecoy: 3, summedScore: 15),
         ];
     }
 
     private static ProteinGroup CreateTransientGroup(double bestPeptideQValue, double bestPeptideScore,
-        double bestPeptidePep = 0.9, double summedScore = 0)
+        double bestPeptidePepQValue = 0.9, double summedScore = 0)
     {
-        return CreateProteinGroup(bestPeptideQValue, bestPeptideScore, bestPeptidePep, qValue: 0.9,
+        return CreateProteinGroup(bestPeptideQValue, bestPeptideScore, bestPeptidePepQValue, qValue: 0.9,
             cumulativeTarget: 1, cumulativeDecoy: 1, summedScore);
     }
 
@@ -297,14 +297,14 @@ public class ParallelSearchTaskFdrAlignmentTests
         return psm;
     }
 
-    private static ProteinGroup CreateProteinGroup(double bestPeptideQValue, double bestPeptideScore, double bestPeptidePep,
+    private static ProteinGroup CreateProteinGroup(double bestPeptideQValue, double bestPeptideScore, double bestPeptidePepQValue,
         double qValue, int cumulativeTarget, int cumulativeDecoy, double summedScore)
     {
         var proteinGroup = ParallelSearchTestContextFactory.CreateProteinGroup(isDecoy: false, qValue: qValue, peptideCount: 1);
         proteinGroup.ProteinGroupScore = summedScore;
         proteinGroup.BestPeptideQValue = bestPeptideQValue;
         proteinGroup.BestPeptideScore = bestPeptideScore;
-        proteinGroup.BestPeptidePEP = bestPeptidePep;
+        proteinGroup.BestPeptidePepQValue = bestPeptidePepQValue;
         proteinGroup.CumulativeTarget = cumulativeTarget;
         proteinGroup.CumulativeDecoy = cumulativeDecoy;
         return proteinGroup;
