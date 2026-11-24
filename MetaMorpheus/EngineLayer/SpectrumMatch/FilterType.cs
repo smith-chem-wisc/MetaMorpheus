@@ -1,8 +1,7 @@
 namespace EngineLayer.SpectrumMatch
 {
     /// <summary>
-    /// The FDR values a match or peptide can be judged by: the three choices for
-    /// <see cref="CommonParameters.IdentificationFilter"/>, each held to <see cref="CommonParameters.FilterThreshold"/>.
+    /// The FDR values a match or peptide can be judged by. The combined filter is reserved for task-specific callers.
     /// </summary>
     public enum FilterType
     {
@@ -24,6 +23,9 @@ namespace EngineLayer.SpectrumMatch
         /// The q-value notch: the q-value counted within each mass-difference notch. The default for top-down and RNA
         /// (<see cref="CommonParameters.DefaultIdentificationFilter"/>).
         /// </summary>
-        QValueNotch
+        QValueNotch,
+
+        /// <summary>A pooled q-value and q-value-notch filter, both held to the same threshold for task-specific callers.</summary>
+        QValueAndQValueNotch
     }
 }

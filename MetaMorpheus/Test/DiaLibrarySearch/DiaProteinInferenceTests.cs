@@ -366,6 +366,7 @@ public class DiaProteinInferenceTests
     [TestCase(FilterType.PepQValue)]
     [TestCase(FilterType.QValueNotch)]
     [TestCase(FilterType.QValue)]
+    [TestCase(FilterType.QValueAndQValueNotch)]
     public void EveryIdentificationFilterReadsThePeptideQValue(FilterType filter)
     {
         var peptides = new List<DiaPeptideMatch>
@@ -373,7 +374,7 @@ public class DiaProteinInferenceTests
             Peptide("EEEEER", 0.001, index: 0),
             Peptide("VVVVVK", 0.02, index: 1),
         };
-        Assert.That(Enum.GetValues<FilterType>(), Has.Length.EqualTo(3), "a new filter needs a case here");
+        Assert.That(Enum.GetValues<FilterType>(), Has.Length.EqualTo(4), "a new filter needs a case here");
 
         var strict = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5), identificationFilter: filter, filterThreshold: 0.01);
         var loose = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5), identificationFilter: filter, filterThreshold: 0.05);

@@ -254,12 +254,25 @@ namespace TaskLayer
             List<CrosslinkSpectralMatch> singlePsms,
             string outputFolder)
         {
-            IEnumerable<CrosslinkSpectralMatch> linkedCsms = interCsms.Concat(intraCsms);
+            IEnumerable<CrosslinkSpectralMatch> linkedCsms = FilteredPsms.Filter(interCsms.Concat(intraCsms), null,
+                includeDecoys: false,
+                includeContaminants: true,
+                includeAmbiguous: true,
+                includeAmbiguousMods: true,
+                filterType: FilterType.QValueNotch,
+                filterThreshold: 0.05)
+                .FilteredPsmsList.Cast<CrosslinkSpectralMatch>();
+            IEnumerable<CrosslinkSpectralMatch> filteredSinglePsms = FilteredPsms.Filter(singlePsms, null,
+                includeDecoys: false,
+                includeContaminants: true,
+                includeAmbiguous: true,
+                includeAmbiguousMods: true,
+                filterType: FilterType.QValueNotch,
+                filterThreshold: 0.05)
+                .FilteredPsmsList.Cast<CrosslinkSpectralMatch>();
             List<LibrarySpectrum> librarySpectra = new();
 
-            foreach (var csmGroups in linkedCsms.Where(c => 
-                    !c.IsDecoy
-                    && c.FdrInfo.QValueNotch < 0.05)
+            foreach (var csmGroups in linkedCsms
                 .GroupBy(c => (c.UniqueSequence, c.ScanPrecursorCharge)))
             {
                 CrosslinkSpectralMatch bestCsm = csmGroups.MaxBy(c => c.XLTotalScore);
@@ -275,9 +288,7 @@ namespace TaskLayer
 
             // Single peptides carry no crosslinker, so their theoretical precursor m/z is their own (SpectralMatch.ToLibrarySpectrum).
             // A psm whose candidates differ in mass has no one precursor m/z to store.
-            foreach (var singlePsmGroup in singlePsms.Where(c =>
-                    !c.IsDecoy
-                    && c.FdrInfo.QValueNotch < 0.05)
+            foreach (var singlePsmGroup in filteredSinglePsms
                 .Where(c => c.BioPolymerWithSetModsMonoisotopicMass.HasValue)
                 .GroupBy(c => (c.FullSequence, c.ScanPrecursorCharge)))
             {
