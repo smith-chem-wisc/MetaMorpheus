@@ -162,6 +162,7 @@ public class DiaProteinInferenceTests
         var result = DiaProteinInference.Infer(peptides, TargetsAndDecoys(), Parameters, "run.raw", [], []);
 
         Assert.That(result.UnmappedPeptides, Is.EqualTo(1));
+        Assert.That(result.UnmappedTargets, Is.EqualTo(1), "the task warns with this count");
         Assert.That(result.SpectralMatches.Select(m => m.FullSequence), Is.EqualTo(new[] { "EEEEER" }));
     }
 
@@ -280,6 +281,7 @@ public class DiaProteinInferenceTests
             decoyAccessionsOf: s => s == "ELEELK" ? ["A_DECOY"] : null);
 
         Assert.That(result.UnmappedPeptides, Is.EqualTo(1));
+        Assert.That(result.UnmappedTargets, Is.Zero, "the unmapped peptide is a decoy");
         Assert.That(result.SpectralMatches.Select(m => m.FullSequence), Is.EquivalentTo(new[] { "ELEELK" }));
     }
 

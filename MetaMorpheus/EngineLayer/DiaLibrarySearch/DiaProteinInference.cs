@@ -18,7 +18,12 @@ namespace EngineLayer.DiaLibrarySearch;
 /// <param name="ProteinGroups">MetaMorpheus's scored protein groups, with its protein q-values, best first.</param>
 /// <param name="SpectralMatches">One per mapped peptide, in the order of the peptides given.</param>
 /// <param name="UnmappedPeptides">Peptides no protein of their own kind (target or decoy) yields; not used as evidence.</param>
-public sealed record DiaProteinInferenceResult(List<ProteinGroup> ProteinGroups, List<SpectralMatch> SpectralMatches, int UnmappedPeptides);
+/// <param name="UnmappedTargets">
+/// The targets among <paramref name="UnmappedPeptides"/>. Decoys can map by the library's accessions where their targets
+/// do not, so these shrink the target side alone.
+/// </param>
+public sealed record DiaProteinInferenceResult(List<ProteinGroup> ProteinGroups, List<SpectralMatch> SpectralMatches, int UnmappedPeptides,
+    int UnmappedTargets);
 
 /// <summary>
 /// Protein inference for the DIA search, by MetaMorpheus's DDA engines unchanged: <see cref="ProteinParsimonyEngine"/>
@@ -103,7 +108,7 @@ public static class DiaProteinInference
         IDecoyMap? decoys = targetSequenceOfDecoy is not null ? new InheritedDecoys(targetSequenceOfDecoy)
             : decoyAccessionsOf is not null ? new LibraryDecoys(peptides.Where(p => p.IsDecoy), decoyAccessionsOf, commonParameters!.DigestionParams)
             : null;
-        var matches = BuildSpectralMatches(peptides, index, decoys, commonParameters!, fullFilePath, out int unmapped);
+        var matches = BuildSpectralMatches(peptides, index, decoys, commonParameters!, fullFilePath, out int unmapped, out int unmappedTargets);
 
         var parsimony = (ProteinParsimonyResults)new ProteinParsimonyEngine(matches, modPeptidesAreDifferent: false,
             commonParameters!, null, []).Run();
@@ -111,7 +116,7 @@ public static class DiaProteinInference
             noOneHitWonders: false, treatModPeptidesAsDifferentPeptides: false, mergeIndistinguishableProteinGroups: true,
             commonParameters!, null, []).Run();
 
-        return new DiaProteinInferenceResult(scored.SortedAndScoredProteinGroups, matches, unmapped);
+        return new DiaProteinInferenceResult(scored.SortedAndScoredProteinGroups, matches, unmapped, unmappedTargets);
     }
 
     /// <summary>
@@ -120,11 +125,12 @@ public static class DiaProteinInference
     /// </summary>
     private static List<SpectralMatch> BuildSpectralMatches(IReadOnlyList<DiaPeptideMatch> peptides,
         Dictionary<string, List<PeptideWithSetModifications>> index, IDecoyMap? decoys, CommonParameters commonParameters,
-        string fullFilePath, out int unmapped)
+        string fullFilePath, out int unmapped, out int unmappedTargets)
     {
         double shift = peptides.Count == 0 ? 0 : Math.Max(0, 1 - peptides.Min(p => p.Score));
         var matches = new List<SpectralMatch>();
         unmapped = 0;
+        unmappedTargets = 0;
         foreach (var peptide in peptides)
         {
             var yields = peptide.IsDecoy && decoys is not null
@@ -135,6 +141,8 @@ public static class DiaProteinInference
             if (yields.Count == 0)
             {
                 unmapped++;
+                if (!peptide.IsDecoy)
+                    unmappedTargets++;
                 continue;
             }
 
