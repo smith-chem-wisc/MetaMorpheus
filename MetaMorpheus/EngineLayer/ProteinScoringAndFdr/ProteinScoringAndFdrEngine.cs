@@ -1,4 +1,5 @@
-﻿using EngineLayer.SpectrumMatch;
+﻿using EngineLayer.FdrAnalysis;
+using EngineLayer.SpectrumMatch;
 using System.Collections.Generic;
 using System.Linq;
 using Omics;
@@ -8,6 +9,7 @@ namespace EngineLayer
     public class ProteinScoringAndFdrEngine : MetaMorpheusEngine
     {
         private readonly IList<SpectralMatch> _FilteredPsms;
+        private readonly IList<SpectralMatch> _peptideFdrPsms;
         private readonly bool NoOneHitWonders;
         private readonly bool TreatModPeptidesAsDifferentPeptides;
         private readonly bool MergeIndistinguishableProteinGroups;
@@ -40,11 +42,16 @@ namespace EngineLayer
         /// returns. False for a per-file call, whose groups are subsets of the search's and already carry its labels
         /// (see <see cref="ProteinGroup.ConstructSubsetProteinGroup"/>), so the per-file tables agree with the combined one.
         /// </param>
+        /// <param name="peptideFdrPsms">
+        /// The matches each peptide's PEP and peptide-level PEP q-value are read from, off its best-scoring match among them;
+        /// null for the matches that score the groups. A per-file call passes the whole search's: the search's peptide-level
+        /// FDR gave its values to the peptide's best-scoring match in the whole search, which another file can hold.
+        /// </param>
         public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, IList<SpectralMatch> filteredPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups,
             CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds,
-            bool labelPeptidesUniqueToOneGroup = true)
+            bool labelPeptidesUniqueToOneGroup = true, IList<SpectralMatch> peptideFdrPsms = null)
             : this(proteinGroups, filteredPsms, psmsAlreadyFiltered: false, noOneHitWonders, treatModPeptidesAsDifferentPeptides, mergeIndistinguishableProteinGroups,
-                commonParameters, fileSpecificParameters, nestedIds, labelPeptidesUniqueToOneGroup) { }
+                commonParameters, fileSpecificParameters, nestedIds, labelPeptidesUniqueToOneGroup, peptideFdrPsms) { }
 
         /// <summary>
         /// When <paramref name="psmsAlreadyFiltered"/> is true, <paramref name="psms"/> are scored as-is with no q-value
@@ -53,9 +60,10 @@ namespace EngineLayer
         /// </summary>
         public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, IList<SpectralMatch> psms, bool psmsAlreadyFiltered, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups,
             CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds,
-            bool labelPeptidesUniqueToOneGroup = true) : base(commonParameters, fileSpecificParameters, nestedIds)
+            bool labelPeptidesUniqueToOneGroup = true, IList<SpectralMatch> peptideFdrPsms = null) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             _FilteredPsms = psms;
+            _peptideFdrPsms = peptideFdrPsms ?? psms;
             _psmsAlreadyFiltered = psmsAlreadyFiltered;
             ProteinGroups = proteinGroups;
             NoOneHitWonders = noOneHitWonders;
@@ -267,7 +275,12 @@ namespace EngineLayer
             return proteinGroups.Where(p => p.AllPeptides.Select(x => x.BaseSequence).Distinct().Skip(1).Any()).ToList();
         }
 
-        protected static void PopulateBestPeptideMetrics(IEnumerable<ProteinGroup> proteinGroups, IEnumerable<SpectralMatch> psms)
+        /// <param name="siteAmbiguousPepQValues">
+        /// True when the groups are ranked by PEP q-value, the only time <see cref="ProteinGroup.BestPeptidePepQValue"/> is
+        /// read, so the only time the site-ambiguous peptides' PEP q-values are computed (below).
+        /// </param>
+        protected static void PopulateBestPeptideMetrics(IEnumerable<ProteinGroup> proteinGroups, IEnumerable<SpectralMatch> psms,
+            bool siteAmbiguousPepQValues = false)
         {
             // A peptide's PEP is its best-scoring match's, the match PEP trains on, as at every peptide-level step;
             // the lowest PEP of its repeats would be a PSM-level number. Keyed as the peptide-level passes key a peptide,
@@ -282,6 +295,22 @@ namespace EngineLayer
                 .OrderByDescending(p => p)
                 .GroupBy(PeptideKey)
                 .ToDictionary(g => g.Key, g => (Pep: g.First().FdrInfo.PEP, PepQValue: g.First().PeptideFdrInfo?.PEP_QValue ?? 2));
+
+            // Except a site-ambiguous peptide's: the search's peptide-level FDR keys peptides by full sequence, so it
+            // collapses every site-ambiguous match into one peptide and gives a PEP q-value to its best-scoring match
+            // alone. Each site-free identity gets its own here, as quantification computes it, and the stored values,
+            // which the result files are written from, are put back.
+            if (siteAmbiguousPepQValues && peptidePep.Keys.Any(key => key.Item3 != null))
+            {
+                using (FdrInfoSnapshot.Take(psms))
+                {
+                    foreach (var peptide in FdrAnalysisEngine.CalculateLocalizationAmbiguousPeptideQValues(psms))
+                    {
+                        var key = PeptideKey(peptide);
+                        peptidePep[key] = (peptidePep[key].Pep, peptide.PeptideFdrInfo.PEP_QValue);
+                    }
+                }
+            }
 
             foreach (var pg in proteinGroups)
             {
@@ -311,7 +340,7 @@ namespace EngineLayer
             proteinGroups = ApplyNoOneHitWondersFilter(proteinGroups);
 
             // Both passes below rank groups by their best peptide, so set its score, q-value and PEP first
-            PopulateBestPeptideMetrics(proteinGroups, _FilteredPsms);
+            PopulateBestPeptideMetrics(proteinGroups, _peptideFdrPsms, siteAmbiguousPepQValues: _rankByPep);
 
             // Do Classic protein FDR (all targets, all decoys)
             // order protein groups based on filter type

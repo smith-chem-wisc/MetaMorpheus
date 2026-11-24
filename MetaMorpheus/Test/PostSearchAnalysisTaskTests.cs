@@ -1478,6 +1478,100 @@ namespace Test
                 "the contaminant's own peptide row is still withheld");
         }
 
+        /// <summary>
+        /// The per-file protein FDR (each file's protein table, its count in results.txt and its mzID) ranks a file's groups
+        /// under a trained PEP by each peptide's PEP q-value from the whole search, which only the peptide's best-scoring
+        /// match in the whole search carries. Read off the file's own best match, a peptide whose best match was in another
+        /// file had FdrInfo's unset 2, and its group ranked behind a decoy group found only in this file (review of #2983).
+        /// </summary>
+        [Test]
+        public static void PerFileProteinFdrReadsEachPeptidesPepQValueFromTheWholeSearch()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "PerFileProteinFdrPeptidePepQValue");
+            if (Directory.Exists(outputFolder))
+            {
+                Directory.Delete(outputFolder, true);
+            }
+            Directory.CreateDirectory(outputFolder);
+
+            try
+            {
+                var digestionParams = new DigestionParams(protease: "trypsin", minPeptideLength: 1);
+                var commonParameters = new CommonParameters(digestionParams: digestionParams); // the PEP q-value filter, bottom-up's default
+                string fileA = Path.Combine(outputFolder, "a.mzML");
+                string fileB = Path.Combine(outputFolder, "b.mzML");
+
+                // As the search's FDR leaves them, PEP trained: every match passes the PSM-level cut, and only each
+                // peptide's best-scoring match carries its peptide-level values.
+                SpectralMatch Match(Protein protein, string file, int scanNumber, double score, FdrInfo peptideFdr)
+                {
+                    var peptide = (PeptideWithSetModifications)protein.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
+                    SpectralMatch psm = new PeptideSpectralMatch(peptide, 0, score, scanNumber - 1,
+                        NullMassTestScan(file, commonParameters, scanNumber), commonParameters, new List<MatchedFragmentIon>());
+                    psm.ResolveAllAmbiguities();
+                    psm.SetFdrValues(1, 0, 0, 1, 0, 0, 0.001, 0.001);
+                    psm.PsmFdrInfo.PepTrained = true;
+                    psm.PeptideFdrInfo = peptideFdr;
+                    return psm;
+                }
+
+                // X's peptide scores best in a.mzML; its repeat is in b.mzML. The decoy is found only in b.mzML.
+                var target = new Protein("ACDEFK", "X");
+                var decoy = new Protein("NQSTVK", "DECOY_Z", isDecoy: true);
+                var best = Match(target, fileA, 1, 50, new FdrInfo { QValue = 0, QValueNotch = 0, PEP_QValue = 0.001, PepTrained = true });
+                var repeat = Match(target, fileB, 2, 20, new FdrInfo());
+                var decoyMatch = Match(decoy, fileB, 3, 30, new FdrInfo { QValue = 0, QValueNotch = 0, PEP_QValue = 0.005, PepTrained = true });
+
+                PostSearchAnalysisParameters parameters = new()
+                {
+                    SearchParameters = new SearchParameters
+                    {
+                        DoParsimony = true,
+                        DoLabelFreeQuantification = false,
+                        DoMultiplexQuantification = false,
+                        WriteIndividualFiles = true,
+                        WriteMzId = false,
+                        WritePepXml = false,
+                    },
+                    OutputFolder = outputFolder,
+                    IndividualResultsOutputFolder = outputFolder,
+                    SearchTaskId = "TestTask",
+                    AllSpectralMatches = new List<SpectralMatch> { best, repeat, decoyMatch },
+                    CurrentRawFileList = new List<string> { fileA, fileB },
+                    MyFileManager = new MyFileManager(true),
+                    FixedModifications = new List<Modification>(),
+                    VariableModifications = new List<Modification>(),
+                    ListOfDigestionParams = new HashSet<IDigestionParams> { digestionParams },
+                    DatabaseFilenameList = new List<DbForTask>(),
+                    FileSettingsList = new FileSpecificParameters[] { null, null },
+                };
+                PostSearchAnalysisTask task = new()
+                {
+                    Parameters = parameters,
+                    CommonParameters = commonParameters,
+                    FileSpecificParameters = new List<(string, CommonParameters)> { (fileA, commonParameters), (fileB, commonParameters) },
+                };
+
+                InvokePrivate(task, "ConstructResultsDictionary");
+                InvokePrivate(task, "ProteinAnalysis");
+                InvokePrivate(task, "WriteProteinResults");
+
+                var results = (Dictionary<(string, string), string>)typeof(PostSearchAnalysisTask)
+                    .GetProperty("ResultsDictionary", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(task);
+                string proteins = $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s";
+                Assert.That(results[("a", proteins)], Does.EndWith(": 1"));
+                Assert.That(results[("b", proteins)], Does.EndWith(": 1"),
+                    "in b.mzML X ranks by its peptide's whole-search PEP q-value, 0.001, ahead of the decoy's 0.005");
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder))
+                {
+                    Directory.Delete(outputFolder, true);
+                }
+            }
+        }
+
         private const string TargetSequence = "PEPTIDEK";
         private const string ContaminantSequence = "ACDEFGHIK";
 
