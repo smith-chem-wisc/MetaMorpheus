@@ -204,6 +204,19 @@
                                             <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
                                             <local:IntegerTexBoxControl x:Name="MaxPeptideLengthTextBox" Width="45" TextChanged="NonSpecificUpdate"/>
                                         </StackPanel>
+                                        <CheckBox x:Name="CheckBoxRespectCleavagePromotingModifications" Content="Respect cleavage-promoting modifications" Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <CheckBox.ToolTip>
+                                                <TextBlock>
+                                                    Some proteases cut only beside a modified residue: StcE, for example, needs an O-glycan two residues before the cut.
+                                                    <LineBreak/>
+                                                    Checked: such a protease cuts only where the search can place that modification (a variable modification, or one annotated in the database).
+                                                    <LineBreak/>
+                                                    Unchecked: it cuts wherever its sequence motif matches, as if the modification were always there.
+                                                    <LineBreak/>
+                                                    No effect on other proteases, or on semi-specific and non-specific searches.
+                                                </TextBlock>
+                                            </CheckBox.ToolTip>
+                                        </CheckBox>
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>

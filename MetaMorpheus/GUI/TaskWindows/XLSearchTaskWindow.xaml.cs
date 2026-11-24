@@ -160,6 +160,7 @@ namespace MetaMorpheusGUI
                 SearchModeWarningTextBlock.Text = searchModeWarning;
                 SearchModeWarningTextBlock.Visibility = searchModeWarning == null ? Visibility.Collapsed : Visibility.Visible;
                 initiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
+                CheckBoxRespectCleavagePromotingModifications.IsChecked = digestionParams.RespectCleavagePromotingModifications;
             }
 
             checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
@@ -289,7 +290,8 @@ namespace MetaMorpheusGUI
             // other digestion setting are kept from the loaded task
             DigestionParams digestionParamsToSave = TaskWindowDigestionParams.ForSave(TheTask.CommonParameters.DigestionParams,
                 protease.Name, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms,
-                initiatorMethionineBehavior: InitiatorMethionineBehavior);
+                initiatorMethionineBehavior: InitiatorMethionineBehavior,
+                respectCleavagePromotingModifications: CheckBoxRespectCleavagePromotingModifications.IsChecked.Value);
 
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
