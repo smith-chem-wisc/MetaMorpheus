@@ -626,6 +626,49 @@ public class DiaLibrarySearchTaskTests
             Assert.That(unmapped, Is.EqualTo(scored), warning);
     }
 
+    /// <summary>
+    /// One run calibration cannot use (here, one with no DIA MS2 scans) is skipped with a warning naming it and why, and
+    /// the other runs are searched and written; results.txt lists the run skipped (acesnik's #2984 review). Only when no
+    /// run can be searched does the task fail, naming each run and its reason.
+    /// </summary>
+    [Test]
+    public void ARunCalibrationCannotUseIsSkippedAndTheOthersAreWritten()
+    {
+        var (mzml, library, run) = WriteInputs("badRun");
+        string folder = Path.GetDirectoryName(mzml)!;
+        string ms1Only = Path.Combine(folder, "ms1only.mzML");
+        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(new GenericMsDataFile(run.Scans.Where(s => s.MsnOrder == 1).ToArray(),
+            new SourceFile("no nativeID format", "mzML format", null, null, null)), ms1Only, false);
+        string output = Path.Combine(folder, "output", "Task1");
+        Directory.CreateDirectory(output);
+        var warnings = new List<string>();
+        EventHandler<StringEventArgs> onWarn = (_, e) => warnings.Add(e.S);
+        MetaMorpheusTask.WarnHandler += onWarn;
+        try
+        {
+            new DiaLibrarySearchTask().RunTask(output, [new DbForTask(library, false)], [mzml, ms1Only], "Task1");
+        }
+        finally
+        {
+            MetaMorpheusTask.WarnHandler -= onWarn;
+        }
+
+        Assert.That(warnings.Single(w => w.Contains("ms1only.mzML")), Does.Contain("no DIA MS2 scans"));
+        string results = File.ReadAllText(Path.Combine(output, "results.txt"));
+        Assert.That(results, Does.Contain("ms1only.mzML: skipped").And.Contain("no DIA MS2 scans"));
+        Assert.That(int.Parse(Regex.Match(results, @"All target precursors with q-value <= 0\.01: (\d+)").Groups[1].Value), Is.GreaterThan(0));
+        var table = new DiaPrecursorFile(Path.Combine(output, "AllDiaPrecursors.tsv"));
+        table.LoadResults();
+        Assert.That(table.Results.Select(r => r.FileName).Distinct(), Is.EqualTo(new[] { "badRun.mzML" }));
+        Assert.That(File.ReadAllLines(Path.Combine(output, "DiaCalibrationSummary.tsv")).Skip(1).Select(l => l.Split('\t')[0]),
+            Is.EqualTo(new[] { "badRun.mzML" }));
+
+        string nothingUsable = Path.Combine(folder, "output", "Task2");
+        Directory.CreateDirectory(nothingUsable);
+        Assert.That(() => new DiaLibrarySearchTask().RunTask(nothingUsable, [new DbForTask(library, false)], [ms1Only], "Task2"),
+            Throws.InstanceOf<MetaMorpheusException>().With.Message.Contains("ms1only.mzML").And.Message.Contains("no DIA MS2 scans"));
+    }
+
     /// <summary>A FASTA of one protein no library target comes from.</summary>
     private static string WriteUnrelatedFasta(string path)
     {
