@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using GuiFunctions;
+using GuiFunctions.Util;
 
 namespace MetaMorpheusGUI
 {
@@ -51,6 +52,7 @@ namespace MetaMorpheusGUI
                         "\t-Uncheck 'Trim MS2 Peaks'\n" +
                         "\t-Uncheck all variable mods (Please use a GPTMD database instead)\n" +
                         "\t-GPTMD TASK ONLY: Search for only acetylation, phosphorylation, and oxidation of M\n" +
+                        "\t-SEARCH TASK ONLY: " + TaskWindowIdentificationFilter.TopDownRecommendedSentence(GuiGlobalParamsViewModel.Instance.IsRnaMode) + "\n" +
                         "\t-SEARCH TASK ONLY: Check 'No Quantification'\n" +
                         "\t-SEARCH TASK ONLY: Check '1, 2, or 3 Missed Monoisotopic Peaks'\n" +
                         "\t-SEARCH TASK ONLY: Check 'Internal Ions - Min Internal Length 10'\n" +

@@ -45,39 +45,22 @@ namespace EngineLayer.SpectrumMatch
         /// </summary>
         public static bool Passes(SpectralMatch psm, bool peptideLevel, FilterType filterType, double threshold)
         {
-            RefuseThePooledQValue(filterType);
             var fdrInfo = psm.GetFdrInfo(peptideLevel);
             return fdrInfo != null && Value(fdrInfo, filterType) <= threshold;
         }
 
         /// <summary>
-        /// The pooled q-value is not an identification filter (<see cref="CommonParameters.IdentificationFilter"/>), so no
-        /// caller may ask for it by name either.
-        /// </summary>
-        private static void RefuseThePooledQValue(FilterType filterType)
-        {
-            if (filterType is not (FilterType.PepQValue or FilterType.QValueNotch))
-                throw new ArgumentException(CommonParameters.NotAFilter(filterType), nameof(filterType));
-        }
-
-        /// <summary>
         /// The value a match is judged by. Under the PEP q-value filter, its PEP q-value where PEP was trained for it
         /// (<see cref="FdrInfo.PepTrained"/>), and its q-value notch where it was not. Under the q-value notch filter, its
-        /// q-value notch.
+        /// q-value notch. Under the q-value filter, its pooled q-value alone.
         /// </summary>
         private static double Value(FdrInfo fdrInfo, FilterType filterType) => filterType switch
         {
             FilterType.PepQValue => fdrInfo.PepTrained ? fdrInfo.PEP_QValue : fdrInfo.QValueNotch,
             FilterType.QValueNotch => fdrInfo.QValueNotch,
+            FilterType.QValue => fdrInfo.QValue,
             _ => throw new ArgumentOutOfRangeException(nameof(filterType), filterType, null)
         };
-
-        /// <summary>
-        /// The threshold <paramref name="filterType"/> is held to: the PEP q-value threshold for the PEP q-value (and
-        /// for the q-value notch of the matches it judges by the notch), the q-value threshold otherwise.
-        /// </summary>
-        public static double Threshold(CommonParameters commonParams, FilterType filterType) =>
-            filterType == FilterType.PepQValue ? commonParams.PepQValueThreshold : commonParams.QValueThreshold;
 
         /// <summary>The filter and its threshold, as results.txt and the output files state them: "q-value notch &lt;= 0.01".</summary>
         public static string Describe(FilterType filterType, double threshold) =>
@@ -85,7 +68,7 @@ namespace EngineLayer.SpectrumMatch
 
         /// <summary>The search's own filter and threshold, described as <see cref="Describe(FilterType, double)"/>.</summary>
         public static string Describe(CommonParameters commonParams) =>
-            Describe(commonParams.IdentificationFilter, Threshold(commonParams, commonParams.IdentificationFilter));
+            Describe(commonParams.IdentificationFilter, commonParams.FilterThreshold);
 
         private static string Name(FilterType filterType) => filterType switch
         {
@@ -155,15 +138,13 @@ namespace EngineLayer.SpectrumMatch
         /// so filtering may not be optimal for all proteases when generating a combined filtered PSM list.
         /// </summary>
         /// <param name="psms"> List of spectral match objects to be filtered</param>
-        /// <param name="commonParams">The search's parameters: its identification filter and the thresholds</param>
+        /// <param name="commonParams">The search's parameters: its identification filter and its threshold</param>
         /// <param name="filterAtPeptideLevel">Filter results at the peptide level (defaults to false) </param>
         /// <param name="includeAmbiguousMods">Keep PSMs whose full sequence did not resolve (two or more full sequences
         /// match the scan)</param>
         /// <param name="includeLocalizationAmbiguousMods">Keep PSMs ambiguous only in where their modifications sit
         /// (<see cref="SpectralMatch.IsLocalizationAmbiguous"/>), whatever <paramref name="includeAmbiguousMods"/> says
         /// about the others. Null, the default, follows <paramref name="includeAmbiguousMods"/>.</param>
-        /// <param name="qValueThreshold">Overrides the q-value threshold, which the q-value notch is held to</param>
-        /// <param name="pepQValueThreshold">Overrides the PEP q-value threshold, which the PEP q-value is held to</param>
         /// <param name="filterType">The filter, when the caller chooses it. Null (the default) is the search's
         /// <see cref="CommonParameters.IdentificationFilter"/>.</param>
         /// <returns> A FilteredPsms object</returns>
@@ -174,8 +155,6 @@ namespace EngineLayer.SpectrumMatch
             bool includeAmbiguous = false,
             bool includeAmbiguousMods = true,
             bool includeHighQValuePsms = false,
-            double? qValueThreshold = null,
-            double? pepQValueThreshold = null,
             bool filterAtPeptideLevel = false,
             bool? includeLocalizationAmbiguousMods = null,
             FilterType? filterType = null)
@@ -190,10 +169,7 @@ namespace EngineLayer.SpectrumMatch
                     : psm.IsLocalizationAmbiguous ? includeLocalizationAmbiguous : includeAmbiguousMods;
 
             FilterType type = filterType ?? commonParams.IdentificationFilter;
-            RefuseThePooledQValue(type);
-            double threshold = type == FilterType.PepQValue
-                ? pepQValueThreshold ?? commonParams.PepQValueThreshold
-                : qValueThreshold ?? commonParams.QValueThreshold;
+            double threshold = commonParams.FilterThreshold;
 
             List<SpectralMatch> candidates = psms.Where(psm =>
                     (includeDecoys || !psm.IsDecoy)
@@ -263,9 +239,9 @@ namespace EngineLayer.SpectrumMatch
         }
     }
 
-    internal static class FilteredPsmsExtensions
+    public static class FilteredPsmsExtensions
     {
-        internal static IEnumerable<SpectralMatch> CollapseToPeptides(this IEnumerable<SpectralMatch> psms, bool filterAtPeptideLevel)
+        public static IEnumerable<SpectralMatch> CollapseToPeptides(this IEnumerable<SpectralMatch> psms, bool filterAtPeptideLevel)
         {
             if (!filterAtPeptideLevel)
             {
