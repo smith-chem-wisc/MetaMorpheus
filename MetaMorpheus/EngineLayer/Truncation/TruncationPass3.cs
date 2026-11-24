@@ -197,7 +197,9 @@ namespace EngineLayer.Truncation
                 {
                     SpectralMatch alternate = members[i].SpectralMatch;
                     representative.AddOrReplace(members[i].TruncatedForm, alternate.Score,
-                        alternate.Notch ?? 0, reportAllAmbiguity: true, alternate.MatchedFragmentIons);
+                        alternate.Notch ?? 0, reportAllAmbiguity: true,
+                        // MatchedFragmentIons is only set by ResolveAllAmbiguities, which has not run on a fresh PSM.
+                        alternate.BestMatchingBioPolymersWithSetMods.First().MatchedIons);
                 }
 
                 collapsed.Add(representative);

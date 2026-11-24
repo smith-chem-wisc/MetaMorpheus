@@ -177,6 +177,33 @@ public class DiaMassCalibrationTests
         AssertSamePoints(actual, expected);
     }
 
+    /// <summary>
+    /// Calibration changes only the spectra. A scan's FAIMS compensation voltage, HCD energy, scan description and charge
+    /// array stay as recorded, as everything else does: a FAIMS DIA run's scans must still say which CV they were taken at.
+    /// </summary>
+    [Test]
+    public void CalibrationKeepsEachScansOwnMetadata()
+    {
+        var (path, scans, confident) = Searched();
+        using var library = MslLibrary.Load(path);
+        var tagged = scans.Select(s => new MsDataScan(s.MassSpectrum, s.OneBasedScanNumber, s.MsnOrder, s.IsCentroid, s.Polarity, s.RetentionTime,
+            s.ScanWindowRange, s.ScanFilter, s.MzAnalyzer, s.TotalIonCurrent, s.InjectionTime, s.NoiseData, s.NativeId, s.SelectedIonMZ,
+            s.SelectedIonChargeStateGuess, s.SelectedIonIntensity, s.IsolationMz, s.IsolationWidth, s.DissociationType, s.OneBasedPrecursorScanNumber,
+            s.SelectedIonMonoisotopicGuessMz, hcdEnergy: "27", scanDescription: "synthetic DIA", compensationVoltage: -45,
+            chargeArray: Enumerable.Repeat(2, s.MassSpectrum.Size).ToArray())).ToArray();
+
+        var calibrated = DiaMassCalibration.Calibrate(tagged, confident, library, new CommonParameters()).Scans;
+
+        Assert.That(calibrated, Is.Not.SameAs(tagged), "the run was calibrated");
+        for (int i = 0; i < tagged.Length; i++)
+        {
+            Assert.That(calibrated[i].CompensationVoltage, Is.EqualTo(-45), $"scan {i}");
+            Assert.That(calibrated[i].HcdEnergy, Is.EqualTo("27"), $"scan {i}");
+            Assert.That(calibrated[i].ScanDescription, Is.EqualTo("synthetic DIA"), $"scan {i}");
+            Assert.That(calibrated[i].ChargeArray, Is.EqualTo(tagged[i].ChargeArray), $"scan {i}");
+        }
+    }
+
     /// <summary>With no confident identifications there is nothing to calibrate on: the scans come back unchanged.</summary>
     [Test]
     public void WithoutIdentificationsTheScansAreReturnedUnchanged()

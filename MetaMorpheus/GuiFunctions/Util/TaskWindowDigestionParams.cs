@@ -31,7 +31,7 @@ public static class TaskWindowDigestionParams
         int maxPeptideLength, int maxModificationIsoforms, int? maxModsForPeptides = null,
         InitiatorMethionineBehavior? initiatorMethionineBehavior = null,
         (CleavageSpecificity SearchModeType, FragmentationTerminus Terminus)? searchMode = null,
-        bool? generateUnlabeledProteinsForSilac = null)
+        bool? generateUnlabeledProteinsForSilac = null, bool? respectCleavagePromotingModifications = null)
     {
         // Every setting the window does not show comes from here. Adding a DigestionParams constructor argument means adding
         // it below too; TaskWindowDigestionParamsTests.ASettingNoWindowShows_SurvivesASave fails until it is.
@@ -52,6 +52,6 @@ public static class TaskWindowDigestionParams
             keepNGlycopeptide: kept.KeepNGlycopeptide,
             keepOGlycopeptide: kept.KeepOGlycopeptide,
             respectCleavageBlockingModifications: kept.RespectCleavageBlockingModifications,
-            respectCleavagePromotingModifications: kept.RespectCleavagePromotingModifications);
+            respectCleavagePromotingModifications: respectCleavagePromotingModifications ?? kept.RespectCleavagePromotingModifications);
     }
 }

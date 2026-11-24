@@ -47,7 +47,8 @@ namespace TaskLayer
         GlycoSearch,
         Average,
         Truncation,
-        ParallelSearch
+        ParallelSearch,
+        DiaLibrarySearch
     }
 
     public abstract class MetaMorpheusTask
