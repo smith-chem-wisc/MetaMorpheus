@@ -1620,13 +1620,13 @@ namespace Test
             Assert.That(csm.MatchedFragmentIons.Count, Is.EqualTo(36));
             Assert.That(csm.ScanNumber == 2);
 
-            // test child scan (low-resolution CID, alpha peptide signature ion)
-            Assert.That(csm.ChildMatchedFragmentIons.First().Key == 4);
-            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 1);
-
-            // test child scan (low-resolution CID, beta peptide signature ion)
-            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 4);
-            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 5);
+            // Each peptide is annotated against exactly its own two DSSO stub-signature MS3 scans: alpha's
+            // are 6 and 7, beta's are 4 and 5. Asserting the whole dictionary rather than First(), because
+            // what matters here is which scans are annotated, not which happens to sort first.
+            Assert.That(csm.ChildMatchedFragmentIons.ToDictionary(p => p.Key, p => p.Value.Count),
+                Is.EqualTo(new Dictionary<int, int> { { 6, 10 }, { 7, 5 } }));
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.ToDictionary(p => p.Key, p => p.Value.Count),
+                Is.EqualTo(new Dictionary<int, int> { { 4, 5 }, { 5, 3 } }));
 
             // write results to TSV
             csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0);
@@ -1635,15 +1635,76 @@ namespace Test
             // read results from TSV
             var psmFromTsv = SpectrumMatchTsvReader.ReadPsmTsv(outputFile, out var warnings).First();
 
-            Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 4
-                && psmFromTsv.ChildScanMatchedIons.First().Key == 4
-                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 1);
-
-            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 4
-                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 4
-                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 5);
+            // tracks the in-memory assertions above through the TSV round trip
+            Assert.That(psmFromTsv.ChildScanMatchedIons.ToDictionary(p => p.Key, p => p.Value.Count),
+                Is.EqualTo(new Dictionary<int, int> { { 6, 10 }, { 7, 5 } }));
+            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.ToDictionary(p => p.Key, p => p.Value.Count),
+                Is.EqualTo(new Dictionary<int, int> { { 4, 5 }, { 5, 3 } }));
 
             File.Delete(outputFile);
+        }
+
+        // ScoreChildScan's third branch: an MS3 child whose precursor mass equals the parent MS2's is annotated
+        // against the crosslinked peptide; one that differs by more than 0.001 Da, and is not one of this
+        // peptide's stub signatures, is not. No fixture has such a scan, so beta's signature MS3 (scan 4) is
+        // re-wrapped with the parent's precursor, and as the parent's only child.
+        [Test]
+        [TestCase(0.0, true)]
+        [TestCase(0.002, false)]
+        public static void TestMs3ChildWithParentPrecursorMass(double massOffset, bool expectAnnotated)
+        {
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, ms3childScanDissociationType: DissociationType.LowCID, precursorMassTolerance: new PpmTolerance(10));
+
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\10226.mzML");
+            var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
+            var fsp = new List<(string, CommonParameters)> { (spectraFile, commonParameters) };
+
+            Ms2ScanWithSpecificMass[] scans = MetaMorpheusTask.GetMs2ScansWrapByScanNum(file, spectraFile, commonParameters, out List<List<(double, int, double)>> precursorss).ToArray();
+            Ms2ScanWithSpecificMass parent = scans.First();
+            Ms2ScanWithSpecificMass signature = parent.ChildScans.Single(p => p.OneBasedScanNumber == 4);
+            Assert.That(signature.TheScan.MsnOrder, Is.EqualTo(3));
+
+            var sameAsParent = new Ms2ScanWithSpecificMass(signature.TheScan, (parent.PrecursorMass + massOffset).ToMz(parent.PrecursorCharge),
+                parent.PrecursorCharge, spectraFile, commonParameters, signature.ExperimentalFragments);
+            Assert.That(sameAsParent.PrecursorMass - parent.PrecursorMass, Is.EqualTo(massOffset).Within(1e-6));
+            parent.ChildScans = new List<Ms2ScanWithSpecificMass> { sameAsParent };
+
+            Protein bsa = new Protein("MKWVTFISLLLLFSSAYSRGVFRRDTHKSEIAHRFKDLGEEHFKGLVLIAFSQYL" +
+                "QQCPFDEHVKLVNELTEFAKTCVADESHAGCEKSLHTLFGDELCKVASLRETYGDMADCCEKQEPERNECFLSHKDDS" +
+                "PDLPKLKPDPNTLCDEFKADEKKFWGKYLYEIARRHPYFYAPELLYYANKYNGVFQECCQAEDKGACLLPKIETMRE" +
+                "KVLTSSARQRLRCASIQKFGERALKAWSVARLSQKFPKAEFVEVTKLVTDLTKVHKECCHGDLLECADDR" +
+                "ADLAKYICDNQDTISSKLKECCDKPLLEKSHCIAEVEKDAIPENLPPLTADFAEDKDVCKNYQEAKDAFL" +
+                "GSFLYEYSRRHPEYAVSVLLRLAKEYEATLEECCAKDDPHACYSTVFDKLKHLVDEPQNLIKQNCDQFEK" +
+                "LGEYGFQNALIVRYTRKVPQVSTPTLVEVSRSLGKVGTRCCTKPESERMPCTEDYLSLILNRLCVLHEKT" +
+                "PVSEKVTKCCTESLVNRRPCFSALTPDETYVPKAFDEKLFTFHADICTLPDTEKQIKKQTALVELLKHKP" +
+                "KATEEQLKTVMENFVAFVDKCCAADDKEACFAVEGPKLVVSTQTALA", "BSA");
+            var fixedMods = GlobalVariables.AllModsKnown.Where(p => p.IdWithMotif == "Carbamidomethyl on C").ToList();
+            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), fixedMods,
+               null, null, null, 0, DecoyType.None, commonParameters, fsp, 5000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>()).Run();
+
+            var csms = new List<CrosslinkSpectralMatch>[2];
+            var XLEngine = new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, null, 0,
+                commonParameters, fsp, GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"), 50, true, false, false, true, new List<string>(),
+                new List<(int, int, int)>[scans.Length], 0, indexingResults.PeptideIndex, precursorss);
+            XLEngine.FirstRoundSearch();
+            XLEngine.Run();
+
+            var csm = csms[0].First();
+            Assert.That(csm.ScanNumber, Is.EqualTo(2));
+            Assert.That(csm.BetaPeptide, Is.Not.Null);
+
+            if (expectAnnotated)
+            {
+                Assert.That(csm.ChildMatchedFragmentIons?.ToDictionary(p => p.Key, p => p.Value.Count),
+                    Is.EqualTo(new Dictionary<int, int> { { 4, 1 } }));
+                Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons?.ToDictionary(p => p.Key, p => p.Value.Count),
+                    Is.EqualTo(new Dictionary<int, int> { { 4, 1 } }));
+            }
+            else
+            {
+                Assert.That(csm.ChildMatchedFragmentIons, Is.Null);
+                Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons, Is.Null);
+            }
         }
 
         [Test]
