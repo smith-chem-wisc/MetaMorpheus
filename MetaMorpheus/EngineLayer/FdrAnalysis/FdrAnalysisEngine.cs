@@ -106,6 +106,8 @@ namespace EngineLayer.FdrAnalysis
                     includeAmbiguous: true,
                     includeHighQValuePsms: true,
                     filterAtPeptideLevel: true).FilteredPsmsList;
+                // Each peptide's best-scoring match, the one PEP trains on. Every peptide-level pass below uses these.
+                var bestMatchOfEachPeptide = peptides;
 
                 // Whether this pass leaves PEP q-values from a trained model at each level (FdrInfo.PepTrained). A pass
                 // asked to train starts from "not trained"; a pass that trains nothing (doPep false) leaves the record an
@@ -124,14 +126,11 @@ namespace EngineLayer.FdrAnalysis
                         pepTrainedPsmLevel = trained;
                         pepTrainedPeptideLevel = trained;
 
-                        // peptides are ordered by PEP score from good to bad in order to select the best PSM for each peptide
+                        // each peptide's best-scoring match is ordered by its PEP from good to bad
                         // The PSMs are sorted once, for both: the peptide-level pass in between changes neither PEP nor
                         // anything the default comparer reads, so sorting them again gave this same order.
                         var psmsByPep = psms.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
-                        peptides = psmsByPep
-                            .GroupBy(p => p.FullSequence)
-                            .Select(p => p.FirstOrDefault()) // Get the best psm for each peptide based on PEP (default comparer is used to break ties)
-                            .ToList();
+                        peptides = bestMatchOfEachPeptide.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
                         CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
 
                         psms = psmsByPep;
@@ -153,10 +152,7 @@ namespace EngineLayer.FdrAnalysis
                         pepTrainedPsmLevel = trained;
                         pepTrainedPeptideLevel = trained;
                         var psmsByPep = psms.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
-                        peptides = psmsByPep
-                            .GroupBy(p => p.FullSequence)
-                            .Select(p => p.FirstOrDefault()) // Get the best psm for each peptide based on PEP (default comparer is used to break ties)
-                            .ToList();
+                        peptides = bestMatchOfEachPeptide.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
                         CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
                         psms = psmsByPep;
                         CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
@@ -173,10 +169,7 @@ namespace EngineLayer.FdrAnalysis
                     pepTrainedPeptideLevel = null;
                     // Sorted once for both passes, as above
                     var psmsByPep = psms.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
-                    peptides = psmsByPep
-                            .GroupBy(p => p.FullSequence)
-                            .Select(p => p.FirstOrDefault()) // Get the best psm for each peptide based on PEP (default comparer is used to break ties)
-                            .ToList();
+                    peptides = bestMatchOfEachPeptide.OrderBy(p => p.FdrInfo.PEP).ThenByDescending(p => p).ToList();
                     CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
 
                     psms = psmsByPep;
@@ -184,11 +177,7 @@ namespace EngineLayer.FdrAnalysis
                 }
 
                 //we do this section last so that target and decoy counts written in the psmtsv files are appropriate for the sort order which is by MM score
-                peptides = psms
-                    .OrderBy(p => p.FdrInfo.PEP)
-                    .ThenByDescending(p => p)
-                    .GroupBy(b => b.FullSequence)
-                    .Select(b => b.FirstOrDefault()) // Get the best psm for each peptide based on PEP (default comparer is used to break ties)
+                peptides = bestMatchOfEachPeptide
                     .OrderByDescending(p => p) // Sort using the default comparer before calculating Q Values
                     .ToList();
                 CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
@@ -215,8 +204,8 @@ namespace EngineLayer.FdrAnalysis
         /// give them: it keys a peptide by its full sequence, which such a match does not have, so all of them share one
         /// entry with every other ambiguous match. Here each set of them with one site-free identity
         /// (<see cref="SpectralMatch.GetSiteFreeIdentity"/>) is one more peptide beside the full-sequence peptides, and the
-        /// final peptide-level passes are re-run as that method runs them: per digestion agent, the best match of each
-        /// peptide by PEP and then score, targets and decoys alike, PEP q-values when PEPs exist, then q-values.
+        /// final peptide-level passes are re-run as that method runs them: per digestion agent, the best-scoring match of
+        /// each peptide, targets and decoys alike, PEP q-values when PEPs exist, then q-values.
         /// Returns each set's best match, carrying its q-values in <see cref="SpectralMatch.PeptideFdrInfo"/>.
         /// It writes onto the matches it is given, the full-sequence peptides' best matches included, so a caller that
         /// must keep the stored values takes an <see cref="FdrInfoSnapshot"/> first.
@@ -227,10 +216,11 @@ namespace EngineLayer.FdrAnalysis
             foreach (var proteasePsms in psms.GroupBy(p => p.DigestionParams.DigestionAgent))
             {
                 var peptides = proteasePsms
-                    .OrderBy(p => p.FdrInfo.PEP)
-                    .ThenByDescending(p => p)
+                    .OrderByDescending(p => p)
                     .GroupBy(p => (p.FullSequence, SiteFreeIdentity: p.FullSequence == null && p.IsLocalizationAmbiguous ? p.GetSiteFreeIdentity() : null))
                     .Select(p => p.First())
+                    .OrderBy(p => p.FdrInfo.PEP)
+                    .ThenByDescending(p => p)
                     .ToList();
 
                 if (proteasePsms.Any(p => p.FdrInfo.PEP > 0))

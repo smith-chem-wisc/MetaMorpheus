@@ -277,11 +277,6 @@ namespace MetaMorpheusCommandLine
                         taskList.Add(("Task" + (i + 1) + "ParallelSearchTask", parallelSearchTask));
                         break;
 
-                    case "Truncation":
-                        var truncationTask = Toml.ReadFile<TruncationSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(("Task" + (i + 1) + "TruncationSearchTask", truncationTask));
-                        break;
-
                     case "DiaLibrarySearch":
                         var DiaTask = Toml.ReadFile<DiaLibrarySearchTask>(filePath, MetaMorpheusTask.tomlConfig);
                         taskList.Add(("Task" + (i + 1) + "DiaLibrarySearchTask", DiaTask));

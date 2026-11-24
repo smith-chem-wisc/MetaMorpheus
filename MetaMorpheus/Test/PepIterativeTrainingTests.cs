@@ -381,7 +381,7 @@ namespace Test
 
         /// <summary>
         /// The stopping count must be the number FdrAnalysisEngine reports: target peptides whose PEP q-value
-        /// is below the cutoff, with the PEP-best match per full sequence.
+        /// is below the cutoff, on each full sequence's best-scoring match.
         /// </summary>
         [Test]
         public static void CountAcceptedPeptides_MatchesTheReportedPeptidePepQValues()
@@ -394,8 +394,7 @@ namespace Test
                 new FdrAnalysisEngine(psms, 1, commonParameters, FileSpecificParameters(commonParameters), new List<string>()).Run();
 
                 var peptides = psms
-                    .OrderBy(p => p.FdrInfo.PEP)
-                    .ThenByDescending(p => p)
+                    .OrderByDescending(p => p)
                     .GroupBy(p => p.FullSequence)
                     .Select(g => g.First())
                     .ToList();

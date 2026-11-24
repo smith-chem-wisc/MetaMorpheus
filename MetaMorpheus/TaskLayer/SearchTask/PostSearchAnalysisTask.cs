@@ -167,7 +167,7 @@ namespace TaskLayer
             if (Parameters.BioPolymerList.Any((p => p.AppliedSequenceVariations.Count > 0)))
             {
                 // The variant tables re-run FDR on the variant matches alone. Their values must not outlive them:
-                // a chained TruncationSearchTask reads the whole-search FDR from these matches.
+                // the truncation search (AddTruncations) reads the whole-search FDR from these matches.
                 using (FdrInfoSnapshot.Take(Parameters.AllSpectralMatches))
                 {
                     WriteVariantResults();
@@ -2110,7 +2110,8 @@ namespace TaskLayer
                     CommonParameters,
                     this.FileSpecificParameters,
                     new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath },
-                    labelPeptidesUniqueToOneGroup: false // each subset keeps the search's labels
+                    labelPeptidesUniqueToOneGroup: false, // each subset keeps the search's labels
+                    peptideFdrPsms: Parameters.AllSpectralMatches // each peptide's values are on its best match in the whole search
                     ).Run();
 
                 subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
