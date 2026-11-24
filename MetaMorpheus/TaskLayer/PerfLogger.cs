@@ -8,13 +8,12 @@ namespace TaskLayer
 {
     /// <summary>
     /// One row of the rolling, append-only <c>perf_log.tsv</c> performance log (docs/Truncation-Search.md, Benchmarking hook schema).
-    /// A SearchTask run and its paired TruncationSearchTask run each produce one row; truncation-specific
-    /// fields are left at their defaults for SearchTask rows.
+    /// Each truncation search (a SearchTask with AddTruncations) produces one row.
     /// </summary>
     public class TruncationPerfMetrics
     {
         public string Phase = "Manual";
-        public string TaskType = "TruncationSearchTask";
+        public string TaskType = "TruncationSearchTask"; // the label rows from the former task carry, kept so the log stays comparable
         public string DatasetTag = "";
         public string RunLabel = "";
         public string OutputFolder = "";

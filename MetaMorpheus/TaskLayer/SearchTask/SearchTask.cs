@@ -28,7 +28,7 @@ using Chemistry;
 
 namespace TaskLayer
 {
-    public class SearchTask : MetaMorpheusTask
+    public partial class SearchTask : MetaMorpheusTask
     {
         public SearchTask() : base(MyTask.Search)
         {
@@ -283,7 +283,7 @@ namespace TaskLayer
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
             ProseCreatedWhileRunning.Append($"{GlobalVariables.AnalyteType.GetDigestionAgentLabel()} = " + CommonParameters.DigestionParams.DigestionAgent + "; ");
-            ProseCreatedWhileRunning.Append($"search for truncated {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} and proteolysis products = " + CommonParameters.AddTruncations + "; ");
+            ProseCreatedWhileRunning.Append($"truncation search for N- and C-terminally truncated {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} = " + CommonParameters.AddTruncations + "; ");
             ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
             ProseCreatedWhileRunning.Append($"minimum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MinLength + "; ");
             ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxLength == int.MaxValue ?
@@ -717,16 +717,13 @@ namespace TaskLayer
             // outlasted the searches of a two-file run: post-search waited 40 s for it on the bottom-up nightly's files.
             FinishWritingIndexCache();
 
-            // Hand the resolved, FDR'd PSM set to a downstream TruncationSearchTask via the shared
-            // in-memory task-chain context (decision #1). The consumer dedups to proteoform level, applies
-            // its own permissive parent filter, and null-filters as it goes — AllSpectralMatches is assembled
-            // from fixed-length per-file arrays that hold null slots for unmatched scans — so deposit the
-            // list as-is rather than allocating a filtered copy of it. The context is null (and this a
-            // no-op) unless the run list actually contains a consumer, and the runner clears it once that
-            // consumer has run.
-            TaskChainContext?.Deposit(taskId, parameters.AllSpectralMatches);
-            // Its CommonParameters ride along so the consumer can warn when its own settings disagree.
-            TaskChainContext?.Deposit(TaskChainContext.CommonParametersKey(taskId), CommonParameters);
+            // AddTruncations runs the truncation search (TruncationSearch.cs) on this search's resolved, FDR'd matches, into
+            // this folder. Nucleic acid searches never had truncations, so for them the flag still does nothing.
+            if (CommonParameters.AddTruncations && GlobalVariables.AnalyteType != AnalyteType.Oligo)
+            {
+                Status("Searching for truncations...", taskId);
+                RunTruncationSearch(parameters.AllSpectralMatches, OutputFolder, currentRawFileList, taskId, fileSettingsList, fixedModifications);
+            }
 
             return postSearchResults;
         }

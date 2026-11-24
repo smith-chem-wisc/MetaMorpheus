@@ -766,20 +766,20 @@
                                     <GroupBox Visibility="{Binding  Converter={StaticResource CollapseOnRnaModeConverter}}">
                                         <GroupBox.Header>
                                             <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}" 
-                                                     ConverterParameter="Add Protein Truncation and Proteolysis Products"/>
+                                                     ConverterParameter="Truncation Search"/>
                                         </GroupBox.Header>
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
-                                                <CheckBox x:Name="AddTruncationsCheckBox" IsChecked="False" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="AddTruncationsCheckBox_Checked">
+                                                <CheckBox x:Name="AddTruncationsCheckBox" IsChecked="False" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                     <CheckBox.Content>
                                                         <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
-                                                                 ConverterParameter="Add Protein Truncation and Proteolysis Products. Automatically sets initiator methionine to retain."/>
+                                                                 ConverterParameter="Search for N- and C-terminally truncated forms of the identified proteins"/>
                                                     </CheckBox.Content>
                                                     <CheckBox.ToolTip>
                                                         <ToolTip>
                                                             <ToolTip.Content>
                                                                 <Binding Converter="{StaticResource ProteinRnaTerminologyConverter}"
-                                                                         ConverterParameter="Enables search of protein and proteolysis products with terminal degration from either terminus of up to 5 amino acids including any PTMs."/>
+                                                                         ConverterParameter="After the search, re-searches the MS2 scans for truncations, from either terminus, of the proteins this search identified, keeping their PTMs. Writes AllTruncatedPSMs.psmtsv and AllTruncatedProteoforms.psmtsv beside the search results."/>
                                                             </ToolTip.Content>
                                                         </ToolTip>
                                                     </CheckBox.ToolTip>

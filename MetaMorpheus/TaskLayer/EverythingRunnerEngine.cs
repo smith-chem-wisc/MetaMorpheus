@@ -22,11 +22,6 @@ namespace TaskLayer
         private List<DbForTask> CurrentXmlDbFilenameList;
         private List<string> _warnings;
 
-        // Shared in-memory hand-off between tasks in this run list (docs/Truncation-Search.md decision #1).
-        // Only created when the run list actually contains a task that reads from it, so a depositing task
-        // does not pin its results for the rest of a run nothing will consume them in.
-        private readonly TaskChainContext _taskChainContext;
-
         /// <summary>The SDRF beside the run's spectra files, handed to every search task for this run only; null with none.</summary>
         private readonly SdrfForRun _runSdrf;
 
@@ -40,7 +35,6 @@ namespace TaskLayer
         {
             TaskList = taskList;
             OutputFolder = outputFolder.Trim('"');
-            _taskChainContext = taskList.Any(t => t.Item2.ConsumesTaskChainContext) ? new TaskChainContext() : null;
             _runSdrf = runSdrf;
 
             CurrentRawDataFilenameList = startingRawFilenameList;
@@ -108,11 +102,6 @@ namespace TaskLayer
                
                 var ok = TaskList[i];
 
-                // give every task the shared in-memory hand-off so a finishing task can deposit
-                // results for a later one (e.g. SearchTask -> TruncationSearchTask), decision #1.
-                // Null unless this run list has a consumer, in which case deposits are no-ops.
-                ok.Item2.TaskChainContext = _taskChainContext;
-
                 // Non-specific search is built around proteases -- terminal mod placement, the "single"
                 // agents, the FDR categories -- none of which have a nucleic acid counterpart yet.
                 // Refused here rather than only in SearchTask because a MetaMorpheusException out of
@@ -143,13 +132,6 @@ namespace TaskLayer
                 ok.Item2.AcquiredSpectraFiles = AcquiredRawDataFilenameList;
                 ok.Item2.RunSdrf = _runSdrf;
                 var myTaskResults = ok.Item2.RunTask(outputFolderForThisTask, CurrentXmlDbFilenameList, CurrentRawDataFilenameList, ok.Item1);
-
-                // A consumer has taken what it needed; drop the deposited results rather than holding the
-                // upstream search's whole PSM graph alive for the remainder of the run list (decision #1).
-                if (ok.Item2.ConsumesTaskChainContext)
-                {
-                    _taskChainContext?.Clear();
-                }
 
                 if (myTaskResults.NewDatabases != null)
                 {

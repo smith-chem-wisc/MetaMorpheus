@@ -1419,19 +1419,6 @@ namespace MetaMorpheusGUI
             var prefix = GuiGlobalParamsViewModel.Instance.IsRnaMode ? "Rna" : "";
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", $"{prefix}SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
-
-        /// <summary>
-        /// Retained/Lost Methionine is best handled through truncation search when truncation search is selected.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void AddTruncationsCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            if (AddTruncationsCheckBox.IsChecked.Value)
-            {
-                InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)InitiatorMethionineBehavior.Retain;
-            }
-        }
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
