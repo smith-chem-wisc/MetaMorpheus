@@ -1259,7 +1259,7 @@ namespace Test
         /// <summary>
         /// The variant tables re-run FDR on the variant matches alone, on purpose: VariantPSMs.psmtsv and
         /// VariantPeptides.psmtsv report the variant subset's own q-values. That pass must not leave them on the
-        /// shared spectral matches either. SearchTask hands those matches to a chained TruncationSearchTask, whose
+        /// shared spectral matches either. With AddTruncations the search runs the truncation search on those matches, whose
         /// parent filter reads their FdrInfo (PEP q-value, else notch q-value, at most 0.10). When one of the variant
         /// matches has a PEP above 0, the variant pass recomputes the PEP q-values, and a subset of N variant targets
         /// with no decoys gets (0 + 1) / N. So with fewer than ten variant peptides every one of them failed that
@@ -1285,10 +1285,10 @@ namespace Test
 
             var task = Nett.Toml.ReadFile<SearchTask>(Path.Combine(testDirectory, @"TestData\Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
             task.CommonParameters.QValueCutoffForPepCalculation = 0.01;
-            task.TaskChainContext = new TaskChainContext(); // as when a TruncationSearchTask follows the search
-            double parentThreshold = new TruncationSearchParameters().ParentQValueThreshold;
+            double parentThreshold = SearchTask.TruncationParentQValueThreshold;
 
             Dictionary<SpectralMatch, string> wholeSearchFdr = null;
+            List<SpectralMatch> handedOnMatches = null;
             List<string> parentsInWholeSearch = null;
             EventHandler<StringEventArgs> recordWholeSearchFdr = (sender, e) =>
             {
@@ -1296,6 +1296,7 @@ namespace Test
                 {
                     var matches = postSearch.Parameters.AllSpectralMatches.Where(m => m != null).ToList();
                     wholeSearchFdr = matches.ToDictionary(m => m, FdrState);
+                    handedOnMatches = matches; // the objects the truncation search reads once post-search returns
                     parentsInWholeSearch = VariantParents(matches, parentThreshold);
                 }
             };
@@ -1320,9 +1321,6 @@ namespace Test
             }
 
             Assert.That(wholeSearchFdr, Is.Not.Null, "WriteVariantResults did not run");
-            Assert.That(task.TaskChainContext.TryGet("search", out List<SpectralMatch> handedOn), Is.True);
-            var handedOnMatches = handedOn.Where(m => m != null).ToList();
-            Assert.That(handedOnMatches, Has.Count.EqualTo(wholeSearchFdr.Count));
 
             // Fewer than ten variant peptides, all of them parents by the whole search's FDR, and one with a PEP above 0.
             var targetVariantPeptides = handedOnMatches.Where(m => !m.IsDecoy && IsVariant(m)).Select(m => m.BaseSequence).Distinct().ToList();
@@ -1341,7 +1339,7 @@ namespace Test
 
                 // So the truncation search keeps the variant proteoforms the whole search found as parents.
                 Assert.That(VariantParents(handedOnMatches, parentThreshold), Is.EqualTo(parentsInWholeSearch),
-                    "variant matches handed to TruncationSearchTask must pass its parent filter as they did in the whole search");
+                    "variant matches handed to the truncation search must pass its parent filter as they did in the whole search");
             });
 
             // The variant table itself keeps the variant subset's own q-values.
@@ -1384,9 +1382,9 @@ namespace Test
         private static bool IsVariant(SpectralMatch match) => match.BestMatchingBioPolymersWithSetMods
             .Any(h => h.SpecificBioPolymer is PeptideWithSetModifications peptide && peptide.IsVariantPeptide());
 
-        /// <summary>The variant matches TruncationSearchTask's parent filter keeps, as "full sequence scan".</summary>
+        /// <summary>The variant matches the truncation search's parent filter keeps, as "full sequence scan".</summary>
         private static List<string> VariantParents(IEnumerable<SpectralMatch> matches, double threshold) => matches
-            .Where(m => IsVariant(m) && TruncationSearchTask.PassesParentFilter(m, threshold))
+            .Where(m => IsVariant(m) && SearchTask.PassesTruncationParentFilter(m, threshold))
             .Select(m => $"{m.FullSequence} {m.ScanNumber}").OrderBy(s => s, StringComparer.Ordinal).ToList();
 
         /// <summary>Every FDR value FdrAnalysisEngine writes onto a match, as text ("R" keeps each double exact).</summary>
