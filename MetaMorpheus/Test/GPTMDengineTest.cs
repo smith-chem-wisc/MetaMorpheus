@@ -75,6 +75,38 @@ namespace Test
             Assert.That(recordingFilter.Sites.All(site => site >= 1 && site <= modPep.Length), Is.True);
         }
 
+        // Runs CleavageSiteFilter through the engine, so a change to the site convention GptmdEngine
+        // passes to filters cannot leave the filter reading the wrong residue unnoticed.
+        [Test]
+        [TestCase('R', 0)] // creates a trypsin site inside PEPTIDEK: rejected
+        [TestCase('S', 1)] // moves no site: kept
+        public static void TestGptmdEngineCleavageSiteFilter(char substituted, int expectedSites)
+        {
+            ModificationMotif.TryGetMotif("T", out ModificationMotif motifT);
+            double delta = new Proteomics.AminoAcidPolymer.Peptide($"PEP{substituted}IDEK").MonoisotopicMass
+                - new Proteomics.AminoAcidPolymer.Peptide("PEPTIDEK").MonoisotopicMass;
+            var substitution = new Modification(_originalId: $"T->{substituted}", _modificationType: "1 nucleotide substitution",
+                _target: motifT, _locationRestriction: "Anywhere.", _monoisotopicMass: delta);
+
+            var commonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1));
+            var peptide = new Protein("PEPTIDEKAAAR", "accession")
+                .Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>())
+                .Single(p => p.BaseSequence == "PEPTIDEK");
+
+            var scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null), (peptide.MonoisotopicMass + delta).ToMz(1), 1, "filepath", commonParameters);
+            SpectralMatch psm = new PeptideSpectralMatch(peptide, 0, 0, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
+            psm.SetMs2Scan(scan.TheScan);
+
+            var engine = new GptmdEngine(new List<SpectralMatch> { psm }, new List<Modification> { substitution }, new List<Tuple<double, double>>(),
+                new Dictionary<string, Tolerance> { { "filepath", new PpmTolerance(10) } }, commonParameters, null, new List<string>(), null,
+                new List<IGptmdFilter> { new CleavageSiteFilter() });
+            var res = (GptmdResults)engine.Run();
+
+            int sitesAdded = res.Mods.TryGetValue("accession", out var mods) ? mods.Count : 0;
+            Assert.That(sitesAdded, Is.EqualTo(expectedSites));
+        }
+
         [Test]
         public static void TestGptmdEngineDissociationTypeAutodetect()
         {
