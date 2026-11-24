@@ -51,6 +51,7 @@ public sealed class ConfidenceCutoff
         FilterType.PepQValue => fdrInfo.PepTrained ? fdrInfo.PEP_QValue : fdrInfo.QValueNotch,
         FilterType.QValueNotch => fdrInfo.QValueNotch,
         FilterType.QValue => fdrInfo.QValue,
+        FilterType.QValueAndQValueNotch => Math.Max(fdrInfo.QValue, fdrInfo.QValueNotch),
         _ => throw new ArgumentOutOfRangeException(nameof(FilterType), FilterType, null)
     };
 }
