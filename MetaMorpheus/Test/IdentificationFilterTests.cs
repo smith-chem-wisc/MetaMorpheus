@@ -848,6 +848,7 @@ namespace Test
             Assert.That((common.IdentificationFilter, common.FilterThreshold), Is.EqualTo((filter, threshold)));
         }
 
+        // The twelve test TOMLs that name both old keys are kept as they are, as old task files. Each keeps what it meant.
         [Test]
         [TestCase(@"GlycoTestData\GlycoSnip.toml")]
         [TestCase(@"GlycoTestData\Glyco_Isobaric_testing.toml")]
@@ -892,6 +893,7 @@ namespace Test
             Assert.That((file.IdentificationFilter, file.FilterThreshold), Is.EqualTo((FilterType.QValueNotch, 0.02)));
         }
 
+        // A copy keeps the record of an old file, and resolves as the original does
         [Test]
         public static void SearchTask_AnOldGuiPepTask_UsesThePepFilter()
         {

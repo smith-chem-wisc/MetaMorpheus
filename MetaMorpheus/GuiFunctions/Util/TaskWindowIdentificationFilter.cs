@@ -7,7 +7,7 @@ namespace GuiFunctions.Util;
 
 /// <summary>
 /// What a task window shows and saves for <see cref="CommonParameters.IdentificationFilter"/> and
-    /// <see cref="CommonParameters.FilterThreshold"/>: a choice of the three filters (<see cref="Choices"/>) and one threshold
+    /// <see cref="CommonParameters.FilterThreshold"/>: a choice of the filters (<see cref="Choices"/>) and one threshold
 /// box. The Search window loads them with <see cref="Load(CommonParameters, bool)"/> and saves what it shows with
 /// <see cref="ForSave"/>.
 /// </summary>

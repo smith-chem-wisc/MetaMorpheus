@@ -247,9 +247,9 @@ namespace EngineLayer.SpectrumMatch
         }
     }
 
-    internal static class FilteredPsmsExtensions
+    public static class FilteredPsmsExtensions
     {
-        internal static IEnumerable<SpectralMatch> CollapseToPeptides(this IEnumerable<SpectralMatch> psms, bool filterAtPeptideLevel)
+        public static IEnumerable<SpectralMatch> CollapseToPeptides(this IEnumerable<SpectralMatch> psms, bool filterAtPeptideLevel)
         {
             if (!filterAtPeptideLevel)
             {
