@@ -443,16 +443,43 @@ namespace EngineLayer
                 }
 
                 // *** greedy algorithm loop
+                // The next best protein is the one with:
+                // 1. the most new peptide sequences and then (in case of a tie),
+                // 2. the most total peptides observed for the protein, regardless if they're unaccounted for or not,
+                // and then the first in algDictionary's order. Proteins are kept in buckets by their count of new sequences,
+                // each ordered by that tie-break, so a pick does not scan (and hash the sequence of) every remaining protein:
+                // that was quadratic in the number of proteins left. algDictionary is only removed from in this loop, so the
+                // remaining proteins keep their relative order.
+                var proteinRank = new Dictionary<IBioPolymer, int>(algDictionary.Count);
+                foreach (var (protein, rank) in algDictionary.Keys
+                    .Select((protein, order) => (protein, order))
+                    .OrderByDescending(p => proteinToPepSeqMatch[p.protein].Count)
+                    .ThenBy(p => p.order)
+                    .Select((p, rank) => (p.protein, rank)))
+                {
+                    proteinRank.Add(protein, rank);
+                }
+                var proteinsByRank = new IBioPolymer[proteinRank.Count];
+                foreach (var (protein, rank) in proteinRank)
+                {
+                    proteinsByRank[rank] = protein;
+                }
+
                 int numNewSeqs = algDictionary.Max(p => p.Value.Count);
+                var proteinsByNewSeqCount = new SortedSet<int>[numNewSeqs + 1];
+                for (int count = 0; count <= numNewSeqs; count++)
+                {
+                    proteinsByNewSeqCount[count] = new SortedSet<int>();
+                }
+                foreach (var (protein, peptideSequences) in algDictionary)
+                {
+                    proteinsByNewSeqCount[peptideSequences.Count].Add(proteinRank[protein]);
+                }
+
                 while (numNewSeqs != 0)
                 {
-                    // get the next best protein based on:
-                    // 1. the number of new peptide sequences and then (in case of a tie),
-                    // 2. the number of total peptides observed for the protein, regardless if they're unaccounted for or not
-                    IBioPolymer bestProtein = algDictionary
-                        .Where(p => p.Value.Count == numNewSeqs)
-                        .OrderByDescending(p => proteinToPepSeqMatch[p.Key].Count)
-                        .First().Key;
+                    int bestRank = proteinsByNewSeqCount[numNewSeqs].Min;
+                    IBioPolymer bestProtein = proteinsByRank[bestRank];
 
                     parsimoniousProteinList.Add(bestProtein);
 
@@ -464,50 +491,46 @@ namespace EngineLayer
 
                         foreach (IBioPolymer protein in proteinsWithThisPeptide)
                         {
-                            algDictionary[protein].Remove(peptide.Sequence);
+                            HashSet<string> newSequences = algDictionary[protein];
+                            if (newSequences.Remove(peptide.Sequence))
+                            {
+                                int rank = proteinRank[protein];
+                                proteinsByNewSeqCount[newSequences.Count + 1].Remove(rank);
+                                proteinsByNewSeqCount[newSequences.Count].Add(rank);
+                            }
                             algDictionaryProtease[protein].Remove(peptide);
                         }
                     }
 
+                    proteinsByNewSeqCount[algDictionary[bestProtein].Count].Remove(bestRank);
                     algDictionary.Remove(bestProtein);
                     algDictionaryProtease.Remove(bestProtein);
 
-                    numNewSeqs = algDictionary.Any() ? algDictionary.Max(p => p.Value.Count) : 0;
+                    while (numNewSeqs > 0 && proteinsByNewSeqCount[numNewSeqs].Count == 0)
+                    {
+                        numNewSeqs--;
+                    }
                 }
 
                 // *** done with greedy algorithm
 
                 // Parsimony stage 4: add back indistinguishable proteins (proteins that have identical peptide sets as parsimonious proteins)
-                var allProteinsGroupedByNumPeptides = proteinToPepSeqMatch.GroupBy(p => p.Value.Count);
-                var parsimonyProteinsGroupedByNumPeptides = parsimoniousProteinList.GroupBy(p => proteinToPepSeqMatch[p].Count);
-                var indistinguishableProteins = new ConcurrentBag<IBioPolymer>();
-
-                foreach (var group in allProteinsGroupedByNumPeptides)
+                // Every peptide set a parsimonious protein has, looked up by set equality: one lookup per protein instead of
+                // comparing it with every parsimonious protein that has as many peptides.
+                // A parsimonious protein matching its own set is already in the list, so adding it again changes nothing.
+                var parsimoniousPeptideSets = new HashSet<HashSet<ParsimonySequence>>(PeptideSetComparer.Instance);
+                foreach (IBioPolymer parsimonyProtein in parsimoniousProteinList)
                 {
-                    var parsimonyProteinsWithSameNumPeptides = parsimonyProteinsGroupedByNumPeptides.FirstOrDefault(p => p.Key == group.Key);
-                    var list = group.ToList();
+                    parsimoniousPeptideSets.Add(proteinToPepSeqMatch[parsimonyProtein]);
+                }
 
-                    if (parsimonyProteinsWithSameNumPeptides != null)
+                var indistinguishableProteins = new List<IBioPolymer>();
+                foreach (var (otherProtein, peptideSequences) in proteinToPepSeqMatch)
+                {
+                    // if the two proteins have the same set of peptide sequences, they're indistinguishable
+                    if (parsimoniousPeptideSets.Contains(peptideSequences))
                     {
-                        Parallel.ForEach(Partitioner.Create(0, list.Count),
-                            new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
-                            (range, loopState) =>
-                            {
-                                for (int i = range.Item1; i < range.Item2; i++)
-                                {
-                                    IBioPolymer otherProtein = list[i].Key;
-
-                                    foreach (var parsimonyProtein in parsimonyProteinsWithSameNumPeptides)
-                                    {
-                                        // if the two proteins have the same set of peptide sequences, they're indistinguishable
-                                        if (parsimonyProtein != otherProtein && proteinToPepSeqMatch[parsimonyProtein].SetEquals(proteinToPepSeqMatch[otherProtein]))
-                                        {
-                                            indistinguishableProteins.Add(otherProtein);
-                                        }
-                                    }
-                                }
-                            }
-                        );
+                        indistinguishableProteins.Add(otherProtein);
                     }
                 }
 
@@ -534,6 +557,37 @@ namespace EngineLayer
 
             // finished with parsimony
             return proteinGroups;
+        }
+
+        /// <summary>
+        /// Compares peptide sets by their contents. The hash does not depend on the order the set holds its sequences in,
+        /// and equal sets are decided by <see cref="HashSet{T}.SetEquals"/>, as the pairwise comparison did.
+        /// </summary>
+        private sealed class PeptideSetComparer : IEqualityComparer<HashSet<ParsimonySequence>>
+        {
+            public static readonly PeptideSetComparer Instance = new();
+
+            public bool Equals(HashSet<ParsimonySequence> x, HashSet<ParsimonySequence> y)
+            {
+                if (ReferenceEquals(x, y))
+                    return true;
+                if (x is null || y is null || x.Count != y.Count)
+                    return false;
+                return x.SetEquals(y);
+            }
+
+            public int GetHashCode(HashSet<ParsimonySequence> set)
+            {
+                int sum = 0;
+                int xor = 0;
+                foreach (ParsimonySequence sequence in set)
+                {
+                    int hash = sequence.GetHashCode();
+                    sum = unchecked(sum + hash);
+                    xor ^= hash;
+                }
+                return System.HashCode.Combine(set.Count, sum, xor);
+            }
         }
 
         /// <summary>
