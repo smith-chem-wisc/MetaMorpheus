@@ -177,7 +177,10 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
         Status("Loading library...", taskId);
         using var library = OpenLibrary(libraryPath);
         var parameters = Parameters.ToEngineParameters();
-        string threshold = Parameters.QValueThreshold.ToString(CultureInfo.InvariantCulture);
+        // One threshold for every step, the search's identification filter threshold (MetaMorpheus #2982). Every filter
+        // reads a DIA q-value: the search computes no PEP.
+        double qValueThreshold = CommonParameters.FilterThreshold;
+        string threshold = qValueThreshold.ToString(CultureInfo.InvariantCulture);
 
         // A protein database, if given, is loaded before any run is searched, so a bad one fails at once. Its targets are
         // for protein inference; the library's decoys name their own decoy proteins, so none are generated.
@@ -228,7 +231,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
             bestScores.Add(results.Matches);
             bestPeptides.Add(fileName, results.Matches);
             firstRun ??= rawFile;
-            passing.Add((fileName, PassingTargets(results.Matches, Parameters.QValueThreshold).ToList()));
+            passing.Add((fileName, PassingTargets(results.Matches, qValueThreshold).ToList()));
             FinishedDataFile(rawFile, ids);
         }
 
@@ -241,7 +244,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
         var perRun = new List<string>();
         foreach (var (fileName, matches) in passing)
         {
-            var kept = Reported(matches, global, Parameters.QValueThreshold);
+            var kept = Reported(matches, global, qValueThreshold);
             rows.AddRange(kept.Select(m => PrecursorRow(m, fileName, library, global[m.PrecursorIndex], contaminantAccessions)));
             reported.UnionWith(kept.Select(m => m.PrecursorIndex));
             perRun.Add($"{fileName}: {kept.Count} target precursors with q-value <= {threshold}");
@@ -255,7 +258,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
 
         // PLAN D4, "peptide, global": each peptide's best precursor over the runs, then a fresh competition among peptides
         var peptides = bestPeptides.Assign();
-        var peptideRows = peptides.Where(p => !p.Peptide.IsDecoy && p.Peptide.QValue <= Parameters.QValueThreshold)
+        var peptideRows = peptides.Where(p => !p.Peptide.IsDecoy && p.Peptide.QValue <= qValueThreshold)
             .Select(p => PeptideRow(p.Peptide, p.Precursor, p.Run, library, contaminantAccessions)).ToList();
         string peptidePath = Path.Combine(OutputFolder, "AllDiaPeptides.tsv");
         new DiaPeptideFile(peptidePath, peptideRows, contaminantsAssessed).WriteResults(peptidePath);
@@ -302,6 +305,15 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
             p => (IReadOnlyList<string>)(library.GetEntry(p.Precursor.PrecursorIndex, includeFragments: false)?.ProteinAccession ?? "").Split('|', StringSplitOptions.RemoveEmptyEntries));
         var inference = DiaProteinInference.Infer(peptides.Select(p => p.Peptide).ToList(), proteins, CommonParameters, runPath,
             fixedModifications, variableModifications, decoyAccessionsOf: sequence => decoyAccessions.GetValueOrDefault(sequence) is { Count: > 0 } a ? a : null);
+        int targetPeptides = peptides.Count(p => !p.Peptide.IsDecoy);
+        if (inference.UnmappedTargets > 0)
+        {
+            // Their decoys still map by the library's accessions, so a library/database mismatch shrinks the target side alone
+            Warn($"{inference.UnmappedTargets} of {targetPeptides} target peptides map to no protein in the protein database (a modification " +
+                "or cleavage the search's settings do not allow, or a library built from another database). They are not protein evidence, " +
+                "while their decoys still map by the library's accessions, so the protein groups rest on fewer targets than the library holds" +
+                (inference.UnmappedTargets == targetPeptides ? ", and no target group can be reported." : "."));
+        }
         if (!inference.SpectralMatches.Any(m => m.IsDecoy))
         {
             Warn($"No decoy peptide names a decoy protein in the library (of {peptides.Count(p => p.Peptide.IsDecoy)} decoy peptides scored), so protein q-values would rest on no decoy evidence; " +
@@ -309,7 +321,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
             return null;
         }
 
-        var groups = inference.ProteinGroups.Where(g => !g.IsDecoy && g.QValue <= Parameters.QValueThreshold).ToList();
+        var groups = inference.ProteinGroups.Where(g => !g.IsDecoy && g.QValue <= CommonParameters.FilterThreshold).ToList();
         string path = Path.Combine(outputFolder, "AllDiaProteinGroups.tsv");
         using (var writer = new StreamWriter(path))
         {

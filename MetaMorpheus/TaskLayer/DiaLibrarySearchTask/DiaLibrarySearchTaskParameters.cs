@@ -22,9 +22,6 @@ public class DiaLibrarySearchTaskParameters
     /// <summary>Seed for the classifier, so a search can be repeated exactly.</summary>
     public int ClassifierSeed { get; set; } = new DiaLibrarySearchParameters().ClassifierSeed;
 
-    /// <summary>The q-value at which precursors are counted in results.txt.</summary>
-    public double QValueThreshold { get; set; } = 0.01;
-
     /// <summary>The engine's parameters for these settings, before a run's calibration is applied.</summary>
     public DiaLibrarySearchParameters ToEngineParameters() => new()
     {

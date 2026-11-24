@@ -560,19 +560,28 @@ public class DiaLibrarySearchTaskTests
     [Test]
     public void TheSearchsFilterThresholdIsTheTasksOneThreshold()
     {
-        var (mzml, library, _) = WriteInputs("threshold5");
-        string output = Path.Combine(_directory, "threshold5", "output", "Task1");
-        Directory.CreateDirectory(output);
+        // Enough noise that decoys are scored and some targets fall between 1% and 5%
+        var (mzml, library, _) = WriteInputs("threshold5", noisePeaksPerScan: 1500);
+        List<double> Run(double threshold, string folder)
+        {
+            string output = Path.Combine(_directory, "threshold5", folder, "Task1");
+            Directory.CreateDirectory(output);
+            new DiaLibrarySearchTask { CommonParameters = new CommonParameters(filterThreshold: threshold) }
+                .RunTask(output, [new DbForTask(library, false)], [mzml], "Task1");
+            Assert.That(File.ReadAllText(Path.Combine(output, "results.txt")),
+                Does.Contain($"All target precursors with q-value <= {threshold.ToString(System.Globalization.CultureInfo.InvariantCulture)}: "));
+            var table = new DiaPrecursorFile(Path.Combine(output, "AllDiaPrecursors.tsv"));
+            table.LoadResults();
+            return table.Results.Select(r => Math.Max(r.QValuePrecursorRun, r.QValuePrecursorGlobal)).ToList();
+        }
 
-        new DiaLibrarySearchTask { CommonParameters = new CommonParameters(filterThreshold: 0.05) }
-            .RunTask(output, [new DbForTask(library, false)], [mzml], "Task1");
+        var atOne = Run(0.01, "one");
+        var atFive = Run(0.05, "five");
 
-        string results = File.ReadAllText(Path.Combine(output, "results.txt"));
-        Assert.That(results, Does.Contain("All target precursors with q-value <= 0.05: "));
-        var table = new DiaPrecursorFile(Path.Combine(output, "AllDiaPrecursors.tsv"));
-        table.LoadResults();
-        Assert.That(table.Results, Is.Not.Empty);
-        Assert.That(table.Results.Select(r => Math.Max(r.QValuePrecursorRun, r.QValuePrecursorGlobal)), Is.All.LessThanOrEqualTo(0.05));
+        Assert.That(atOne, Is.Not.Empty.And.All.LessThanOrEqualTo(0.01));
+        Assert.That(atFive, Is.All.LessThanOrEqualTo(0.05));
+        Assert.That(atFive.Count(q => q > 0.01), Is.GreaterThan(0), "the fixture has precursors between 1% and 5%");
+        Assert.That(atFive.Count, Is.EqualTo(atOne.Count + atFive.Count(q => q > 0.01)));
     }
 
     /// <summary>
