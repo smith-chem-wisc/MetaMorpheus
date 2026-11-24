@@ -931,5 +931,84 @@ namespace Test
                 Directory.Delete(outputFolder, true);
             }
         }
+
+        /// <summary>
+        /// Protein FDR reads a site-ambiguous peptide's PEP off its best-scoring match, keyed by its site-free identity as
+        /// the peptide-level passes key it, not the lowest PEP of its repeats (review of #2983).
+        /// </summary>
+        [Test]
+        public static void ProteinFdrReadsASiteAmbiguousPeptidesPepOffItsBestScoringMatch()
+        {
+            var protein = Protein("GMHMK", "P1");
+            var onM2 = Peptide(protein, 1, 5, (2, OxidationOnM));
+            var onM4 = Peptide(protein, 1, 5, (4, OxidationOnM));
+            var best = ScoredPsm(50, "a.mzML", 1, onM2, onM4);
+            var repeat = ScoredPsm(20, "a.mzML", 2, onM2, onM4);
+            best.PsmFdrInfo.PEP = 0.01;
+            repeat.PsmFdrInfo.PEP = 0;
+            Assume.That(best.IsLocalizationAmbiguous && repeat.IsLocalizationAmbiguous);
+            var peptides = new HashSet<Omics.IBioPolymerWithSetMods> { onM2, onM4 };
+            var group = new ProteinGroup(new HashSet<Omics.IBioPolymer> { protein }, peptides, peptides);
+
+            var results = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(new List<ProteinGroup> { group },
+                new List<SpectralMatch> { best, repeat }, noOneHitWonders: false, treatModPeptidesAsDifferentPeptides: false,
+                mergeIndistinguishableProteinGroups: false, new CommonParameters(digestionParams: Digestion),
+                new List<(string, CommonParameters)>(), new List<string>()).Run();
+            var scored = results.SortedAndScoredProteinGroups.Single();
+
+            Assume.That(scored.AllPsmsBelowOnePercentFDR, Has.Count.EqualTo(2), "both matches score the group");
+            Assert.That(scored.BestPeptidePEP, Is.EqualTo(0.01), "the best-scoring match's PEP, not the repeat's 0");
+        }
+
+        /// <summary>
+        /// Under a trained PEP, protein FDR ranks groups by their best peptide's PEP q-value. A site-ambiguous peptide's is
+        /// the one its site-free identity gets as one peptide beside the others
+        /// (<see cref="FdrAnalysisEngine.CalculateLocalizationAmbiguousPeptideQValues"/>), the value quantification holds it
+        /// to. The search's peptide-level FDR keys a peptide by its full sequence, so it collapses every site-ambiguous match
+        /// into one peptide and gives a value to the best-scoring match alone: a second identity kept FdrInfo's unset 2, and
+        /// its group ranked behind the decoy (review of #2983).
+        /// </summary>
+        [Test]
+        public static void ProteinFdrGivesEachSiteAmbiguousIdentityItsOwnPeptidePepQValue()
+        {
+            PeptideWithSetModifications[] OxidizedOnM2OrM4(Protein protein) =>
+                new[] { Peptide(protein, 1, 5, (2, OxidationOnM)), Peptide(protein, 1, 5, (4, OxidationOnM)) };
+            ProteinGroup Group(Protein protein, PeptideWithSetModifications[] peptides) =>
+                new(new HashSet<Omics.IBioPolymer> { protein }, new(peptides), new(peptides));
+            var p1 = Protein("GMHMK", "P1");
+            var p2 = Protein("AMEMR", "P2");
+            var p3 = new Protein("ACDEFK", "DECOY_P3", isDecoy: true);
+            var p1Peptides = OxidizedOnM2OrM4(p1);
+            var p2Peptides = OxidizedOnM2OrM4(p2);
+            var p3Peptides = new[] { Peptide(p3, 1, 6) };
+            var p1Match = ScoredPsm(30, "a.mzML", 1, p1Peptides);
+            var p2Match = ScoredPsm(50, "a.mzML", 2, p2Peptides);
+            var decoyMatch = ScoredPsm(40, "a.mzML", 3, p3Peptides);
+            var psms = new List<SpectralMatch> { p1Match, p2Match, decoyMatch };
+            Assume.That(p1Match.IsLocalizationAmbiguous && p2Match.IsLocalizationAmbiguous);
+            Assume.That(p1Match.GetSiteFreeIdentity(), Is.Not.EqualTo(p2Match.GetSiteFreeIdentity()), "two site-free identities");
+
+            // The search's FDR pass over a trained PEP, from unassigned peptide-level values. Every match passes the
+            // PSM-level cut, so the groups are judged by protein FDR alone.
+            (p2Match.PsmFdrInfo.PEP, p1Match.PsmFdrInfo.PEP, decoyMatch.PsmFdrInfo.PEP) = (0.01, 0.02, 0.03);
+            psms.ForEach(psm => psm.PeptideFdrInfo = new FdrInfo());
+            var common = new CommonParameters(digestionParams: Digestion, filterThreshold: 1);
+            new FdrAnalysisEngine(psms, 1, common, new List<(string, CommonParameters)>(), new List<string>(), doPEP: false).Run();
+            psms.ForEach(psm => psm.PsmFdrInfo.PepTrained = psm.PeptideFdrInfo.PepTrained = true);
+            Assume.That(p1Match.PeptideFdrInfo.PEP_QValue, Is.EqualTo(2), "the search's FDR gave P1's identity, the lower-scoring, no value");
+
+            var results = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(
+                new List<ProteinGroup> { Group(p1, p1Peptides), Group(p2, p2Peptides), Group(p3, p3Peptides) },
+                psms, noOneHitWonders: false, treatModPeptidesAsDifferentPeptides: false, mergeIndistinguishableProteinGroups: false,
+                common, new List<(string, CommonParameters)>(), new List<string>()).Run();
+            var groups = results.SortedAndScoredProteinGroups.ToDictionary(g => g.ProteinGroupName);
+
+            // Ranked by PEP, the two identities and the decoy's peptide are three peptides: P2's, P1's, the decoy's. Each
+            // identity's PEP q-value is (0 decoys + 1) / 2 targets.
+            Assert.That(groups["P1"].BestPeptidePepQValue, Is.EqualTo(0.5), "its own identity's value, not the unset 2");
+            Assert.That(groups["P2"].BestPeptidePepQValue, Is.EqualTo(0.5));
+            Assert.That(groups["P1"].QValue, Is.EqualTo(0), "ranked ahead of the decoy");
+            Assert.That(p1Match.PeptideFdrInfo.PEP_QValue, Is.EqualTo(2), "the stored values, which the result files are written from, are put back");
+        }
     }
 }

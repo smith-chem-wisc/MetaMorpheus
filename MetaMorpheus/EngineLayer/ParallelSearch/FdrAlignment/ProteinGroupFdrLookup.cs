@@ -44,8 +44,8 @@ public sealed class ProteinGroupFdrLookup : BaselineRankLookup<ProteinGroupRank,
 }
 
 /// <summary>
-/// Where a protein group sits in protein FDR's ranking: its best peptide's q-value (or PEP, when FDR filters
-/// on PEP q-value), lower first, then its best peptide's score, higher first. This is the order
+/// Where a protein group sits in protein FDR's ranking: its best peptide's q-value (or peptide PEP q-value, when FDR
+/// filters on PEP q-value), lower first, then its best peptide's score, higher first. This is the order
 /// <see cref="ProteinScoringAndFdrEngine"/> assigns protein q-values in; the summed protein-group score is not.
 /// </summary>
 public readonly record struct ProteinGroupRank(double BestPeptideMetric, double BestPeptideScore)
@@ -53,7 +53,7 @@ public readonly record struct ProteinGroupRank(double BestPeptideMetric, double 
     public static ProteinGroupRank Of(ProteinGroup group, FilterType filterType)
     {
         return new ProteinGroupRank(
-            filterType == FilterType.PepQValue ? group.BestPeptidePEP : group.BestPeptideQValue,
+            filterType == FilterType.PepQValue ? group.BestPeptidePepQValue : group.BestPeptideQValue,
             group.BestPeptideScore);
     }
 

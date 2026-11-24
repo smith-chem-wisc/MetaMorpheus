@@ -800,8 +800,8 @@ namespace EngineLayer
 
         /// <summary>
         /// Target peptides whose peptide-level PEP q-value is below <paramref name="qValueCutoff"/>, computed
-        /// the way <see cref="FdrAnalysisEngine"/> computes the reported one: the PEP-best match per full
-        /// sequence (ties broken by the default comparer), fractional target and decoy counts per hypothesis
+        /// the way <see cref="FdrAnalysisEngine"/> computes the reported one: the best-scoring match per full
+        /// sequence, the one PEP trains on, ranked by its PEP, fractional target and decoy counts per hypothesis
         /// as in CalculateQValue, and q = min over the tail of (decoys + 1) / targets as in PepQValueInverted.
         /// Reads the matches' current PEP. For reporting and the stopping decision only -- never labels.
         /// <remarks>
@@ -814,10 +814,9 @@ namespace EngineLayer
         {
             var peptides = psms
                 .Where(p => p != null)
+                .CollapseToPeptides(filterAtPeptideLevel: true)
                 .OrderBy(p => p.FdrInfo.PEP)
                 .ThenByDescending(p => p)
-                .GroupBy(p => p.FullSequence)
-                .Select(g => g.First())
                 .ToList();
 
             var q = new double[peptides.Count];

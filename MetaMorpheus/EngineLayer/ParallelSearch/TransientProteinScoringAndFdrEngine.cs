@@ -63,7 +63,9 @@ public sealed class TransientProteinScoringAndFdrEngine : ProteinScoringAndFdrEn
         }
 
         List<ProteinGroup> filteredTransientGroups = ApplyNoOneHitWondersFilter(_transientProteinGroups);
-        PopulateBestPeptideMetrics(filteredTransientGroups);
+        // Each peptide's values as its match carries them, aligned to the baseline's (BaselineFdr.AlignPeptides): the
+        // site-ambiguous peptides' PEP q-values are not computed over this neighbourhood, which is not the baseline.
+        PopulateBestPeptideMetrics(filteredTransientGroups, _scoringPsms);
 
         if (!_baselineFdr.IsEmpty)
         {
