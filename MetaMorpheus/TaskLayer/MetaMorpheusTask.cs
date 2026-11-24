@@ -46,7 +46,8 @@ namespace TaskLayer
         XLSearch,
         GlycoSearch,
         Average,
-        Truncation
+        Truncation,
+        ParallelSearch
     }
 
     public abstract class MetaMorpheusTask
@@ -433,6 +434,13 @@ namespace TaskLayer
                 .CreateInstance(() => RnaFragmentationParams.Default))
             .ConfigureType<FragmentationParams>(type => type
                 .CreateInstance(() => new()))
+            .ConfigureType<List<DbForTask>>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(dbs => string.Join("\t", dbs.Select(db => db.FilePath)))
+                    .FromToml(tmlString => tmlString.Value
+                        .Split('\t', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(filePath => new DbForTask(filePath, false))
+                        .ToList())))
             .ConfigurePropertyMapping(mapping => mapping
                 .OnTargetPropertyNotFound(ResolveLegacyCommonParametersKey))
         );
