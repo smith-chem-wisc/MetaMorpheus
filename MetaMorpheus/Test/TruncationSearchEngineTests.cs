@@ -315,6 +315,7 @@ namespace Test
             collapsed.ResolveAllAmbiguities();
             Assert.That(collapsed.BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.Parent.Accession).Distinct(),
                 Is.EquivalentTo(new[] { "P1", "P1b" }));
+            Assert.That(collapsed.BestMatchingBioPolymersWithSetMods.Select(b => b.MatchedIons), Has.All.Not.Null);
         }
 
         /// <summary>
