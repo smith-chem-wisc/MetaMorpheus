@@ -310,9 +310,7 @@ namespace TaskLayer
                 includeAmbiguous: true,
                 includeAmbiguousMods: false,
                 filterType: FilterType.QValueNotch,
-                filterThreshold: CalibrationParameters.QValueCutoffForCalibratingPSMs).FilteredPsmsList
-                .Where(psm => psm.GetFdrInfo(false)?.QValueNotch is double qValueNotch
-                    && qValueNotch < CalibrationParameters.QValueCutoffForCalibratingPSMs).ToList();
+                filterThreshold: CalibrationParameters.QValueCutoffForCalibratingPSMs).FilteredPsmsList;
 
             if (!goodIdentifications.Any())
             {

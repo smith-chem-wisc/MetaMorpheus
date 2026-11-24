@@ -261,9 +261,7 @@ namespace TaskLayer
                 includeAmbiguousMods: true,
                 filterType: FilterType.QValueNotch,
                 filterThreshold: 0.05)
-                .FilteredPsmsList
-                .Where(psm => psm.GetFdrInfo(false)?.QValueNotch is double qValueNotch && qValueNotch < 0.05)
-                .Cast<CrosslinkSpectralMatch>();
+                .FilteredPsmsList.Cast<CrosslinkSpectralMatch>();
             IEnumerable<CrosslinkSpectralMatch> filteredSinglePsms = FilteredPsms.Filter(singlePsms, null,
                 includeDecoys: false,
                 includeContaminants: true,
@@ -271,9 +269,7 @@ namespace TaskLayer
                 includeAmbiguousMods: true,
                 filterType: FilterType.QValueNotch,
                 filterThreshold: 0.05)
-                .FilteredPsmsList
-                .Where(psm => psm.GetFdrInfo(false)?.QValueNotch is double qValueNotch && qValueNotch < 0.05)
-                .Cast<CrosslinkSpectralMatch>();
+                .FilteredPsmsList.Cast<CrosslinkSpectralMatch>();
             List<LibrarySpectrum> librarySpectra = new();
 
             foreach (var csmGroups in linkedCsms
