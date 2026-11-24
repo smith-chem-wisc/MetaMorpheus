@@ -123,6 +123,12 @@ public static class DiaProteinInference
     /// One spectral match per peptide that a protein of its own kind yields, attached to every such protein. Scores are
     /// shifted by one constant so the lowest is 1: MetaMorpheus ignores a match scored at or below zero.
     /// </summary>
+    /// <remarks>
+    /// The constant is set by the lowest score among all the peptides, decoys included, so that no decoy is dropped. A
+    /// group's written score is a sum of shifted peptide scores, so it is comparable within one search, not across
+    /// searches. Protein q-values and the order of groups do not depend on it: picked protein FDR ranks on each group's
+    /// best peptide, and one constant added to every score keeps that order.
+    /// </remarks>
     private static List<SpectralMatch> BuildSpectralMatches(IReadOnlyList<DiaPeptideMatch> peptides,
         Dictionary<string, List<PeptideWithSetModifications>> index, IDecoyMap? decoys, CommonParameters commonParameters,
         string fullFilePath, out int unmapped, out int unmappedTargets)

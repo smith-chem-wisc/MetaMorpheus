@@ -205,6 +205,8 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
         string? firstRun = null;
         var calibrationLines = new List<string> { "File Name\tAnchorRtMin\tLibraryIrt\tCalibratedIrt\tResidualIrt" };
         var summaryLines = new List<string> { CalibrationSummaryHeader };
+        // Runs calibration could not use (no DIA MS2 scans, too few anchors): the others are searched and written without them
+        var skipped = new List<(string FileName, string Reason)>();
         foreach (string rawFile in currentRawFileList)
         {
             if (GlobalVariables.StopLoops)
@@ -216,7 +218,18 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
             Status("Loading spectra file...", ids);
             var scans = LoadScans(rawFile);
             Status("Calibrating retention time...", ids);
-            var calibration = DiaIrtSelfCalibration.Calibrate(scans, library, parameters, CommonParameters);
+            DiaIrtCalibration calibration;
+            try
+            {
+                calibration = DiaIrtSelfCalibration.Calibrate(scans, library, parameters, CommonParameters);
+            }
+            catch (MetaMorpheusException e)
+            {
+                skipped.Add((fileName, e.Message));
+                Warn($"{fileName} is skipped, and the other runs are searched and written without it. {e.Message}");
+                FinishedDataFile(rawFile, ids);
+                continue;
+            }
             summaryLines.Add(CalibrationSummaryRow(fileName, calibration, parameters));
             foreach (var (rt, irt) in calibration.Anchors)
             {
@@ -234,6 +247,9 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
             passing.Add((fileName, PassingTargets(results.Matches, qValueThreshold).ToList()));
             FinishedDataFile(rawFile, ids);
         }
+        if (passing.Count == 0 && skipped.Count > 0)
+            throw new MetaMorpheusException("No run could be searched. " +
+                string.Join(" ", skipped.Select(s => $"{s.FileName}: {s.Reason}")));
 
         // PLAN D4: a precursor is reported in a run when both its run q-value and its global q-value (best score across the
         // runs, then target-decoy competition) pass. The headline is the distinct precursors reported; with one run the
@@ -283,6 +299,8 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
             MyTaskResults.AddTaskSummaryText($"All target protein groups with q-value <= {threshold}: {groups}");
         foreach (string line in perRun)
             MyTaskResults.AddTaskSummaryText(line);
+        foreach (var (fileName, reason) in skipped)
+            MyTaskResults.AddTaskSummaryText($"{fileName}: skipped. {reason}");
         return MyTaskResults;
     }
 
