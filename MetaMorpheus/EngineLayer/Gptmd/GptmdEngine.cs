@@ -161,7 +161,8 @@ namespace EngineLayer.Gptmd
                                 if (!ModFits(mod, pepWithSetMods.Parent, pepSeqIndex + 1, pepWithSetMods.Length, indexInProtein))
                                     continue;
                                 if (pepSeqIndex == pepWithSetMods.Length - 1
-                                    && (cleavageBlocking ??= CleavageBlockingFor(pepWithSetMods, GptmdModifications)).Blocks(mod, indexInProtein))
+                                    && (cleavageBlocking ??= CleavageBlockingFor(pepWithSetMods, GptmdModifications)).Blocks(mod, indexInProtein)
+                                    && !CleavageBlockingModifications.MayFormAfterDigestion(mod))
                                     continue;
 
                                 var newPep = pepWithSetMods.Localize(pepSeqIndex, mod.MonoisotopicMass.Value);
@@ -293,7 +294,7 @@ namespace EngineLayer.Gptmd
                     if (toIndex == peptide.Length - 1 && fitting.Count > 0)
                     {
                         var policy = cleavageBlocking ??= CleavageBlockingFor(peptide, GptmdModifications);
-                        fitting = fitting.Where(m => !policy.Blocks(m, indexInProtein)).ToList();
+                        fitting = fitting.Where(m => !policy.Blocks(m, indexInProtein) || CleavageBlockingModifications.MayFormAfterDigestion(m)).ToList();
                     }
                     if (!offered && fitting.Count == 0)
                         continue;
@@ -474,6 +475,7 @@ namespace EngineLayer.Gptmd
         /// Blocks(mod, residue) on the peptide's last residue is true when the modification there would block the
         /// cleavage that made the peptide's C-terminus -- trypsin does not cut after an acetylated lysine, so a tryptic
         /// peptide cannot end in one. GPTMD then must not localize it there, and tries the peptide's other residues instead.
+        /// Carbamylation is the exception, as in digestion: urea also adds it after the cut (MayFormAfterDigestion).
         /// </summary>
         /// <remarks>
         /// The search's digestion drops exactly these peptidoforms when RespectCleavageBlockingModifications is on, and

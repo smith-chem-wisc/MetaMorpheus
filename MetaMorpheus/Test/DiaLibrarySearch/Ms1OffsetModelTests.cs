@@ -63,4 +63,18 @@ public class Ms1OffsetModelTests
         Assert.That(Ms1OffsetModel.Constant(3).ResidualSpreadPpm, Is.NaN);
         Assert.That(Ms1OffsetModel.Fit([]).ResidualSpreadPpm, Is.NaN);
     }
+
+    /// <summary>
+    /// The offset a typical precursor gets, for a run's calibration summary: the median of the bins' offsets. The bins hold
+    /// equal numbers of points, so this is close to the median error over all of them. Three bins at 1, 2 and 4 ppm give 2;
+    /// a constant model gives its constant.
+    /// </summary>
+    [Test]
+    public void TheMedianOffsetIsTheMiddleBinsOffset()
+    {
+        var points = Enumerable.Range(0, 300).Select(i => (i / 10.0, i < 100 ? 1.0 : i < 200 ? 2.0 : 4.0)).ToList();
+        Assert.That(Ms1OffsetModel.Fit(points).MedianOffsetPpm, Is.EqualTo(2));
+        Assert.That(Ms1OffsetModel.Constant(1.5).MedianOffsetPpm, Is.EqualTo(1.5));
+        Assert.That(Ms1OffsetModel.Fit([]).MedianOffsetPpm, Is.EqualTo(0), "fitted from nothing: zero, as everywhere");
+    }
 }
