@@ -280,6 +280,7 @@ namespace MetaMorpheusGUI
                 }
 
                 CheckBoxQuantifyUnlabeledForSilac.IsChecked = digestionParams.GeneratehUnlabeledProteinsForSilac;
+                CheckBoxRespectCleavagePromotingModifications.IsChecked = digestionParams.RespectCleavagePromotingModifications;
                 InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
             }
             else
@@ -562,7 +563,8 @@ namespace MetaMorpheusGUI
                     maxModsForPeptides: maxModsForPeptideValue,
                     initiatorMethionineBehavior: initiatorMethionineBehavior,
                     searchMode: (searchModeType, fragmentationTerminus),
-                    generateUnlabeledProteinsForSilac: CheckBoxQuantifyUnlabeledForSilac.IsChecked.Value);
+                    generateUnlabeledProteinsForSilac: CheckBoxQuantifyUnlabeledForSilac.IsChecked.Value,
+                    respectCleavagePromotingModifications: CheckBoxRespectCleavagePromotingModifications.IsChecked.Value);
             }
                 
 

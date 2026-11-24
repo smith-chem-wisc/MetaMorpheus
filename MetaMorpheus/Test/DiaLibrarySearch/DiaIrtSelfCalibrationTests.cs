@@ -175,6 +175,9 @@ public class DiaIrtSelfCalibrationTests
         // Calibration reads MS1 at its own fixed tolerance (the offset is not known yet), whatever the search's
         Assert.That(DiaIrtSelfCalibration.CalibrationParameters(new DiaLibrarySearchParameters(Ms1TolerancePpm: 5)).Ms1TolerancePpm,
             Is.EqualTo(DiaIrtSelfCalibration.CalibrationMs1TolerancePpm));
+        // ...unless the search is set wider: a user who knows the instrument is off widens calibration's read too
+        Assert.That(DiaIrtSelfCalibration.CalibrationParameters(new DiaLibrarySearchParameters(Ms1TolerancePpm: 30)).Ms1TolerancePpm, Is.EqualTo(30));
+        Assert.That(calibration.Ms1OffsetAnchors, Is.GreaterThan(calibration.AnchorCount / 2), "most anchors have an M0 the offset is fitted from");
         // Applying a calibration sets the search's iRT window, MS1 offset, intensity table and iRT composition fit together
         var applied = calibration.ApplyTo(new DiaLibrarySearchParameters());
         Assert.That(applied.IrtHalfWindow, Is.EqualTo(calibration.IrtHalfWindow));
@@ -183,6 +186,27 @@ public class DiaIrtSelfCalibrationTests
         Assert.That(applied.FragmentIntensities, Is.SameAs(calibration.FragmentIntensities));
         Assert.That(calibration.IrtComposition, Is.Not.Null);
         Assert.That(applied.IrtComposition, Is.SameAs(calibration.IrtComposition));
+    }
+
+    /// <summary>
+    /// A run whose MS1 error is past calibration's 10 ppm read: almost no anchor found its M0 there, so the offset was fitted
+    /// from a couple of chance peaks, near 0 (12 ppm fitted 0.07), and nothing said so. The offset is then read from each
+    /// anchor's nearest MS1 scan at the 20 ppm mass calibration reads with, and it comes out right, resting on most anchors.
+    /// A search set to 30 ppm reads that far in calibration too, and its own read is enough.
+    /// </summary>
+    [TestCase(12, 5)]
+    [TestCase(-15, 5)]
+    [TestCase(12, 30)]
+    public void AnMs1OffsetPastCalibrationsReadIsStillFitted(double ppm, double searchTolerancePpm)
+    {
+        var run = SyntheticDiaRun.Build(300, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0, withMs1: true, ppmOffset: ppm);
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+
+        var calibration = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(Ms1TolerancePpm: searchTolerancePpm), new CommonParameters());
+
+        Assert.That(calibration.Ms1Offset, Is.Not.Null);
+        Assert.That(calibration.Ms1Offset!.OffsetPpm(5), Is.EqualTo(ppm).Within(1));
+        Assert.That(calibration.Ms1OffsetAnchors, Is.GreaterThan(calibration.AnchorCount / 2));
     }
 
     /// <summary>The library halves one class's prediction after the run was made, so the run reads that class at twice what the library says, and calibration's table says so.</summary>
@@ -309,6 +333,91 @@ public class DiaIrtSelfCalibrationTests
             Assert.That(calibration.Model.ToIrt(new RtMinutes(SyntheticDiaRun.TrueRtMinutes(irt))).Value, Is.EqualTo(irt).Within(2.0), $"at library iRT {irt}");
     }
 
+    /// <summary>
+    /// A run can spend minutes before anything elutes, and a short gradient elutes only part of a whole-proteome library's
+    /// iRT range. PXD071205's 5-min direct-injection Astral runs do both: peptides elute from about 2.5 of 6.8 min. The first
+    /// pass lays the library's iRT range over the whole MS2 time span, so its provisional line then puts every eluting
+    /// precursor outside its window, and it finds nothing. When the first pass finds too few anchors to fit, even over the
+    /// whole library, calibration searches once more with a window over the library's whole iRT range.
+    /// </summary>
+    [Test]
+    public void ElutionAfterDeadTimeIsStillCalibrated()
+    {
+        // Peptides below iRT 30 elute after 10 min of dead time in a 20-min run. The provisional line places them 40 to 68
+        // iRT from where they elute, beyond the first pass's half-window of about 31. 600 targets leave about 160 eluting:
+        // (D+1)/T reaches 1% q only past 100 targets.
+        const double deadMinutes = 10;
+        var run = SyntheticDiaRun.Build(600, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0 && entry.RetentionTime < 30,
+            deadMinutes: deadMinutes);
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+
+        var calibration = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(), new CommonParameters());
+
+        for (double irt = -10; irt <= 20; irt += 10)
+            Assert.That(calibration.Model.ToIrt(new RtMinutes(deadMinutes + SyntheticDiaRun.TrueRtMinutes(irt))).Value, Is.EqualTo(irt).Within(2.0),
+                $"at library iRT {irt}");
+    }
+
+    /// <summary>
+    /// A sample where the provisional window finds no anchor at all is searched over the library's whole iRT range too, and
+    /// calibration continues there when that finds enough. A run with dead time then no longer searches the whole library
+    /// with a window that cannot work before it widens. On PXD071205's 5-min runs that cost about 38 of calibration's 47 min.
+    /// Here 3000 targets sampled 500 at a time (stride 6): widening only after the whole library takes 6 or more searches,
+    /// widening at the first empty sample takes 4.
+    /// </summary>
+    [Test]
+    public void AnEmptyProvisionalWindowWidensAtOnce()
+    {
+        const double deadMinutes = 10;
+        var run = SyntheticDiaRun.Build(3000, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0 && entry.RetentionTime < 30,
+            deadMinutes: deadMinutes);
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+
+        var calibration = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(), new CommonParameters(),
+            firstPassTargetCount: 500);
+
+        Assert.That(calibration.FirstPassSearches, Is.LessThanOrEqualTo(4));
+        for (double irt = -10; irt <= 20; irt += 10)
+            Assert.That(calibration.Model.ToIrt(new RtMinutes(deadMinutes + SyntheticDiaRun.TrueRtMinutes(irt))).Value, Is.EqualTo(irt).Within(2.0),
+                $"at library iRT {irt}");
+    }
+
+    /// <summary>
+    /// A whole-range search can find anchors where the provisional window found none for a reason other than a wrong line: it
+    /// searches more of a small sample's precursors, enough to reach 1% q (on the HeLa runs it did, and switching cost
+    /// held-out half its anchors). So the switch asks the anchors: the line is misplaced only when most of them sit outside
+    /// the window the first pass used.
+    /// </summary>
+    [TestCase(0.0, false)]
+    [TestCase(0.4, false)]
+    [TestCase(0.5, false)]
+    [TestCase(0.6, true)]
+    [TestCase(1.0, true)]
+    public void WideAnchorsSayTheProvisionalLineIsMisplacedWhenMostLieOutsideItsWindow(double outsideFraction, bool misplaced)
+    {
+        var line = Chromatography.RetentionTimeCalibration.IrtCalibration.Line((new RtMinutes(0), new Irt(0)), (new RtMinutes(10), new Irt(100)));
+        const double halfWindow = 10;
+        int outside = (int)Math.Round(outsideFraction * 50);
+        // Each anchor's apex maps to iRT 10 * minutes on the line; library iRT 5 away is inside the window, 40 away is outside
+        var anchors = Enumerable.Range(0, 50)
+            .Select(i => (new RtMinutes(i * 0.2), new Irt(i * 2.0 + (i < outside ? 40 : 5))))
+            .ToList();
+
+        Assert.That(DiaIrtSelfCalibration.LineIsMisplaced(anchors, line, halfWindow), Is.EqualTo(misplaced));
+    }
+
+    /// <summary>A run whose provisional line is right takes its first sample, and is never searched over the whole range.</summary>
+    [Test]
+    public void ARunThatCalibratesOnItsFirstSampleSearchesOnce()
+    {
+        var run = SyntheticDiaRun.Build(300, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0);
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+
+        var calibration = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(), new CommonParameters(), desiredAnchors: 20);
+
+        Assert.That(calibration.FirstPassSearches, Is.EqualTo(1));
+    }
+
     /// <summary>Calibration can be repeated on a disjoint first-pass sample; each sample calibrates the run on its own.</summary>
     [TestCase(1)]
     [TestCase(3)]
@@ -424,11 +533,42 @@ public class DiaIrtSelfCalibrationTests
             new DiaPrecursorMatch(200_000 + i, "KNOSIOP", 2, 500, true, new Irt(100), new RtMinutes(1), new Irt(0), 99, [1.0]),
         })).ToList();
 
-        var refined = DiaIrtSelfCalibration.Refine(poisoned);
+        var refined = DiaIrtSelfCalibration.Refine(calibration, poisoned, library);
 
         Assert.That(refined.AnchorCount, Is.EqualTo(Math.Min(confident, DiaIrtSelfCalibration.MaximumRefinementAnchors)));
         for (double irt = -10; irt <= 110; irt += 10)
             Assert.That(refined.Model.ToIrt(new RtMinutes(SyntheticDiaRun.TrueRtMinutes(irt))).Value, Is.EqualTo(irt).Within(2.0), $"at library iRT {irt}");
+    }
+
+    /// <summary>
+    /// A refit replaces the curve and its window, not the rest of the calibration: applied on top of the first calibration,
+    /// it keeps that calibration's MS1 offset and intensity table, and its iRT composition fit is refitted against the new
+    /// curve. A refit with too few targets says so, not that the first pass found too few.
+    /// </summary>
+    [Test]
+    public void ARefitKeepsTheCalibrationsOtherModels()
+    {
+        var run = SyntheticDiaRun.Build(300, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0, withMs1: true);
+        using var library = MslLibrary.Load(run.WriteLibrary(_directory));
+        var calibration = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(), new CommonParameters());
+        Assert.That(calibration.Ms1Offset, Is.Not.Null);
+        Assert.That(calibration.FragmentIntensities, Is.Not.Null);
+        Assert.That(calibration.IrtComposition, Is.Not.Null);
+        var first = calibration.ApplyTo(new DiaLibrarySearchParameters());
+        var results = (DiaLibrarySearchResults)new DiaLibrarySearchEngine(run.Scans, library, calibration.Model, first, new CommonParameters(), [], []).Run();
+
+        var refined = DiaIrtSelfCalibration.Refine(calibration, results.Matches, library);
+        var second = refined.ApplyTo(first);
+
+        Assert.That(second.IrtHalfWindow, Is.EqualTo(refined.IrtHalfWindow));
+        Assert.That(second.Ms1Offset, Is.SameAs(calibration.Ms1Offset));
+        Assert.That(second.FragmentIntensities, Is.SameAs(calibration.FragmentIntensities));
+        Assert.That(second.IrtComposition, Is.Not.Null.And.Not.SameAs(calibration.IrtComposition), "refitted against the new curve");
+        Assert.That(refined.Ms1OffsetAnchors, Is.EqualTo(calibration.Ms1OffsetAnchors));
+        var oneRound = DiaIrtSelfCalibration.Calibrate(run.Scans, library, new DiaLibrarySearchParameters(), new CommonParameters(), rounds: 1);
+        Assert.That(DiaIrtSelfCalibration.Refine(oneRound, results.Matches, library).IrtComposition, Is.Null, "a calibration without a composition fit gets none");
+        var e = Assert.Throws<MetaMorpheusException>(() => DiaIrtSelfCalibration.Refine(calibration, [], library));
+        Assert.That(e!.Message, Does.Contain("main search").And.Not.Contain("first pass"));
     }
 
     /// <summary>With nothing to find there is nothing to calibrate on, and that is an error, not a guess.</summary>

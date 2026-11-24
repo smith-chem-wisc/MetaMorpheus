@@ -100,6 +100,7 @@ namespace MetaMorpheusGUI
                 SearchModeWarningTextBlock.Text = searchModeWarning;
                 SearchModeWarningTextBlock.Visibility = searchModeWarning == null ? Visibility.Collapsed : Visibility.Visible;
                 InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
+                CheckBoxRespectCleavagePromotingModifications.IsChecked = digestionParams.RespectCleavagePromotingModifications;
             }
             else
             {
@@ -576,7 +577,8 @@ namespace MetaMorpheusGUI
                 digestionParamsToSave = TaskWindowDigestionParams.ForSave(TheTask.CommonParameters.DigestionParams,
                     protease.Name, maxMissedCleavages, minPeptideLength, maxPeptideLength, maxModificationIsoforms,
                     maxModsForPeptides: maxModsPerPeptide,
-                    initiatorMethionineBehavior: initiatorMethionineBehavior);
+                    initiatorMethionineBehavior: initiatorMethionineBehavior,
+                    respectCleavagePromotingModifications: CheckBoxRespectCleavagePromotingModifications.IsChecked.Value);
             }
 
             CommonParameters commonParamsToSave = new CommonParameters(
