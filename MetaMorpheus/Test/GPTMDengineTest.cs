@@ -735,25 +735,35 @@ namespace Test
 
         // The ordinary pass's cleavage-blocking rule holds for moves too. UniProt's acetyl-K at K4 of AAAKAAAAK, and a
         // spectrum that cannot tell K4 from K9: with the search respecting cleavage-blocking modifications, the tie is not
-        // moved onto K9, the residue trypsin cut after; with it off, K9 is added.
+        // moved onto K9, the residue trypsin cut after; with it off, K9 is added. A carbamyl-K is moved there, because urea
+        // also adds it after the cut. GPTMD is given only Carbamyl on R there, which cannot go on a K, so K9 can come only
+        // from the move, which writes the database's own Carbamyl on K.
         [Test]
-        [TestCase(true, new int[0])]
-        [TestCase(false, new[] { 9 })]
+        [TestCase(true, false, new int[0])]
+        [TestCase(false, false, new[] { 9 })]
+        [TestCase(true, true, new[] { 9 }, TestName = "TestGptmdMovesACarbamylDatabaseModOntoTheResidueTheProteaseCutAfter")]
         public static void TestGptmdDoesNotMoveACleavageBlockingDatabaseModOntoTheResidueTheProteaseCutAfter(bool respectCleavageBlockingModifications,
-            int[] expectedSites)
+            bool carbamyl, int[] expectedSites)
         {
+            Modification databaseMod = carbamyl ? ArtifactMod("Carbamyl on K") : UniProtMod("N6-acetyllysine on K");
+            Modification sourceMod = carbamyl ? databaseMod : GptmdMod("Acetylation on K");
+            Modification gptmdMod = carbamyl ? ArtifactMod("Carbamyl on R") : GptmdMod("Acetylation on K");
+            Assert.That(CleavageBlockingModifications.BlocksCleavageBy(databaseMod, ProteaseDictionary.Dictionary["trypsin"]), Is.True,
+                "the test's premise: both block trypsin");
+            Assert.That(CleavageBlockingModifications.MayFormAfterDigestion(databaseMod), Is.EqualTo(carbamyl),
+                "the test's premise: only carbamyl can form after the cut");
             var protein = new Protein("AAAKAAAAKAAAAR", "accession",
-                oneBasedModifications: new Dictionary<int, List<Modification>> { { 4, new List<Modification> { UniProtMod("N6-acetyllysine on K") } } });
+                oneBasedModifications: new Dictionary<int, List<Modification>> { { 4, new List<Modification> { databaseMod } } });
             var digestionParams = new DigestionParams(minPeptideLength: 5, respectCleavageBlockingModifications: respectCleavageBlockingModifications);
             var matched = protein.Digest(digestionParams, new List<Modification>(), new List<Modification>())
                 .First(p => p.BaseSequence == "AAAKAAAAK" && p.AllModsOneIsNterminus.ContainsKey(5));
             var source = new Protein("AAAKAAAAK", "source",
-                    oneBasedModifications: new Dictionary<int, List<Modification>> { { 9, new List<Modification> { GptmdMod("Acetylation on K") } } })
+                    oneBasedModifications: new Dictionary<int, List<Modification>> { { 9, new List<Modification> { sourceMod } } })
                 .Digest(new CommonParameters().DigestionParams, new List<Modification>(), new List<Modification>())
                 .First(p => p.AllModsOneIsNterminus.Count == 1);
 
             var res = RunGptmd(new List<SpectralMatch> { PsmWithSpectrum(matched, SpectrumOf(source, p => NotDeterminingBetween(p, 4, 9, 9))) },
-                new List<Modification> { GptmdMod("Acetylation on K") });
+                new List<Modification> { gptmdMod });
 
             Assert.That(res.Mods.TryGetValue("accession", out var added) ? added.Select(m => m.Item1) : [], Is.EquivalentTo(expectedSites));
         }
@@ -1060,6 +1070,9 @@ namespace Test
         private static Modification GptmdMod(string idWithMotif) =>
             GlobalVariables.AllModsKnown.First(m => m.ModificationType == "Common Biological" && m.IdWithMotif == idWithMotif);
 
+        private static Modification ArtifactMod(string idWithMotif) =>
+            GlobalVariables.AllModsKnown.First(m => m.ModificationType == "Common Artifact" && m.IdWithMotif == idWithMotif);
+
         private static List<Modification> PhosphoMods() => GlobalVariables.AllModsKnown
             .Where(p => p.ModificationType == "Common Biological" && p.IdWithMotif.StartsWith("Phosphorylation on ")).ToList();
 
@@ -1089,11 +1102,13 @@ namespace Test
         /// The peptide is the protein's first nine residues: K4 is internal, K9 is the residue trypsin cut after, unless the
         /// protein ends there. Lys-N cuts BEFORE K, so its peptide ends at K9 only because K10 follows, and K9 is free.
         /// trypsin (K|) cuts before P too, so a K before P is refused like any other cut K; trypsin|P (K[P]|) never cuts
-        /// there, so its K4 before P5 is no cleavage site. The spectrum is a stub, so every placement scores the same and
-        /// GPTMD writes every site it allows.
+        /// there, so its K4 before P5 is no cleavage site. Carbamylation blocks trypsin too, but urea also adds it after the
+        /// cut, so digestion lets a peptide end in it and GPTMD keeps it there. The spectrum is a stub, so every placement
+        /// scores the same and GPTMD writes every site it allows.
         /// </summary>
         [Test]
         [TestCase("AAAKAAAAKAAAAR", "Acetylation", true, CleavageSpecificity.Full, "4", TestName = "BlockingModOnTheCutResidue_IsRefused")]
+        [TestCase("AAAKAAAAKAAAAR", "Carbamyl", true, CleavageSpecificity.Full, "4,9", TestName = "CarbamylOnTheCutResidue_IsKeptBecauseItCanFormAfterTheCut")]
         [TestCase("AAAKAAAAKAAAAR", "Acetylation", false, CleavageSpecificity.Full, "4,9", TestName = "BlockingModOnTheCutResidue_IsKeptWithTheFlagOff")]
         [TestCase("AAAKAAAAK", "Acetylation", true, CleavageSpecificity.Full, "4,9", TestName = "BlockingModOnTheProteinCTerminus_IsKept")]
         [TestCase("AAAKAAAAKAAAAR", "Acetylation", true, CleavageSpecificity.Semi, "4,9", TestName = "BlockingModOnTheCutResidue_IsKeptInASemiSpecificSearch")]
@@ -1106,11 +1121,13 @@ namespace Test
             string protease = "trypsin")
         {
             ModificationMotif.TryGetMotif("K", out ModificationMotif motifK);
-            double modificationMass = modificationName == "Acetylation" ? 42.010565 : 14.015650;
+            double modificationMass = modificationName switch { "Acetylation" => 42.010565, "Carbamyl" => 43.005814, _ => 14.015650 };
             var modification = new Modification(_originalId: modificationName, _modificationType: "Common Biological", _target: motifK,
                 _locationRestriction: "Anywhere.", _monoisotopicMass: modificationMass);
             Assert.That(CleavageBlockingModifications.BlocksCleavageBy(modification, ProteaseDictionary.Dictionary["trypsin"]),
-                Is.EqualTo(modificationName == "Acetylation"), "the test's premise: only acetyl blocks trypsin");
+                Is.EqualTo(modificationName != "Methylation"), "the test's premise: acetyl and carbamyl block trypsin, methyl does not");
+            Assert.That(CleavageBlockingModifications.MayFormAfterDigestion(modification), Is.EqualTo(modificationName == "Carbamyl"),
+                "the test's premise: only carbamyl can form after the cut");
 
             var protein = new Protein(proteinSequence, "accession");
             var digestionParams = new DigestionParams(protease, minPeptideLength: 5, searchModeType: searchMode,
