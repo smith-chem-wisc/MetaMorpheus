@@ -215,6 +215,36 @@ namespace Test
         }
 
         [Test]
+        public void Stop_BeforeTheTimes_WritesNoLibrary()
+        {
+            // No substitute predictor, so this is the Koina model; Stop is checked before each call, so it is never asked
+            var task = TaskUpdating(WriteLibrary(), predictor: null);
+            GlobalVariables.StopLoops = true;
+
+            task.UpdateSpectralLibrary();
+
+            Assert.That(Directory.GetFiles(_folder, "updateSpectralLibrary_*"), Is.Empty);
+            Assert.That(task.Parameters.SearchTaskResults.NewDatabases, Is.Null);
+        }
+
+        [Test]
+        public void Stop_DuringThePredictedTimes_WritesNoLibrary()
+        {
+            // Only step 3 asks for a peptide the search never measured
+            var task = TaskUpdating(WriteLibrary(), sequences =>
+            {
+                if (sequences.Contains(NeverMeasured))
+                    GlobalVariables.StopLoops = true;
+                return sequences.Select(PredictedIrt).ToArray();
+            });
+
+            task.UpdateSpectralLibrary();
+
+            Assert.That(Directory.GetFiles(_folder, "updateSpectralLibrary_*"), Is.Empty);
+            Assert.That(task.Parameters.SearchTaskResults.NewDatabases, Is.Null);
+        }
+
+        [Test]
         public void ANonPeptideSearch_UpdatesTheSpectra_WithoutAskingProsit()
         {
             var task = TaskUpdating(WriteLibrary(), _ => throw new AssertionException("Prosit must not be asked"));
@@ -241,6 +271,58 @@ namespace Test
 
             Assert.That(TaskWithLibraries(msl, msp).SingleMslLibraryPath(), Is.Null);
             Assert.That(_warnings.Single(), Does.Contain("written together as .msp"));
+        }
+
+        [Test]
+        public void NoFileCalibrating_WritesNoMinutes_AndSaysWhichFilesAndWhy()
+        {
+            // The predictor knows none of the search's peptides: no anchors, so neither file can be put on the iRT scale
+            var task = TaskUpdating(WriteLibrary(), sequences => sequences.Select(_ => double.NaN).ToArray());
+
+            task.UpdateSpectralLibrary();
+
+            string written = Directory.GetFiles(_folder, "updateSpectralLibrary_*").Single();
+            AssertTheDiaLibrarySearchOpens(written);
+            using var library = MslLibrary.Load(written);
+            var entries = library.GetAllEntries().ToDictionary(e => (e.FullSequence, e.IsDecoy));
+            foreach (var (sequence, _) in Peptides.Skip(2))
+                Assert.That(entries[(sequence, false)].RetentionTime, Is.NaN, sequence);
+            Assert.That(entries[(Peptides[0].Sequence, false)].RetentionTime, Is.EqualTo(Peptides[0].Irt).Within(1e-4));
+            Assert.That(entries[(LongNeverMeasured, false)].RetentionTime, Is.NaN, "two known times are too few to map Chronologer");
+
+            string summary = task.Parameters.SearchTaskResults.ToString();
+            Assert.That(summary, Does.Contain("0 of 2 files calibrated (not: runA, too few anchors, runB, too few anchors)"));
+            Assert.That(summary, Does.Contain("Chronologer (peptides of 31-50 residues) not used: ArgumentException"));
+        }
+
+        [Test]
+        public void APredictorGivingTheWrongNumberOfTimes_UpdatesNoTimes_AndSaysWhy()
+        {
+            var task = TaskUpdating(WriteLibrary(), _ => Array.Empty<double>());
+
+            task.UpdateSpectralLibrary();
+
+            using var library = MslLibrary.Load(Directory.GetFiles(_folder, "updateSpectralLibrary_*").Single());
+            var entries = library.GetAllEntries().ToDictionary(e => (e.FullSequence, e.IsDecoy));
+            Assert.That(entries[(Peptides[0].Sequence, false)].MatchedFragmentIons, Has.Count.EqualTo(5), "the spectra still update");
+            Assert.That(entries[(Peptides[5].Sequence, false)].RetentionTime, Is.NaN);
+            Assert.That(_warnings[0], Does.Contain("retention times were not updated: InvalidOperationException: The iRT predictor returned 0 values for"));
+        }
+
+        [Test]
+        public void AFileSearchedWithAutodetect_GivesItsSpectraNoDissociationType()
+        {
+            var task = TaskUpdating(WriteLibrary(), sequences => sequences.Select(PredictedIrt).ToArray());
+            task.FileSpecificParameters = new List<(string, CommonParameters)>
+            {
+                (FileA, new CommonParameters(dissociationType: DissociationType.Autodetect))
+            };
+
+            task.UpdateSpectralLibrary();
+
+            using var library = MslLibrary.Load(Directory.GetFiles(_folder, "updateSpectralLibrary_*").Single());
+            var replaced = library.GetAllEntries().Single(e => e.FullSequence == Peptides[0].Sequence && !e.IsDecoy);
+            Assert.That(replaced.DissociationType, Is.EqualTo(DissociationType.Unknown), "Autodetect decides per scan, and a PSM does not record it");
         }
 
         /// <summary>
