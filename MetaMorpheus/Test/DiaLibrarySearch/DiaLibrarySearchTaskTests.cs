@@ -72,7 +72,7 @@ public class DiaLibrarySearchTaskTests
     /// The scans as a converter writes a DIA run: each MS2 names the window centre as its selected ion and the cycle's MS1
     /// as its precursor scan (the mzML writer requires a selected ion).
     /// </summary>
-    private static MsDataScan[] AsWritten(MsDataScan[] scans)
+    internal static MsDataScan[] AsWritten(MsDataScan[] scans)
     {
         int? lastMs1 = null;
         return scans.Select(scan =>
@@ -93,7 +93,11 @@ public class DiaLibrarySearchTaskTests
     [Test]
     public void TheTaskRoundTripsThroughToml()
     {
-        var task = new DiaLibrarySearchTask(new DiaLibrarySearchTaskParameters { FragmentTolerancePpm = 15, Ms1TolerancePpm = 4, ClassifierSeed = 3 })
+        var task = new DiaLibrarySearchTask(new DiaLibrarySearchTaskParameters
+        {
+            FragmentTolerancePpm = 15, Ms1TolerancePpm = 4, ClassifierSeed = 3,
+            LibraryPrecursorCharges = [2, 3, 4], LibraryNce = 30, LibraryDecoys = DiaLibraryDecoys.Reversed,
+        })
         {
             CommonParameters = new CommonParameters(filterThreshold: 0.05),
         };
@@ -106,6 +110,14 @@ public class DiaLibrarySearchTaskTests
         Assert.That(read.Parameters.FragmentTolerancePpm, Is.EqualTo(15));
         Assert.That(read.Parameters.Ms1TolerancePpm, Is.EqualTo(4));
         Assert.That(read.Parameters.ClassifierSeed, Is.EqualTo(3));
+        Assert.That(read.Parameters.LibraryPrecursorCharges, Is.EqualTo(new[] { 2, 3, 4 }));
+        Assert.That(read.Parameters.LibraryNce, Is.EqualTo(30));
+        Assert.That(read.Parameters.LibraryDecoys, Is.EqualTo(DiaLibraryDecoys.Reversed));
+        var defaults = new DiaLibrarySearchTaskParameters();
+        Assert.That(defaults.LibraryPrecursorCharges, Is.EqualTo(new[] { 2, 3 }), "the benchmark libraries' charges");
+        Assert.That(defaults.LibraryNce, Is.EqualTo(27));
+        Assert.That(defaults.LibraryDecoys, Is.EqualTo(DiaLibraryDecoys.Permuted));
+        Assert.That(File.ReadAllText(path), Does.Contain("LibraryPrecursorCharges = [2, 3, 4]"), "an int list in TOML, as LocalFdrCategories is a list");
         Assert.That(read.CommonParameters.FilterThreshold, Is.EqualTo(0.05), "the search's one threshold");
         Assert.That(new DiaLibrarySearchTask().CommonParameters.FilterThreshold, Is.EqualTo(0.01));
         Assert.That(typeof(DiaLibrarySearchTaskParameters).GetProperty("QValueThreshold"), Is.Null,

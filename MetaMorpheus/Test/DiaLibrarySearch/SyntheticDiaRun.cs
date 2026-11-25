@@ -98,6 +98,25 @@ internal sealed class SyntheticDiaRun
         }
 
         var planted = library.Where(plant).ToList();
+        return new SyntheticDiaRun(library, PlantedScans(planted, random, noisePeaksPerScan, abundance, withMs1, ppmOffset, deadMinutes),
+            planted.Select(e => e.FullSequence).ToHashSet());
+    }
+
+    /// <summary>
+    /// A run planted from a library made elsewhere (a predicted one, say), with the scans <see cref="Build"/> makes for its own:
+    /// the chosen entries elute at <see cref="TrueRtMinutes"/> of their iRT, in the run's windows only.
+    /// </summary>
+    public static SyntheticDiaRun Plant(List<MslLibraryEntry> library, Func<MslLibraryEntry, bool> plant, int seed = 42, double noisePeaksPerScan = 60,
+        bool withMs1 = false)
+    {
+        var planted = library.Where(plant).ToList();
+        return new SyntheticDiaRun(library, PlantedScans(planted, new Random(seed), noisePeaksPerScan, null, withMs1, 0, 0),
+            planted.Select(e => e.FullSequence).ToHashSet());
+    }
+
+    private static MsDataScan[] PlantedScans(List<MslLibraryEntry> planted, Random random, double noisePeaksPerScan,
+        Func<MslLibraryEntry, double>? abundance, bool withMs1, double ppmOffset, double deadMinutes)
+    {
         var scans = new List<MsDataScan>();
         int scanNumber = 1;
         for (double rt = 0; rt < RunMinutes + deadMinutes; rt += CycleMinutes)
@@ -145,8 +164,7 @@ internal sealed class SyntheticDiaRun
                 scanNumber++;
             }
         }
-
-        return new SyntheticDiaRun(library, scans.ToArray(), planted.Select(e => e.FullSequence).ToHashSet());
+        return scans.ToArray();
     }
 
     /// <summary>

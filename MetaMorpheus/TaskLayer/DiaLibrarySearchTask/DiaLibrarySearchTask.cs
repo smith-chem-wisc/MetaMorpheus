@@ -28,6 +28,12 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
 {
     public DiaLibrarySearchTaskParameters Parameters { get; set; }
 
+    /// <summary>
+    /// The models a predicted library is built with (<see cref="DiaPredictedLibrary"/>): null in production, which asks Koina
+    /// (<see cref="DiaPredictedLibrary.KoinaModels"/>); a test answers from memory.
+    /// </summary>
+    internal Func<(PredictionClients.Koina.AbstractClasses.FragmentIntensityModel Intensity, PredictionClients.Koina.AbstractClasses.RetentionTimeModel Irt)>? PredictionModels { get; set; }
+
     public DiaLibrarySearchTask(DiaLibrarySearchTaskParameters parameters) : base(MyTask.DiaLibrarySearch)
     {
         CommonParameters = new CommonParameters();
