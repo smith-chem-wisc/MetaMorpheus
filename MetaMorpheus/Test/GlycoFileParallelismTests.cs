@@ -121,12 +121,16 @@ namespace Test
         /// <summary>
         /// The per-file charge for the index copies must cover what a glyco engine really allocates for them. If the engine stops
         /// copying the index, this fails on the lower bound, and the charge in <see cref="FileParallelism.BytesPerFile"/> should come down.
+        /// The copies are read directly (<see cref="IndexCopyBytes"/>), not as a change in the managed heap, which the rest of a full
+        /// test run moves by more than the margin.
         /// </summary>
         [Test]
-        [NonParallelizable] // measures the managed heap, and the glyco engine writes process-wide glycan state (GlycanBox statics)
+        [NonParallelizable] // the glyco engine writes process-wide glycan state (GlycanBox statics)
         public static void BytesPerFileCoversTheIndexCopiesAGlycoEngineMakes()
         {
-            const int peptideCount = 2_000_000;
+            // One past a power of two: the worst case for the engine's copy that grows by doubling, which ends with nearly twice the
+            // slots it needs.
+            const int peptideCount = 1025;
             var peptide = new PeptideWithSetModifications("PEPTIDE", new Dictionary<string, Omics.Modifications.Modification>());
             var peptideIndex = new List<PeptideWithSetModifications>(peptideCount);
             for (int i = 0; i < peptideCount; i++)
@@ -136,17 +140,39 @@ namespace Test
             var commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, maxThreadsToUsePerFile: 1);
             GlycanSearchSpace searchSpace = GlycanSearchSpace.Build("OGlycan.gdb", null, GlycoSearchType.OGlycanSearch, 3, GlycanBox.DefaultMaximumGlycanBoxMass);
 
-            long before = GC.GetTotalMemory(forceFullCollection: true);
             var engine = new GlycoSearchEngine(new List<GlycoSpectralMatch>[0], new Ms2ScanWithSpecificMass[0], peptideIndex, null, null, 0,
                 commonParameters, null, searchSpace, "OGlycan.gdb", null, 30, 3, false, new List<string>());
-            long engineBytes = GC.GetTotalMemory(forceFullCollection: true) - before;
-            GC.KeepAlive(engine);
-            GC.KeepAlive(peptideIndex); // the task holds its index for the whole search; collected here, it would hide one copy
+            long engineBytes = IndexCopyBytes(engine, peptideIndex);
             TestContext.WriteLine("bytes a glyco engine holds for its copies of a " + peptideCount + "-peptide index: " + engineBytes);
 
             long charged = FileParallelism.BytesPerFile(scanBytes: 0, peptideCount: peptideCount);
             Assert.That(engineBytes, Is.LessThanOrEqualTo(charged), "an engine holds more for its copies of the index than one more file is charged");
             Assert.That(engineBytes, Is.GreaterThanOrEqualTo(16L * peptideCount), "the engine no longer copies the index twice; lower the charge to match");
+        }
+
+        /// <summary>
+        /// Bytes an engine holds for its own copies of <paramref name="index"/>: every list in a field of the engine or its base
+        /// classes that holds exactly the index's peptides, other than the caller's list itself, at its capacity times the size of
+        /// a reference.
+        /// </summary>
+        private static long IndexCopyBytes(object engine, List<PeptideWithSetModifications> index)
+        {
+            var peptides = new HashSet<object>(index, ReferenceEqualityComparer.Instance);
+            var counted = new HashSet<object>(ReferenceEqualityComparer.Instance) { index };
+            long bytes = 0;
+            for (Type type = engine.GetType(); type != null; type = type.BaseType)
+            {
+                foreach (FieldInfo field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+                {
+                    if (field.GetValue(engine) is System.Collections.IList list && list.Count == index.Count && counted.Add(list)
+                        && list.Cast<object>().All(peptides.Contains))
+                    {
+                        int slots = list is Array array ? array.Length : (int)(list.GetType().GetProperty("Capacity")?.GetValue(list) ?? list.Count);
+                        bytes += (long)slots * IntPtr.Size;
+                    }
+                }
+            }
+            return bytes;
         }
 
         [Test]
