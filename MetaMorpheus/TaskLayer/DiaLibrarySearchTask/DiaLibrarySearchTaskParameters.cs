@@ -35,7 +35,7 @@ public class DiaLibrarySearchTaskParameters
 
     /// <summary>
     /// The precursor charges a predicted library holds, when the search is given proteins and no library
-    /// (<see cref="DiaPredictedLibrary"/>). 2 and 3 by default, as in the benchmark libraries; Prosit takes 1 to 6.
+    /// (<see cref="DiaLibrarySearchTask"/>). 2 and 3 by default, as in the benchmark libraries; Prosit 2025 takes 1 to 6.
     /// </summary>
     public List<int> LibraryPrecursorCharges { get; set; } = [2, 3];
 

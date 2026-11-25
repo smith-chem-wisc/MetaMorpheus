@@ -20,7 +20,7 @@ namespace MetaMorpheusCommandLine
         [Option('t', HelpText = "Single-task TOMLs (.toml file format); space-delimited")]
         public IEnumerable<string> _tasks { get; set; }
 
-        [Option('d', HelpText = "Protein sequence databases (.fasta, .xml, .fasta.gz, .xml.gz file formats) and spectral libraries (.msp, .msl); space-delimited. A DIA library search takes one .msl library, or predicts one from the protein databases (network access to Koina required)")]
+        [Option('d', HelpText = "Protein sequence databases (.fasta, .xml, .fasta.gz, .xml.gz file formats); space-delimited")]
         public IEnumerable<string> _databases { get; set; }
 
         [Option('s', HelpText = "Spectra to analyze (.raw, .mzML, .mgf, ms2.msalign file formats) or folder(s) containing spectra; space-delimited")]
