@@ -165,7 +165,8 @@ namespace Test
                         for (int repeat = 0; repeat < 3; repeat++)
                         {
                             WriterProbe.Write(rows, many, mods, peptideLevel, 8);
-                            Assert.That(File.ReadAllBytes(many), Is.EqualTo(expected), $"culture '{culture}', peptide level {peptideLevel}, repeat {repeat}");
+                            // SequenceEqual, not Is.EqualTo: NUnit compares large byte arrays one element at a time
+                            Assert.That(File.ReadAllBytes(many).AsSpan().SequenceEqual(expected), Is.True, $"culture '{culture}', peptide level {peptideLevel}, repeat {repeat}");
                         }
                         if (culture == "en-US" && !peptideLevel)
                         {
