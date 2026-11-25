@@ -167,9 +167,20 @@ public class DiaPredictedLibraryTests
         string output = Path.Combine(folder, "output", "Task1");
         Directory.CreateDirectory(output);
         var models = new CannedProsit();
+        var warnings = new List<string>();
+        EventHandler<StringEventArgs> warned = (_, e) => warnings.Add(e.S);
+        MetaMorpheusTask.WarnHandler += warned;
+        try
+        {
+            new DiaLibrarySearchTask { PredictionModels = () => (models.Intensity, models.Irt) }.RunTask(output, [new DbForTask(fasta, false)], [mzml], "Task1");
+        }
+        finally
+        {
+            MetaMorpheusTask.WarnHandler -= warned;
+        }
 
-        new DiaLibrarySearchTask { PredictionModels = () => (models.Intensity, models.Irt) }.RunTask(output, [new DbForTask(fasta, false)], [mzml], "Task1");
-
+        Assert.That(warnings, Has.Some.Contains("No .msl library was given, so one is predicted from the protein databases, complete with targets and decoys"),
+            "the user is told, before the long network step, that a library is being made and what it holds");
         string libraryPath = Path.Combine(output, DiaPredictedLibrary.FileName);
         Assert.That(File.Exists(libraryPath));
         using var library = MslLibrary.Load(libraryPath);
@@ -186,7 +197,8 @@ public class DiaPredictedLibraryTests
         Assert.That(models.Calls, Is.GreaterThan(0));
 
         string results = File.ReadAllText(Path.Combine(output, "results.txt"));
-        Assert.That(results, Does.Contain($"Predicted library {DiaPredictedLibrary.FileName}: {expectedResult.TargetPrecursors} target and {expectedResult.DecoyPrecursors} decoy precursors from 150 proteins, permuted decoys"));
+        Assert.That(results, Does.Contain($"Library: {DiaPredictedLibrary.FileName}, predicted from the protein databases (150 proteins), complete with targets and decoys: " +
+            $"{expectedResult.TargetPrecursors} target and {expectedResult.DecoyPrecursors} permuted decoy precursors"));
         Assert.That(results, Does.Contain(models.Intensity.ModelName).And.Contain(models.Irt.ModelName).And.Contain(HTTP.ModelsURL));
         int found = int.Parse(Regex.Match(results, @"All target precursors with q-value <= 0\.01: (\d+)").Groups[1].Value);
         int planted = run.Library.Count(e => !e.IsDecoy && run.PlantedSequences.Contains(e.FullSequence)
@@ -351,7 +363,10 @@ public class DiaPredictedLibraryTests
         Assert.That(e.Message, Does.Contain(".msl").And.Contain("protein database"));
     }
 
-    /// <summary>Given a library, the task predicts nothing, whatever protein database comes with it.</summary>
+    /// <summary>
+    /// Given a library, the task predicts nothing, whatever protein database comes with it, and results.txt says so: only
+    /// the library's spectra are searched, and the protein database adds none (it infers protein groups).
+    /// </summary>
     [Test]
     public void WithALibraryNothingIsPredicted()
     {
@@ -370,11 +385,49 @@ public class DiaPredictedLibraryTests
 
         Assert.That(models.Calls, Is.Zero);
         Assert.That(File.Exists(Path.Combine(output, DiaPredictedLibrary.FileName)), Is.False);
-        Assert.That(File.ReadAllText(Path.Combine(output, "results.txt")), Does.Not.Contain("Predicted library"));
+        string results = File.ReadAllText(Path.Combine(output, "results.txt"));
+        Assert.That(results, Does.Not.Contain(DiaPredictedLibrary.FileName));
+        Assert.That(results, Does.Contain($"Library: {Path.GetFileName(library)}, as given: {run.Library.Count(e => !e.IsDecoy)} target and {run.Library.Count(e => e.IsDecoy)} decoy precursors. " +
+            "Only its spectra are searched; the protein databases add none, and infer protein groups."));
+    }
+
+    /// <summary>
+    /// A library with no decoys gives the search nothing to estimate an FDR from. It is refused once, before any run is
+    /// calibrated (not run by run, as each calibration found it), saying what to give instead.
+    /// </summary>
+    [Test]
+    public void ALibraryWithoutDecoysIsRefusedOnceSayingWhatToGiveInstead()
+    {
+        string folder = Path.Combine(_directory, "nodecoys");
+        Directory.CreateDirectory(folder);
+        var run = SyntheticDiaRun.Build(50, _ => true, withDecoys: false);
+        string mzml = WriteRun(folder, run);
+        string library = run.WriteLibrary(folder);
+        string output = Path.Combine(folder, "output", "Task1");
+        Directory.CreateDirectory(output);
+        var warnings = new List<string>();
+        EventHandler<StringEventArgs> warned = (_, e) => warnings.Add(e.S);
+        MetaMorpheusTask.WarnHandler += warned;
+        MetaMorpheusException? e;
+        try
+        {
+            e = Assert.Throws<MetaMorpheusException>(() => new DiaLibrarySearchTask().RunTask(output, [new DbForTask(library, false)], [mzml], "Task1"));
+        }
+        finally
+        {
+            MetaMorpheusTask.WarnHandler -= warned;
+        }
+
+        Assert.That(e!.Message, Does.Contain($"{Path.GetFileName(library)} holds no decoys").And.Contain("protein database"));
+        Assert.That(warnings, Has.None.Contains("is skipped"), "refused once, not run by run");
     }
 }
 
-/// <summary>Live: a small library through the real Prosit 2025 models on Koina. Skipped when Koina cannot be reached.</summary>
+/// <summary>
+/// Live: a small library through the real Prosit 2025 models on Koina, with the task's default modifications
+/// (carbamidomethyl on C fixed, oxidation on M variable), so MetaMorpheus's own modifications are shown to reach Prosit.
+/// Skipped when Koina cannot be reached.
+/// </summary>
 [TestFixture]
 [Category("ExternalService")]
 [ExcludeFromCodeCoverage]
@@ -384,12 +437,14 @@ public class DiaPredictedLibraryLiveTests
     public void ASmallLibraryIsPredictedThroughKoina()
     {
         var (intensity, irt) = DiaPredictedLibrary.KoinaModels();
+        var fixedModifications = GlobalVariables.AllModsKnown.Where(m => m.IdWithMotif == "Carbamidomethyl on C" && m.ModificationType == "Common Fixed").Take(1).ToList();
+        var variableModifications = GlobalVariables.AllModsKnown.Where(m => m.IdWithMotif == "Oxidation on M" && m.ModificationType == "Common Variable").Take(1).ToList();
         List<MslLibraryEntry> entries;
         PredictionClients.SpectralLibraryGeneration.MslLibraryBuildResult result;
         try
         {
-            entries = DiaPredictedLibrary.Build([new Protein("MSLPDKAGTCVLVEGDRPYVLNSR", "P1")], new CommonParameters(), new DiaLibrarySearchTaskParameters(), [], [],
-                intensity, irt, out result);
+            entries = DiaPredictedLibrary.Build([new Protein("MSLPDKAGTCVLVEGDRPYVLNSR", "P1")], new CommonParameters(), new DiaLibrarySearchTaskParameters(),
+                fixedModifications, variableModifications, intensity, irt, out result);
         }
         catch (MetaMorpheusException e) when (e.InnerException is HttpRequestException or OperationCanceledException)
         {
@@ -397,8 +452,13 @@ public class DiaPredictedLibraryLiveTests
             return;
         }
 
+        Assert.That(fixedModifications, Has.Count.EqualTo(1));
         Assert.That(result.TargetPrecursors, Is.GreaterThan(0));
         Assert.That(entries.Where(e => !e.IsDecoy), Has.All.Matches<MslLibraryEntry>(e => e.MatchedFragmentIons.Count > 0 && double.IsFinite(e.RetentionTime)));
+        Assert.That(entries.Where(e => !e.IsDecoy && e.BaseSequence == "AGTCVLVEGDR").Select(e => e.FullSequence), Has.All.Contain("Carbamidomethyl").And.Not.Empty,
+            "MetaMorpheus's carbamidomethyl reaches Prosit");
+        Assert.That(entries.Where(e => !e.IsDecoy && e.BaseSequence.StartsWith("MSLPDK")).Select(e => e.FullSequence), Has.Some.Contain("Oxidation"),
+            "and its variable oxidation");
         Assert.That(entries.Where(e => e.IsDecoy).Select(e => e.ProteinAccession), Has.All.StartWith("DECOY_P1_f1"));
     }
 }
