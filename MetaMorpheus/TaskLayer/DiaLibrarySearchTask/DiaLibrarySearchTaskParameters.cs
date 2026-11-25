@@ -1,7 +1,18 @@
 #nullable enable
+using System.Collections.Generic;
 using EngineLayer.DiaLibrarySearch;
 
 namespace TaskLayer;
+
+/// <summary>How a predicted library's decoys are made (<see cref="DiaLibrarySearchTaskParameters.LibraryDecoys"/>).</summary>
+public enum DiaLibraryDecoys
+{
+    /// <summary>A composition-preserving permutation of each target protein's pieces, named DECOY_&lt;accession&gt;_f1.</summary>
+    Permuted,
+
+    /// <summary>Each target protein reversed, named DECOY_&lt;accession&gt;.</summary>
+    Reversed,
+}
 
 /// <summary>
 /// The settings a user sets for a DIA library search, as TOML. Only what a user should touch is here; the engine's
@@ -21,6 +32,26 @@ public class DiaLibrarySearchTaskParameters
 
     /// <summary>Seed for the classifier, so a search can be repeated exactly.</summary>
     public int ClassifierSeed { get; set; } = new DiaLibrarySearchParameters().ClassifierSeed;
+
+    /// <summary>
+    /// The precursor charges a predicted library holds, when the search is given proteins and no library
+    /// (<see cref="DiaLibrarySearchTask"/>). 2 and 3 by default, as in the benchmark libraries; Prosit 2025 takes 1 to 6.
+    /// </summary>
+    public List<int> LibraryPrecursorCharges { get; set; } = [2, 3];
+
+    /// <summary>
+    /// The normalized collision energy a predicted library's spectra are predicted at: set the runs' HCD energy. 27 by
+    /// default, the energy of the HeLa benchmark runs (PXD005573, PXD022589); PXD071205's Astral runs were 25.
+    /// </summary>
+    public int LibraryNce { get; set; } = 27;
+
+    /// <summary>
+    /// How a predicted library's decoys are made. Permuted by default: each decoy protein a composition-preserving
+    /// permutation of its target's tryptic pieces (mzLib's entrapment generator), so every target peptide has a near-isomeric
+    /// decoy, as in the benchmark libraries. Reversed decoys are for a digestion the permuter refuses (not fully specific,
+    /// cleavage-blocking modifications respected, or a rule such as trypsin|P).
+    /// </summary>
+    public DiaLibraryDecoys LibraryDecoys { get; set; } = DiaLibraryDecoys.Permuted;
 
     /// <summary>The engine's parameters for these settings, before a run's calibration is applied.</summary>
     public DiaLibrarySearchParameters ToEngineParameters() => new()

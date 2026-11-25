@@ -4,16 +4,26 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using EngineLayer;
 using EngineLayer.DatabaseLoading;
 using EngineLayer.DiaLibrarySearch;
 using MassSpectrometry;
+using MzLibUtil;
 using Omics.BioPolymer;
 using Omics.Modifications;
+using Omics.SpectralMatch.MslSpectralLibrary;
+using PredictionClients.Koina.AbstractClasses;
+using PredictionClients.Koina.Client;
+using PredictionClients.Koina.SupportedModels.FragmentIntensityModels;
+using PredictionClients.Koina.SupportedModels.RetentionTimeModels;
+using PredictionClients.SpectralLibraryGeneration;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using Readers;
 using Readers.SpectralLibrary;
 using UsefulProteomicsDatabases;
+using UsefulProteomicsDatabases.EntrapmentGeneration;
 
 namespace TaskLayer;
 
@@ -23,10 +33,23 @@ namespace TaskLayer;
 /// the q-value threshold, per run and in total, and the target peptides. A protein database is not needed; given one
 /// (FASTA or XML, beside the library), the task also infers protein groups, and labels C the precursors and peptides
 /// whose proteins are all in a contaminant database.
+/// <list type="bullet">
+/// <item>Given proteins and no library, it predicts one from them first, complete with targets and decoys (Prosit 2025
+/// through Koina, <see cref="PredictLibraryEntries"/>), and says so before it starts.</item>
+/// <item>Given a library, it searches that library's spectra only: a protein database beside it adds none, and results.txt
+/// says so.</item>
+/// <item>It takes one library; two or more are refused, as is a library with no decoys.</item>
+/// </list>
 /// </summary>
 public class DiaLibrarySearchTask : MetaMorpheusTask
 {
     public DiaLibrarySearchTaskParameters Parameters { get; set; }
+
+    /// <summary>
+    /// The models a predicted library is built with: null in production, which asks Koina (<see cref="KoinaModels"/>); a test
+    /// answers from memory.
+    /// </summary>
+    internal Func<(FragmentIntensityModel Intensity, RetentionTimeModel Irt)>? PredictionModels { get; set; }
 
     public DiaLibrarySearchTask(DiaLibrarySearchTaskParameters parameters) : base(MyTask.DiaLibrarySearch)
     {
@@ -170,12 +193,14 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
     {
         MyTaskResults = new MyTaskResults(this);
         var libraries = dbFilenameList.Where(db => db.IsSpectralLibrary).ToList();
-        if (libraries.Count != 1 || !string.Equals(Path.GetExtension(libraries[0].FilePath), ".msl", StringComparison.OrdinalIgnoreCase))
+        var proteinDatabases = dbFilenameList.Where(db => !db.IsSpectralLibrary).ToList();
+        // Given proteins and no library, the search predicts one from them (PredictLibrary)
+        bool predict = libraries.Count == 0 && proteinDatabases.Count > 0;
+        if (libraries.Count == 0 && !predict)
+            throw new MetaMorpheusException("A DIA library search needs one .msl library, or a protein database (FASTA or XML) to predict one from; neither was given.");
+        if (!predict && (libraries.Count != 1 || !string.Equals(Path.GetExtension(libraries[0].FilePath), ".msl", StringComparison.OrdinalIgnoreCase)))
             throw new MetaMorpheusException($"A DIA library search needs exactly one .msl library; {libraries.Count} spectral libraries were given.");
 
-        string libraryPath = libraries[0].FilePath;
-        Status("Loading library...", taskId);
-        using var library = OpenLibrary(libraryPath);
         var parameters = Parameters.ToEngineParameters();
         // One threshold for every step, the search's identification filter threshold (MetaMorpheus #2982). Every filter
         // reads a DIA q-value: the search computes no PEP.
@@ -183,8 +208,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
         string threshold = qValueThreshold.ToString(CultureInfo.InvariantCulture);
 
         // A protein database, if given, is loaded before any run is searched, so a bad one fails at once. Its targets are
-        // for protein inference; the library's decoys name their own decoy proteins, so none are generated.
-        var proteinDatabases = dbFilenameList.Where(db => !db.IsSpectralLibrary).ToList();
+        // for protein inference (and a predicted library); the library's decoys name their own decoy proteins, so none are generated.
         List<Protein>? proteins = null;
         List<Modification> fixedModifications = [], variableModifications = [];
         HashSet<string>? contaminantAccessions = null;
@@ -197,6 +221,19 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
             proteins = loaded.BioPolymers.OfType<Protein>().ToList();
             contaminantAccessions = proteins.Where(p => p.IsContaminant).Select(p => p.Accession).ToHashSet();
         }
+
+        string? librarySummary = null;
+        string libraryPath = predict ? PredictLibrary(OutputFolder, taskId, proteins!, fixedModifications, variableModifications, out librarySummary)
+            : libraries[0].FilePath;
+        Status("Loading library...", taskId);
+        using var library = OpenLibrary(libraryPath);
+        // Refused once here, rather than by every run's calibration in turn
+        if (library.DecoyCount == 0)
+            throw new MetaMorpheusException($"{Path.GetFileName(libraryPath)} holds no decoys, so the search cannot estimate its FDR. Give a library that includes " +
+                "decoy precursors, or give no library and a protein database (FASTA or XML) to predict one from, complete with targets and decoys.");
+        // A given library is searched as it is: say so, since a protein database beside it could be taken to add to it
+        librarySummary ??= $"Library: {Path.GetFileName(libraryPath)}, as given: {library.PrecursorCount - library.DecoyCount} target and {library.DecoyCount} decoy precursors. " +
+            "Only its spectra are searched" + (proteinDatabases.Count > 0 ? "; the protein databases add none." : ".");
 
         // Each run's targets passing its own q-value, kept until every run is in and the global q-values are known
         var passing = new List<(string FileName, List<DiaPrecursorMatch> Matches)>();
@@ -301,7 +338,120 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
             MyTaskResults.AddTaskSummaryText(line);
         foreach (var (fileName, reason) in skipped)
             MyTaskResults.AddTaskSummaryText($"{fileName}: skipped. {reason}");
+        MyTaskResults.AddTaskSummaryText(librarySummary);
         return MyTaskResults;
+    }
+
+    /// <summary>A predicted library's file name in the task's output folder.</summary>
+    internal const string PredictedLibraryFileName = "DiaPredictedLibrary.msl";
+
+    /// <summary>
+    /// The notice given before a library is predicted, so the user knows, before the long network step, that one is being
+    /// made, that it is complete with targets and decoys, and where it will be.
+    /// </summary>
+    internal const string PredictedLibraryNotice = "No .msl library was given, so one is predicted from the protein databases, complete with targets and decoys: " +
+        "Prosit 2025 spectra and retention times through Koina (network access required; a proteome takes tens of minutes). " +
+        "It is written to the output folder as " + PredictedLibraryFileName + ", which later searches can be given as their library.";
+
+    /// <summary>
+    /// Predicts a library from the proteins, writes it to the output folder as <see cref="PredictedLibraryFileName"/>, so it
+    /// can be searched again, and returns its path. The call blocks for as long as Koina takes (a proteome is tens of
+    /// minutes); <paramref name="summary"/> is its results.txt line.
+    /// </summary>
+    private string PredictLibrary(string outputFolder, string taskId, List<Protein> proteins, List<Modification> fixedModifications,
+        List<Modification> variableModifications, out string summary)
+    {
+        var (intensity, irt) = PredictionModels?.Invoke() ?? KoinaModels();
+        if (PredictionUnsupported(CommonParameters, FileSpecificParameters?.Select(f => f.Parameters.DissociationType) ?? [], Parameters, intensity) is string unpredictable)
+            throw new MetaMorpheusException($"No .msl library was given, and one cannot be predicted from the proteins: {unpredictable}. Give the search an .msl library.");
+        Warn(PredictedLibraryNotice);
+        Status($"Predicting a library from {proteins.Count} proteins through Koina (network access required)...", taskId);
+        var entries = PredictLibraryEntries(proteins, CommonParameters, Parameters, fixedModifications, variableModifications, intensity, irt, out var result);
+        string path = Path.Combine(outputFolder, PredictedLibraryFileName);
+        MslLibrary.Save(path, entries);
+        FinishedWritingFile(path, new List<string> { taskId });
+        summary = $"Library: {PredictedLibraryFileName}, predicted from the protein databases ({proteins.Count} proteins), complete with targets and decoys: " +
+            $"{result.TargetPrecursors} target and {result.DecoyPrecursors} {Parameters.LibraryDecoys.ToString().ToLowerInvariant()} decoy precursors; " +
+            $"{intensity.ModelName} and {irt.ModelName} at {HTTP.ModelsURL}, NCE {Parameters.LibraryNce}, charges {string.Join(", ", Parameters.LibraryPrecursorCharges)}; " +
+            $"{result.NotPredicted} precursors not predicted, {result.NoFragments} with no fragments, {result.DecoysDroppedAsTargetSequences} decoys dropped as target sequences";
+        return path;
+    }
+
+    /// <summary>
+    /// The Prosit 2025 models on Koina, at most <see cref="PostSearchAnalysisTask.MaxConcurrentPredictionRequests"/> requests
+    /// at once: Koina is a public academic service, and one failed batch fails the whole build.
+    /// </summary>
+    internal static (FragmentIntensityModel Intensity, RetentionTimeModel Irt) KoinaModels() =>
+        (new Prosit2025Intensity40PTM(maxNumberOfBatchesPerRequest: PostSearchAnalysisTask.MaxConcurrentPredictionRequests),
+         new Prosit2025iRT40PTM(maxNumberOfBatchesPerRequest: PostSearchAnalysisTask.MaxConcurrentPredictionRequests));
+
+    /// <summary>
+    /// Why a library cannot be predicted for this search with this model, or null when it can: the model's own fragmentation
+    /// types and precursor charges (mzLib's), a protease's digestion, and a collision energy above 0. Checked before Koina is
+    /// asked, since mzLib's builder would ask for every retention time first and then count each refused input as not predicted.
+    /// </summary>
+    /// <param name="fileDissociationTypes">The fragmentation any spectra file sets for itself; one library serves them all.</param>
+    internal static string? PredictionUnsupported(CommonParameters commonParameters, IEnumerable<DissociationType> fileDissociationTypes,
+        DiaLibrarySearchTaskParameters parameters, FragmentIntensityModel intensityModel)
+    {
+        if (commonParameters.DigestionParams is not DigestionParams)
+            return $"the library is digested with a protease, and this search digests with {commonParameters.DigestionParams.DigestionAgent.Name}";
+        var unsupported = fileDissociationTypes.Prepend(commonParameters.DissociationType).Distinct()
+            .Where(d => intensityModel.AllowedFragmentationTypes is { } allowed && !allowed.Contains(d.ToString())).ToList();
+        if (unsupported.Count > 0)
+            return $"{intensityModel.ModelName} predicts {string.Join(" and ", intensityModel.AllowedFragmentationTypes!)} spectra, and this search uses {string.Join(", ", unsupported)}";
+        var charges = intensityModel.AllowedPrecursorCharges;
+        if (parameters.LibraryPrecursorCharges.Count == 0 || parameters.LibraryPrecursorCharges.Any(z => charges.Count > 0 && !charges.Contains(z)))
+            return $"{intensityModel.ModelName} predicts precursor charges {string.Join(", ", charges.Order())}, and LibraryPrecursorCharges is [{string.Join(", ", parameters.LibraryPrecursorCharges)}]";
+        if (parameters.LibraryNce <= 0)
+            return $"LibraryNce, the collision energy (NCE) the spectra are predicted at, must be above 0, and it is {parameters.LibraryNce}";
+        return null;
+    }
+
+    /// <summary>
+    /// A predicted library's entries, targets and decoys (mzLib's <see cref="MslLibraryBuilder"/>), digested as the search's
+    /// settings say but stopped at the longest peptide the models take. What Koina cannot predict is counted in <paramref name="result"/>.
+    /// </summary>
+    /// <exception cref="MetaMorpheusException">
+    /// Permuted decoys cannot be made for these proteins (with the setting to use instead), or the prediction through Koina
+    /// failed (with what it needs, and the way round it: an .msl library).
+    /// </exception>
+    internal static List<MslLibraryEntry> PredictLibraryEntries(IReadOnlyList<Protein> proteins, CommonParameters commonParameters, DiaLibrarySearchTaskParameters parameters,
+        List<Modification> fixedModifications, List<Modification> variableModifications, FragmentIntensityModel intensityModel, RetentionTimeModel irtModel,
+        out MslLibraryBuildResult result)
+    {
+        var digestion = (DigestionParams)((DigestionParams)commonParameters.DigestionParams).Clone();
+        digestion.MaxLength = Math.Min(digestion.MaxLength, Math.Min(intensityModel.MaxPeptideLength, irtModel.MaxPeptideLength));
+        bool permuted = parameters.LibraryDecoys == DiaLibraryDecoys.Permuted;
+        var builder = new MslLibraryBuilder(intensityModel, irtModel) { DecoyProteins = permuted ? targets => PermutedDecoys(targets, digestion) : null };
+        try
+        {
+            return builder.Build(proteins, new MslLibraryBuildParameters(digestion, fixedModifications, variableModifications, parameters.LibraryPrecursorCharges,
+                parameters.LibraryNce, commonParameters.DissociationType), out result);
+        }
+        catch (MzLibException e) when (permuted)
+        {
+            throw new MetaMorpheusException($"Permuted decoys cannot be made for these proteins: {e.Message} " +
+                "Set LibraryDecoys = \"Reversed\" to predict the library with reversed decoys.", e);
+        }
+        catch (Exception e) when (e is HttpRequestException or OperationCanceledException)
+        {
+            // Nothing in MetaMorpheus cancels the build, so a cancellation is Koina's own deadline running out
+            throw new MetaMorpheusException($"The library could not be predicted through Koina ({e.GetType().Name}: {e.Message}). " +
+                $"Predicting a library needs network access to Koina ({HTTP.ModelsURL}); without it, give the search an .msl library.", e);
+        }
+    }
+
+    /// <summary>
+    /// Each target's permuted decoy, the benchmark libraries' recipe: mzLib's entrapment generator, fold 1 of 3, seed 1, named
+    /// DECOY_&lt;accession&gt;_f1, with no peptide equal to a target's. The generator makes entrapment, so each is marked a
+    /// decoy instead, and it refuses a contaminant, so a contaminant goes in as a plain copy.
+    /// </summary>
+    private static IReadOnlyList<Protein> PermutedDecoys(IReadOnlyList<Protein> targets, DigestionParams digestion)
+    {
+        var forbidden = EntrapmentProteinGenerator.TargetPeptides(targets, digestion);
+        return targets.Select(target => new Protein(EntrapmentProteinGenerator.Create(target.IsContaminant ? new Protein(target, isContaminant: false) : target,
+            digestion, forbidden, fold: 1, foldCount: 3, seed: 1, entrapmentIdentifier: "DECOY"), isDecoy: true, isEntrapment: false)).ToList();
     }
 
     /// <summary>
