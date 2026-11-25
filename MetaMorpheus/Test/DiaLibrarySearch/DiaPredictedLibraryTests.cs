@@ -177,7 +177,7 @@ public class DiaPredictedLibraryTests
         Assert.That(entries.Select(e => (e.FullSequence, e.ChargeState, e.IsDecoy)), Is.EquivalentTo(expected.Select(e => (e.FullSequence, e.ChargeState, e.IsDecoy))),
             "the task builds the library built here");
         var accessions = proteins.Select(p => p.Accession).ToHashSet();
-        Assert.That(entries.Where(e => !e.IsDecoy).SelectMany(e => e.ProteinAccession.Split('|')), Is.SubsetOf(accessions));
+        Assert.That(entries.Where(e => !e.IsDecoy).SelectMany(e => e.ProteinAccession.Split('|')).Distinct(), Is.SubsetOf(accessions));
         var decoys = entries.Where(e => e.IsDecoy).ToList();
         Assert.That(decoys, Is.Not.Empty);
         Assert.That(decoys, Has.None.Matches<MslLibraryEntry>(e => e.IsEntrapment), "a permuted decoy is a decoy, not entrapment");
@@ -307,7 +307,10 @@ public class DiaPredictedLibraryTests
         if (setting == "oligo")
             GlobalVariables.AnalyteType = AnalyteType.Oligo;
 
-        Assert.That(DiaPredictedLibrary.Unsupported(commonParameters, [], parameters), Does.Contain(said));
+        string? reason = DiaPredictedLibrary.Unsupported(commonParameters, [], parameters);
+        GlobalVariables.AnalyteType = AnalyteType.Peptide;
+
+        Assert.That(reason, Does.Contain(said));
         Assert.That(DiaPredictedLibrary.Unsupported(new CommonParameters(), [], new DiaLibrarySearchTaskParameters()), Is.Null, "the defaults can be predicted");
         Assert.That(DiaPredictedLibrary.Unsupported(new CommonParameters(dissociationType: DissociationType.CID), [], new DiaLibrarySearchTaskParameters()), Is.Null);
         Assert.That(DiaPredictedLibrary.Unsupported(new CommonParameters(), [DissociationType.ETD], new DiaLibrarySearchTaskParameters()), Does.Contain("ETD"),

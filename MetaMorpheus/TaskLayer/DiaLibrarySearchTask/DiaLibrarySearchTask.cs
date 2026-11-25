@@ -22,7 +22,8 @@ namespace TaskLayer;
 /// onto the library's iRT and its MS1 offset, then is searched and scored; results.txt reports the target precursors at
 /// the q-value threshold, per run and in total, and the target peptides. A protein database is not needed; given one
 /// (FASTA or XML, beside the library), the task also infers protein groups, and labels C the precursors and peptides
-/// whose proteins are all in a contaminant database.
+/// whose proteins are all in a contaminant database. Given proteins and no library, it predicts one from them first
+/// (<see cref="DiaPredictedLibrary"/>, through Koina).
 /// </summary>
 public class DiaLibrarySearchTask : MetaMorpheusTask
 {
@@ -176,12 +177,16 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
     {
         MyTaskResults = new MyTaskResults(this);
         var libraries = dbFilenameList.Where(db => db.IsSpectralLibrary).ToList();
-        if (libraries.Count != 1 || !string.Equals(Path.GetExtension(libraries[0].FilePath), ".msl", StringComparison.OrdinalIgnoreCase))
+        var proteinDatabases = dbFilenameList.Where(db => !db.IsSpectralLibrary).ToList();
+        // Given proteins and no library, the search predicts one from them (DiaPredictedLibrary)
+        bool predict = libraries.Count == 0 && proteinDatabases.Count > 0;
+        if (libraries.Count == 0 && !predict)
+            throw new MetaMorpheusException("A DIA library search needs one .msl library, or a protein database (FASTA or XML) to predict one from; neither was given.");
+        if (!predict && (libraries.Count != 1 || !string.Equals(Path.GetExtension(libraries[0].FilePath), ".msl", StringComparison.OrdinalIgnoreCase)))
             throw new MetaMorpheusException($"A DIA library search needs exactly one .msl library; {libraries.Count} spectral libraries were given.");
+        if (predict && DiaPredictedLibrary.Unsupported(CommonParameters, FileSpecificParameters?.Select(f => f.Parameters.DissociationType) ?? [], Parameters) is string unpredictable)
+            throw new MetaMorpheusException($"No .msl library was given, and one cannot be predicted from the proteins: {unpredictable}. Give the search an .msl library.");
 
-        string libraryPath = libraries[0].FilePath;
-        Status("Loading library...", taskId);
-        using var library = OpenLibrary(libraryPath);
         var parameters = Parameters.ToEngineParameters();
         // One threshold for every step, the search's identification filter threshold (MetaMorpheus #2982). Every filter
         // reads a DIA q-value: the search computes no PEP.
@@ -189,8 +194,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
         string threshold = qValueThreshold.ToString(CultureInfo.InvariantCulture);
 
         // A protein database, if given, is loaded before any run is searched, so a bad one fails at once. Its targets are
-        // for protein inference; the library's decoys name their own decoy proteins, so none are generated.
-        var proteinDatabases = dbFilenameList.Where(db => !db.IsSpectralLibrary).ToList();
+        // for protein inference (and a predicted library); the library's decoys name their own decoy proteins, so none are generated.
         List<Protein>? proteins = null;
         List<Modification> fixedModifications = [], variableModifications = [];
         HashSet<string>? contaminantAccessions = null;
@@ -203,6 +207,12 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
             proteins = loaded.BioPolymers.OfType<Protein>().ToList();
             contaminantAccessions = proteins.Where(p => p.IsContaminant).Select(p => p.Accession).ToHashSet();
         }
+
+        string? predictedSummary = null;
+        string libraryPath = predict ? PredictLibrary(OutputFolder, taskId, proteins!, fixedModifications, variableModifications, out predictedSummary)
+            : libraries[0].FilePath;
+        Status("Loading library...", taskId);
+        using var library = OpenLibrary(libraryPath);
 
         // Each run's targets passing its own q-value, kept until every run is in and the global q-values are known
         var passing = new List<(string FileName, List<DiaPrecursorMatch> Matches)>();
@@ -307,7 +317,27 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
             MyTaskResults.AddTaskSummaryText(line);
         foreach (var (fileName, reason) in skipped)
             MyTaskResults.AddTaskSummaryText($"{fileName}: skipped. {reason}");
+        if (predictedSummary is not null)
+            MyTaskResults.AddTaskSummaryText(predictedSummary);
         return MyTaskResults;
+    }
+
+    /// <summary>
+    /// Predicts a library from the proteins (<see cref="DiaPredictedLibrary"/>), writes it to the output folder as
+    /// <see cref="DiaPredictedLibrary.FileName"/>, so it can be searched again, and returns its path. The call blocks for as
+    /// long as Koina takes (a proteome is tens of minutes); <paramref name="summary"/> is its results.txt line.
+    /// </summary>
+    private string PredictLibrary(string outputFolder, string taskId, List<Protein> proteins, List<Modification> fixedModifications,
+        List<Modification> variableModifications, out string summary)
+    {
+        var (intensity, irt) = PredictionModels?.Invoke() ?? DiaPredictedLibrary.KoinaModels();
+        Status($"Predicting a library from {proteins.Count} proteins through Koina (network access required)...", taskId);
+        var entries = DiaPredictedLibrary.Build(proteins, CommonParameters, Parameters, fixedModifications, variableModifications, intensity, irt, out var result);
+        string path = Path.Combine(outputFolder, DiaPredictedLibrary.FileName);
+        MslLibrary.Save(path, entries);
+        FinishedWritingFile(path, new List<string> { taskId });
+        summary = DiaPredictedLibrary.Describe(result, proteins.Count, Parameters, intensity, irt);
+        return path;
     }
 
     /// <summary>
