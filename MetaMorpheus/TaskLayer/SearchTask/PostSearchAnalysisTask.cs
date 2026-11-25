@@ -1897,7 +1897,7 @@ namespace TaskLayer
                 throw;
             }
         }
-        private void UpdateSpectralLibrary()
+        internal void UpdateSpectralLibrary()
         {
             try
             {
@@ -1910,6 +1910,13 @@ namespace TaskLayer
                     includeAmbiguousMods: false,
                     includeHighQValuePsms: false);
 
+                // An .msl library is updated as .msl, with its retention times on the iRT scale (PostSearchAnalysisTaskMsl.cs)
+                if (SingleMslLibraryPath() is string mslLibrary)
+                {
+                    if (UpdateMslLibrary(mslLibrary, peptidesForSpectralLibrary.ToList()) is string updatedMslLibrary)
+                        SearchNextWith(updatedMslLibrary);
+                    return;
+                }
 
             //group psms by peptide and charge, then write highest scoring PSM to dictionary
             //a psm whose candidates differ in mass has no one precursor m/z to store (see SpectralMatch.ToLibrarySpectrum)
@@ -1958,16 +1965,21 @@ namespace TaskLayer
                 }
 
                 string updatedSpectralLibrary = UpdateSpectralLibrary(updatedLibrarySpectra, Parameters.OutputFolder);
-
-                Parameters.SearchTaskResults.NewDatabases = new List<DbForTask> { new DbForTask(updatedSpectralLibrary, false) };
-
-                DbForTask originalFastaDb = Parameters.DatabaseFilenameList.Where(p => p.IsSpectralLibrary == false && p.IsContaminant == false).First();
-                Parameters.SearchTaskResults.NewDatabases.Add(originalFastaDb);
+                SearchNextWith(updatedSpectralLibrary);
             }
             catch (Exception e)
             {
                 EngineCrashed("UpdateSpectralLibrary", e);
             }
+        }
+
+        /// <summary>A later task searches the updated library, with the search's protein database.</summary>
+        private void SearchNextWith(string updatedSpectralLibrary)
+        {
+            Parameters.SearchTaskResults.NewDatabases = new List<DbForTask> { new DbForTask(updatedSpectralLibrary, false) };
+
+            DbForTask originalFastaDb = Parameters.DatabaseFilenameList.Where(p => p.IsSpectralLibrary == false && p.IsContaminant == false).First();
+            Parameters.SearchTaskResults.NewDatabases.Add(originalFastaDb);
         }
 
         //for those spectra matching the same peptide/protein with same charge, save the one with highest score
