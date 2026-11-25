@@ -306,6 +306,17 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
                     && Math.Abs(mono.M - monoMz) / monoMz * 1e6 <= Ms1Tolerance.Value / 2)
                     ms1MonoTight[k] = mono.Intensity;
                 ms1Isotope[k] = _ms1Index.GetIndexedPeak(Ms1Target(isotopeMz, scanRt), ms1, Ms1Tolerance)?.Intensity ?? 0;
+                // Ms1InterpolatedTraces: each trace at the MS2 scan's own time, between the MS1 scans either side; the M0 mass
+                // error stays the nearest scan's
+                if (_parameters.Ms1InterpolatedTraces && Ms1Bracket(scanRt) is (var before, var after, var weight) && after != before)
+                {
+                    ms1Mono[k] = InterpolatedMs1(monoMz, before, after, weight);
+                    if (ms1MonoTight is not null)
+                        ms1MonoTight[k] = InterpolatedMs1(monoMz, before, after, weight, Ms1Tolerance.Value / 2);
+                    if (ms1Isotope2 is not null)
+                        ms1Isotope2[k] = InterpolatedMs1(Ms1Target(candidate.PrecursorMz + 2 * 1.0033548 / Math.Max(1, (int)candidate.Charge), scanRt), before, after, weight);
+                    ms1Isotope[k] = InterpolatedMs1(Ms1Target(isotopeMz, scanRt), before, after, weight);
+                }
             }
         }
         // The gate (MinimumApexFragments) picks candidates only; the apex-score features still see every scan
@@ -318,7 +329,7 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
                     candidateScores[s] = 0;
         }
         var apexes = _parameters.DiaNnPeakFinding
-            ? DiaNnCandidateApexes(core, _parameters.ApexHalfWidthScans, _parameters.MaxApexCandidates, _parameters.DiaNnPeakFindingMs1 ? ms1Mono : null, _parameters.CandidatePeaksFromSummedCore).ToList()
+            ? DiaNnCandidateApexes(core, _parameters.ApexHalfWidthScans, _parameters.MaxApexCandidates, _parameters.DiaNnPeakFindingMs1 ? ms1Mono : null, _parameters.CandidatePeaksFromSummedCore, _parameters.CandidateApexSpacingScans).ToList()
             : FragmentCoElution.FindApexes(candidateScores, _parameters.ApexHalfWidthScans, _parameters.MaxApexCandidates).ToList();
         if (_parameters.FragmentApexCandidate && reachable.Length > 1)
         {
@@ -384,6 +395,7 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
             }
         }
 
+        double[]? coreSummed = null;
         foreach (int apex in apexes)
         {
             double[] apexIntensities = traces.Select(trace => trace[apex]).ToArray();
@@ -553,9 +565,12 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
                     ms1From = Math.Max(0, apex - ms1HalfWidth);
                     ms1To = Math.Min(reachable.Length - 1, apex + ms1HalfWidth);
                 }
-                ms1Correlation = FragmentCoElution.CorrelationsTo([ms1Mono], reference, ms1From, ms1To)[0];
+                // Ms1CorrelationSummedCore: the core fragments summed, a sturdier profile than one fragment when each has
+                // only a few points across its peak
+                double[] ms1Reference = _parameters.Ms1CorrelationSummedCore ? coreSummed ??= SumOf(core) : reference;
+                ms1Correlation = FragmentCoElution.CorrelationsTo([ms1Mono], ms1Reference, ms1From, ms1To)[0];
                 if (ms1MonoTight is not null)
-                    ms1TightCorrelation = FragmentCoElution.CorrelationsTo([ms1MonoTight], reference, from, to)[0];
+                    ms1TightCorrelation = FragmentCoElution.CorrelationsTo([ms1MonoTight], ms1Reference, from, to)[0];
                 if (ms1MonoPpm is not null && ms1Isotope2 is not null)
                 {
                     // Intensity-weighted M0 mass error over the window; the full tolerance when no M0 was found there
@@ -567,9 +582,9 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
                             weights += ms1Mono[s];
                         }
                     ms1PeakMassError = weights > 0 ? weighted / weights : Ms1Tolerance.Value;
-                    ms1Isotope2Correlation = FragmentCoElution.CorrelationsTo([ms1Isotope2], reference, from, to)[0];
+                    ms1Isotope2Correlation = FragmentCoElution.CorrelationsTo([ms1Isotope2], ms1Reference, from, to)[0];
                 }
-                ms1IsotopeCorrelation = FragmentCoElution.CorrelationsTo([ms1Isotope], reference, ms1From, ms1To)[0];
+                ms1IsotopeCorrelation = FragmentCoElution.CorrelationsTo([ms1Isotope], ms1Reference, ms1From, ms1To)[0];
             }
 
             // MS1 evidence that stands without the fragments, at the MS1 scan nearest the apex: the M0-M3 envelope against the
@@ -930,8 +945,9 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
     /// added when <paramref name="ms1"/> is given: the MS1 trace's correlation with the best fragment. With
     /// <paramref name="summedCorePeaks"/>, scans where the sum of the smoothed fragments peaks also compete on score for the
     /// <paramref name="maxCount"/> places, if more than <paramref name="halfWidth"/> from every candidate, so none of those moves.
+    /// <paramref name="spacing"/>, when given, replaces <paramref name="halfWidth"/> as the least distance between candidates.
     /// </summary>
-    public static int[] DiaNnCandidateApexes(IReadOnlyList<double[]> core, int halfWidth, int maxCount, double[]? ms1 = null, bool summedCorePeaks = false)
+    public static int[] DiaNnCandidateApexes(IReadOnlyList<double[]> core, int halfWidth, int maxCount, double[]? ms1 = null, bool summedCorePeaks = false, int? spacing = null)
     {
         int n = core.Count == 0 ? 0 : core[0].Length;
         var smoothed = core.Select(FragmentCoElution.Smooth).ToArray();
@@ -977,6 +993,7 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
             else if (summed is not null && IsLocalMaximum(summed, s, local))
                 summedOnly.Add((s, bestSum));
         }
+        int gap = spacing ?? halfWidth;
         var chosen = new List<(int Scan, double Score)>();
         double top = candidates.Count > 0 ? candidates.Max(c => c.Score) : 0;
         foreach (var (scan, score) in candidates.OrderByDescending(c => c.Score).ThenBy(c => c.Scan))
@@ -984,7 +1001,7 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
             // With sum-peaks still to weigh, the cap waits until they have competed for its places
             if (score < top - 2.0 || (summedOnly.Count == 0 && chosen.Count == maxCount))
                 break;
-            if (chosen.All(c => Math.Abs(c.Scan - scan) > halfWidth))
+            if (chosen.All(c => Math.Abs(c.Scan - scan) > gap))
                 chosen.Add((scan, score));
         }
         if (summedOnly.Count == 0)
@@ -998,7 +1015,7 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
         {
             if (score < bar)
                 break;
-            if (chosen.All(c => Math.Abs(c.Scan - scan) > halfWidth))
+            if (chosen.All(c => Math.Abs(c.Scan - scan) > gap))
                 chosen.Add((scan, score));
         }
         return chosen.OrderByDescending(c => c.Score).ThenBy(c => c.Scan).Take(maxCount).Select(c => c.Scan).ToArray();
@@ -1128,6 +1145,47 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
         return SpectralSimilarity.CosineOfAlignedVectors(observedMinus1ToM3, [0, .. expectedM0ToM3]);
     }
 
+    /// <summary>The traces summed scan by scan.</summary>
+    private static double[] SumOf(IReadOnlyList<double[]> traces)
+    {
+        var sum = new double[traces.Count > 0 ? traces[0].Length : 0];
+        foreach (var trace in traces)
+            for (int k = 0; k < sum.Length; k++)
+                sum[k] += trace[k];
+        return sum;
+    }
+
+    /// <summary>
+    /// The MS1 scans either side of a time, and the later one's weight in a linear interpolation. At an MS1 scan's own time,
+    /// or outside the MS1 scans, both are the same scan.
+    /// </summary>
+    private (int Before, int After, double Weight) Ms1Bracket(double retentionTime)
+    {
+        int i = Array.BinarySearch(_ms1Rts, retentionTime);
+        if (i >= 0)
+            return (i, i, 0);
+        i = ~i;
+        if (i == 0)
+            return (0, 0, 0);
+        if (i == _ms1Rts.Length)
+            return (i - 1, i - 1, 0);
+        return (i - 1, i, (retentionTime - _ms1Rts[i - 1]) / (_ms1Rts[i] - _ms1Rts[i - 1]));
+    }
+
+    /// <summary>
+    /// An MS1 intensity between two MS1 scans (<see cref="DiaLibrarySearchParameters.Ms1InterpolatedTraces"/>): each scan's
+    /// closest peak within the MS1 tolerance, or within <paramref name="maxPpm"/> when given, interpolated linearly.
+    /// </summary>
+    private double InterpolatedMs1(double mz, int before, int after, double weight, double? maxPpm = null)
+    {
+        double At(int scan)
+        {
+            var peak = _ms1Index!.GetIndexedPeak(mz, scan, Ms1Tolerance);
+            return peak is null || (maxPpm is double limit && Math.Abs(peak.M - mz) / mz * 1e6 > limit) ? 0 : peak.Intensity;
+        }
+        return (1 - weight) * At(before) + weight * At(after);
+    }
+
     private int NearestMs1(double retentionTime)
     {
         int i = Array.BinarySearch(_ms1Rts, retentionTime);
@@ -1249,7 +1307,10 @@ public class DiaLibrarySearchEngine : MetaMorpheusEngine
                 ? new DiaNeighbourEvidence.PrecursorIons(ScoredIons(entry), entry.MatchedFragmentIons.Select(f => (double)f.Mz).ToList(), entry.BaseSequence)
                 : null;
             matches = DiaNeighbourEvidence.Apply(matches, IonsOf, windowBounds, windowScans, (_parameters.InterferenceRtToleranceCycles ?? _parameters.ApexHalfWidthScans + 1) * cycleMinutes,
-                _parameters.FragmentTolerancePpm, _parameters.ApexHalfWidthScans, _parameters.MostIntenseFragmentPeak, _parameters.TopFragmentCount, _parameters.ClassifierSeed, CommonParameters.MaxThreadsToUsePerFile, Status);
+                _parameters.FragmentTolerancePpm, _parameters.ApexHalfWidthScans, _parameters.MostIntenseFragmentPeak, _parameters.TopFragmentCount, _parameters.ClassifierSeed, CommonParameters.MaxThreadsToUsePerFile, Status,
+                _parameters.PeptidoformEvidence ? 1.2 * cycleMinutes : null,
+                _parameters.ProteinSupport ? index => _library.GetEntry(index) is { } entry ? (entry.ProteinAccession, entry.BaseSequence) : null : null,
+                _parameters.ProteinKey);
             Status($"timing: neighbour evidence over {matches.Count} precursors  [{neighbourClock.Elapsed:mm\\:ss\\.f}]");
         }
 

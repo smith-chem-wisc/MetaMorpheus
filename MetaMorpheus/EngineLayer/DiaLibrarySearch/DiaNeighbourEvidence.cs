@@ -181,6 +181,43 @@ public static class DiaNeighbourEvidence
         }
     }
 
+    /// <summary>
+    /// Two precursors' evidence on the ions only each has, at one scan: the library-weighted share of its unique ions (none of the
+    /// other's within the tolerance) present, weights renormalised over the unique set. Shared ions are left out, since they say
+    /// nothing about which of the two is there.
+    /// </summary>
+    public static (double Own, double Rival) UniqueEvidence(IReadOnlyList<(double Mz, double Intensity)> own, IReadOnlyList<(double Mz, double Intensity)> rival,
+        MsDataScan scan, double tolerancePpm, bool mostIntensePeak = true)
+    {
+        var tolerance = new PpmTolerance(tolerancePpm);
+        double Share(IReadOnlyList<(double Mz, double Intensity)> ions, IReadOnlyList<(double Mz, double Intensity)> others)
+        {
+            double weight = 0, seen = 0;
+            foreach (var (mz, intensity) in ions)
+            {
+                bool shared = false;
+                foreach (var other in others)
+                    if (Math.Abs(other.Mz - mz) <= mz * tolerancePpm * 1e-6) { shared = true; break; }
+                if (shared)
+                    continue;
+                weight += intensity;
+                if (scan.MassSpectrum.Size > 0 && DiaLibrarySearchEngine.FragmentPeakIndex(scan.MassSpectrum, mz, tolerance, mostIntensePeak) >= 0)
+                    seen += intensity;
+            }
+            return weight > 0 ? seen / weight : 0;
+        }
+        return (Share(own, rival), Share(rival, own));
+    }
+
+    /// <summary>The column appended with protein support (<see cref="DiaProteinSupport"/>): log(1 + support).</summary>
+    public const string ProteinSupportColumnName = "ProteinSupport";
+
+    /// <summary>The columns appended with peptidoform evidence, in order.</summary>
+    public static readonly string[] PeptidoformColumnNames = ["PeptidoformDifferential", "PeptidoformRivals", "PeptidoformOutscored"];
+
+    /// <summary>Precursors read as rivals on one MS1 signal: within this many ppm of each other, at the same charge.</summary>
+    public const double PeptidoformPpm = 3;
+
     /// <summary>Measures every row down to the provisional floor, each in the window holding its apex, against that window's confident targets.</summary>
     /// <param name="matches">One match per precursor, already scored.</param>
     /// <param name="ionsOf">What the library says of a precursor, by index; null when it cannot say.</param>
@@ -194,7 +231,8 @@ public static class DiaNeighbourEvidence
     /// <param name="threads">The most threads to read with.</param>
     /// <returns>Each match's columns; null for a match below the floor; zeros for one with no window or nothing on the library.</returns>
     public static double[]?[] MeasureAll(IReadOnlyList<DiaPrecursorMatch> matches, Func<int, PrecursorIons?> ionsOf, IReadOnlyList<(double Low, double High)> windowBounds,
-        IReadOnlyList<MsDataScan[]> windowScans, double rtToleranceMinutes, double tolerancePpm, int apexHalfWidthScans, bool mostIntensePeak, int topFragments, int threads = 1)
+        IReadOnlyList<MsDataScan[]> windowScans, double rtToleranceMinutes, double tolerancePpm, int apexHalfWidthScans, bool mostIntensePeak, int topFragments, int threads = 1,
+        double? peptidoformRtMinutes = null)
     {
         var columns = new double[]?[matches.Count];
         if (matches.Count == 0)
@@ -209,8 +247,10 @@ public static class DiaNeighbourEvidence
             .Select(c => new Neighbour(c.Match.ApexRt.Value, c.Ions!.BaseSequence, c.Ions.Ions.Select(f => f.Mz).ToArray(), c.Ions.Ions.Select(f => f.Intensity).ToArray())).ToArray()).ToArray();
 
         var options = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, threads) };
+        var windowOf = new (int Window, int Scan)[matches.Count];
         Parallel.For(0, matches.Count, options, i =>
         {
+            windowOf[i] = (-1, -1);
             var match = matches[i];
             if (!(match.Score >= floor))
                 return;
@@ -233,8 +273,94 @@ public static class DiaNeighbourEvidence
             columns[i] = library is null
                 ? new double[ColumnNames.Length]
                 : Measure(library.Ions.Take(topFragments).ToList(), library.AllMzs, library.BaseSequence, neighboursOf[own], windowScans[own], ownScan, rtToleranceMinutes, tolerancePpm, apexHalfWidthScans, mostIntensePeak);
+            windowOf[i] = (own, ownScan);
         });
+        if (peptidoformRtMinutes is double rivalRt)
+            AppendPeptidoformColumns(matches, columns, windowOf, ionsOf, windowScans, rivalRt, tolerancePpm, mostIntensePeak, topFragments, options);
         return columns;
+    }
+
+    /// <summary>
+    /// Appends <see cref="PeptidoformColumnNames"/> to each measured row: rivals are the other measured rows on its MS1 signal (same charge,
+    /// within <see cref="PeptidoformPpm"/>, apex within <paramref name="rivalRtMinutes"/>); at the row's apex scan, the worst difference of its
+    /// unique evidence over the rival's, the number of rivals, and whether any outscores it. Zeros for a row with no rival.
+    /// </summary>
+    private static void AppendPeptidoformColumns(IReadOnlyList<DiaPrecursorMatch> matches, double[]?[] columns, (int Window, int Scan)[] windowOf,
+        Func<int, PrecursorIons?> ionsOf, IReadOnlyList<MsDataScan[]> windowScans, double rivalRtMinutes, double tolerancePpm, bool mostIntensePeak, int topFragments,
+        ParallelOptions options)
+    {
+        int[] measured = Enumerable.Range(0, matches.Count).Where(i => columns[i] is not null).OrderBy(i => matches[i].Charge).ThenBy(i => matches[i].PrecursorMz).ToArray();
+        double[] mzs = measured.Select(i => matches[i].PrecursorMz).ToArray();
+        int[] charges = measured.Select(i => matches[i].Charge).ToArray();
+        var ions = new IReadOnlyList<(double Mz, double Intensity)>?[matches.Count];
+        Parallel.ForEach(measured, options, i => ions[i] = ionsOf(matches[i].PrecursorIndex)?.Ions.Take(topFragments).ToList());
+        var extra = new double[matches.Count][];
+        Parallel.For(0, measured.Length, options, k =>
+        {
+            int i = measured[k];
+            extra[i] = new double[PeptidoformColumnNames.Length];
+            var (window, scan) = windowOf[i];
+            if (ions[i] is null || window < 0)
+                return;
+            double low = matches[i].PrecursorMz * (1 - PeptidoformPpm * 1e-6), high = matches[i].PrecursorMz * (1 + PeptidoformPpm * 1e-6);
+            int first = k;
+            while (first > 0 && charges[first - 1] == charges[k] && mzs[first - 1] >= low)
+                first--;
+            double worst = double.PositiveInfinity;
+            int rivals = 0;
+            bool outscored = false;
+            for (int r = first; r < measured.Length && charges[r] == charges[k] && mzs[r] <= high; r++)
+            {
+                int j = measured[r];
+                if (j == i || ions[j] is null || Math.Abs(matches[j].ApexRt.Value - matches[i].ApexRt.Value) > rivalRtMinutes)
+                    continue;
+                var (own, rival) = UniqueEvidence(ions[i]!, ions[j]!, windowScans[window][scan], tolerancePpm, mostIntensePeak);
+                worst = Math.Min(worst, own - rival);
+                rivals++;
+                outscored |= matches[j].Score > matches[i].Score;
+            }
+            if (rivals > 0)
+                extra[i] = [worst, rivals, outscored ? 1 : 0];
+        });
+        foreach (int i in measured)
+            columns[i] = [.. columns[i]!, .. extra[i]];
+    }
+
+    /// <summary>
+    /// Appends log(1 + protein support) to each measured row, from the confident targets' peptides. Only the measured and the
+    /// confident rows are read, so a library is not walked whole.
+    /// </summary>
+    /// <summary>
+    /// Protein support is read only when measured decoys are in a supported protein at least this share as often as measured
+    /// targets are. A decoy counts toward its target's protein, so it lands in one about as often as a false target does.
+    /// When decoy accessions name no target protein, no decoy is ever supported, and the trees would tell targets from decoys
+    /// by name alone: the column is left out.
+    /// </summary>
+    public const double MinDecoySupportShare = 0.1;
+
+    /// <summary>Appends <see cref="ProteinSupportColumnName"/> to every measured row, or to none; returns what it did.</summary>
+    private static string AppendProteinSupport(IReadOnlyList<DiaPrecursorMatch> matches, double[]?[] columns, int[] measured, double[] q,
+        Func<int, (string? Accession, string BaseSequence)?> proteinOf, Func<string, string>? proteinKey)
+    {
+        bool Confident(int i) => !matches[i].IsDecoy && q[i] <= ConfidentQValue;
+        int[] read = measured.Concat(Enumerable.Range(0, matches.Count).Where(Confident)).Distinct().ToArray();
+        var rows = read.Select(i => proteinOf(matches[i].PrecursorIndex) is { } protein
+            ? new DiaProteinSupport.Row(protein.Accession, protein.BaseSequence, matches[i].IsDecoy, Confident(i))
+            : new DiaProteinSupport.Row(null, matches[i].FullSequence, matches[i].IsDecoy, false)).ToList();
+        double[] support = DiaProteinSupport.Measure(rows, proteinKey);
+        var supportOf = new Dictionary<int, double>(read.Length);
+        for (int k = 0; k < read.Length; k++)
+            supportOf[read[k]] = support[k];
+        int decoys = measured.Count(i => matches[i].IsDecoy), targets = measured.Length - decoys;
+        int supportedDecoys = measured.Count(i => matches[i].IsDecoy && supportOf[i] > 0);
+        int supportedTargets = measured.Count(i => !matches[i].IsDecoy && supportOf[i] > 0);
+        double decoyShare = decoys > 0 ? (double)supportedDecoys / decoys : 0, targetShare = targets > 0 ? (double)supportedTargets / targets : 0;
+        string counts = $"{supportedDecoys} of {decoys} measured decoys and {supportedTargets} of {targets} measured targets in a protein with another confident peptide";
+        if (decoyShare < MinDecoySupportShare * targetShare)
+            return $"protein support left out: {counts}; decoy accessions may not name their targets' proteins";
+        foreach (int i in measured)
+            columns[i] = [.. columns[i]!, Math.Log(1 + supportOf[i])];
+        return $"protein support: {counts}";
     }
 
     /// <summary>
@@ -266,16 +392,24 @@ public static class DiaNeighbourEvidence
     /// <summary>
     /// Measures the rows near the threshold and re-orders them. Rows below the provisional floor keep their scores, and every value above it stays above it. So do rows at or under <see cref="KeptQValue"/>.
     /// </summary>
+    /// <param name="proteinOf">
+    /// With it, each measured row also gets <see cref="ProteinSupportColumnName"/>: log(1 + its <see cref="DiaProteinSupport"/>),
+    /// counting the targets at or under <see cref="ConfidentQValue"/>. It gives a library precursor's accessions and peptide.
+    /// </param>
+    /// <param name="proteinKey">The protein an accession counts toward (<see cref="DiaLibrarySearchParameters.ProteinKey"/>).</param>
     /// <returns>The matches in their input order, with their scores reassigned.</returns>
     public static List<DiaPrecursorMatch> Apply(IReadOnlyList<DiaPrecursorMatch> matches, Func<int, PrecursorIons?> ionsOf, IReadOnlyList<(double Low, double High)> windowBounds,
-        IReadOnlyList<MsDataScan[]> windowScans, double rtToleranceMinutes, double tolerancePpm, int apexHalfWidthScans, bool mostIntensePeak, int topFragments, int seed, int threads = 1, Action<string>? report = null)
+        IReadOnlyList<MsDataScan[]> windowScans, double rtToleranceMinutes, double tolerancePpm, int apexHalfWidthScans, bool mostIntensePeak, int topFragments, int seed, int threads = 1, Action<string>? report = null,
+        double? peptidoformRtMinutes = null, Func<int, (string? Accession, string BaseSequence)?>? proteinOf = null, Func<string, string>? proteinKey = null)
     {
-        double[]?[] columns = MeasureAll(matches, ionsOf, windowBounds, windowScans, rtToleranceMinutes, tolerancePpm, apexHalfWidthScans, mostIntensePeak, topFragments, threads);
+        double[]?[] columns = MeasureAll(matches, ionsOf, windowBounds, windowScans, rtToleranceMinutes, tolerancePpm, apexHalfWidthScans, mostIntensePeak, topFragments, threads, peptidoformRtMinutes);
         int[] measured = Enumerable.Range(0, matches.Count).Where(i => columns[i] is not null).ToArray();
         var applied = matches.ToList();
         if (measured.Length == 0)
             return applied;
         double[] q = TargetDecoyQValues.Compute(matches.Select(m => m.Score).ToArray(), matches.Select(m => m.IsDecoy).ToArray());
+        if (proteinOf is not null)
+            report?.Invoke(AppendProteinSupport(matches, columns, measured, q, proteinOf, proteinKey));
         double keepAtOrAbove = matches.Where((_, i) => q[i] <= KeptQValue).Select(m => m.Score).DefaultIfEmpty(double.PositiveInfinity).Min();
         double[] stacked = Stack(measured.Select(i => matches[i].Score).ToList(), measured.Select(i => columns[i]!).ToList(), measured.Select(i => matches[i].IsDecoy).ToList(),
             measured.Select(i => matches[i].FullSequence).ToList(), seed, threads, keepAtOrAbove);

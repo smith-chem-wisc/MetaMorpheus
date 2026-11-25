@@ -47,11 +47,17 @@ public class DiaIrtSelfCalibrationTests
         var search = new DiaLibrarySearchParameters(DiaNnFragmentFilter: true, TopFragmentCount: 10);
         var calibrationParameters = DiaIrtSelfCalibration.CalibrationParameters(search);
         Assert.That(calibrationParameters.DiaNnFragmentFilter, Is.False);
+        // Candidate spacing, peptidoform evidence and protein support were benchmarked in the main search only: calibration keeps
+        // the half width, no rivals and no protein support
+        Assert.That(calibrationParameters.CandidateApexSpacingScans, Is.Null);
+        Assert.That(calibrationParameters.PeptidoformEvidence, Is.False);
+        Assert.That(calibrationParameters.ProteinSupport, Is.False);
         Assert.That(calibrationParameters with { DiaNnFragmentFilter = true, Ms1TolerancePpm = search.Ms1TolerancePpm, DiaNnSignalShare = search.DiaNnSignalShare,
+                CandidateApexSpacingScans = search.CandidateApexSpacingScans, PeptidoformEvidence = search.PeptidoformEvidence, ProteinSupport = search.ProteinSupport,
                 InterferenceExplainedFragments = search.InterferenceExplainedFragments, ClassifierNetworkLayers = search.ClassifierNetworkLayers,
                 ClassifierTreeBlend = search.ClassifierTreeBlend, CandidatePeaksFromSummedCore = search.CandidatePeaksFromSummedCore, NeighbourEvidence = search.NeighbourEvidence, FragmentIntensities = search.FragmentIntensities, IrtComposition = search.IrtComposition,
-                MaxToleranceCoElution = search.MaxToleranceCoElution, Ms1TightCorrelation = search.Ms1TightCorrelation, SqrtCoElution = search.SqrtCoElution, Ms1PeakEnvelopeTight = search.Ms1PeakEnvelopeTight, Ms1PeakSignalFraction = search.Ms1PeakSignalFraction, Ms1PeakPoints = search.Ms1PeakPoints, Ms1PeakFeatures = search.Ms1PeakFeatures },
-            Is.EqualTo(search), "nothing else changes but calibration's own MS1 tolerance, the signal share, the interference rule, the network, the tree blend and the summed core");
+                MaxToleranceCoElution = search.MaxToleranceCoElution, Ms1TightCorrelation = search.Ms1TightCorrelation, SqrtCoElution = search.SqrtCoElution, Ms1PeakEnvelopeTight = search.Ms1PeakEnvelopeTight, Ms1PeakSignalFraction = search.Ms1PeakSignalFraction, Ms1PeakPoints = search.Ms1PeakPoints, Ms1PeakFeatures = search.Ms1PeakFeatures, Ms1InterpolatedTraces = search.Ms1InterpolatedTraces },
+            Is.EqualTo(search), "nothing else changes but calibration's own MS1 tolerance, the signal share, the interference rule, the network, the tree blend, the summed core and the MS1 features it was benchmarked without");
 
         var run = SyntheticDiaRun.Build(300, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0);
         using var library = MslLibrary.Load(run.WriteLibrary(_directory));
@@ -108,6 +114,9 @@ public class DiaIrtSelfCalibrationTests
         Assert.That(DiaIrtSelfCalibration.CalibrationParameters(new DiaLibrarySearchParameters()).Ms1PeakSignalFraction, Is.False, "Ms1PeakSignalFraction: calibration was benchmarked without it");
         Assert.That(DiaIrtSelfCalibration.CalibrationParameters(new DiaLibrarySearchParameters()).Ms1PeakPoints, Is.False, "Ms1PeakPoints: calibration was benchmarked without it");
         Assert.That(DiaIrtSelfCalibration.CalibrationParameters(new DiaLibrarySearchParameters()).Ms1PeakFeatures, Is.False, "Ms1PeakFeatures: calibration was benchmarked without it");
+        var ms1Options = DiaIrtSelfCalibration.CalibrationParameters(new DiaLibrarySearchParameters(Ms1InterpolatedTraces: true, Ms1CorrelationSummedCore: true));
+        Assert.That(ms1Options.Ms1InterpolatedTraces, Is.False, "Ms1InterpolatedTraces: calibration was benchmarked without it");
+        Assert.That(ms1Options.Ms1CorrelationSummedCore, Is.False, "Ms1CorrelationSummedCore: calibration was benchmarked without it");
 
         var run = SyntheticDiaRun.Build(300, entry => !entry.IsDecoy && SyntheticDiaRun.Bucket(entry, 4) != 0);
         using var library = MslLibrary.Load(run.WriteLibrary(_directory));

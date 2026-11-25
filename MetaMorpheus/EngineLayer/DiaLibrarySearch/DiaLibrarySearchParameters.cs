@@ -4,7 +4,12 @@ using System.Collections.Generic;
 
 namespace EngineLayer.DiaLibrarySearch;
 
-/// <param name="FragmentTolerancePpm">How far an observed peak may sit from a library fragment and still be it.</param>
+/// <param name="FragmentTolerancePpm">
+/// How far an observed peak may sit from a library fragment and still be it. 20 ppm by default, best for Orbitrap MS2: at
+/// 15 ppm PXD022589 (HF-X) lost 5.1% and PXD005573 1 h (QE HF) 1.3% at a matched paired entrapment FDP of 1%. For Orbitrap
+/// Astral MS2 set 10 ppm: PXD071205's four 5-min runs gained 10.4%, 13.3%, 7.2% and 2.5% (A1, A2, B1, B2). Neither the run's fragment mass error nor
+/// its spectrum density predicts which a run wants, so the tolerance is set by instrument, not measured.
+/// </param>
 /// <param name="IrtHalfWindow">
 /// How far, in iRT, a precursor's apex may fall from its library iRT. Wide enough here to absorb a run whose true
 /// RT-to-iRT curve bows away from the linear map it was searched with.
@@ -202,6 +207,52 @@ namespace EngineLayer.DiaLibrarySearch;
 /// library value.
 /// </param>
 /// <param name="ClassifierModel">The model the rescorer fits in each fold: a linear discriminant, or a small neural-network ensemble (DIA-NN's approach).</param>
+/// <param name="Ms1InterpolatedTraces">
+/// Read the precursor's MS1 traces at each MS2 scan's time by interpolating linearly between the MS1 scans either side,
+/// instead of taking the nearest MS1 scan. When MS1 is sampled faster than a window's MS2 (PXD071205's 5-min Astral runs:
+/// 0.74 s against 1.06 s), the nearest scan drops MS1 points and sits up to half an MS1 interval off. On by default: two-seed
+/// means at a matched paired entrapment FDP of 1% gained 1.2% (PXD022589 HF-X) and 1.4% (PXD005573 1 h), the species arm
+/// 0.64% and 0.38%, DIA-NN's own list rose on both, and the 5-min runs gained 2.5% on average (seed 0). Calibration keeps it off.
+/// </param>
+/// <param name="Ms1CorrelationSummedCore">
+/// Correlate the MS1 traces (M0, M+1, M+2 and the tight M0) with the summed core fragments instead of the smoothed best core
+/// fragment, a sturdier profile when each fragment has only one to three points across its peak. Off by default.
+/// </param>
+/// <param name="CandidateApexSpacingScans">
+/// Candidate apexes must lie more than this many scans apart; null spaces them by <see cref="ApexHalfWidthScans"/>, as DIA-NN 1.8
+/// does. Each candidate is scored over its co-elution window, so at about 1.6 points per FWHM (PXD071205's 5-min runs) a noise
+/// maximum of the best fragment a half width from the real apex scores on the real peak at its window's edge, and, scoring a
+/// little higher, suppresses the real apex. A smaller spacing keeps both, and the classifier chooses on their apex features.
+/// 2 by default since 2026-11-18, with <see cref="PeptidoformEvidence"/> (owner adopted both; two-seed means at a matched paired
+/// entrapment FDP of 1% against the earlier defaults: PXD022589 HF-X +1.7%, PXD005573 1 h +1.4%; species arm +1.0% / +1.5%;
+/// DIA-NN's own list +1.3% / +0.3%; PXD071205's 5-min runs +3-7% for the spacing alone). Spacing 2 alone helps the narrow-peak
+/// runs most: at the held-out run's 3.2 scans per FWHM it was about neutral, and its q 0.1% count fell at one seed of two.
+/// Calibration keeps the half width (<see cref="DiaIrtSelfCalibration.CalibrationParameters"/>).
+/// </param>
+/// <param name="PeptidoformEvidence">
+/// With <see cref="NeighbourEvidence"/>: precursors reading one MS1 signal (same charge, within 3 ppm, apex within a cycle) are compared
+/// on the ions only each has (<see cref="DiaNeighbourEvidence.UniqueEvidence"/>), and the neighbour trees also see the worst difference,
+/// the number of such rivals and whether one outscores the row. On by default since 2026-11-18, with spacing 2 (see
+/// <see cref="CandidateApexSpacingScans"/>; on top of spacing 2: paired +0.85% / +1.27%, species -0.06% / +0.48%, the 5-min runs
+/// +2.3%). Permuted decoys are isomers of targets, so a decoy on a present target's MS1 now loses to it while a foreign false
+/// hit is nobody's isomer: E. coli FDP at 1% q rose 0.65-0.74% to 0.77-0.82% on HF-X and stayed 1.18-1.24% on held-out.
+/// </param>
+/// <param name="ProteinSupport">
+/// With <see cref="NeighbourEvidence"/>: the neighbour trees also see each row's protein support (<see cref="DiaProteinSupport.Measure"/>),
+/// the number of other confident peptides of its protein, as DIA-NN 2.3.2 re-scores on protein information after its network.
+/// Judge it only where entrapments count toward their owners' proteins (<see cref="ProteinKey"/>): in their own proteins,
+/// which are never present, support removes them for free. On by default since 2026-11-18 (owner adopted it): with each
+/// entrapment in its owner's protein, two seeds, at a matched paired entrapment FDP of 1% against the defaults before it,
+/// PXD022589 HF-X +7.0% / +7.5%, PXD005573 1 h +7.8% / +8.1%; species arm +7.4% / +7.7% and +12.6% / +11.4%; DIA-NN's own
+/// list +2.8% / +3.6%; PXD071205 A1 +12.4% / +13.2%. FDP at 1% q stays at or under 1% (held-out's species arm 1.24% to 0.77%),
+/// and q 0.1% is flat or up. A decoy counts toward its target's protein; the column is left out when no decoy accession names
+/// one (<see cref="DiaNeighbourEvidence.MinDecoySupportShare"/>). Calibration leaves it off.
+/// </param>
+/// <param name="ProteinKey">
+/// The protein an accession counts toward for <see cref="ProteinSupport"/>; null takes the accession as it is. An entrapment
+/// benchmark maps each entrapment's accession to its owner target's, so it gets the support a false hit in a random,
+/// sometimes present, protein would.
+/// </param>
 public sealed record DiaLibrarySearchParameters(double FragmentTolerancePpm = 20, double IrtHalfWindow = 20,
     int TopFragmentCount = 12, int ApexHalfWidthScans = 3, int PrecursorSampleStride = 1, int MaxApexCandidates = 30, double ClassifierTrainingQValue = 0.01,
     StatisticalModels.RescoreModel ClassifierModel = StatisticalModels.RescoreModel.NeuralNetworkEnsemble,
@@ -255,7 +306,13 @@ public sealed record DiaLibrarySearchParameters(double FragmentTolerancePpm = 20
     double InterferenceOwnIonShareCeiling = 1,
     bool NeighbourEvidence = true,
     DiaFragmentIntensityModel? FragmentIntensities = null,
-    DiaIrtCompositionModel? IrtComposition = null)
+    DiaIrtCompositionModel? IrtComposition = null,
+    bool Ms1InterpolatedTraces = true,
+    bool Ms1CorrelationSummedCore = false,
+    int? CandidateApexSpacingScans = 2,
+    bool PeptidoformEvidence = true,
+    bool ProteinSupport = true,
+    Func<string, string>? ProteinKey = null)
 {
     /// <summary>
     /// The MS1 tolerance a search uses: <see cref="Ms1ToleranceSpreadMultiple"/> times the calibrated offset's residual

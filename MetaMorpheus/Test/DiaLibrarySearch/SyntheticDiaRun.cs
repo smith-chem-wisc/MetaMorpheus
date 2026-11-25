@@ -71,9 +71,11 @@ internal sealed class SyntheticDiaRun
     /// <param name="deadMinutes">Minutes before anything elutes, as a short direct-injection run spends before its peptides
     /// arrive: the run lasts <see cref="RunMinutes"/> plus this, and every elution is this much later than
     /// <see cref="TrueRtMinutes"/>.</param>
+    /// <param name="staggerMs2">Spreads each cycle's MS2 scans through the cycle, window w at (w + 1) / (windows + 1) of it,
+    /// as a real instrument records them after the cycle's MS1 scan; false gives every scan of a cycle the cycle's time.</param>
     public static SyntheticDiaRun Build(int targetCount, Func<MslLibraryEntry, bool> plant, bool withDecoys = true,
         int seed = 42, double noisePeaksPerScan = 60, Func<MslLibraryEntry, double>? abundance = null, bool withMs1 = false, double ppmOffset = 0, bool withCharge3Siblings = false,
-        double deadMinutes = 0)
+        double deadMinutes = 0, bool staggerMs2 = false)
     {
         var random = new Random(seed);
         var library = new List<MslLibraryEntry>();
@@ -126,13 +128,14 @@ internal sealed class SyntheticDiaRun
             for (int w = 0; w < WindowCount; w++)
             {
                 double low = FirstWindowLowMz + w * WindowWidth;
+                double scanRt = staggerMs2 ? rt + (w + 1) * CycleMinutes / (WindowCount + 1) : rt;
                 var peaks = new List<(double Mz, double Intensity)>();
                 for (int n = 0; n < noisePeaksPerScan; n++)
                     peaks.Add((150 + random.NextDouble() * 1350, 50 + random.NextDouble() * 950));
 
                 foreach (var entry in planted.Where(e => e.PrecursorMz >= low && e.PrecursorMz < low + WindowWidth))
                 {
-                    double elution = 1e5 * (abundance?.Invoke(entry) ?? 1) * Math.Exp(-0.5 * Math.Pow((rt - deadMinutes - TrueRtMinutes(entry.RetentionTime)) / ElutionSigmaMinutes, 2));
+                    double elution = 1e5 * (abundance?.Invoke(entry) ?? 1) * Math.Exp(-0.5 * Math.Pow((scanRt - deadMinutes - TrueRtMinutes(entry.RetentionTime)) / ElutionSigmaMinutes, 2));
                     if (elution < 1)
                         continue;
                     foreach (var fragment in entry.MatchedFragmentIons)
@@ -141,7 +144,7 @@ internal sealed class SyntheticDiaRun
 
                 var ordered = peaks.OrderBy(p => p.Mz).ToArray();
                 var spectrum = new MzSpectrum(ordered.Select(p => p.Mz * (1 + ppmOffset * 1e-6)).ToArray(), ordered.Select(p => p.Intensity).ToArray(), false);
-                scans.Add(Scan(spectrum, scanNumber, rt, isolationMz: low + WindowWidth / 2));
+                scans.Add(Scan(spectrum, scanNumber, scanRt, isolationMz: low + WindowWidth / 2));
                 scanNumber++;
             }
         }
