@@ -22,8 +22,14 @@ namespace TaskLayer;
 /// onto the library's iRT and its MS1 offset, then is searched and scored; results.txt reports the target precursors at
 /// the q-value threshold, per run and in total, and the target peptides. A protein database is not needed; given one
 /// (FASTA or XML, beside the library), the task also infers protein groups, and labels C the precursors and peptides
-/// whose proteins are all in a contaminant database. Given proteins and no library, it predicts one from them first
-/// (<see cref="DiaPredictedLibrary"/>, through Koina).
+/// whose proteins are all in a contaminant database.
+/// <list type="bullet">
+/// <item>Given proteins and no library, it predicts one from them first, complete with targets and decoys
+/// (<see cref="DiaPredictedLibrary"/>, through Koina), and says so before it starts.</item>
+/// <item>Given a library, it searches that library's spectra only: a protein database beside it adds none, and results.txt
+/// says so.</item>
+/// <item>It takes one library; two or more are refused, as is a library with no decoys.</item>
+/// </list>
 /// </summary>
 public class DiaLibrarySearchTask : MetaMorpheusTask
 {
@@ -208,11 +214,18 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
             contaminantAccessions = proteins.Where(p => p.IsContaminant).Select(p => p.Accession).ToHashSet();
         }
 
-        string? predictedSummary = null;
-        string libraryPath = predict ? PredictLibrary(OutputFolder, taskId, proteins!, fixedModifications, variableModifications, out predictedSummary)
+        string? librarySummary = null;
+        string libraryPath = predict ? PredictLibrary(OutputFolder, taskId, proteins!, fixedModifications, variableModifications, out librarySummary)
             : libraries[0].FilePath;
         Status("Loading library...", taskId);
         using var library = OpenLibrary(libraryPath);
+        // Refused once here, rather than by every run's calibration in turn
+        if (library.DecoyCount == 0)
+            throw new MetaMorpheusException($"{Path.GetFileName(libraryPath)} holds no decoys, so the search cannot estimate its FDR. Give a library that includes " +
+                "decoy precursors, or give no library and a protein database (FASTA or XML) to predict one from, complete with targets and decoys.");
+        // A given library is searched as it is: say so, since a protein database beside it could be taken to add to it
+        librarySummary ??= $"Library: {Path.GetFileName(libraryPath)}, as given: {library.PrecursorCount - library.DecoyCount} target and {library.DecoyCount} decoy precursors. " +
+            "Only its spectra are searched" + (proteinDatabases.Count > 0 ? "; the protein databases add none, and infer protein groups." : ".");
 
         // Each run's targets passing its own q-value, kept until every run is in and the global q-values are known
         var passing = new List<(string FileName, List<DiaPrecursorMatch> Matches)>();
@@ -317,8 +330,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
             MyTaskResults.AddTaskSummaryText(line);
         foreach (var (fileName, reason) in skipped)
             MyTaskResults.AddTaskSummaryText($"{fileName}: skipped. {reason}");
-        if (predictedSummary is not null)
-            MyTaskResults.AddTaskSummaryText(predictedSummary);
+        MyTaskResults.AddTaskSummaryText(librarySummary);
         return MyTaskResults;
     }
 
@@ -331,6 +343,7 @@ public class DiaLibrarySearchTask : MetaMorpheusTask
         List<Modification> variableModifications, out string summary)
     {
         var (intensity, irt) = PredictionModels?.Invoke() ?? DiaPredictedLibrary.KoinaModels();
+        Warn(DiaPredictedLibrary.Notice);
         Status($"Predicting a library from {proteins.Count} proteins through Koina (network access required)...", taskId);
         var entries = DiaPredictedLibrary.Build(proteins, CommonParameters, Parameters, fixedModifications, variableModifications, intensity, irt, out var result);
         string path = Path.Combine(outputFolder, DiaPredictedLibrary.FileName);

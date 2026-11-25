@@ -115,11 +115,19 @@ internal static class DiaPredictedLibrary
             digestion, forbidden, fold: 1, foldCount: 3, seed: 1, entrapmentIdentifier: "DECOY"), isDecoy: true, isEntrapment: false)).ToList();
     }
 
+    /// <summary>
+    /// The notice given before a library is predicted, so the user knows, before the long network step, that one is being
+    /// made, that it is complete with targets and decoys, and where it will be.
+    /// </summary>
+    public const string Notice = "No .msl library was given, so one is predicted from the protein databases, complete with targets and decoys: " +
+        "Prosit 2025 spectra and retention times through Koina (network access required; a proteome takes tens of minutes). " +
+        "It is written to the output folder as " + FileName + ", which later searches can be given as their library.";
+
     /// <summary>The results.txt line for a predicted library: what it holds, how it was made, and what could not be predicted.</summary>
     public static string Describe(MslLibraryBuildResult result, int proteinCount, DiaLibrarySearchTaskParameters parameters, FragmentIntensityModel intensityModel,
         RetentionTimeModel irtModel) =>
-        $"Predicted library {FileName}: {result.TargetPrecursors} target and {result.DecoyPrecursors} decoy precursors from {proteinCount} proteins, " +
-        $"{parameters.LibraryDecoys.ToString().ToLowerInvariant()} decoys; {intensityModel.ModelName} and {irtModel.ModelName} at {HTTP.ModelsURL}, " +
-        $"NCE {parameters.LibraryNce}, charges {string.Join(", ", parameters.LibraryPrecursorCharges)}; {result.NotPredicted} precursors not predicted, " +
-        $"{result.NoFragments} with no fragments, {result.DecoysDroppedAsTargetSequences} decoys dropped as target sequences";
+        $"Library: {FileName}, predicted from the protein databases ({proteinCount} proteins), complete with targets and decoys: " +
+        $"{result.TargetPrecursors} target and {result.DecoyPrecursors} {parameters.LibraryDecoys.ToString().ToLowerInvariant()} decoy precursors; " +
+        $"{intensityModel.ModelName} and {irtModel.ModelName} at {HTTP.ModelsURL}, NCE {parameters.LibraryNce}, charges {string.Join(", ", parameters.LibraryPrecursorCharges)}; " +
+        $"{result.NotPredicted} precursors not predicted, {result.NoFragments} with no fragments, {result.DecoysDroppedAsTargetSequences} decoys dropped as target sequences";
 }
