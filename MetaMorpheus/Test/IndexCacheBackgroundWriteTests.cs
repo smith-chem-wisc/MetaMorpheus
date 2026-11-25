@@ -101,7 +101,8 @@ namespace Test
                     Is.EqualTo(Directory.GetFiles(syncCache).Select(Path.GetFileName).OrderBy(n => n)), "the same files, and no partial file left");
                 foreach (string name in names)
                 {
-                    Assert.That(File.ReadAllBytes(Path.Combine(backgroundCache, name)), Is.EqualTo(File.ReadAllBytes(Path.Combine(syncCache, name))), name);
+                    // SequenceEqual, not Is.EqualTo: NUnit compares a 130 MB index file byte by byte in about 20 s
+                    Assert.That(File.ReadAllBytes(Path.Combine(backgroundCache, name)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(syncCache, name))), Is.True, name);
                 }
             }
             finally

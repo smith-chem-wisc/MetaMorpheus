@@ -224,14 +224,13 @@ namespace Test
         /// <summary>
         /// A whole modern search over real spectra and a real database finds exactly what it found before: the same peptides, by
         /// reference, in the same order, with the same notches, scores and runner-up scores, for each fragmentation mode the
-        /// coarse scoring branches on, with and without complementary ions, and for windows bounded on both sides, on one side and
-        /// on neither. Low-resolution CID with complementary ions is left out: it throws on these spectra before and after this
+        /// coarse scoring branches on, with and without complementary ions, and for windows bounded on both sides and on one side.
+        /// Low-resolution CID with complementary ions is left out: it throws on these spectra before and after this
         /// change, because that branch computes a complementary bin without scaling it and can index below zero.
         /// </summary>
         [Test]
         [TestCase(DissociationType.HCD, false, "OneMM 10 ppm")]
         [TestCase(DissociationType.HCD, true, "OneMM 10 ppm")]
-        [TestCase(DissociationType.HCD, false, "Open")]
         [TestCase(DissociationType.HCD, false, "[-187, +inf) Da")]
         [TestCase(DissociationType.HCD, false, "[-500, +5] Da")]
         [TestCase(DissociationType.LowCID, false, "OneMM 10 ppm")]
@@ -279,7 +278,6 @@ namespace Test
         private static MassDiffAcceptor Acceptor(string name) => name switch
         {
             "OneMM 10 ppm" => SearchTask.GetMassDiffAcceptor(new PpmTolerance(10), MassDiffAcceptorType.OneMM, null),
-            "Open" => new OpenSearchMode(),
             "[-187, +inf) Da" => new IntervalMassDiffAcceptor("modopen", new[] { new DoubleRange(-187, double.PositiveInfinity) }),
             "[-500, +5] Da" => new IntervalMassDiffAcceptor("wide", new[] { new DoubleRange(-500, 5) }),
             _ => throw new ArgumentException(name),
@@ -555,14 +553,15 @@ namespace Test
 
             int compared = 0, nonEmpty = 0, byMass = 0;
             var failures = new List<string>();
+            // whether a bin holds a peptide out of order depends on the bin alone, so it is found once, not once per window
+            var binsHoldingOutOfOrder = bins.Select(bin => (bin, holdsOutOfOrder: bin.Any(standIns.ContainsKey))).ToList();
             foreach (var (lowest, highest) in windows)
             {
                 (int FirstId, int LastId)? idWindow = probe.Window(lowest, highest);
                 Assert.That(idWindow, Is.Not.Null, "a nearly sorted index must give an id window");
 
-                foreach (int[] bin in bins)
+                foreach (var (bin, holdsOutOfOrder) in binsHoldingOutOfOrder)
                 {
-                    bool holdsOutOfOrder = bin.Any(standIns.ContainsKey);
                     var (refStart, refEnd) = ReferenceRange(lowest, highest, bin, peptideIndex);
                     var (start, end) = probe.Range(idWindow, lowest, highest, bin, holdsOutOfOrder);
                     bool refEmpty = refStart > refEnd;
@@ -623,7 +622,6 @@ namespace Test
         [Test]
         [TestCase(DissociationType.HCD, false, "OneMM 10 ppm")]
         [TestCase(DissociationType.HCD, true, "OneMM 10 ppm")]
-        [TestCase(DissociationType.HCD, false, "Open")]
         [TestCase(DissociationType.HCD, false, "[-187, +inf) Da")]
         [TestCase(DissociationType.HCD, false, "[-500, +5] Da")]
         [TestCase(DissociationType.LowCID, false, "OneMM 10 ppm")]

@@ -44,8 +44,9 @@ namespace Test
         {
             var parameters = new CommonParameters(maxThreadsToUsePerFile: 4,
                 digestionParams: new DigestionParams(protease: "trypsin", maxMissedCleavages: 2, minPeptideLength: 7, maxModsForPeptides: 3));
+            // every 16th protein, targets and decoys alike: the whole database indexes to 650,000 peptides, far more than needed
             var proteins = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "smalldb.fasta"),
-                true, DecoyType.Reverse, false, out _);
+                true, DecoyType.Reverse, false, out _).Where((_, i) => i % 16 == 0).ToList();
             var variable = GlobalVariables.AllModsKnown.Where(m => (m.ModificationType == "Common Variable" && m.IdWithMotif == "Oxidation on M")
                 || (m.ModificationType == "Common Biological" && m.IdWithMotif == "Phosphorylation on S")).ToList();
             var fixedMods = GlobalVariables.AllModsKnown.Where(m => m.ModificationType == "Common Fixed" && m.IdWithMotif == "Carbamidomethyl on C").ToList();
