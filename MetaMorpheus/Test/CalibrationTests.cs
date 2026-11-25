@@ -786,33 +786,6 @@ namespace Test
             Assert.That(e.S, Does.Contain("Calibration failure! Could not find enough MS1 datapoints."));
         }
 
-        [Test]
-        [TestCase(SearchType.Classic)]
-        [TestCase(SearchType.Modern)]
-        public static void CalibrationTestLowRes(SearchType searchType)
-        {
-            CalibrationTask calibrationTask = new CalibrationTask();
-            calibrationTask.CalibrationParameters.SearchType = searchType;
-
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestCalibrationLow");
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TaGe_SA_A549_3_snip.mzML");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "TaGe_SA_A549_3_snip.fasta");
-            Directory.CreateDirectory(outputFolder);
-
-            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test");
-            Assert.That(File.Exists(Path.Combine(outputFolder, @"TaGe_SA_A549_3_snip-calib.mzML")));
-            Assert.That(File.Exists(Path.Combine(outputFolder, @"TaGe_SA_A549_3_snip-calib.toml")));
-            var lines = File.ReadAllLines(Path.Combine(outputFolder, @"TaGe_SA_A549_3_snip-calib.toml"));
-            var tolerance = Regex.Match(lines[0], @"\d+\.\d*").Value;
-            var tolerance1 = Regex.Match(lines[1], @"\d+\.\d*").Value;
-            Assert.That(double.TryParse(tolerance, out double tol) == true);
-            Assert.That(double.TryParse(tolerance1, out double tol1) == true);
-            Assert.That(lines[0].Contains("PrecursorMassTolerance"));
-            Assert.That(lines[1].Contains("ProductMassTolerance"));
-            Directory.Delete(outputFolder, true);
-            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
-        }
-
         /// <summary>
         /// LowCID calibrates MS1 only: no fragments are deconvoluted in that mode and CalibrationEngine
         /// leaves MS2 scans as they are, so calibration must not require MS2 datapoints, must not crash

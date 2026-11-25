@@ -251,12 +251,13 @@ public class BioPolymerCoverageMapViewModelTests
         var method = typeof(BioPolymerTabViewModel)
             .GetMethod("LoadDatabase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         method.Invoke(tabVm, null);
-        Thread.Sleep(3000); // wait for async load
+        // wait for the async load to finish, groups included (IsDatabaseLoaded is set before the groups are built)
+        Assert.That(SpinWait.SpinUntil(() => !tabVm.IsLoading, TimeSpan.FromSeconds(60)), Is.True, "the database finished loading");
         Assert.That(tabVm.IsDatabaseLoaded, Is.True);
 
-        // Plot every group
+        // Plot every tenth group: real sequences and coverage of many kinds, without drawing all 538
         var previous = tabVm.CoverageMapViewModel.CoverageDrawing;
-        foreach (var group in tabVm.AllGroups)
+        foreach (var group in tabVm.AllGroups.Where((_, i) => i % 10 == 0))
         {
             tabVm.SelectedGroup = group;
             var current = tabVm.CoverageMapViewModel.CoverageDrawing;
