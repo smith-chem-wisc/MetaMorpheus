@@ -251,8 +251,8 @@ namespace Test
             List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
             Assert.That(warnings, Is.Empty, "TSV file should be readable without warnings");
 
-            // Verify PSMs were found
-            Assert.That(parsedPsms.Count, Is.GreaterThan(30), "Expected 38 total PSMs");
+            // The non-specific search's regression count, the same with or without the library
+            Assert.That(parsedPsms.Count, Is.EqualTo(39), "total PSMs of the non-specific search");
 
             // Verify the Normalized Spectral Angle column exists in the output file
             var headerLine = File.ReadLines(psmFile).First();

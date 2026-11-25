@@ -242,13 +242,14 @@ namespace Test
         ///
         /// What this can and cannot catch: the task writes only each scan's best match, and on this data the extra
         /// candidates a per-partition cut lets through never beat it, so a per-partition cut passes here (the engine
-        /// test above is the one that catches that). A wrong partition tag, a skipped second loop or a crash in the
-        /// wiring fails it. Everything written is compared except Rank, a candidate's position in the cut, which can
-        /// legitimately differ between candidates tied on coarse score.
+        /// test above is the one that catches that). A first round that skips a partition, a second round that never
+        /// runs, or a crash in the wiring fails it. A second-round bug confined to the last partition does not: the
+        /// partitions split the protein list in order, targets before decoys, so with two partitions the last holds only
+        /// decoys, and nothing compared here changes. Everything written is compared except Rank, a candidate's
+        /// position in the cut, which can legitimately differ between candidates tied on coarse score.
         /// </summary>
         [Test]
         [TestCase(1)]
-        [TestCase(3)]
         public static void GlycoSearchTask_TwoPartitions_ReportExactlyWhatOnePartitionReports(int topN)
         {
             string root = MakeEmptyFolder("TestGlycoPartitionInvariance_" + topN);

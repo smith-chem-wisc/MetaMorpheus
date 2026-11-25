@@ -1057,29 +1057,6 @@ namespace Test
             Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("QQQGGGG"));
         }
 
-        [Test]
-        public static void TestNonSpecificEnzymeSearchEngine()
-        {
-            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\NonSpecificSearchToml.toml");
-            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\NonSpecificSearchTest");
-            Directory.CreateDirectory(outputFolder);
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\bosTaurusEnamPruned.xml");
-
-            var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
-            engineToml.Run();
-
-            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
-
-            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
-
-            Assert.That(parsedPsms.Count, Is.EqualTo(39)); //total psm count
-
-            Directory.Delete(outputFolder, true);
-
-        }
-
 
         [Test]
         public static void TestNonSpecificEnzymeSearchEngineSingleNLowCID()
@@ -1968,7 +1945,7 @@ namespace Test
                 {
                     var digestParams = new HashSet<IDigestionParams> { commonParams.DigestionParams };
                     var indexEngine = new IndexingEngine(termParams.proteinList, termParams.variableMods, empty, null, null, null, 1, DecoyType.None,
-                        commonParams, null, 100000, true, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+                        commonParams, null, 30000, true, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
                     var indexResults = (IndexingResults)indexEngine.Run();
                     var peptideIndex = indexResults.PeptideIndex;
                     var fragmentIndexDict = indexResults.FragmentIndex;
