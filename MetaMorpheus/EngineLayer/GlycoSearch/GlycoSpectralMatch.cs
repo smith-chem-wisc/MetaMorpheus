@@ -155,6 +155,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append(SpectrumMatchFromTsvHeader.FullSequence + '\t');
             sb.Append(SpectrumMatchFromTsvHeader.NumberOfMods + '\t');
             sb.Append(SpectrumMatchFromTsvHeader.PeptideMonoMass + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.Notch + '\t');
             sb.Append(SpectrumMatchFromTsvHeader.Score + '\t');
             sb.Append(SpectrumMatchFromTsvHeader.RankLabel + '\t');
 
@@ -167,6 +168,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append(SpectrumMatchFromTsvHeader.MatchedIonCounts + '\t');
             sb.Append(SpectrumMatchFromTsvHeader.DecoyContaminantTarget + '\t');
             sb.Append(SpectrumMatchFromTsvHeader.QValue + '\t');
+            sb.Append(SpectrumMatchFromTsvHeader.QValueNotch + '\t');
             sb.Append(SpectrumMatchFromTsvHeader.PEP + '\t');
             sb.Append(SpectrumMatchFromTsvHeader.PEP_QValue);
 
@@ -239,6 +241,9 @@ namespace EngineLayer.GlycoSearch
             sb.Append(BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.AllModsOneIsNterminus.Count + "\t");
 
             sb.Append((BioPolymerWithSetModsMonoisotopicMass.HasValue ? BioPolymerWithSetModsMonoisotopicMass.Value.ToString() : "---")); sb.Append("\t");
+            // The precursor mass offset the match was found at, in Da (0 = observed precursor mass, 1.00335 = one 13C peak heavy),
+            // written as the Classic and Modern searches write it; notch-ambiguous matches list each offset.
+            sb.Append(PsmTsvWriter.Resolve(BestMatchingBioPolymersWithSetMods.Select(b => b.Notch / MassDiffAcceptor.NotchScalar)).ResolvedString); sb.Append("\t");
             sb.Append(Score + "\t");
             sb.Append(Rank + "\t");
 
@@ -281,6 +286,8 @@ namespace EngineLayer.GlycoSearch
 
 
             sb.Append(FdrInfo!=null? FdrInfo.QValue.ToString() : "-1" );  sb.Append("\t");
+
+            sb.Append(FdrInfo != null ? FdrInfo.QValueNotch.ToString() : "-1"); sb.Append("\t"); // q-value among matches at the same precursor mass offset
 
             sb.Append("0" + "\t"); //This is space for PEP
 

@@ -47,6 +47,16 @@ namespace TaskLayer
         public GlycoSearchParameters _glycoSearchParameters { get; set; }
 
         /// <summary>
+        /// The precursor mass difference acceptor the glyco search uses for a file: the task's
+        /// <see cref="GlycoSearchParameters.MassDiffAcceptorType"/> around that file's precursor mass tolerance, built exactly as
+        /// the Classic and Modern searches build theirs.
+        /// </summary>
+        internal MassDiffAcceptor GetPrecursorMassDiffAcceptor(CommonParameters commonParameters)
+        {
+            return SearchTask.GetMassDiffAcceptor(commonParameters.PrecursorMassTolerance, _glycoSearchParameters.MassDiffAcceptorType, null);
+        }
+
+        /// <summary>
         /// The methods-prose line naming one glycan database, saying so when the search was narrowed to a
         /// selection of it; and, when the selection names entries the file no longer holds, a warning.
         /// </summary>
@@ -111,6 +121,7 @@ namespace TaskLayer
             ProseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.IdWithMotif)) + "; \n");
             ProseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.IdWithMotif)) + "; \n");
             ProseCreatedWhileRunning.Append("parent mass tolerance(s) = " + CommonParameters.PrecursorMassTolerance + "; \n");
+            ProseCreatedWhileRunning.Append("precursor mass difference acceptor = " + GetPrecursorMassDiffAcceptor(CommonParameters).ToProseString() + "; \n");
             ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; \n");
             ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. \n");
             if (_glycoSearchParameters.GlycoSearchType != GlycoSearchType.NGlycanSearch)
@@ -246,6 +257,7 @@ namespace TaskLayer
                         _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisIds[spectraFileIndex])
                     {
                         CustomOxoniumThreshold = _glycoSearchParameters.CustomOxoniumThreshold,
+                        PrecursorMassDiffAcceptor = GetPrecursorMassDiffAcceptor(searchParamsPerFile[spectraFileIndex]),
                         ThreadBudget = searchThreads
                     }.Run();
                     gsmsPerFile[spectraFileIndex] = gsms;
@@ -296,7 +308,8 @@ namespace TaskLayer
                         return new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, indexParams, this.FileSpecificParameters, glycanSearchSpace,
                             _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, thisId, candidates)
                         {
-                            CustomOxoniumThreshold = _glycoSearchParameters.CustomOxoniumThreshold
+                            CustomOxoniumThreshold = _glycoSearchParameters.CustomOxoniumThreshold,
+                            PrecursorMassDiffAcceptor = GetPrecursorMassDiffAcceptor(indexParams)
                         };
                     }
 

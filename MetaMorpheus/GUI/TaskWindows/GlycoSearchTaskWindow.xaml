@@ -413,6 +413,10 @@
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
+                            <!-- Same wording and tooltips as the classic search's criterion; the radio buttons are added in PopulateChoices. -->
+                            <GroupBox Header="Precursor Mass Difference Acceptor Criterion">
+                                <StackPanel x:Name="MassDiffAcceptorPanel" Margin="5" />
+                            </GroupBox>
                         </StackPanel>
                     </Expander>
                 </GroupBox>
