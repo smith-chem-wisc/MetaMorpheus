@@ -599,13 +599,32 @@ namespace TaskLayer
             Status($"Done constructing {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} groups!", Parameters.SearchTaskId);
         }
 
+        /// <summary>
+        /// The modifications a match's own may be swapped for when localizing: the variable ones and every one annotated
+        /// in the databases (from GPTMD or UniProt). Without the annotated ones, a search of a GPTMD database never weighs
+        /// an annotated phosphotyrosine against the phosphoserine it reported.
+        /// </summary>
+        public static List<Modification> PlaceableModifications(IEnumerable<Modification> variableModifications,
+            IEnumerable<Omics.IBioPolymer> bioPolymers)
+        {
+            return variableModifications
+                .Concat(bioPolymers.SelectMany(p => p.OneBasedPossibleLocalizedModifications.Values.SelectMany(mods => mods)))
+                .Distinct()
+                .ToList();
+        }
+
         private void DoMassDifferenceLocalizationAnalysis()
         {
             try
             {
-                if (Parameters.SearchParameters.DoLocalizationAnalysis)
+                bool localizeMassDifferences = Parameters.SearchParameters.DoLocalizationAnalysis;
+                bool computeProbabilities = Parameters.SearchParameters.DoLocalizationProbabilities;
+                if (localizeMassDifferences || computeProbabilities)
                 {
-                    Status("Running mass-difference localization analysis...", Parameters.SearchTaskId);
+                    Status(localizeMassDifferences ? "Running mass-difference localization analysis..." : "Collecting localization evidence...", Parameters.SearchTaskId);
+                    List<Modification> placeable = computeProbabilities
+                        ? PlaceableModifications(Parameters.VariableModifications, Parameters.BioPolymerList)
+                        : null;
                     for (int spectraFileIndex = 0;
                          spectraFileIndex < Parameters.CurrentRawFileList.Count;
                          spectraFileIndex++)
@@ -619,12 +638,38 @@ namespace TaskLayer
                         new LocalizationEngine(
                                 Parameters.AllSpectralMatches.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(),
                                 myMsDataFile, combinedParams, this.FileSpecificParameters,
-                                new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile })
+                                new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile },
+                                localizeMassDifferences,
+                                // every arrangement of a match's modifications, each swappable for a variable or database one
+                                placeableModifications: placeable,
+                                siteRule: Parameters.SearchParameters.LocalizationSiteRule)
+                            {
+                                KeepMassDifferenceEvidence = computeProbabilities,
+                                UseLowResToleranceForIonTraps = computeProbabilities && Parameters.SearchParameters.LocalizeIonTrapScansSeparately
+                            }
                             .Run();
                         Parameters.MyFileManager.DoneWithFile(origDataFile);
                         ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!",
                             new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile }));
                     }
+                }
+
+                if (computeProbabilities)
+                {
+                    // confident by the search's own identification filter, so the matches learned from and ranked are
+                    // the ones the search reports
+                    FilteredPsms identified = FilteredPsms.Filter(Parameters.AllSpectralMatches, CommonParameters,
+                        includeDecoys: false, includeContaminants: true, includeAmbiguous: true, includeAmbiguousMods: true);
+                    new LocalizationProbabilityEngine(Parameters.AllSpectralMatches, CommonParameters, this.FileSpecificParameters,
+                            new List<string> { Parameters.SearchTaskId }, identified.PassesThreshold)
+                        {
+                            ModelPerScanType = Parameters.SearchParameters.LocalizeIonTrapScansSeparately,
+                            LearnFromModifiedMatches = true,
+                            LearnSitePrior = Parameters.SearchParameters.LearnLocalizationPrior,
+                            LikelihoodExponent = Parameters.SearchParameters.LocalizationLikelihoodExponent,
+                            CoElutionWindow = Parameters.SearchParameters.LocalizationCoElutionWindow
+                        }
+                        .Run();
                 }
 
                 // count different modifications observed
