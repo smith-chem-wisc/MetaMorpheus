@@ -580,7 +580,18 @@ namespace TaskLayer
             }
 
             // run parsimony
+            int ambiguousBeforeParsimony = Parameters.AllSpectralMatches.Count(p => p.FullSequence == null);
             ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(Parameters.AllSpectralMatches, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
+
+            // Parsimony trims each match to its parsimonious proteins, which can resolve a match that was ambiguous (no full
+            // sequence) when the peptide-level FDR picked each peptide's best-scoring match. A resolved match that now scores
+            // best is its peptide's row in the result files and the match protein FDR reads, but it carries no peptide-level
+            // values (FdrInfo's unset 2). Recalculate the q-values from the PEPs already trained, as DisambiguationEngine
+            // does after it removes hypotheses.
+            if (Parameters.AllSpectralMatches.Count(p => p.FullSequence == null) < ambiguousBeforeParsimony)
+            {
+                CalculatePsmAndPeptideFdr(Parameters.AllSpectralMatches, doPep: false);
+            }
 
             // score protein groups and calculate FDR
             ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(

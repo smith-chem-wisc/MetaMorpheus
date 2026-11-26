@@ -1570,6 +1570,101 @@ namespace Test
             }
         }
 
+        /// <summary>
+        /// #3004. A match ambiguous between two isobaric peptides of two proteins has no full sequence when the
+        /// peptide-level FDR picks each peptide's best-scoring match, so another match represents its peptide. Parsimony
+        /// keeps one of the proteins and resolves the match, which then scores best among its peptide's matches: it is the
+        /// peptide's row in AllPeptides.psmtsv and the match protein FDR reads. It must carry peptide-level values.
+        /// </summary>
+        [Test]
+        public static void AMatchParsimonyResolvesGetsItsPeptidesQValues()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "ParsimonyResolvedPeptideQValues");
+            if (Directory.Exists(outputFolder))
+            {
+                Directory.Delete(outputFolder, true);
+            }
+            Directory.CreateDirectory(outputFolder);
+
+            try
+            {
+                var digestionParams = new DigestionParams(protease: "trypsin", minPeptideLength: 1);
+                var commonParameters = new CommonParameters(digestionParams: digestionParams);
+                string file = Path.Combine(outputFolder, "a.mzML");
+                var fileSpecificParameters = new List<(string, CommonParameters)> { (file, commonParameters) };
+
+                // LN and VQ have the same mass, so LNLYELK and VQLYELK explain one spectrum equally well. ACDEFGR makes
+                // KEPT the parsimonious protein, so parsimony drops DROPPED from the ambiguous match. GGLNR and GGVQR, whose
+                // proteins nothing else supports, stay ambiguous; their match outscores the other, so it is the one that
+                // carries the values of the matches with no full sequence, as in a real search.
+                var kept = new Protein("LNLYELKACDEFGR", "KEPT");
+                var dropped = new Protein("VQLYELK", "DROPPED");
+                var unresolved1 = new Protein("GGLNR", "UNRESOLVED1");
+                var unresolved2 = new Protein("GGVQR", "UNRESOLVED2");
+                PeptideWithSetModifications Peptide(Protein protein, string sequence) => (PeptideWithSetModifications)protein
+                    .Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                    .First(p => p.BaseSequence == sequence);
+                SpectralMatch Match(PeptideWithSetModifications peptide, int scanNumber, double score) =>
+                    new PeptideSpectralMatch(peptide, 0, score, scanNumber - 1,
+                        NullMassTestScan(file, commonParameters, scanNumber), commonParameters, new List<MatchedFragmentIon>());
+
+                SpectralMatch ambiguous = Match(Peptide(kept, "LNLYELK"), 1, 20);
+                ambiguous.AddOrReplace(Peptide(dropped, "VQLYELK"), 20, 0, reportAllAmbiguity: true, new List<MatchedFragmentIon>());
+                SpectralMatch repeat = Match(Peptide(kept, "LNLYELK"), 2, 10);
+                SpectralMatch other = Match(Peptide(kept, "ACDEFGR"), 3, 15);
+                SpectralMatch stillAmbiguous = Match(Peptide(unresolved1, "GGLNR"), 4, 30);
+                stillAmbiguous.AddOrReplace(Peptide(unresolved2, "GGVQR"), 30, 0, reportAllAmbiguity: true, new List<MatchedFragmentIon>());
+                var allMatches = new List<SpectralMatch> { ambiguous, repeat, other, stillAmbiguous };
+                allMatches.ForEach(p => p.ResolveAllAmbiguities());
+
+                new FdrAnalysisEngine(allMatches, 1, commonParameters, fileSpecificParameters, new List<string>(), doPEP: false).Run();
+                Assert.That(ambiguous.FullSequence, Is.Null, "the case: the match is ambiguous when FDR runs");
+                Assert.That(ambiguous.PeptideFdrInfo.QValue, Is.EqualTo(2), "the case: the match carries no peptide-level values");
+                Assert.That(repeat.PeptideFdrInfo.QValue, Is.LessThan(2), "the case: LNLYELK's values sit on its unambiguous match");
+
+                PostSearchAnalysisTask task = new()
+                {
+                    Parameters = new PostSearchAnalysisParameters
+                    {
+                        SearchParameters = new SearchParameters
+                        {
+                            DoParsimony = true,
+                            DoLabelFreeQuantification = false,
+                            DoMultiplexQuantification = false,
+                        },
+                        OutputFolder = outputFolder,
+                        SearchTaskId = "TestTask",
+                        AllSpectralMatches = allMatches,
+                        CurrentRawFileList = new List<string> { file },
+                        MyFileManager = new MyFileManager(true),
+                        FixedModifications = new List<Modification>(),
+                        VariableModifications = new List<Modification>(),
+                        ListOfDigestionParams = new HashSet<IDigestionParams> { digestionParams },
+                        DatabaseFilenameList = new List<DbForTask>(),
+                        FileSettingsList = new FileSpecificParameters[] { null },
+                    },
+                    CommonParameters = commonParameters,
+                    FileSpecificParameters = fileSpecificParameters,
+                };
+                InvokePrivate(task, "ConstructResultsDictionary");
+                InvokePrivate(task, "ProteinAnalysis");
+
+                Assert.That(ambiguous.FullSequence, Is.EqualTo("LNLYELK"), "the case: parsimony resolved the match");
+                Assert.That(stillAmbiguous.FullSequence, Is.Null, "the case: parsimony left the other match ambiguous");
+                SpectralMatch row = allMatches.CollapseToPeptides(filterAtPeptideLevel: true).Single(p => p.FullSequence == "LNLYELK");
+                Assert.That(row, Is.SameAs(ambiguous), "the resolved match is LNLYELK's best-scoring match");
+                Assert.That(row.PeptideFdrInfo.QValue, Is.LessThan(2), "LNLYELK's row carries its peptide-level q-value");
+                Assert.That(row.PeptideFdrInfo.QValueNotch, Is.LessThan(2), "and its peptide-level q-value notch");
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder))
+                {
+                    Directory.Delete(outputFolder, true);
+                }
+            }
+        }
+
         private const string TargetSequence = "PEPTIDEK";
         private const string ContaminantSequence = "ACDEFGHIK";
 
