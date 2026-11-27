@@ -22,6 +22,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using EngineLayer.DatabaseLoading;
@@ -45,7 +46,8 @@ namespace TaskLayer
         XLSearch,
         GlycoSearch,
         Average,
-        Truncation
+        ParallelSearch,
+        DiaLibrarySearch
     }
 
     public abstract class MetaMorpheusTask
@@ -281,6 +283,9 @@ namespace TaskLayer
 
         #endregion
 
+        // The settings every task-TOML read uses. A file written before FilterThreshold existed names its filter and
+        // threshold through the old QValueThreshold/PepQValueThreshold keys; OnTargetPropertyNotFound maps them onto the
+        // resolved properties as the task is bound, so functional code and CommonParameters carry no legacy awareness.
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
             .ConfigureType<Tolerance>(type => type
                 .WithConversionFor<TomlString>(convert => convert
@@ -429,40 +434,60 @@ namespace TaskLayer
                 .CreateInstance(() => RnaFragmentationParams.Default))
             .ConfigureType<FragmentationParams>(type => type
                 .CreateInstance(() => new()))
+            .ConfigureType<List<DbForTask>>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(dbs => string.Join("\t", dbs.Select(db => db.FilePath)))
+                    .FromToml(tmlString => tmlString.Value
+                        .Split('\t', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(filePath => new DbForTask(filePath, false))
+                        .ToList())))
+            .ConfigurePropertyMapping(mapping => mapping
+                .OnTargetPropertyNotFound(ResolveLegacyCommonParametersKey))
         );
+
+        /// <summary>
+        /// Resolves the released legacy filter keys while Nett binds CommonParameters. Threshold keys select the filter
+        /// when present. In the pre-#2285 files, PepQValueOutputFilter was 1.0 and marked the old notch-at-0.01 behavior;
+        /// in transitional files it copied the active PEP threshold, so that key is ignored when below 1.0.
+        /// </summary>
+        private static void ResolveLegacyCommonParametersKey(string[] path, object target, TomlObject node)
+        {
+            if (target is not CommonParameters commonParameters || path.Length == 0 || node is not TomlFloat value)
+            {
+                return;
+            }
+
+            string key = path[^1];
+            FilterType? filter = null;
+            double threshold = value.Value;
+            if (threshold < 1)
+            {
+                filter = key switch
+                {
+                    "QValueThreshold" => FilterType.QValueNotch,
+                    "PepQValueThreshold" => FilterType.PepQValue,
+                    _ => null
+                };
+            }
+            else if (key == "PepQValueOutputFilter")
+            {
+                filter = FilterType.QValueNotch;
+                threshold = CommonParameters.DefaultFilterThreshold;
+            }
+
+            if (filter is FilterType resolved)
+            {
+                typeof(CommonParameters).GetProperty(nameof(CommonParameters.IdentificationFilter))!.SetValue(commonParameters, resolved);
+                typeof(CommonParameters).GetProperty(nameof(CommonParameters.FilterThreshold))!.SetValue(commonParameters, threshold);
+            }
+        }
+
        
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
 
         [TomlIgnore]
         public virtual string OutputFolder { get; private set; }
-
-        /// <summary>
-        /// In-memory hand-off shared across the tasks in a run list (docs/Truncation-Search.md decision #1).
-        /// Assigned by <see cref="EverythingRunnerEngine"/> before each task runs; a finishing task can
-        /// deposit results that a later task retrieves, avoiding a file round-trip. Null for tasks run
-        /// outside the runner (e.g. directly in tests), in which case consumers fall back to disk.
-        /// </summary>
-        [TomlIgnore]
-        public TaskChainContext TaskChainContext { get; set; }
-
-        /// <summary>
-        /// True for tasks that read results out of the <see cref="TaskChainContext"/>. The runner wires the
-        /// context up only when a run list contains at least one such task, and clears it once one has run —
-        /// so a task that deposits into the context does not pin its results through run lists that will
-        /// never read them.
-        /// </summary>
-        [TomlIgnore]
-        public virtual bool ConsumesTaskChainContext => false;
-
-        /// <summary>
-        /// Called at the start of <see cref="RunTask"/>, before the task TOML is written and before file-specific
-        /// parameters are resolved, so a task can settle its <see cref="CommonParameters"/> (e.g. adopt an upstream
-        /// task's from the <see cref="TaskChainContext"/>) and have the written TOML record what actually ran.
-        /// </summary>
-        protected virtual void ResolveParametersBeforeRun()
-        {
-        }
 
         /// <summary>
         /// The spectra files the whole run started from, before a Calibrate or Average task replaced them with
@@ -987,9 +1012,8 @@ namespace TaskLayer
                 reportAllAmbiguity: commonParams.ReportAllAmbiguity,
                 addCompIons: commonParams.AddCompIons,
                 totalPartitions: commonParams.TotalPartitions,
-                qValueThreshold: commonParams.QValueThreshold,
-                pepQValueThreshold: commonParams.PepQValueThreshold,
                 identificationFilter: commonParams.IdentificationFilter,
+                filterThreshold: commonParams.FilterThreshold,
                 qValueCutoffForPepCalculation: commonParams.QValueCutoffForPepCalculation,
                 scoreCutoff: commonParams.ScoreCutoff,
                 numberOfPeaksToKeepPerWindow: commonParams.NumberOfPeaksToKeepPerWindow,
@@ -1025,7 +1049,6 @@ namespace TaskLayer
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName)
         {
             this.OutputFolder = output_folder;
-            ResolveParametersBeforeRun();
             MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
             StartingSingleTask(displayName);
 

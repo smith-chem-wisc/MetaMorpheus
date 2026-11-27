@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TaskLayer;
+using TaskLayer.ParallelSearch;
 
 namespace MetaMorpheusCommandLine
 {
@@ -329,8 +330,11 @@ namespace MetaMorpheusCommandLine
                 SpectralAveragingTask averaging = new SpectralAveragingTask();
                 Toml.WriteFile(averaging, Path.Combine(folderLocation, @"AveragingTask.toml"), MetaMorpheusTask.tomlConfig);
 
-                TruncationSearchTask truncation = new TruncationSearchTask();
-                Toml.WriteFile(truncation, Path.Combine(folderLocation, @"TruncationSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+                ParallelSearchTask parallelSearch = new ParallelSearchTask();
+                Toml.WriteFile(parallelSearch, Path.Combine(folderLocation, @"ParallelSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+
+                DiaLibrarySearchTask dia = new DiaLibrarySearchTask();
+                Toml.WriteFile(dia, Path.Combine(folderLocation, @"DiaLibrarySearchTask.toml"), MetaMorpheusTask.tomlConfig);
             }
             catch (Exception e)
             {

@@ -87,6 +87,7 @@ namespace MetaMorpheusGUI
                 SearchModeWarningTextBlock.Text = searchModeWarning;
                 SearchModeWarningTextBlock.Visibility = searchModeWarning == null ? Visibility.Collapsed : Visibility.Visible;
                 InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
+                CheckBoxRespectCleavagePromotingModifications.IsChecked = digestionParams.RespectCleavagePromotingModifications;
             }
             else
             {
@@ -270,7 +271,7 @@ namespace MetaMorpheusGUI
             if (!TaskValidator.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, null, MissedCleavagesTextBox.Text,
                  MaxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
                  fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed,
-                 null, null, null))
+                 null, null))
             {
                 return;
             }
@@ -310,7 +311,8 @@ namespace MetaMorpheusGUI
                     // the box is filled only for a task with protein digestion parameters; with nothing selected, keep the loaded value
                     initiatorMethionineBehavior: InitiatorMethionineBehaviorComboBox.SelectedIndex >= 0
                         ? (InitiatorMethionineBehavior)InitiatorMethionineBehaviorComboBox.SelectedIndex
-                        : null);
+                        : null,
+                    respectCleavagePromotingModifications: CheckBoxRespectCleavagePromotingModifications.IsChecked.Value);
             }
 
             var listOfModsVariable = new List<(string, string)>();

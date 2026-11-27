@@ -349,6 +349,9 @@
 	  <Component Id="src_FluentFTP.dll" Guid="BB8D505C-416F-471D-BDBE-C577F5EC646F">
 	  	<File Id="src_FluentFTP.dll" Name="FluentFTP.dll" Source="$(var.GUI_TargetDir)FluentFTP.dll" />
 	  </Component>
+	  <Component Id="src_System.IO.Hashing.dll" Guid="BAB9485F-543E-45BB-86AF-DB2B3F75D860">
+	  	<File Id="src_System.IO.Hashing.dll" Name="System.IO.Hashing.dll" Source="$(var.GUI_TargetDir)System.IO.Hashing.dll" />
+	  </Component>
 	  <Component Id="src_msvcp110.dll" Guid="36947FB1-E7F0-4580-A15C-66CB25D566C4">
 	  	<File Id="src_msvcp110.dll" Name="msvcp110.dll" Source="$(var.GUI_TargetDir)msvcp110.dll" />
 	  </Component>

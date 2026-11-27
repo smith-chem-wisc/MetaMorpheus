@@ -1939,7 +1939,7 @@ namespace MetaMorpheusGUI
                                     break;
 
                                 default:
-                                    // e.g. a Truncation task, which runs from the command line only.
+                                    // a task type the GUI does not list.
                                     NotificationHandler(null, new StringEventArgs("Task type \"" + tomlFile.Get<string>("TaskType")
                                         + "\" cannot be run from the GUI; run it from the command line: " + filePath, null));
                                     break;

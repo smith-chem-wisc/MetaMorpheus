@@ -280,6 +280,7 @@ namespace MetaMorpheusGUI
                 }
 
                 CheckBoxQuantifyUnlabeledForSilac.IsChecked = digestionParams.GeneratehUnlabeledProteinsForSilac;
+                CheckBoxRespectCleavagePromotingModifications.IsChecked = digestionParams.RespectCleavagePromotingModifications;
                 InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
             }
             else
@@ -352,8 +353,6 @@ namespace MetaMorpheusGUI
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
 
-            QValueThresholdTextBox.Text = TaskWindowIdentificationFilter.QValueThresholdText(task.CommonParameters);
-
             // A task still at the bottom-up default starts from the default for its search type
             double pepTrainingQ = task.CommonParameters.QValueCutoffForPepCalculation;
             if (pepTrainingQ == PepAnalysisEngine.DefaultQValueCutoffForPepCalculation(false, false))
@@ -363,10 +362,12 @@ namespace MetaMorpheusGUI
             }
             PepTrainingQValueTextBox.Text = pepTrainingQ.ToString(CultureInfo.InvariantCulture);
 
-            // The box is the identification filter: ticked, the PEP q-value; unticked, the q-value notch. A task saved before
-            // the filter was named, with the old PEP box ticked, loads as the PEP q-value and shows the box ticked.
-            PepQValueThresholdCheckbox.IsChecked = TaskWindowIdentificationFilter.PepBoxTicked(task.CommonParameters);
-            PepQValueThresholdTextBox.Text = TaskWindowIdentificationFilter.PepQValueThresholdText(task.CommonParameters);
+            // The identification filter and its threshold; a task at the bottom-up default with a top-down protease, or in RNA
+            // mode, shows the default for its search type
+            IdentificationFilterComboBox.ItemsSource = TaskWindowIdentificationFilter.Choices;
+            var (identificationFilter, filterThresholdText) = TaskWindowIdentificationFilter.Load(task.CommonParameters, GuiGlobalParamsViewModel.Instance.IsRnaMode);
+            IdentificationFilterComboBox.SelectedValue = identificationFilter;
+            FilterThresholdTextBox.Text = filterThresholdText;
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             CkbMzId.IsChecked = task.SearchParameters.WriteMzId;
@@ -498,9 +499,8 @@ namespace MetaMorpheusGUI
                 NumberOfWindowsTextBox.Text, 
                 NumberOfDatabaseSearchesTextBox.Text, 
                 MaxModNumTextBox.Text,
-                _fragmentationParamsViewModel.MaxFragmentMassDa.ToString(), 
-                QValueThresholdTextBox.Text, 
-                PepQValueThresholdTextBox.Text,
+                _fragmentationParamsViewModel.MaxFragmentMassDa.ToString(),
+                FilterThresholdTextBox.Text,
                 _fragmentationParamsViewModel.GenerateInternalIons ? _fragmentationParamsViewModel.MinInternalIonLength.ToString() : null))
             {
                 return;
@@ -563,7 +563,8 @@ namespace MetaMorpheusGUI
                     maxModsForPeptides: maxModsForPeptideValue,
                     initiatorMethionineBehavior: initiatorMethionineBehavior,
                     searchMode: (searchModeType, fragmentationTerminus),
-                    generateUnlabeledProteinsForSilac: CheckBoxQuantifyUnlabeledForSilac.IsChecked.Value);
+                    generateUnlabeledProteinsForSilac: CheckBoxQuantifyUnlabeledForSilac.IsChecked.Value,
+                    respectCleavagePromotingModifications: CheckBoxRespectCleavagePromotingModifications.IsChecked.Value);
             }
                 
 
@@ -655,8 +656,7 @@ namespace MetaMorpheusGUI
             else if (Prosit2020iRTTMTRadioButton.IsChecked == true) rtPredictorModelName = RTPredictorNames.Prosit2020iRTTMT;
             else rtPredictorModelName = RTPredictorNames.Chronologer; // default
 
-            var savedFilter = TaskWindowIdentificationFilter.ForSave(PepQValueThresholdCheckbox.IsChecked.Value,
-                QValueThresholdTextBox.Text, PepQValueThresholdTextBox.Text);
+            var savedFilter = TaskWindowIdentificationFilter.ForSave((FilterType)IdentificationFilterComboBox.SelectedValue, FilterThresholdTextBox.Text);
 
             CommonParameters commonParamsToSave = new CommonParameters(
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
@@ -665,9 +665,8 @@ namespace MetaMorpheusGUI
                 totalPartitions: int.Parse(NumberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 doPrecursorDeconvolution: doPrecursorDeconvolution,
                 useProvidedPrecursorInfo: useProvidedPrecursorInfo,
-                qValueThreshold: savedFilter.QValueThreshold,
-                pepQValueThreshold: savedFilter.PepQValueThreshold,
                 identificationFilter: savedFilter.IdentificationFilter,
+                filterThreshold: savedFilter.FilterThreshold,
                 qValueCutoffForPepCalculation: double.Parse(PepTrainingQValueTextBox.Text, CultureInfo.InvariantCulture),
                 scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                 listOfModsFixed: listOfModsFixed,
@@ -962,6 +961,9 @@ namespace MetaMorpheusGUI
                         {
                             PepTrainingQValueTextBox.Text = PepAnalysisEngine.DefaultQValueCutoffForPepCalculation(isRnaMode, true)
                                 .ToString(CultureInfo.InvariantCulture);
+                            var (topDownFilter, topDownThreshold) = TaskWindowIdentificationFilter.TopDownRecommended(isRnaMode);
+                            IdentificationFilterComboBox.SelectedValue = topDownFilter;
+                            FilterThresholdTextBox.Text = topDownThreshold;
                             DeconHostViewModel.DoPrecursorDeconvolution = true;
                             DeconHostViewModel.UseProvidedPrecursors = false;
                             if (isRnaMode)
@@ -1418,19 +1420,6 @@ namespace MetaMorpheusGUI
             SaveButton_Click(sender, e);
             var prefix = GuiGlobalParamsViewModel.Instance.IsRnaMode ? "Rna" : "";
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", $"{prefix}SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
-        }
-
-        /// <summary>
-        /// Retained/Lost Methionine is best handled through truncation search when truncation search is selected.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void AddTruncationsCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            if (AddTruncationsCheckBox.IsChecked.Value)
-            {
-                InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)InitiatorMethionineBehavior.Retain;
-            }
         }
     }
 

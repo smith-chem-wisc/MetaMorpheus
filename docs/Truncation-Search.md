@@ -1,16 +1,18 @@
 # Truncation search
 
-`TruncationSearchTask` is a follow-on MetaMorpheus task that discovers **N- and C-terminally
-truncated proteoforms** of the parents identified by an upstream top-down `SearchTask`. It is a
-normal task: it has its own TOML schema, it runs from CMD in a run list such as
-`[Search, Truncation]`, and it writes results using the standard `.psmtsv` columns. It is
-command-line only: the GUI does not list it, and a truncation TOML dropped on the GUI is reported as
-not runnable there rather than silently ignored.
+The truncation search discovers **N- and C-terminally truncated proteoforms** of the proteoforms a
+top-down search identified. It is a step of the search itself, not a separate task: a `SearchTask`
+with `AddTruncations = true` (the Search window's "Truncation Search" checkbox) runs it on its own
+matches when it finishes, with the search's settings, and writes `AllTruncatedPSMs.psmtsv` and
+`AllTruncatedProteoforms.psmtsv`, in the standard `.psmtsv` columns, into the search's folder.
+`AddTruncations` used to expand the database with truncation products of up to 5 residues; it no
+longer does. MetaMorpheus 1.1.14 shipped the same search as a separate, command-line-only
+`TruncationSearchTask`; that task is gone.
 
 This document is the design contract the `EngineLayer/Truncation` and
-`TaskLayer/TruncationSearchTask` code refers to. Numbered decisions (`#1`-`#21`) are cited from
-doc-comments throughout that code; the numbering is stable, and gaps in it (there is no `#11`) are
-historical.
+`TaskLayer/SearchTask/TruncationSearch.cs` code refers to. Numbered decisions (`#1`-`#21`) are cited
+from doc-comments throughout that code; the numbering is stable, and gaps in it (there is no `#11`)
+are historical.
 
 ---
 
@@ -30,7 +32,7 @@ every possible cut point.
 - **Pass 1** - a standard top-down `SearchTask` runs to completion, including its full
   `PostSearchAnalysisTask`. It produces the proteoform-level `SpectralMatch` set (the same set that
   is written to `AllProteoforms.psmtsv`).
-- **Pass 2** - `TruncationSearchTask` builds a fragment index over the parent proteoforms, then for
+- **Pass 2** - the truncation search builds a fragment index over the parent proteoforms, then for
   each MS2 scan scores every mass-eligible parent twice: once against the N-terminal ion series
   only, once against the C-terminal ion series only. The winning `(parent, series)` pair names the
   parent and the retained terminus.
@@ -48,17 +50,12 @@ share a single target-decoy ranking (#15, #18); there is no separate per-class F
 
 ### #1 - Pass 1 source and task structure
 
-- `TruncationSearchTask : MetaMorpheusTask`, parallel to `SearchTask` / `CalibrationTask` /
-  `GptmdTask`.
-- Pass 1 results reach Pass 2 **in memory**, not through a file round-trip.
-  `EverythingRunnerEngine` owns a `TaskChainContext` - a typed deposit/retrieve slot keyed by task
-  id - which a finishing `SearchTask` deposits into and `TruncationSearchTask` reads from. The
-  runner hands out the context only when the run list actually contains a consumer, and clears it
-  once that consumer has run, so nothing is pinned for chains that never read it.
-- Fallback for standalone runs: parse `AllProteoforms.psmtsv` from a previous output folder
-  (`Pass1ProteoformsFilePath`).
-- The payload deposited on the context is the search's PSM-level `SpectralMatch` set as-searched.
-  The consumer dedups it to proteoform level itself (best PSM per `FullSequence`).
+- The truncation search is part of `SearchTask` (a partial class, `TruncationSearch.cs`), run after
+  post-search analysis when `AddTruncations` is set. It writes into the search's folder under the
+  search's task id; there is no second task in the run list.
+- Pass 1 results reach Pass 2 **in memory**: the search's PSM-level `SpectralMatch` set as-searched,
+  carrying the matched `Protein` and `DigestionParams` that chopping and decoy generation need. The
+  truncation search dedups it to proteoform level itself (best PSM per `FullSequence`).
 
 ### #2 - Pipe-ambiguous proteoforms
 
@@ -72,13 +69,13 @@ share a single target-decoy ranking (#15, #18); there is no separate per-class F
 ### #3 - Parent inclusion filter
 
 - Targets and decoys live in one combined list, filtered identically.
-- Filter: **PEP q-value <= `ParentQValueThreshold`** when PEP was computed, otherwise **notch
-  q-value <= `ParentQValueThreshold`**.
+- Filter: **PEP q-value <= `TruncationParentQValueThreshold`** when PEP was computed, otherwise
+  **notch q-value <= `TruncationParentQValueThreshold`**.
 - The values are proteoform-level, read from the PSM `FdrAnalysisEngine` picked as the proteoform's
   representative (lowest PEP, then score). Where no proteoform-level values were assigned, as for
   pipe-ambiguous matches, whose null `FullSequence` MetaMorpheus groups together, the PSM-level
   values are used.
-- The default threshold (0.10) is deliberately permissive: cast a wide net of parents and let the
+- The threshold (0.10, fixed) is deliberately permissive: cast a wide net of parents and let the
   truncation search's own FDR police the final output.
 
 ### #4 - Pass 2 index content
@@ -107,11 +104,9 @@ share a single target-decoy ranking (#15, #18); there is no separate per-class F
 
 ### #6 - Maximum parent mass
 
-- Parents heavier than `MaxParentMass` (default 30 kDa, the existing
+- Parents heavier than 30 kDa (`TruncationSearchEngine.DefaultMaxFragmentSize`, the existing
   `SearchParameters.DefaultMaxFragmentSize`) are excluded from the index, reported as a single
   summary line: `"{N} parent proteoforms exceeded MaxFragmentSize and were excluded."`
-- Raise this for database-seeded runs, where a large protein's intact form may never be observed
-  but its truncations are.
 
 ### #7 - Pass 2 precursor acceptor
 
@@ -132,12 +127,10 @@ share a single target-decoy ranking (#15, #18); there is no separate per-class F
 - One residue at a time from the indicated terminus, subtracting the residue's monoisotopic mass
   **plus any PTM locked to that residue** in one step; an N-terminal acetyl-Ala leaves as a single
   step.
-- Notch behaviour is inherited from the task's `MassDiffAcceptorType` (see #15) and applies to
-  `M_obs - M_truncated_theo`. Tolerance is the file's `PrecursorMassTolerance`, the same one Pass 2
-  uses. Only acceptors with a fixed set of notches around the monoisotopic mass can chop (`Exact`,
-  `OneMM`/`TwoMM`/`ThreeMM`, `PlusOrMinusThreeMM`, or a `Custom` dot or around-zero acceptor); the
-  task refuses `Open`, `ModOpen` and the `MostAbundant_*` types at start-up, since they would absorb
-  a mass shift or never match.
+- Notch behaviour is the `ThreeMM` notch set (see #15), applied to `M_obs - M_truncated_theo`.
+  Tolerance is the file's `PrecursorMassTolerance`, the same one Pass 2 uses. It does not follow the
+  search's own `MassDiffAcceptorType`: open and most-abundant acceptors would absorb a mass shift or
+  never match.
 - Stop at the first match, or when no residues remain. Because chopping is monotonic in mass, the
   loop also stops as soon as the truncated form falls below the lowest mass the acceptor could
   accept for that scan - the acceptor reports that bound itself, via
@@ -175,11 +168,9 @@ share a single target-decoy ranking (#15, #18); there is no separate per-class F
   `N-terminal truncation(<start>-<end>)`, `C-terminal truncation(<start>-<end>)`,
   `N-terminal Met excision(...)`, or `full-length`.
 - **Protein accession** is the parent's, unchanged. **Start/end residue** are the truncated
-  coordinates within the parent protein, which makes downstream cleavage-motif analysis trivial. On
-  the disk fallback path the parent is placed at the start its `AllProteoforms.psmtsv` row reports,
-  so its coordinates are protein-relative there too.
-- **Essential Sequence** writes the mod types in `ModsToWriteSelection`, which defaults to the same
-  selection as `SearchParameters`, so the column joins to the search's own output.
+  coordinates within the parent protein, which makes downstream cleavage-motif analysis trivial.
+- **Essential Sequence** writes the mod types in the search's `ModsToWriteSelection`, so the column
+  joins to the search's own output.
 
 ### #14 - Decoys
 
@@ -190,13 +181,13 @@ share a single target-decoy ranking (#15, #18); there is no separate per-class F
   reversal.
 - Pass 2 scoring is target/decoy-blind - scans compete naturally.
 - Diagnostic side files (`CandidateRanks.tsv`) and the perf log are best-effort: a failure to write
-  one never aborts an otherwise successful task.
+  one never aborts an otherwise successful search.
 
 ### #15 - Notches and FDR categories
 
 - Notches are the standard monoisotopic offsets on `M_obs - M_truncated_theo` (not on parent mass),
-  inherited from the task's `MassDiffAcceptorType`. The default `ThreeMM` keeps a precursor isotope
-  error from blocking a chop. Truncation length does not affect notch assignment.
+  from the `ThreeMM` notch set, which keeps a precursor isotope error from blocking a chop.
+  Truncation length does not affect notch assignment.
 - N-terminal and C-terminal truncations are **pooled** into one FDR analysis, for statistical power.
 
 ### #16 / #17 - Output files and filters
@@ -205,8 +196,8 @@ share a single target-decoy ranking (#15, #18); there is no separate per-class F
 - `AllTruncatedProteoforms.psmtsv` - deduped by truncated `FullSequence`.
 - **No q-value or PEP cutoff at write time.** Both files carry the full FDR columns (q-value, notch
   q-value, PEP, PEP q-value) and the user filters downstream, exactly as with `AllPSMs.psmtsv`.
-- `WriteDecoys` and `WriteContaminants` default to `true`; either can be turned off in the TOML,
-  which drops those rows from both files (FDR is computed before the filter, so it is unaffected).
+- The search's `WriteDecoys` and `WriteContaminants` apply: turning either off drops those rows from
+  both files (FDR is computed before the filter, so it is unaffected).
 
 ### #18 - Pooled FDR universe
 
@@ -223,16 +214,10 @@ share a single target-decoy ranking (#15, #18); there is no separate per-class F
 
 ### #20 - Task wiring
 
-- Own TOML schema, including its own `CommonParameters`. When the task consumes a search in the
-  same run list, `InheritUpstreamCommonParameters` (default `true`) replaces them with a copy of
-  that search's `CommonParameters` before the task starts, so the written task TOML records the
-  settings actually used. With it set to `false`, or on a standalone (disk-ingest) run, the task's
-  own block applies; it defaults to MetaMorpheus's general (bottom-up) defaults, so for top-down
-  data copy the search's `CommonParameters` in. With inheritance off, the task warns if the
-  settings that drive MS2 deconvolution and matching (precursor and product tolerances, precursor
-  deconvolution, max charge states, dissociation type) differ from the search's.
-- Plumbed into the existing runner, so `[Search, Truncation]` works end-to-end with in-memory
-  result passing, and into `CMD/Program.cs` so the task dispatches from a TOML on the command line.
+- No settings of its own: one switch, `AddTruncations`, in the search's `CommonParameters`. The
+  truncation search uses the search's `CommonParameters`, so its deconvolution, tolerances and
+  dissociation type always match the search's. The parent threshold (#3), notch set (#15) and
+  maximum parent mass (#6) are fixed.
 
 ### #21 - Test and benchmark data
 
@@ -243,27 +228,16 @@ share a single target-decoy ranking (#15, #18); there is no separate per-class F
 
 ---
 
-## Optional: database-seeded parents
-
-`SeedParentsFromDatabase` generates parents by digesting the database — theoretical full-length
-proteoforms built the way a top-down search builds them, so annotated PTMs ride along — instead of
-taking only the proteoforms an upstream search identified. That removes the requirement that a
-truncation's parent be observed intact, at the cost of a much larger Pass 2 search; raise
-`MaxParentMass` alongside it, since a large protein's intact form may never be observed even when
-its truncations are.
-
----
-
 ## Benchmarking hook
 
-Performance instrumentation is deliberately **not** part of the task's TOML schema. Set the
+Performance instrumentation is deliberately **not** part of the search's TOML schema. Set the
 environment variable
 
 ```
 MetaMorpheusTruncationPerfLog=<path to perf_log.tsv>
 ```
 
-and the task appends one metrics-and-timings row per run to that rolling, append-only TSV (header
+and the truncation search appends one metrics-and-timings row per run to that rolling, append-only TSV (header
 written once, never overwritten), and additionally writes a `CandidateRanks.tsv` side file
 recording each scan's winning-parent rank in the index match-count ordering. Leave the variable
 unset - the default - and nothing is logged; ordinary runs and tests are unaffected.

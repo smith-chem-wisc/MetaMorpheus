@@ -28,7 +28,7 @@ using Chemistry;
 
 namespace TaskLayer
 {
-    public class SearchTask : MetaMorpheusTask
+    public partial class SearchTask : MetaMorpheusTask
     {
         public SearchTask() : base(MyTask.Search)
         {
@@ -37,7 +37,17 @@ namespace TaskLayer
             SearchParameters = new SearchParameters();
         }
 
-        public SearchParameters SearchParameters { get; set; }
+        /// <summary>
+        /// For tasks that build on the search task and report their own <see cref="MyTask"/> type.
+        /// </summary>
+        protected SearchTask(MyTask task) : base(task)
+        {
+            CommonParameters = new CommonParameters();
+
+            SearchParameters = new SearchParameters();
+        }
+
+        public virtual SearchParameters SearchParameters { get; set; }
 
         /// <summary>The input SDRF this search reads: the task's own, else the run's (<see cref="SdrfForRun.InputSdrfPathFor"/>).</summary>
         private string InputSdrfPathForRun => SdrfForRun.InputSdrfPathFor(SearchParameters, RunSdrf);
@@ -164,25 +174,11 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// When the identification filter was read from a task TOML's legacy thresholds
-        /// (<see cref="CommonParameters.IdentificationFilterFromLegacyThresholds"/>: a task saved before the filter was
-        /// named, with the GUI's PEP box ticked), the sentence saying so, once per task, as a warning and in results.txt;
-        /// null otherwise.
-        /// </summary>
-        internal static string LegacyFilterSentence(CommonParameters commonParameters)
-        {
-            if (!commonParameters.IdentificationFilterFromLegacyThresholds) return null;
-            string pep = commonParameters.PepQValueThreshold.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            string q = commonParameters.QValueThreshold.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            return $"IdentificationFilter read from this task's legacy thresholds (PepQValueThreshold {pep} < QValueThreshold {q}): PEP q-value at {pep}";
-        }
-
-        /// <summary>
         /// When the search's identification filter is held to 1 or more, which keeps every match, the sentence saying so;
         /// null otherwise.
         /// </summary>
         internal static string FilterKeepsEveryMatch(CommonParameters commonParameters) =>
-            EngineLayer.SpectrumMatch.FilteredPsms.Threshold(commonParameters, commonParameters.IdentificationFilter) >= 1
+            commonParameters.FilterThreshold >= 1
                 ? $"This search filters by {EngineLayer.SpectrumMatch.FilteredPsms.Describe(commonParameters)}, which keeps every match."
                 : null;
 
@@ -202,12 +198,6 @@ namespace TaskLayer
             // a gap named up front can still be fixed cheaply, whereas one named after a three-hour
             // search cannot. This warns; it does not refuse the run.
             WarnAboutSdrfGaps(currentRawFileList);
-
-            // A filter read from an old task's thresholds: say so once, before the search, and in results.txt
-            if (LegacyFilterSentence(CommonParameters) is string fromLegacyThresholds)
-            {
-                Warn(fromLegacyThresholds);
-            }
 
             // A filter at 1 is allowed, but it keeps every match: say so before the search, and in results.txt
             if (FilterKeepsEveryMatch(CommonParameters) is string keepsEveryMatch)
@@ -293,7 +283,7 @@ namespace TaskLayer
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
             ProseCreatedWhileRunning.Append($"{GlobalVariables.AnalyteType.GetDigestionAgentLabel()} = " + CommonParameters.DigestionParams.DigestionAgent + "; ");
-            ProseCreatedWhileRunning.Append($"search for truncated {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} and proteolysis products = " + CommonParameters.AddTruncations + "; ");
+            ProseCreatedWhileRunning.Append($"truncation search for N- and C-terminally truncated {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} = " + CommonParameters.AddTruncations + "; ");
             ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
             ProseCreatedWhileRunning.Append($"minimum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MinLength + "; ");
             ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxLength == int.MaxValue ?
@@ -727,16 +717,13 @@ namespace TaskLayer
             // outlasted the searches of a two-file run: post-search waited 40 s for it on the bottom-up nightly's files.
             FinishWritingIndexCache();
 
-            // Hand the resolved, FDR'd PSM set to a downstream TruncationSearchTask via the shared
-            // in-memory task-chain context (decision #1). The consumer dedups to proteoform level, applies
-            // its own permissive parent filter, and null-filters as it goes — AllSpectralMatches is assembled
-            // from fixed-length per-file arrays that hold null slots for unmatched scans — so deposit the
-            // list as-is rather than allocating a filtered copy of it. The context is null (and this a
-            // no-op) unless the run list actually contains a consumer, and the runner clears it once that
-            // consumer has run.
-            TaskChainContext?.Deposit(taskId, parameters.AllSpectralMatches);
-            // Its CommonParameters ride along so the consumer can warn when its own settings disagree.
-            TaskChainContext?.Deposit(TaskChainContext.CommonParametersKey(taskId), CommonParameters);
+            // AddTruncations runs the truncation search (TruncationSearch.cs) on this search's resolved, FDR'd matches, into
+            // this folder. Nucleic acid searches never had truncations, so for them the flag still does nothing.
+            if (CommonParameters.AddTruncations && GlobalVariables.AnalyteType != AnalyteType.Oligo)
+            {
+                Status("Searching for truncations...", taskId);
+                RunTruncationSearch(parameters.AllSpectralMatches, OutputFolder, currentRawFileList, taskId, fileSettingsList, fixedModifications);
+            }
 
             return postSearchResults;
         }

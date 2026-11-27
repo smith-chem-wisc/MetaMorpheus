@@ -335,7 +335,7 @@ namespace MetaMorpheusGUI
             if (!TaskValidator.CheckTaskSettingsValidity(PrecusorMsTlTextBox.Text, productMassToleranceTextBox.Text, productMassTolerance_LowResTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
                 fieldNotUsed, fieldNotUsed, fieldNotUsed, DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState.ToString(), TopNPeaksTextBox.Text, MinRatioTextBox.Text, null, null, numberOfDatabaseSearchesTextBox.Text, TxtBoxMaxModPerPep.Text, 
-                fieldNotUsed, null, null, null))
+                fieldNotUsed, null, null))
             {
                 return;
             }
@@ -430,7 +430,8 @@ namespace MetaMorpheusGUI
             int MaxModPerPep = (int.Parse(TxtBoxMaxModPerPep.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
             // Semi-specific peptides (SearchModeType Semi, terminus Both) or fully specific ones; never seeds, which a glyco search cannot use
-            // Every other digestion setting (SILAC, cleavage-blocking modifications, ...) is kept from the loaded task.
+            // Every other digestion setting (SILAC, cleavage-blocking modifications, ...) is kept from the loaded task. There is no
+            // cleavage-promoting box: a glyco search digests before it places glycans, so that setting stops a glycoprotease cutting.
             DigestionParams digestionParamsToSave = TaskWindowDigestionParams.ForSave(TheTask.CommonParameters.DigestionParams,
                 protease.Name, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms,
                 maxModsForPeptides: MaxModPerPep,

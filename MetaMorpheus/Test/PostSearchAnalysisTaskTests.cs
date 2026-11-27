@@ -44,10 +44,11 @@ namespace Test
             string[] allResults = File.ReadAllLines(allResultsFile);
 
             // The new PEP calculation method improves things, so all these numbers are increasing as of (7/17/24)
-            // There is a discrepancy between the number of All target peptides and individual file target peptides, 
+            // The two files hold the same spectra, so the whole search and each file count the same peptides: both use each
+            // peptide's best-scoring match, the one PEP trains on.
 
             Assert.That(allResults[10], Is.EqualTo("All target PSMs with q-value notch <= 0.01: 428"));
-            Assert.That(allResults[11], Is.EqualTo("All target peptides with q-value notch <= 0.01: 173"));
+            Assert.That(allResults[11], Is.EqualTo("All target peptides with q-value notch <= 0.01: 174"));
             Assert.That(allResults[12], Is.EqualTo("All target protein groups with q-value notch <= 0.01 (1% FDR): 165"));
             Assert.That(allResults[13], Is.EqualTo("All Precursors: 1070"));
             Assert.That(allResults[14], Is.EqualTo("All MS2 Scans: 294"));
@@ -66,7 +67,7 @@ namespace Test
             string[] results = File.ReadAllLines(resultsFile);
 
             Assert.That(results[5], Is.EqualTo("All target PSMs with q-value notch <= 0.01: 428"));
-            Assert.That(results[6], Is.EqualTo("All target peptides with q-value notch <= 0.01: 173"));
+            Assert.That(results[6], Is.EqualTo("All target peptides with q-value notch <= 0.01: 174"));
             Assert.That(results[7], Is.EqualTo("All target protein groups with q-value notch <= 0.01 (1% FDR): 165"));
             Assert.That(results[8], Is.EqualTo("All Precursors: 1070"));
             Assert.That(results[9], Is.EqualTo("All MS2 Scans: 294"));
@@ -92,7 +93,7 @@ namespace Test
             // The number of protein groups will be different, because protein inference is performed once, using every peptide
             // identified across all files.
             int TaGe_SA_A549_3_snip_2ExpectedPsms = 214;
-            int TaGe_SA_A549_3_snip_2ExpectedPeptides = 173;
+            int TaGe_SA_A549_3_snip_2ExpectedPeptides = 174;
 
             EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpQValueSingle, out var testCaseSingle);
             outputFolder = testCaseSingle.OutputDirectory;
@@ -111,54 +112,53 @@ namespace Test
             // Note: PEP Q-value filtering typically yields fewer PSMs, peptides, and protein groups than Q-value filtering
             // (e.g., 144 protein groups here vs. 165 with Q-value filtering) because PEP is a more stringent per-PSM
             // confidence metric that considers additional features beyond just target-decoy competition.
+            // The whole search counts the same peptides as each of its two identical files (151): both use each peptide's
+            // best-scoring match, the one PEP trains on.
             EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpPepQValue, out var testCase);
             string outputFolder = testCase.OutputDirectory;
             var allResultsFile = Path.Combine(outputFolder, "allResults.txt");
             var allResults = File.ReadAllLines(allResultsFile);
 
-            // Task2-SearchTaskconfig.toml is an old GUI PEP task (no IdentificationFilter): it is read as the PEP q-value filter, and says so
-            const string legacyFilter = "IdentificationFilter read from this task's legacy thresholds (PepQValueThreshold 0.01 < QValueThreshold 1): PEP q-value at 0.01";
-            Assert.That(allResults[10], Is.EqualTo(legacyFilter));
-            Assert.That(allResults[11], Is.EqualTo("All target PSMs with pep q-value <= 0.01: 374"));
-            Assert.That(allResults[12], Is.EqualTo("All target peptides with pep q-value <= 0.01: 153"));
-            Assert.That(allResults[13], Is.EqualTo("All target protein groups with pep q-value <= 0.01 (1% FDR): 144"));
-            Assert.That(allResults[14], Is.EqualTo("All Precursors: 1070"));
-            Assert.That(allResults[15], Is.EqualTo("All MS2 Scans: 294"));
+            // Task2-SearchTaskconfig.toml is an old GUI PEP task (no IdentificationFilter): it is read as the PEP q-value filter.
+            Assert.That(allResults[10], Is.EqualTo("All target PSMs with pep q-value <= 0.01: 374"));
+            Assert.That(allResults[11], Is.EqualTo("All target peptides with pep q-value <= 0.01: 151"));
+            Assert.That(allResults[12], Is.EqualTo("All target protein groups with pep q-value <= 0.01 (1% FDR): 144"));
+            Assert.That(allResults[13], Is.EqualTo("All Precursors: 1070"));
+            Assert.That(allResults[14], Is.EqualTo("All MS2 Scans: 294"));
 
-            Assert.That(allResults[17], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 187"));
-            Assert.That(allResults[18], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 151"));
-            Assert.That(allResults[19], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups with pep q-value <= 0.01: 144"));
-            Assert.That(allResults[20], Is.EqualTo("TaGe_SA_A549_3_snip - Precursors: 535"));
-            Assert.That(allResults[21], Is.EqualTo("TaGe_SA_A549_3_snip - MS2 Scans: 147"));
+            Assert.That(allResults[16], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 187"));
+            Assert.That(allResults[17], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 151"));
+            Assert.That(allResults[18], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups with pep q-value <= 0.01: 144"));
+            Assert.That(allResults[19], Is.EqualTo("TaGe_SA_A549_3_snip - Precursors: 535"));
+            Assert.That(allResults[20], Is.EqualTo("TaGe_SA_A549_3_snip - MS2 Scans: 147"));
 
-            Assert.That(allResults[23], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 187"));
-            Assert.That(allResults[24], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 151"));
-            Assert.That(allResults[25], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups with pep q-value <= 0.01: 144"));
-            Assert.That(allResults[26], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Precursors: 535"));
-            Assert.That(allResults[27], Is.EqualTo("TaGe_SA_A549_3_snip_2 - MS2 Scans: 147"));
+            Assert.That(allResults[22], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 187"));
+            Assert.That(allResults[23], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 151"));
+            Assert.That(allResults[24], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups with pep q-value <= 0.01: 144"));
+            Assert.That(allResults[25], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Precursors: 535"));
+            Assert.That(allResults[26], Is.EqualTo("TaGe_SA_A549_3_snip_2 - MS2 Scans: 147"));
 
 
             var resultsFile = Path.Combine(outputFolder, @"postSearchAnalysisTaskTestOutput\results.txt");
             var results = File.ReadAllLines(resultsFile);
 
-            Assert.That(results[5], Is.EqualTo(legacyFilter));
-            Assert.That(results[6], Is.EqualTo("All target PSMs with pep q-value <= 0.01: 374"));
-            Assert.That(results[7], Is.EqualTo("All target peptides with pep q-value <= 0.01: 153"));
-            Assert.That(results[8], Is.EqualTo("All target protein groups with pep q-value <= 0.01 (1% FDR): 144"));
-            Assert.That(results[9], Is.EqualTo("All Precursors: 1070"));
-            Assert.That(results[10], Is.EqualTo("All MS2 Scans: 294"));
+            Assert.That(results[5], Is.EqualTo("All target PSMs with pep q-value <= 0.01: 374"));
+            Assert.That(results[6], Is.EqualTo("All target peptides with pep q-value <= 0.01: 151"));
+            Assert.That(results[7], Is.EqualTo("All target protein groups with pep q-value <= 0.01 (1% FDR): 144"));
+            Assert.That(results[8], Is.EqualTo("All Precursors: 1070"));
+            Assert.That(results[9], Is.EqualTo("All MS2 Scans: 294"));
 
-            Assert.That(results[12], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 187"));
-            Assert.That(results[13], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 151"));
-            Assert.That(results[14], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups with pep q-value <= 0.01: 144"));
-            Assert.That(results[15], Is.EqualTo("TaGe_SA_A549_3_snip - Precursors: 535"));
-            Assert.That(results[16], Is.EqualTo("TaGe_SA_A549_3_snip - MS2 Scans: 147"));
+            Assert.That(results[11], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 187"));
+            Assert.That(results[12], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 151"));
+            Assert.That(results[13], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups with pep q-value <= 0.01: 144"));
+            Assert.That(results[14], Is.EqualTo("TaGe_SA_A549_3_snip - Precursors: 535"));
+            Assert.That(results[15], Is.EqualTo("TaGe_SA_A549_3_snip - MS2 Scans: 147"));
 
-            Assert.That(results[18], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 187"));
-            Assert.That(results[19], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 151"));
-            Assert.That(results[20], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups with pep q-value <= 0.01: 144"));
-            Assert.That(results[21], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Precursors: 535"));
-            Assert.That(results[22], Is.EqualTo("TaGe_SA_A549_3_snip_2 - MS2 Scans: 147"));
+            Assert.That(results[17], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 187"));
+            Assert.That(results[18], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 151"));
+            Assert.That(results[19], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups with pep q-value <= 0.01: 144"));
+            Assert.That(results[20], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Precursors: 535"));
+            Assert.That(results[21], Is.EqualTo("TaGe_SA_A549_3_snip_2 - MS2 Scans: 147"));
         }
 
         [Test]
@@ -217,11 +217,10 @@ namespace Test
             int startIndexQ = resultsQ.IndexOf("Engine type: FdrAnalysisEngine");
             int startIndexPep = resultsPepQ.IndexOf("Engine type: FdrAnalysisEngine");
 
-            // The PEP case is an old GUI PEP task, so its results.txt carries more lines above the engines (where its
-            // filter came from): compare each engine block from its own start.
+            // Both results.txt files now carry the same lines above the engines, so the engine blocks start at the same index.
             Assert.That(startIndexQ, Is.GreaterThan(0));
-            Assert.That(startIndexPep, Is.GreaterThan(startIndexQ));
-            int offset = startIndexPep - startIndexQ;
+            Assert.That(startIndexPep, Is.EqualTo(startIndexQ));
+            int offset = 0;
 
             int starsFound = 0;
             for (int i = startIndexQ; i < int.MaxValue; i++)
@@ -1260,7 +1259,7 @@ namespace Test
         /// <summary>
         /// The variant tables re-run FDR on the variant matches alone, on purpose: VariantPSMs.psmtsv and
         /// VariantPeptides.psmtsv report the variant subset's own q-values. That pass must not leave them on the
-        /// shared spectral matches either. SearchTask hands those matches to a chained TruncationSearchTask, whose
+        /// shared spectral matches either. With AddTruncations the search runs the truncation search on those matches, whose
         /// parent filter reads their FdrInfo (PEP q-value, else notch q-value, at most 0.10). When one of the variant
         /// matches has a PEP above 0, the variant pass recomputes the PEP q-values, and a subset of N variant targets
         /// with no decoys gets (0 + 1) / N. So with fewer than ten variant peptides every one of them failed that
@@ -1286,10 +1285,10 @@ namespace Test
 
             var task = Nett.Toml.ReadFile<SearchTask>(Path.Combine(testDirectory, @"TestData\Task1-SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
             task.CommonParameters.QValueCutoffForPepCalculation = 0.01;
-            task.TaskChainContext = new TaskChainContext(); // as when a TruncationSearchTask follows the search
-            double parentThreshold = new TruncationSearchParameters().ParentQValueThreshold;
+            double parentThreshold = SearchTask.TruncationParentQValueThreshold;
 
             Dictionary<SpectralMatch, string> wholeSearchFdr = null;
+            List<SpectralMatch> handedOnMatches = null;
             List<string> parentsInWholeSearch = null;
             EventHandler<StringEventArgs> recordWholeSearchFdr = (sender, e) =>
             {
@@ -1297,6 +1296,7 @@ namespace Test
                 {
                     var matches = postSearch.Parameters.AllSpectralMatches.Where(m => m != null).ToList();
                     wholeSearchFdr = matches.ToDictionary(m => m, FdrState);
+                    handedOnMatches = matches; // the objects the truncation search reads once post-search returns
                     parentsInWholeSearch = VariantParents(matches, parentThreshold);
                 }
             };
@@ -1321,9 +1321,6 @@ namespace Test
             }
 
             Assert.That(wholeSearchFdr, Is.Not.Null, "WriteVariantResults did not run");
-            Assert.That(task.TaskChainContext.TryGet("search", out List<SpectralMatch> handedOn), Is.True);
-            var handedOnMatches = handedOn.Where(m => m != null).ToList();
-            Assert.That(handedOnMatches, Has.Count.EqualTo(wholeSearchFdr.Count));
 
             // Fewer than ten variant peptides, all of them parents by the whole search's FDR, and one with a PEP above 0.
             var targetVariantPeptides = handedOnMatches.Where(m => !m.IsDecoy && IsVariant(m)).Select(m => m.BaseSequence).Distinct().ToList();
@@ -1342,7 +1339,7 @@ namespace Test
 
                 // So the truncation search keeps the variant proteoforms the whole search found as parents.
                 Assert.That(VariantParents(handedOnMatches, parentThreshold), Is.EqualTo(parentsInWholeSearch),
-                    "variant matches handed to TruncationSearchTask must pass its parent filter as they did in the whole search");
+                    "variant matches handed to the truncation search must pass its parent filter as they did in the whole search");
             });
 
             // The variant table itself keeps the variant subset's own q-values.
@@ -1385,9 +1382,9 @@ namespace Test
         private static bool IsVariant(SpectralMatch match) => match.BestMatchingBioPolymersWithSetMods
             .Any(h => h.SpecificBioPolymer is PeptideWithSetModifications peptide && peptide.IsVariantPeptide());
 
-        /// <summary>The variant matches TruncationSearchTask's parent filter keeps, as "full sequence scan".</summary>
+        /// <summary>The variant matches the truncation search's parent filter keeps, as "full sequence scan".</summary>
         private static List<string> VariantParents(IEnumerable<SpectralMatch> matches, double threshold) => matches
-            .Where(m => IsVariant(m) && TruncationSearchTask.PassesParentFilter(m, threshold))
+            .Where(m => IsVariant(m) && SearchTask.PassesTruncationParentFilter(m, threshold))
             .Select(m => $"{m.FullSequence} {m.ScanNumber}").OrderBy(s => s, StringComparer.Ordinal).ToList();
 
         /// <summary>Every FDR value FdrAnalysisEngine writes onto a match, as text ("R" keeps each double exact).</summary>
@@ -1477,6 +1474,100 @@ namespace Test
             Assert.That(coelutingPeakRow, Does.Contain(TargetSequence));
             Assert.That(withheld.Peptides, Does.Not.Contain(ContaminantSequence),
                 "the contaminant's own peptide row is still withheld");
+        }
+
+        /// <summary>
+        /// The per-file protein FDR (each file's protein table, its count in results.txt and its mzID) ranks a file's groups
+        /// under a trained PEP by each peptide's PEP q-value from the whole search, which only the peptide's best-scoring
+        /// match in the whole search carries. Read off the file's own best match, a peptide whose best match was in another
+        /// file had FdrInfo's unset 2, and its group ranked behind a decoy group found only in this file (review of #2983).
+        /// </summary>
+        [Test]
+        public static void PerFileProteinFdrReadsEachPeptidesPepQValueFromTheWholeSearch()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "PerFileProteinFdrPeptidePepQValue");
+            if (Directory.Exists(outputFolder))
+            {
+                Directory.Delete(outputFolder, true);
+            }
+            Directory.CreateDirectory(outputFolder);
+
+            try
+            {
+                var digestionParams = new DigestionParams(protease: "trypsin", minPeptideLength: 1);
+                var commonParameters = new CommonParameters(digestionParams: digestionParams); // the PEP q-value filter, bottom-up's default
+                string fileA = Path.Combine(outputFolder, "a.mzML");
+                string fileB = Path.Combine(outputFolder, "b.mzML");
+
+                // As the search's FDR leaves them, PEP trained: every match passes the PSM-level cut, and only each
+                // peptide's best-scoring match carries its peptide-level values.
+                SpectralMatch Match(Protein protein, string file, int scanNumber, double score, FdrInfo peptideFdr)
+                {
+                    var peptide = (PeptideWithSetModifications)protein.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
+                    SpectralMatch psm = new PeptideSpectralMatch(peptide, 0, score, scanNumber - 1,
+                        NullMassTestScan(file, commonParameters, scanNumber), commonParameters, new List<MatchedFragmentIon>());
+                    psm.ResolveAllAmbiguities();
+                    psm.SetFdrValues(1, 0, 0, 1, 0, 0, 0.001, 0.001);
+                    psm.PsmFdrInfo.PepTrained = true;
+                    psm.PeptideFdrInfo = peptideFdr;
+                    return psm;
+                }
+
+                // X's peptide scores best in a.mzML; its repeat is in b.mzML. The decoy is found only in b.mzML.
+                var target = new Protein("ACDEFK", "X");
+                var decoy = new Protein("NQSTVK", "DECOY_Z", isDecoy: true);
+                var best = Match(target, fileA, 1, 50, new FdrInfo { QValue = 0, QValueNotch = 0, PEP_QValue = 0.001, PepTrained = true });
+                var repeat = Match(target, fileB, 2, 20, new FdrInfo());
+                var decoyMatch = Match(decoy, fileB, 3, 30, new FdrInfo { QValue = 0, QValueNotch = 0, PEP_QValue = 0.005, PepTrained = true });
+
+                PostSearchAnalysisParameters parameters = new()
+                {
+                    SearchParameters = new SearchParameters
+                    {
+                        DoParsimony = true,
+                        DoLabelFreeQuantification = false,
+                        DoMultiplexQuantification = false,
+                        WriteIndividualFiles = true,
+                        WriteMzId = false,
+                        WritePepXml = false,
+                    },
+                    OutputFolder = outputFolder,
+                    IndividualResultsOutputFolder = outputFolder,
+                    SearchTaskId = "TestTask",
+                    AllSpectralMatches = new List<SpectralMatch> { best, repeat, decoyMatch },
+                    CurrentRawFileList = new List<string> { fileA, fileB },
+                    MyFileManager = new MyFileManager(true),
+                    FixedModifications = new List<Modification>(),
+                    VariableModifications = new List<Modification>(),
+                    ListOfDigestionParams = new HashSet<IDigestionParams> { digestionParams },
+                    DatabaseFilenameList = new List<DbForTask>(),
+                    FileSettingsList = new FileSpecificParameters[] { null, null },
+                };
+                PostSearchAnalysisTask task = new()
+                {
+                    Parameters = parameters,
+                    CommonParameters = commonParameters,
+                    FileSpecificParameters = new List<(string, CommonParameters)> { (fileA, commonParameters), (fileB, commonParameters) },
+                };
+
+                InvokePrivate(task, "ConstructResultsDictionary");
+                InvokePrivate(task, "ProteinAnalysis");
+                InvokePrivate(task, "WriteProteinResults");
+
+                var results = (Dictionary<(string, string), string>)typeof(PostSearchAnalysisTask)
+                    .GetProperty("ResultsDictionary", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(task);
+                string proteins = $"{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s";
+                Assert.That(results[("a", proteins)], Does.EndWith(": 1"));
+                Assert.That(results[("b", proteins)], Does.EndWith(": 1"),
+                    "in b.mzML X ranks by its peptide's whole-search PEP q-value, 0.001, ahead of the decoy's 0.005");
+            }
+            finally
+            {
+                if (Directory.Exists(outputFolder))
+                {
+                    Directory.Delete(outputFolder, true);
+                }
+            }
         }
 
         private const string TargetSequence = "PEPTIDEK";
