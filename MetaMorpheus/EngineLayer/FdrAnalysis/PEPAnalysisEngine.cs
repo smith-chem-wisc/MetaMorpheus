@@ -203,6 +203,20 @@ namespace EngineLayer
         public IRetentionTimePredictor RetentionTimePredictor { get; }
 
         /// <summary>
+        /// False for top-down. Top-down PEP trains on <see cref="PsmData.HydrophobicityZScore"/> from CZE electrophoretic
+        /// mobility only: no retention-time predictor (SSRCalc, Chronologer, Prosit) is run on a proteoform, so an LC
+        /// file in a top-down search carries <see cref="MissingHydrophobicityZScore"/> for every match.
+        /// </summary>
+        private bool RunsRetentionTimePredictor => SearchType != "top-down";
+
+        /// <summary>
+        /// The scaled <see cref="PsmData.HydrophobicityZScore"/> that stands in for a missing value: the 10 standard
+        /// deviation cap, times the 10 that <see cref="ComputeFeatures"/> scales by. Paired with a
+        /// <see cref="PsmData.HasHydrophobicity"/> of 0.
+        /// </summary>
+        private const float MissingHydrophobicityZScore = 100;
+
+        /// <summary>
         /// Each hypothesis's prediction from the round being scored. Written to the hypotheses only after the loop
         /// has decided which round to keep (<see cref="RecordHypothesisPeps"/>), so a rejected round leaves no trace.
         /// </summary>
@@ -237,7 +251,7 @@ namespace EngineLayer
             // 32-thread Parallel.ForEach -- spends the run queueing rather than predicting. Warming here
             // leaves every later call a dictionary lookup.
             IRetentionTimePredictor basePredictor = rtPredictor ?? new SSRCalc3RetentionTimePredictor();
-            RetentionTimePredictor = TrainingVariables.Contains("HydrophobicityZScore")
+            RetentionTimePredictor = TrainingVariables.Contains("HydrophobicityZScore") && RunsRetentionTimePredictor
                 ? PrewarmedRetentionTimePredictor.Warm(basePredictor, PeptidesToPredict(psms), MaxThreadsForWarming(fileSpecificParameters))
                 : basePredictor;
 
@@ -587,8 +601,11 @@ namespace EngineLayer
 
             if (trainingVariables.Contains("HydrophobicityZScore"))
             {
-                FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = ComputeRetentionTimeEquivalentValues(trainingData, false, RetentionTimePredictor);
-                FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = ComputeRetentionTimeEquivalentValues(trainingData, true, RetentionTimePredictor);
+                if (RunsRetentionTimePredictor)
+                {
+                    FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = ComputeRetentionTimeEquivalentValues(trainingData, false, RetentionTimePredictor);
+                    FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = ComputeRetentionTimeEquivalentValues(trainingData, true, RetentionTimePredictor);
+                }
                 FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = ComputeMobilityValues(trainingData);
             }
             if (trainingVariables.Contains("ChimeraCount"))
@@ -1266,6 +1283,24 @@ namespace EngineLayer
                         }
                     }
                 }
+                else if (searchType == "top-down")
+                {
+                    // Top-down uses CZE electrophoretic mobility only. An LC file gets the missing value rather than a
+                    // retention-time prediction (see RunsRetentionTimePredictor).
+                    bool topDownFileIsCze = psm.FullFilePath != null
+                        && FileSpecificParametersDictionary.TryGetValue(Path.GetFileName(psm.FullFilePath), out var topDownFileParams)
+                        && topDownFileParams.SeparationType == "CZE";
+                    if (topDownFileIsCze)
+                    {
+                        hydrophobicityZscore = (float)Math.Round(GetMobilityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer, out bool mobilityAvailable) * 10.0, 0);
+                        hasHydrophobicity = Convert.ToSingle(mobilityAvailable);
+                    }
+                    else
+                    {
+                        hydrophobicityZscore = MissingHydrophobicityZScore;
+                        hasHydrophobicity = 0;
+                    }
+                }
                 //this is not for actual crosslinks but for the byproducts of crosslink loop links, deadends, etc.
                 if (psm is CrosslinkSpectralMatch)
                 {
@@ -1593,7 +1628,12 @@ namespace EngineLayer
             }
         }
 
-        private static double GetCifuentesMobility(IBioPolymerWithSetMods pwsm)
+        /// <summary>
+        /// The predicted electrophoretic mobility PEP compares a CZE file's matches against (the Cifuentes and Poppe
+        /// model: basic residues, less modifications that remove a charge, over mass^0.411). PEP scales it by 100.
+        /// Public so MetaDraw can plot the same value.
+        /// </summary>
+        public static double GetCifuentesMobility(IBioPolymerWithSetMods pwsm)
         {
             int charge = 1 + pwsm.BaseSequence.Count(f => f == 'K') + pwsm.BaseSequence.Count(f => f == 'R') + pwsm.BaseSequence.Count(f => f == 'H') - CountModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable());// the 1 + is for N-terminal
 

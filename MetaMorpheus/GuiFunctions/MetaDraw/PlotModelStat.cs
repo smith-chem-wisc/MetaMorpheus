@@ -45,7 +45,8 @@ namespace GuiFunctions
             "Histogram of Fragment Ion Types by Intensity",
             "Histogram of Ids by Retention Time",
             "Histogram of Spectral Match Ambiguity Levels",
-            "Histogram of Notch (Ambiguous PSMs Split Across Notches)"
+            "Histogram of Notch (Ambiguous PSMs Split Across Notches)",
+            "Predicted CZE Mobility vs. Observed Migration Time"
         };
 
         public PlotModel Model => privateModel;
@@ -131,6 +132,9 @@ namespace GuiFunctions
                     break;
                 case "Histogram of Notch (Ambiguous PSMs Split Across Notches)":
                     histogramPlot(14);
+                    break;
+                case "Predicted CZE Mobility vs. Observed Migration Time":
+                    linePlot(4);
                     break;
             }
         }
@@ -937,6 +941,34 @@ namespace GuiFunctions
                         });
                     }
                     break;
+                case 4: // Predicted CZE Mobility vs. Observed Migration Time
+                    // The mobility PEP uses for a CZE file, bottom-up or top-down, at the same x100 scale
+                    yAxisTitle = "Predicted electrophoretic mobility";
+                    xAxisTitle = "Observed migration time";
+                    foreach (var psm in allSpectralMatches)
+                    {
+                        if (!TryGetPredictedCzeMobility(psm, out double mobility))
+                        {
+                            continue;
+                        }
+                        if (psm.IdentifiedSequenceVariations == null || psm.IdentifiedSequenceVariations.Equals(""))
+                        {
+                            xy.Add(new Tuple<double, double, string>(mobility, (double)psm.RetentionTime, psm.FullSequence));
+                        }
+                        else
+                        {
+                            variantxy.Add(new Tuple<double, double, string>(mobility, (double)psm.RetentionTime, psm.FullSequence));
+                        }
+
+                        PlotData.Add(new Dictionary<string, string>
+                        {
+                            { "Migration Time", psm.RetentionTime.ToString(CultureInfo.InvariantCulture) },
+                            { "Predicted Electrophoretic Mobility", mobility.ToString(CultureInfo.InvariantCulture) },
+                            { "Full Sequence", psm.FullSequence },
+                            { "Is Variant", (psm.IdentifiedSequenceVariations != null && !psm.IdentifiedSequenceVariations.Equals("")).ToString() }
+                        });
+                    }
+                    break;
             }
             if (xy.Count != 0)
             {
@@ -961,6 +993,30 @@ namespace GuiFunctions
             }
             privateModel.Axes.Add(new LinearAxis { Title = xAxisTitle, Position = AxisPosition.Bottom });
             privateModel.Axes.Add(new LinearAxis { Title = yAxisTitle, Position = AxisPosition.Left });
+        }
+
+        /// <summary>
+        /// The predicted CZE mobility of the match's first full sequence, including its modifications, which change
+        /// the charge. False for an oligo (the model is for peptides and proteoforms) or a modification this
+        /// installation does not know, rather than plotting a mobility computed without it.
+        /// </summary>
+        private static bool TryGetPredictedCzeMobility(SpectrumMatchFromTsv psm, out double mobility)
+        {
+            mobility = double.NaN;
+            if (!psm.IsPeptide())
+            {
+                return false;
+            }
+            try
+            {
+                var peptide = psm.ToBioPolymerWithSetMods(psm.FullSequence.Split('|')[0]);
+                mobility = 100.0 * PepAnalysisEngine.GetCifuentesMobility(peptide);
+            }
+            catch (MzLibUtil.MzLibException)
+            {
+                return false;
+            }
+            return double.IsFinite(mobility);
         }
 
         // returns a bin index of number relative to 0, midpoints are rounded towards zero

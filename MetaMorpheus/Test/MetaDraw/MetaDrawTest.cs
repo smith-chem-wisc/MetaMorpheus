@@ -2403,9 +2403,50 @@ namespace Test.MetaDraw
         public static void PlotNamesDoNotChange()
         {
             var plotNames = PlotModelStat.PlotNames;
-            Assert.That(plotNames.Count, Is.EqualTo(16));
+            Assert.That(plotNames.Count, Is.EqualTo(17));
             Assert.That(plotNames, Does.Contain("Histogram of Spectral Match Ambiguity Levels"));
             Assert.That(plotNames, Does.Contain("Histogram of Notch (Ambiguous PSMs Split Across Notches)"));
+            Assert.That(plotNames, Does.Contain("Predicted CZE Mobility vs. Observed Migration Time"));
+        }
+
+        /// <summary>
+        /// Top-down CZE: each proteoform is plotted at its observed migration time against the mobility PEP uses,
+        /// counting its modifications. Ubiquitin is unmodified; the N-acetylated proteoform loses one charge.
+        /// </summary>
+        [Test]
+        public static void PredictedCzeMobilityPlotsTopDownProteoforms()
+        {
+            string psmFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
+            ObservableCollection<SpectrumMatchFromTsv> psms = new(SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out _));
+            var psmDict = psms.GroupBy(p => p.FileNameWithoutExtension)
+                .ToDictionary(p => p.Key, p => new ObservableCollection<SpectrumMatchFromTsv>(p));
+
+            var plot = new PlotModelStat("Predicted CZE Mobility vs. Observed Migration Time", psms, psmDict);
+            var points = plot.Model.Series.OfType<OxyPlot.Series.ScatterSeries>().SelectMany(s => s.Points).ToList();
+
+            Assert.That(points, Is.Not.Empty);
+            Assert.That(plot.PlotData.Count, Is.EqualTo(points.Count));
+            Assert.That(plot.Model.Axes.Select(a => a.Title), Is.EquivalentTo(new[] { "Observed migration time", "Predicted electrophoretic mobility" }));
+
+            const string ubiquitin = "MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG";
+            var ubiquitinPoint = points.First(p => (string)p.Tag == ubiquitin);
+            var ubiquitinPsm = psms.First(p => p.FullSequence == ubiquitin);
+            double ubiquitinMass = new PeptideWithSetModifications(ubiquitin, GlobalVariables.AllModsKnownDictionary).MonoisotopicMass;
+            Assert.That(ubiquitinPoint.X, Is.EqualTo(ubiquitinPsm.RetentionTime));
+            // 1 (N-terminus) + 7 K + 4 R + 1 H
+            Assert.That(ubiquitinPoint.Y, Is.EqualTo(100 * Math.Log(1 + 0.35 * 13) / Math.Pow(ubiquitinMass, 0.411)).Within(1e-9));
+
+            const string acetylated = "[UniProt:N-acetylalanine on A]ADKPDMGEIASFDKAKLKKTETQEKNTLPTKETIEQEKRSEIS";
+            var acetylatedPoint = points.First(p => (string)p.Tag == acetylated);
+            double acetylatedMass = new PeptideWithSetModifications(acetylated, GlobalVariables.AllModsKnownDictionary).MonoisotopicMass;
+            // 1 (N-terminus) + 8 K + 1 R, less 1 for the N-acetylation
+            Assert.That(acetylatedPoint.Y, Is.EqualTo(100 * Math.Log(1 + 0.35 * 9) / Math.Pow(acetylatedMass, 0.411)).Within(1e-9));
+
+            // An ambiguous match is plotted at the mobility of its first full sequence
+            var ambiguousPsm = psms.First(p => p.FullSequence.Contains('|'));
+            var ambiguousPoint = points.First(p => (string)p.Tag == ambiguousPsm.FullSequence && p.X == ambiguousPsm.RetentionTime);
+            var firstSequence = new PeptideWithSetModifications(ambiguousPsm.FullSequence.Split('|')[0], GlobalVariables.AllModsKnownDictionary);
+            Assert.That(ambiguousPoint.Y, Is.EqualTo(100 * PepAnalysisEngine.GetCifuentesMobility(firstSequence)).Within(1e-9));
         }
 
         [Test, Category("PlotModelStat")]

@@ -30,7 +30,9 @@ namespace EngineLayer.FdrAnalysis
                     "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", 
                     "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle",
                     "HasSpectralAngle", "PeaksInPrecursorEnvelope", "ChimeraCount",
-                    "MostAbundantPrecursorPeakIntensity", "PrecursorFractionalIntensity", "InternalIonCount"
+                    "MostAbundantPrecursorPeakIntensity", "PrecursorFractionalIntensity", "InternalIonCount",
+                    // CZE electrophoretic mobility only; see PepAnalysisEngine.ComputeFeatures
+                    "HydrophobicityZScore", "HasHydrophobicity"
                 }
             },
 
@@ -207,6 +209,8 @@ namespace EngineLayer.FdrAnalysis
         /// - there is no reference distribution for this file and retention-time bin (for LC or CZE), so there is
         ///   nothing to compare the prediction against.
         /// - the computed z-score is NaN or infinite (a NaN prediction or bin mean, or a zero or NaN deviation).
+        /// - the file is LC in a top-down search. Top-down uses CZE electrophoretic mobility only and runs no
+        ///   retention-time predictor on a proteoform.
         ///
         /// Companion to <see cref="HydrophobicityZScore"/> in the same way <see cref="HasSpectralAngle"/> is the
         /// companion to <see cref="SpectralAngle"/>: it lets the model distinguish "predicted, and disagrees with
