@@ -2441,6 +2441,12 @@ namespace Test.MetaDraw
             double acetylatedMass = new PeptideWithSetModifications(acetylated, GlobalVariables.AllModsKnownDictionary).MonoisotopicMass;
             // 1 (N-terminus) + 8 K + 1 R, less 1 for the N-acetylation
             Assert.That(acetylatedPoint.Y, Is.EqualTo(100 * Math.Log(1 + 0.35 * 9) / Math.Pow(acetylatedMass, 0.411)).Within(1e-9));
+
+            // An ambiguous match is plotted at the mobility of its first full sequence
+            var ambiguousPsm = psms.First(p => p.FullSequence.Contains('|'));
+            var ambiguousPoint = points.First(p => (string)p.Tag == ambiguousPsm.FullSequence && p.X == ambiguousPsm.RetentionTime);
+            var firstSequence = new PeptideWithSetModifications(ambiguousPsm.FullSequence.Split('|')[0], GlobalVariables.AllModsKnownDictionary);
+            Assert.That(ambiguousPoint.Y, Is.EqualTo(100 * PepAnalysisEngine.GetCifuentesMobility(firstSequence)).Within(1e-9));
         }
 
         [Test, Category("PlotModelStat")]
