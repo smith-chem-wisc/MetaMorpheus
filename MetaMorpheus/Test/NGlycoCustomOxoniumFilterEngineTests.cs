@@ -85,7 +85,8 @@ namespace Test
 
             double possibleGlycanMassLow = commonParameters.PrecursorMassTolerance.GetMinimumValue(scan.PrecursorMass) - peptide.MonoisotopicMass;
             var possibleMatches = new List<GlycoSpectralMatch>();
-            object[] args = { scan, 0, 3, peptide, 0, possibleGlycanMassLow, oxoniumIonIntensities, possibleMatches };
+            // the last two are the precursor mass searched and its notch: the observed mass, no offset
+            object[] args = { scan, 0, 3, peptide, 0, possibleGlycanMassLow, oxoniumIonIntensities, possibleMatches, scan.PrecursorMass, 0 };
 
             MethodInfo findNGlycan = typeof(GlycoSearchEngine).GetMethod("FindNGlycan", BindingFlags.NonPublic | BindingFlags.Instance);
             Assert.That(findNGlycan, Is.Not.Null, "FindNGlycan was renamed or its signature changed.");

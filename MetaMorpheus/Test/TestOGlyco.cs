@@ -244,7 +244,7 @@ namespace Test
         public static void GlycoSpectralHeader()
         {
             string header = GlycoSpectralMatch.GetTabSepHeaderSingle().ToLower().Trim();
-            string expectedHeader = "File Name\tScan Number\tScan Retention Time\tPrecursor Scan Number\tPrecursor MZ\tPrecursor Charge\tPrecursor Mass\tProtein Accession\tOrganism Name\tProtein Name\tMissed Cleavages\tStart and End Residues In Protein\tBase Sequence\tFlanking Residues\tFull Sequence\tNumber of Mods\tPeptide Monoisotopic Mass\tScore\tRank\tMatched Ion Series\tMatched Ion Mass-To-Charge Ratios\tMatched Ion Mass Diff (Da)\tMatched Ion Mass Diff (Ppm)\tMatched Ion Intensities\tMatched Ion Counts\tDecoy/Contaminant/Target\tQValue\tPEP\tPEP_QValue\t".ToLower();
+            string expectedHeader = "File Name\tScan Number\tScan Retention Time\tPrecursor Scan Number\tPrecursor MZ\tPrecursor Charge\tPrecursor Mass\tProtein Accession\tOrganism Name\tProtein Name\tMissed Cleavages\tStart and End Residues In Protein\tBase Sequence\tFlanking Residues\tFull Sequence\tNumber of Mods\tPeptide Monoisotopic Mass\tNotch\tScore\tRank\tMatched Ion Series\tMatched Ion Mass-To-Charge Ratios\tMatched Ion Mass Diff (Da)\tMatched Ion Mass Diff (Ppm)\tMatched Ion Intensities\tMatched Ion Counts\tDecoy/Contaminant/Target\tQValue\tQValue Notch\tPEP\tPEP_QValue\t".ToLower();
             Assert.That(header.Equals(expectedHeader.Trim()));
         }
 

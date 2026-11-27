@@ -172,7 +172,8 @@ namespace Test
             double rangeWidth = scan.TheScan.MassSpectrum.Range.Width;
             double tolWidth = commonParameters.ProductMassTolerance.GetRange(1000).Width;
             double pEstimate = rangeWidth > 0 ? spectrumSize * tolWidth / rangeWidth : double.PositiveInfinity;
-            var result = (GlycoSpectralMatch)createGsmMethod.Invoke(engine, new object[] { ms2ScanWithSpecificMass.First(), 0, 0, peptide, route, oxoniumIonIntensities, localizationGraphs });
+            // the last two are the precursor mass searched and its notch: the observed mass, no offset
+            var result = (GlycoSpectralMatch)createGsmMethod.Invoke(engine, new object[] { ms2ScanWithSpecificMass.First(), 0, 0, peptide, route, oxoniumIonIntensities, localizationGraphs, scan.PrecursorMass, 0 });
 
             // Compute expected p and verify it exceeds 1 so capping behavior is exercised.
             Assert.That(pEstimate, Is.GreaterThan(1d), "Test must drive p > 1 to validate the cap.");

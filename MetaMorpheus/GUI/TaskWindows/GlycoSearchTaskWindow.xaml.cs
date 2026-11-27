@@ -64,6 +64,49 @@ namespace MetaMorpheusGUI
 
         internal GlycoSearchTask TheTask { get; private set; }
 
+        /// <summary> The precursor mass difference acceptor criteria the glyco window offers. </summary>
+        private static readonly MassDiffAcceptorType[] GuiMassDiffAcceptorTypes =
+        {
+            MassDiffAcceptorType.Exact,
+            MassDiffAcceptorType.OneMM,
+            MassDiffAcceptorType.TwoMM,
+            MassDiffAcceptorType.PlusOrMinusThreeMM, // the only one that also searches a precursor picked lighter than the monoisotopic peak
+        };
+
+        /// <summary>
+        /// Adds a radio button for one criterion, worded and explained exactly as in the classic search's
+        /// "Precursor Mass Difference Acceptor Criterion" (labels and tool tips come from its view model).
+        /// </summary>
+        private void AddMassDiffAcceptorChoice(MassDiffAcceptorType type)
+        {
+            MassDifferenceAcceptorTypeViewModel classic = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Exact, "")
+                .MonoMassDiffAcceptorTypes.First(m => m.Type == type);
+            MassDiffAcceptorPanel.Children.Add(new RadioButton
+            {
+                Content = classic.Label,
+                ToolTip = classic.ToolTip,
+                Tag = type,
+                GroupName = "GlycoMassDiffAcceptor",
+                Margin = new Thickness(2, 1, 2, 1),
+            });
+        }
+
+        /// <summary>
+        /// Checks the task's criterion. A task file can hold a supported criterion this window does not list
+        /// (for example +- 3 missed monoisotopic peaks); it is added so opening and saving the task keeps it.
+        /// </summary>
+        private void SelectMassDiffAcceptorChoice(MassDiffAcceptorType type)
+        {
+            if (!MassDiffAcceptorPanel.Children.OfType<RadioButton>().Any(r => (MassDiffAcceptorType)r.Tag == type))
+            {
+                AddMassDiffAcceptorChoice(type);
+            }
+            foreach (RadioButton choice in MassDiffAcceptorPanel.Children.OfType<RadioButton>())
+            {
+                choice.IsChecked = (MassDiffAcceptorType)choice.Tag == type;
+            }
+        }
+
         private void PopulateChoices()
         {
             ChildScanDissociationTypeComboBox.Items.Add("Null");
@@ -75,6 +118,11 @@ namespace MetaMorpheusGUI
 
             cbbPrecusorMsTl.Items.Add("Da");
             cbbPrecusorMsTl.Items.Add("ppm");
+
+            foreach (MassDiffAcceptorType type in GuiMassDiffAcceptorTypes)
+            {
+                AddMassDiffAcceptorChoice(type);
+            }
 
             CmbOGlycanDatabase.ItemsSource = GlobalVariables.OGlycanDatabasePaths.Select(p=> Path.GetFileName(p));
             CmbNGlycanDatabase.ItemsSource = GlobalVariables.NGlycanDatabasePaths.Select(p => Path.GetFileName(p));
@@ -136,6 +184,7 @@ namespace MetaMorpheusGUI
             TbCustomOxoniumThreshold.Text = task._glycoSearchParameters.CustomOxoniumThreshold.ToString(CultureInfo.InvariantCulture);
 
             txtTopNum.Text = task._glycoSearchParameters.GlycoSearchTopNum.ToString(CultureInfo.InvariantCulture);
+            SelectMassDiffAcceptorChoice(task._glycoSearchParameters.MassDiffAcceptorType);
             CmbOGlycanDatabase.SelectedItem = task._glycoSearchParameters.OGlycanDatabasefile;
             CmbNGlycanDatabase.SelectedItem = task._glycoSearchParameters.NGlycanDatabasefile;
 
@@ -376,6 +425,7 @@ namespace MetaMorpheusGUI
 
             TheTask._glycoSearchParameters.SelectedGlycans = GlycanSelectionViewModel.ToSelectedGlycans();
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
+            TheTask._glycoSearchParameters.MassDiffAcceptorType = (MassDiffAcceptorType)MassDiffAcceptorPanel.Children.OfType<RadioButton>().First(r => r.IsChecked == true).Tag;
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumGlycanBoxMass = double.Parse(TbMaxGlycanBoxMass.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.OxoniumIonFilt = CkbOxoniumIonFilt.IsChecked.Value;

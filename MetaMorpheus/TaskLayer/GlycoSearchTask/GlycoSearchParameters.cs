@@ -1,5 +1,6 @@
 using EngineLayer.GlycoSearch;
 using System.Collections.Generic;
+using System.Linq;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -80,6 +81,41 @@ namespace TaskLayer
             }
         }
         private double _customOxoniumThreshold = GlycoPeptides.DefaultCustomOxoniumThreshold;
+
+        /// <summary>
+        /// The precursor mass offsets a glycopeptide may explain, as in the Classic and Modern searches. A large glycopeptide's
+        /// monoisotopic peak is small, so its precursor is often picked one or more 13C peaks heavy (or light); an isotope-offset
+        /// type searches each offset as the observed precursor mass minus the offset, and each match keeps the offset's notch.
+        /// Only <see cref="SupportedMassDiffAcceptorTypes"/> are allowed. Default <see cref="MassDiffAcceptorType.Exact"/>, the
+        /// behaviour before this setting existed; TOMLs written before it omit it and get the default.
+        /// </summary>
+        public MassDiffAcceptorType MassDiffAcceptorType
+        {
+            get => _massDiffAcceptorType;
+            set
+            {
+                if (!SupportedMassDiffAcceptorTypes.Contains(value))
+                {
+                    throw new EngineLayer.MetaMorpheusException(
+                        $"Glyco search supports the precursor mass difference acceptors {string.Join(", ", SupportedMassDiffAcceptorTypes)}, but was {value}.");
+                }
+                _massDiffAcceptorType = value;
+            }
+        }
+        private MassDiffAcceptorType _massDiffAcceptorType = MassDiffAcceptorType.Exact;
+
+        /// <summary>
+        /// The acceptors that only allow isotope (missed monoisotopic) offsets of the observed precursor mass. Open, interval and
+        /// custom acceptors would let any mass difference through as a "glycan" and are not supported.
+        /// </summary>
+        public static readonly IReadOnlyList<MassDiffAcceptorType> SupportedMassDiffAcceptorTypes = new[]
+        {
+            MassDiffAcceptorType.Exact,
+            MassDiffAcceptorType.OneMM,
+            MassDiffAcceptorType.TwoMM,
+            MassDiffAcceptorType.ThreeMM,
+            MassDiffAcceptorType.PlusOrMinusThreeMM,
+        };
 
         public DecoyType DecoyType { get; set; }
         public int GlycoSearchTopNum { get; set; }
